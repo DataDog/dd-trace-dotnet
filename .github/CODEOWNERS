@@ -1,11 +1,20 @@
 # See https://docs.github.com/en/github/creating-cloning-and-archiving-repositories/creating-a-repository-on-github/about-code-owners
 
-*                                         @DataDog/apm-dotnet
-.github/workflows/profiler-pipeline.yml   @DataDog/profiling-dotnet
-/shared/                                  @DataDog/apm-dotnet @DataDog/profiling-dotnet
+# By default every team is owner
+*                                         @DataDog/apm-dotnet @DataDog/debugger-dotnet-agent @DataDog/profiling-dotnet
+
+# Tracer
 /tracer/                                  @DataDog/apm-dotnet
 /tracer/src/Datadog.Trace/Ci/             @DataDog/apm-dotnet @DataDog/ci-app-tracers
-# /tracer/src/Datadog.Trace/AppSec/       @DataDog/apm-dotnet @DataDog/appsec-dotnet
-/profiler/                                @DataDog/profiling-dotnet
-
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/CI/ @DataDog/ci-app-tracers
+# /tracer/src/Datadog.Trace/AppSec/       @DataDog/apm-dotnet @DataDog/appsec-dotnet
+
+# Profiler
+/profiler/                                @DataDog/profiling-dotnet
+.github/workflows/profiler-pipeline.yml   @DataDog/profiling-dotnet
+
+# Debugger
+/debugger                                 @DataDog/debugger-dotnet-agent
+# Those do not exist yet, but I suggest we use that structure
+/docs/tracer/                             @DataDog/apm-dotnet
+/samples/tracer/                          @DataDog/apm-dotnet
