@@ -5,6 +5,7 @@
 
 using Datadog.Trace.Processors;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Xunit;
 
 namespace Datadog.Trace.Tests.TraceProcessors
@@ -62,6 +63,42 @@ namespace Datadog.Trace.Tests.TraceProcessors
             { "foo DEBOG", 4, 9, false },
         };
 
+        // Based on https://github.dev/DataDog/datadog-agent/blob/1c76b8381a195a0b0f629011a6225e936fe1d37a/pkg/trace/obfuscate/redis_tokenizer_test.go#L13
+        public static TheoryData<string, (string, string, bool)[]> RedisTokenizerData() => new()
+        {
+            { string.Empty, new[] { (string.Empty, nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), true) } },
+            { "BAD\"\"INPUT\" \"boo\n  Weird13\\Stuff", new[] { ("BAD\"\"INPUT\"", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("\"boo\n  Weird13\\Stuff", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { "CMD", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), true), } },
+            { "\n  \nCMD\n  \n", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), true), } },
+            { "  CMD  ", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), true), } },
+            { "CMD1\nCMD2", new[] { ("CMD1", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("CMD2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), true), } },
+            { "  CMD1  \n  CMD2  ", new[] { ("CMD1", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("CMD2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), true), } },
+            { "CMD1\nCMD2\nCMD3", new[] { ("CMD1", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("CMD2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("CMD3", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), true), } },
+            { "CMD1 \n CMD2 \n CMD3 ", new[] { ("CMD1", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("CMD2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("CMD3", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), true), } },
+            { "CMD arg", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { "  CMD  arg  ", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { "CMD arg1 arg2", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg1", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("arg2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { " 	 CMD   arg1 	  arg2 ", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg1", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("arg2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { "CMD arg1\nCMD2 arg2", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg1", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("CMD2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { "CMD arg1 arg2\nCMD2 arg3\nCMD3\nCMD4 arg4 arg5 arg6", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg1", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("arg2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("CMD2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg3", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("CMD3", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("CMD4", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg4", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("arg5", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("arg6", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { "CMD arg1   arg2  \n CMD2  arg3 \n CMD3 \n  CMD4 arg4 arg5 arg6\nCMD5 ", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg1", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("arg2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("CMD2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg3", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("CMD3", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("CMD4", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg4", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("arg5", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("arg6", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("CMD5", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), true), } },
+            { "CMD \"\"", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("\"\"", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { "CMD  \"foo bar\"", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("\"foo bar\"", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { "CMD  \"foo bar\\ \" baz", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("\"foo bar\\ \"", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("baz", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { "CMD \"foo \n bar\" \"\"  baz ", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("\"foo \n bar\"", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("\"\"", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("baz", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { "CMD \"foo \\\" bar\" baz", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("\"foo \\\" bar\"", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("baz", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { "CMD  \"foo bar\"  baz", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("\"foo bar\"", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("baz", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { "CMD \"foo bar\" baz\nCMD2 \"baz\\\\bar\"", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("\"foo bar\"", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("baz", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("CMD2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("\"baz\\\\bar\"", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { " CMD  \"foo bar\"  baz \n CMD2  \"baz\\\\bar\"  ", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("\"foo bar\"", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("baz", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("CMD2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("\"baz\\\\bar\"", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            // These are some extra edge cases
+            { "CMD arg1\n CMD2 arg2", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg1", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("CMD2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { "CMD arg1 \nCMD2 arg2", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg1", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("CMD2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { "CMD arg1 \nCMD2 arg2\n", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg1", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), ("CMD2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { "\nCMD arg1 \n\nCMD2 arg2\n", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg1", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), (string.Empty, nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("CMD2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { " \n \n CMD arg1 \n\nCMD2 arg2\n ", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg1", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), (string.Empty, nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("CMD2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+            { "CMD arg1 \n\n  \n CMD2 arg2\n ", new[] { ("CMD", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg1", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), false), (string.Empty, nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), (string.Empty, nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("CMD2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Command), false), ("arg2", nameof(RedisObfuscationUtil.RedisTokenizer.TokenType.Argument), true), } },
+        };
+
         [Theory]
         [MemberData(nameof(GetRedisQuantizedQuery))]
         public void RedisQuantizerTest(string inValue, string expectedValue)
@@ -76,6 +113,25 @@ namespace Datadog.Trace.Tests.TraceProcessors
         {
             var actual = RedisObfuscationUtil.IsCompoundCommand(query, startIndex, endIndex);
             actual.Should().Be(expected);
+        }
+
+        [Theory]
+        [MemberData(nameof(RedisTokenizerData))]
+        public void RedisTokenizerTest(string query, (string Token, string TokenType, bool Done)[] allExpected)
+        {
+            var tokenizer = new RedisObfuscationUtil.RedisTokenizer(query);
+            foreach (var expected in allExpected)
+            {
+                var done = tokenizer.Scan(out var token);
+
+                using var s = new AssertionScope();
+                done.Should().Be(expected.Done);
+                token.Offset.Should().BeInRange(0, query.Length);
+                (token.Length + token.Offset).Should().BeInRange(0, query.Length);
+                token.TokenType.ToString().Should().Be(expected.TokenType);
+                var commandArg = query.Substring(token.Offset, token.Length);
+                commandArg.Should().Be(expected.Token);
+            }
         }
     }
 }
