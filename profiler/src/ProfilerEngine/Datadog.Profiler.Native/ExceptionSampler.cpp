@@ -1,7 +1,5 @@
 #include "ExceptionSampler.h"
 
-#include <iostream>
-
 ExceptionSampler::ExceptionSampler(const IConfiguration* configuration) :
     _sampler(SamplingWindow, SamplesPerWindow(configuration), SamplingWindowsPerRecording(configuration), 16, [this] { RollWindow(); })
 {
@@ -23,7 +21,6 @@ bool ExceptionSampler::Sample(const std::string exceptionType)
             // force the sampling decision
             _knownExceptions.insert(exceptionType);
 
-            std::cout << "First time seeing " << exceptionType << std::endl;
             return _sampler.Keep();
         }
     }
@@ -34,7 +31,6 @@ bool ExceptionSampler::Sample(const std::string exceptionType)
 
 void ExceptionSampler::RollWindow()
 {
-    std::cout << "RollWindow" << std::endl;
     std::unique_lock lock(_knownExceptionsMutex);
     _knownExceptions.clear();
 }

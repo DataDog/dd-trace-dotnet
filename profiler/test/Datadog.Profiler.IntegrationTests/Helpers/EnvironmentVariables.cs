@@ -14,5 +14,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string UseNativeLoader = "USE_NATIVE_LOADER";
         public const string CpuProfilerEnabled = "DD_PROFILING_CPU_ENABLED";
         public const string ExceptionProfilerEnabled = "DD_PROFILING_EXCEPTION_ENABLED";
+        public const string ExceptionSampleLimit = "DD_PROFILING_EXCEPTION_SAMPLE_LIMIT";
     }
 }

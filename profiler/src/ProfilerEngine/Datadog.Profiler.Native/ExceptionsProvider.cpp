@@ -98,6 +98,11 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         return false;
     }
 
+    if (!_sampler.Sample(name))
+    {
+        return true;
+    }
+
     const auto messageAddress = *reinterpret_cast<UINT_PTR*>(thrownObjectId + _messageFieldOffset.ulOffset);
 
     std::string message;
