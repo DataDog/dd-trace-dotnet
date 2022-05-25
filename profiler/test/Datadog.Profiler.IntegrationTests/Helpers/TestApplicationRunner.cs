@@ -152,6 +152,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             {
                 if (!process.HasExited)
                 {
+                    process.GetAllThreadsStack(_testBaseOutputDir, _output);
+
                     process.TakeMemoryDump(_testBaseOutputDir, _output);
 
                     try
