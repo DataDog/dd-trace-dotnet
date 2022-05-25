@@ -136,11 +136,11 @@ namespace Datadog.Trace.TestHelpers
 
             string fileName = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform()) switch
             {
-                ("win", "X64")     => "Datadog.AutoInstrumentation.NativeLoader.x64.dll",
-                ("win", "X86")     => "Datadog.AutoInstrumentation.NativeLoader.x86.dll",
+                ("win", "X64")     => "Datadog.Trace.ClrProfiler.Native.x64.dll",
+                ("win", "X86")     => "Datadog.Trace.ClrProfiler.Native.x86.dll",
                 ("linux", "X64")   => "Datadog.Trace.ClrProfiler.Native.so",
-                ("linux", "Arm64") => "Datadog.AutoInstrumentation.NativeLoader.so",
-                ("osx", _)         => "Datadog.AutoInstrumentation.NativeLoader.dylib",
+                ("linux", "Arm64") => "Datadog.Trace.ClrProfiler.Native.so",
+                ("osx", _)         => "Datadog.Trace.ClrProfiler.Native.dylib",
                 _ => throw new PlatformNotSupportedException()
             };
 
