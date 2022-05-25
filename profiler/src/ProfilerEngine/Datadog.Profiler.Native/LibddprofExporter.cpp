@@ -295,7 +295,7 @@ bool LibddprofExporter::Export()
 std::string LibddprofExporter::GeneratePprofFilePath(const std::string& applicationName, int idx) const
 {
     auto time = std::time(nullptr);
-    struct tm buf;
+    struct tm buf = {};
 
 #ifdef _WINDOWS
     localtime_s(&buf, &time);

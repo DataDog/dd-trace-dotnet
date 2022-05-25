@@ -126,7 +126,7 @@ partial class Build
         => _ => _
                .Description("Run exploration tests.")
                .Requires(() => ExplorationTestUseCase)
-               .After(Clean, BuildTracerHome, SetUpExplorationTests)
+               .After(Clean, BuildTracerHome, BuildNativeLoader, SetUpExplorationTests)
                .Executes(() =>
                 {
                     FileSystemTasks.EnsureExistingDirectory(TestLogsDirectory);
@@ -155,13 +155,13 @@ partial class Build
         switch (ExplorationTestUseCase)
         {
             case global::ExplorationTestUseCase.Debugger:
-                envVariables.AddDebuggerEnvironmentVariables(TracerHomeDirectory);
+                envVariables.AddDebuggerEnvironmentVariables(MonitoringHomeDirectory);
                 break;
             case global::ExplorationTestUseCase.ContinuousProfiler:
-                envVariables.AddContinuousProfilerEnvironmentVariables(TracerHomeDirectory);
+                envVariables.AddContinuousProfilerEnvironmentVariables(MonitoringHomeDirectory);
                 break;
             case global::ExplorationTestUseCase.Tracer:
-                envVariables.AddTracerEnvironmentVariables(TracerHomeDirectory);
+                envVariables.AddTracerEnvironmentVariables(MonitoringHomeDirectory);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(ExplorationTestUseCase), ExplorationTestUseCase, null);
