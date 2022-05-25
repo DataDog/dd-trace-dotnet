@@ -114,7 +114,6 @@
     <ClCompile Include="LinuxStackFramesCollector.cpp" />
     <ClCompile Include="LinuxThreadsCpuManager.cpp" />
     <ClCompile Include="OsSpecificApi.cpp" />
-    <ClCompile Include="Timer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="prepare_loader_for_linking.sh" />

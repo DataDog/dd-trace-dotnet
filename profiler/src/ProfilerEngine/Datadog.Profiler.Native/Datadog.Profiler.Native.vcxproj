@@ -333,6 +333,8 @@
     <ClCompile Include="TagsHelper.cpp" />
     <ClCompile Include="ThreadCpuInfo.cpp" />
     <ClCompile Include="ThreadsCpuManager.cpp" />
+    <ClCompile Include="Timer.Linux.cpp" />
+    <ClCompile Include="Timer.Windows.cpp" />
     <ClCompile Include="WallTimeProvider.cpp" />
   </ItemGroup>
   <ItemGroup>

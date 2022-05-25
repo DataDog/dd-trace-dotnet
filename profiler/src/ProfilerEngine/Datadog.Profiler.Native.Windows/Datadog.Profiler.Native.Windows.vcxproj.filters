@@ -49,9 +49,6 @@
     <ClCompile Include="..\Datadog.Profiler.Native\DllMain.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Timer.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="SystemTime.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

@@ -1,6 +1,8 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
+#ifdef _WINDOWS
+
 #include "Timer.h"
 
 Timer::Timer(std::function<void()> callback, std::chrono::milliseconds period) :
@@ -47,3 +49,5 @@ void NTAPI Timer::OnTick(
     const auto callback = static_cast<std::function<void()>*>(Context);
     (*callback)();
 }
+
+#endif

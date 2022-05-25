@@ -228,7 +228,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\Datadog.Profiler.Native\DllMain.cpp" />
-    <ClCompile Include="Timer.cpp" />
     <ClCompile Include="SystemTime.cpp" />
     <ClCompile Include="WindowsThreadsCpuManager.cpp" />
     <ClCompile Include="OsSpecificApi.cpp" />

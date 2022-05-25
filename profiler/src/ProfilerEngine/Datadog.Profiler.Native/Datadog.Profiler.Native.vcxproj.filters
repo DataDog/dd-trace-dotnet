@@ -313,6 +313,12 @@
     <ClCompile Include="ExceptionSampler.cpp">
       <Filter>Exceptions</Filter>
     </ClCompile>
+    <ClCompile Include="Timer.Linux.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="Timer.Windows.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
