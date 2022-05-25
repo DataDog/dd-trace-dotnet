@@ -1127,10 +1127,14 @@ stages:
   dependsOn: [build_arm64, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    TestAllPackageVersions: true
+    IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
+    baseImage: debian
+
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
-        jobs: [Test]
+        jobs: [Test, DockerTest]
 
     - job: Test
       timeoutInMinutes: 60 #default value
@@ -1140,10 +1144,6 @@ stages:
             publishTargetFramework: net5.0
           net6_0:
             publishTargetFramework: net6.0
-      variables:
-        TestAllPackageVersions: true
-        IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
-        baseImage: debian
       workspace:
         clean: all
       pool:
@@ -1153,14 +1153,6 @@ stages:
         - template: steps/clone-repo.yml
           parameters:
             masterCommitId: $(masterCommitId)
-        # Doing a clean of obj files _before_ restore to remove build output from previous runs
-        # Can't do a full clean, as otherwise restore-working-directory fails
-        # Only necessary for ARM64, but shouldn't cause any harm on others
-        - template: steps/run-in-docker.yml
-          parameters:
-            build: true
-            baseImage: $(baseImage)
-            command: "CleanObjFiles"
 
         - template: steps/restore-working-directory.yml
           parameters:
@@ -1168,8 +1160,70 @@ stages:
 
         - template: steps/run-in-docker.yml
           parameters:
+            build: true
             baseImage: $(baseImage)
-            command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework)"
+            command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false"
+
+        - task: DockerCompose@0
+          displayName: docker-compose run --no-deps IntegrationTests
+          inputs:
+            containerregistrytype: Container Registry
+            dockerComposeFileArgs: |
+              baseImage=$(baseImage)
+              framework=$(publishTargetFramework)
+            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
+            projectName: ddtrace_$(Build.BuildNumber)
+
+        - publish: tracer/build_data
+          artifact: integration_tests_linux_tracer_logs_arm64_$(publishTargetFramework)_$(System.JobAttempt)
+          condition: succeededOrFailed()
+          continueOnError: true
+
+        - task: PublishTestResults@2
+          displayName: publish test results
+          inputs:
+            testResultsFormat: VSTest
+            testResultsFiles: tracer/build_data/results/**/*.trx
+          condition: succeededOrFailed()
+
+        - publish: tracer/test/snapshots
+          displayName: Uploading snapshots
+          artifact: integration_tests_linux_snapshots_arm64_$(publishTargetFramework)_$(System.JobAttempt)
+          condition: succeededOrFailed()
+          continueOnError: true
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            baseImage: $(baseImage)
+            command: "CheckBuildLogsForErrors"
+
+    - job: DockerTest
+      timeoutInMinutes: 60 #default value
+      strategy:
+        matrix:
+          net5_0:
+            publishTargetFramework: net5.0
+          net6_0:
+            publishTargetFramework: net6.0
+      workspace:
+        clean: all
+      pool:
+        name: aws-arm64-auto-scaling
+
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            masterCommitId: $(masterCommitId)
+
+        - template: steps/restore-working-directory.yml
+          parameters:
+            artifact: build-linux-arm64-working-directory
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            build: true
+            baseImage: $(baseImage)
+            command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true"
 
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64
@@ -1187,7 +1241,7 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests.ARM64
+            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
 
         - task: DockerCompose@0
@@ -1199,7 +1253,7 @@ stages:
           condition: succeededOrFailed()
 
         - publish: tracer/build_data
-          artifact: profiler-logs_integration_tests_linux_arm64_$(publishTargetFramework)_$(System.JobAttempt)
+          artifact: integration_tests_linux_docker_tracer_logs_arm64_$(publishTargetFramework)_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
 
@@ -1212,7 +1266,7 @@ stages:
 
         - publish: tracer/test/snapshots
           displayName: Uploading snapshots
-          artifact: integration_tests_linux_snapshots_arm64_$(publishTargetFramework)_$(System.JobAttempt)
+          artifact: integration_tests_linux_docker_snapshots_arm64_$(publishTargetFramework)_$(System.JobAttempt)
           condition: succeededOrFailed()
           continueOnError: true
 
