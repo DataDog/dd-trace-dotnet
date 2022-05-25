@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Headers.Ip
 {
@@ -37,6 +38,18 @@ namespace Datadog.Trace.Headers.Ip
 
             var result = IpExtractor.GetRealIpFromValues(ipPotentialValues, isSecureConnection);
             return result ?? peerIpFallback;
+        }
+
+        internal static void AddIpToTags(string peerIpAddress, bool isSecureConnection, Func<string, string> getHeader, string customIpHeader, WebTags tags)
+        {
+            var peerIp = IpExtractor.ExtractAddressAndPort(peerIpAddress, https: isSecureConnection);
+            AddIpToTags(peerIp, isSecureConnection, getHeader, customIpHeader, tags);
+        }
+
+        internal static void AddIpToTags(IpInfo peerIp, bool isSecureConnection, Func<string, string> getHeader, string customIpHeader, WebTags tags)
+        {
+            var ipInfo = ExtractIpAndPort(getHeader, customIpHeader, isSecureConnection, peerIp);
+            tags.SetTag(Tags.HttpClientIp, ipInfo.IpAddress);
         }
     }
 }

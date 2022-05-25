@@ -129,9 +129,7 @@ namespace Datadog.Trace.AspNet
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
                 scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, userAgent, tags, tagsFromHeaders);
 
-                var peerIp = Headers.Ip.IpExtractor.ExtractAddressAndPort(httpRequest.UserHostAddress, https: httpRequest.IsSecureConnection);
-                var ipInfo = Headers.Ip.RequestIpExtractor.ExtractIpAndPort(key => httpRequest.Headers[key], tracer.Settings.IpHeader, httpRequest.IsSecureConnection, peerIp);
-                tags.SetTag(Tags.HttpClientIp, ipInfo.IpAddress);
+                Headers.Ip.RequestIpExtractor.AddIpToTags(httpRequest.UserHostAddress, httpRequest.IsSecureConnection, key => httpRequest.Headers[key], tracer.Settings.IpHeader, tags);
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
 
                 // Decorate the incoming HTTP Request with distributed tracing headers

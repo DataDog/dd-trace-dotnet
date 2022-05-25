@@ -99,7 +99,7 @@ namespace Datadog.Trace.AppSec
                 if (_settings.Enabled)
                 {
                     _waf = waf ?? Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules);
-                    if (_waf.InitializedSuccessfully)
+                    if ((_waf?.InitializedSuccessfully).GetValueOrDefault())
                     {
                         _instrumentationGateway.EndRequest += RunWaf;
                         _instrumentationGateway.PathParamsAvailable += AggregateAddressesInContext;

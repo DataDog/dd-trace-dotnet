@@ -39,6 +39,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		GlobalSuppressions.cs = GlobalSuppressions.cs
 		LICENSE = LICENSE
 		LICENSE-3rdparty.csv = LICENSE-3rdparty.csv
+		tracer\build\PackageVersionsGeneratorDefinitions.json = tracer\build\PackageVersionsGeneratorDefinitions.json
 		docs\README.md = docs\README.md
 		tracer\stylecop.json = tracer\stylecop.json
 	EndProjectSection
@@ -443,7 +444,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Telemetry", "tracer
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sandbox.AutomaticInstrumentation", "tracer\test\test-applications\regression\Sandbox.AutomaticInstrumentation\Sandbox.AutomaticInstrumentation.csproj", "{10619BA2-AED1-482A-8570-BB7C7B83DDDC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.Coverage.collector", "tracer\src\Datadog.Trace.Coverage.collector\Datadog.Trace.Coverage.collector.csproj", "{7A0D8A39-C60D-4BA1-93AB-D429080BBFA5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Coverage.collector", "tracer\src\Datadog.Trace.Coverage.collector\Datadog.Trace.Coverage.collector.csproj", "{7A0D8A39-C60D-4BA1-93AB-D429080BBFA5}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.TraceAnnotations", "tracer\test\test-applications\integrations\Samples.TraceAnnotations\Samples.TraceAnnotations.csproj", "{230A9B80-E1AA-469F-86F2-B7E257F14E66}"
 EndProject
