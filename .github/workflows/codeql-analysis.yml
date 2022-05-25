@@ -38,7 +38,7 @@ jobs:
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
     - name: Build dd-trace-dotnet
       run: |
-          run: ./tracer/build.sh
+        ./tracer/build.sh
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
