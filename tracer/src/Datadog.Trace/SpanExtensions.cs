@@ -3,6 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Text;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
@@ -12,6 +16,8 @@ namespace Datadog.Trace
     /// </summary>
     public static class SpanExtensions
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SpanExtensions));
+
         /// <summary>
         /// Sets the details of the user on the local root span
         /// </summary>
@@ -30,12 +36,31 @@ namespace Datadog.Trace
             }
 
             var localRootSpan = span;
+            TraceContext traceContext = null;
             if (span is Span spanClass)
             {
-                localRootSpan = spanClass.Context.TraceContext?.RootSpan ?? span;
+                traceContext = spanClass.Context.TraceContext;
+                localRootSpan = traceContext?.RootSpan ?? span;
             }
 
-            localRootSpan.SetTag(Tags.User.Id, userDetails.Id);
+            if (userDetails.PropagateId)
+            {
+                var base64UserId = Convert.ToBase64String(Encoding.UTF8.GetBytes(userDetails.Id));
+
+                var propagationHeaderMaxLength =
+                    traceContext?.Tracer.Settings.TagPropagationHeaderMaxLength ??
+                        TagPropagation.OutgoingPropagationHeaderMaxLength;
+                if (base64UserId.Length > propagationHeaderMaxLength)
+                {
+                    Log.Warning<string, int>("{Id} is {IdLength} bytes long, which is longer than the configured max length of {MaxLength}", userDetails.Id, base64UserId.Length, propagationHeaderMaxLength);
+                }
+
+                localRootSpan.SetTag(TagPropagation.PropagatedTagPrefix + Tags.User.Id, base64UserId);
+            }
+            else
+            {
+                localRootSpan.SetTag(Tags.User.Id, userDetails.Id);
+            }
 
             if (userDetails.Email is not null)
             {
