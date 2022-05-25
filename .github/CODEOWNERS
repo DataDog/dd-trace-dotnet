@@ -5,9 +5,16 @@
 
 # Tracer
 /tracer/                                  @DataDog/apm-dotnet
+
+# CI
 /tracer/src/Datadog.Trace/Ci/             @DataDog/apm-dotnet @DataDog/ci-app-tracers
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/CI/ @DataDog/ci-app-tracers
-# /tracer/src/Datadog.Trace/AppSec/       @DataDog/apm-dotnet @DataDog/appsec-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/CI/   @DataDog/ci-app-tracers
+
+# ASM
+/tracer/src/Datadog.Trace/AppSec/         @DataDog/apm-dotnet @DataDog/asm-dotnet
+/tracer/test/test-applications/security   @DataDog/apm-dotnet @DataDog/asm-dotnet
+/tracer/test/Datadog.Trace.Security.IntegrationTests @DataDog/apm-dotnet @DataDog/asm-dotnet
+/tracer/test/Datadog.Trace.Security.Unit.Tests       @DataDog/apm-dotnet @DataDog/asm-dotnet
 
 # Profiler
 /profiler/                                @DataDog/profiling-dotnet
@@ -19,4 +26,4 @@
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Debugger @DataDog/debugger-dotnet
 
 # Shared code we could move to the root folder
-/tracer/build/                            @DataDog/apm-dotnet @DataDog/debugger-dotnet @DataDog/profiling-dotnet
+/tracer/build/                            @DataDog/apm-dotnet @DataDog/debugger-dotnet @DataDog/profiling-dotnet @DataDog/asm-dotnet
