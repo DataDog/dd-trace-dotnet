@@ -21,8 +21,7 @@ namespace Datadog.Trace.Tests.Debugger;
 
 public class LiveDebuggerTests
 {
-    // https://datadoghq.atlassian.net/browse/DEBUG-823
-    [Fact(Skip = "Non-deterministic test.")]
+    [Fact]
     public void DebuggerEnabled_ServicesCalled()
     {
         var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
@@ -39,7 +38,16 @@ public class LiveDebuggerTests
 
         LiveDebugger.Create(settings, discoveryService, configurationPoller, lineProbeResolver, debuggerSink);
 
-        Thread.Sleep(100);
+        var counter = 0;
+
+        var allCalled = discoveryService.Called && configurationPoller.Called && debuggerSink.Called;
+        while (counter < 10 && !allCalled)
+        {
+            Thread.Sleep(100);
+
+            allCalled = discoveryService.Called && configurationPoller.Called && debuggerSink.Called;
+            counter++;
+        }
 
         discoveryService.Called.Should().BeTrue();
         configurationPoller.Called.Should().BeTrue();
