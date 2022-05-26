@@ -70,7 +70,6 @@ pr:
       - LICENSE
       - LICENSE-3rdparty.csv
       - NOTICE
-      - profiler/
 
 schedules:
   - cron: "0 3 * * *"
@@ -274,6 +273,10 @@ stages:
     - publish: $(symbols)
       displayName: Upload Windows profiler symbols
       artifact: windows-profiler-symbols
+      
+    - publish: $(System.DefaultWorkingDirectory)/profiler/_build
+      displayName: Upload Windows profiler directory
+      artifact: windows-profiler-binaries
 
 - stage: build_linux_tracer
   dependsOn: [master_commit_id]
@@ -1164,6 +1167,199 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
+- stage: asan_tests_windows_profiler
+#address sanitizer tests
+  condition: > 
+    and(
+      succeeded(), 
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+    )
+  dependsOn: [master_commit_id, generate_variables, build_windows_tracer, build_windows_profiler]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Win]
+
+  - job: Win
+    pool:
+      vmImage: windows-2022
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix:
+        x86:
+          platform: x86
+        x64:
+          platform: x64
+    
+    steps:
+    - template: steps/install-dotnet-sdks.yml
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows tracer home
+      inputs:
+        artifact: windows-tracer-home
+        path: $(monitoringHome)
+        
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows profiler home
+      inputs:
+        artifact: windows-profiler-binaries
+        path: $(System.DefaultWorkingDirectory)/profiler/_build
+
+    - task: MSBuild@1
+      inputs:
+        solution: profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Datadog.Profiler.Native.Windows.WithTests.proj
+        configuration: Release
+        platfom: $(platform)
+        msbuildArguments: /target:BuildCppWithAsan /property:DeployToMonitoringHome=True
+      displayName: Build Native profiler and tests
+
+    - powershell: |        
+        dotnet restore /p:Configuration="Release" /p:Platform="$(platform)" profiler/src/Demos/Datadog.Demos.sln
+      displayName: restore sample applications
+
+    - powershell: |        
+        dotnet build --no-restore -c Release -p:Platform=$(platform) profiler/src/Demos/Datadog.Demos.sln
+      displayName: build sample applications
+
+    - powershell: |
+        # Prepare environment
+        $env:DD_INSIDE_CI=$true
+        $env:DD_HOSTNAME="dd-profiler-dotnet"
+        $env:DD_SERVICE="dd-profiler-dotnet"
+        $env:DD_PROFILING_ENABLED="1"
+
+        # Set profiler deployment and test output dir folder path for the test
+        $test_output_dir="$(System.DefaultWorkingDirectory)\test_output"
+
+        $env:DD_TESTING_OUPUT_DIR=$test_output_dir
+        $env:DD_TRACE_DEBUG="1"
+        $env:DD_PROFILING_LOG_DIR="$test_output_dir\logs"
+        $env:DD_PROFILING_OUTPUT_DIR="$test_output_dir\pprofs"
+        $env:DD_TRACE_ENABLED="0"
+        $env:COR_ENABLE_PROFILING="1"
+        $env:COR_PROFILER="{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+        $env:COR_PROFILER_PATH="$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home/win-$(platform)/Datadog.Trace.ClrProfiler.Native.dll)"
+        $env:DD_DOTNET_PROFILER_HOME="$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home)"
+
+        # Run Computer01 for 2min
+        cd profiler\_build\bin\Release-$(platform)\profiler\src\Demos\Samples.Computer01\net45
+        .\Samples.Computer01.exe --scenario 1 --timeout 120
+      displayName: run asan test
+      workingDirectory: $(System.DefaultWorkingDirectory)
+      env:
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_API_KEY: $(ddApiKey)
+
+    - publish: $(System.DefaultWorkingDirectory)/test_output
+      displayName: Uploading test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_tests_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: false
+
+- stage: static_analysis_tests_windows_profiler
+  condition: > 
+    and(
+      succeeded(), 
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+    )
+  dependsOn: [master_commit_id, generate_variables, build_windows_tracer, build_windows_profiler]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Win]
+
+  - job: Win
+    pool:
+      vmImage: windows-2022
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix:
+        x86:
+          platform: x86
+        x64:
+          platform: x64
+    
+    steps:
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows profiler home
+      inputs:
+        artifact: windows-profiler-binaries
+        path: $(System.DefaultWorkingDirectory)/profiler/_build
+        
+    - powershell: |
+        choco install cppcheck -y
+        Write-Host "##vso[task.setvariable variable=PATH;]${env:PATH};C:\Program Files\Cppcheck";
+        refreshenv
+      displayName: Install CppCheck
+
+    - powershell: |
+        New-Item -Type Directory analyzers_results
+        $cppcheck_results=$(Join-Path -Path $(Resolve-Path .) -ChildPath analyzers_results)
+        Write-Output "##vso[task.setvariable variable=CI_ANALYSIS_RESULTS_FOLDER]$cppcheck_results"
+      displayName: set analysis result folder
+
+    - task: MSBuild@1
+      inputs:
+        solution: profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Datadog.Profiler.Native.Windows.WithTests.proj
+        configuration: Release
+        platfom: $(platform)
+        msbuildArguments: /target:RunCppCheck
+      displayName: Run CppCheck
+
+    - task: MSBuild@1
+      inputs:
+        solution: profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Datadog.Profiler.Native.Windows.WithTests.proj
+        configuration: Release
+        platfom: $(platform)
+        msbuildArguments: /target:RunClangTidy /fl /flp:logfile="$(CI_ANALYSIS_RESULTS_FOLDER)\clang-tidy-results.txt;verbosity=minimal"
+      displayName: Run clang-tidy
+
+    - powershell: |
+        $resultsPath = "$(CI_ANALYSIS_RESULTS_FOLDER)"
+
+        if ((Get-ChildItem -Path $resultsPath -Recurse -File "*.txt" | Measure-Object).Count -eq 0)
+        {
+          throw "No cppcheck result file(s) was/were found in " + $resultsPath
+        }
+
+        if ((Get-ChildItem -Path $resultsPath -Recurse -File "clang-tidy-results.txt" | Measure-Object).Count -eq 0)
+        {
+          throw "No clang-tidy result file(s) was/were found in " + $resultsPath
+        }
+
+        # /!\ "cppcheck-results-" prefix is the same as the one defined in the
+        # src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj file.
+
+        $Errors=Get-ChildItem -Path $resultsPath -Recurse -File "cppcheck-results-*.txt" | Select-String -Pattern ' error: '
+        if (![string]::IsNullOrEmpty($Errors))
+        {
+          Write-Output $Errors
+          throw "CppCheck found error(s) in the source files (see above)"
+        }
+
+        $Errors=Get-ChildItem -Path $resultsPath -Recurse -File "clang-tidy-results.txt" | Select-String -Pattern ' error:'
+        if (![string]::IsNullOrEmpty($Errors))
+        {
+            Write-Output $Errors
+            throw "clang-tidy found error(s) in the source files (see above)"
+        }
+      displayName: Checking for errors in the result files
+
+    - publish: $(System.DefaultWorkingDirectory)/analyzers_results
+      displayName: Publish Analyzers Results
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
 - stage: msi_integration_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, package_windows, generate_variables, master_commit_id]
@@ -1786,6 +1982,278 @@ stages:
         testResultsFiles: profiler/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
+- stage: asan_tests_linux_profiler
+#address sanitizer tests
+  condition: > 
+    and(
+      succeeded(), 
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+    )
+  dependsOn: [master_commit_id, generate_variables, build_linux_tracer, build_linux_profiler]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Test]
+
+  - job: Test
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix:
+        centos:
+          baseImage: centos7
+        alpine:
+          baseImage: alpine
+    
+    pool:
+      vmImage: ubuntu-20.04
+
+    steps:
+    - template: steps/install-dotnet-sdks.yml
+
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: linux-profiler-binaries-$(baseImage)
+        path: $(System.DefaultWorkingDirectory)/profiler/_build
+      displayName: Download linux profiler binaries
+
+    - script: |
+        sudo apt-get update
+        sudo apt-get install -y libasan6
+      displayName: install libasan
+    
+    - script: |
+        CXX=clang++ CC=clang cmake -S . -B __build -DRUN_ASAN=ON
+        cmake --build __build --config Release --target all-profiler
+      displayName: Build Native Profiler Engine
+
+    - script: |
+        dotnet restore /p:Configuration="Release" /p:Platform="x64" profiler/src/Demos/Datadog.Demos.sln
+      displayName: restore sample applications
+
+    - script: |
+        dotnet build --no-restore -c Release -p:Platform=x64 profiler/src/Demos/Datadog.Demos.sln
+      displayName: build sample applications
+
+    - script: |
+        # set profiler deployment and test output dir folder path for the test
+        test_output_dir="$(System.DefaultWorkingDirectory)/test_output"
+
+        export DD_TESTING_OUPUT_DIR="$test_output_dir"
+        export DD_PROFILING_LOG_DIR="$test_output_dir/logs"
+        export DD_PROFILING_OUTPUT_DIR="$test_output_dir/pprofs"
+        export DD_TRACE_DEBUG="1"
+
+        # Run Computer01 for 2min
+        source profiler/src/ProfilerEngine/DeployResources/DDProf-SetEnv.sh `pwd`/profiler/_build/DDProf-Deploy &&
+        cd profiler/_build/bin/Release-x64/profiler/src/Demos/Samples.Computer01/net6.0 &&
+        # LD_PRELOAD was previously set in the DDProf-SetEnv.sh script, but ASAN does not work with other
+        # library in LD_PRELOAD (segfault)
+        ASAN_OPTIONS="detect_leaks=0" LD_PRELOAD="libasan.so.6" dotnet Samples.Computer01.dll --scenario 1 --timeout 120
+      displayName: run asan test
+      env:
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_API_KEY: $(ddApiKey)
+
+    - publish: $(System.DefaultWorkingDirectory)/test_output
+      displayName: Uploading test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: false
+
+- stage: ubsan_tests_linux_profiler
+#undefined behavior sanitizer tests
+  condition: > 
+    and(
+      succeeded(), 
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+    )
+  dependsOn: [master_commit_id, generate_variables, build_linux_tracer, build_linux_profiler]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Test]
+
+  - job: Test
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix:
+        centos7:
+          baseImage: centos7
+        alpine:
+          baseImage: alpine
+
+    pool:
+      vmImage: ubuntu-20.04
+
+    steps:
+    - template: steps/install-dotnet-sdks.yml
+
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: linux-profiler-binaries-$(baseImage)
+        path: $(System.DefaultWorkingDirectory)/profiler/_build
+      displayName: Download linux profiler binaries
+
+    - script: |
+        sudo apt-get update
+        sudo apt-get install -y libubsan1
+      displayName: install libasan
+    
+    - script: |
+          CXX=clang++ CC=clang cmake -S . -B __build -DRUN_UBSAN=ON
+          cmake --build __build --config Release --target all-profiler
+      displayName: Build Native Profiler Engine
+
+    - script: |
+        dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+      displayName: build sample applications
+
+    - script: |
+        # set profiler deployment and test output dir folder path for the test
+        test_output_dir="$(realpath .)/test_output"
+
+        export DD_TESTING_OUPUT_DIR="$test_output_dir"
+        export DD_PROFILING_LOG_DIR="$test_output_dir/logs"
+        export DD_PROFILING_OUTPUT_DIR="$test_output_dir/pprofs"
+        export DD_TRACE_DEBUG="1"
+
+        # Run Computer01 for 2min
+        source profiler/src/ProfilerEngine/DeployResources/DDProf-SetEnv.sh `pwd`/profiler/_build/DDProf-Deploy &&
+        cd profiler/_build/bin/Release-x64/profiler/src/Demos/Samples.Computer01/net6.0 &&
+        UBSAN_OPTIONS=print_stacktrace=1 LD_PRELOAD="libubsan.so.1:$LD_PRELOAD" dotnet Samples.Computer01.dll --scenario 1 --timeout 120
+      displayName: run asan test
+      env:
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_API_KEY: $(ddApiKey)
+
+    - publish: $(System.DefaultWorkingDirectory)/test_output
+      displayName: Uploading test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: false
+
+- stage: static_analysis_tests_linux_profiler
+  condition: > 
+    and(
+      succeeded(), 
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+    )
+  dependsOn: [master_commit_id, generate_variables, build_linux_tracer, build_linux_profiler]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Test]
+
+  - job: Test
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix:
+        centos7:
+          baseImage: centos7
+        alpine:
+          baseImage: alpine
+    
+    pool:
+      vmImage: ubuntu-20.04
+
+    steps:
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - task: DownloadPipelineArtifact@2
+      inputs:
+        artifact: linux-profiler-binaries-$(baseImage)
+        path: $(System.DefaultWorkingDirectory)/profiler/_build
+      displayName: Download linux profiler binaries
+
+    - script: |
+        wget https://github.com/danmar/cppcheck/archive/refs/tags/2.5.tar.gz \
+        && CPPCHECK_SHA256="dc27154d799935c96903dcc46653c526c6f4148a6912b77d3a50cb35dabd82e1" \
+        && (printf "${CPPCHECK_SHA256}  2.5.tar.gz" | sha256sum --check --strict --status) \
+        && tar xvfz 2.5.tar.gz \
+        && cd cppcheck-2.5 \
+        && mkdir build \
+        && cd build \
+        && cmake ../ \
+        && cmake --build .  \
+        && sudo make install
+      displayName: install cppcheck
+
+    - script: |
+        mkdir analyzers_results
+        export CI_ANALYSIS_RESULTS_FOLDER="$(realpath .)/analyzers_results"
+        echo "##vso[task.setvariable variable=CI_ANALYSIS_RESULTS_FOLDER;]$CI_ANALYSIS_RESULTS_FOLDER"
+      displayName: set analyzers target    
+
+    - script: |
+        sudo apt-get update
+        sudo apt-get -y install clang-tidy
+      displayName: install clang-tidy   
+
+    - script: |
+        export CC="clang"
+        export CXX="clang++"
+
+        cmake -DRUN_ANALYSIS=1 -S . -B __build
+        cmake --build __build --config Release --target all-profiler
+        cd ..
+      displayName: Build profiler
+
+    - script: |
+        cppcheck --enable=all --project=__build/compile_commands.json -D__linux__ -D__x86_64__ --suppressions-list=profiler/cppcheck-suppressions.txt --output-file=$(CI_ANALYSIS_RESULTS_FOLDER)/cppcheck-results.txt
+      displayName: Run CppCheck
+
+    - script: |
+        run-clang-tidy -p __build &> $(CI_ANALYSIS_RESULTS_FOLDER)/clang-tidy-results.txt
+      displayName: Run clang-tidy
+
+    - script: |
+        [ `find ${CI_ANALYSIS_RESULTS_FOLDER} -name "cppcheck-results.txt" | wc -l` -ne 0 ] || (echo "Folder $CI_ANALYSIS_RESULTS_FOLDER does not contains CppCheck result file(s)" && exit 1)
+        [ `find ${CI_ANALYSIS_RESULTS_FOLDER} -name "clang-tidy-results.txt" | wc -l` -ne 0 ] || (echo "Folder $CI_ANALYSIS_RESULTS_FOLDER does not contains clang-tidy result file(s)" && exit 1)
+
+        errors=$(grep -HFin ' error: ' $CI_ANALYSIS_RESULTS_FOLDER/cppcheck-results.txt || true)
+        if [ ! -z "$errors" ]
+        then
+            echo $errors
+            echo "CppCheck result file contain errors (see above)"
+            exit 1
+        fi
+
+        errors=$(grep -HFin ' error: ' $CI_ANALYSIS_RESULTS_FOLDER/clang-tidy-results.txt || true)
+        if [ ! -z "$errors" ]
+        then
+            echo $errors
+            echo "clang-tidy result file contain errors (see above)"
+              exit 1
+        fi
+      displayName: Checking for errors in the result files
+
+    - publish: $(CI_ANALYSIS_RESULTS_FOLDER)
+      displayName: Uploading test results
+      artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: false
+      
 - stage: integration_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_arm64, generate_variables, master_commit_id]
@@ -2929,6 +3397,7 @@ stages:
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
+        
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
@@ -2942,7 +3411,7 @@ stages:
         cd $(CrankDir)
         chmod +x ./run.sh
         ./run.sh "linux" "$(runExtendedThroughputTests)"
-      displayName: Crank
+      displayName: Crank tracer
       env:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
@@ -2969,6 +3438,7 @@ stages:
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
+
     - task: DownloadPipelineArtifact@2
       displayName: Download windows native binary
       inputs:
@@ -2982,7 +3452,7 @@ stages:
         cd $(CrankDir)
         chmod +x ./run.sh
         ./run.sh "windows" "$(runExtendedThroughputTests)"
-      displayName: Crank
+      displayName: Crank tracer 
       env:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
@@ -3039,6 +3509,107 @@ stages:
     - publish: "$(CrankDir)/results"
       displayName: Publish results
       artifact: crank_linux_arm64_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+- stage: throughput_profiler
+  condition: > 
+    and(
+      succeeded(), 
+      ne(variables['isNgenTestBuild'], 'True'),
+      eq(variables.isMainRepository, true),
+      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+    )
+  dependsOn: [package_linux, generate_variables, build_windows_tracer, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    crankDir: $(System.DefaultWorkingDirectory)/profiler/build/crank
+  pool: Throughput-profiler
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Linux64, Windows64]
+  #### Throughput Linux 64, windows 64, linux arm 64
+
+  - job: Linux64
+    timeoutInMinutes: 60
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+        
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux native binary
+      inputs:
+        artifact: linux-monitoring-home-centos7
+        path: $(System.DefaultWorkingDirectory)/monitoring-home-linux
+
+    - script: |
+        test ! -s "monitoring-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "monitoring-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
+        test ! -s "monitoring-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "monitoring-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
+        test ! -s "monitoring-home-linux/linux-x64/libddwaf.so" && echo "monitoring-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
+        cd $(crankDir)
+        chmod +x ./run.sh
+        ./run.sh "linux"
+      displayName: Crank profiler
+      env:
+        DD_SERVICE: dd-trace-dotnet-profiler
+        DD_ENV: CI
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_API_KEY: $(ddApiKey)
+
+    - script: |
+        mkdir -p $(crankDir)/results
+        cp $(crankDir)/*.json $(crankDir)/results
+      displayName: Copy the results to results dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(crankDir)/results"
+      displayName: Publish results
+      artifact: crank_profiler_linux_x64_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+  - job: Windows64
+    timeoutInMinutes: 60
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows native binary
+      inputs:
+        artifact: windows-tracer-home
+        path: $(System.DefaultWorkingDirectory)/monitoring-home-windows
+
+    - script: |
+        test ! -s "monitoring-home-windows/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "monitoring-home-windows/win-x64/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
+        test ! -s "monitoring-home-windows/win-x64/ddwaf.dll" && echo "monitoring-home-windows/win-x64/ddwaf.dll does not exist" && exit 1
+        cd $(crankDir)
+        chmod +x ./run.sh
+        ./run.sh "windows"
+      displayName: Crank profiler
+
+      env:
+        DD_SERVICE: dd-trace-dotnet-profiler
+        DD_ENV: CI
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_API_KEY: $(ddApiKey)
+
+    - script: |
+        mkdir -p $(crankDir)/results
+        cp $(crankDir)/*.json $(crankDir)/results
+      displayName: Copy the results to results dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(crankDir)/results"
+      displayName: Publish results
+      artifact: crank_profiler_windows64_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
