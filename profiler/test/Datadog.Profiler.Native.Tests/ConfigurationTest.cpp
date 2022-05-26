@@ -108,6 +108,7 @@ TEST(ConfigurationTest, CheckIfOperationalMetricsIsNotEnabledWhenVariableIsNotSe
     ASSERT_FALSE(configuration.IsOperationalMetricsEnabled());
 }
 
+#if not defined(_WINDOWS) || not defined(DD_SANITIZERS)
 TEST(ConfigurationTest, CheckDefaultLogDirectoryWhenVariableIsNotSet)
 {
     unsetenv(EnvironmentVariables::LogDirectory);
@@ -120,6 +121,7 @@ TEST(ConfigurationTest, CheckDefaultLogDirectoryWhenVariableIsNotSet)
 #endif
     ASSERT_EQ(expectedValue, configuration.GetLogDirectory());
 }
+#endif
 
 TEST(ConfigurationTest, CheckLogDirectoryWhenVariableIsSet)
 {
