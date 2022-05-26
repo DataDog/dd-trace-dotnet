@@ -472,26 +472,290 @@ namespace Datadog.Trace.Processors
 
         private static ArgumentObfuscationType GetObfuscationType(string query, in RedisTokenizer.Token token)
         {
-            // TODO: do this without allocating? Will be easy to do in C# 12 with Span<char> (pattern matching of span against const string)
-            // We could check each of the characters etc but I don't think I can face that
-            return query.Substring(token.Offset, token.Length).ToUpperInvariant() switch
+            // The following code is equivalent but allocation free
+            // In C#12 we can do this easily with Span<char> (pattern matching of span against const string)
+            // return query.Substring(token.Offset, token.Length).ToUpperInvariant() switch
+            // {
+            //     "AUTH" => ArgumentObfuscationType.HideAll,
+            //     "APPEND" or "GETSET" or "LPUSHX" or "GEORADIUSBYMEMBER" or "RPUSHX" or "SET" or "SETNX" or "SISMEMBER" or "ZRANK" or "ZREVRANK" or "ZSCORE" => ArgumentObfuscationType.HideArg2,
+            //     "HSET" or "HSETNX" or "LREM" or "LSET" or "SETBIT" or "SETEX" or "PSETEX" or "SETRANGE" or "ZINCRBY" or "SMOVE" or "RESTORE" => ArgumentObfuscationType.HideArg3,
+            //     "LINSERT" => ArgumentObfuscationType.HideArg4,
+            //     "GEOHASH" or "GEOPOS" or "GEODIST" or "LPUSH" or "RPUSH" or "SREM" or "ZREM" or "SADD" => ArgumentObfuscationType.Keep1,
+            //     "GEOADD" => ArgumentObfuscationType.HideEvery3After1,
+            //     "HMSET" => ArgumentObfuscationType.HideEvery2After1,
+            //     "MSET" or "MSETNX" => ArgumentObfuscationType.HideEvery2,
+            //     "CONFIG" => ArgumentObfuscationType.HideArg3IfArg1IsSet,
+            //     "BITFIELD" => ArgumentObfuscationType.Hide3RdArgAfterSet,
+            //     "ZADD" => ArgumentObfuscationType.ZADD,
+            //     _ => ArgumentObfuscationType.KeepAll,
+            // };
+            return token.Length switch
             {
-                "AUTH" => ArgumentObfuscationType.HideAll,
-                "APPEND" or "GETSET" or "LPUSHX" or "GEORADIUSBYMEMBER" or "RPUSHX" or "SET" or "SETNX" or "SISMEMBER" or "ZRANK" or "ZREVRANK" or "ZSCORE" => ArgumentObfuscationType.HideArg2,
-                "HSET" or "HSETNX" or "LREM" or "LSET" or "SETBIT" or "SETEX" or "PSETEX" or "SETRANGE" or "ZINCRBY" or "SMOVE" or "RESTORE" => ArgumentObfuscationType.HideArg3,
-                "LINSERT" => ArgumentObfuscationType.HideArg4,
-                "GEOHASH" or "GEOPOS" or "GEODIST" or "LPUSH" or "RPUSH" or "SREM" or "ZREM" or "SADD" => ArgumentObfuscationType.Keep1,
-                "GEOADD" => ArgumentObfuscationType.HideEvery3After1,
-                "HMSET" => ArgumentObfuscationType.HideEvery2After1,
-                "MSET" or "MSETNX" => ArgumentObfuscationType.HideEvery2,
-                "CONFIG" => ArgumentObfuscationType.HideArg3IfArg1IsSet,
-                "BITFIELD" => ArgumentObfuscationType.Hide3RdArgAfterSet,
-                "ZADD" => ArgumentObfuscationType.ZADD,
+                3 => Get3(query, in token),
+                4 => Get4(query, in token),
+                5 => Get5(query, in token),
+                6 => Get6(query, in token),
+                7 => Get7(query, in token),
+                8 => Get8(query, in token),
+                9 => Get9(query, in token),
+                17 => Get17(query, in token),
                 _ => ArgumentObfuscationType.KeepAll,
             };
+
+            static ArgumentObfuscationType Get3(string query, in RedisTokenizer.Token token)
+            {
+                if (char.ToUpperInvariant(query[token.Offset]) == 'S'
+                 && char.ToUpperInvariant(query[token.Offset + 1]) == 'E'
+                 && char.ToUpperInvariant(query[token.Offset + 2]) == 'T')
+                {
+                    return ArgumentObfuscationType.HideArg2;
+                }
+
+                return ArgumentObfuscationType.KeepAll;
+            }
+
+            static ArgumentObfuscationType Get4(string query, in RedisTokenizer.Token token)
+            {
+                return char.ToUpperInvariant(query[token.Offset]) switch
+                {
+                    'A' when char.ToUpperInvariant(query[token.Offset + 1]) == 'U'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'T'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'H' => ArgumentObfuscationType.HideAll,
+                    'H' when char.ToUpperInvariant(query[token.Offset + 1]) == 'S'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'T' => ArgumentObfuscationType.HideArg3,
+                    'L' when (char.ToUpperInvariant(query[token.Offset + 1]) == 'R'
+                           && char.ToUpperInvariant(query[token.Offset + 2]) == 'E'
+                           && char.ToUpperInvariant(query[token.Offset + 3]) == 'M')
+                          || (char.ToUpperInvariant(query[token.Offset + 1]) == 'S'
+                           && char.ToUpperInvariant(query[token.Offset + 2]) == 'E'
+                           && char.ToUpperInvariant(query[token.Offset + 3]) == 'T') => ArgumentObfuscationType.HideArg3,
+                    'S' when (char.ToUpperInvariant(query[token.Offset + 1]) == 'R'
+                           && char.ToUpperInvariant(query[token.Offset + 2]) == 'E'
+                           && char.ToUpperInvariant(query[token.Offset + 3]) == 'M')
+                          || (char.ToUpperInvariant(query[token.Offset + 1]) == 'A'
+                           && char.ToUpperInvariant(query[token.Offset + 2]) == 'D'
+                           && char.ToUpperInvariant(query[token.Offset + 3]) == 'D') => ArgumentObfuscationType.Keep1,
+                    'Z' when (char.ToUpperInvariant(query[token.Offset + 1]) == 'R'
+                           && char.ToUpperInvariant(query[token.Offset + 2]) == 'E'
+                           && char.ToUpperInvariant(query[token.Offset + 3]) == 'M') => ArgumentObfuscationType.Keep1,
+                    'M' when (char.ToUpperInvariant(query[token.Offset + 1]) == 'S'
+                           && char.ToUpperInvariant(query[token.Offset + 2]) == 'E'
+                           && char.ToUpperInvariant(query[token.Offset + 3]) == 'T') => ArgumentObfuscationType.HideEvery2,
+                    'Z' when (char.ToUpperInvariant(query[token.Offset + 1]) == 'A'
+                           && char.ToUpperInvariant(query[token.Offset + 2]) == 'D'
+                           && char.ToUpperInvariant(query[token.Offset + 3]) == 'D') => ArgumentObfuscationType.ZADD,
+                    _ => ArgumentObfuscationType.KeepAll,
+                };
+            }
+
+            static ArgumentObfuscationType Get5(string query, in RedisTokenizer.Token token)
+            {
+                return char.ToUpperInvariant(query[token.Offset]) switch
+                {
+                    'S' when char.ToUpperInvariant(query[token.Offset + 1]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'T'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'N'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'X' => ArgumentObfuscationType.HideArg2,
+                    'Z' when char.ToUpperInvariant(query[token.Offset + 1]) == 'R'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'A'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'N'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'K' => ArgumentObfuscationType.HideArg2,
+                    'S' when (char.ToUpperInvariant(query[token.Offset + 1]) == 'E'
+                           && char.ToUpperInvariant(query[token.Offset + 2]) == 'T'
+                           && char.ToUpperInvariant(query[token.Offset + 3]) == 'E'
+                           && char.ToUpperInvariant(query[token.Offset + 4]) == 'X')
+                          || (char.ToUpperInvariant(query[token.Offset + 1]) == 'M'
+                           && char.ToUpperInvariant(query[token.Offset + 2]) == 'O'
+                           && char.ToUpperInvariant(query[token.Offset + 3]) == 'V'
+                           && char.ToUpperInvariant(query[token.Offset + 4]) == 'E') => ArgumentObfuscationType.HideArg3,
+                    'L' or 'R' when char.ToUpperInvariant(query[token.Offset + 1]) == 'P'
+                                 && char.ToUpperInvariant(query[token.Offset + 2]) == 'U'
+                                 && char.ToUpperInvariant(query[token.Offset + 3]) == 'S'
+                                 && char.ToUpperInvariant(query[token.Offset + 4]) == 'H' => ArgumentObfuscationType.Keep1,
+                    'H' when char.ToUpperInvariant(query[token.Offset + 1]) == 'M'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'S'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'T' => ArgumentObfuscationType.HideEvery2After1,
+                    _ => ArgumentObfuscationType.KeepAll,
+                };
+            }
+
+            static ArgumentObfuscationType Get6(string query, in RedisTokenizer.Token token)
+            {
+                return char.ToUpperInvariant(query[token.Offset]) switch
+                {
+                    'A' when char.ToUpperInvariant(query[token.Offset + 1]) == 'P'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'P'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'N'
+                          && char.ToUpperInvariant(query[token.Offset + 5]) == 'D' => ArgumentObfuscationType.HideArg2,
+                    'G' when char.ToUpperInvariant(query[token.Offset + 1]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'T'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'S'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 5]) == 'T' => ArgumentObfuscationType.HideArg2,
+                    'L' or 'R' when char.ToUpperInvariant(query[token.Offset + 1]) == 'P'
+                                 && char.ToUpperInvariant(query[token.Offset + 2]) == 'U'
+                                 && char.ToUpperInvariant(query[token.Offset + 3]) == 'S'
+                                 && char.ToUpperInvariant(query[token.Offset + 4]) == 'H'
+                                 && char.ToUpperInvariant(query[token.Offset + 5]) == 'X' => ArgumentObfuscationType.HideArg2,
+                    'Z' when char.ToUpperInvariant(query[token.Offset + 1]) == 'S'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'C'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'O'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'R'
+                          && char.ToUpperInvariant(query[token.Offset + 5]) == 'E' => ArgumentObfuscationType.HideArg2,
+                    'S' when char.ToUpperInvariant(query[token.Offset + 1]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'T'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'B'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'I'
+                          && char.ToUpperInvariant(query[token.Offset + 5]) == 'T' => ArgumentObfuscationType.HideArg3,
+                    'H' when char.ToUpperInvariant(query[token.Offset + 1]) == 'S'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'T'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'N'
+                          && char.ToUpperInvariant(query[token.Offset + 5]) == 'X' => ArgumentObfuscationType.HideArg3,
+                    'P' when char.ToUpperInvariant(query[token.Offset + 1]) == 'S'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'T'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 5]) == 'X' => ArgumentObfuscationType.HideArg3,
+                    'G' when char.ToUpperInvariant(query[token.Offset + 1]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'O'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'P'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'O'
+                          && char.ToUpperInvariant(query[token.Offset + 5]) == 'S' => ArgumentObfuscationType.Keep1,
+                    'G' when char.ToUpperInvariant(query[token.Offset + 1]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'O'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'A'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'D'
+                          && char.ToUpperInvariant(query[token.Offset + 5]) == 'D' => ArgumentObfuscationType.HideEvery3After1,
+                    'M' when char.ToUpperInvariant(query[token.Offset + 1]) == 'S'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'T'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'N'
+                          && char.ToUpperInvariant(query[token.Offset + 5]) == 'X' => ArgumentObfuscationType.HideEvery2,
+                    'C' when char.ToUpperInvariant(query[token.Offset + 1]) == 'O'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'N'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'F'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'I'
+                          && char.ToUpperInvariant(query[token.Offset + 5]) == 'G' => ArgumentObfuscationType.HideArg3IfArg1IsSet,
+
+                    _ => ArgumentObfuscationType.KeepAll,
+                };
+            }
+
+            static ArgumentObfuscationType Get7(string query, in RedisTokenizer.Token token)
+            {
+                return char.ToUpperInvariant(query[token.Offset]) switch
+                {
+                    'Z' when char.ToUpperInvariant(query[token.Offset + 1]) == 'I'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'N'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'C'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'R'
+                          && char.ToUpperInvariant(query[token.Offset + 5]) == 'B'
+                          && char.ToUpperInvariant(query[token.Offset + 6]) == 'Y' => ArgumentObfuscationType.HideArg3,
+                    'R' when char.ToUpperInvariant(query[token.Offset + 1]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'S'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'T'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'O'
+                          && char.ToUpperInvariant(query[token.Offset + 5]) == 'R'
+                          && char.ToUpperInvariant(query[token.Offset + 6]) == 'E' => ArgumentObfuscationType.HideArg3,
+                    'L' when char.ToUpperInvariant(query[token.Offset + 1]) == 'I'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'N'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'S'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 5]) == 'R'
+                          && char.ToUpperInvariant(query[token.Offset + 6]) == 'T' => ArgumentObfuscationType.HideArg4,
+                    'G' when char.ToUpperInvariant(query[token.Offset + 1]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'O'
+                          && ((char.ToUpperInvariant(query[token.Offset + 3]) == 'H'
+                           && char.ToUpperInvariant(query[token.Offset + 4]) == 'A'
+                           && char.ToUpperInvariant(query[token.Offset + 5]) == 'S'
+                           && char.ToUpperInvariant(query[token.Offset + 6]) == 'H')
+                          || (char.ToUpperInvariant(query[token.Offset + 3]) == 'D'
+                           && char.ToUpperInvariant(query[token.Offset + 4]) == 'I'
+                           && char.ToUpperInvariant(query[token.Offset + 5]) == 'S'
+                           && char.ToUpperInvariant(query[token.Offset + 6]) == 'T')) => ArgumentObfuscationType.Keep1,
+                    _ => ArgumentObfuscationType.KeepAll,
+                };
+            }
+
+            static ArgumentObfuscationType Get8(string query, in RedisTokenizer.Token token)
+            {
+                return char.ToUpperInvariant(query[token.Offset]) switch
+                {
+                    'Z' when char.ToUpperInvariant(query[token.Offset + 1]) == 'R'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'V'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'R'
+                          && char.ToUpperInvariant(query[token.Offset + 5]) == 'A'
+                          && char.ToUpperInvariant(query[token.Offset + 6]) == 'N'
+                          && char.ToUpperInvariant(query[token.Offset + 7]) == 'K' => ArgumentObfuscationType.HideArg2,
+                    'S' when char.ToUpperInvariant(query[token.Offset + 1]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'T'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'R'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'A'
+                          && char.ToUpperInvariant(query[token.Offset + 5]) == 'N'
+                          && char.ToUpperInvariant(query[token.Offset + 6]) == 'G'
+                          && char.ToUpperInvariant(query[token.Offset + 7]) == 'E' => ArgumentObfuscationType.HideArg3,
+                    'B' when char.ToUpperInvariant(query[token.Offset + 1]) == 'I'
+                          && char.ToUpperInvariant(query[token.Offset + 2]) == 'T'
+                          && char.ToUpperInvariant(query[token.Offset + 3]) == 'F'
+                          && char.ToUpperInvariant(query[token.Offset + 4]) == 'I'
+                          && char.ToUpperInvariant(query[token.Offset + 5]) == 'E'
+                          && char.ToUpperInvariant(query[token.Offset + 6]) == 'L'
+                          && char.ToUpperInvariant(query[token.Offset + 7]) == 'D' => ArgumentObfuscationType.Hide3RdArgAfterSet,
+                    _ => ArgumentObfuscationType.KeepAll,
+                };
+            }
+
+            static ArgumentObfuscationType Get9(string query, in RedisTokenizer.Token token)
+            {
+                if (char.ToUpperInvariant(query[token.Offset]) == 'S'
+                 && char.ToUpperInvariant(query[token.Offset + 1]) == 'I'
+                 && char.ToUpperInvariant(query[token.Offset + 2]) == 'S'
+                 && char.ToUpperInvariant(query[token.Offset + 3]) == 'M'
+                 && char.ToUpperInvariant(query[token.Offset + 4]) == 'E'
+                 && char.ToUpperInvariant(query[token.Offset + 5]) == 'M'
+                 && char.ToUpperInvariant(query[token.Offset + 6]) == 'B'
+                 && char.ToUpperInvariant(query[token.Offset + 7]) == 'E'
+                 && char.ToUpperInvariant(query[token.Offset + 8]) == 'R')
+                {
+                    return ArgumentObfuscationType.HideArg2;
+                }
+
+                return ArgumentObfuscationType.KeepAll;
+            }
+
+            static ArgumentObfuscationType Get17(string query, in RedisTokenizer.Token token)
+            {
+                if (char.ToUpperInvariant(query[token.Offset]) == 'G'
+                 && char.ToUpperInvariant(query[token.Offset + 1]) == 'E'
+                 && char.ToUpperInvariant(query[token.Offset + 2]) == 'O'
+                 && char.ToUpperInvariant(query[token.Offset + 3]) == 'R'
+                 && char.ToUpperInvariant(query[token.Offset + 4]) == 'A'
+                 && char.ToUpperInvariant(query[token.Offset + 5]) == 'D'
+                 && char.ToUpperInvariant(query[token.Offset + 6]) == 'I'
+                 && char.ToUpperInvariant(query[token.Offset + 7]) == 'U'
+                 && char.ToUpperInvariant(query[token.Offset + 8]) == 'S'
+                 && char.ToUpperInvariant(query[token.Offset + 9]) == 'B'
+                 && char.ToUpperInvariant(query[token.Offset + 10]) == 'Y'
+                 && char.ToUpperInvariant(query[token.Offset + 11]) == 'M'
+                 && char.ToUpperInvariant(query[token.Offset + 12]) == 'E'
+                 && char.ToUpperInvariant(query[token.Offset + 13]) == 'M'
+                 && char.ToUpperInvariant(query[token.Offset + 14]) == 'B'
+                 && char.ToUpperInvariant(query[token.Offset + 15]) == 'E'
+                 && char.ToUpperInvariant(query[token.Offset + 16]) == 'R')
+                {
+                    return ArgumentObfuscationType.HideArg2;
+                }
+
+                return ArgumentObfuscationType.KeepAll;
+            }
         }
 
-        public class RedisTokenizer
+        public struct RedisTokenizer
         {
             private readonly string _query;
             private int _offset;
