@@ -15,7 +15,8 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/params/appscan_fingerprint,
+      http.url: http://localhost:00000/health/params/appscan_fingerprint,
+      http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
     }
@@ -29,10 +30,13 @@
     Type: web,
     Tags: {
       env: integration_tests,
+      http.client_ip: 86.242.244.246,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: health/params/{id},
       http.status_code: 200,
-      http.url: /health/params/appscan_fingerprint,
+      http.url: http://localhost:00000/health/params/appscan_fingerprint,
+      http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server
@@ -61,7 +65,8 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/params/appscan_fingerprint,
+      http.url: http://localhost:00000/health/params/appscan_fingerprint,
+      http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
     }
@@ -75,10 +80,13 @@
     Type: web,
     Tags: {
       env: integration_tests,
+      http.client_ip: 86.242.244.246,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: health/params/{id},
       http.status_code: 200,
-      http.url: /health/params/appscan_fingerprint,
+      http.url: http://localhost:00000/health/params/appscan_fingerprint,
+      http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server
@@ -107,7 +115,8 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/params/appscan_fingerprint,
+      http.url: http://localhost:00000/health/params/appscan_fingerprint,
+      http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
     }
@@ -121,10 +130,13 @@
     Type: web,
     Tags: {
       env: integration_tests,
+      http.client_ip: 86.242.244.246,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: health/params/{id},
       http.status_code: 200,
-      http.url: /health/params/appscan_fingerprint,
+      http.url: http://localhost:00000/health/params/appscan_fingerprint,
+      http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server
@@ -153,7 +165,8 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/params/appscan_fingerprint,
+      http.url: http://localhost:00000/health/params/appscan_fingerprint,
+      http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
     }
@@ -167,10 +180,13 @@
     Type: web,
     Tags: {
       env: integration_tests,
+      http.client_ip: 86.242.244.246,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: health/params/{id},
       http.status_code: 200,
-      http.url: /health/params/appscan_fingerprint,
+      http.url: http://localhost:00000/health/params/appscan_fingerprint,
+      http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server
@@ -199,7 +215,8 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/params/appscan_fingerprint,
+      http.url: http://localhost:00000/health/params/appscan_fingerprint,
+      http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
     }
@@ -213,10 +230,13 @@
     Type: web,
     Tags: {
       env: integration_tests,
+      http.client_ip: 86.242.244.246,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: health/params/{id},
       http.status_code: 200,
-      http.url: /health/params/appscan_fingerprint,
+      http.url: http://localhost:00000/health/params/appscan_fingerprint,
+      http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server

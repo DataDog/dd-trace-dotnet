@@ -114,7 +114,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 string controller = string.Empty;
                 string action = string.Empty;
                 string area = string.Empty;
-
+                string resolvedRoute = string.Empty;
                 if (route is not null && routeValues is not null)
                 {
                     resourceName = AspNetResourceNameHelper.CalculateResourceName(
@@ -125,6 +125,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         out area,
                         out controller,
                         out action,
+                        out resolvedRoute,
                         addSlashPrefix: newResourceNamesEnabled,
                         expandRouteTemplates: newResourceNamesEnabled && Tracer.Instance.Settings.ExpandRouteTemplatesEnabled);
                 }
@@ -144,9 +145,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     // get the route values. Not sure how this is possible, but is preexisting behaviour
                     try
                     {
+                        area = (routeValues.GetValueOrDefault("area") as string)?.ToLowerInvariant();
                         controller = (routeValues.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
                         action = (routeValues.GetValueOrDefault("action") as string)?.ToLowerInvariant();
-                        area = (routeValues.GetValueOrDefault("area") as string)?.ToLowerInvariant();
+                        resolvedRoute = $"{area}/{controller}/{action}";
                     }
                     catch
                     {

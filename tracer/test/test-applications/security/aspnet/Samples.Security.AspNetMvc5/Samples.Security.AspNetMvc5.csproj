@@ -16,7 +16,7 @@
     <AssemblyName>Samples.Security.AspNetMvc5</AssemblyName>
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <MvcBuildViews>false</MvcBuildViews>
-    <UseIISExpress>false</UseIISExpress>
+    <UseIISExpress>true</UseIISExpress>
     <Use64BitIISExpress>true</Use64BitIISExpress>
     <IISExpressSSLPort>44385</IISExpressSSLPort>
     <IISExpressAnonymousAuthentication>
