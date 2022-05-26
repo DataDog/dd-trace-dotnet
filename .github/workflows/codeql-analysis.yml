@@ -9,7 +9,7 @@ on:
 
 jobs:
   tracer:
-    name: Analyze Tracer
+    name: Analyze Profiler
     runs-on: ubuntu-latest
     permissions:
       actions: read
@@ -45,7 +45,7 @@ jobs:
       
 
   profiler:
-    name: Analyze PRofiler
+    name: Analyze Tracer
     runs-on: ubuntu-latest
     permissions:
       actions: read
