@@ -31,14 +31,14 @@ jobs:
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
       with:
-        languages: csharp, javascript
+        languages: csharp, cpp
         # If you wish to specify custom queries, you can do so here or in a config file.
         # By default, queries listed here will override any specified in a config file.
         # Prefix the list here with "+" to use these queries and those in the config file.
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
     - name: Build dd-trace-dotnet
       run: |
-        ./tracer/build.sh
+        ./tracer/build.sh BuildTracerHome BuildProfilerHome BuildNativeLoader ZipMonitoringHome
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
