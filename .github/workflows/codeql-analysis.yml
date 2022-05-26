@@ -2,13 +2,10 @@ name: "CodeQL"
 
 on:
   push:
-    branches: [ master, hotfix/**/*, release/**/* ]
-  pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ master ]
+    branches: [ master, hotfix/**/* ]
 
 jobs:
-  tracer:
+  profiler:
     name: Analyze Profiler
     runs-on: ubuntu-latest
     permissions:
@@ -44,7 +41,7 @@ jobs:
       uses: github/codeql-action/analyze@v1
       
 
-  profiler:
+  tracer:
     name: Analyze Tracer
     runs-on: ubuntu-latest
     permissions:
