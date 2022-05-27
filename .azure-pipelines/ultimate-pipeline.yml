@@ -168,7 +168,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-windows-scale-set
+      vmImage: windows-2019
 
     steps:
     - template: steps/clone-repo.yml
@@ -193,7 +193,7 @@ stages:
   - job: build
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-windows-scale-set
+      vmImage: windows-2019
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -225,7 +225,7 @@ stages:
 
   - job: build
     pool:
-      name: azure-windows-scale-set
+      vmImage: windows-2019
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -450,7 +450,7 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool:
-    name: azure-windows-scale-set
+    vmImage: windows-2019
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -494,7 +494,8 @@ stages:
   dependsOn: [build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-  
+  pool:
+    vmImage: windows-2019
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -502,8 +503,6 @@ stages:
 
     - job: managed
       timeoutInMinutes: 60 #default value
-      pool:
-        name: azure-windows-scale-set
       steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -528,8 +527,6 @@ stages:
 
     - job: native
       timeoutInMinutes: 60 #default value
-      pool:
-        vmImage: windows-2019
       steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -1557,7 +1554,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-windows-scale-set
+      vmImage: windows-2019
 
     steps:
     - template: steps/clone-repo.yml
@@ -1708,7 +1705,7 @@ stages:
           targetPlatform: "x64"
 
     pool:
-      name: azure-windows-scale-set
+      vmImage: windows-2019
 
     steps:
     - template: steps/clone-repo.yml
@@ -1762,17 +1759,21 @@ stages:
         debian:
           baseImage: debian
           artifactSuffix: linux-x64
-          poolName: azure-linux-scale-set
+          poolImage: ubuntu-18.04
+          poolName:
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
-          poolName: azure-linux-scale-set
+          poolImage: ubuntu-18.04
+          poolName:
         arm64:
           baseImage: debian
           artifactSuffix: linux-arm64
+          poolImage:
           poolname: aws-arm64-auto-scaling
 
     pool:
+      vmImage: $(poolImage)
       name: $(poolName)
 
     steps:
