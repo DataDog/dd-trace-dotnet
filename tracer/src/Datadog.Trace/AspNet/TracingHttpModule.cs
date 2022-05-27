@@ -214,7 +214,7 @@ namespace Datadog.Trace.AspNet
                         }
                         else
                         {
-                            string path = UriHelpers.GetCleanUriPath(app.Request.Url);
+                            string path = UriHelpers.GetCleanUriPath(app.Request.Url, app.Request.ApplicationPath);
                             scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
                         }
 
