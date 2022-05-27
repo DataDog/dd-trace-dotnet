@@ -10,12 +10,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
     internal interface ILambdaExtensionRequest
     {
         /// <summary>
-        /// Get the trace context request
-        /// </summary>
-        /// <returns>The trace context request</returns>
-        WebRequest GetTraceContextRequest();
-
-        /// <summary>
         /// Get the start invocation request
         /// </summary>
         /// <returns>The start invocation request</returns>
@@ -25,6 +19,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         /// Get the end invocation request
         /// </summary>
         /// <returns>The end invocation request</returns>
-        WebRequest GetEndInvocationRequest(bool isError);
+        WebRequest GetEndInvocationRequest(Scope scope, bool isError);
     }
 }

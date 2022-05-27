@@ -35,6 +35,14 @@ namespace Samples.AWS.Lambda
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_ONE_PARAM_VOID"));
             Thread.Sleep(1000);
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_TWO_PARAMS_VOID"));
+
+            // with context
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_NO_PARAM_SYNC_WITH_CONTEXT"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_ONE_PARAM_SYNC_WITH_CONTEXT"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_TWO_PARAMS_SYNC_WITH_CONTEXT"));
         }
         private static async Task<string> Post(string url)
         {
@@ -80,6 +88,24 @@ namespace Samples.AWS.Lambda
         public object HandlerTwoParamsSync(CustomInput request, ILambdaContext context)
         {
             Get("http://localhost/function/HandlerTwoParamsSync");
+            return new { statusCode = 200, body = "ok!" };
+        }
+
+        public object HandlerNoParamSyncWithContext()
+        {
+            Get("http://localhost/function/HandlerNoParamSyncWithContext");
+            return new { statusCode = 200, body = "ok!" };
+        }
+
+        public object HandlerOneParamSyncWithContext(CustomInput request)
+        {
+            Get("http://localhost/function/HandlerOneParamSyncWithContext");
+            return new { statusCode = 200, body = "ok!" };
+        }
+
+        public object HandlerTwoParamsSyncWithContext(CustomInput request, ILambdaContext context)
+        {
+            Get("http://localhost/function/HandlerTwoParamsSyncWithContext");
             return new { statusCode = 200, body = "ok!" };
         }
 

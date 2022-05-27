@@ -4,10 +4,10 @@ RUN echo "\
     var http = require('http');\
     http.createServer(async (request, response) => {\
     response.writeHead(200, {\
-    'x-datadog-trace-id': '1111',\
-    'x-datadog-span-id': '2222'\
+    'x-datadog-trace-id': '1234',\
+    'x-datadog-sampling-priority': '1'\
     });\
     response.end();\
-    }).listen(9003);\
+    }).listen(9004);\
     " > app.js
 CMD ["app.js"]
