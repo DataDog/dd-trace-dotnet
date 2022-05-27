@@ -63,13 +63,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
     }
 
+    [Collection("IisTests")]
+    public class AspNetMvc5TestsVirtualAppIntegratedWithFeatureFlag : AspNetMvc5Tests
+    {
+        public AspNetMvc5TestsVirtualAppIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
+            : base(iisFixture, output, virtualApp: true, classicMode: false, enableRouteTemplateResourceNames: true)
+        {
+        }
+    }
+
     [UsesVerify]
     public abstract class AspNetMvc5Tests : TestHelper, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
 
-        public AspNetMvc5Tests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableRouteTemplateResourceNames, bool enableRouteTemplateExpansion = false)
+        protected AspNetMvc5Tests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableRouteTemplateResourceNames, bool enableRouteTemplateExpansion = false, bool virtualApp = false)
             : base("AspNetMvc5", @"test\test-applications\aspnet", output)
         {
             SetServiceVersion("1.0.0");
@@ -78,8 +87,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
+            if (virtualApp)
+            {
+                _iisFixture.VirtualApplicationPath = "/my-app";
+            }
+
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = nameof(AspNetMvc5Tests)
+                      + (virtualApp ? ".VirtualApp" : string.Empty)
                       + (classicMode ? ".Classic" : ".Integrated")
                       + (enableRouteTemplateExpansion ? ".WithExpansion" :
                         (enableRouteTemplateResourceNames ?  ".WithFF" : ".NoFF"));
@@ -122,7 +137,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 statusCode = (HttpStatusCode)500;
             }
 
-            var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode);
+            // Append virtual directory to the actual request
+            var spans = await GetWebServerSpans(_iisFixture.VirtualApplicationPath + path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
 
