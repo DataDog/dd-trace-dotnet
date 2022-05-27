@@ -457,7 +457,7 @@ namespace Datadog.Trace.Processors
                     && char.ToUpperInvariant(query[startIndex + 3]) == 'U'
                     && char.ToUpperInvariant(query[startIndex + 4]) == 'G';
             }
-            else if (query[startIndex] is 's' or 'S')
+            else if (firstLetter == 'S')
             {
                 return (endIndex == startIndex + 6)
                     && char.ToUpperInvariant(query[startIndex + 1]) == 'C'
