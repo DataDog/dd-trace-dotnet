@@ -70,6 +70,42 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
             }
         }
+
+        [Collection("IisTests")]
+        public class AspNetWebApi2TestsModuleOnlyClassic : AspNetWebApi2ModuleOnlyTests
+        {
+            public AspNetWebApi2TestsModuleOnlyClassic(IisFixture iisFixture, ITestOutputHelper output)
+                : base(iisFixture, output, virtualApp: false, classicMode: true, enableRouteTemplateResourceNames: false)
+            {
+            }
+        }
+
+        [Collection("IisTests")]
+        public class AspNetWebApi2TestsModuleOnlyIntegrated : AspNetWebApi2ModuleOnlyTests
+        {
+            public AspNetWebApi2TestsModuleOnlyIntegrated(IisFixture iisFixture, ITestOutputHelper output)
+                : base(iisFixture, output, virtualApp: false, classicMode: false, enableRouteTemplateResourceNames: false)
+            {
+            }
+        }
+
+        [Collection("IisTests")]
+        public class AspNetWebApi2TestsModuleOnlyVirtualAppIntegrated : AspNetWebApi2ModuleOnlyTests
+        {
+            public AspNetWebApi2TestsModuleOnlyVirtualAppIntegrated(IisFixture iisFixture, ITestOutputHelper output)
+                : base(iisFixture, output, virtualApp: true, classicMode: false, enableRouteTemplateResourceNames: false)
+            {
+            }
+        }
+
+        [Collection("IisTests")]
+        public class AspNetWebApi2TestsModuleOnlyVirtualAppIntegratedWithFeatureFlag : AspNetWebApi2ModuleOnlyTests
+        {
+            public AspNetWebApi2TestsModuleOnlyVirtualAppIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
+                : base(iisFixture, output, virtualApp: true, classicMode: false, enableRouteTemplateResourceNames: false)
+            {
+            }
+        }
     }
 
     [UsesVerify]
@@ -165,6 +201,75 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Overriding the method name to _
             // Overriding the parameters to remove the expectedSpanCount parameter, which is necessary for operation but unnecessary for the filename
             await Verifier.Verify(spans, settings)
+                          .UseFileName($"{_testName}.__path={sanitisedPath}_statusCode={(int)statusCode}");
+        }
+    }
+
+    [UsesVerify]
+    public abstract class AspNetWebApi2ModuleOnlyTests : TestHelper, IClassFixture<IisFixture>
+    {
+        private readonly IisFixture _iisFixture;
+        private readonly string _testName;
+
+        public AspNetWebApi2ModuleOnlyTests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableRouteTemplateResourceNames, bool virtualApp = false)
+            : base("AspNetMvc5", @"test\test-applications\aspnet", output)
+        {
+            SetServiceVersion("1.0.0");
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, enableRouteTemplateResourceNames.ToString());
+
+            // Disable the WebApi2 part, so we can't back propagate any details to the tracing module
+            SetEnvironmentVariable(ConfigurationKeys.DisabledIntegrations, nameof(Configuration.IntegrationId.AspNetWebApi2));
+
+            _iisFixture = iisFixture;
+            _iisFixture.ShutdownPath = "/home/shutdown";
+            if (virtualApp)
+            {
+                _iisFixture.VirtualApplicationPath = "/my-app";
+            }
+
+            _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
+            _testName = nameof(AspNetWebApi2Tests)
+                      + "ModuleOnly"
+                      + (virtualApp ? ".VirtualApp" : string.Empty);
+        }
+
+        public static TheoryData<string, int, int> Data() => new()
+        {
+            { "/api/absolute-route", 200, 1 },
+            { "/api/transient-failure/true", 200, 1 },
+            { "/api/transient-failure/false", 500, 2 },
+            { "/api/statuscode/503", 503, 1 },
+            { "/api2/transientfailure/false", 500, 2 },
+            { "/api2/statuscode/201", 201, 1 },
+            { "/api2/statuscode/503", 503, 1 },
+
+            // The global message handler will fail when ps=false
+            // The global and per-route message handler is invoked with the route /handler-api, so ts=false will also fail the request
+            { "/handler-api/api?ps=true&ts=true", 200, 1 },
+            { "/handler-api/api?ps=true&ts=false", 500, 2 },
+            { "/handler-api/api?ps=false&ts=true", 500, 2 },
+            { "/handler-api/api?ps=false&ts=false", 500, 2 },
+        };
+
+        [SkippableTheory]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
+        [MemberData(nameof(Data))]
+        public async Task SubmitsTraces(string path, HttpStatusCode statusCode, int expectedSpanCount)
+        {
+            // Append virtual directory to the actual request
+            var spans = await GetWebServerSpans(_iisFixture.VirtualApplicationPath + path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode, expectedSpanCount);
+
+            var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
+
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
+
+            // Overriding the type name here as we have multiple test classes in the file
+            // Overriding the method name to _
+            // Overriding the parameters to remove the expectedSpanCount parameter, which is necessary for operation but unnecessary for the filename
+            await Verifier.Verify(spans, settings)
+                          .DisableRequireUniquePrefix()
                           .UseFileName($"{_testName}.__path={sanitisedPath}_statusCode={(int)statusCode}");
         }
     }
