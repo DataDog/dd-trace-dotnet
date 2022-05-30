@@ -95,7 +95,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         private static void OnRequestCompleted(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
             HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
-            scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+
+            if (!HttpRuntime.UsingIntegratedPipeline && httpContext.Response.StatusCode == 200)
+            {
+                // in classic mode, the exception won't cause the correct status code to be set
+                // even though a 500 response will be sent, so set it manually instead
+                scope.Span.SetHttpStatusCode(500, isServer: true, Tracer.Instance.Settings);
+            }
+            else
+            {
+                scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+            }
+
             scope.Span.Finish(finishTime);
         }
     }
