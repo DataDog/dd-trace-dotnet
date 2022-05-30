@@ -19,6 +19,7 @@ namespace Samples.AspNetCoreSimpleController.Controllers
         public string Get() => "Hello world";
 
         [HttpGet]
+        [Route("exception")]
         public string Exception()
         {
             try
