@@ -2,18 +2,6 @@ name: 'Run in docker'
 description: 'Run command in docker'
 
 inputs:
-  baseImage:
-    description: 'Base image'
-    default: 'debian'
-
-  target:
-    description: 'Target'
-    default: 'tester'
-    
-  build:
-    description: 'Should build image'
-    default: false
-    
   command:
     descritption: 'Command to run'
     default: ''
@@ -21,15 +9,14 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Build ${{ inputs.baseImage }} Docker image
-      #if: ${{ inputs.build == true }}
+    - name: Build on Debian Docker image
       shell: bash
       run: |
         docker build \
           --build-arg DOTNETSDK_VERSION=6.0.100 \
-          --tag dd-trace-dotnet/${{ inputs.baseImage }}-${{ inputs.target }} \
-          --target ${{ inputs.target }} \
-          --file "${GITHUB_WORKSPACE}/tracer/build/_build/docker/${{ inputs.baseImage }}.dockerfile" \
+          --tag dd-trace-dotnet/debian-builder \
+          --target builder \
+          --file "${GITHUB_WORKSPACE}/tracer/build/_build/docker/debian.dockerfile" \
           "${GITHUB_WORKSPACE}/tracer/build/_build"
 
     - name: Run '${{ inputs.command }}' in Docker
@@ -46,5 +33,5 @@ runs:
             --env TestAllPackageVersions=false \
             --env IncludeMinorPackageVersions=false \
             --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
-            dd-trace-dotnet/${{ inputs.baseImage }}-${{ inputs.target }} \
+            dd-trace-dotnet/debian-builder \
             dotnet /build/bin/Debug/_build.dll ${{ inputs.command }}

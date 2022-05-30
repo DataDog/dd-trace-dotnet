@@ -191,11 +191,9 @@ partial class Build
             var buildDirectory = NativeProfilerProject.Directory / "build";
 
             CMake.Value(
-                arguments: $"../ -DCMAKE_BUILD_TYPE=Release",
-                workingDirectory: buildDirectory);
+                arguments: $"-B {buildDirectory} -S {NativeProfilerProject.Directory} -DCMAKE_BUILD_TYPE=Release");
             CMake.Value(
-                arguments: $"--build . --parallel",
-                workingDirectory: buildDirectory);
+                arguments: $"--build {buildDirectory} --parallel");
         });
 
     Target CompileNativeSrcMacOs => _ => _
@@ -1198,14 +1196,14 @@ partial class Build
                 .Concat(regressionProjects)
                 .Concat(instrumentationProjects)
                 .Select(path => (path, project: Solution.GetProject(path)))
-                .Where(x => (IncludeTestsRequiringDocker, x.project) switch 
+                .Where(x => (IncludeTestsRequiringDocker, x.project) switch
                 {
-                    // filter out or to integration tests that have docker dependencies 
+                    // filter out or to integration tests that have docker dependencies
                     (null, _) => true,
                     (_, null) => true,
                     (_, { } p) when p.Name.Contains("Samples.AspNetCoreRazorPages") => true, // always have to build this one
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) && p.Name.Contains(SampleName) => true,
-                    (var required, {} p) => p.RequiresDockerDependency() == required,   
+                    (var required, {} p) => p.RequiresDockerDependency() == required,
                 })
                 .Where(x =>
                 {

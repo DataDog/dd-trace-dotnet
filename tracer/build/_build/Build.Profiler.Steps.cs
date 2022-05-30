@@ -82,7 +82,7 @@ partial class Build
             EnsureExistingDirectory(ProfilerLinuxBuildDirectory);
 
             CMake.Value(
-                arguments: $"-B {ProfilerLinuxBuildDirectory} -S {ProfilerDirectory}");
+                arguments: $"-B {ProfilerLinuxBuildDirectory} -S {ProfilerDirectory} -DCMAKE_BUILD_TYPE=Release");
 
             CMake.Value(
                 arguments: $"--build {ProfilerLinuxBuildDirectory} --parallel");
