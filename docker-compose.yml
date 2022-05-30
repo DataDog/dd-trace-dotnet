@@ -465,7 +465,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
-    command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
+    command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerLinuxIntegrationTests
     volumes:
       - ./:/project
     cap_add:

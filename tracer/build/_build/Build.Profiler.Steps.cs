@@ -245,7 +245,6 @@ partial class Build
         .After(CompileProfilerSamplesLinux)
         .After(CompileProfilerLinuxIntegrationTests)
         .Description("Runs the profiler linux integration tests")
-        .Requires(() => Framework)
         .Requires(() => !IsWin)
         .Requires(() => !IsArm64)
         .Executes(() =>

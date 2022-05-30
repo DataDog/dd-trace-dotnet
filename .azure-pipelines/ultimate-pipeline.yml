@@ -1135,7 +1135,11 @@ stages:
   - job: Test
     timeoutInMinutes: 60 #default value
     strategy:
-      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_matrix']]
+      matrix:
+        debian:
+          baseImage: debian
+        alpine:
+          baseImage: alpine
 
     variables:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
@@ -1173,12 +1177,11 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
-          framework=$(publishTargetFramework)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=false ProfilerIntegrationTests
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e IncludeTestsRequiringDocker=false ProfilerIntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
 
     - publish: profiler/build_data
-      artifact: continuous-profiler-logs_integration_tests_linux_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
+      artifact: continuous-profiler-logs_integration_tests_linux_$(baseImage)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
