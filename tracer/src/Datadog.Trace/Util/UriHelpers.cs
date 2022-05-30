@@ -60,10 +60,11 @@ namespace Datadog.Trace.Util
             }
 
             // If the virtual path is "/" then we're hosted at the root, so nothing to remove
-            // If not, it will be off the form "/myapp", so remove whole thing
+            // If not, it will be of the form "/myapp", so remove whole thing
             // Make sure we only remove _whole_ segment i.e. /myapp/controller, but not /myappcontroller
             var hasPrefix = !string.IsNullOrEmpty(virtualPathToRemove)
                          && virtualPathToRemove != "/"
+                         && virtualPathToRemove[0] == '/'
                          && absolutePath.StartsWith(virtualPathToRemove, StringComparison.OrdinalIgnoreCase)
                          && absolutePath.Length > virtualPathToRemove.Length
                          && absolutePath[virtualPathToRemove.Length] == '/';
