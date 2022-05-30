@@ -224,6 +224,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/badrequest", 500 },
             { "/statuscode/503", 503 },
             { "/BadRequestWithStatusCode/401", 500 }, // the exception thrown here overrides the status code set
+            { "/BadRequestWithStatusCode/401?TransferRequest=true", 401 },
+            { "/BadRequestWithStatusCode/503?TransferRequest=true", 503 },
         };
 
         [SkippableTheory]
@@ -233,6 +235,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(Data))]
         public async Task SubmitsTraces(string path, HttpStatusCode statusCode)
         {
+            // TransferRequest cannot be called in the classic mode, so we expect a 500 when this happens
+            if (_testName.Contains(".Classic") && path.ToLowerInvariant().Contains("transferrequest"))
+            {
+                statusCode = (HttpStatusCode)500;
+            }
+
             // Append virtual directory if there is one
             var spans = await GetWebServerSpans(_iisFixture.VirtualApplicationPath + path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode, expectedSpanCount: 1);
 
