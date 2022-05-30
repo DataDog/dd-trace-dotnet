@@ -8,13 +8,11 @@
 #include <thread>
 #include <functional>
 
-
 Timer::Timer(std::function<void()> callback, std::chrono::milliseconds period) :
     _callback(std::move(callback)),
     _period(period),
     _thread(),
-    _exitMutex(),
-    _exit()
+    _exitPromise()
 {
 }
 
@@ -22,7 +20,7 @@ Timer::~Timer()
 {
     if (_thread.get_id() != std::thread::id() && _thread.joinable())
     {
-        _exit.notify_all();
+        _exitPromise.set_value();
         _thread.join();
     }
 }
@@ -34,9 +32,9 @@ void Timer::Start()
 
 void Timer::ThreadProc()
 {
-    std::unique_lock<std::mutex> lock(_exitMutex);
+    const auto future = _exitPromise.get_future();
 
-    while (_exit.wait_for(lock, _period) == std::cv_status::timeout)
+    while (future.wait_for(_period) == std::future_status::timeout)
     {
         _callback();
     }

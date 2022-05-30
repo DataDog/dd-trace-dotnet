@@ -5,12 +5,13 @@
 
 #ifdef _WINDOWS
 #include <Windows.h>
+#else
+#include <future>
 #endif
 
 #include <functional>
 #include <thread>
 #include <mutex>
-#include <condition_variable>
 
 class Timer {
 public:
@@ -35,8 +36,7 @@ private:
             PTP_TIMER             Timer);
 #else
     std::thread _thread;
-    std::mutex _exitMutex;
-    std::condition_variable _exit;
+    std::promise<void> _exitPromise;
 
     void ThreadProc();
 #endif
