@@ -1,0 +1,50 @@
+name: 'Run in docker'
+description: 'Run command in docker'
+
+inputs:
+  baseImage:
+    description: 'Base image'
+    default: 'debian'
+
+  target:
+    description: 'Target'
+    default: 'tester'
+    
+  build:
+    description: 'Should build image'
+    default: false
+    
+  command:
+    descritption: 'Command to run'
+    default: ''
+
+runs:
+  using: "composite"
+  steps:
+    - name: Build ${{ inputs.baseImage }} Docker image
+      #if: ${{ inputs.build == true }}
+      shell: bash
+      run: |
+        docker build \
+          --build-arg DOTNETSDK_VERSION=6.0.100 \
+          --tag dd-trace-dotnet/${{ inputs.baseImage }}-${{ inputs.target }} \
+          --target ${{ inputs.target }} \
+          --file "${GITHUB_WORKSPACE}/tracer/build/_build/docker/${{ inputs.baseImage }}.dockerfile" \
+          "${GITHUB_WORKSPACE}/tracer/build/_build"
+
+    - name: Run '${{ inputs.command }}' in Docker
+      shell: bash
+      run: |
+        docker run --rm \
+            --mount type=bind,source="${GITHUB_WORKSPACE}",target=/project \
+            --env NugetPackageDirectory=/project/packages \
+            --env tracerHome=/project/shared/bin/monitoring-home/tracer \
+            --env artifacts=/project/tracer/src/bin/artifacts \
+            --env DD_CLR_ENABLE_NGEN=1 \
+            --env Verify_DisableClipboard=true \
+            --env DiffEngine_Disabled=true \
+            --env TestAllPackageVersions=false \
+            --env IncludeMinorPackageVersions=false \
+            --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
+            dd-trace-dotnet/${{ inputs.baseImage }}-${{ inputs.target }} \
+            dotnet /build/bin/Debug/_build.dll ${{ inputs.command }}
