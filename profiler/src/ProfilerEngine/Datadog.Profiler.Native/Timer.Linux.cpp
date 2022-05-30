@@ -20,7 +20,7 @@ Timer::Timer(std::function<void()> callback, std::chrono::milliseconds period) :
 
 Timer::~Timer()
 {
-    if (_thread.joinable())
+    if (_thread.get_id() != std::thread::id() && _thread.joinable())
     {
         _exit.notify_all();
         _thread.join();
