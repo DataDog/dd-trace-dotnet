@@ -41,6 +41,9 @@ namespace Datadog.Trace.Tests.TraceProcessors
             { "CLIENT...", "..." },
             { "CLIENT LIST...", "..." },
             { "罿", "罿" },
+            { string.Empty, string.Empty },
+            { null, string.Empty },
+            { "CONFIG SET parameter\t\t value\t\nCONFIG SET parameter\t\t value\t value \n", "CONFIG SET CONFIG SET" },
         };
 
         public static TheoryData<string, int, int, bool> RedisCompoundCommands() => new()
@@ -174,6 +177,19 @@ SET k v
                 @"CONFIG command
 SET k ?"
             },
+            // These are some extra ones to catch some edge cases
+            { null, null },
+            { string.Empty, string.Empty },
+            { "\n  \n", "\n  \n" },
+            { "\n  \n", "\n  \n" },
+            { "EEK key value1 value2", "EEK key value1 value2" },
+            { "YIKES key value1 value2", "YIKES key value1 value2" },
+            { "OOPSEY key value1 value2", "OOPSEY key value1 value2" },
+            { "IMSORRY key value1 value2", "IMSORRY key value1 value2" },
+            { "WHOOPSEY key value1 value2", "WHOOPSEY key value1 value2" },
+            { "IMSOSORRY key value1 value2", "IMSOSORRY key value1 value2" },
+            { "YOUTRYDOINGITTHEN key value1 value2", "YOUTRYDOINGITTHEN key value1 value2" },
+            { "ALRIGHTIMOUT key value1 value2", "ALRIGHTIMOUT key value1 value2" },
         };
 
         [Theory]
