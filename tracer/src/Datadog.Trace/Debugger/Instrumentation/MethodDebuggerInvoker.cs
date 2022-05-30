@@ -53,7 +53,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             state.SnapshotCreator.StartSnapshot();
             state.SnapshotCreator.StartCaptures();
             state.SnapshotCreator.StartEntry();
-            state.SnapshotCreator.CaptureInstance(instance, state.MethodMetadaInfo.DeclaringType);
+            state.SnapshotCreator.CaptureInstance(instance, state.MethodMetadataInfo.DeclaringType);
             return state;
         }
 
@@ -77,7 +77,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
-                                       state.MethodMetadaInfo.ParameterNames.Length > 0;
+                                       state.MethodMetadataInfo.ParameterNames.Length > 0;
             state.HasLocalsOrReturnValue = false;
             state.SnapshotCreator.EndEntry(hasArgumentsOrLocals);
         }
@@ -97,7 +97,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            var paramName = state.MethodMetadaInfo.ParameterNames[index];
+            var paramName = state.MethodMetadataInfo.ParameterNames[index];
             state.SnapshotCreator.CaptureArgument(arg, paramName, index == 0, state.HasLocalsOrReturnValue);
             state.HasLocalsOrReturnValue = false;
         }
@@ -117,7 +117,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            var localNamesFromPdb = state.MethodMetadaInfo.LocalVariableNames;
+            var localNamesFromPdb = state.MethodMetadataInfo.LocalVariableNames;
             if (localNamesFromPdb != null)
             {
                 if (index >= localNamesFromPdb.Length)
@@ -157,7 +157,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             state.SnapshotCreator.StartReturn();
-            state.SnapshotCreator.CaptureInstance(instance, state.MethodMetadaInfo.DeclaringType);
+            state.SnapshotCreator.CaptureInstance(instance, state.MethodMetadataInfo.DeclaringType);
             if (exception != null)
             {
                 state.SnapshotCreator.CaptureException(exception);
@@ -185,7 +185,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             state.SnapshotCreator.StartReturn();
-            state.SnapshotCreator.CaptureInstance(instance, state.MethodMetadaInfo.DeclaringType);
+            state.SnapshotCreator.CaptureInstance(instance, state.MethodMetadataInfo.DeclaringType);
             if (exception != null)
             {
                 state.SnapshotCreator.CaptureException(exception);
@@ -212,7 +212,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
-                                       state.MethodMetadaInfo.ParameterNames.Length > 0;
+                                       state.MethodMetadataInfo.ParameterNames.Length > 0;
             state.SnapshotCreator.MethodProbeEndReturn(hasArgumentsOrLocals);
             FinalizeSnapshot(ref state);
         }
@@ -262,6 +262,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                      .AddLoggerInfo(methodName, type)
                      .AddGeneralInfo(LiveDebugger.Instance.ServiceName, null, null) // todo
                      .AddMessage()
+                     .Complete()
                     ;
 
                 var snapshot = state.SnapshotCreator.GetSnapshotJson();

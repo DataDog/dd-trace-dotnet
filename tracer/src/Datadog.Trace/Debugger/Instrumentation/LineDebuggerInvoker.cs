@@ -186,6 +186,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                      .AddLoggerInfo(methodName, type)
                      .AddGeneralInfo(LiveDebugger.Instance.ServiceName, null, null) // todo
                      .AddMessage()
+                     .Complete()
                     ;
 
                 var snapshot = state.SnapshotCreator.GetSnapshotJson();

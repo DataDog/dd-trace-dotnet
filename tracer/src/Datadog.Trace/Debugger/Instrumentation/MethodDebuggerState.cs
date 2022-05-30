@@ -22,7 +22,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         private readonly DateTimeOffset? _startTime;
 
         /// <summary>
-        /// Used to perform a fast lookup to grab the proper <see cref="MethodMetadataInfo"/>.
+        /// Used to perform a fast lookup to grab the proper <see cref="Instrumentation.MethodMetadataInfo"/>.
         /// This index is hard-coded into the method's instrumented bytecode.
         /// </summary>
         private readonly int _methodMetadataIndex;
@@ -38,7 +38,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="probeId">The id of the probe</param>
         /// <param name="scope">Scope instance</param>
         /// <param name="startTime">The intended start time of the scope, intended for scopes created in the OnMethodEnd handler</param>
-        /// <param name="methodMetadataIndex">The unique index of the method's <see cref="MethodMetadataInfo"/></param>
+        /// <param name="methodMetadataIndex">The unique index of the method's <see cref="Instrumentation.MethodMetadataInfo"/></param>
         internal MethodDebuggerState(string probeId, Scope scope, DateTimeOffset? startTime, int methodMetadataIndex)
         {
             _probeId = probeId;
@@ -49,7 +49,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             SnapshotCreator = new DebuggerSnapshotCreator();
         }
 
-        internal ref MethodMetadataInfo MethodMetadaInfo => ref MethodMetadataProvider.Get(_methodMetadataIndex);
+        internal readonly ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataProvider.Get(_methodMetadataIndex);
 
         /// <summary>
         /// Gets the LiveDebugger SnapshotCreator

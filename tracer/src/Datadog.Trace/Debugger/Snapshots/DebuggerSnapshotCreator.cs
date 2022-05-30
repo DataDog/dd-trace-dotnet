@@ -13,7 +13,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
-    internal readonly ref struct DebuggerSnapshotCreator
+    internal readonly struct DebuggerSnapshotCreator : IDisposable
     {
         private const string LoggerVersion = "2";
         private const string DDSource = "dd_debugger";
@@ -290,12 +290,19 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        public void AddMessage()
+        public DebuggerSnapshotCreator AddMessage()
         {
             var snapshotObject = JsonConvert.DeserializeObject<Snapshot>(_jsonUnderlyingString.ToString() + "}");
             var message = SnapshotSummary.FormatMessage(snapshotObject);
             _jsonWriter.WritePropertyName("message");
             _jsonWriter.WriteValue(message);
+            return this;
+        }
+
+        public DebuggerSnapshotCreator Complete()
+        {
+            _jsonWriter.WriteEndObject();
+            return this;
         }
 
         private void StartLocalsOrArgs(bool isFirstLocalOrArg, bool shouldEndObject, string name)
@@ -314,11 +321,10 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal string GetSnapshotJson()
         {
-            _jsonWriter.WriteEndObject();
             return StringBuilderCache.GetStringAndRelease(_jsonUnderlyingString);
         }
 
-        internal void Dispose()
+        public void Dispose()
         {
             _jsonWriter?.Close();
         }
