@@ -55,16 +55,12 @@ jobs:
           sudo chmod +x ./profiler/_build/bin/Datadog.Profiler.Native.Tests/Datadog.Profiler.Native.Tests
           ./profiler/_build/bin/Datadog.Profiler.Native.Tests/Datadog.Profiler.Native.Tests --gtest_output=xml
 
-      - name: Prepare environment to run the application
-        run: |
-          echo "PROFILER_OUTPUT_DIR=$(realpath ./shared/bin/monitoring-home)/" >> $GITHUB_ENV
-
       - name: Publish artifact
         uses: actions/upload-artifact@v2
         with:
           if-no-files-found: error
           name: monitoring-home.Linux.Release.x64
-          path: '${{ env.PROFILER_OUTPUT_DIR }}'
+          path: '${{ github.workspace }}/shared/bin/monitoring-home'
           retention-days: 7
 
   benchmark_linux_x64:
@@ -111,6 +107,8 @@ jobs:
           go_tool_dir=$(realpath .)/tools
           mkdir $go_tool_dir
           echo "GOPATH=$go_tool_dir" >> $GITHUB_ENV
+          sudo mkdir -p /var/log/datadog/dotnet
+          sudo chmod 777 /var/log/datadog/dotnet
 
       - name: Install timeit
         run: go install github.com/tonyredondo/timeit@latest
@@ -125,6 +123,14 @@ jobs:
 
       - name: Wait 20 seconds to agent flush before finishing pipeline
         run: sleep 20
+
+      - name: Publish artifact
+        uses: actions/upload-artifact@v2
+        with:
+          if-no-files-found: error
+          name: Benchmark.tests.linux.${{ matrix.framework }}.logs
+          path: '/var/log/datadog/dotnet'
+          retention-days: 7
 
   build_linux_asan:
     name: Build Linux Profiler ASAN
@@ -296,14 +302,6 @@ jobs:
           if-no-files-found: error
           name: 'monitoring-home.Windows.${{matrix.configuration}}'
           path: 'shared\bin\monitoring-home'
-          retention-days: 7
-
-      - name: Publish artifact profiler-home
-        uses: actions/upload-artifact@v2
-        with:
-          if-no-files-found: error
-          name: 'profiler-home.Windows.${{matrix.configuration}}'
-          path: 'shared\bin\monitoring-home\continuousprofiler'
           retention-days: 7
 
 
