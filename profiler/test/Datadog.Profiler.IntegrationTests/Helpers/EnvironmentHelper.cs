@@ -34,15 +34,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             InitializeLogAndPprofEnvironmentVariables();
         }
 
-        public static bool UseNativeLoader
-        {
-            get
-            {
-                var value = Environment.GetEnvironmentVariable(EnvironmentVariables.UseNativeLoader);
-                return string.Equals(value, "TRUE", StringComparison.OrdinalIgnoreCase) || string.Equals(value, "1");
-            }
-        }
-
         public static bool IsAlpine
         {
             get
