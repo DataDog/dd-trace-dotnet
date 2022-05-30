@@ -300,7 +300,7 @@ namespace Datadog.Trace.TestHelpers
 
             var virtualAppSection = subAppPath switch
             {
-                null or "" or "/" => "/",
+                null or "" or "/" => string.Empty,
                 _ when !subAppPath.StartsWith("/") => throw new ArgumentException("Application path must start with '/'", nameof(subAppPath)),
                 _ when subAppPath.EndsWith("/") => throw new ArgumentException("Application path must not end with '/'", nameof(subAppPath)),
                 _ => $"<application path=\"{subAppPath}\" applicationPool=\"{appPool}\"><virtualDirectory path=\"/\" physicalPath=\"{appPath}\" /></application>",

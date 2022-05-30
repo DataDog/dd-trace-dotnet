@@ -103,7 +103,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class AspNetMvc5TestsModuleOnlyVirtualAppIntegratedWithFeatureFlag : AspNetMvc5ModuleOnlyTests
     {
         public AspNetMvc5TestsModuleOnlyVirtualAppIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
-            : base(iisFixture, output, virtualApp: true, classicMode: false, enableRouteTemplateResourceNames: false)
+            : base(iisFixture, output, virtualApp: true, classicMode: false, enableRouteTemplateResourceNames: true)
         {
         }
     }

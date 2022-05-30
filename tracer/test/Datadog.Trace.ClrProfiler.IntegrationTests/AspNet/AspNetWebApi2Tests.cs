@@ -102,7 +102,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public class AspNetWebApi2TestsModuleOnlyVirtualAppIntegratedWithFeatureFlag : AspNetWebApi2ModuleOnlyTests
         {
             public AspNetWebApi2TestsModuleOnlyVirtualAppIntegratedWithFeatureFlag(IisFixture iisFixture, ITestOutputHelper output)
-                : base(iisFixture, output, virtualApp: true, classicMode: false, enableRouteTemplateResourceNames: false)
+                : base(iisFixture, output, virtualApp: true, classicMode: false, enableRouteTemplateResourceNames: true)
             {
             }
         }
