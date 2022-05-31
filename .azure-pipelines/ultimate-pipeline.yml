@@ -529,6 +529,7 @@ stages:
     - job: native
       timeoutInMinutes: 60 #default value
       pool:
+        # not using the VMSS here as there's an issue with the profiler building currently  
         vmImage: windows-2019
       steps:
       - template: steps/clone-repo.yml
