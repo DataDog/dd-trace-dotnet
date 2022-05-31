@@ -175,7 +175,6 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -static-libstdc++
     -lstdc++fs
     -pthread
-    -llzma
     -ldl
 )
 
