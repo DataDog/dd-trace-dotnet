@@ -65,6 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                             scope.Span.SetTag("test.coverage", Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(coverageSession));
                         }
 
+                        scope.Span.Finish(TimeSpan.Zero);
                         scope.Dispose();
                     }
                 }
