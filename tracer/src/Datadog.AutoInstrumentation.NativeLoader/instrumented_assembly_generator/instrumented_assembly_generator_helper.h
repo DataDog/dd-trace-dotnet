@@ -32,9 +32,6 @@ inline std::string AnsiStringFromGuid(const GUID& guid)
 {
 #ifdef _WIN32
     wchar_t szGuidW[40] = {0};
-#else
-    char16_t szGuidW[40] = {0};
-#endif
     char szGuidA[40] = {0};
     if (!StringFromGUID2(guid, szGuidW, 40))
     {
@@ -42,6 +39,9 @@ inline std::string AnsiStringFromGuid(const GUID& guid)
     }
     WideCharToMultiByte(CP_ACP, 0, szGuidW, -1, szGuidA, 40, nullptr, nullptr);
     return szGuidA;
+#else
+    throw std::logic_error("InstrumentationVerification on a non-Windows OS not yet implemented");
+#endif
 }
 
 // Helper method that removes all illegal chars from a file name
