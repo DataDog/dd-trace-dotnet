@@ -49,6 +49,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
             using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario2);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "10000");
 
             using var agent = new MockDatadogAgent(_output);
 
