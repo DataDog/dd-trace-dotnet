@@ -28,7 +28,8 @@ namespace Datadog.Trace.Util
 
         private static string GetImpl()
         {
-            if (TryGetRuntimeIdFromNative(out var runtimeId))
+            if (FrameworkDescription.Instance.OSArchitecture != ProcessArchitecture.Arm64
+             && TryGetRuntimeIdFromNative(out var runtimeId))
             {
                 Log.Information("Runtime id retrieved from native: " + runtimeId);
                 return runtimeId;
@@ -72,7 +73,7 @@ namespace Datadog.Trace.Util
                 // We failed to retrieve the runtime from native this can be because:
                 // - P/Invoke issue (unknown dll, unknown entrypoint...)
                 // - We are running in a partial trust environment
-                Log.Information("Failed to get the runtime-id from native: {Reason}", e.Message);
+                Log.Warning("Failed to get the runtime-id from native: {Reason}", e.Message);
             }
 
             runtimeId = default;
