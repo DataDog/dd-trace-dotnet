@@ -5,8 +5,13 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Vendors.Serilog.Parsing;
 using FluentAssertions;
 using Xunit;
 
@@ -50,7 +55,6 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
         [Theory]
-        [InlineData("DuckTypeAssembly.SomeTest")]
         [InlineData("App_global.asax.zt8edv4m")]
         [InlineData("App_Web_login.cshtml.6331810a.tvsbhzc3")]
         [InlineData("App_GlobalResources.9ccedwue")]
@@ -63,6 +67,26 @@ namespace Datadog.Trace.Tests.Telemetry
 
             var collector = new DependencyTelemetryCollector();
             collector.AssemblyLoaded(ignoredName);
+
+            collector.HasChanges().Should().BeFalse();
+        }
+
+        [Fact]
+        public void DoesNotHaveChangesWhenUsingDuckTypeAssembly()
+        {
+            // create a random proxy (this needs to succeed, but can be anything)
+            var original = new LogEvent(
+                DateTimeOffset.UtcNow,
+                LogEventLevel.Debug,
+                exception: null,
+                new MessageTemplate("Some text", Enumerable.Empty<MessageTemplateToken>()),
+                Enumerable.Empty<LogEventProperty>());
+            var proxy = original.DuckCast<ILogEvent>();
+
+            var assembly = proxy.GetType().Assembly;
+
+            var collector = new DependencyTelemetryCollector();
+            collector.AssemblyLoaded(assembly);
 
             collector.HasChanges().Should().BeFalse();
         }

@@ -94,8 +94,6 @@ namespace Datadog.Trace.Tests.Telemetry
                                                 .GetAssemblies()
                                                 .Where(x => !x.IsDynamic)
                                                 .Select(x => x.GetName())
-                                                .Where(x => x.Name != "Anonymously Hosted DynamicMethods Assembly"
-                                                         && !x.Name.StartsWith("DuckType"))
                                                 .Select(name => new { name.Name, Version = name.Version.ToString() });
 
             // creating a new controller so we have the same list of assemblies

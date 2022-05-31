@@ -8,7 +8,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
-using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.Telemetry
 {
@@ -35,17 +34,15 @@ namespace Datadog.Trace.Telemetry
             // exclude dlls we're not interested in which have a "random" component
             // ASP.NET sites generate an App_Web_*.dll with a random string for
             var assemblyName = assembly.Name;
-            if (assemblyName is null or "Anonymously Hosted DynamicMethods Assembly"
-             || assemblyName.StartsWith("App_Web_", StringComparison.Ordinal)
-             || assemblyName.StartsWith("App_Theme_", StringComparison.Ordinal)
-             || assemblyName.StartsWith("App_GlobalResources.", StringComparison.Ordinal)
-             || assemblyName.StartsWith("App_global.asax.", StringComparison.Ordinal)
-             || assemblyName.StartsWith("App_Code.", StringComparison.Ordinal)
-             || assemblyName.StartsWith("App_WebReferences.", StringComparison.Ordinal)
-             || assemblyName.StartsWith(DuckTypeConstants.DuckTypeAssemblyPrefix, StringComparison.Ordinal)
-             || assemblyName.StartsWith(DuckTypeConstants.DuckTypeNotVisibleAssemblyPrefix, StringComparison.Ordinal)
-             || assemblyName.StartsWith(DuckTypeConstants.DuckTypeGenericTypeAssemblyPrefix, StringComparison.Ordinal)
-             || IsTempPathPattern(assemblyName))
+            if (assemblyName is null or ""
+             || IsTempPathPattern(assemblyName)
+             || (assemblyName[0] == 'A'
+              && (assemblyName.StartsWith("App_Web_", StringComparison.Ordinal)
+               || assemblyName.StartsWith("App_Theme_", StringComparison.Ordinal)
+               || assemblyName.StartsWith("App_GlobalResources.", StringComparison.Ordinal)
+               || assemblyName.StartsWith("App_global.asax.", StringComparison.Ordinal)
+               || assemblyName.StartsWith("App_Code.", StringComparison.Ordinal)
+               || assemblyName.StartsWith("App_WebReferences.", StringComparison.Ordinal))))
             {
                 return;
             }
