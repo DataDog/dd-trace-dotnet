@@ -42,7 +42,7 @@ namespace Datadog.Trace
                 // We failed to retrieve the runtime from native this can be because:
                 // - P/Invoke issue (unknown dll, unknown entrypoint...)
                 // - We are running in a partial trust environment
-                Log.Information("Failed to get the runtime-id from native: {Reason}", e.Message);
+                Log.Warning("Failed to get the runtime-id from native: {Reason}", e.Message);
             }
 
             runtimeId = default;
