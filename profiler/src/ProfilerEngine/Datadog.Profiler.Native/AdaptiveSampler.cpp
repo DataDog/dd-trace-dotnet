@@ -1,5 +1,7 @@
 #include "AdaptiveSampler.h"
 
+#include "Log.h"
+
 #include <algorithm>
 #include <stdexcept>
 
@@ -56,12 +58,14 @@ AdaptiveSampler::AdaptiveSampler(
 {
     if (averageLookback < 1)
     {
-        throw std::invalid_argument("'averageLookback' argument must be at least 1");
+        Log::Error("AdaptiveSampler: 'averageLookback' argument must be at least 1");
+        averageLookback = 1;
     }
 
     if (budgetLookback < 1)
     {
-        throw std::invalid_argument("'budgetLookback' argument must be at least 1");
+        Log::Error("AdaptiveSampler: 'budgetLookback' argument must be at least 1");
+        budgetLookback = 1;
     }
 
     _samplesPerWindow = samplesPerWindow;
