@@ -13,22 +13,23 @@ namespace Datadog.Trace.Util
 {
     internal static class RuntimeId
     {
-#if NETFRAMEWORK
-        private const string NativeLoaderLibNameX86 = "Datadog.AutoInstrumentation.NativeLoader.x86.dll";
-        private const string NativeLoaderLibNameX64 = "Datadog.AutoInstrumentation.NativeLoader.x64.dll";
-#else
-        private const string NativeLoaderLibNameX86 = "Datadog.AutoInstrumentation.NativeLoader.x86";
-        private const string NativeLoaderLibNameX64 = "Datadog.AutoInstrumentation.NativeLoader.x64";
-#endif
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RuntimeId));
         private static string _runtimeId;
+
+        private static bool IsNativeLoaderAvailable
+        {
+            get
+            {
+                var fd = FrameworkDescription.Create();
+                return fd.ProcessArchitecture != ProcessArchitecture.Arm && fd.ProcessArchitecture != ProcessArchitecture.Arm64;
+            }
+        }
 
         public static string Get() => LazyInitializer.EnsureInitialized(ref _runtimeId, () => GetImpl());
 
         private static string GetImpl()
         {
-            if (TryGetRuntimeIdFromNative(out var runtimeId))
+            if (IsNativeLoaderAvailable && TryGetRuntimeIdFromNative(out var runtimeId))
             {
                 Log.Information("Runtime id retrieved from native: " + runtimeId);
                 return runtimeId;
@@ -40,23 +41,12 @@ namespace Datadog.Trace.Util
             return guid;
         }
 
-        [DllImport(NativeLoaderLibNameX86, CallingConvention = CallingConvention.StdCall, EntryPoint = "GetCurrentAppDomainRuntimeId")]
-        private static extern IntPtr GetRuntimeIdFromNativeX86();
-
-        [DllImport(NativeLoaderLibNameX64, CallingConvention = CallingConvention.StdCall, EntryPoint = "GetCurrentAppDomainRuntimeId")]
-        private static extern IntPtr GetRuntimeIdFromNativeX64();
-
         // Adding the attribute MethodImpl(MethodImplOptions.NoInlining) allows the caller to
         // catch the SecurityException in case of we are running in a partial trust environment.
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static IntPtr GetRuntimeIdFromNative()
         {
-            if (Environment.Is64BitProcess)
-            {
-                return GetRuntimeIdFromNativeX64();
-            }
-
-            return GetRuntimeIdFromNativeX86();
+            return NativeMethods.GetRuntimeIdFromNative();
         }
 
         private static bool TryGetRuntimeIdFromNative(out string runtimeId)
@@ -77,6 +67,12 @@ namespace Datadog.Trace.Util
 
             runtimeId = default;
             return false;
+        }
+
+        private static class NativeMethods
+        {
+            [DllImport("Datadog.AutoInstrumentation.NativeLoader", CallingConvention = CallingConvention.StdCall, EntryPoint = "GetCurrentAppDomainRuntimeId")]
+            public static extern IntPtr GetRuntimeIdFromNative();
         }
     }
 }

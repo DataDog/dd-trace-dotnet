@@ -168,6 +168,7 @@ add_library("Datadog.AutoInstrumentation.NativeLoader" SHARED
         dynamic_dispatcher.cpp
         dynamic_instance.cpp
         runtimeid_store.cpp
+        exported_functions.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp
