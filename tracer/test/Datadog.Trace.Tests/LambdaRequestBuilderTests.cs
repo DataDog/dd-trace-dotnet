@@ -17,6 +17,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests
 {
+    [CollectionDefinition(nameof(WebRequestCollection), DisableParallelization = true)]
     public class LambdaRequestBuilderTests
     {
         [Fact]
