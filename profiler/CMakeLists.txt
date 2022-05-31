@@ -83,6 +83,8 @@ if (DEFINED RUN_ANALYSIS AND RUN_ANALYSIS EQUAL 1)
     endif()
 endif()
 
+add_definitions("-D_GLIBCXX_USE_CXX11_ABI=0")
+
 # ******************************************************
 # Output folders
 # ******************************************************
