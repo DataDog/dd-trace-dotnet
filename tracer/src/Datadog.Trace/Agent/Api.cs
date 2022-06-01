@@ -67,7 +67,7 @@ namespace Datadog.Trace.Agent
 
         public Task<bool> SendStatsAsync(StatsBuffer stats, long duration)
         {
-            _log.Debug("Sending stats to the DD agent");
+            _log.Debug("Sending stats to the Datadog Agent.");
 
             var state = new SendStatsState(stats, duration);
 
@@ -76,7 +76,7 @@ namespace Datadog.Trace.Agent
 
         public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces)
         {
-            _log.Debug<int>("Sending {Count} traces to the DD agent", numberOfTraces);
+            _log.Debug<int>("Sending {Count} traces to the Datadog Agent.", numberOfTraces);
 
             var state = new SendTracesState(traces, numberOfTraces);
 
@@ -214,17 +214,17 @@ namespace Datadog.Trace.Agent
                 try
                 {
                     var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-                    _log.Error<int, string>("Failed to submit stats with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
+                    _log.Error<int, string>("Failed to submit stats. Status code {StatusCode}, message: {ResponseContent}", response.StatusCode, responseContent);
                 }
                 catch (Exception ex)
                 {
-                    _log.Error<int>(ex, "Unable to read response for failed request with status code {StatusCode}", response.StatusCode);
+                    _log.Error<int>(ex, "Unable to read response for failed request. Status code {StatusCode}", response.StatusCode);
                 }
             }
 
             if (success)
             {
-                _log.Debug("Successfully sent stats to the DD agent");
+                _log.Debug("Successfully sent stats to the Datadog Agent.");
             }
 
             return success;
