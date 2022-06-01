@@ -525,8 +525,11 @@ stages:
           testResultsFiles: tracer/build_data/results/**/*.trx
         condition: succeededOrFailed()
       
-      - script: .azure-pipelines/upload-junit.ps1
+      - task: PowerShell@2
         displayName: Upload JUnit results
+        inputs:
+          targetType: 'filePath'
+          filePath: .azure-pipelines/upload-junit.ps1
         env:
           DD_API_KEY: $(ddApiKey)
           DD_ENV: ci
