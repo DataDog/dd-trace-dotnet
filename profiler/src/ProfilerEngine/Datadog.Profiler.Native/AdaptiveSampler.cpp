@@ -54,7 +54,8 @@ AdaptiveSampler::AdaptiveSampler(
     _timer([this] { RollWindow(); }, windowDuration),
     _totalCountRunningAverage(0),
     _rollWindowCallback(std::move(rollWindowCallback)),
-    _avgSamples(0)
+    _avgSamples(0),
+    _countsSlots{}
 {
     if (averageLookback < 1)
     {
