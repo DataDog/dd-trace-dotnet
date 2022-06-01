@@ -12,7 +12,7 @@ namespace Datadog.Trace.Tests
     /// As we have tests that modify the static prefixes.
     /// Or, you know, stop using WebRequest
     /// </summary>
-    [CollectionDefinition(nameof(TracerInstanceTestCollection), DisableParallelization = true)]
+    [CollectionDefinition(nameof(WebRequestCollection), DisableParallelization = true)]
     public class WebRequestCollection
     {
     }
