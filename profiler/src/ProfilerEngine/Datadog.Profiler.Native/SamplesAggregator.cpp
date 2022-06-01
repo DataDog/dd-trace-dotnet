@@ -104,6 +104,10 @@ void SamplesAggregator::ProcessSamples()
         {
             _exporter->Add(sample);
         }
+        else
+        {
+            Log::Debug("SamplesAggregator receives a sample with empty callstack. This sample won't be added to the profile.");
+        }
     }
     Export();
 }
