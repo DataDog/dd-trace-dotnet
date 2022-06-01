@@ -49,14 +49,12 @@ class CollectorBase
 public:
     CollectorBase<TRawSample>(
         const char* name,
-        IConfiguration* pConfiguration,
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore
         ) :
         ProviderBase(name),
-        _isNativeFramesEnabled{pConfiguration->IsNativeFramesEnabled()},
         _pFrameStore{pFrameStore},
         _pAppDomainStore{pAppDomainStore},
         _pRuntimeIdStore{pRuntimeIdStore},
@@ -235,10 +233,9 @@ private:
     {
         for (auto const& instructionPointer : rawSample.Stack)
         {
-            auto [isManaged, moduleName, frame] = _pFrameStore->GetFrame(instructionPointer);
+            auto [isResolved, moduleName, frame] = _pFrameStore->GetFrame(instructionPointer);
 
-            // filter out native frames if needed
-            if (isManaged || _isNativeFramesEnabled)
+            if (isResolved)
             {
                 sample.AddFrame(moduleName, frame);
             }
