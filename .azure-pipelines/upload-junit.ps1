@@ -7,12 +7,12 @@ $datadogCliReleases = "https://github.com/DataDog/datadog-ci/releases/latest/dow
 if ($IsLinux) {
     if (![System.IO.File]::Exists("./datadog-ci")) {
         Invoke-WebRequest -Uri "$datadogCliReleases/datadog-ci_linux-x64" -OutFile "./datadog-ci"
-        chmod +x /usr/local/bin/datadog-ci
+        chmod +x ./datadog-ci
     }
 } elseif ($IsMacOS) { 
     if (![System.IO.File]::Exists("./datadog-ci")) {
         Invoke-WebRequest -Uri "$datadogCliReleases/datadog-ci_darwin-x64" -OutFile "./datadog-ci"
-        chmod +x /usr/local/bin/datadog-ci
+        chmod +x ./datadog-ci
     }
 } else {
     if (![System.IO.File]::Exists("datadog-ci.exe")) {
