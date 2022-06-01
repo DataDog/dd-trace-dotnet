@@ -73,6 +73,7 @@ namespace Datadog.Trace.Tests.Util
         [InlineData("https://example.org/supcontroller/action/2022", "/sup", "/supcontroller/action/?")]
         [InlineData("https://example.org/sup/controller/action/2022", "/sup", "/controller/action/?")]
         [InlineData("https://example.org/sup/sup/controller/action/2022", "/sup", "/sup/controller/action/?")]
+        [InlineData("https://example.org/sup/sup/controller/action/2022", "/sup/sup", "/controller/action/?")]
         public void GetCleanUriPath_ByUri_ShouldRemoveThePrefixIfPresent(string url, string prefix, string expected)
         {
             Assert.Equal(expected, Trace.Util.UriHelpers.GetCleanUriPath(new Uri(url), prefix));
