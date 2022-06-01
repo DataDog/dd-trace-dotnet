@@ -159,18 +159,17 @@ partial class Build
 
     Target PublishProfilerLinux => _ => _
         .Unlisted()
-        .OnlyWhenStatic(() => IsLinux)
+        .OnlyWhenStatic(() => IsLinux || IsOsx)
         .After(CompileProfilerNativeSrc)
         .Executes(() =>
         {
-            var source = ProfilerOutputDirectory / "DDProf-Deploy" / "Datadog.AutoInstrumentation.Profiler.Native.x64.so";
-            var dest = ProfilerHomeDirectory;
-            Logger.Info($"Copying file '{source}' to 'file {dest}'");
+            var (arch, ext) = GetUnixArchitectureAndExtension();
+            // TODO: handle other architectures?
+            var source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.AutoInstrumentation.Profiler.Native.x64.{ext}";
+            var dest = MonitoringHomeDirectory / arch;
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
-            source = ProfilerOutputDirectory / "DDProf-Deploy" / "Datadog.Linux.ApiWrapper.x64.so";
-            dest = ProfilerHomeDirectory;
-            Logger.Info($"Copying file '{source}' to 'file {dest}'");
+            source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.Linux.ApiWrapper.x64.{ext}";
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
         });
 
@@ -183,8 +182,7 @@ partial class Build
             foreach (var architecture in ArchitecturesForPlatform)
             {
                 var source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.AutoInstrumentation.Profiler.Native.{architecture}.dll";
-                var dest = ProfilerHomeDirectory;
-                Logger.Info($"Copying file '{source}' to 'file {dest}'");
+                var dest = MonitoringHomeDirectory / $"win-{architecture}";
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
             }
         });

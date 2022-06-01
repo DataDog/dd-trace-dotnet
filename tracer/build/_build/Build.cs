@@ -99,7 +99,7 @@ partial class Build : NukeBuild
             Logger.Info($"Platform: {TargetPlatform}");
             Logger.Info($"Framework: {Framework}");
             Logger.Info($"TestAllPackageVersions: {TestAllPackageVersions}");
-            Logger.Info($"TracerHomeDirectory: {TracerHomeDirectory}");
+            Logger.Info($"MonitoringHomeDirectory: {MonitoringHomeDirectory}");
             Logger.Info($"ArtifactsDirectory: {ArtifactsDirectory}");
             Logger.Info($"NugetPackageDirectory: {NugetPackageDirectory}");
             Logger.Info($"IsAlpine: {IsAlpine}");
@@ -121,11 +121,10 @@ partial class Build : NukeBuild
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             DistributionHomeDirectory.GlobFiles("**").Where(x => !x.ToString().Contains("readme.txt")).ForEach(x => DeleteFile(x));
             EnsureCleanDirectory(OutputDirectory);
-            EnsureCleanDirectory(TracerHomeDirectory);
-            EnsureCleanDirectory(DDTracerHomeDirectory);
+            EnsureCleanDirectory(MonitoringHomeDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
-            EnsureCleanDirectory(NativeProfilerProject.Directory / "build");
-            EnsureCleanDirectory(NativeProfilerProject.Directory / "deps");
+            EnsureCleanDirectory(NativeTracerProject.Directory / "build");
+            EnsureCleanDirectory(NativeTracerProject.Directory / "deps");
             EnsureCleanDirectory(BuildDataDirectory);
             EnsureCleanDirectory(ExplorationTestsDirectory);
             DeleteFile(WindowsTracerHomeZip);
@@ -157,10 +156,9 @@ partial class Build : NukeBuild
         .DependsOn(CompileManagedSrc)
         .DependsOn(PublishManagedProfiler)
         .DependsOn(CompileNativeSrc)
-        .DependsOn(PublishNativeProfiler)
+        .DependsOn(PublishNativeTracer)
         .DependsOn(DownloadLibDdwaf)
-        .DependsOn(CopyLibDdwaf)
-        .DependsOn(CreateDdTracerHome);
+        .DependsOn(CopyLibDdwaf);
 
     Target BuildProfilerHome => _ => _
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
