@@ -4,6 +4,7 @@
 #include "LinuxStackFramesCollector.h"
 
 #include <cassert>
+#include <chrono>
 #include <errno.h>
 #include <mutex>
 #include <signal.h>
@@ -13,8 +14,11 @@
 
 #include "Log.h"
 #include "ManagedThreadInfo.h"
+#include "OpSysTools.h"
 #include "ScopeFinalizer.h"
 #include "StackSnapshotResultReusableBuffer.h"
+
+using namespace std::chrono_literals;
 
 std::mutex LinuxStackFramesCollector::s_signalHandlerInitLock;
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
@@ -24,7 +28,8 @@ LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackW
 
 LinuxStackFramesCollector::LinuxStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo) :
     _pCorProfilerInfo(_pCorProfilerInfo),
-    _lastStackWalkErrorCode{0}
+    _lastStackWalkErrorCode{0},
+    _stackWalkFinished{false}
 {
     _pCorProfilerInfo->AddRef();
     InitializeSignalHandler();
@@ -33,6 +38,11 @@ LinuxStackFramesCollector::~LinuxStackFramesCollector()
 {
     _pCorProfilerInfo->Release();
     // !! @ToDo: We must uninstall the signal handler!!
+}
+
+bool IsThreadAlive(::pid_t processId, ::pid_t threadId)
+{
+    return syscall(SYS_tgkill, processId, threadId, 0) == 0;
 }
 
 StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
@@ -59,7 +69,8 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 
         std::unique_lock<std::mutex> stackWalkInProgressLock(s_stackWalkInProgressMutex);
 
-        const DWORD osThreadId = pThreadInfo->GetOsThreadId();
+        const auto osThreadId = static_cast<::pid_t>(pThreadInfo->GetOsThreadId());
+        const auto processId = static_cast<::pid_t>(OpSysTools::GetProcId());
 
 #ifndef NDEBUG
         Log::Debug("LinuxStackFramesCollector::CollectStackSampleImplementation: Sending signal ",
@@ -71,7 +82,9 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
                 s_pInstanceCurrentlyStackWalking = nullptr;
             });
 
-        errorCode = syscall(SYS_tgkill, static_cast<::pid_t>(getpid()), static_cast<::pid_t>(osThreadId), s_signalToSend);
+        _stackWalkFinished = false;
+
+        errorCode = syscall(SYS_tgkill, processId,osThreadId, s_signalToSend);
 
         if (errorCode == -1)
         {
@@ -82,7 +95,15 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
         }
         else
         {
-            _stackWalkInProgressWaiter.wait(stackWalkInProgressLock);
+            do
+            {
+                _stackWalkInProgressWaiter.wait_for(stackWalkInProgressLock, 500ms);
+                if (!IsThreadAlive(processId, osThreadId))
+                {
+                    _lastStackWalkErrorCode = E_ABORT;
+                    break;
+                }
+            } while (!_stackWalkFinished);
             errorCode = _lastStackWalkErrorCode;
         }
     }
@@ -109,6 +130,7 @@ void LinuxStackFramesCollector::NotifyStackWalkCompleted(std::int32_t resultErro
 {
     _lastStackWalkErrorCode = resultErrorCode;
     _stackWalkInProgressWaiter.notify_one();
+    _stackWalkFinished = true;
 }
 
 void LinuxStackFramesCollector::InitializeSignalHandler()
@@ -158,6 +180,7 @@ bool LinuxStackFramesCollector::TrySetHandlerForSignal(int signal, struct sigact
               " Unable to set signal for ",
               signal, ". The default one is overriden by ",
               oldAction.sa_handler, ".");
+
     return false;
 }
 
@@ -223,31 +246,22 @@ char const* LinuxStackFramesCollector::ErrorCodeToString(int errorCode)
 
 std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread()
 {
-    std::int32_t resultErrorCode;
-
+    try
     {
-        // Collect data for TraceContext tracking:
-        bool traceContextDataCollected = TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
+        std::int32_t resultErrorCode;
 
-        // Now walk the stack:
-
-        unw_context_t uc;
-        unw_getcontext(&uc);
-
-        unw_cursor_t cursor;
-        unw_init_local(&cursor, &uc);
-
-        // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
-        if (IsCurrentCollectionAbortRequested())
         {
-            AddFakeFrame();
-            return E_ABORT;
-        }
+            // Collect data for TraceContext tracking:
+            bool traceContextDataCollected = TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
 
-        resultErrorCode = unw_step(&cursor);
+            // Now walk the stack:
 
-        while (resultErrorCode > 0)
-        {
+            unw_context_t uc;
+            unw_getcontext(&uc);
+
+            unw_cursor_t cursor;
+            unw_init_local(&cursor, &uc);
+
             // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
             if (IsCurrentCollectionAbortRequested())
             {
@@ -255,22 +269,38 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread()
                 return E_ABORT;
             }
 
-            unw_word_t nativeInstructionPointer;
-            resultErrorCode = unw_get_reg(&cursor, UNW_REG_IP, &nativeInstructionPointer);
-            if (resultErrorCode != 0)
-            {
-                return resultErrorCode;
-            }
-
-            if (!AddFrame(nativeInstructionPointer))
-            {
-                return S_FALSE;
-            }
-
             resultErrorCode = unw_step(&cursor);
+
+            while (resultErrorCode > 0)
+            {
+                // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
+                if (IsCurrentCollectionAbortRequested())
+                {
+                    AddFakeFrame();
+                    return E_ABORT;
+                }
+
+                unw_word_t nativeInstructionPointer;
+                resultErrorCode = unw_get_reg(&cursor, UNW_REG_IP, &nativeInstructionPointer);
+                if (resultErrorCode != 0)
+                {
+                    return resultErrorCode;
+                }
+
+                if (!AddFrame(nativeInstructionPointer))
+                {
+                    return S_FALSE;
+                }
+
+                resultErrorCode = unw_step(&cursor);
+            }
         }
+        return resultErrorCode;
     }
-    return resultErrorCode;
+    catch(...)
+    {
+        return E_ABORT;
+    }
 }
 
 void LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal)
