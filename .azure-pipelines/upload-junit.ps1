@@ -1,16 +1,22 @@
 $resultFolder = "./tracer/build_data/results";
 $service= "dd-trace-dotnet";
-$files = [System.IO.Directory]::GetFiles($resultFolder, "*.xml", [System.IO.SearchOption]::AllDirectories);
+$files = [System.IO.Directory]::GetFiles($resultFolder, "junit-result.xml", [System.IO.SearchOption]::AllDirectories);
 
 Write-Output "Downloading datadog-ci..."
-if ($IsLinux) { 
-    Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_linux-x64" -OutFile "/usr/local/bin/datadog-ci"
-    chmod +x /usr/local/bin/datadog-ci
+if ($IsLinux) {
+    if (![System.IO.File]::Exists("/usr/local/bin/datadog-ci")) {
+        Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_linux-x64" -OutFile "/usr/local/bin/datadog-ci"
+        chmod +x /usr/local/bin/datadog-ci
+    }
 } elseif ($IsMacOS) { 
-    Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_darwin-x64" -OutFile "/usr/local/bin/datadog-ci"
-    chmod +x /usr/local/bin/datadog-ci
+    if (![System.IO.File]::Exists("/usr/local/bin/datadog-ci")) {
+        Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_darwin-x64" -OutFile "/usr/local/bin/datadog-ci"
+        chmod +x /usr/local/bin/datadog-ci
+    }
 } else {
-    Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_win-x64.exe" -OutFile "datadog-ci.exe"
+    if (![System.IO.File]::Exists("datadog-ci.exe")) {
+        Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_win-x64.exe" -OutFile "datadog-ci.exe"
+    }
 }
 
 $osArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant();

@@ -590,6 +590,16 @@ stages:
           testResultsFiles: tracer/build_data/results/**/*.trx
         condition: succeededOrFailed()
 
+      - task: PowerShell@2
+        displayName: Upload JUnit results
+        inputs:
+          targetType: 'filePath'
+          filePath: .azure-pipelines/upload-junit.ps1
+        env:
+          DD_API_KEY: $(ddApiKey)
+          DD_ENV: ci
+        condition: succeededOrFailed()
+
 - stage: unit_tests_linux
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_linux_tracer, build_linux_profiler, master_commit_id]
@@ -636,6 +646,16 @@ stages:
       inputs:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+      
+    - task: PowerShell@2
+      displayName: Upload JUnit results
+      inputs:
+        targetType: 'filePath'
+        filePath: .azure-pipelines/upload-junit.ps1
+      env:
+        DD_API_KEY: $(ddApiKey)
+        DD_ENV: ci
       condition: succeededOrFailed()
 
   - job: native
@@ -718,6 +738,16 @@ stages:
             testResultsFiles: tracer/build_data/results/**/*.trx
           condition: succeededOrFailed()
 
+        - task: PowerShell@2
+          displayName: Upload JUnit results
+          inputs:
+            targetType: 'filePath'
+            filePath: .azure-pipelines/upload-junit.ps1
+          env:
+            DD_API_KEY: $(ddApiKey)
+            DD_ENV: ci
+          condition: succeededOrFailed()
+
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
@@ -770,6 +800,16 @@ stages:
       inputs:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+      
+    - task: PowerShell@2
+      displayName: Upload JUnit results
+      inputs:
+        targetType: 'filePath'
+        filePath: .azure-pipelines/upload-junit.ps1
+      env:
+        DD_API_KEY: $(ddApiKey)
+        DD_ENV: ci
       condition: succeededOrFailed()
 
     - publish: tracer/build_data
@@ -826,6 +866,16 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+      
+    - task: PowerShell@2
+      displayName: Upload JUnit results
+      inputs:
+        targetType: 'filePath'
+        filePath: .azure-pipelines/upload-junit.ps1
+      env:
+        DD_API_KEY: $(ddApiKey)
+        DD_ENV: ci
+      condition: succeededOrFailed()
 
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
@@ -870,6 +920,16 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+      
+    - task: PowerShell@2
+      displayName: Upload JUnit results
+      inputs:
+        targetType: 'filePath'
+        filePath: .azure-pipelines/upload-junit.ps1
+      env:
+        DD_API_KEY: $(ddApiKey)
+        DD_ENV: ci
+      condition: succeededOrFailed()      
 
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
@@ -940,6 +1000,16 @@ stages:
       inputs:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
+    - task: PowerShell@2
+      displayName: Upload JUnit results
+      inputs:
+        targetType: 'filePath'
+        filePath: .azure-pipelines/upload-junit.ps1
+      env:
+        DD_API_KEY: $(ddApiKey)
+        DD_ENV: ci
       condition: succeededOrFailed()
 
     - task: DockerCompose@0
@@ -1029,6 +1099,16 @@ stages:
       inputs:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+      
+    - task: PowerShell@2
+      displayName: Upload JUnit results
+      inputs:
+        targetType: 'filePath'
+        filePath: .azure-pipelines/upload-junit.ps1
+      env:
+        DD_API_KEY: $(ddApiKey)
+        DD_ENV: ci
       condition: succeededOrFailed()
 
     - publish: tracer/test/snapshots
@@ -1120,6 +1200,16 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+      
+    - task: PowerShell@2
+      displayName: Upload JUnit results
+      inputs:
+        targetType: 'filePath'
+        filePath: .azure-pipelines/upload-junit.ps1
+      env:
+        DD_API_KEY: $(ddApiKey)
+        DD_ENV: ci
+      condition: succeededOrFailed()      
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
@@ -1194,6 +1284,16 @@ stages:
           inputs:
             testResultsFormat: VSTest
             testResultsFiles: tracer/build_data/results/**/*.trx
+          condition: succeededOrFailed()
+      
+        - task: PowerShell@2
+          displayName: Upload JUnit results
+          inputs:
+            targetType: 'filePath'
+            filePath: .azure-pipelines/upload-junit.ps1
+          env:
+            DD_API_KEY: $(ddApiKey)
+            DD_ENV: ci
           condition: succeededOrFailed()
 
         - publish: tracer/test/snapshots
@@ -1272,6 +1372,16 @@ stages:
           inputs:
             testResultsFormat: VSTest
             testResultsFiles: tracer/build_data/results/**/*.trx
+          condition: succeededOrFailed()
+
+        - task: PowerShell@2
+          displayName: Upload JUnit results
+          inputs:
+            targetType: 'filePath'
+            filePath: .azure-pipelines/upload-junit.ps1
+          env:
+            DD_API_KEY: $(ddApiKey)
+            DD_ENV: ci
           condition: succeededOrFailed()
 
         - publish: tracer/test/snapshots
@@ -1750,6 +1860,16 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+      
+    - task: PowerShell@2
+      displayName: Upload JUnit results
+      inputs:
+        targetType: 'filePath'
+        filePath: .azure-pipelines/upload-junit.ps1
+      env:
+        DD_API_KEY: $(ddApiKey)
+        DD_ENV: ci
+      condition: succeededOrFailed()
 
 - stage: tool_artifacts_tests_linux
   dependsOn: [dotnet_tool, master_commit_id]
@@ -1826,6 +1946,16 @@ stages:
       inputs:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+      
+    - task: PowerShell@2
+      displayName: Upload JUnit results
+      inputs:
+        targetType: 'filePath'
+        filePath: .azure-pipelines/upload-junit.ps1
+      env:
+        DD_API_KEY: $(ddApiKey)
+        DD_ENV: ci
       condition: succeededOrFailed()
 
 - stage: upload_to_s3
