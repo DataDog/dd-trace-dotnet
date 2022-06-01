@@ -2,6 +2,20 @@ $resultFolder = "./tracer/build_data/results";
 $service= "dd-trace-dotnet";
 $files = [System.IO.Directory]::GetFiles($resultFolder, "*.xml", [System.IO.SearchOption]::AllDirectories);
 
+if ($IsWindows) { 
+    Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_win-x64.exe" -OutFile "datadog-ci.exe"
+}
+if ($IsLinux) { 
+    Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_linux-x64" -OutFile "/usr/local/bin/datadog-ci"
+    chmod +x /usr/local/bin/datadog-ci
+}
+if ($IsMacOS) { 
+    Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_darwin-x64" -OutFile "/usr/local/bin/datadog-ci"
+    chmod +x /usr/local/bin/datadog-ci
+}
+
+$osArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant();
+
 foreach ($file in $files)
 {
     $fileInfo = New-Object -TypeName System.IO.FileInfo -ArgumentList $file
@@ -11,7 +25,6 @@ foreach ($file in $files)
     $osPlatform = "windows";
     if ($IsLinux) { $osPlatform = "linux"; }
     if ($IsMacOS) { $osPlatform = "macos"; }
-    $osArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant();
 
     $runtimeName = ".NET";
     $runtimeVersion = $targetFramework;
@@ -29,6 +42,16 @@ foreach ($file in $files)
 
     Write-Output $file;
     Write-Output $env:DD_TAGS;
-    datadog-ci junit upload --service $service $file
+
+    if ($IsWindows) { 
+        ./datadog-ci.exe junit upload --service $service $file
+    }
+    if ($IsLinux) { 
+        datadog-ci junit upload --service $service $file
+    }
+    if ($IsMacOS) { 
+        datadog-ci junit upload --service $service $file
+    }
+
     Write-Output "";
 }
