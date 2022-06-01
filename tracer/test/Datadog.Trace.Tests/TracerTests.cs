@@ -23,7 +23,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests
 {
-    [CollectionDefinition(nameof(WebRequestCollection), DisableParallelization = true)]
+    [Collection(nameof(WebRequestCollection), DisableParallelization = true)]
     public class TracerTests
     {
         private readonly Tracer _tracer;
