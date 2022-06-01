@@ -725,6 +725,7 @@ partial class Build
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
                     .CombineWith(testProjects, (x, project) => x
                         .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .WithJUnitLogger(GetResultsDirectory(project))
                         .SetProjectFile(project)));
             }
             finally
@@ -987,6 +988,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .WithJUnitLogger(GetResultsDirectory(project))
                         .SetProjectFile(project)), degreeOfParallelism: 4);
 
 
@@ -1006,6 +1008,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .WithJUnitLogger(GetResultsDirectory(project))
                         .SetProjectFile(project)));
             }
             finally
@@ -1043,6 +1046,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .WithJUnitLogger(GetResultsDirectory(project))
                         .SetProjectFile(project)));
             }
             finally
@@ -1086,6 +1090,7 @@ partial class Build
                                 .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True")
                                 .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                                 .SetLogsDirectory(TestLogsDirectory)
+                                .WithJUnitLogger(GetResultsDirectory(project))
                                 .When(CodeCoverage, ConfigureCodeCoverage)
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
                                 .SetProjectFile(project));
@@ -1120,6 +1125,7 @@ partial class Build
                     .SetFilter(Filter ?? "(RunOnWindows=True)&MSI=True")
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
+                    .WithJUnitLogger(resultsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(resultsDirectory)
                     .SetProjectFile(project));
@@ -1382,6 +1388,7 @@ partial class Build
                         .When(CodeCoverage, ConfigureCodeCoverage)
                         .CombineWith(ParallelIntegrationTests, (s, project) => s
                             .EnableTrxLogOutput(GetResultsDirectory(project))
+                            .WithJUnitLogger(GetResultsDirectory(project))
                             .SetProjectFile(project)),
                     degreeOfParallelism: 2);
 
@@ -1392,7 +1399,7 @@ partial class Build
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFramework(Framework)
-                    //.WithMemoryDumpAfter(timeoutInMinutes: 30)
+                    // .WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .SetFilter(filter)
                     .SetProcessEnvironmentVariable("TracerHomeDirectory", TracerHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
@@ -1402,6 +1409,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .WithJUnitLogger(GetResultsDirectory(project))
                         .SetProjectFile(project))
                 );
             }

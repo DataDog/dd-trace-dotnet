@@ -524,6 +524,13 @@ stages:
           testResultsFormat: VSTest
           testResultsFiles: tracer/build_data/results/**/*.trx
         condition: succeededOrFailed()
+      
+      - script: .azure-pipelines/upload-junit.ps1
+        displayName: Upload JUnit results
+        env:
+          DD_API_KEY: $(ddApiKey)
+          DD_ENV: ci
+        condition: succeededOrFailed()
 
     - job: native
       timeoutInMinutes: 60 #default value
