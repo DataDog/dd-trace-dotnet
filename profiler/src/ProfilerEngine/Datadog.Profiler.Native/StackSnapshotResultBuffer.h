@@ -23,13 +23,13 @@ class StackSnapshotResultBuffer
 public:
     static constexpr std::uint16_t MaxSnapshotStackDepth_Limit = 2049;
 
-    inline std::uint64_t GetUnixTimeUtc(void) const;
+    inline std::uint64_t GetUnixTimeUtc() const;
     inline std::uint64_t SetUnixTimeUtc(std::uint64_t value);
 
-    inline std::uint64_t GetRepresentedDurationNanoseconds(void) const;
+    inline std::uint64_t GetRepresentedDurationNanoseconds() const;
     inline std::uint64_t SetRepresentedDurationNanoseconds(std::uint64_t value);
 
-    inline AppDomainID GetAppDomainId(void) const;
+    inline AppDomainID GetAppDomainId() const;
     inline AppDomainID SetAppDomainId(AppDomainID appDomainId);
 
     inline std::uint64_t GetLocalRootSpanId() const;
@@ -38,15 +38,18 @@ public:
     inline std::uint64_t GetSpanId() const;
     inline std::uint64_t SetSpanId(std::uint64_t value);
 
-    inline std::size_t GetFramesCount(void) const;
+    inline std::uint16_t GetFramesCount() const;
+    inline void SetFramesCount(std::uint16_t count);
     inline void CopyInstructionPointers(std::vector<std::uintptr_t>& ips) const;
 
     inline void DetermineAppDomain(ThreadID threadId, ICorProfilerInfo4* pCorProfilerInfo);
     
-    void Reset(void);
+    void Reset();
 
     inline bool AddFrame(std::uintptr_t ip);
     inline bool AddFakeFrame();
+
+    inline uintptr_t* Data();
 
     StackSnapshotResultBuffer();
     ~StackSnapshotResultBuffer();
@@ -66,7 +69,7 @@ protected:
 
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------
 
-inline std::uint64_t StackSnapshotResultBuffer::GetUnixTimeUtc(void) const
+inline std::uint64_t StackSnapshotResultBuffer::GetUnixTimeUtc() const
 {
     return _unixTimeUtc;
 }
@@ -78,7 +81,7 @@ inline std::uint64_t StackSnapshotResultBuffer::SetUnixTimeUtc(std::uint64_t val
     return prevValue;
 }
 
-inline std::uint64_t StackSnapshotResultBuffer::GetRepresentedDurationNanoseconds(void) const
+inline std::uint64_t StackSnapshotResultBuffer::GetRepresentedDurationNanoseconds() const
 {
     return _representedDurationNanoseconds;
 }
@@ -90,7 +93,7 @@ inline std::uint64_t StackSnapshotResultBuffer::SetRepresentedDurationNanosecond
     return prevValue;
 }
 
-inline AppDomainID StackSnapshotResultBuffer::GetAppDomainId(void) const
+inline AppDomainID StackSnapshotResultBuffer::GetAppDomainId() const
 {
     return _appDomainId;
 }
@@ -126,9 +129,14 @@ inline std::uint64_t StackSnapshotResultBuffer::SetSpanId(std::uint64_t value)
     return prevValue;
 }
 
-inline std::size_t StackSnapshotResultBuffer::GetFramesCount(void) const
+inline std::uint16_t StackSnapshotResultBuffer::GetFramesCount() const
 {
     return _currentFramesCount;
+}
+
+inline void StackSnapshotResultBuffer::SetFramesCount(std::uint16_t count)
+{
+    _currentFramesCount = count;
 }
 
 inline void StackSnapshotResultBuffer::CopyInstructionPointers(std::vector<std::uintptr_t>& ips) const
@@ -190,4 +198,9 @@ inline bool StackSnapshotResultBuffer::AddFrame(std::uintptr_t ip)
 inline bool StackSnapshotResultBuffer::AddFakeFrame()
 {
     return AddFrame(0);
+}
+
+inline uintptr_t* StackSnapshotResultBuffer::Data()
+{
+    return _instructionPointers.data();
 }

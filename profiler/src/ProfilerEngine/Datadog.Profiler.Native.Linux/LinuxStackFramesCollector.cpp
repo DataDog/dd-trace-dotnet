@@ -294,54 +294,22 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread()
 {
     try
     {
-        std::int32_t resultErrorCode;
+        // Collect data for TraceContext tracking:
+        bool traceContextDataCollected = TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
 
+        // Now walk the stack:
+        auto [data, size] = Data();
+
+        auto count = unw_backtrace((void**)data, size);
+
+        if (count == 0)
         {
-            // Collect data for TraceContext tracking:
-            bool traceContextDataCollected = TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
-
-            // Now walk the stack:
-
-            unw_context_t uc;
-            unw_getcontext(&uc);
-
-            unw_cursor_t cursor;
-            unw_init_local(&cursor, &uc);
-
-            // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
-            if (IsCurrentCollectionAbortRequested())
-            {
-                AddFakeFrame();
-                return E_ABORT;
-            }
-
-            resultErrorCode = unw_step(&cursor);
-
-            while (resultErrorCode > 0)
-            {
-                // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
-                if (IsCurrentCollectionAbortRequested())
-                {
-                    AddFakeFrame();
-                    return E_ABORT;
-                }
-
-                unw_word_t nativeInstructionPointer;
-                resultErrorCode = unw_get_reg(&cursor, UNW_REG_IP, &nativeInstructionPointer);
-                if (resultErrorCode != 0)
-                {
-                    return resultErrorCode;
-                }
-
-                if (!AddFrame(nativeInstructionPointer))
-                {
-                    return S_FALSE;
-                }
-
-                resultErrorCode = unw_step(&cursor);
-            }
+            AddFakeFrame();
+            return S_FALSE;
         }
-        return resultErrorCode;
+
+        SetFrameCount(count);
+        return S_OK;
     }
     catch (...)
     {

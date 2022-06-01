@@ -25,7 +25,7 @@ StackSnapshotResultBuffer::~StackSnapshotResultBuffer()
     _spanId = 0;
 }
 
-void StackSnapshotResultBuffer::Reset(void)
+void StackSnapshotResultBuffer::Reset()
 {
     _localRootSpanId = 0;
     _spanId = 0;
