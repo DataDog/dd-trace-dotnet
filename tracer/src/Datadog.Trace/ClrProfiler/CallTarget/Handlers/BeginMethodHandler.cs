@@ -42,7 +42,11 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static CallTargetState Invoke(TTarget instance)
         {
-            return new CallTargetState(Tracer.Instance.InternalActiveScope, Tracer.Instance.DistributedSpanContext, _invokeDelegate(instance));
+            var activeScope = Tracer.Instance.InternalActiveScope;
+            // We don't use Tracer.Instance.DistributedSpanContext directly because we already retrieved the
+            // active scope from an AsyncLocal instance, and we want to avoid retrieving twice.
+            var spanContextRaw = DistributedTracer.Instance.GetSpanContextRaw() ?? activeScope?.Span?.Context;
+            return new CallTargetState(activeScope, spanContextRaw, _invokeDelegate(instance));
         }
     }
 }

@@ -14,6 +14,7 @@
 #include <memory>
 #include <mutex>
 #include <signal.h>
+#include <atomic>
 
 class IManagedThreadList;
 
@@ -44,6 +45,11 @@ private:
 
     std::int32_t _lastStackWalkErrorCode;
     std::condition_variable _stackWalkInProgressWaiter;
+    // since we wait for a specific amount of time, if a call to notify_one
+    // is done while we are not waiting, we will miss it and
+    // we will block for ever.
+    // This flag is used to prevent blocking on successfull (but long) stackwalking
+    std::atomic<bool> _stackWalkFinished;
 
     ICorProfilerInfo4* const _pCorProfilerInfo;
 

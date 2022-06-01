@@ -15,25 +15,34 @@ public static class BuildVariables
         envVars.AddTracerEnvironmentVariables(tracerHomeDirectory);
     }
 
-    public static void AddTracerEnvironmentVariables(this Dictionary<string, string> envVars, AbsolutePath tracerHomeDirectory)
+    public static void AddTracerEnvironmentVariables(this Dictionary<string, string> envVars, AbsolutePath monitoringHomeDirectory)
     {
         envVars.Add("COR_ENABLE_PROFILING", "1");
         envVars.Add("COR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}");
-        envVars.Add("COR_PROFILER_PATH_32", tracerHomeDirectory / "win-x86" / "Datadog.Trace.ClrProfiler.Native.dll");
-        envVars.Add("COR_PROFILER_PATH_64", tracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll");
-        envVars.Add("CORECLR_ENABLE_PROFILING", "1");
-        envVars.Add("CORECLR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}");
-        envVars.Add("DD_DOTNET_TRACER_HOME", tracerHomeDirectory);
 
+        envVars.Add("COR_PROFILER_PATH_32", monitoringHomeDirectory / "Datadog.AutoInstrumentation.NativeLoader.x86.dll");
+        envVars.Add("COR_PROFILER_PATH_64", monitoringHomeDirectory / "Datadog.AutoInstrumentation.NativeLoader.x64.dll");
 
         if (EnvironmentInfo.IsWin)
         {
-            envVars.Add("CORECLR_PROFILER_PATH_32", tracerHomeDirectory / "win-x86" / "Datadog.Trace.ClrProfiler.Native.dll");
-            envVars.Add("CORECLR_PROFILER_PATH_64", tracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll");
+            envVars.Add("DD_DOTNET_TRACER_HOME", monitoringHomeDirectory / "tracer");
         }
         else
         {
-            envVars.Add("CORECLR_PROFILER_PATH", tracerHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so");
+            envVars.Add("DD_DOTNET_TRACER_HOME", monitoringHomeDirectory);
+        }
+
+        envVars.Add("CORECLR_ENABLE_PROFILING", "1");
+        envVars.Add("CORECLR_PROFILER", "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}");
+
+        if (EnvironmentInfo.IsWin)
+        {
+            envVars.Add("CORECLR_PROFILER_PATH_32", monitoringHomeDirectory / "win-x86" / "Datadog.AutoInstrumentation.NativeLoader.x86.dll");
+            envVars.Add("CORECLR_PROFILER_PATH_64", monitoringHomeDirectory / "win-x64" / "Datadog.AutoInstrumentation.NativeLoader.x64.dll");
+        }
+        else
+        {
+            envVars.Add("CORECLR_PROFILER_PATH", monitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so");
         }
     }
 

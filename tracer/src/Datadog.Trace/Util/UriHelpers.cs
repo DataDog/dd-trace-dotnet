@@ -33,21 +33,47 @@ namespace Datadog.Trace.Util
         }
 
         public static string GetCleanUriPath(Uri uri)
-        {
-            return GetCleanUriPath(uri.AbsolutePath);
-        }
+            => GetCleanUriPath(uri.AbsolutePath);
+
+        public static string GetCleanUriPath(Uri uri, string virtualPathToRemove)
+            => GetCleanUriPath(uri.AbsolutePath, virtualPathToRemove);
 
         public static string GetCleanUriPath(string absolutePath)
+            => GetCleanUriPath(absolutePath, null);
+
+        /// <summary>
+        /// Cleans identifiers from an absolute path, and optionally removes the provided prefix
+        /// </summary>
+        /// <param name="absolutePath">The path to clean</param>
+        /// <param name="virtualPathToRemove">The optional virtual path to remove from the front of the path</param>
+        /// <returns>The cleaned path</returns>
+        public static string GetCleanUriPath(string absolutePath, string virtualPathToRemove)
         {
             if (string.IsNullOrWhiteSpace(absolutePath) || (absolutePath.Length == 1 && absolutePath[0] == '/'))
             {
                 return absolutePath;
             }
 
-            // Sanitized url will be at worse as long as the original
-            var sb = StringBuilderCache.Acquire(absolutePath.Length);
+            if (!string.IsNullOrEmpty(virtualPathToRemove) && string.Equals(absolutePath, virtualPathToRemove))
+            {
+                return "/";
+            }
 
-            int previousIndex = 0;
+            // If the virtual path is "/" then we're hosted at the root, so nothing to remove
+            // If not, it will be of the form "/myapp", so remove whole thing
+            // Make sure we only remove _whole_ segment i.e. /myapp/controller, but not /myappcontroller
+            var hasPrefix = !string.IsNullOrEmpty(virtualPathToRemove)
+                         && virtualPathToRemove != "/"
+                         && virtualPathToRemove[0] == '/'
+                         && absolutePath.StartsWith(virtualPathToRemove, StringComparison.OrdinalIgnoreCase)
+                         && absolutePath.Length > virtualPathToRemove.Length
+                         && absolutePath[virtualPathToRemove.Length] == '/';
+
+            // Sanitized url will be at worse as long as the original, minus a removed virtual path
+            var maxLength = absolutePath.Length - (hasPrefix ? virtualPathToRemove.Length : 0);
+            var sb = StringBuilderCache.Acquire(maxLength);
+
+            int previousIndex = hasPrefix ? virtualPathToRemove.Length : 0;
             int index;
             int segmentLength;
             int indexOfFileExtension = 0;

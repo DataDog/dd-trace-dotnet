@@ -486,8 +486,8 @@ jobs:
       - name: Download profiler artifact
         uses: actions/download-artifact@v2
         with:
-          name: profiler-home.Windows.Release
-          path: DDProf-Deploy
+          name: monitoring-home.Windows.Release
+          path: shared/bin/monitoring-home
 
       - name: Setup Go 1.16.8
         uses: actions/setup-go@v2
@@ -508,12 +508,24 @@ jobs:
         run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
 
       - name: Execute PiComputation benchmark
+        env:
+          DD_PROFILING_LOG_DIR: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}'
+          DD_TRACE_LOG_DIRECTORY: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}' # for the loader
         run: |
           cd profiler\build
           .\run.cmd ${{ matrix.framework }}
 
       - name: Wait 20 seconds to agent flush before finishing pipeline
         run: Start-Sleep -s 20
+
+      - name: 'Publish Benchmark log files'
+        uses: actions/upload-artifact@v2
+        if: '${{ always() }}'
+        with:
+          if-no-files-found: error
+          name: Benchmark.tests.windows.x64.${{ matrix.framework }}.logs
+          path: '${{ github.workspace }}/tests_output_dir'
+          retention-days: 7
 
   deploy_windows_profiler:
     name: Deploying Windows Profiler to AWS S3 bucket

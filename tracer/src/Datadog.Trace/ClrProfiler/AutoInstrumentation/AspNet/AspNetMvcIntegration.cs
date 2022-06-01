@@ -115,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                     if (string.IsNullOrEmpty(resourceName) && httpContext.Request.Url != null)
                     {
-                        var cleanUri = UriHelpers.GetCleanUriPath(httpContext.Request.Url);
+                        var cleanUri = UriHelpers.GetCleanUriPath(httpContext.Request.Url, httpContext.Request.ApplicationPath);
                         resourceName = $"{httpMethod} {cleanUri.ToLowerInvariant()}";
                     }
 

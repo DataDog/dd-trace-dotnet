@@ -25,8 +25,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetState StartInvocation<TArg>(ILambdaExtensionRequest requestBuilder, TArg payload, IDictionary<string, string> context)
         {
             var json = SerializeObject(payload);
-            NotifyExtensionStart(requestBuilder, json, context);
-            return new CallTargetState(CreatePlaceholderScope(Tracer.Instance, requestBuilder));
+            return new CallTargetState(NotifyExtensionStart(requestBuilder, json, context));
         }
 
         internal static CallTargetState StartInvocationWithoutEvent(ILambdaExtensionRequest requestBuilder)
@@ -54,18 +53,18 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         internal static CallTargetReturn<TReturn> EndInvocationSync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
         {
             var json = SerializeObject(returnValue);
-            scope?.Dispose();
             Flush();
-            NotifyExtensionEnd(requestBuilder, exception != null, json);
+            NotifyExtensionEnd(requestBuilder, scope, exception != null, json);
+            scope?.Dispose();
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
         internal static TReturn EndInvocationAsync<TReturn>(TReturn returnValue, Exception exception, Scope scope, ILambdaExtensionRequest requestBuilder)
         {
             var json = SerializeObject(returnValue);
-            scope?.Dispose();
             Flush();
-            NotifyExtensionEnd(requestBuilder, exception != null, json);
+            NotifyExtensionEnd(requestBuilder, scope, exception != null, json);
+            scope?.Dispose();
             return returnValue;
         }
 
@@ -73,45 +72,57 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         {
             scope?.Dispose();
             Flush();
-            NotifyExtensionEnd(requestBuilder, exception != null);
+            NotifyExtensionEnd(requestBuilder, scope, exception != null);
             return CallTargetReturn.GetDefault();
         }
 
-        internal static Scope CreatePlaceholderScope(Tracer tracer, ILambdaExtensionRequest requestBuilder)
+        internal static Scope CreatePlaceholderScope(Tracer tracer, string traceId, string samplingPriority)
         {
-            Scope scope = null;
-            try
+            Span span = null;
+            if (traceId == null)
             {
-                var request = requestBuilder.GetTraceContextRequest();
-                using (var response = (HttpWebResponse)request.GetResponse())
-                {
-                    var traceId = response.Headers.Get(HttpHeaderNames.TraceId);
-                    // need to set the exact same spanId so nested spans (auto-instrumentation or manual) will have the correct parent-id
-                    var spanId = response.Headers.Get(HttpHeaderNames.SpanId);
-                    Serverless.Debug($"received traceId = {traceId} and spanId = {spanId}");
-                    var span = tracer.StartSpan(PlaceholderOperationName, null, serviceName: PlaceholderServiceName, traceId: Convert.ToUInt64(traceId), spanId: Convert.ToUInt64(spanId), addToTraceContext: false);
-                    scope = tracer.TracerManager.ScopeManager.Activate(span, false);
-                }
+                Serverless.Debug("traceId not found");
+                span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, addToTraceContext: false);
             }
-            catch (Exception ex)
+            else
             {
-                Serverless.Error("Error creating the placeholder scope", ex);
+                Serverless.Debug($"creating the placeholder traceId = {traceId}");
+                span = tracer.StartSpan(PlaceholderOperationName, tags: null, serviceName: PlaceholderServiceName, traceId: Convert.ToUInt64(traceId), addToTraceContext: false);
             }
 
-            return scope;
+            if (samplingPriority == null)
+            {
+                Serverless.Debug($"samplingPriority not found");
+                span.Context.TraceContext.SetSamplingPriority(tracer.TracerManager.Sampler?.GetSamplingPriority(span));
+            }
+            else
+            {
+                Serverless.Debug($"setting the placeholder sampling proirity to = {samplingPriority}");
+                span.Context.TraceContext.SetSamplingPriority(Convert.ToInt32(samplingPriority));
+            }
+
+            return tracer.TracerManager.ScopeManager.Activate(span, false);
         }
 
-        internal static bool SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, IDictionary<string, string> context)
+        internal static Scope SendStartInvocation(ILambdaExtensionRequest requestBuilder, string data, IDictionary<string, string> context)
         {
             var request = requestBuilder.GetStartInvocationRequest();
             WriteRequestPayload(request, data);
             WriteRequestHeaders(request, context);
-            return ValidateOKStatus((HttpWebResponse)request.GetResponse());
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            var traceId = response.Headers.Get(HttpHeaderNames.TraceId);
+            var samplingPriority = response.Headers.Get(HttpHeaderNames.SamplingPriority);
+            if (ValidateOKStatus(response))
+            {
+                return CreatePlaceholderScope(Tracer.Instance, traceId, samplingPriority);
+            }
+
+            return null;
         }
 
-        internal static bool SendEndInvocation(ILambdaExtensionRequest requestBuilder, bool isError, string data)
+        internal static bool SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string data)
         {
-            var request = requestBuilder.GetEndInvocationRequest(isError);
+            var request = requestBuilder.GetEndInvocationRequest(scope, isError);
             WriteRequestPayload(request, data);
             return ValidateOKStatus((HttpWebResponse)request.GetResponse());
         }
@@ -123,26 +134,30 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             return statusCode == HttpStatusCode.OK;
         }
 
-        private static void NotifyExtensionStart(ILambdaExtensionRequest requestBuilder, string json, IDictionary<string, string> context)
+        private static Scope NotifyExtensionStart(ILambdaExtensionRequest requestBuilder, string json, IDictionary<string, string> context)
         {
+            Scope scope = null;
             try
             {
-                if (!SendStartInvocation(requestBuilder, json, context))
+                scope = SendStartInvocation(requestBuilder, json, context);
+                if (scope == null)
                 {
-                    Serverless.Debug("Extension does not send a status 200 OK");
+                    Serverless.Debug("Error while creating the scope");
                 }
             }
             catch (Exception ex)
             {
                 Serverless.Error("Could not send payload to the extension", ex);
             }
+
+            return scope;
         }
 
-        private static void NotifyExtensionEnd(ILambdaExtensionRequest requestBuilder, bool isError, string json = DefaultJson)
+        private static void NotifyExtensionEnd(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string json = DefaultJson)
         {
             try
             {
-                if (!SendEndInvocation(requestBuilder, isError, json))
+                if (!SendEndInvocation(requestBuilder, scope, isError, json))
                 {
                     Serverless.Debug("Extension does not send a status 200 OK");
                 }

@@ -12,15 +12,20 @@ echo "BUILD_REPOSITORY_URI=$BUILD_REPOSITORY_URI"
 
 repo="$GITHUB_REPOSITORY"
 commit_sha="$GITHUB_SHA"
+branchOrCommit="$GITHUB_HEAD_REF"
 
 if [ -z "$repo" ]; then
     repo="$BUILD_REPOSITORY_URI"
 fi
 
+if [ -z "$GITHUB_HEAD_REF" ]; then
+    branchOrCommit="#$GITHUB_SHA"
+fi
+
 echo "Using repo=$repo commit=$commit_sha"
 
 repository="--application.source.repository https://github.com/$repo"
-commit="--application.source.branchOrCommit $GITHUB_HEAD_REF"
+commit="--application.source.branchOrCommit $branchOrCommit"
 
 if [ "$1" = "windows" ]; then
     echo "Running windows throughput tests"
@@ -33,6 +38,10 @@ if [ "$1" = "windows" ]; then
     dd-trace --crank-import="profiler_windows.json"
     rm profiler_windows.json
 
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario profiler_exceptions --profile windows --json profiler_exceptions_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=profiler_exceptions --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="profiler_exceptions_windows.json"
+    rm profiler_exceptions_windows.json
+
 elif [ "$1" = "linux" ]; then
     echo "Running Linux  x64 throughput tests"
 
@@ -43,6 +52,10 @@ elif [ "$1" = "linux" ]; then
     crank --config Samples.AspNetCoreSimpleController.yml --scenario profiler --profile linux --json profiler_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=profiler --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="profiler_linux.json"
     rm profiler_linux.json
+
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario profiler_exceptions --profile linux --json profiler_exceptions_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=profiler_exceptions --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="profiler_exceptions_linux.json"
+    rm profiler_exceptions_linux.json
 
 else
     echo "Unknown argument $1"

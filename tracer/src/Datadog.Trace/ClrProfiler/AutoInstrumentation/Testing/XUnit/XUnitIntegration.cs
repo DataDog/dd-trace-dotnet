@@ -87,21 +87,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             }
 
             // Test code and code owners
-            if (MethodSymbolResolver.Instance.TryGetMethodSymbol(runnerInstance.TestMethod, out var methodSymbol))
-            {
-                span.SetTag(TestTags.SourceFile, CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File));
-                span.SetMetric(TestTags.SourceStart, methodSymbol.StartLine);
-                span.SetMetric(TestTags.SourceEnd, methodSymbol.EndLine);
-
-                if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
-                {
-                    var match = codeOwners.Match("/" + CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
-                    if (match is not null)
-                    {
-                        span.SetTag(TestTags.CodeOwners, match.Value.GetOwnersString());
-                    }
-                }
-            }
+            Common.DecorateSpanWithSourceAndCodeOwners(span, runnerInstance.TestMethod);
 
             Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             Ci.Coverage.CoverageReporter.Handler.StartSession();
@@ -118,13 +104,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                     scope.Span.SetTag("test.coverage", Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(coverageSession));
                 }
 
-                span.Finish(new TimeSpan(10));
+                span.Finish(TimeSpan.Zero);
                 scope.Dispose();
                 return null;
             }
 
             span.ResetStartTime();
-
             return scope;
         }
 
