@@ -2,6 +2,7 @@ $resultFolder = "./tracer/build_data/results";
 $service= "dd-trace-dotnet";
 $files = [System.IO.Directory]::GetFiles($resultFolder, "*.xml", [System.IO.SearchOption]::AllDirectories);
 
+Write-Output "Downloading datadog-ci..."
 if ($IsLinux) { 
     Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_linux-x64" -OutFile "/usr/local/bin/datadog-ci"
     chmod +x /usr/local/bin/datadog-ci
@@ -14,6 +15,7 @@ if ($IsLinux) {
 
 $osArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant();
 
+Write-Output "Processing junit files..."
 foreach ($file in $files)
 {
     $fileInfo = New-Object -TypeName System.IO.FileInfo -ArgumentList $file
