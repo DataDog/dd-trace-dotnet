@@ -4,12 +4,24 @@
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
+
+    <?if $(var.Win64) = yes ?>
     <ComponentGroup Id="Shared.EnvironmentVariables.Machine" Directory="INSTALLFOLDER">
       <Component Id="EnvironmentVariablesShared" Guid="{C314A305-9C24-4E46-9ECF-E5EEA703BDEA}" Win64="$(var.Win64)">
         <CreateFolder/>
-        <Environment Id="DD_NATIVELOADER_CONFIGFILE" Name="DD_NATIVELOADER_CONFIGFILE" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]loader.conf" Part="all" />
+        <Environment Id="DD_NATIVELOADER_CONFIGFILE" Name="DD_NATIVELOADER_CONFIGFILE" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]win-x64\loader.conf" Part="all" />
       </Component>
     </ComponentGroup>
+    <?else ?>
+    <ComponentGroup Id="Shared.EnvironmentVariables.Machine" Directory="INSTALLFOLDER">
+      <Component Id="EnvironmentVariablesShared" Guid="{C314A305-9C24-4E46-9ECF-E5EEA703BDEA}" Win64="$(var.Win64)">
+        <CreateFolder/>
+        <Environment Id="DD_NATIVELOADER_CONFIGFILE" Name="DD_NATIVELOADER_CONFIGFILE" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]win-x86\loader.conf" Part="all" />
+      </Component>
+    </ComponentGroup>
+    <?endif ?>
+    
+
   
     <ComponentGroup Id="Shared.EnvironmentVariables.IIS" Directory="INSTALLFOLDER">
       <Component Id="Shared.Registry.EnvironmentVariables.W3SVC" Guid="{702DB265-F33E-47F4-A6B0-E21FA0FC21C1}" Win64="$(var.Win64)">

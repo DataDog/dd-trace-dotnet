@@ -4,25 +4,26 @@
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
-    <ComponentGroup Id="Shared.Files" Directory="INSTALLFOLDER">
-      <Component Win64="$(var.Win64)">
-        <File Id="loader.conf" Source="$(var.MonitoringHomeDirectory)\loader.conf" />
-      </Component>
-    </ComponentGroup>
 
     <?if $(var.Win64) = yes ?>
+    <ComponentGroup Id="Shared.Files" Directory="INSTALLFOLDER">
+      <Component Win64="yes">
+        <File Id="loader.conf" Source="$(var.MonitoringHomeDirectory)\win-x64\loader.conf" />
+      </Component>
+    </ComponentGroup>
+    
     <ComponentGroup Id="Shared.Files.NativeLoader.64" Directory="INSTALLFOLDER">
       <Component Win64="yes">
-        <File Id="Datadog.AutoInstrumentation.NativeLoader.x64.dll"
-              Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x64.dll"
+        <File Id="Datadog.Trace.ClrProfiler.Native.x64.dll"
+              Source="$(var.MonitoringHomeDirectory)\win-x64\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
 
       </Component>
       <Component Win64="yes">
-        <File Id="Datadog.AutoInstrumentation.NativeLoader.x64.pdb"
-              Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x64.pdb"
+        <File Id="Datadog.Trace.ClrProfiler.Native.x64.pdb"
+              Source="$(var.MonitoringHomeDirectory)\win-x64\Datadog.Trace.ClrProfiler.Native.pdb"
               Checksum="yes">
         </File>
       </Component>
@@ -30,35 +31,40 @@
 
     <!-- For the 64-bit installer, also install the 32-bit binaries -->
     <ComponentGroup Id="Shared.Files.NativeLoader.32" Directory="INSTALLFOLDER.32">
-      <Component Win64="no" Id="Datadog.AutoInstrumentation.NativeLoader.x86.dll">
-        <File Id="Datadog.AutoInstrumentation.NativeLoader.x86.dll"
-              Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x86.dll"
+      <Component Win64="no" Id="Datadog.Trace.ClrProfiler.Native.x86.dll">
+        <File Id="Datadog.Trace.ClrProfiler.Native.x86.dll"
+              Source="$(var.MonitoringHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
       </Component>
       <Component Win64="no">
-        <File Id="Datadog.AutoInstrumentation.NativeLoader.x86.pdb"
-              Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x86.pdb"
+        <File Id="Datadog.Trace.ClrProfiler.Native.x86.pdb"
+              Source="$(var.MonitoringHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.pdb"
               Checksum="yes">
         </File>
       </Component>
     </ComponentGroup>
 
     <?else ?>
+    <ComponentGroup Id="Shared.Files" Directory="INSTALLFOLDER">
+      <Component Win64="no">
+        <File Id="loader.conf" Source="$(var.MonitoringHomeDirectory)\win-x86\loader.conf" />
+      </Component>
+    </ComponentGroup>
 
     <!-- note that for the 32-bit build, we need to install into INSTALLFOLDER instead of INSTALLFOLDER.32 -->
     <ComponentGroup Id="Shared.Files.NativeLoader.32" Directory="INSTALLFOLDER">
       <Component Win64="no">
-        <File Id="Datadog.AutoInstrumentation.NativeLoader.x86.dll"
-              Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x86.dll"
+        <File Id="Datadog.Trace.ClrProfiler.Native.x86.dll"
+              Source="$(var.MonitoringHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
       </Component>
       <Component Win64="no">
-        <File Id="Datadog.AutoInstrumentation.NativeLoader.x86.pdb"
-              Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x86.pdb"
+        <File Id="Datadog.Trace.ClrProfiler.Native.x86.pdb"
+              Source="$(var.MonitoringHomeDirectory)\Datadog.Trace.ClrProfiler.Native.pdb"
               Checksum="yes">
         </File>
       </Component>

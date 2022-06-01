@@ -72,32 +72,26 @@
           <!-- ".\Datadog" -->
           <Directory Id="INSTALLFOLDER" Name="$(var.BaseProductName)">
             <!-- ".\.NET Tracer" -->
-            <Directory Id="Tracer" Name="Tracer">
-              <!-- Tracer -->
-              <Directory Id="Tracer.net461" Name="net461">
-                <!-- ".\net461" -->
-              </Directory>
-              <Directory Id="Tracer.netstandard2.0" Name="netstandard2.0">
-                <!-- ".\netstandard2.0" -->
-              </Directory>
-              <Directory Id="Tracer.netcoreapp3.1" Name="netcoreapp3.1">
-                  <!-- ".\netcoreapp3.1" -->
-              </Directory>
-              <Directory Id="Tracer.net6.0" Name="net6.0">
-                <!-- ".\net6.0" -->
-              </Directory>
-              <Directory Id="Tracer.net461.GAC" Name="net461.GAC">
-                <!-- Ignored as all of its components will be installed in the GAC -->
-              </Directory>
-              <Directory Id="Tracer.win_x86" Name="win-x86">
-                <!-- ".\win-x86" -->
-              </Directory>
-              <Directory Id="Tracer.win_x64" Name="win-x64">
-                <!-- ".\win-x64" -->
-              </Directory>
+            <Directory Id="Tracer.net461" Name="net461">
+              <!-- ".\net461" -->
             </Directory>
-            <Directory Id="ContinuousProfiler" Name="ContinuousProfiler">
-              <!-- ContinuousProfiler -->
+            <Directory Id="Tracer.netstandard2.0" Name="netstandard2.0">
+              <!-- ".\netstandard2.0" -->
+            </Directory>
+            <Directory Id="Tracer.netcoreapp3.1" Name="netcoreapp3.1">
+                <!-- ".\netcoreapp3.1" -->
+            </Directory>
+            <Directory Id="Tracer.net6.0" Name="net6.0">
+              <!-- ".\net6.0" -->
+            </Directory>
+            <Directory Id="Tracer.net461.GAC" Name="net461.GAC">
+              <!-- Ignored as all of its components will be installed in the GAC -->
+            </Directory>
+            <Directory Id="Tracer.win_x86" Name="win-x86">
+              <!-- ".\win-x86" -->
+            </Directory>
+            <Directory Id="Tracer.win_x64" Name="win-x64">
+              <!-- ".\win-x64" -->
             </Directory>
           </Directory>
         </Directory>
