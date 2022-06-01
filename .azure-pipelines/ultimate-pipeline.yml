@@ -90,11 +90,8 @@ schedules:
 variables:
   buildConfiguration: Release
   dotnetCoreSdkLatestVersion: 6.0.100
-  relativeTracerHome: /shared/bin/monitoring-home/tracer
+  relativeTracerHome: /shared/bin/monitoring-home
   relativeArtifacts: /tracer/src/bin/artifacts
-  tracerHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/tracer
-  profilerHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/continuousprofiler
-  profilerSrcDirectory: $(System.DefaultWorkingDirectory)/../dd-continuous-profiler-dotnet
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
   relativeRunnerTool: tracer/src/bin/runnerTool
@@ -206,7 +203,7 @@ stages:
     - script: tracer\build.cmd BuildNativeLoader
       displayName: Build monitoring home
 
-    - publish: $(tracerHome)
+    - publish: $(monitoringHome)
       displayName: Upload Windows tracer home directory
       artifact: windows-tracer-home
 
@@ -271,7 +268,7 @@ stages:
         baseImage: $(baseImage)
         command: "Clean BuildTracerHome"
 
-    - publish: $(tracerHome)
+    - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
       artifact: linux-tracer-home-$(baseImage)
 
@@ -315,7 +312,7 @@ stages:
       displayName: Uploading linux profiler output build folder
       artifact: linux-profiler-binaries-$(baseImage)
 
-    - publish: $(profilerHome)
+    - publish: $(monitoringHome)
       displayName: Uploading linux profiler home artifact
       artifact: linux-profiler-home-$(baseImage)
 
@@ -400,7 +397,7 @@ stages:
         baseImage: debian
         command: "Clean BuildTracerHome ZipMonitoringHome"
 
-    - publish: $(tracerHome)
+    - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
       artifact: linux-tracer-home-arm64
 
@@ -436,7 +433,7 @@ stages:
     - script: ./tracer/build.sh BuildTracerHome
       displayName: Build tracer home
 
-    - publish: $(tracerHome)
+    - publish: $(monitoringHome)
       displayName: Uploading macos profiler artifact
       artifact: macos-tracer-home
 
@@ -468,7 +465,7 @@ stages:
         displayName: Download windows profiler home
         inputs:
           artifact: windows-profiler-home
-          path: $(profilerHome)
+          path: $(monitoringHome)
 
       - script: tracer\build.cmd PackageTracerHome
         displayName: Build MSI and Tracer home
