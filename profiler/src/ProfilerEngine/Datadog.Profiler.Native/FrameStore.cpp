@@ -21,7 +21,7 @@ FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pCon
 std::tuple<bool, std::string, std::string> FrameStore::GetFrame(uintptr_t instructionPointer)
 {
     static const std::string NotResolvedModuleName("NotResolvedModule");
-    static const std::string NotResolvedFrame("NotResolvedModule");
+    static const std::string NotResolvedFrame("NotResolvedFrame");
 
     FunctionID functionId;
     HRESULT hr = _pCorProfilerInfo->GetFunctionFromIP((LPCBYTE)instructionPointer, &functionId);
