@@ -84,7 +84,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 
         _stackWalkFinished = false;
 
-        errorCode = syscall(SYS_tgkill, processId,osThreadId, s_signalToSend);
+        errorCode = syscall(SYS_tgkill, processId, osThreadId, s_signalToSend);
 
         if (errorCode == -1)
         {
@@ -97,6 +97,11 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
         {
             do
             {
+                // When the application ends and the CLR shuts down, it might happen that
+                // the currently walked thread gets terminated without noticing us.
+                // This loop ensures that the code does not stay stuck waiting for a lock that will
+                // never be released. It will exit if the stack walked thread does not run anymore or
+                // the stack walk finishes as expected.
                 _stackWalkInProgressWaiter.wait_for(stackWalkInProgressLock, 500ms);
                 if (!IsThreadAlive(processId, osThreadId))
                 {
@@ -297,7 +302,7 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread()
         }
         return resultErrorCode;
     }
-    catch(...)
+    catch (...)
     {
         return E_ABORT;
     }
