@@ -325,7 +325,7 @@ namespace Datadog.Trace.Agent
                 response?.Dispose();
             }
 
-            _log.Debug<int>("Successfully sent {Count} traces to the DD agent", numberOfTraces);
+            _log.Debug<int>("Successfully sent {Count} traces to the Datadog Agent.", numberOfTraces);
 
             return true;
         }
