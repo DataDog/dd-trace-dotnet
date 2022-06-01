@@ -1,9 +1,9 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
     Name: aspnet.request,
-    Resource: GET /my-app/error/index,
+    Resource: GET /error/index,
     Service: sample/my-app,
     Type: web,
     ParentId: Id_3,
@@ -24,7 +24,7 @@
     TraceId: Id_1,
     SpanId: Id_3,
     Name: aspnet.request,
-    Resource: GET /my-app/badrequestwithstatuscode/?,
+    Resource: GET /badrequestwithstatuscode/?,
     Service: sample/my-app,
     Type: web,
     Error: 1,

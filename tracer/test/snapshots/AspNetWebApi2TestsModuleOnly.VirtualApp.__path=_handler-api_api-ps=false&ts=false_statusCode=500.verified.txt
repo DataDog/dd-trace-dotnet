@@ -17,7 +17,7 @@
     TraceId: Id_1,
     SpanId: Id_3,
     Name: aspnet.request,
-    Resource: GET /my-app/handler-api/api,
+    Resource: GET /handler-api/api,
     Service: sample/my-app,
     Type: web,
     Error: 1,
