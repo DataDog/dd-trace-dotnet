@@ -21,12 +21,11 @@ ExceptionsProvider::ExceptionsProvider(
     ICorProfilerInfo4* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
-    IConfiguration* pConfiguration,
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore)
     :
-    CollectorBase<RawExceptionSample>("ExceptionsProvider", pConfiguration, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
+    CollectorBase<RawExceptionSample>("ExceptionsProvider", pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),

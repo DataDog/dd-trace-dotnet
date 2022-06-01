@@ -49,14 +49,12 @@ class CollectorBase
 public:
     CollectorBase<TRawSample>(
         const char* name,
-        IConfiguration* pConfiguration,
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore
         ) :
         ProviderBase(name),
-        _isNativeFramesEnabled{pConfiguration->IsNativeFramesEnabled()},
         _pFrameStore{pFrameStore},
         _pAppDomainStore{pAppDomainStore},
         _pRuntimeIdStore{pRuntimeIdStore},

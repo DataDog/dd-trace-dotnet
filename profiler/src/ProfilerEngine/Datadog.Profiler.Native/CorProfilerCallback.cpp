@@ -116,11 +116,11 @@ bool CorProfilerCallback::InitializeServices()
     _pManagedThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
 
     auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
-    _pWallTimeProvider = RegisterService<WallTimeProvider>(_pConfiguration.get(), _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+    _pWallTimeProvider = RegisterService<WallTimeProvider>(_pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(_pConfiguration.get(), _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(_pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
@@ -129,7 +129,6 @@ bool CorProfilerCallback::InitializeServices()
             _pCorProfilerInfo,
             _pManagedThreadList,
             _pFrameStore.get(),
-            _pConfiguration.get(),
             _pThreadsCpuManager,
             _pAppDomainStore.get(),
             pRuntimeIdStore
