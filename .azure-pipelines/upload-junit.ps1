@@ -3,19 +3,20 @@ $service= "dd-trace-dotnet";
 $files = [System.IO.Directory]::GetFiles($resultFolder, "junit-result.xml", [System.IO.SearchOption]::AllDirectories);
 
 Write-Output "Downloading datadog-ci..."
+$datadogCliReleases = "https://github.com/DataDog/datadog-ci/releases/latest/download"
 if ($IsLinux) {
     if (![System.IO.File]::Exists("./datadog-ci")) {
-        Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_linux-x64" -OutFile "./datadog-ci"
+        Invoke-WebRequest -Uri "$datadogCliReleases/datadog-ci_linux-x64" -OutFile "./datadog-ci"
         chmod +x /usr/local/bin/datadog-ci
     }
 } elseif ($IsMacOS) { 
     if (![System.IO.File]::Exists("./datadog-ci")) {
-        Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_darwin-x64" -OutFile "./datadog-ci"
+        Invoke-WebRequest -Uri "$datadogCliReleases/datadog-ci_darwin-x64" -OutFile "./datadog-ci"
         chmod +x /usr/local/bin/datadog-ci
     }
 } else {
     if (![System.IO.File]::Exists("datadog-ci.exe")) {
-        Invoke-WebRequest -Uri "https://github.com/DataDog/datadog-ci/releases/latest/download/datadog-ci_win-x64.exe" -OutFile "datadog-ci.exe"
+        Invoke-WebRequest -Uri "$datadogCliReleases/datadog-ci_win-x64.exe" -OutFile "datadog-ci.exe"
     }
 }
 
