@@ -4,6 +4,7 @@
 #include <link.h>
 #include <stddef.h>	
 #include <stdio.h>
+#include <dlfcn.h>
 
 /* dl_iterate_phdr wrapper
 The .NET profiler on Linux uses a classic signal-based approach to collect thread callstack.
@@ -55,6 +56,66 @@ int dl_iterate_phdr(int (*callback) (struct dl_phdr_info* info, size_t size, voi
 
     // call the real dl_iterate_phdr (libc)
     int result = __real_dl_iterate_phdr(callback, data);
+
+    // restore the previous state for signals
+    pthread_sigmask(SIG_SETMASK, &oldOne, NULL);
+
+    return result;
+}
+
+/*
+ * dlopen, dladdr issue happens mainly on Alpine
+ */
+
+/* Function pointers to hold the value of the glibc functions */
+static void* (*__real_dlopen)(const char* file, int mode) = NULL;
+
+void *dlopen(const char *file, int mode)
+{
+    if (__real_dlopen == NULL)
+    {
+        __real_dlopen = dlsym(RTLD_NEXT, "dlopen");
+    }
+
+    sigset_t oldOne;
+    sigset_t newOne;
+
+    // initialize the set to all signals
+    sigfillset(&newOne);
+
+    // prevent any signals from interrupting the execution of the real dlopen
+    pthread_sigmask(SIG_SETMASK, &newOne, &oldOne);
+
+    // call the real dlopen (libc/musl-libc)
+    void* result = __real_dlopen(file, mode);
+
+    // restore the previous state for signals
+    pthread_sigmask(SIG_SETMASK, &oldOne, NULL);
+
+    return result;
+}
+
+/* Function pointers to hold the value of the glibc functions */
+static int (*__real_dladdr)(const void* addr_arg, Dl_info* info) = NULL;
+
+int dladdr(const void* addr_arg, Dl_info* info)
+{
+    if (__real_dladdr == NULL)
+    {
+        __real_dladdr = dlsym(RTLD_NEXT, "dladdr");
+    }
+
+    sigset_t oldOne;
+    sigset_t newOne;
+
+    // initialize the set to all signals
+    sigfillset(&newOne);
+
+    // prevent any signals from interrupting the execution of the real dladdr
+    pthread_sigmask(SIG_SETMASK, &newOne, &oldOne);
+
+    // call the real dladdr (libc/musl-libc)
+    int result = __real_dladdr(addr_arg, info);
 
     // restore the previous state for signals
     pthread_sigmask(SIG_SETMASK, &oldOne, NULL);
