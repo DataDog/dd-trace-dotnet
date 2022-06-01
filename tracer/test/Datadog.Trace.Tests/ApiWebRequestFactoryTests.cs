@@ -11,7 +11,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests
 {
-    [Collection(nameof(WebRequestCollection), DisableParallelization = true)]
+    [Collection(nameof(WebRequestCollection))]
     public class ApiWebRequestFactoryTests
     {
         /// <summary>
