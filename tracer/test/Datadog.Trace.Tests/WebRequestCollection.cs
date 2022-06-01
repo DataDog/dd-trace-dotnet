@@ -8,7 +8,7 @@ using Xunit;
 namespace Datadog.Trace.Tests
 {
     /// <summary>
-    /// If you're using WebRequest (directly or indirectly), use must use this attribute
+    /// If you're using WebRequest (directly or indirectly), you must use this attribute
     /// As we have tests that modify the static prefixes.
     /// Or, you know, stop using WebRequest
     /// </summary>
