@@ -8,7 +8,7 @@
 #include <mutex>
 
 #include "ManagedThreadInfo.h"
-#include "StackSnapshotResultReusableBuffer.h"
+#include "StackSnapshotResultBuffer.h"
 
 class StackFramesCollectorBase
 {
@@ -48,7 +48,7 @@ protected:
     ManagedThreadInfo* _pCurrentCollectionThreadInfo;
 
 private:
-    StackSnapshotResultReusableBuffer* _pReusableStackSnapshotResult;
+    StackSnapshotResultBuffer* _pStackSnapshotResult;
     std::atomic<bool> _isCurrentCollectionAbortRequested;
     std::condition_variable _collectionAbortPerformedSignal;
     std::mutex _collectionAbortNotificationLock;

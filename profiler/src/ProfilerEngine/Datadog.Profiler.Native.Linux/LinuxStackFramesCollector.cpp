@@ -24,7 +24,7 @@ error("unsupported architecture")
 #include "ManagedThreadInfo.h"
 #include "OpSysTools.h"
 #include "ScopeFinalizer.h"
-#include "StackSnapshotResultReusableBuffer.h"
+#include "StackSnapshotResultBuffer.h"
 
 using namespace std::chrono_literals;
 

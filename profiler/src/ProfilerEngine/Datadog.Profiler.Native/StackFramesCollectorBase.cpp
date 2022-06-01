@@ -14,28 +14,28 @@
 StackFramesCollectorBase::StackFramesCollectorBase()
 {
     _isRequestedCollectionAbortSuccessful = false;
-    _pReusableStackSnapshotResult = new StackSnapshotResultReusableBuffer();
+    _pStackSnapshotResult = new StackSnapshotResultBuffer();
     _pCurrentCollectionThreadInfo = nullptr;
 }
 
 StackFramesCollectorBase::~StackFramesCollectorBase()
 {
-    StackSnapshotResultReusableBuffer* pReusableStackSnapshotResult = _pReusableStackSnapshotResult;
+    const auto* pReusableStackSnapshotResult = _pStackSnapshotResult;
     if (pReusableStackSnapshotResult != nullptr)
     {
         delete pReusableStackSnapshotResult;
-        _pReusableStackSnapshotResult = nullptr;
+        _pStackSnapshotResult = nullptr;
     }
 }
 
 bool StackFramesCollectorBase::AddFrame(std::uintptr_t ip)
 {
-    return _pReusableStackSnapshotResult->AddFrame(ip);
+    return _pStackSnapshotResult->AddFrame(ip);
 }
 
 void StackFramesCollectorBase::AddFakeFrame()
 {
-    _pReusableStackSnapshotResult->AddFakeFrame();
+    _pStackSnapshotResult->AddFakeFrame();
 }
 
 void StackFramesCollectorBase::RequestAbortCurrentCollection(void)
@@ -112,8 +112,8 @@ bool StackFramesCollectorBase::TryApplyTraceContextDataFromCurrentCollectionThre
         std::uint64_t localRootSpanId = pCurrentCollectionThreadInfo->GetLocalRootSpanId();
         std::uint64_t spanId = pCurrentCollectionThreadInfo->GetSpanId();
 
-        _pReusableStackSnapshotResult->SetLocalRootSpanId(localRootSpanId);
-        _pReusableStackSnapshotResult->SetSpanId(spanId);
+        _pStackSnapshotResult->SetLocalRootSpanId(localRootSpanId);
+        _pStackSnapshotResult->SetSpanId(spanId);
 
         return true;
     }
@@ -123,7 +123,7 @@ bool StackFramesCollectorBase::TryApplyTraceContextDataFromCurrentCollectionThre
 
 StackSnapshotResultBuffer* StackFramesCollectorBase::GetStackSnapshotResult()
 {
-    return _pReusableStackSnapshotResult;
+    return _pStackSnapshotResult;
 }
 
 // ----------- Inline stubs for APIs that are specific to overriding implementations: -----------
@@ -135,7 +135,7 @@ void StackFramesCollectorBase::PrepareForNextCollection(void)
     // We cannot allocate memory once a thread is suspended.
     // This is because malloc() uses a lock and so if we suspend a thread that was allocating, we will deadlock.
     // So we pre-allocate the memory buffer and reset it before suspending the target thread.
-    _pReusableStackSnapshotResult->Reset();
+    _pStackSnapshotResult->Reset();
 
     // Clear the current collection thread pointer:
     _pCurrentCollectionThreadInfo = nullptr;

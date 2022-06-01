@@ -12,9 +12,8 @@
 #include "StackFramesCollectorBase.h"
 #include <winternl.h>
 
-class StackSnapshotResultReusableBuffer;
+class StackSnapshotResultBuffer;
 struct ManagedThreadInfo;
-class IManagedThreadList;
 
 class Windows64BitStackFramesCollector : public StackFramesCollectorBase
 {
