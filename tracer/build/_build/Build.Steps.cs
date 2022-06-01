@@ -592,7 +592,7 @@ partial class Build
             {
                 CompressZip(MonitoringHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
             }
-            else if (IsLinux && !IsArm64)
+            else if (IsLinux)
             {
                 var fpm = Fpm.Value;
                 var gzip = GZip.Value;
@@ -621,12 +621,16 @@ partial class Build
                         Constants.LoaderConfFilename,
                     };
 
+                    if (!IsArm64)
+                    {
+                        args.Add($"linux-{LinuxArchitectureIdentifier}");
+                    }
+
                     var arguments = string.Join(" ", args);
                     fpm(arguments, workingDirectory: workingDirectory);
                 }
 
                 gzip($"-f {packageName}.tar", workingDirectory: workingDirectory);
-
 
                 var suffix = RuntimeInformation.ProcessArchitecture == Architecture.X64
                     ? string.Empty
