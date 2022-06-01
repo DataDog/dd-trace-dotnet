@@ -14,6 +14,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests
 {
+    [Collection(nameof(WebRequestCollection))]
     public class SpanContextPropagatorTests_ExtractHeaderTags
     {
         private static readonly string TestPrefix = "test.prefix";

@@ -11,6 +11,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests
 {
+    [Collection(nameof(WebRequestCollection))]
     public class ApiWebRequestFactoryTests
     {
         /// <summary>
