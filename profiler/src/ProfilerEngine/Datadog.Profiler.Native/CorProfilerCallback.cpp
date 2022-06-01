@@ -108,7 +108,7 @@ bool CorProfilerCallback::InitializeServices()
 
     _pAppDomainStore = std::make_unique<AppDomainStore>(_pCorProfilerInfo);
 
-    _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo);
+    _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo, _pConfiguration.get());
 
     // Create service instances
     _pThreadsCpuManager = RegisterService<ThreadsCpuManager>();

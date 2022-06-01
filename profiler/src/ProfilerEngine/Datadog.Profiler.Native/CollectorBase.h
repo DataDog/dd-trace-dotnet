@@ -235,10 +235,9 @@ private:
     {
         for (auto const& instructionPointer : rawSample.Stack)
         {
-            auto [isManaged, moduleName, frame] = _pFrameStore->GetFrame(instructionPointer);
+            auto [isResolved, moduleName, frame] = _pFrameStore->GetFrame(instructionPointer);
 
-            // filter out native frames if needed
-            if (isManaged || _isNativeFramesEnabled)
+            if (isResolved)
             {
                 sample.AddFrame(moduleName, frame);
             }
