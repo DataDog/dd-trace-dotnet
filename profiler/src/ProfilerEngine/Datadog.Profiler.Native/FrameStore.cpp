@@ -39,7 +39,7 @@ std::tuple<bool, std::string, std::string> FrameStore::GetFrame(uintptr_t instru
         }
 
         auto [moduleName, frame] = GetNativeFrame(instructionPointer);
-        return {false, moduleName, frame};
+        return {true, moduleName, frame};
     }
 }
 
