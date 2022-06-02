@@ -741,20 +741,18 @@ stages:
             testResultsFiles: tracer/build_data/results/**/*.trx
           condition: succeededOrFailed()
 
-# datadog-ci is not yet available for arm64
-#
-#        - script: mkdir -p /tmp/powershell && (curl -L -s https://github.com/PowerShell/PowerShell/releases/download/v7.2.4/powershell-7.2.4-linux-arm64.tar.gz | tar xvz -C /tmp/powershell/) && sudo ln -s /tmp/powershell/pwsh /usr/local/bin/pwsh
-#          displayName: Download Powershell
-#
-#        - task: PowerShell@2
-#          displayName: Upload JUnit results
-#          inputs:
-#            targetType: 'filePath'
-#            filePath: .azure-pipelines/upload-junit.ps1
-#          env:
-#            DD_API_KEY: $(ddApiKey)
-#            DD_ENV: ci
-#          condition: succeededOrFailed()
+        - script: mkdir -p /tmp/powershell && (curl -L -s https://github.com/PowerShell/PowerShell/releases/download/v7.2.4/powershell-7.2.4-linux-arm64.tar.gz | tar xvz -C /tmp/powershell/) && sudo ln -s /tmp/powershell/pwsh /usr/local/bin/pwsh
+          displayName: Download Powershell
+
+        - task: PowerShell@2
+          displayName: Upload JUnit results
+          inputs:
+            targetType: 'filePath'
+            filePath: .azure-pipelines/upload-junit.ps1
+          env:
+            DD_API_KEY: $(ddApiKey)
+            DD_ENV: ci
+          condition: succeededOrFailed()
 
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
@@ -1300,20 +1298,18 @@ stages:
             testResultsFiles: tracer/build_data/results/**/*.trx
           condition: succeededOrFailed()
 
-# datadog-ci is not yet available for arm64
-#
-#        - script: mkdir -p /tmp/powershell && (curl -L -s https://github.com/PowerShell/PowerShell/releases/download/v7.2.4/powershell-7.2.4-linux-arm64.tar.gz | tar xvz -C /tmp/powershell/) && sudo ln -s /tmp/powershell/pwsh /usr/local/bin/pwsh
-#          displayName: Download Powershell
-#
-#        - task: PowerShell@2
-#          displayName: Upload JUnit results
-#          inputs:
-#            targetType: 'filePath'
-#            filePath: .azure-pipelines/upload-junit.ps1
-#          env:
-#            DD_API_KEY: $(ddApiKey)
-#            DD_ENV: ci
-#          condition: succeededOrFailed()
+        - script: mkdir -p /tmp/powershell && (curl -L -s https://github.com/PowerShell/PowerShell/releases/download/v7.2.4/powershell-7.2.4-linux-arm64.tar.gz | tar xvz -C /tmp/powershell/) && sudo ln -s /tmp/powershell/pwsh /usr/local/bin/pwsh
+          displayName: Download Powershell
+
+        - task: PowerShell@2
+          displayName: Upload JUnit results
+          inputs:
+            targetType: 'filePath'
+            filePath: .azure-pipelines/upload-junit.ps1
+          env:
+            DD_API_KEY: $(ddApiKey)
+            DD_ENV: ci
+          condition: succeededOrFailed()
 
         - publish: tracer/test/snapshots
           displayName: Uploading snapshots
@@ -1393,18 +1389,18 @@ stages:
             testResultsFiles: tracer/build_data/results/**/*.trx
           condition: succeededOrFailed()
 
-#        - script: mkdir -p /tmp/powershell && (curl -L -s https://github.com/PowerShell/PowerShell/releases/download/v7.2.4/powershell-7.2.4-linux-x64.tar.gz | tar xvz -C /tmp/powershell/) && sudo ln -s /tmp/powershell/pwsh /usr/local/bin/pwsh
-#          displayName: Download Powershell
+        - script: mkdir -p /tmp/powershell && (curl -L -s https://github.com/PowerShell/PowerShell/releases/download/v7.2.4/powershell-7.2.4-linux-x64.tar.gz | tar xvz -C /tmp/powershell/) && sudo ln -s /tmp/powershell/pwsh /usr/local/bin/pwsh
+          displayName: Download Powershell
 
-#        - task: PowerShell@2
-#          displayName: Upload JUnit results
-#          inputs:
-#            targetType: 'filePath'
-#            filePath: .azure-pipelines/upload-junit.ps1
-#          env:
-#            DD_API_KEY: $(ddApiKey)
-#            DD_ENV: ci
-#          condition: succeededOrFailed()
+        - task: PowerShell@2
+          displayName: Upload JUnit results
+          inputs:
+            targetType: 'filePath'
+            filePath: .azure-pipelines/upload-junit.ps1
+          env:
+            DD_API_KEY: $(ddApiKey)
+            DD_ENV: ci
+          condition: succeededOrFailed()
 
         - publish: tracer/test/snapshots
           displayName: Uploading snapshots
@@ -1978,7 +1974,7 @@ stages:
       env:
         DD_API_KEY: $(ddApiKey)
         DD_ENV: ci
-      condition: and(succeededOrFailed(), ne($(artifactSuffix), 'linux-arm64'))
+      condition: succeededOrFailed()
 
 - stage: upload_to_s3
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))

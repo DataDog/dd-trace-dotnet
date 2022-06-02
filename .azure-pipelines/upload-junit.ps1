@@ -3,9 +3,14 @@ $service= "dd-trace-dotnet";
 $files = [System.IO.Directory]::GetFiles($resultFolder, "junit-result.xml", [System.IO.SearchOption]::AllDirectories);
 $osArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant();
 
-Write-Output "Downloading datadog-ci..."
-#npm install -g @datadog/datadog-ci
+# ARM is not supported
+if ($osArchitecture.Contains("arm"))
+{
+    Write-Output "ARM architecture is not supported.";
+    Exit;
+}
 
+Write-Output "Downloading datadog-ci..."
 $datadogCliReleases = "https://github.com/DataDog/datadog-ci/releases/latest/download"
 if ($IsLinux) {
     if (![System.IO.File]::Exists("./datadog-ci")) {
