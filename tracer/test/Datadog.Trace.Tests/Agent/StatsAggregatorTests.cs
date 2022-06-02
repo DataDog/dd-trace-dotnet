@@ -22,14 +22,14 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task CallFlushAutomatically()
         {
-            var duration = TimeSpan.FromSeconds(1);
+            var bucketDuration = TimeSpan.FromSeconds(1);
 
             var mutex = new ManualResetEventSlim();
 
             int invocationCount = 0;
 
             var api = new Mock<IApi>();
-            api.Setup(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), duration.ToNanoseconds()))
+            api.Setup(a => a.SendStatsAsync(It.IsAny<StatsBuffer>(), bucketDuration.ToNanoseconds()))
                 .Callback(
                     () =>
                     {
@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tests.Agent
                     })
                 .Returns(Task.FromResult(true));
 
-            var aggregator = new StatsAggregator(api.Object, GetSettings(), duration);
+            var aggregator = new StatsAggregator(api.Object, GetSettings(), bucketDuration);
 
             try
             {

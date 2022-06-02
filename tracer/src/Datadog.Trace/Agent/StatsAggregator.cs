@@ -16,6 +16,8 @@ namespace Datadog.Trace.Agent
     {
         private const int BufferCount = 2;
 
+        private const int BucketDurationSeconds = 10;
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StatsAggregator>();
 
         private readonly StatsBuffer[] _buffers;
@@ -24,17 +26,17 @@ namespace Datadog.Trace.Agent
 
         private readonly TaskCompletionSource<bool> _processExit;
 
-        private readonly TimeSpan _duration;
+        private readonly TimeSpan _bucketDuration;
 
         private readonly Task _flushTask;
 
         private int _currentBuffer;
 
-        internal StatsAggregator(IApi api, ImmutableTracerSettings settings, TimeSpan duration)
+        internal StatsAggregator(IApi api, ImmutableTracerSettings settings, TimeSpan bucketDuration)
         {
             _api = api;
             _processExit = new TaskCompletionSource<bool>();
-            _duration = duration;
+            _bucketDuration = bucketDuration;
             _buffers = new StatsBuffer[BufferCount];
 
             var header = new ClientStatsPayload
@@ -63,7 +65,7 @@ namespace Datadog.Trace.Agent
 
         public static IStatsAggregator Create(IApi api, ImmutableTracerSettings settings)
         {
-            return settings.TracerStatsEnabled ? new StatsAggregator(api, settings, TimeSpan.FromSeconds(10)) : new NullStatsAggregator();
+            return settings.TracerStatsEnabled ? new StatsAggregator(api, settings, TimeSpan.FromSeconds(BucketDurationSeconds)) : new NullStatsAggregator();
         }
 
         public Task DisposeAsync()
@@ -97,7 +99,7 @@ namespace Datadog.Trace.Agent
             // Use a do/while loop to still flush once if _processExit is already completed (this makes testing easier)
             do
             {
-                await Task.WhenAny(_processExit.Task, Task.Delay(_duration)).ConfigureAwait(false);
+                await Task.WhenAny(_processExit.Task, Task.Delay(_bucketDuration)).ConfigureAwait(false);
 
                 var buffer = CurrentBuffer;
 
@@ -109,7 +111,7 @@ namespace Datadog.Trace.Agent
                 if (buffer.Buckets.Count > 0)
                 {
                     // Push the metrics
-                    await _api.SendStatsAsync(buffer, _duration.ToNanoseconds()).ConfigureAwait(false);
+                    await _api.SendStatsAsync(buffer, _bucketDuration.ToNanoseconds()).ConfigureAwait(false);
 
                     buffer.Reset();
                 }

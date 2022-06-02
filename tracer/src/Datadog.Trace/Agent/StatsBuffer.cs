@@ -57,7 +57,7 @@ namespace Datadog.Trace.Agent
             Start = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
         }
 
-        public void Serialize(Stream stream, long duration)
+        public void Serialize(Stream stream, long bucketDuration)
         {
             MessagePackBinary.WriteMapHeader(stream, 9);
 
@@ -72,7 +72,7 @@ namespace Datadog.Trace.Agent
 
             MessagePackBinary.WriteString(stream, "Stats");
             MessagePackBinary.WriteArrayHeader(stream, 1);
-            SerializeBuckets(stream, duration);
+            SerializeBuckets(stream, bucketDuration);
 
             MessagePackBinary.WriteString(stream, "Lang");
             MessagePackBinary.WriteString(stream, TracerConstants.Language);
@@ -141,7 +141,7 @@ namespace Datadog.Trace.Agent
             sketch.Serialize(stream);
         }
 
-        private void SerializeBuckets(Stream stream, long duration)
+        private void SerializeBuckets(Stream stream, long bucketDuration)
         {
             MessagePackBinary.WriteMapHeader(stream, 3);
 
@@ -149,7 +149,7 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteInt64(stream, Start);
 
             MessagePackBinary.WriteString(stream, "Duration");
-            MessagePackBinary.WriteInt64(stream, duration);
+            MessagePackBinary.WriteInt64(stream, bucketDuration);
 
             int count = 0;
 

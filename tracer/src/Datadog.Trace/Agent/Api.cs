@@ -65,11 +65,11 @@ namespace Datadog.Trace.Agent
 
         private delegate Task<bool> SendCallback<T>(IApiRequest request, bool isFinalTry, T state);
 
-        public Task<bool> SendStatsAsync(StatsBuffer stats, long duration)
+        public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
         {
             _log.Debug("Sending stats to the Datadog Agent.");
 
-            var state = new SendStatsState(stats, duration);
+            var state = new SendStatsState(stats, bucketDuration);
 
             return SendWithRetry(_statsEndpoint, _sendStats, state);
         }
@@ -199,7 +199,7 @@ namespace Datadog.Trace.Agent
             }
 
             using var stream = new MemoryStream();
-            state.Stats.Serialize(stream, state.Duration);
+            state.Stats.Serialize(stream, state.BucketDuration);
 
             var buffer = stream.GetBuffer();
 
@@ -351,12 +351,12 @@ namespace Datadog.Trace.Agent
         private readonly struct SendStatsState
         {
             public readonly StatsBuffer Stats;
-            public readonly long Duration;
+            public readonly long BucketDuration;
 
-            public SendStatsState(StatsBuffer stats, long duration)
+            public SendStatsState(StatsBuffer stats, long bucketDuration)
             {
                 Stats = stats;
-                Duration = duration;
+                BucketDuration = bucketDuration;
             }
         }
     }

@@ -12,6 +12,6 @@ namespace Datadog.Trace.Agent
     {
         Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces);
 
-        Task<bool> SendStatsAsync(StatsBuffer stats, long duration);
+        Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration);
     }
 }
