@@ -75,6 +75,8 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         return true;
     }
 
+    return true;
+
     if (_mscorlibModuleId == 0)
     {
         if (!_loggedMscorlibError)
