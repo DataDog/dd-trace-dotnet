@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             const long expectedDuration = 42;
 
-            var payload = new ClientStatsPayload { Environment = "Env", HostName = "Hostname", ServiceName = "Service", Version = "v99.99" };
+            var payload = new ClientStatsPayload { Environment = "Env", HostName = "Hostname", Version = "v99.99" };
 
             var buffer = new StatsBuffer(payload);
 
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tests.Agent
             result.RuntimeId.Should().Be(Tracer.RuntimeId);
             result.Sequence.Should().Be(1);
             result.AgentAggregation.Should().BeNull();
-            result.Service.Should().Be(payload.ServiceName);
+            result.Service.Should().BeNull();
             result.Stats.Should().HaveCount(1);
 
             var bucket = result.Stats[0];

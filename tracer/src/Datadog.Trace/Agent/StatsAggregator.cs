@@ -42,7 +42,6 @@ namespace Datadog.Trace.Agent
             var header = new ClientStatsPayload
             {
                 Environment = settings.Environment,
-                ServiceName = settings.ServiceName,
                 Version = settings.ServiceVersion,
                 HostName = HostMetadata.Instance.Hostname
             };

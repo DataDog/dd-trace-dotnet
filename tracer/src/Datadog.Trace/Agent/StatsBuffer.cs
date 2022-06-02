@@ -59,7 +59,7 @@ namespace Datadog.Trace.Agent
 
         public void Serialize(Stream stream, long bucketDuration)
         {
-            MessagePackBinary.WriteMapHeader(stream, 9);
+            MessagePackBinary.WriteMapHeader(stream, 8);
 
             MessagePackBinary.WriteString(stream, "Hostname");
             MessagePackBinary.WriteString(stream, _header.HostName ?? string.Empty);
@@ -85,9 +85,6 @@ namespace Datadog.Trace.Agent
 
             MessagePackBinary.WriteString(stream, "Sequence");
             MessagePackBinary.WriteInt64(stream, _header.GetSequenceNumber());
-
-            MessagePackBinary.WriteString(stream, "Service");
-            MessagePackBinary.WriteString(stream, _header.ServiceName ?? string.Empty);
         }
 
         private static void SerializeBucket(Stream stream, StatsBucket bucket)
