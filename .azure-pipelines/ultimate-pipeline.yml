@@ -1984,7 +1984,7 @@ stages:
 
     - script: mkdir -p /tmp/powershell && (curl -L -s https://github.com/PowerShell/PowerShell/releases/download/v7.2.4/powershell-7.2.4-linux-arm64.tar.gz | tar xvz -C /tmp/powershell/) && (sudo ln -s /tmp/powershell/pwsh /usr/local/bin/pwsh || true)
       displayName: Download Powershell
-      condition: $[eq('$(artifactSuffix)', 'linux-arm64')]
+      condition: eq(variables['artifactSuffix'], 'linux-arm64')
 
     - task: PowerShell@2
       displayName: Upload JUnit results
