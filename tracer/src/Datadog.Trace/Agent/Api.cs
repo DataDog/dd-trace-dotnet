@@ -31,8 +31,8 @@ namespace Datadog.Trace.Agent
         private readonly Uri _tracesEndpoint;
         private readonly Uri _statsEndpoint;
         private readonly Action<Dictionary<string, float>> _updateSampleRates;
-        private readonly bool _isPartialFlushEnabled;
-        private readonly bool _areTracerStatsEnabled;
+        private readonly bool _partialFlushEnabled;
+        private readonly bool _tracerStatsEnabled;
         private readonly SendCallback<SendStatsState> _sendStats;
         private readonly SendCallback<SendTracesState> _sendTraces;
         private string _cachedResponse;
@@ -42,8 +42,8 @@ namespace Datadog.Trace.Agent
             IApiRequestFactory apiRequestFactory,
             IDogStatsd statsd,
             Action<Dictionary<string, float>> updateSampleRates,
-            bool isPartialFlushEnabled,
-            bool areTracerStatsEnabled,
+            bool partialFlushEnabled,
+            bool tracerStatsEnabled,
             IDatadogLogger log = null)
         {
             // optionally injecting a log instance in here for testing purposes
@@ -55,12 +55,12 @@ namespace Datadog.Trace.Agent
             _statsd = statsd;
             _containerId = ContainerMetadata.GetContainerId();
             _apiRequestFactory = apiRequestFactory;
-            _isPartialFlushEnabled = isPartialFlushEnabled;
+            _partialFlushEnabled = partialFlushEnabled;
             _tracesEndpoint = _apiRequestFactory.GetEndpoint(TracesPath);
             _log.Debug("Using traces endpoint {TracesEndpoint}", _tracesEndpoint.ToString());
             _statsEndpoint = _apiRequestFactory.GetEndpoint(StatsPath);
             _log.Debug("Using trace stats endpoint {TraceStatsEndpoint}", _statsEndpoint.ToString());
-            _areTracerStatsEnabled = areTracerStatsEnabled;
+            _tracerStatsEnabled = tracerStatsEnabled;
         }
 
         private delegate Task<bool> SendCallback<T>(IApiRequest request, bool isFinalTry, T state);
@@ -90,7 +90,7 @@ namespace Datadog.Trace.Agent
             {
                 _agentVersion = agentVersion;
 
-                if (_isPartialFlushEnabled)
+                if (_partialFlushEnabled)
                 {
                     if (!Version.TryParse(agentVersion, out var parsedVersion) || parsedVersion < new Version(7, 26, 0))
                     {
@@ -245,7 +245,7 @@ namespace Datadog.Trace.Agent
                 request.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
             }
 
-            if (_areTracerStatsEnabled)
+            if (_tracerStatsEnabled)
             {
                 request.AddHeader(AgentHttpHeaderNames.TracerStats, "true");
             }
