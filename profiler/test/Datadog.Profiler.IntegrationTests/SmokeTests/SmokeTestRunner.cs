@@ -45,6 +45,7 @@ namespace Datadog.Profiler.SmokeTests
         {
             get => _testApplicationRunner.Environment;
         }
+
         public void RunAndCheck()
         {
             using var agent = new MockDatadogAgent(_output);

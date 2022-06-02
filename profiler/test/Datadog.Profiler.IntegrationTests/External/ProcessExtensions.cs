@@ -76,6 +76,7 @@ namespace Microsoft.Extensions.Internal
                     stdout += Environment.NewLine + "=== Error output ===" + Environment.NewLine;
                     stdout += errout;
                 }
+
                 return true;
             }
             else
@@ -125,6 +126,5 @@ namespace Microsoft.Extensions.Internal
                 timeout,
                 out var stdout);
         }
-
     }
 }

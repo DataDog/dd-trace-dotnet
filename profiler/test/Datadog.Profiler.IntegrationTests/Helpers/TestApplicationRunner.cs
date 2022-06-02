@@ -114,7 +114,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             {
                 if (EnvironmentHelper.IsAlpine)
                 {
-                    return ("dotnet", $"{ applicationPath} {arguments}");
+                    return ("dotnet", $"{applicationPath} {arguments}");
                 }
 
                 // catchsegv is a tool that catches the segmentation fault and displays useful information: callstack, registers...
