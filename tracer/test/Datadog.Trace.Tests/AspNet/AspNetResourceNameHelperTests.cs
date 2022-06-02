@@ -80,7 +80,7 @@ namespace Datadog.Trace.Tests.AspNet
             areaName.Should().BeNull();
             controllerName.Should().Be("home");
             actionName.Should().Be("index");
-            resolvedRoute.Should().Be("home/index");
+            resolvedRoute.Should().Be(expected.TrimStart('/'));
             resource.Should().Be($"{method} {expected}");
         }
 
@@ -120,7 +120,7 @@ namespace Datadog.Trace.Tests.AspNet
             areaName.Should().BeNull();
             controllerName.Should().Be("home");
             actionName.Should().Be("index");
-            resolvedRoute.Should().Be("home/index");
+            resolvedRoute.Should().Be(expected.TrimStart('/'));
             resource.Should().Be($"{method} {expected}");
         }
 

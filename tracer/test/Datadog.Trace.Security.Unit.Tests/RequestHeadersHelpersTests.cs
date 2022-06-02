@@ -5,7 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.AppSec.Transports.Http;
+using Datadog.Trace.Headers.Ip;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
@@ -25,7 +25,6 @@ namespace Datadog.Trace.Security.Unit.Tests
                             { "true-client-ip", "81.202.236.243:82" }
                     },
                string.Empty,
-               new string[0],
                "80.19.10.10", 32
            },
            new object[]
@@ -40,7 +39,6 @@ namespace Datadog.Trace.Security.Unit.Tests
                             { "true-client-ip", "81.202.236.243:82" }
                     },
                "custom-ip-header",
-               new string[0],
                "193.12.13.14", 81
            },
            new object[]
@@ -51,21 +49,19 @@ namespace Datadog.Trace.Security.Unit.Tests
                             { "referer", "https://example.com/" },
                             { "header-custom-2", "93.12.13.14:81" },
                             { "hello-world", "irrelevant" },
-                            { "header-custom-1", "193.12.13.14:81" },
                             { "x-forwarded-for", "192.168.1.2" },
                             { "true-client-ip", "81.202.236.243" }
                     },
-               string.Empty,
-               new string[] { "header-custom-1", "header-custom-2" }, "81.202.236.243", 80
+               string.Empty, "81.202.236.243", 80
            }
        };
 
         [Theory]
         [MemberData(nameof(Headers))]
-        public void GetRightHeadersAndIp(Dictionary<string, string> headers, string customIpHeader, string[] extraHeaders, string expectedIp, int expectedPort)
+        public void GetRightHeadersAndIp(Dictionary<string, string> headers, string customIpHeader, string expectedIp, int expectedPort)
         {
             Func<string, string> getHeader = k => headers.TryGetValue(k, out var val) ? val : string.Empty;
-            var result = RequestHeadersHelper.ExtractIpAndPort(getHeader, customIpHeader, extraHeaders, false, new IpInfo(string.Empty, 80));
+            var result = RequestIpExtractor.ExtractIpAndPort(getHeader, customIpHeader, false, new IpInfo(string.Empty, 80));
 
             Assert.Equal(expectedIp, result.IpAddress);
             Assert.Equal(expectedPort, result.Port);
