@@ -69,6 +69,7 @@ namespace UpdateVendors
                 version: "1.0.0",
                 downloadUrl: "https://github.com/DataDog/sketches-dotnet/archive/v1.0.0.zip",
                 pathToSrc: new[] { "sketches-dotnet-1.0.0", "src", "Datadog.Sketches" },
+                // Perform standard CS file transform with additional '#nullable enable' directive at the beginning of the files, since the vendored project was built with <Nullable>enable</Nullable>
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Datadog.Sketches", AddNullableDirectiveTransform));
         }
 
