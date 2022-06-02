@@ -35,9 +35,9 @@ bool RuntimeIdStore::Start()
 #ifdef _WINDOWS
     auto nativeLoaderFilename = NativeLoaderFilename;
 #else
-    auto currentModoulePath = fs::path(shared::GetCurrentModuleFileName());
+    auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
     // the native loader is in the parent directory
-    auto nativeLoaderPath = currentModoulePath.parent_path() / ".." / NativeLoaderFilename;
+    auto nativeLoaderPath = currentModulePath.parent_path() / ".." / NativeLoaderFilename;
     auto nativeLoaderFilename = nativeLoaderPath.string();
 #endif
     _instance = LoadDynamicLibrary(nativeLoaderFilename);

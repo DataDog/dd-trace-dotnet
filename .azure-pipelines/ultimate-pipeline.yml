@@ -1151,15 +1151,6 @@ stages:
     - template: steps/clone-repo.yml
       parameters:
         masterCommitId: $(masterCommitId)
-    # Doing a clean of obj files _before_ restore to remove build output from previous runs
-    # Can't do a full clean, as otherwise restore-working-directory fails
-    # Only necessary for ARM64, but shouldn't cause any harm on others
-    # Can't ifdef it as depends on a matrix variable
-    - template: steps/run-in-docker.yml
-      parameters:
-        build: true
-        baseImage: $(baseImage)
-        command: "CleanObjFiles"
 
     - template: steps/restore-working-directory.yml
       parameters:
@@ -1170,6 +1161,14 @@ stages:
       inputs:
         artifact: linux-monitoring-home-$(baseImage)
         path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+
+    # when we build samples separately, we could run this step and the docker-compose one below in //
+    # (currently the docker-compose step relies on serverless samples)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "BuildProfilerLinuxIntegrationTests"
 
     - task: DockerCompose@0
       displayName: docker-compose run --no-deps ProfilerIntegrationTests

@@ -193,9 +193,14 @@ partial class Build
         .Requires(() => IsLinux && !IsArm64)
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader, ZipMonitoringHome)
         .Description("Builds and runs the profiler linux integration tests.")
-        .DependsOn(CompileProfilerSamplesLinux)
-        .DependsOn(CompileProfilerLinuxIntegrationTests)
+        .DependsOn(BuildProfilerLinuxIntegrationTests)
         .DependsOn(RunProfilerLinuxIntegrationTests);
+
+    Target BuildProfilerLinuxIntegrationTests => _ => _
+        .Description("Builds the profiler linux integration tests.")
+        .Requires(() => IsLinux && !IsArm64)
+        .DependsOn(CompileProfilerSamplesLinux)
+        .DependsOn(CompileProfilerLinuxIntegrationTests);
 
     Target CompileProfilerLinuxIntegrationTests => _ => _
         .Unlisted()
