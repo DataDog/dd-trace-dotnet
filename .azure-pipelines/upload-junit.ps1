@@ -1,26 +1,27 @@
 $resultFolder = "./tracer/build_data/results";
 $service= "dd-trace-dotnet";
 $files = [System.IO.Directory]::GetFiles($resultFolder, "junit-result.xml", [System.IO.SearchOption]::AllDirectories);
+$osArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant();
 
 Write-Output "Downloading datadog-ci..."
-$datadogCliReleases = "https://github.com/DataDog/datadog-ci/releases/latest/download"
-if ($IsLinux) {
-    if (![System.IO.File]::Exists("./datadog-ci")) {
-        Invoke-WebRequest -Uri "$datadogCliReleases/datadog-ci_linux-x64" -OutFile "./datadog-ci"
-        chmod +x ./datadog-ci
-    }
-} elseif ($IsMacOS) { 
-    if (![System.IO.File]::Exists("./datadog-ci")) {
-        Invoke-WebRequest -Uri "$datadogCliReleases/datadog-ci_darwin-x64" -OutFile "./datadog-ci"
-        chmod +x ./datadog-ci
-    }
-} else {
-    if (![System.IO.File]::Exists("datadog-ci.exe")) {
-        Invoke-WebRequest -Uri "$datadogCliReleases/datadog-ci_win-x64.exe" -OutFile "datadog-ci.exe"
-    }
-}
+npm install -g @datadog/datadog-ci
 
-$osArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant();
+#$datadogCliReleases = "https://github.com/DataDog/datadog-ci/releases/latest/download"
+#if ($IsLinux) {
+#    if (![System.IO.File]::Exists("./datadog-ci")) {
+#        Invoke-WebRequest -Uri "$datadogCliReleases/datadog-ci_linux-x64" -OutFile "./datadog-ci"
+#        chmod +x ./datadog-ci
+#    }
+#} elseif ($IsMacOS) { 
+#    if (![System.IO.File]::Exists("./datadog-ci")) {
+#        Invoke-WebRequest -Uri "$datadogCliReleases/datadog-ci_darwin-x64" -OutFile "./datadog-ci"
+#        chmod +x ./datadog-ci
+#    }
+#} else {
+#    if (![System.IO.File]::Exists("datadog-ci.exe")) {
+#        Invoke-WebRequest -Uri "$datadogCliReleases/datadog-ci_win-x64.exe" -OutFile "datadog-ci.exe"
+#    }
+#}
 
 Write-Output "Processing junit files..."
 foreach ($file in $files)
