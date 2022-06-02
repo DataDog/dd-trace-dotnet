@@ -53,15 +53,49 @@ namespace Microsoft.Extensions.Internal
             }
         }
 
+        public static bool RunProcessAndWaitForExit(string fileName, string arguments, TimeSpan timeout, out string stdout)
+        {
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = fileName,
+                Arguments = arguments,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+            };
+
+            var process = Process.Start(startInfo);
+
+            stdout = null;
+            if (process.WaitForExit((int)timeout.TotalMilliseconds))
+            {
+                stdout = process.StandardOutput.ReadToEnd();
+                var errout = process.StandardError.ReadToEnd();
+                if (!string.IsNullOrWhiteSpace(errout))
+                {
+                    stdout += Environment.NewLine + "=== Error output ===" + Environment.NewLine;
+                    stdout += errout;
+                }
+
+                return true;
+            }
+            else
+            {
+                stdout = $"process created with command-line \"{fileName} arguments\" has been killed";
+                process.Kill();
+                return false;
+            }
+        }
+
         private static void GetAllChildIdsUnix(int parentId, ISet<int> children, TimeSpan timeout)
         {
-            RunProcessAndWaitForExit(
+            var succeeded = RunProcessAndWaitForExit(
                 "pgrep",
                 $"-P {parentId}",
                 timeout,
                 out var stdout);
 
-            if (!string.IsNullOrEmpty(stdout))
+            if (succeeded && !string.IsNullOrEmpty(stdout))
             {
                 using (var reader = new StringReader(stdout))
                 {
@@ -91,30 +125,6 @@ namespace Microsoft.Extensions.Internal
                 $"-9 {processId}",
                 timeout,
                 out var stdout);
-        }
-
-        private static void RunProcessAndWaitForExit(string fileName, string arguments, TimeSpan timeout, out string stdout)
-        {
-            var startInfo = new ProcessStartInfo
-            {
-                FileName = fileName,
-                Arguments = arguments,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-            };
-
-            var process = Process.Start(startInfo);
-
-            stdout = null;
-            if (process.WaitForExit((int)timeout.TotalMilliseconds))
-            {
-                stdout = process.StandardOutput.ReadToEnd();
-            }
-            else
-            {
-                process.Kill();
-            }
         }
     }
 }

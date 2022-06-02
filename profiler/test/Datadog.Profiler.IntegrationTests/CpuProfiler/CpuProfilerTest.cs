@@ -6,7 +6,7 @@
 using System.IO;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.SmokeTests;
-using Perftools.Profiles.Tests;
+using Perftools.Profiles;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -26,14 +26,14 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
         [TestAppFact("Samples.Computer01", DisplayName = "Computer01")]
         public void NoCpuSampleIfCpuProfilerIsNotActivatedByDefault(string appName, string framework, string appAssembly)
         {
-            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
             CheckCpuProfiles(runner, false);
         }
 
         [TestAppFact("Samples.Computer01", DisplayName = "Computer01")]
         public void NoCpuSampleIfCpuProfilerIsDeactivated(string appName, string framework, string appAssembly)
         {
-            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
             CheckCpuProfiles(runner, false);
         }
@@ -41,7 +41,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
         [TestAppFact("Samples.Computer01", DisplayName = "Computer01")]
         public void GetCpuSamplesIfCpuProfilerIsActivated(string appName, string framework, string appAssembly)
         {
-            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
             CheckCpuProfiles(runner, true);
         }

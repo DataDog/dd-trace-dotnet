@@ -1122,6 +1122,75 @@ stages:
         baseImage: $(baseImage)
         command: "CheckBuildLogsForErrors"
 
+- stage: profiler_integration_tests_linux
+  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  dependsOn: [package_linux, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Test]
+
+  - job: Test
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix:
+        debian:
+          baseImage: debian
+        alpine:
+          baseImage: alpine
+
+    variables:
+      IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
+
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - template: steps/restore-working-directory.yml
+      parameters:
+        artifact: build-linux-$(baseImage)-working-directory
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux monitoring home
+      inputs:
+        artifact: linux-monitoring-home-$(baseImage)
+        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+
+    # when we build samples separately, we could run this step and the docker-compose one below in //
+    # (currently the docker-compose step relies on serverless samples)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "BuildProfilerLinuxIntegrationTests"
+
+    - task: DockerCompose@0
+      displayName: docker-compose run --no-deps ProfilerIntegrationTests
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeFileArgs: |
+          baseImage=$(baseImage)
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e IncludeTestsRequiringDocker=false ProfilerIntegrationTests
+        projectName: ddtrace_$(Build.BuildNumber)
+
+    - publish: profiler/build_data
+      artifact: continuous-profiler-logs_integration_tests_linux_$(baseImage)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: profiler/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
 - stage: integration_tests_arm64
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_arm64, master_commit_id]

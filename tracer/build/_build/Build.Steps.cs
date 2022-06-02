@@ -50,10 +50,14 @@ partial class Build
 
     AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
 
+    [Solution("profiler/src/Demos/Datadog.Demos.sln")] readonly Solution ProfilerSamplesSolution;
+    [Solution("Datadog.Profiler.sln")] readonly Solution ProfilerSolution;
     AbsolutePath ProfilerHomeDirectory => ProfilerHome ?? (MonitoringHomeDirectory / "continuousprofiler");
     AbsolutePath ProfilerMsBuildProject => ProfilerDirectory / "src" / "ProfilerEngine" / "Datadog.Profiler.Native.Windows" / "Datadog.Profiler.Native.Windows.WithTests.proj";
     AbsolutePath ProfilerOutputDirectory => RootDirectory / "profiler" / "_build";
     AbsolutePath ProfilerLinuxBuildDirectory => ProfilerOutputDirectory / "cmake";
+    AbsolutePath ProfilerBuildDataDirectory => ProfilerDirectory / "build_data";
+    AbsolutePath ProfilerTestLogsDirectory => ProfilerBuildDataDirectory / "logs";
 
     const string LibDdwafVersion = "1.3.0";
     AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{LibDdwafVersion}";
@@ -187,11 +191,9 @@ partial class Build
             var buildDirectory = NativeProfilerProject.Directory / "build";
 
             CMake.Value(
-                arguments: $"../ -DCMAKE_BUILD_TYPE=Release",
-                workingDirectory: buildDirectory);
+                arguments: $"-B {buildDirectory} -S {NativeProfilerProject.Directory} -DCMAKE_BUILD_TYPE=Release");
             CMake.Value(
-                arguments: $"--build . --parallel",
-                workingDirectory: buildDirectory);
+                arguments: $"--build {buildDirectory} --parallel");
         });
 
     Target CompileNativeSrcMacOs => _ => _
@@ -1194,14 +1196,14 @@ partial class Build
                 .Concat(regressionProjects)
                 .Concat(instrumentationProjects)
                 .Select(path => (path, project: Solution.GetProject(path)))
-                .Where(x => (IncludeTestsRequiringDocker, x.project) switch 
+                .Where(x => (IncludeTestsRequiringDocker, x.project) switch
                 {
-                    // filter out or to integration tests that have docker dependencies 
+                    // filter out or to integration tests that have docker dependencies
                     (null, _) => true,
                     (_, null) => true,
                     (_, { } p) when p.Name.Contains("Samples.AspNetCoreRazorPages") => true, // always have to build this one
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) && p.Name.Contains(SampleName) => true,
-                    (var required, {} p) => p.RequiresDockerDependency() == required,   
+                    (var required, {} p) => p.RequiresDockerDependency() == required,
                 })
                 .Where(x =>
                 {
