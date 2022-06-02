@@ -48,7 +48,7 @@ Configuration::Configuration()
     _apiKey = GetEnvironmentValue(EnvironmentVariables::ApiKey, DefaultEmptyString);
     _serviceName = GetEnvironmentValue(EnvironmentVariables::ServiceName, OpSysTools::GetProcessName());
     _isAgentLess = GetEnvironmentValue(EnvironmentVariables::Agentless, false);
-    _exceptionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ExceptionSampleLimit, 10);
+    _exceptionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ExceptionSampleLimit, 100);
 }
 
 fs::path Configuration::ExtractLogDirectory()
