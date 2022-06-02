@@ -21,6 +21,7 @@ ExceptionsProvider::ExceptionsProvider(
     ICorProfilerInfo4* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
+    IConfiguration* pConfiguration,
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore)
@@ -34,7 +35,8 @@ ExceptionsProvider::ExceptionsProvider(
     _stringBufferOffset(0),
     _mscorlibModuleId(0),
     _exceptionClassId(0),
-    _loggedMscorlibError(false)
+    _loggedMscorlibError(false),
+    _sampler(pConfiguration)
 {
 }
 
@@ -95,6 +97,11 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     if (!GetExceptionType(classId, name))
     {
         return false;
+    }
+
+    if (!_sampler.Sample(name))
+    {
+        return true;
     }
 
     const auto messageAddress = *reinterpret_cast<UINT_PTR*>(thrownObjectId + _messageFieldOffset.ulOffset);

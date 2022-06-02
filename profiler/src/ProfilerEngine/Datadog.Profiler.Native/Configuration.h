@@ -39,6 +39,7 @@ public:
     std::string const& GetServiceName() const override;
     bool IsCpuProfilingEnabled() const override;
     bool IsExceptionProfilingEnabled() const override;
+    int ExceptionSampleLimit() const override;
 
 private:
     static tags ExtractUserTags();
@@ -85,4 +86,5 @@ private:
     tags _userTags;
     bool _isNativeFrameEnabled;
     bool _isAgentLess;
+    int _exceptionSampleLimit;
 };

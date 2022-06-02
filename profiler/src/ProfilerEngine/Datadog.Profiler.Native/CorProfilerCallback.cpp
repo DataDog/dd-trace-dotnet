@@ -129,6 +129,7 @@ bool CorProfilerCallback::InitializeServices()
             _pCorProfilerInfo,
             _pManagedThreadList,
             _pFrameStore.get(),
+            _pConfiguration.get(),
             _pThreadsCpuManager,
             _pAppDomainStore.get(),
             pRuntimeIdStore
