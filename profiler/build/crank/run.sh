@@ -57,6 +57,10 @@ elif [ "$1" = "linux" ]; then
     dd-trace --crank-import="profiler_linux.json"
     rm profiler_linux.json
 
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario profiler_exceptions_baseline --profile linux --json profiler_exceptions_baseline_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=profiler_exceptions_baseline --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="profiler_exceptions_baseline_linux.json"
+    rm profiler_exceptions_baseline_linux.json
+
     crank --config Samples.AspNetCoreSimpleController.yml --scenario profiler_exceptions --profile linux --json profiler_exceptions_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=profiler_exceptions --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="profiler_exceptions_linux.json"
     rm profiler_exceptions_linux.json
