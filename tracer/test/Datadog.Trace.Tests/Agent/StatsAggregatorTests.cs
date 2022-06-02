@@ -103,7 +103,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             const int millisecondsToNanoseconds = 1_000_000;
 
-            // All spans should be recorded except childSpan
+            // All spans should be recorded except childSpan and snapshotSpan
             const long expectedTotalDuration = (100 + 200 + 300 + 500) * millisecondsToNanoseconds;
             const long expectedOkDuration = (100 + 300 + 500) * millisecondsToNanoseconds;
             const long expectedErrorDuration = 200 * millisecondsToNanoseconds;
@@ -132,7 +132,12 @@ namespace Datadog.Trace.Tests.Agent
                 measuredChildSpan.SetTag(Tags.Measured, "1");
                 measuredChildSpan.SetDuration(TimeSpan.FromMilliseconds(500));
 
-                aggregator.Add(simpleSpan, errorSpan, parentSpan, childSpan, measuredChildSpan);
+                // snapshotSpan shouldn't be recorded, because it has the PartialSnapshot metric (even though it is top-level)
+                var snapshotSpan = new Span(new SpanContext(4, 4, serviceName: "service"), start);
+                snapshotSpan.SetMetric(Tags.PartialSnapshot, 1.0);
+                snapshotSpan.SetDuration(TimeSpan.FromMilliseconds(600));
+
+                aggregator.Add(simpleSpan, errorSpan, parentSpan, childSpan, measuredChildSpan, snapshotSpan);
 
                 var buffer = aggregator.CurrentBuffer;
 
