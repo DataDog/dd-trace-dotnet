@@ -70,13 +70,6 @@ bool ExceptionsProvider::OnModuleLoaded(const ModuleID moduleId)
 
 bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
 {
-    if (!_sampler.Sample(""))
-    {
-        return true;
-    }
-
-    return true;
-
     if (_mscorlibModuleId == 0)
     {
         if (!_loggedMscorlibError)
@@ -106,10 +99,10 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         return false;
     }
 
-    /*if (!_sampler.Sample(name))
+    if (!_sampler.Sample(name))
     {
         return true;
-    }*/
+    }
 
     const auto messageAddress = *reinterpret_cast<UINT_PTR*>(thrownObjectId + _messageFieldOffset.ulOffset);
 

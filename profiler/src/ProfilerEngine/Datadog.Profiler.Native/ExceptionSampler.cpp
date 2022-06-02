@@ -12,18 +12,18 @@ ExceptionSampler::ExceptionSampler(std::chrono::milliseconds windowDuration, int
 
 bool ExceptionSampler::Sample(const std::string exceptionType)
 {
-    //{
-    //    std::unique_lock lock(_knownExceptionsMutex);
+    {
+        std::unique_lock lock(_knownExceptionsMutex);
 
-    //    if (_knownExceptions.find(exceptionType) == _knownExceptions.end())
-    //    {
-    //        // This is the first time we see this exception in this time window,
-    //        // force the sampling decision
-    //        _knownExceptions.insert(exceptionType);
+        if (_knownExceptions.find(exceptionType) == _knownExceptions.end())
+        {
+            // This is the first time we see this exception in this time window,
+            // force the sampling decision
+            _knownExceptions.insert(exceptionType);
 
-    //        return _sampler.Keep();
-    //    }
-    //}
+            return _sampler.Keep();
+        }
+    }
 
     // We've already seen this exception, let the sampler decide
     return _sampler.Sample();

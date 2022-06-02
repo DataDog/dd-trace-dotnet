@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-#if false
-
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -229,5 +227,3 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         }
     }
 }
-
-#endif
