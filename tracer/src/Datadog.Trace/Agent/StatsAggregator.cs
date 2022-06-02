@@ -159,7 +159,7 @@ namespace Datadog.Trace.Agent
 
         private void AddToBuffer(Span span)
         {
-            if (!span.IsTopLevel && span.GetMetric(Tags.Measured) != 1.0)
+            if ((!span.IsTopLevel && span.GetMetric(Tags.Measured) != 1.0) || span.GetMetric(Tags.PartialSnapshot) > 0)
             {
                 return;
             }
