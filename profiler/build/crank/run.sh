@@ -38,6 +38,10 @@ if [ "$1" = "windows" ]; then
     dd-trace --crank-import="profiler_windows.json"
     rm profiler_windows.json
 
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario profiler_exceptions_baseline --profile windows --json profiler_exceptions_baseline_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=profiler_exceptions_baseline --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="profiler_exceptions_baseline_windows.json"
+    rm profiler_exceptions_baseline_windows.json
+
     crank --config Samples.AspNetCoreSimpleController.yml --scenario profiler_exceptions --profile windows --json profiler_exceptions_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=profiler_exceptions --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="profiler_exceptions_windows.json"
     rm profiler_exceptions_windows.json
