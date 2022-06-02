@@ -137,12 +137,11 @@ namespace Datadog.Trace.Tests.Agent
             group.Resource.Should().Be(expectedKey.Resource);
             group.HttpStatusCode.Should().Be(expectedKey.HttpStatusCode);
             group.Type.Should().Be(expectedKey.Type);
-            group.Synthetics.Should().Be(expectedKey.Synthetics);
             group.DbType.Should().BeNull();
             group.Hits.Should().Be(expectedBucket.Hits);
             group.Errors.Should().Be(expectedBucket.Errors);
             group.Duration.Should().Be(expectedBucket.Duration);
-            group.Synthetics.Should().BeFalse();
+            group.Synthetics.Should().Be(expectedKey.Synthetics);
             group.TopLevelhits.Should().Be(expectedBucket.TopLevelHits);
 
             var stream = new MemoryStream();
