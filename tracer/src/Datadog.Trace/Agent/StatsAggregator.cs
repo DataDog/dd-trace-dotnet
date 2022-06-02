@@ -153,7 +153,8 @@ namespace Datadog.Trace.Agent
                 span.ServiceName,
                 span.OperationName,
                 span.Type,
-                httpStatusCode);
+                httpStatusCode,
+                span.Context.Origin == "synthetics");
         }
 
         private void AddToBuffer(Span span)

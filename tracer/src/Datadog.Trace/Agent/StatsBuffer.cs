@@ -89,7 +89,7 @@ namespace Datadog.Trace.Agent
 
         private static void SerializeBucket(Stream stream, StatsBucket bucket)
         {
-            MessagePackBinary.WriteMapHeader(stream, 11);
+            MessagePackBinary.WriteMapHeader(stream, 12);
 
             MessagePackBinary.WriteString(stream, "Service");
             MessagePackBinary.WriteString(stream, bucket.Key.Service ?? string.Empty);
@@ -99,6 +99,9 @@ namespace Datadog.Trace.Agent
 
             MessagePackBinary.WriteString(stream, "Resource");
             MessagePackBinary.WriteString(stream, bucket.Key.Resource ?? string.Empty);
+
+            MessagePackBinary.WriteString(stream, "Synthetics");
+            MessagePackBinary.WriteBoolean(stream, bucket.Key.Synthetics);
 
             MessagePackBinary.WriteString(stream, "HTTPStatusCode");
             MessagePackBinary.WriteInt32(stream, bucket.Key.HttpStatusCode);

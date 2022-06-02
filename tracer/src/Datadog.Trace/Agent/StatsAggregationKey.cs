@@ -14,19 +14,22 @@ namespace Datadog.Trace.Agent
         public readonly string OperationName;
         public readonly string Type;
         public readonly int HttpStatusCode;
+        public readonly bool Synthetics;
 
         public StatsAggregationKey(
             string resource,
             string service,
             string operationName,
             string type,
-            int httpStatusCode)
+            int httpStatusCode,
+            bool synthetics)
         {
             Resource = resource;
             Service = service;
             OperationName = operationName;
             Type = type;
             HttpStatusCode = httpStatusCode;
+            Synthetics = synthetics;
         }
 
         public bool Equals(StatsAggregationKey other)
@@ -36,7 +39,8 @@ namespace Datadog.Trace.Agent
                 && Service == other.Service
                 && OperationName == other.OperationName
                 && Type == other.Type
-                && HttpStatusCode == other.HttpStatusCode;
+                && HttpStatusCode == other.HttpStatusCode
+                && Synthetics == other.Synthetics;
         }
 
         public override bool Equals(object obj)
@@ -53,6 +57,7 @@ namespace Datadog.Trace.Agent
                 hashCode = (hashCode * 397) ^ (OperationName != null ? OperationName.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ (Type != null ? Type.GetHashCode() : 0);
                 hashCode = (hashCode * 397) ^ HttpStatusCode;
+                hashCode = (hashCode * 397) ^ Synthetics.GetHashCode();
                 return hashCode;
             }
         }
