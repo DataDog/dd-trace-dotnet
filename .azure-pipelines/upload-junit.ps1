@@ -2,6 +2,7 @@ $resultFolder = "./tracer/build_data/results";
 $service= "dd-trace-dotnet";
 $files = [System.IO.Directory]::GetFiles($resultFolder, "junit-result.xml", [System.IO.SearchOption]::AllDirectories);
 $osArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant();
+$runtimeArchitecture = $env:ARCHITECTURE
 
 # ARM is not supported
 if ($osArchitecture.Contains("arm"))
@@ -51,7 +52,7 @@ foreach ($file in $files)
         NETFramework461 { $runtimeVersion = "4.6.1"; $runtimeName = ".NET Framework"; }
     }
 
-    $env:DD_TAGS="os.platform:$osPlatform,os.architecture:$osArchitecture,runtime.name:$runtimeName,runtime.version:$runtimeVersion,runtime.vendor:$targetFramework,language:dotnet"
+    $env:DD_TAGS="os.platform:$osPlatform,os.architecture:$osArchitecture,runtime.name:$runtimeName,runtime.version:$runtimeVersion,runtime.architecture:$runtimeArchitecture,runtime.vendor:$targetFramework,language:dotnet"
 
     Write-Output $file;
     Write-Output $env:DD_TAGS;

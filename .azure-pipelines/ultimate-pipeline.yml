@@ -533,6 +533,7 @@ stages:
         env:
           DD_API_KEY: $(ddApiKey)
           DD_ENV: ci
+          ARCHITECTURE: x64
         condition: succeededOrFailed()
 
     - job: native
@@ -598,6 +599,7 @@ stages:
         env:
           DD_API_KEY: $(ddApiKey)
           DD_ENV: ci
+          ARCHITECTURE: x64
         condition: succeededOrFailed()
 
 - stage: unit_tests_linux
@@ -659,6 +661,7 @@ stages:
       env:
         DD_API_KEY: $(ddApiKey)
         DD_ENV: ci
+        ARCHITECTURE: x64
       condition: succeededOrFailed()
 
   - job: native
@@ -752,6 +755,7 @@ stages:
           env:
             DD_API_KEY: $(ddApiKey)
             DD_ENV: ci
+            ARCHITECTURE: arm64
           condition: succeededOrFailed()
 
 - stage: integration_tests_windows
@@ -816,6 +820,7 @@ stages:
       env:
         DD_API_KEY: $(ddApiKey)
         DD_ENV: ci
+        ARCHITECTURE: $(targetPlatform)
       condition: succeededOrFailed()
 
     - publish: tracer/build_data
@@ -881,6 +886,7 @@ stages:
       env:
         DD_API_KEY: $(ddApiKey)
         DD_ENV: ci
+        ARCHITECTURE: $(targetPlatform)
       condition: succeededOrFailed()
 
     - publish: tracer/build_data
@@ -935,6 +941,7 @@ stages:
       env:
         DD_API_KEY: $(ddApiKey)
         DD_ENV: ci
+        ARCHITECTURE: $(targetPlatform)
       condition: succeededOrFailed()      
 
     - publish: tracer/build_data
@@ -1016,6 +1023,7 @@ stages:
       env:
         DD_API_KEY: $(ddApiKey)
         DD_ENV: ci
+        ARCHITECTURE: $(targetPlatform)
       condition: succeededOrFailed()
 
     - task: DockerCompose@0
@@ -1118,6 +1126,7 @@ stages:
       env:
         DD_API_KEY: $(ddApiKey)
         DD_ENV: ci
+        ARCHITECTURE: x64
       condition: succeededOrFailed()
 
     - publish: tracer/test/snapshots
@@ -1221,6 +1230,7 @@ stages:
       env:
         DD_API_KEY: $(ddApiKey)
         DD_ENV: ci
+        ARCHITECTURE: x64
       condition: succeededOrFailed()      
 
     - publish: tracer/test/snapshots
@@ -1309,6 +1319,7 @@ stages:
           env:
             DD_API_KEY: $(ddApiKey)
             DD_ENV: ci
+            ARCHITECTURE: arm64
           condition: succeededOrFailed()
 
         - publish: tracer/test/snapshots
@@ -1400,6 +1411,7 @@ stages:
           env:
             DD_API_KEY: $(ddApiKey)
             DD_ENV: ci
+            ARCHITECTURE: arm64
           condition: succeededOrFailed()
 
         - publish: tracer/test/snapshots
@@ -1887,6 +1899,7 @@ stages:
       env:
         DD_API_KEY: $(ddApiKey)
         DD_ENV: ci
+        ARCHITECTURE: $(targetPlatform)
       condition: succeededOrFailed()
 
 - stage: tool_artifacts_tests_linux
@@ -1907,16 +1920,19 @@ stages:
         debian:
           baseImage: debian
           artifactSuffix: linux-x64
+          targetPlatform: x64
           poolImage: ubuntu-18.04
           poolName:
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
+          targetPlatform: x64
           poolImage: ubuntu-18.04
           poolName:
         arm64:
           baseImage: debian
           artifactSuffix: linux-arm64
+          targetPlatform: arm64
           poolImage:
           poolname: aws-arm64-auto-scaling
 
@@ -1968,7 +1984,7 @@ stages:
 
     - script: mkdir -p /tmp/powershell && (curl -L -s https://github.com/PowerShell/PowerShell/releases/download/v7.2.4/powershell-7.2.4-linux-arm64.tar.gz | tar xvz -C /tmp/powershell/) && (sudo ln -s /tmp/powershell/pwsh /usr/local/bin/pwsh || true)
       displayName: Download Powershell
-      condition: eq(artifactSuffix, 'linux-arm64')
+      condition: $[eq('$(artifactSuffix)', 'linux-arm64')]
 
     - task: PowerShell@2
       displayName: Upload JUnit results
@@ -1978,6 +1994,7 @@ stages:
       env:
         DD_API_KEY: $(ddApiKey)
         DD_ENV: ci
+        ARCHITECTURE: $(targetPlatform)
       condition: succeededOrFailed()
 
 - stage: upload_to_s3
