@@ -190,13 +190,8 @@ partial class Build
         });
 
     Target BuildAndRunProfilerLinuxIntegrationTests => _ => _
-        .Requires(() => !IsWin)
-        .Requires(() => IsLinux)
-        .Requires(() => !IsArm64)
-        .After(BuildTracerHome)
-        .After(BuildProfilerHome)
-        .After(BuildNativeLoader)
-        .After(ZipMonitoringHome)
+        .Requires(() => IsLinux && !IsArm64)
+        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader, ZipMonitoringHome)
         .Description("Builds and runs the profiler linux integration tests.")
         .DependsOn(CompileProfilerSamplesLinux)
         .DependsOn(CompileProfilerLinuxIntegrationTests)
@@ -245,8 +240,7 @@ partial class Build
         .After(CompileProfilerSamplesLinux)
         .After(CompileProfilerLinuxIntegrationTests)
         .Description("Runs the profiler linux integration tests")
-        .Requires(() => !IsWin)
-        .Requires(() => !IsArm64)
+        .Requires(() => IsLinux && !IsArm64)
         .Executes(() =>
         {
             EnsureExistingDirectory(ProfilerTestLogsDirectory);
