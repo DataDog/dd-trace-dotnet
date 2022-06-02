@@ -260,36 +260,19 @@ partial class Build
                     continue;
                 }
 
-                var tempZipLocation = Path.GetTempFileName();
-                var extractLocation = Path.Combine(Path.GetDirectoryName(tempZipLocation), Path.GetFileNameWithoutExtension(tempZipLocation));
+                var tempZipLocation = (AbsolutePath)Path.GetFileNameWithoutExtension(Path.GetTempFileName());
+                var snapshotsDirectory = TestsDirectory / "snapshots";
 
-                Logger.Info($"Unzipping '{artifact.Resource.DownloadUrl}' in '{extractLocation}'");
+                await DownloadAzureArtifact(tempZipLocation, artifact, AzureDevopsToken);
 
-                using var response = await client.GetAsync(artifact.Resource.DownloadUrl);
-                await using var fs = new FileStream(tempZipLocation, FileMode.Create);
-                await response.Content.CopyToAsync(fs);
+                CopyDirectoryRecursively(
+                    source: tempZipLocation,
+                    target: snapshotsDirectory,
+                    DirectoryExistsPolicy.Merge,
+                    FileExistsPolicy.Skip,
+                    excludeFile: file => !Path.GetFileNameWithoutExtension(file.FullName).EndsWith(".received"));
 
-                ZipFile.ExtractToDirectory(tempZipLocation, extractLocation);
-
-                var snapshotsDirectory = Path.Combine(TestsDirectory, "snapshots");
-                var di = new DirectoryInfo(extractLocation);
-
-                Logger.Info($"Moving received snapshots from this archive to'{snapshotsDirectory}'");
-                foreach (var file in di.GetFiles("*", SearchOption.AllDirectories))
-                {
-                    var fileName = Path.GetFileNameWithoutExtension(file.FullName);
-                    if (fileName.EndsWith("received"))
-                    {
-                        var destFileName = Path.Combine(snapshotsDirectory, file.Name);
-                        if (!File.Exists(destFileName))
-                        {
-                            file.CopyTo(destFileName, overwrite: false);
-                        }
-                    }
-                }
-
-                File.Delete(tempZipLocation);
-                Directory.Delete(extractLocation, recursive: true);
+                DeleteDirectory(tempZipLocation);
             }
 
             ReplaceReceivedFilesInSnapshots();
@@ -297,9 +280,8 @@ partial class Build
 
     private void ReplaceReceivedFilesInSnapshots()
     {
-        var snapshotsDirectory = Path.Combine(TestsDirectory, "snapshots");
-        var directory = new DirectoryInfo(snapshotsDirectory);
-        var files = directory.GetFiles("*.received*");
+        var snapshotsDirectory = TestsDirectory / "snapshots";
+        var files = snapshotsDirectory.GlobFiles("*.received.*")
 
         var suffixLength = "received".Length;
         foreach (var file in files)
@@ -313,7 +295,7 @@ partial class Build
             }
             var trimmedName = fileName.Substring(0, fileName.Length - suffixLength);
             var dest = Path.Combine(directory.FullName, $"{trimmedName}verified{Path.GetExtension(source)}");
-            file.MoveTo(dest, overwrite: true);
+            MoveFile(file, dest, FileExistsPolicy.Overwrite, createDirectories: true);
         }
     }
 }
