@@ -13,7 +13,9 @@
 
 #if _WINDOWS
 const std::string currentOsArch = "win-x64";
-#elif LINUX
+#elif defined(LINUX) && defined(__DD_MUSL__)
+const std::string currentOsArch = "linux-musl-x64";
+#elif defined(LINUX) && !defined(__DD_MUSL__)
 const std::string currentOsArch = "linux-x64";
 #elif MACOS
 const std::string currentOsArch = "osx-x64";
@@ -25,7 +27,7 @@ const std::string currentOsArch = "osx-x64";
 
 #if _WINDOWS
 const std::string currentOsArch = "win-x86";
-#elif LINUX
+#elif defined(LINUX)
 const std::string currentOsArch = "linux-x86";
 #elif MACOS
 const std::string currentOsArch = "osx-x86";
@@ -98,8 +100,8 @@ namespace datadog::shared::nativeloader
         // Set the current path to the configuration folder (to allow relative paths)
         fs::current_path(configFolder);
 
-        const std::string allOsArch[12] = {
-            "win-x64", "linux-x64", "osx-x64",
+        const std::string allOsArch[13] = {
+            "win-x64", "linux-x64",  "linux-musl-x64", "osx-x64",
             "win-x86", "linux-x86", "osx-x86",
             "win-arm64", "linux-arm64", "osx-arm64",
             "win-arm", "linux-arm", "osx-arm",

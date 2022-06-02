@@ -7,6 +7,7 @@ public static class Projects
     public const string DatadogTraceOpenTracing = "Datadog.Trace.OpenTracing";
     public const string DatadogTraceMsBuild = "Datadog.Trace.MSBuild";
     public const string DatadogTraceNative = "Datadog.Trace.ClrProfiler.Native";
+    public const string DatadogNativeLoader = "Datadog.Trace.ClrProfiler.Native";
     public const string NativeLoader = "Datadog.AutoInstrumentation.NativeLoader";
 
     public const string BenchmarksTrace = "Benchmarks.Trace";

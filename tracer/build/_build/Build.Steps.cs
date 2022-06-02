@@ -37,7 +37,7 @@ partial class Build
     AbsolutePath MsBuildProject => TracerDirectory / "Datadog.Trace.proj";
 
     AbsolutePath OutputDirectory => RootDirectory / "bin";
-    AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (OutputDirectory / "monitoring-home");
+    AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
     AbsolutePath SymbolsDirectory => OutputDirectory / "symbols";
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
@@ -47,8 +47,6 @@ partial class Build
     AbsolutePath TestLogsDirectory => BuildDataDirectory / "logs";
     AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
     AbsolutePath ToolInstallDirectory => ToolDestination ?? (ToolSourceDirectory / "install");
-
-    AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
 
     [Solution("profiler/src/Demos/Datadog.Demos.sln")] readonly Solution ProfilerSamplesSolution;
     [Solution("Datadog.Profiler.sln")] readonly Solution ProfilerSolution;
@@ -198,7 +196,7 @@ partial class Build
             var buildDirectory = NativeTracerProject.Directory / "build";
 
             CMake.Value(
-                arguments: $"-B {buildDirectory} -S {NativeProfilerProject.Directory} -DCMAKE_BUILD_TYPE=Release");
+                arguments: $"-B {buildDirectory} -S {NativeProfilerProject.Directory} -DCMAKE_BUILD_TYPE=Release {(IsAlpine ? "-D__DD_MUSL__" : "")}");
             CMake.Value(
                 arguments: $"--build {buildDirectory} --parallel");
         });
@@ -432,10 +430,10 @@ partial class Build
 
             CopyNativeTracerAssets(dest, symbolsDestination, nativeProjectBuildDir, ext);
         });
-    
+
     void CopyNativeTracerAssets(
-        AbsolutePath fileDestination, 
-        AbsolutePath symbolsDestination, 
+        AbsolutePath fileDestination,
+        AbsolutePath symbolsDestination,
         AbsolutePath nativeProjectBuildDir,
         string fileExtension)
     {
@@ -533,7 +531,7 @@ partial class Build
     Target ZipSymbols => _ => _
         .DependsOn(ZipSymbolsWindows)
         .DependsOn(ZipSymbolsLinux);
-    
+
     Target ZipSymbolsWindows => _ => _
         .Unlisted()
         .After(BuildTracerHome)
@@ -542,7 +540,7 @@ partial class Build
         .Executes(() =>
         {
             CompressZip(SymbolsDirectory, WindowsSymbolsZip, fileMode: FileMode.Create);
-        });    
+        });
 
     Target ZipSymbolsLinux => _ => _
         .Unlisted()
@@ -553,7 +551,7 @@ partial class Build
         {
             CompressZip(SymbolsDirectory, LinuxSymbolsZip, fileMode: FileMode.Create);
         });
-    
+
     Target CreateLinuxBackCompatFiles => _ => _
        .Unlisted()
        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
@@ -562,15 +560,15 @@ partial class Build
        {
            // Create a symlink in the root of monitoring home, pointing to the native loader in the architecture specific folder
            var (arch, ext) = GetUnixArchitectureAndExtension();
-           var archSpecificFolder = MonitoringHomeDirectory / arch / $"{Constants.NativeLoaderFilename}.{ext}"; 
+           var archSpecificFolder = MonitoringHomeDirectory / arch / $"{Constants.NativeLoaderFilename}.{ext}";
            var linkLocation = MonitoringHomeDirectory / $"{Constants.NativeLoaderFilename}.{ext}";
            HardLinkUtil.Value($"-v {archSpecificFolder} {linkLocation}");
-           
+
            // Create a loader conf in the root of the home directory
            // This is required for when the "root" native loader is used
            // And needs to include the architecture in the paths to the native dlls
            var loaderConfContents = File.ReadAllText(MonitoringHomeDirectory / arch / Constants.LoaderConfFilename);
-           
+
            // we don't really need to replace the Windows paths, as this is linux only
            // but doing it here for consistency and to avoid other confustion
            var updatedContents = loaderConfContents
@@ -1317,7 +1315,7 @@ partial class Build
 
             IntegrationTestLinuxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
             IntegrationTestLinuxProfilerDirFudge(Projects.AppSecIntegrationTests);
-            
+
             // the integration tests need their own copy of the profiler, this achieved through build.props on Windows, but doesn't seem to work under Linux
             void IntegrationTestLinuxProfilerDirFudge(string project)
             {
