@@ -15,9 +15,9 @@ namespace Samples.ExceptionGenerator
         private const bool PrintExceptionsToConsole = false;
 
         private static readonly TimeSpan StatsPeriodDuration = TimeSpan.FromSeconds(5);
+        private static int _count;
         private readonly Thread _thread;
         private volatile bool _isStopped;
-        private static int _count;
 
         public ExceptionGenerator()
         {

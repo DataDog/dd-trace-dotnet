@@ -15,7 +15,23 @@
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
-        "DD_TRACE_ENABLED" : "0"
+        "DD_TRACE_ENABLED": "0"
+      }
+    },
+    {
+      "name": "Profiler_exceptions",
+      "environmentVariables": {
+        "DD_CLR_ENABLE_NGEN": "true",
+        "DD_PROFILING_ENABLED": "1",
+        "DD_PROFILING_EXCEPTION_ENABLED": "1"
+      }
+    },
+    {
+      "name": "Profiler_cpu",
+      "environmentVariables": {
+        "DD_CLR_ENABLE_NGEN": "true",
+        "DD_PROFILING_ENABLED": "1",
+        "DD_PROFILING_CPU_ENABLED": "1"
       }
     }
   ],

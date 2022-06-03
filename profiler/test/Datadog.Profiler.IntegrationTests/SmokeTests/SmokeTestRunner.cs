@@ -14,7 +14,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Profiler.SmokeTests
 {
-    public class SmokeTestRunner : IDisposable
+    public class SmokeTestRunner
     {
         private readonly ITestOutputHelper _output;
         private readonly int _minimumExpectedPprofsCount = 2; // 1 empty and at least one normal
@@ -44,11 +44,6 @@ namespace Datadog.Profiler.SmokeTests
         private EnvironmentHelper EnvironmentHelper
         {
             get => _testApplicationRunner.Environment;
-        }
-
-        public void Dispose()
-        {
-            _testApplicationRunner.Dispose();
         }
 
         public void RunAndCheck()

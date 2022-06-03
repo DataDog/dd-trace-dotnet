@@ -15,7 +15,8 @@ Creating a new instrumentation implementation typically uses the following proce
    1. Create (or reuse) a sample application that uses the target library, which ideally exercises all the code paths in your new instrumentation. Use an `$(ApiVersion)` MSBuild variables to allow testing against multiple package versions in CI. 
    2. Add an entry in [tracer/build/PackageVersionsGeneratorDefinitions.json](../../tracer/build/PackageVersionsGeneratorDefinitions.json) defining the range of all supported versions. See the existing definitions for examples
    3. Run `./tracer/build.ps1 GeneratePackageVersions`. This generates the xunit test data for package versions in the `TestData` that you can use as `[MemberData]` for your `[Theory]` tests. 
-   4. Use the `MockTracerAgent` to confirm your instrumentation is working as expected.
+   4. If needed, add a docker image in the docker-compose.yml to allow the CI to test against it. Locally, you can use docker-compose as well and start only the dependencies you need.
+   5. Use the `MockTracerAgent` to confirm your instrumentation is working as expected.
 7. After testing locally, push to GitHub, and do a manual run in Azure Devops for your branch
    1. Navigate to the [consolidated-pipeline](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build?definitionId=54)
    2. Click `Run Pipeline`

@@ -2,7 +2,7 @@
 #include <dlfcn.h>
 #include <signal.h>
 #include <link.h>
-#include <stddef.h>	
+#include <stddef.h>
 #include <stdio.h>
 #include <dlfcn.h>
 

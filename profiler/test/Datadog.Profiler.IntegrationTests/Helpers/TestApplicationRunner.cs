@@ -12,7 +12,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
-    internal class TestApplicationRunner : IDisposable
+    internal class TestApplicationRunner
     {
         private readonly string _appName;
         private readonly string _framework;
@@ -28,7 +28,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private readonly int _testDurationInSeconds = 10;
         private readonly int _profilingExportsIntervalInSeconds = 3;
         private string _appListenerPort;
-        private bool _testFailed;
 
         public TestApplicationRunner(
             string appName,
@@ -45,7 +44,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             _appAssembly = appAssembly;
             _output = output;
             _commandLine = commandLine ?? string.Empty;
-            _testFailed = true;
             ServiceName = $"IntegrationTest-{_appName}";
         }
 
@@ -60,19 +58,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return Path.Combine(binPath, configurationAndPlatform, "profiler", "src", "Demos", appName);
         }
 
-        public void Dispose()
-        {
-            var testPath = _testBaseOutputDir;
-            if (Directory.Exists(testPath) && !EnvironmentHelper.IsInCI && _testFailed)
-            {
-                Directory.Delete(testPath, recursive: true);
-            }
-        }
-
         public void Run(MockDatadogAgent agent)
         {
             RunTest(agent.Port);
-            _testFailed = false;
             PrintTestInfo();
         }
 
@@ -124,6 +112,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             if (!EnvironmentHelper.IsRunningOnWindows())
             {
+                if (EnvironmentHelper.IsAlpine)
+                {
+                    return ("dotnet", $"{applicationPath} {arguments}");
+                }
+
                 // catchsegv is a tool that catches the segmentation fault and displays useful information: callstack, registers...
                 return ("catchsegv", $"dotnet {applicationPath} {arguments}");
             }
@@ -159,6 +152,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             {
                 if (!process.HasExited)
                 {
+                    process.GetAllThreadsStack(_testBaseOutputDir, _output);
+
                     process.TakeMemoryDump(_testBaseOutputDir, _output);
 
                     try
