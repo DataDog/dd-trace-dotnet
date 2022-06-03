@@ -66,13 +66,13 @@ foreach ($file in $files)
     }
 
     Write-Output "";
-    Remove-Item $file
+    Remove-Item $file -Force -ErrorAction Ignore
 }
 
 Write-Output "Removing datadog-ci..."
 if (Test-Path "./datadog-ci") {
-  Remove-Item "./datadog-ci"
+  Remove-Item "./datadog-ci" -Force -ErrorAction Ignore
 }
 if (Test-Path "datadog-ci.exe") {
-    Remove-Item "datadog-ci.exe"
+    Remove-Item "datadog-ci.exe" -Force -ErrorAction Ignore
 }
