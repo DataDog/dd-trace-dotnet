@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, int millisecondsTimeout)
         {
             // If we are already in a consumer scope, close it, and start a new one on method exit.
-            KafkaHelper.CloseConsumerScope(Tracer.Instance);
+            // KafkaHelper.CloseConsumerScope(Tracer.Instance); // Honestly, I don't see the value of doing this rather than just closing the span right away as I did below. Plus, if we're in a loop, we could be not closing the last message.
             return CallTargetState.GetDefault();
         }
 
@@ -53,6 +53,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
             where TResponse : IConsumeResult, IDuckType
         {
+            // If creating a scope is disabled on the consumer side, we can create one anyway if an exception has been raised.
+            if (!Tracer.Instance.Settings.KafkaCreateConsumerScopeEnabled && exception is null)
+            {
+                return new CallTargetReturn<TResponse>(response);
+            }
+
             IConsumeResult consumeResult = response.Instance is not null ? response : null;
 
             if (exception is not null && exception.TryDuckCast<IConsumeException>(out var consumeException))
@@ -62,24 +68,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             if (consumeResult is not null)
             {
-                // This sets the span as active and either disposes it immediately
-                // or disposes it on the next call to Consumer.Consume()
-                Scope scope = KafkaHelper.CreateConsumerScope(
+                var scope = KafkaHelper.CreateConsumerScope(
                     Tracer.Instance,
                     consumeResult.Topic,
                     consumeResult.Partition,
                     consumeResult.Offset,
                     consumeResult.Message);
 
-                if (!Tracer.Instance.Settings.KafkaCreateConsumerScopeEnabled)
-                {
-                    // Close and dispose the scope immediately
-                    scope.DisposeWithException(exception);
-                }
-                else if (exception is not null)
-                {
-                    scope?.Span?.SetException(exception);
-                }
+                // Close and dispose the scope immediately
+                scope.DisposeWithException(exception);
             }
 
             return new CallTargetReturn<TResponse>(response);
