@@ -63,7 +63,7 @@ namespace Datadog.Trace.Sampling
             }
 
             Log.Debug("Could not establish sample rate for trace {TraceId}. Using default rate instead: {rate}", span.TraceId, _defaultSamplingRate);
-
+            span.SetMetric(Metrics.SamplingAgentDecision, _defaultSamplingRate);
             return _defaultSamplingRate;
         }
 
