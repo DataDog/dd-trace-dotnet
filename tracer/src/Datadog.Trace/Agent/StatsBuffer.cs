@@ -101,7 +101,7 @@ namespace Datadog.Trace.Agent
             MessagePackBinary.WriteString(stream, bucket.Key.Resource ?? string.Empty);
 
             MessagePackBinary.WriteString(stream, "Synthetics");
-            MessagePackBinary.WriteBoolean(stream, bucket.Key.Synthetics);
+            MessagePackBinary.WriteBoolean(stream, bucket.Key.IsSyntheticsRequest);
 
             MessagePackBinary.WriteString(stream, "HTTPStatusCode");
             MessagePackBinary.WriteInt32(stream, bucket.Key.HttpStatusCode);
