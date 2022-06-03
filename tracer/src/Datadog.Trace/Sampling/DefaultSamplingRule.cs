@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Formatting;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -66,43 +67,30 @@ namespace Datadog.Trace.Sampling
             return _defaultSamplingRate;
         }
 
-        public void SetDefaultSampleRates(IEnumerable<KeyValuePair<string, float>> sampleRates)
+        public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
         {
             // to avoid locking if writers and readers can access the dictionary at the same time,
             // build the new dictionary first, then replace the old one
-            var rates = new Dictionary<SampleRateKey, float>();
+            var rates = new Dictionary<SampleRateKey, float>(sampleRates.Count);
             var defaultSamplingRate = _defaultSamplingRate;
 
-            if (sampleRates != null)
+            foreach (var pair in sampleRates)
             {
-                // Find the default rate first
-                foreach (var pair in sampleRates)
+                if (string.Equals(pair.Key, DefaultKey, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (string.Equals(pair.Key, DefaultKey, StringComparison.OrdinalIgnoreCase))
-                    {
-                        defaultSamplingRate = pair.Value;
-                        break;
-                    }
+                    defaultSamplingRate = pair.Value;
+                    continue;
                 }
 
-                foreach (var pair in sampleRates)
+                var key = SampleRateKey.Parse(pair.Key);
+
+                if (key == null)
                 {
-                    // No point in adding default rates
-                    if (pair.Value == defaultSamplingRate)
-                    {
-                        continue;
-                    }
-
-                    var key = SampleRateKey.Parse(pair.Key);
-
-                    if (key == null)
-                    {
-                        Log.Warning("Could not parse sample rate key {SampleRateKey}", pair.Key);
-                        continue;
-                    }
-
-                    rates.Add(key.Value, pair.Value);
+                    Log.Warning("Could not parse sample rate key {SampleRateKey}", pair.Key);
+                    continue;
                 }
+
+                rates.Add(key.Value, pair.Value);
             }
 
             _defaultSamplingRate = defaultSamplingRate;

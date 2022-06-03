@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tests.Sampling
         {
             var rule = new DefaultSamplingRule();
 
-            rule.SetDefaultSampleRates(new[] { new KeyValuePair<string, float>(key, .5f) });
+            rule.SetDefaultSampleRates(new Dictionary<string, float> { { key, .5f } });
 
             var span = new Span(new SpanContext(1, 1, null, serviceName: expectedService), DateTimeOffset.Now);
             span.SetTag(Tags.Env, expectedEnv);
@@ -55,10 +55,10 @@ namespace Datadog.Trace.Tests.Sampling
 
             rule.GetSamplingRate(span).Should().Be(1f); // as we haven't configured it yet.
 
-            rule.SetDefaultSampleRates(new[]
+            rule.SetDefaultSampleRates(new Dictionary<string, float>
             {
-                new KeyValuePair<string, float>("service:,env:", .5f),
-                new KeyValuePair<string, float>($"service:{configuredService},env:{configuredEnv}", .1f)
+                { "service:,env:", .5f },
+                { $"service:{configuredService},env:{configuredEnv}", .1f }
             });
 
             rule.GetSamplingRate(span).Should().Be(.1f);

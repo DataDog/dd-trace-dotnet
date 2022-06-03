@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tests.Sampling
         private const string Env = "my-test-env";
         private const string OperationName = "test";
 
-        private static readonly IEnumerable<KeyValuePair<string, float>> MockAgentRates = new List<KeyValuePair<string, float>>() { new KeyValuePair<string, float>($"service:{ServiceName},env:{Env}", FallbackRate) };
+        private static readonly Dictionary<string, float> MockAgentRates = new() { { $"service:{ServiceName},env:{Env}", FallbackRate } };
 
         [Fact]
         public void RateLimiter_Never_Applied_For_DefaultRule()
