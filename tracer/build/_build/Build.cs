@@ -86,7 +86,7 @@ partial class Build : NukeBuild
 
     [Parameter("The directory to install the tool to")]
     readonly AbsolutePath ToolDestination;
-    
+
     [Parameter("Should we build and run tests that require docker. true = only docker integration tests, false = no docker integration tests, null = all", List = false)]
     readonly bool? IncludeTestsRequiringDocker;
 
@@ -165,6 +165,13 @@ partial class Build : NukeBuild
         .After(Clean)
         .DependsOn(CompileProfilerManagedSrc)
         .DependsOn(CompileProfilerNativeSrc)
+        .DependsOn(PublishProfiler);
+
+    Target BuildProfilerHomeWithAddressSanitizer => _ => _
+        .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
+        .After(Clean)
+        .DependsOn(CompileProfilerManagedSrc)
+        .DependsOn(CompileProfilerNativeSrcWithAddressSanitizer)
         .DependsOn(PublishProfiler);
 
     Target BuildNativeLoader => _ => _

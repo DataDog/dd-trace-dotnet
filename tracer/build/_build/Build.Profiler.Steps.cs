@@ -38,6 +38,36 @@ partial class Build
         .DependsOn(CompileProfilerNativeSrcWindows)
         .DependsOn(CompileProfilerNativeSrcAndTestLinux);
 
+    Target CompileProfilerNativeSrcWithAddressSanitizer => _ => _
+        .Unlisted()
+        .Description("Compiles the native profiler assets with Clang Address Sanitizer")
+        .DependsOn(CompileProfilerNativeSrcWindowsWithAddressSanitizer);
+
+    Target CompileProfilerNativeSrcWindowsWithAddressSanitizer => _ => _
+        .Unlisted()
+        .After(CompileProfilerManagedSrc) // Keeping this because this may depend on embedding managed libs
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            // If we're building for x64, build for x86 too
+            var platforms =
+                Equals(TargetPlatform, MSBuildTargetPlatform.x64)
+                    ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
+                    : new[] { MSBuildTargetPlatform.x86 };
+
+            // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
+            // Build native tracer assets
+            MSBuild(s => s
+                .SetTargetPath(ProfilerMsBuildProject)
+                .SetConfiguration(BuildConfiguration)
+                .SetMSBuildPath()
+                .SetTargets("BuildCppWithAsan")
+                .DisableRestore()
+                .SetMaxCpuCount(null)
+                .CombineWith(platforms, (m, platform) => m
+                    .SetTargetPlatform(platform)));
+        });
+
     Target CompileProfilerNativeSrcWindows => _ => _
         .Unlisted()
         .After(CompileProfilerManagedSrc) // Keeping this because this may depend on embedding managed libs
