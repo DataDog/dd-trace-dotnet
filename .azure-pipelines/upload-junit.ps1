@@ -65,14 +65,24 @@ foreach ($file in $files)
         ./datadog-ci.exe junit upload --service $service $file
     }
 
-    Write-Output "";
+    Write-Output "Removing $file"
     Remove-Item $file -Force -ErrorAction Ignore
+    if ($IsLinux -or $IsMacOS) {
+        sh -c 'rm -f $file'
+    } else {
+        cmd /c 'erase /f /q $file'
+    }
+    Write-Output "";
 }
 
 Write-Output "Removing datadog-ci..."
 if (Test-Path "./datadog-ci") {
   Remove-Item "./datadog-ci" -Force -ErrorAction Ignore
+  sh -c 'rm -f ./datadog-ci'
 }
 if (Test-Path "datadog-ci.exe") {
-    Remove-Item "datadog-ci.exe" -Force -ErrorAction Ignore
+  Remove-Item "datadog-ci.exe" -Force -ErrorAction Ignore
+  cmd /c 'erase /f /q datadog-ci.exe'
 }
+
+Write-Output "Done."
