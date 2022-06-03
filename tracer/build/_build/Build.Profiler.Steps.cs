@@ -170,7 +170,7 @@ partial class Build
             CopyFile(source, dest, FileExistsPolicy.Overwrite);
 
             source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.Linux.ApiWrapper.x64.{ext}";
-            dest = MonitoringHomeDirectory / arch / "Datadog.Linux.ApiWrapper";
+            dest = MonitoringHomeDirectory / arch / "Datadog.Linux.ApiWrapper.so";
             CopyFile(source, dest, FileExistsPolicy.Overwrite);
         });
 
@@ -183,8 +183,8 @@ partial class Build
             foreach (var architecture in ArchitecturesForPlatform)
             {
                 var source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.AutoInstrumentation.Profiler.Native.{architecture}.dll";
-                var dest = MonitoringHomeDirectory / $"win-{architecture}";
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                var dest = MonitoringHomeDirectory / $"win-{architecture}" / "Datadog.Profiler.Native.dll";
+                CopyFile(source, dest, FileExistsPolicy.Overwrite);
             }
         });
 

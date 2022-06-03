@@ -21,13 +21,13 @@ const char* const RuntimeIdStore::ServiceName = "RuntimeID Store";
 const char* const RuntimeIdStore::ExternalFunctionName = "GetRuntimeId";
 const char* const RuntimeIdStore::NativeLoaderFilename =
 #ifdef _WINDOWS
-#ifdef BIT64
-    "Datadog.AutoInstrumentation.NativeLoader.x64" LIBRARY_FILE_EXTENSION;
-#else
-    "Datadog.AutoInstrumentation.NativeLoader.x86" LIBRARY_FILE_EXTENSION;
-#endif
-#else
+    "Datadog.Trace.ClrProfiler.Native.dll";
+#elif MACOS
+    "Datadog.Trace.ClrProfiler.Native.dylib";
+#elif LINUX
     "Datadog.Trace.ClrProfiler.Native.so";
+#else
+    Error("unknown platform");
 #endif
 
 bool RuntimeIdStore::Start()
@@ -36,8 +36,8 @@ bool RuntimeIdStore::Start()
     auto nativeLoaderFilename = NativeLoaderFilename;
 #else
     auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
-    // the native loader is in the parent directory
-    auto nativeLoaderPath = currentModulePath.parent_path() / ".." / NativeLoaderFilename;
+    // the native loader is in the same directory
+    auto nativeLoaderPath = currentModulePath.parent_path() / NativeLoaderFilename;
     auto nativeLoaderFilename = nativeLoaderPath.string();
 #endif
     _instance = LoadDynamicLibrary(nativeLoaderFilename);
