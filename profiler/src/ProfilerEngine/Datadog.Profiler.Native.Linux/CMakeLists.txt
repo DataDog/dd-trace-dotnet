@@ -51,6 +51,9 @@ elseif (ISARM)
     add_compile_options(-DARM)
 endif()
 
+if (ISALPINE)
+    add_compile_options(-D__DD_MUSL__)
+endif()
 
 # ******************************************************
 # Environment detection

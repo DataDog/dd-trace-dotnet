@@ -82,7 +82,7 @@ partial class Build
             EnsureExistingDirectory(ProfilerLinuxBuildDirectory);
 
             CMake.Value(
-                arguments: $"-B {ProfilerLinuxBuildDirectory} -S {ProfilerDirectory} -DCMAKE_BUILD_TYPE=Release {(IsAlpine ? "-D__DD_MUSL__" : "")}");
+                arguments: $"-B {ProfilerLinuxBuildDirectory} -S {ProfilerDirectory} -DCMAKE_BUILD_TYPE=Release");
 
             CMake.Value(
                 arguments: $"--build {ProfilerLinuxBuildDirectory} --parallel");
@@ -166,11 +166,12 @@ partial class Build
             var (arch, ext) = GetUnixArchitectureAndExtension();
             // TODO: handle other architectures?
             var source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.AutoInstrumentation.Profiler.Native.x64.{ext}";
-            var dest = MonitoringHomeDirectory / arch;
-            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+            var dest = MonitoringHomeDirectory / arch / $"Datadog.Profiler.Native.{ext}";
+            CopyFile(source, dest, FileExistsPolicy.Overwrite);
 
             source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.Linux.ApiWrapper.x64.{ext}";
-            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+            dest = MonitoringHomeDirectory / arch / "Datadog.Linux.ApiWrapper";
+            CopyFile(source, dest, FileExistsPolicy.Overwrite);
         });
 
     Target PublishProfilerWindows => _ => _

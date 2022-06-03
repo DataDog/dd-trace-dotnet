@@ -100,9 +100,9 @@ partial class Build
 
             CopyNativeLoaderAssets(dest, nativeLoaderBuildDir, ext);
         });
-    
+
     void CopyNativeLoaderAssets(
-        AbsolutePath destination, 
+        AbsolutePath destination,
         AbsolutePath nativeLoaderBuildDir,
         string fileExtension)
     {
@@ -113,9 +113,12 @@ partial class Build
         var nativeLoaderDest = destination / $"{Constants.NativeLoaderFilename}.{fileExtension}";
         CopyFile(nativeLoader, nativeLoaderDest, FileExistsPolicy.Overwrite);
 
-        var nativeLoaderPdb = nativeLoaderBuildDir / $"{NativeLoaderProject.Name}.pdb";
-        var nativeLoaderPdbDest = destination / $"{Constants.NativeLoaderFilename}.pdb";
-        CopyFile(nativeLoaderPdb, nativeLoaderPdbDest, FileExistsPolicy.Overwrite);
+        if (IsWin)
+        {
+            var nativeLoaderPdb = nativeLoaderBuildDir / $"{NativeLoaderProject.Name}.pdb";
+            var nativeLoaderPdbDest = destination / $"{Constants.NativeLoaderFilename}.pdb";
+            CopyFile(nativeLoaderPdb, nativeLoaderPdbDest, FileExistsPolicy.Overwrite);
+        }
     }
 
 }

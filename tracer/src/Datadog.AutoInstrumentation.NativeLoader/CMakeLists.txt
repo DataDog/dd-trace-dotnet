@@ -11,6 +11,10 @@ project("Datadog.AutoInstrumentation.NativeLoader" VERSION 0.1.0)
 # Environment detection
 # ******************************************************
 
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../../../build/cmake")
+
+include(HelperFunc)
+
 # Detect operating system
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
     message(FATAL_ERROR "Windows builds are not supported using CMAKE. Please use Visual Studio")
@@ -44,6 +48,14 @@ elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64)
 elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL armv7l OR CMAKE_SYSTEM_PROCESSOR STREQUAL arm)
     message(STATUS "Architecture is ARM")
     SET(ISARM true)
+endif()
+
+PopulateOsInformaton()
+message(STATUS "Distribution id: ${DD_OS_DISTRO_ID}")
+message(STATUS "Distribution release number: ${DD_OS_DISTRO_RELEASE}")
+
+if (DISTRO_ID STREQUAL "alpine")
+    SET(ISALPINE true)
 endif()
 
 # ******************************************************
@@ -142,6 +154,10 @@ elseif (ISARM64)
     add_compile_options(-DARM64)
 elseif (ISARM)
     add_compile_options(-DARM)
+endif()
+
+if (ISALPINE)
+    add_compile_options(-D__DD_MUSL__)
 endif()
 
 # ******************************************************

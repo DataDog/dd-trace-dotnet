@@ -5,6 +5,9 @@ cmake_policy(SET CMP0015 NEW)
 # Environment detection
 # ******************************************************
 
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/build/cmake")
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/../build/cmake")
+
 # Detect operating system
 if (CMAKE_SYSTEM_NAME MATCHES "Windows")
     message(FATAL_ERROR "Windows builds are not supported using CMAKE. Please use Visual Studio")
@@ -36,6 +39,16 @@ elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64)
 elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL armv7l OR CMAKE_SYSTEM_PROCESSOR STREQUAL arm)
     message(STATUS "Architecture is ARM")
     SET(ISARM true)
+endif()
+
+include(HelperFunc)
+
+PopulateOsInformaton()
+message(STATUS "Distribution id: ${DD_OS_DISTRO_ID}")
+message(STATUS "Distribution release number: ${DD_OS_DISTRO_RELEASE}")
+
+if (DISTRO_ID STREQUAL "alpine")
+    SET(ISALPINE true)
 endif()
 
 # Out of source build directory
@@ -95,7 +108,6 @@ SET(OUTPUT_DEPS_DIR ${CMAKE_BINARY_DIR}/deps)
 FILE(MAKE_DIRECTORY ${OUTPUT_DEPS_DIR})
 FILE(MAKE_DIRECTORY ${OUTPUT_TMP_DIR})
 
-LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/build/cmake")
 
 find_package(Fmt REQUIRED)
 message(STATUS "FMT library " ${FMT_VERSION})

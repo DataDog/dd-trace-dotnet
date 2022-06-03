@@ -196,7 +196,7 @@ partial class Build
             var buildDirectory = NativeTracerProject.Directory / "build";
 
             CMake.Value(
-                arguments: $"-B {buildDirectory} -S {NativeProfilerProject.Directory} -DCMAKE_BUILD_TYPE=Release {(IsAlpine ? "-D__DD_MUSL__" : "")}");
+                arguments: $"-B {buildDirectory} -S {NativeTracerProject.Directory} -DCMAKE_BUILD_TYPE=Release");
             CMake.Value(
                 arguments: $"--build {buildDirectory} --parallel");
         });
@@ -441,9 +441,12 @@ partial class Build
         var nativeDllDest = fileDestination / $"{Constants.NativeTracerFilename}.{fileExtension}";
         CopyFile(nativeDll, nativeDllDest, FileExistsPolicy.Overwrite);
 
-        var nativePdb = nativeProjectBuildDir / $"{NativeTracerProject.Name}.pdb";
-        var nativePdbDest = symbolsDestination / $"{Constants.NativeTracerFilename}.pdb";
-        CopyFile(nativePdb, nativePdbDest, FileExistsPolicy.Overwrite);
+        if (IsWin)
+        {
+            var nativePdb = nativeProjectBuildDir / $"{NativeTracerProject.Name}.pdb";
+            var nativePdbDest = symbolsDestination / $"{Constants.NativeTracerFilename}.pdb";
+            CopyFile(nativePdb, nativePdbDest, FileExistsPolicy.Overwrite);
+        }
     }
 
     Target PublishNativeTracer => _ => _
@@ -572,10 +575,10 @@ partial class Build
            // we don't really need to replace the Windows paths, as this is linux only
            // but doing it here for consistency and to avoid other confustion
            var updatedContents = loaderConfContents
-                                .Replace(".\\Datadog.Profiler.Native", $".\\{arch}Datadog.Profiler.Native")
-                                .Replace(".\\Datadog.Tracer.Native", $".\\{arch}Datadog.Tracer.Native")
-                                .Replace("./Datadog.Profiler.Native", $"./{arch}Datadog.Profiler.Native")
-                                .Replace("./Datadog.Tracer.Native", $"./{arch}Datadog.Tracer.Native");
+                                .Replace(".\\Datadog.Profiler.Native", $".\\{arch}\\Datadog.Profiler.Native")
+                                .Replace(".\\Datadog.Tracer.Native", $".\\{arch}\\Datadog.Tracer.Native")
+                                .Replace("./Datadog.Profiler.Native", $"./{arch}/Datadog.Profiler.Native")
+                                .Replace("./Datadog.Tracer.Native", $"./{arch}/Datadog.Tracer.Native");
 
            File.WriteAllText(MonitoringHomeDirectory / Constants.LoaderConfFilename, updatedContents);
        });
@@ -615,13 +618,16 @@ partial class Build
                         "netcoreapp3.1/",
                         "net6.0/",
                         $"{Constants.NativeLoaderFilename}.so",
-                        "libddwaf.so",
-                        Constants.LoaderConfFilename,
                     };
 
                     if (!IsArm64)
                     {
                         args.Add($"linux-{LinuxArchitectureIdentifier}");
+                        args.Add(Constants.LoaderConfFilename);
+                    }
+                    else
+                    {
+                        args.Add("libddwaf.so");
                     }
 
                     var arguments = string.Join(" ", args);

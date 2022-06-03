@@ -35,6 +35,10 @@ elseif (ISARM)
     add_compile_options(-DARM)
 endif()
 
+if (ISALPINE)
+    add_compile_options(-D__DD_MUSL__)
+endif()
+
 SET(TEST_EXECUTABLE_NAME "Datadog.Profiler.Native.Tests")
 SET(PROFILER_SHARED ${CMAKE_SOURCE_DIR}/src/ProfilerEngine/Datadog.Profiler.Native)
 
