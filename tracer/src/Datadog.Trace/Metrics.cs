@@ -8,7 +8,8 @@ namespace Datadog.Trace
     internal static class Metrics
     {
         /// <summary>
-        /// Tag set to specify which sampling mechanism is used
+        /// Tag set to specify the sampling decision that was taken
+        /// <seealso cref="SamplingPriorityValues"/>
         /// </summary>
         public const string SamplingPriority = "_sampling_priority_v1";
 

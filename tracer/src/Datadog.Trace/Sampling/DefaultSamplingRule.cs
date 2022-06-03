@@ -71,7 +71,7 @@ namespace Datadog.Trace.Sampling
             // to avoid locking if writers and readers can access the dictionary at the same time,
             // build the new dictionary first, then replace the old one
             var rates = new Dictionary<SampleRateKey, float>();
-            float defaultSamplingRate = 1;
+            var defaultSamplingRate = _defaultSamplingRate;
 
             if (sampleRates != null)
             {
