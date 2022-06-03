@@ -2,7 +2,7 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.AutoInstrumentation.Profiler.Native.Linux" VERSION 2.10.0)
+project("Datadog.Profiler.Native.Linux" VERSION 2.10.0)
 
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
@@ -59,7 +59,7 @@ endif()
 # Environment detection
 # ******************************************************
 
-SET(PROFILER_BASENAME Datadog.AutoInstrumentation.Profiler.Native)
+SET(PROFILER_BASENAME Datadog.Profiler.Native)
 SET(PROFILER_STATIC_LIB_NAME ${PROFILER_BASENAME}.static.${ARCH_POSTFIX})
 SET(PROFILER_SHARED_LIB_NAME ${PROFILER_BASENAME}.${ARCH_POSTFIX})
 

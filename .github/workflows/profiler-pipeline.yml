@@ -45,7 +45,7 @@ jobs:
       - uses: ./.github/actions/run-in-docker
         name: Build Monitoring Home in Docker
         with:
-          command: "Clean BuildTracerHome BuildNativeLoader BuildProfilerHome ZipMonitoringHome --TracerHome /project/shared/bin/monitoring-home"
+          command: "Clean BuildTracerHome BuildNativeLoader BuildProfilerHome ZipMonitoringHome"
 
       - name: Run Native Unit tests
         shell: bash

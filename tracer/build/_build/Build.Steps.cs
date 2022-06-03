@@ -321,7 +321,8 @@ partial class Build
                 var (architecture, ext) = GetUnixArchitectureAndExtension();
                 var ddwafFileName = $"libddwaf.{ext}";
 
-                var source = LibDdwafDirectory / "runtimes" / architecture / "native" / ddwafFileName;
+                // shouldn't we have a build for linux-musl-x64 for libddwaf ?
+                var source = LibDdwafDirectory / "runtimes" / "linux-x64" / "native" / ddwafFileName;
                 var dest = MonitoringHomeDirectory / architecture;
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
@@ -437,7 +438,7 @@ partial class Build
         AbsolutePath nativeProjectBuildDir,
         string fileExtension)
     {
-        var nativeDll  = nativeProjectBuildDir / $"{NativeTracerProject.Name}.{fileExtension}";
+        var nativeDll = nativeProjectBuildDir / $"{NativeTracerProject.Name}.{fileExtension}";
         var nativeDllDest = fileDestination / $"{Constants.NativeTracerFilename}.{fileExtension}";
         CopyFile(nativeDll, nativeDllDest, FileExistsPolicy.Overwrite);
 
@@ -555,10 +556,18 @@ partial class Build
             CompressZip(SymbolsDirectory, LinuxSymbolsZip, fileMode: FileMode.Create);
         });
 
+    // @andrew, not sure it's the way to handle it.
+    // I tried to make it work/compile
     Target CreateLinuxBackCompatFiles => _ => _
+       .Unlisted()
+       .DependsOn(CreateLinuxBackCompatFilesWithLoader)
+       .DependsOn(CreateLinuxBackCompatFilesWithoutLoader);
+
+    Target CreateLinuxBackCompatFilesWithLoader => _ => _
        .Unlisted()
        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
        .OnlyWhenStatic(() => IsLinux || IsOsx)
+       .OnlyWhenStatic(() => !IsArm64)
        .Executes(() =>
        {
            // Create a symlink in the root of monitoring home, pointing to the native loader in the architecture specific folder
@@ -583,9 +592,23 @@ partial class Build
            File.WriteAllText(MonitoringHomeDirectory / Constants.LoaderConfFilename, updatedContents);
        });
 
+    Target CreateLinuxBackCompatFilesWithoutLoader => _ => _
+       .Unlisted()
+       .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
+       .OnlyWhenStatic(() => IsArm64)
+       .Executes(() =>
+       {
+           // Create a symlink in the root of monitoring home, pointing to the native tracer in the architecture specific folder
+           var (arch, ext) = GetUnixArchitectureAndExtension();
+           var archSpecificFolder = MonitoringHomeDirectory / arch / $"{Constants.NativeTracerFilename}.{ext}";
+           var linkLocation = MonitoringHomeDirectory / $"{Constants.NativeLoaderFilename}.{ext}";
+           HardLinkUtil.Value($"-v {archSpecificFolder} {linkLocation}");
+       });
+
     Target ZipMonitoringHome => _ => _
         .Unlisted()
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader, CreateLinuxBackCompatFiles)
+        .DependsOn(CreateLinuxBackCompatFiles)
         .Requires(() => Version)
         .Executes(() =>
         {
@@ -1187,7 +1210,7 @@ partial class Build
                     (_, null) => true,
                     (_, { } p) when p.Name.Contains("Samples.AspNetCoreRazorPages") => true, // always have to build this one
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) && p.Name.Contains(SampleName) => true,
-                    (var required, {} p) => p.RequiresDockerDependency() == required,
+                    (var required, { } p) => p.RequiresDockerDependency() == required,
                 })
                 .Where(x =>
                 {

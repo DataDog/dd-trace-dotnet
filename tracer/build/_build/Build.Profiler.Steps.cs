@@ -165,7 +165,7 @@ partial class Build
         {
             var (arch, ext) = GetUnixArchitectureAndExtension();
             // TODO: handle other architectures?
-            var source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.AutoInstrumentation.Profiler.Native.x64.{ext}";
+            var source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.Profiler.Native.x64.{ext}";
             var dest = MonitoringHomeDirectory / arch / $"Datadog.Profiler.Native.{ext}";
             CopyFile(source, dest, FileExistsPolicy.Overwrite);
 
@@ -182,7 +182,7 @@ partial class Build
         {
             foreach (var architecture in ArchitecturesForPlatform)
             {
-                var source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.AutoInstrumentation.Profiler.Native.{architecture}.dll";
+                var source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.Profiler.Native.{architecture}.dll";
                 var dest = MonitoringHomeDirectory / $"win-{architecture}" / "Datadog.Profiler.Native.dll";
                 CopyFile(source, dest, FileExistsPolicy.Overwrite);
             }
