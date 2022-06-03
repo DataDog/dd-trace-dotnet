@@ -640,17 +640,13 @@ partial class Build
                         "netstandard2.0/",
                         "netcoreapp3.1/",
                         "net6.0/",
+                        $"linux-{LinuxArchitectureIdentifier}",
                         $"{Constants.NativeLoaderFilename}.so",
                     };
 
                     if (!IsArm64)
                     {
-                        args.Add($"linux-{LinuxArchitectureIdentifier}");
                         args.Add(Constants.LoaderConfFilename);
-                    }
-                    else
-                    {
-                        args.Add("libddwaf.so");
                     }
 
                     var arguments = string.Join(" ", args);
