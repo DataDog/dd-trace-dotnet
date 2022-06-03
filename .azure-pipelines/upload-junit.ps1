@@ -66,6 +66,7 @@ foreach ($file in $files)
     }
 
     Write-Output "";
+    Remove-Item $file
 }
 
 Write-Output "Removing datadog-ci..."
