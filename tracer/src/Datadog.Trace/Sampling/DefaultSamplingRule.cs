@@ -69,6 +69,12 @@ namespace Datadog.Trace.Sampling
 
         public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
         {
+            if (sampleRates is null || sampleRates.Count == 0)
+            {
+                Log.Debug("sampling rates received from the agent are empty");
+                return;
+            }
+
             // to avoid locking if writers and readers can access the dictionary at the same time,
             // build the new dictionary first, then replace the old one
             var rates = new Dictionary<SampleRateKey, float>(sampleRates.Count);
