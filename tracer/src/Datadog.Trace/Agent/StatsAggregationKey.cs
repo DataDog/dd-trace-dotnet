@@ -22,14 +22,14 @@ namespace Datadog.Trace.Agent
             string operationName,
             string type,
             int httpStatusCode,
-            bool synthetics)
+            bool isSyntheticsRequest)
         {
             Resource = resource;
             Service = service;
             OperationName = operationName;
             Type = type;
             HttpStatusCode = httpStatusCode;
-            IsSyntheticsRequest = synthetics;
+            IsSyntheticsRequest = isSyntheticsRequest;
         }
 
         public bool Equals(StatsAggregationKey other)
