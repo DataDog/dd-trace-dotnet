@@ -353,7 +353,7 @@ stages:
       displayName: Download profiler linux native binary
       inputs:
         artifact: linux-profiler-home-$(baseImage)
-        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/continuousprofiler
+        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -365,6 +365,12 @@ stages:
     - publish: $(artifacts)/linux-x64
       displayName: Upload linux-x64 packages
       artifact: linux-packages-$(baseImage)
+      condition: ne(variables['baseImage'], 'alpine')
+
+    - publish: $(artifacts)/linux-musl-x64
+      displayName: Upload linux-musl-x64 packages
+      artifact: linux-packages-$(baseImage)
+      condition: eq(variables['baseImage'], 'alpine')
 
     - publish: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
       displayName: Upload linux-x64 monitoring home
@@ -721,8 +727,6 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
-    variables:
-      USE_NATIVE_LOADER: true
 
     steps:
     - template: steps/clone-repo.yml
@@ -793,7 +797,6 @@ stages:
       name: azure-windows-scale-set
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
-      USE_NATIVE_LOADER: true
 
     steps:
     - template: steps/clone-repo.yml

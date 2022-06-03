@@ -69,6 +69,11 @@ namespace Datadog.Trace.TestHelpers
             return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
         }
 
+        public static bool IsAlpine()
+        {
+            return "true".Equals(Environment.GetEnvironmentVariable("IsAlpine"), StringComparison.OrdinalIgnoreCase);
+        }
+
         public static string GetPlatform()
         {
             return RuntimeInformation.ProcessArchitecture.ToString();

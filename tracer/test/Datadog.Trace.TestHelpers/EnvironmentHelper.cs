@@ -42,9 +42,7 @@ namespace Datadog.Trace.TestHelpers
             _output = output;
             TracerHome = GetTracerHomePath();
 
-            // The Native loader is used only on Windows and Linux x64.
-            // We need to keep this check until all platforms/configurations are supported.
-            ProfilerPath = UseNativeLoader ? GetNativeLoaderPath() : GetTracerNativeDLLPath();
+            ProfilerPath = GetClrProfilerDllPath();
 
             var parts = _targetFramework.FrameworkName.Split(',');
             _runtime = parts[0];
@@ -130,31 +128,7 @@ namespace Datadog.Trace.TestHelpers
                 "monitoring-home");
         }
 
-        public static string GetNativeLoaderPath()
-        {
-            var monitoringHome = GetMonitoringHomePath();
-
-            string fileName = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform()) switch
-            {
-                ("win", "X64")     => "Datadog.AutoInstrumentation.NativeLoader.x64.dll",
-                ("win", "X86")     => "Datadog.AutoInstrumentation.NativeLoader.x86.dll",
-                ("linux", "X64")   => "Datadog.Trace.ClrProfiler.Native.so",
-                ("linux", "Arm64") => "Datadog.AutoInstrumentation.NativeLoader.so",
-                ("osx", _)         => "Datadog.AutoInstrumentation.NativeLoader.dylib",
-                _ => throw new PlatformNotSupportedException()
-            };
-
-            var path = Path.Combine(monitoringHome, fileName);
-
-            if (!File.Exists(path))
-            {
-                throw new Exception($"Unable to find Native Loader at {path}");
-            }
-
-            return path;
-        }
-
-        public static string GetTracerNativeDLLPath()
+        public static string GetClrProfilerDllPath()
         {
             var tracerHome = GetTracerHomePath();
 
