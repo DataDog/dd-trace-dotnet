@@ -26,7 +26,7 @@ module SpanModelHelpers =
 
     let tagIsPresent tagName (span: MockSpan) =
         match span.GetTag tagName with
-        | null -> Failure $"Tag {tagName} is missing"
+        | null -> Failure $"Tag \"{tagName}\" was expected to be present, but the tag is missing"
         | _ -> Success span
 
     let tagIsOptional tagName (span: MockSpan) =
@@ -35,35 +35,35 @@ module SpanModelHelpers =
             
     let tagMatches tagName expectedValue (span: MockSpan) =
         match span.GetTag tagName with
-        | null -> Failure $"Tag {tagName} is missing"
-        | value when value <> expectedValue -> Failure $"Tag {tagName} value {value} does not match {expectedValue}"
+        | null -> Failure $"Tag \"{tagName}\" was expected to have value \"{expectedValue}\", but the tag is missing"
+        | value when value <> expectedValue -> Failure $"Tag \"{tagName}\" was expected to have value \"{expectedValue}\", but the tag value is \"{value}\""
         | _ -> Success span
 
     let metricIsPresent metricName (span: MockSpan) =
         match span.GetMetric metricName with
-        | metric when not metric.HasValue -> Failure $"Tag {metricName} is missing"
+        | metric when not metric.HasValue -> Failure $"Metric \"{metricName}\" was expected to be present, but the metric is missing"
         | _ -> Success span
 
     let metricMatches metricName expectedValue (span: MockSpan) =
         match span.GetMetric metricName with
-        | metric when not metric.HasValue -> Failure $"Metric {metricName} is missing"
-        | metric when metric.Value <> expectedValue -> Failure $"Metric {metricName} value {metric.Value} does not match {expectedValue}"
+        | metric when not metric.HasValue -> Failure $"Metric \"{metricName}\" was expected to be present"
+        | metric when metric.Value <> expectedValue -> Failure $"Metric \"{metricName}\" was expected to to have value \"{expectedValue}\", but the tag value is \"{metric.Value}\""
         | _ -> Success span
 
     let isPresentAndNonZero extractProperty (span: MockSpan) =
         match extractProperty span with
-        | (propertyName, "") -> Failure $"{propertyName} is empty"
-        | (propertyName, null) -> Failure $"{propertyName} is null"
-        | (propertyName, "0") -> Failure $"{propertyName} is 0"
+        | (propertyName, "") -> Failure $"Property \"{propertyName}\" was expected to be present and non-zero, but the property is empty"
+        | (propertyName, null) -> Failure $"Property \"{propertyName}\" was expected to be present and non-zero, but the property is null"
+        | (propertyName, "0") -> Failure $"Property \"{propertyName}\" was expected to be present and non-zero, but the property is 0"
         | (_, _) -> Success span
     
     let isPresent extractProperty (span: MockSpan) =
         match extractProperty span with
-        | (propertyName, "") -> Failure $"{propertyName} is empty"
-        | (propertyName, null) -> Failure $"{propertyName} is null"
+        | (propertyName, "") -> Failure $"Property \"{propertyName}\" was expected to be present, but the property is empty"
+        | (propertyName, null) -> Failure $"Property \"{propertyName}\" was expected to be present, but the property is null"
         | (_, _) -> Success span
 
     let matches extractProperty (expectedValue: string) (span:MockSpan) =
         match extractProperty span with
-        | (propertyName, value) when value <> expectedValue -> Failure $"{propertyName} value {value} does not match {expectedValue}"
+        | (propertyName, value) when value <> expectedValue -> Failure $"Property \"{propertyName}\" was expected to have value \"{expectedValue}\", but the property is \"{value}\""
         | (_, _) -> Success span
