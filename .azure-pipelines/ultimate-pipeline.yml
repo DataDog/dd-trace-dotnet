@@ -197,11 +197,8 @@ stages:
         masterCommitId: $(masterCommitId)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: tracer\build.cmd BuildTracerHome
+    - script: tracer\build.cmd BuildTracerHome BuildNativeLoader
       displayName: Build tracer home
-
-    - script: tracer\build.cmd BuildNativeLoader
-      displayName: Build monitoring home
 
     - publish: $(monitoringHome)
       displayName: Upload Windows tracer home directory
@@ -266,7 +263,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "Clean BuildTracerHome"
+        command: "Clean BuildTracerHome BuildNativeLoader"
 
     - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
@@ -360,7 +357,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "BuildNativeLoader ZipMonitoringHome"
+        command: "ZipMonitoringHome"
 
     - publish: $(artifacts)/linux-x64
       displayName: Upload linux-x64 packages
