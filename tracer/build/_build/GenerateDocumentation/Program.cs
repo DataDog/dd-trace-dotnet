@@ -38,7 +38,7 @@ namespace GenerateDocumentation
             }
 
             var sb = new StringBuilder();
-            sb.AppendLine("# Span Model");
+            sb.AppendLine("# Span Metadata");
 
             var reader = new StringReader(contents);
             var currentModel = new SpanModel();
@@ -106,38 +106,63 @@ namespace GenerateDocumentation
                 }
             }
 
-            var spanModelFilePath = _docsDirectory / "SpanModel.md";
+            var spanModelFilePath = _docsDirectory / "span_metadata.md";
             File.WriteAllText(spanModelFilePath, sb.ToString());
         }
 
         private static void GenerateSectionMarkdown(StringBuilder sb, SpanModel model)
         {
-            sb.AppendLine($"## {model.SectionName} Metadata");
-            sb.AppendLine("Property | Required Value |");
-            sb.AppendLine("---------|----------------|");
+            sb.AppendLine($"## {model.SectionName}");
 
             // Add span properties first
+            bool spanHeaderAdded = false;
             foreach (var requirement in model.Requirements
-                                        .Where(r => !r.Property.StartsWith("Tags[") && !r.Property.StartsWith("Metrics["))
+                                        .Where(r => r.PropertyType == SpanModel.PropertyType.Span)
                                         .OrderBy(r => r.Property))
             {
-                sb.AppendLine(requirement.ToMarkdownString());
+                if (!spanHeaderAdded)
+                {
+                    sb.AppendLine("### Span properties");
+                    sb.AppendLine("Name | Required |");
+                    sb.AppendLine("---------|----------------|");
+                    spanHeaderAdded = true;
+                }
+
+                sb.AppendLine(requirement.ToString());
             }
 
             // Add Tags next
+            bool tagsHeaderAdded = false;
             foreach (var requirement in model.Requirements
-                                        .Where(r => r.Property.StartsWith("Tags["))
+                                        .Where(r => r.PropertyType == SpanModel.PropertyType.Tag)
                                         .OrderBy(r => r.Property))
             {
-                sb.AppendLine(requirement.ToMarkdownString());
+                if (!tagsHeaderAdded)
+                {
+                    sb.AppendLine("### Tags");
+                    sb.AppendLine("Name | Required |");
+                    sb.AppendLine("---------|----------------|");
+                    tagsHeaderAdded = true;
+                }
+
+                sb.AppendLine(requirement.ToString());
             }
 
             // Add Metrics next
+            bool metricsHeaderAdded = false;
             foreach (var requirement in model.Requirements
-                                        .Where(r => r.Property.StartsWith("Metrics["))
+                                        .Where(r => r.PropertyType == SpanModel.PropertyType.Metric)
                                         .OrderBy(r => r.Property))
             {
-                sb.AppendLine(requirement.ToMarkdownString());
+                if (!metricsHeaderAdded)
+                {
+                    sb.AppendLine("### Metrics");
+                    sb.AppendLine("Name | Required |");
+                    sb.AppendLine("---------|----------------|");
+                    metricsHeaderAdded = true;
+                }
+
+                sb.AppendLine(requirement.ToString());
             }
 
             sb.AppendLine();
@@ -157,19 +182,28 @@ namespace GenerateDocumentation
                 AtLeastOneRequirementAdded,
             }
 
+            public enum PropertyType
+            {
+                Span,
+                Tag,
+                Metric,
+            }
+
             public record Requirement
             {
                 private static readonly Requirement Unknown = new Requirement
                 {
                     Property = "unknown",
-                    RequiredValue = "unknown"
+                    PropertyType = PropertyType.Span,
+                    RequiredValue = "unknown",
                 };
 
                 public string Property { get; init; }
+                public PropertyType PropertyType { get; init; }
                 public string RequiredValue { get; init; }
 
-                public string ToMarkdownString()
-                    => $"{Property} | {RequiredValue} |";
+                public override string ToString()
+                    => $"{Property} | {RequiredValue}";
                 
                 private static string Capitalize(string input)
                 {
@@ -187,7 +221,7 @@ namespace GenerateDocumentation
 
                     for (int i = 0; i < parts.Length; i++)
                     {
-                        parts[i] = parts[i].Replace("`", "");
+                        parts[i] = parts[i].Replace("`", "").Trim('"');
                     }
                     
                     return parts[0] switch
@@ -196,36 +230,46 @@ namespace GenerateDocumentation
                         "isPresent" => new Requirement
                             {
                                 Property = $"{Capitalize(parts[1])}",
-                                RequiredValue = "_non-null value_",
+                                RequiredValue = $"Yes",
                             },
                         "isPresentAndNonZero" => new Requirement
                             {
                                 Property = $"{Capitalize(parts[1])}",
-                                RequiredValue = "_non-zero value_",
+                                RequiredValue = $"Yes, _non-zero value_",
                             },
                         "matches" => new Requirement
                             {
                                 Property = $"{Capitalize(parts[1])}",
                                 RequiredValue = $"`{parts[2]}`",
                             },
+                        "tagIsOptional" => new Requirement
+                            {
+                                Property = $"{parts[1]}",
+                                PropertyType = PropertyType.Tag,
+                                RequiredValue = "No",
+                            },
                         "tagIsPresent" => new Requirement
                             {
-                                Property = $"Tags[{parts[1]}]",
-                                RequiredValue = "_non-null value_",
+                                Property = $"{parts[1]}",
+                                PropertyType = PropertyType.Tag,
+                                RequiredValue = "Yes",
                             },
                         "tagMatches" => new Requirement
                             {
-                                Property = $"Tags[{parts[1]}]",
+                                Property = $"{parts[1]}",
+                                PropertyType = PropertyType.Tag,
                                 RequiredValue = $"`{parts[2]}`",
                             },
                         "metricIsPresent" => new Requirement
                             {
-                                Property = $"Metrics[{parts[1]}]",
-                                RequiredValue = "_non-null value_",
+                                Property = $"{parts[1]}",
+                                PropertyType = PropertyType.Metric,
+                                RequiredValue = "Yes",
                             },
                         "metricMatches" => new Requirement
                             {
-                                Property = $"Metrics[{parts[1]}]",
+                                Property = $"{parts[1]}",
+                                PropertyType = PropertyType.Metric,
                                 RequiredValue = $"`{parts[2]}`",
                             },
                         _ => throw new Exception($"Requirement {parts[0]} not recognized"),

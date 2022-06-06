@@ -1,0 +1,235 @@
+# Span Metadata
+## AspNetCore
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `aspnet_core.request`
+Type | `web`
+### Tags
+Name | Required |
+---------|----------------|
+component | `aspnet_core`
+http.method | Yes
+http.status_code | Yes
+http.url | Yes
+span.kind | `server`
+
+## AspNetCoreMvc
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `aspnet_core_mvc.request`
+Type | `web`
+### Tags
+Name | Required |
+---------|----------------|
+aspnet_core.action | Yes
+aspnet_core.controller | Yes
+aspnet_core.route | Yes
+component | `aspnet_core`
+span.kind | `server`
+
+## Elasticsearch
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `elasticsearch.query`
+Type | `elasticsearch`
+### Tags
+Name | Required |
+---------|----------------|
+component | `elasticsearch-net`
+elasticsearch.action | Yes
+elasticsearch.method | Yes
+elasticsearch.url | Yes
+span.kind | `client`
+
+## GraphQL Server
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `http.request`
+Type | `graphql`
+### Tags
+Name | Required |
+---------|----------------|
+component | `graphql`
+graphql.operation.name | Yes
+graphql.operation.type | Yes
+graphql.source | Yes
+span.kind | `server`
+
+## HttpMessageHandler
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `http.request`
+Type | `http`
+### Tags
+Name | Required |
+---------|----------------|
+component | Yes
+http-client-handler-type | Yes
+http.method | Yes
+http.status_code | Yes
+http.url | Yes
+span.kind | `client`
+
+## MongoDB
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `mongodb.query`
+Type | `mongodb`
+### Tags
+Name | Required |
+---------|----------------|
+component | `mongodb`
+db.name | Yes
+mongodb.collection | Yes
+mongodb.query | Yes
+out.host | Yes
+out.port | Yes
+span.kind | `client`
+
+## PostgreSQL
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `postgres.query`
+Type | `sql`
+### Tags
+Name | Required |
+---------|----------------|
+component | `mongodb`
+db.name | Yes
+db.type | `postgres`
+span.kind | `client`
+
+## RabbitMQ
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `amqp.command`
+Type | `queue`
+### Tags
+Name | Required |
+---------|----------------|
+amqp.command | Yes
+amqp.delivery_mode | Yes
+amqp.exchange | Yes
+amqp.queue | Yes
+amqp.routing_key | Yes
+component | `rabbitmq`
+message.size | Yes
+span.kind | `client`
+
+## Service Fabric
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `amqp.command`
+Type | `redis`
+### Tags
+Name | Required |
+---------|----------------|
+service-fabric.application-id | Yes
+service-fabric.application-name | Yes
+service-fabric.node-id | Yes
+service-fabric.node-name | Yes
+service-fabric.partition-id | Yes
+service-fabric.service-name | Yes
+service-fabric.service-remoting.interface-id | No
+service-fabric.service-remoting.invocation-id | No
+service-fabric.service-remoting.method-id | No
+service-fabric.service-remoting.method-name | Yes
+service-fabric.service-remoting.uri | Yes
+
+## Service Remoting (client)
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `service_remoting.client`
+### Tags
+Name | Required |
+---------|----------------|
+service-fabric.service-remoting.interface-id | No
+service-fabric.service-remoting.invocation-id | No
+service-fabric.service-remoting.method-id | No
+service-fabric.service-remoting.method-name | Yes
+service-fabric.service-remoting.uri | Yes
+span.kind | `client`
+
+## Service Remoting (server)
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `service_remoting.server`
+### Tags
+Name | Required |
+---------|----------------|
+service-fabric.service-remoting.interface-id | No
+service-fabric.service-remoting.invocation-id | No
+service-fabric.service-remoting.method-id | No
+service-fabric.service-remoting.method-name | Yes
+service-fabric.service-remoting.uri | Yes
+span.kind | `server`
+
+## ServiceStackRedis
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `redis.command`
+Type | `redis`
+### Tags
+Name | Required |
+---------|----------------|
+component | `stackexchangeredis`
+out.host | Yes
+out.port | Yes
+redis.raw_command | Yes
+span.kind | `client`
+
+## StackExchangeRedis
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `redis.command`
+Type | `redis`
+### Tags
+Name | Required |
+---------|----------------|
+component | `stackexchangeredis`
+out.host | Yes
+out.port | Yes
+redis.raw_command | Yes
+span.kind | `client`
+
+## Wcf (server)
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `wcf.request`
+Type | `web`
+### Tags
+Name | Required |
+---------|----------------|
+http.url | Yes
+span.kind | `server`
+
+## WebRequest
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `http.request`
+Type | `http`
+### Tags
+Name | Required |
+---------|----------------|
+component | Yes
+http-client-handler-type | Yes
+http.method | Yes
+http.status_code | Yes
+http.url | Yes
+span.kind | `client`
+

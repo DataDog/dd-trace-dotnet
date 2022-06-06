@@ -15,7 +15,7 @@
   <ItemGroup>
     <Compile Include="ValidationTypes.fs" />
     <Compile Include="SpanModelHelpers.fs" />
-    <Compile Include="SpanModel.fs" />
+    <Compile Include="TracingIntegrationRules.fs" />
     <Compile Include="SpanValidator.fs" />
     <Compile Include="Library.fs" />
   </ItemGroup>

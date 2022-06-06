@@ -189,10 +189,10 @@ partial class Build
         .Description("Regenerate documentation from our code models")
         .Executes(() =>
         {
-            var spanModelRulesFilePath = TestsDirectory / "Datadog.Trace.TestHelpers.FSharp" / "SpanModel.fs";
+            var rulesFilePath = TestsDirectory / "Datadog.Trace.TestHelpers.FSharp" / "TracingIntegrationRules.fs";
             var docsDirectory = RootDirectory / "docs";
 
-            var documentationGenerator = new DocumentationGenerator(spanModelRulesFilePath, docsDirectory);
+            var documentationGenerator = new DocumentationGenerator(rulesFilePath, docsDirectory);
             documentationGenerator.GenerateDocumentation();
         });
 

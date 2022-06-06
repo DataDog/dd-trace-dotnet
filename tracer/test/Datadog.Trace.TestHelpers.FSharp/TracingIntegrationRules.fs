@@ -1,24 +1,9 @@
 namespace Datadog.Trace.TestHelpers.FSharp
 
-module SpanModel =
+module TracingIntegrationRules =
     open ValidationTypes
     open Datadog.Trace.TestHelpers
     open SpanModelHelpers
-
-    let isSpan : MockSpan -> Result<MockSpan, string> =
-        isPresentAndNonZero traceId
-        &&& isPresentAndNonZero spanId
-        &&& isPresent name
-        &&& isPresent resource
-        &&& isPresent service
-        &&& isPresent ``type``
-        &&& tagIsPresent "env"
-        &&& tagIsPresent "version"
-
-    let isRootSpan : MockSpan -> Result<MockSpan, string> =
-        tagIsPresent "language"
-        &&& tagIsPresent "runtime-id"
-        &&& metricMatches "_dd.top_level" 1.0
 
     let isAspNetCore : MockSpan -> Result<MockSpan, string> =
         matches name "aspnet_core.request"
