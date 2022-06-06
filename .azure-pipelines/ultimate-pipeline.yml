@@ -573,6 +573,11 @@ stages:
         condition: succeededOrFailed()
         continueOnError: true
 
+      - publish: tracer/build_data
+        artifact: junit-unit-tests_macos_x64_$(System.JobAttempt)
+        condition: succeededOrFailed()
+        continueOnError: true
+
       - task: PublishTestResults@2
         displayName: publish test results
         inputs:
@@ -618,6 +623,11 @@ stages:
 
     - publish: tracer/build_data
       artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: tracer/build_data
+      artifact: junit-unit-tests-$(Agent.JobName)_linux_x64_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -708,6 +718,11 @@ stages:
             testResultsFiles: tracer/build_data/results/**/*.trx
           condition: succeededOrFailed()
 
+        - publish: tracer/build_data
+          artifact: junit-unit-tests-$(Agent.JobName)_linux_arm64_$(System.JobAttempt)
+          condition: succeededOrFailed()
+          continueOnError: true
+
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
@@ -761,6 +776,11 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+    - publish: tracer/build_data
+      artifact: junit-integration-tests-$(framework)_windows_$(targetPlatform)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows tracer logs
@@ -818,6 +838,11 @@ stages:
       condition: succeededOrFailed()
 
     - publish: tracer/build_data
+      artifact: junit-integration-tests-iis-$(framework)_windows_$(targetPlatform)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: tracer/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
       artifact: integration_tests_windows_iis_tracer_logs_$(targetPlatform)_$(framework)
       condition: succeededOrFailed()
@@ -860,6 +885,11 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+    - publish: tracer/build_data
+      artifact: junit-integration-tests-iis-security-$(framework)_windows_$(targetPlatform)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
@@ -931,6 +961,11 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+    - publish: tracer/build_data
+      artifact: junit-integration-tests-msi-$(framework)_windows_$(targetPlatform)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -1021,6 +1056,11 @@ stages:
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
+    - publish: tracer/build_data
+      artifact: junit-integration-tests-$(baseImage)_linux_x64_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: integration_tests_linux_snapshots_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
@@ -1110,6 +1150,11 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+    - publish: tracer/build_data
+      artifact: junit-integration-tests-docker-$(baseImage)_linux_x64_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
@@ -1255,6 +1300,11 @@ stages:
             testResultsFiles: tracer/build_data/results/**/*.trx
           condition: succeededOrFailed()
 
+        - publish: tracer/build_data
+          artifact: junit-integration-tests-$(publishTargetFramework)-$(baseImage)_linux_arm64_$(System.JobAttempt)
+          condition: succeededOrFailed()
+          continueOnError: true
+
         - publish: tracer/test/snapshots
           displayName: Uploading snapshots
           artifact: integration_tests_linux_snapshots_arm64_$(publishTargetFramework)_$(System.JobAttempt)
@@ -1332,6 +1382,11 @@ stages:
             testResultsFormat: VSTest
             testResultsFiles: tracer/build_data/results/**/*.trx
           condition: succeededOrFailed()
+
+        - publish: tracer/build_data
+          artifact: junit-integration-tests-docker-$(publishTargetFramework)-$(baseImage)_linux_arm64_$(System.JobAttempt)
+          condition: succeededOrFailed()
+          continueOnError: true
 
         - publish: tracer/test/snapshots
           displayName: Uploading snapshots
@@ -1810,6 +1865,11 @@ stages:
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
+    - publish: tracer/build_data
+      artifact: junit-artifact-tests_windows_$(targetPlatform)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
 - stage: tool_artifacts_tests_linux
   dependsOn: [dotnet_tool, master_commit_id]
   variables:
@@ -1828,16 +1888,19 @@ stages:
         debian:
           baseImage: debian
           artifactSuffix: linux-x64
+          targetPlatform: x64
           poolImage: ubuntu-18.04
           poolName:
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
+          targetPlatform: x64
           poolImage: ubuntu-18.04
           poolName:
         arm64:
           baseImage: debian
           artifactSuffix: linux-arm64
+          targetPlatform: arm64
           poolImage:
           poolname: aws-arm64-auto-scaling
 
@@ -1886,6 +1949,11 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+    - publish: tracer/build_data
+      artifact: junit-artifact-tests-$(Agent.JobName)_linux_$(targetPlatform)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
 - stage: upload_to_s3
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
@@ -2249,6 +2317,9 @@ stages:
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet-appsec
+        DD_ENV: CI
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_API_KEY: $(ddApiKey)
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
@@ -2361,6 +2432,7 @@ stages:
       displayName: Execute Samples.$(sampleName) benchmark
       env:
         DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
 
     - task: PowerShell@2
       displayName: Wait 20 seconds to agent flush before finishing pipeline
@@ -2675,3 +2747,61 @@ stages:
 
     - bash: sleep 20
       displayName: Wait 20 seconds to agent flush before finishing pipeline
+
+- stage: junit_upload
+  condition: eq(variables['isScheduledBuild'], 'False')
+  dependsOn: 
+    - master_commit_id
+    - unit_tests_linux
+    - unit_tests_macos
+    - unit_tests_windows
+    - unit_tests_arm64
+    - integration_tests_windows
+    - integration_tests_windows_iis
+    - msi_integration_tests_windows
+    - integration_tests_linux
+    - integration_tests_arm64
+    - benchmarks
+    - throughput
+    - throughput_appsec
+    - tool_artifacts_tests_windows
+    - tool_artifacts_tests_linux
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+
+  jobs:
+  - job: upload_test_results
+    timeoutInMinutes: 60 #default value
+
+    pool:
+      vmImage: ubuntu-18.04
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - task: NodeTool@0 
+      inputs:
+        versionSpec: '12.x'
+
+    - task: Npm@1
+      inputs:
+        command: custom
+        customCommand: '-g @datadog/datadog-ci'
+
+    # - bash: dotnet run $(Build.BuildId)
+    #   displayName: "Run"
+    #   workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"
+    #   env:
+    #     DD_API_KEY: $(ddApiKey)
+
+    # - task: PowerShell@2
+    #   displayName: Upload JUnit results
+    #   inputs:
+    #     targetType: 'filePath'
+    #     filePath: .azure-pipelines/upload-junit.ps1
+    #   env:
+    #     DD_API_KEY: $(ddApiKey)
+    #     DD_ENV: ci
+    #     ARCHITECTURE: x64
