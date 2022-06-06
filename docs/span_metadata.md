@@ -1,4 +1,20 @@
 # Span Metadata
+## Aerospike
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `aerospike.command`
+Type | `aerospike`
+### Tags
+Name | Required |
+---------|----------------|
+aerospike.key | No
+aerospike.namespace | No
+aerospike.setname | No
+aerospike.userkey | No
+component | `aerospike`
+span.kind | `client`
+
 ## AspNetCore
 ### Span properties
 Name | Required |

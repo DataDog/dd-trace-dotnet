@@ -3,10 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.FSharp;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -64,10 +66,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  .ToList();
 
                 spans.Should()
-                     .OnlyContain(span => span.Name == "aerospike.command")
-                     .And.OnlyContain(span => span.Service == "Samples.Aerospike-aerospike")
-                     .And.OnlyContain(span => span.Tags[Tags.SpanKind] == SpanKinds.Client)
+                     .OnlyContain(span => span.Service == "Samples.Aerospike-aerospike")
                      .And.OnlyContain(span => ValidateSpanKey(span));
+
+                foreach (var span in spans)
+                {
+                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAerospike, span);
+                    Assert.True(result, message);
+                }
 
                 spans.Select(span => span.Resource).Should().ContainInOrder(expectedSpans);
                 telemetry.AssertIntegrationEnabled(IntegrationId.Aerospike);

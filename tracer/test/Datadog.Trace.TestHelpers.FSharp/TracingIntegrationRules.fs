@@ -5,6 +5,16 @@ module TracingIntegrationRules =
     open Datadog.Trace.TestHelpers
     open SpanModelHelpers
 
+    let isAerospike : MockSpan -> Result<MockSpan, string> =
+        matches name "aerospike.command"
+        &&& matches ``type`` "aerospike"
+        &&& tagIsOptional "aerospike.key"
+        &&& tagIsOptional "aerospike.namespace"
+        &&& tagIsOptional "aerospike.setname"
+        &&& tagIsOptional "aerospike.userkey"
+        &&& tagMatches "component" "aerospike"
+        &&& tagMatches "span.kind" "client"
+
     let isAspNetCore : MockSpan -> Result<MockSpan, string> =
         matches name "aspnet_core.request"
         &&& matches ``type`` "web"
