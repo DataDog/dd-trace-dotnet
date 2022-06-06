@@ -2,7 +2,7 @@ $resultFolder = "./tracer/build_data/results";
 $service= "dd-trace-dotnet";
 $files = [System.IO.Directory]::GetFiles($resultFolder, "junit-result.xml", [System.IO.SearchOption]::AllDirectories);
 $osArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString().ToLowerInvariant();
-$runtimeArchitecture = $env:ARCHITECTURE
+$runtimeArchitecture = $env:ARCHITECTURE;
 
 Write-Output "Installing NPM datadog-ci";
 npm install -g @datadog/datadog-ci
@@ -30,7 +30,7 @@ npm install -g @datadog/datadog-ci
 #    }
 #}
 
-Write-Output "Processing junit files..."
+Write-Output "Processing junit files...";
 foreach ($file in $files)
 {
     $fileInfo = New-Object -TypeName System.IO.FileInfo -ArgumentList $file
@@ -71,13 +71,13 @@ foreach ($file in $files)
     #    ./datadog-ci.exe junit upload --service $service $file
     #}
 
-    Write-Output "Removing $file"
-    Remove-Item $file -Force -ErrorAction Ignore
-    if ($IsLinux -or $IsMacOS) {
-        sh -c "rm -f $file"
-    } else {
-        cmd /c "erase /f /q $file"
-    }
+    #Write-Output "Removing $file"
+    #Remove-Item $file -Force -ErrorAction Ignore
+    #if ($IsLinux -or $IsMacOS) {
+    #    sh -c "rm -f $file"
+    #} else {
+    #    cmd /c "erase /f /q $file"
+    #}
     Write-Output "";
 }
 
@@ -91,4 +91,5 @@ foreach ($file in $files)
 #  cmd /c "erase /f /q datadog-ci.exe"
 #}
 
-Write-Output "Done."
+Write-Output "Done.";
+Exit 0;
