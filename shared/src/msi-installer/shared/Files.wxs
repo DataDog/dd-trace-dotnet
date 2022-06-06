@@ -21,12 +21,6 @@
         </File>
 
       </Component>
-      <Component Win64="yes">
-        <File Id="Datadog.Trace.ClrProfiler.Native.x64.pdb"
-              Source="$(var.MonitoringHomeDirectory)\win-x64\Datadog.Trace.ClrProfiler.Native.pdb"
-              Checksum="yes">
-        </File>
-      </Component>
     </ComponentGroup>
 
     <!-- For the 64-bit installer, also install the 32-bit binaries -->
@@ -36,12 +30,6 @@
               Source="$(var.MonitoringHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
-        </File>
-      </Component>
-      <Component Win64="no">
-        <File Id="Datadog.Trace.ClrProfiler.Native.x86.pdb"
-              Source="$(var.MonitoringHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.pdb"
-              Checksum="yes">
         </File>
       </Component>
     </ComponentGroup>
@@ -60,12 +48,6 @@
               Source="$(var.MonitoringHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
-        </File>
-      </Component>
-      <Component Win64="no">
-        <File Id="Datadog.Trace.ClrProfiler.Native.x86.pdb"
-              Source="$(var.MonitoringHomeDirectory)\Datadog.Trace.ClrProfiler.Native.pdb"
-              Checksum="yes">
         </File>
       </Component>
     </ComponentGroup>

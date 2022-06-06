@@ -37,7 +37,7 @@ partial class Build
     AbsolutePath MsBuildProject => TracerDirectory / "Datadog.Trace.proj";
 
     AbsolutePath OutputDirectory => RootDirectory / "bin";
-    AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
+    AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (OutputDirectory / "monitoring-home");
     AbsolutePath SymbolsDirectory => OutputDirectory / "symbols";
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
@@ -50,7 +50,6 @@ partial class Build
 
     [Solution("profiler/src/Demos/Datadog.Demos.sln")] readonly Solution ProfilerSamplesSolution;
     [Solution("Datadog.Profiler.sln")] readonly Solution ProfilerSolution;
-    AbsolutePath ProfilerHomeDirectory => ProfilerHome ?? (MonitoringHomeDirectory / "continuousprofiler");
     AbsolutePath ProfilerMsBuildProject => ProfilerDirectory / "src" / "ProfilerEngine" / "Datadog.Profiler.Native.Windows" / "Datadog.Profiler.Native.Windows.WithTests.proj";
     AbsolutePath ProfilerOutputDirectory => RootDirectory / "profiler" / "_build";
     AbsolutePath ProfilerLinuxBuildDirectory => ProfilerOutputDirectory / "cmake";
@@ -467,10 +466,9 @@ partial class Build
                     .SetConfiguration(BuildConfiguration)
                     .SetMSBuildPath()
                     .AddProperty("RunWixToolsOutOfProc", true)
-                    .SetProperty("TracerHomeDirectory", MonitoringHomeDirectory)
                     .SetProperty("LibDdwafDirectory", LibDdwafDirectory)
-                    .SetProperty("ProfilerHomeDirectory", ProfilerHomeDirectory)
                     .SetProperty("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetProperty("SymbolsDirectory", SymbolsDirectory)
                     .SetMaxCpuCount(null)
                     .CombineWith(ArchitecturesForPlatform, (o, arch) => o
                         .SetProperty("MsiOutputPath", ArtifactsDirectory / arch.ToString())
