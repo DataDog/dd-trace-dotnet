@@ -524,7 +524,11 @@ stages:
           testResultsFormat: VSTest
           testResultsFiles: tracer/build_data/results/**/*.trx
         condition: succeededOrFailed()
-      
+
+      - task: NodeTool@0 
+        inputs:
+          versionSpec: '12.x'
+
       - task: PowerShell@2
         displayName: Upload JUnit results
         inputs:
@@ -591,6 +595,10 @@ stages:
           testResultsFiles: tracer/build_data/results/**/*.trx
         condition: succeededOrFailed()
 
+      - task: NodeTool@0 
+        inputs:
+          versionSpec: '12.x'
+
       - task: PowerShell@2
         displayName: Upload JUnit results
         inputs:
@@ -652,6 +660,10 @@ stages:
 
     - script: mkdir -p /tmp/powershell && (curl -L -s https://github.com/PowerShell/PowerShell/releases/download/v7.2.4/powershell-7.2.4-linux-x64.tar.gz | tar xvz -C /tmp/powershell/) && (sudo ln -s /tmp/powershell/pwsh /usr/local/bin/pwsh || true)
       displayName: Download Powershell
+
+    - task: NodeTool@0 
+      inputs:
+        versionSpec: '12.x'
 
     - task: PowerShell@2
       displayName: Upload JUnit results
@@ -815,6 +827,10 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+    - task: NodeTool@0 
+      inputs:
+        versionSpec: '12.x'
       
     - task: PowerShell@2
       displayName: Upload JUnit results
@@ -881,6 +897,10 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+    - task: NodeTool@0 
+      inputs:
+        versionSpec: '12.x'
       
     - task: PowerShell@2
       displayName: Upload JUnit results
@@ -936,6 +956,10 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+    - task: NodeTool@0 
+      inputs:
+        versionSpec: '12.x'
       
     - task: PowerShell@2
       displayName: Upload JUnit results
@@ -1018,6 +1042,10 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+    - task: NodeTool@0 
+      inputs:
+        versionSpec: '12.x'
 
     - task: PowerShell@2
       displayName: Upload JUnit results
@@ -1122,6 +1150,10 @@ stages:
     - script: mkdir -p /tmp/powershell && (curl -L -s https://github.com/PowerShell/PowerShell/releases/download/v7.2.4/powershell-7.2.4-linux-x64.tar.gz | tar xvz -C /tmp/powershell/) && (sudo ln -s /tmp/powershell/pwsh /usr/local/bin/pwsh || true)
       displayName: Download Powershell
 
+    - task: NodeTool@0 
+      inputs:
+        versionSpec: '12.x'
+
     - task: PowerShell@2
       displayName: Upload JUnit results
       inputs:
@@ -1225,6 +1257,10 @@ stages:
 
     - script: mkdir -p /tmp/powershell && (curl -L -s https://github.com/PowerShell/PowerShell/releases/download/v7.2.4/powershell-7.2.4-linux-x64.tar.gz | tar xvz -C /tmp/powershell/) && (sudo ln -s /tmp/powershell/pwsh /usr/local/bin/pwsh || true)
       displayName: Download Powershell
+
+    - task: NodeTool@0 
+      inputs:
+        versionSpec: '12.x'
 
     - task: PowerShell@2
       displayName: Upload JUnit results
@@ -1971,6 +2007,10 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+    - task: NodeTool@0 
+      inputs:
+        versionSpec: '12.x'
       
     - task: PowerShell@2
       displayName: Upload JUnit results
