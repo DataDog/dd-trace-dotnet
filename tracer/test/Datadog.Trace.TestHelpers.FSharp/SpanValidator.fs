@@ -20,3 +20,7 @@ module SpanValidator =
     let validateAspNetCoreMvcSpan span =
         isAspNetCoreMvc span
         |> returnSpanResult
+
+    let validateWcfServerSpan span =
+        ``isWcf (server)`` span
+        |> returnSpanResult

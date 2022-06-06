@@ -5,11 +5,13 @@
 
 #if NET461
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.FSharp;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -85,6 +87,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 await Verifier.Verify(spans, settings)
                               .UseMethodName("_");
+
+                foreach (var span in spans)
+                {
+                    (bool result, string message) = SpanValidator.validateWcfServerSpan(span);
+                    Assert.True(result, message);
+                }
 
                 // The custom binding doesn't trigger the integration
                 telemetry.AssertIntegration(IntegrationId.Wcf, enabled: binding != "Custom", autoEnabled: true);
