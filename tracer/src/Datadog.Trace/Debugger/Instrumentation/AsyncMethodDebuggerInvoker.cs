@@ -5,7 +5,6 @@
 
 using System;
 using System.Diagnostics;
-using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,43 +14,48 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.Debugger.Instrumentation
 {
     /// <summary>
-    /// AsyncMethodDebuggerInvoker responsible for the managed side async method instrumentation,
-    /// e.g. create the state, capture values and handle exceptions
+    /// AsyncMethodDebuggerInvoker is responsible for the managed side of async method instrumentation,
+    /// taking care of creating the state, capturing values and handling exceptions
     /// </summary>
     public static class AsyncMethodDebuggerInvoker
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AsyncMethodDebuggerInvoker));
-        private static readonly ImmutableDebuggerSettings Settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromDefaultSource());
 
         // We have two scenarios:
-        // 1. async method that does not participate in any other async method in i.e. has not async parent: probe on only one async method
-        // 2. async method that has ben called from another async method (async parent) i.e. probe on two async methods, that has a parent child relationship: Async1 call to Async2 and we have probes on both of them
-        // 2.1. async method that participate in a recursive call so we enter the state machine more than once but in a different context
-        // For scenario 1, in the BeginMethod, the context will be empty in the first entry and not empty but with the correct context in the continuation
-        // For scenario 2, in the BeginMethod of Async1, the context will be empty in the first entry and with the correct context in the continuation
-        // but for Async2, the context will not be empty in the first entry, but with the parent context - Async1 and we need to identify it and set the correct context
-        // for the continuation, we will have the correct context.
-        // For scenario 2.1 is the same as scenario 2 but we should note that we are in the same method but not in the same context - recursive call.
+        // 1. async method that does not participate in any other async method in i.e. has not async caller: probe on only one async method
+        // 2. async method that has been called from another async method (async caller) - i.e. probe on two async methods, that has a caller callee relationship: Async1 call to Async2 and we have probes on both of them
+        // 2.1. async method that participate in a recursive call so we enter the same state machine type more than once but in a different context
+        // For case 1 it's simple because we can store all data in AsyncLocal and for each entry to the BeginMethod (through the state machine object)
+        // we can inspect the AsyncLocal to see if we already create the context ot not
+        // but for case 2 and 2.1 the AsyncLocal of the callee will drive the context from the caller
+        // so we can't deterministic know if the context is a continuation or first entry of the callee
 
-        // We use the AsyncLocal to store the debugger state of each async method i.e. StateMachine.MoveNext run
-        // We want to have the same debugger state when reentry in same context but a different debugger state when the entry is in a different context
+        // We use the AsyncLocal storage to store the debugger state of each logical invocation of the async method i.e. StateMachine.MoveNext run
+        // We want to have the same debugger state when reentry in same context (e.g. continuation after executing an "await" expression) but a different debugger state when the entry is in a different context
+
+        /// <summary>
+        /// We use the AsyncLocal storage to store the debugger state of each logical invocation of the async method i.e. StateMachine.MoveNext run
+        /// We want to have the same debugger state when reentry in same context (e.g. continuation after executing an "await" expression) but a different debugger state when the entry is in a different context
+        /// </summary>
         private static readonly AsyncLocal<AsyncMethodDebuggerState> AsyncContext = new();
 
         /// <summary>
         /// Create a new context and save the parent.
-        /// We calling this method from the async kick off method before the state machine is created
-        /// So for each async state machine, this method will be called only once
-        /// and the IsFirstEntry property of the AsyncMethodDebuggerState will be "true"
-        /// then, in the first state machine step, we set this property to "false"
+        /// We call this method from the async kick off method before the state machine is created,
+        /// so for each async state machine, this method will be called exactly once.
+        /// The IsFirstEntry property of the AsyncMethodDebuggerState will be "true"
+        /// then, in the first state machine step, we set this property to "false", thus
+        /// we can deduce that any further invocation is not a new logical call but rather a
+        /// continuation from an "await" expression.
         /// </summary>
         /// <typeparam name="TTarget">Target object of the method. Note that it could be typeof(object) and not a concrete type</typeparam>
-        /// <param name="instance">The instance</param>
+        /// <param name="instance">The instance (target object) of the method</param>
         /// <returns>Live debugger state</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static AsyncMethodDebuggerState SetContext<TTarget>(TTarget instance)
         {
             var currentState = AsyncContext.Value;
-            var newState = new AsyncMethodDebuggerState { Parent = currentState, InvocationTarget = instance };
+            var newState = new AsyncMethodDebuggerState { Parent = currentState, InvocationTarget = instance, InvocationTargetType = typeof(TTarget) };
             AsyncContext.Value = newState;
             return newState;
         }
@@ -83,26 +87,18 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
             }
 
-            // MethodMetadataInfo saves locals from localVarSig,
-            // this isn't enough in async scenario because we need to extract more locals the may hoisted in the builder object
-            // and we need to subtract some locals that exist in the localVarSig but they are not belongs to the kickoff method
-            // see EndMethodLogLocals
-            if (!MethodMetadataProvider.TryCreateIfNotExists(methodMetadataIndex, in methodHandle, in typeHandle))
-            {
-                Log.Warning($"BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadataId = {methodMetadataIndex}");
-                return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
-            }
-
-            // There is an async context,
-            // it can be context of the current executing async method
-            // or the context of the parent call (other async method or recursive call of same method)
-            // Async1 -> Async2 or Async1 -> Async1.
             var asyncState = AsyncContext.Value;
             if (asyncState is { IsFirstEntry: false })
             {
-                // We are in a continuation, and we are in the same context as we hold in the AsyncLocal,
-                // return the current async state without capture things
+                // We are not logically entering the async method - rather, we are in a continuation (resuming after an 'await' expression),
+                // return the current async state without capture anything
                 return asyncState;
+            }
+
+            if (!MethodMetadataProvider.TryCreateIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle))
+            {
+                Log.Warning($"BeginMethod_StartMarker: Failed to receive the InstrumentedMethodInfo associated with the executing method. type = {typeof(TTarget)}, instance type name = {instance?.GetType().Name}, methodMetadataId = {methodMetadataIndex}");
+                return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
             }
 
             // We are not in a continuation,
@@ -130,13 +126,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             asyncState.SnapshotCreator.StartSnapshot();
             asyncState.SnapshotCreator.StartCaptures();
             asyncState.SnapshotCreator.StartEntry();
-            if (asyncState.InvocationTarget == null)
-            {
-                // static method
-                return;
-            }
-
-            asyncState.SnapshotCreator.CaptureInstance(asyncState.InvocationTarget, asyncState.InvocationTarget.GetType());
+            asyncState.SnapshotCreator.CaptureInstance(asyncState.InvocationTarget, asyncState.InvocationTargetType);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -144,7 +134,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             // capture hoisted arguments
             var kickOffMethodParameters = AsyncHelper.GetAsyncKickoffMethod(asyncState.MethodMetadataInfo.DeclaringType).GetParameters();
-            var kickOffMethodArgumentsValues = AsyncHelper.GetKickOffMethodArgumentsFromStateMachine(instance, kickOffMethodParameters);
+            var kickOffMethodArgumentsValues = AsyncHelper.GetHoistedArgumentsFromStateMachine(instance, kickOffMethodParameters);
             for (var index = 0; index < kickOffMethodArgumentsValues.Length; index++)
             {
                 ref var parameter = ref kickOffMethodArgumentsValues[index];
@@ -175,8 +165,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// </summary>
         /// <typeparam name="TArg">Type of argument.</typeparam>
         /// <param name="arg">The argument to be logged.</param>
-        /// <param name="paramName">dd</param>
-        /// <param name="index">index of given argument.</param>
+        /// <param name="paramName">The argument name</param>
+        /// <param name="index">Index of given argument.</param>
         /// <param name="state">Debugger state</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogArg<TArg>(ref TArg arg, string paramName, int index, ref AsyncMethodDebuggerState state)
@@ -193,36 +183,21 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="local">The local to be logged.</param>
         /// <param name="index">index of given argument.</param>
         /// <param name="state">Debugger state</param>
+        /// https://datadoghq.atlassian.net/browse/DEBUG-928
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogLocal<TLocal>(ref TLocal local, int index, ref AsyncMethodDebuggerState state)
         {
-            // this method is called from the most outer catch clause when the async method threw exception or when the async method ended
-            // in this phase we have the correct async context in hand because we already set it in the BeginMethod
-            // In case our instrumentation threw exception the state.IsActive field will return false
             if (!state.IsActive)
             {
                 return;
             }
 
             var localNamesFromPdb = state.MethodMetadataInfo.LocalVariableNames;
-            if (localNamesFromPdb != null)
+            if (!MethodDebuggerInvoker.TryGetLocalName(index, localNamesFromPdb, out var localName))
             {
-                if (index >= localNamesFromPdb.Length)
-                {
-                    // This is an extra local that does not appear in the PDB. This should only happen if the customer
-                    // is using an IL weaving or obfuscation tool that neglects to update the PDB.
-                    // There's nothing we can do, so let's just ignore it.
-                    return;
-                }
-
-                if (localNamesFromPdb[index] == null)
-                {
-                    // If the local does not appear in the PDB, then it is a compiler generated local and we shouldn't capture it.
-                    return;
-                }
+                return;
             }
 
-            var localName = localNamesFromPdb?[index] ?? "local_" + index;
             state.SnapshotCreator.CaptureLocal(local, localName, index == 0 && !state.HasLocalsOrReturnValue);
             state.HasLocalsOrReturnValue = true;
             state.HasArguments = true;
@@ -230,6 +205,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
         /// <summary>
         /// End Method with Void return value invoker
+        /// This method is called from either (1) the outer-most catch clause when the async method threw exception
+        /// or (2) when the async method has logically ended.
+        /// In this phase we have the correct async context in hand because we already set it in the BeginMethod.
         /// </summary>
         /// <typeparam name="TTarget">Target object of the method. Note that it could be typeof(object) and not a concrete type</typeparam>
         /// <param name="instance">Instance value</param>
@@ -251,12 +229,15 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 state.SnapshotCreator.CaptureException(exception);
             }
 
-            EndMethodLogLocals(instance, ref state);
+            EndMethodLogLocals(ref state);
             return DebuggerReturn.GetDefault();
         }
 
         /// <summary>
         /// End Method with Return value invoker - the MoveNext method always return void but here we send the kick-of method return value
+        /// This method is called from either (1) the outer-most catch clause when the async method threw exception
+        /// or (2) when the async method has logically ended.
+        /// In this phase we have the correct async context in hand because we already set it in the BeginMethod.
         /// </summary>
         /// <typeparam name="TReturn">Return type</typeparam>
         /// <typeparam name="TTarget">Target object of the method. Note that it could be typeof(object) and not a concrete type</typeparam>
@@ -285,28 +266,25 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 state.HasLocalsOrReturnValue = true;
             }
 
-            EndMethodLogLocals(instance, ref state);
+            EndMethodLogLocals(ref state);
             return new DebuggerReturn<TReturn>(returnValue);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static void EndMethodLogLocals<TTarget>(TTarget instance, ref AsyncMethodDebuggerState asyncState)
+        private static void EndMethodLogLocals(ref AsyncMethodDebuggerState asyncState)
         {
-            // capture hoisted locals
-            var kickOffMethodLocalsValues = AsyncHelper.GetKickOffMethodLocalsFromStateMachine(instance, asyncState.MethodMetadataInfo.DeclaringType);
-            var numOfLocals = 0;
-            for (var index = 0; index < kickOffMethodLocalsValues.Length; index++)
+            // MethodMetadataInfo saves locals from MoveNext localVarSig,
+            // this isn't enough in async scenario because we need to extract more locals the may hoisted in the builder object
+            // and we need to subtract some locals that exist in the localVarSig but they are not belongs to the kickoff method
+            // For know we capturing here all locals the are hoisted (except known generated locals)
+            // and we capturing in LogLocal the locals form localVarSig
+            var kickOffMethodLocalsValues = asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals;
+            for (var index = 0; index < kickOffMethodLocalsValues.Count; index++)
             {
-                ref var local = ref kickOffMethodLocalsValues[index];
-                if (local == default)
-                {
-                    continue;
-                }
-
-                asyncState.SnapshotCreator.CaptureLocal(local.Value, local.Name, numOfLocals == 0 && !asyncState.HasLocalsOrReturnValue);
+                var local = kickOffMethodLocalsValues[index];
+                asyncState.SnapshotCreator.CaptureLocal(local.Value, local.Name, index == 0 && !asyncState.HasLocalsOrReturnValue);
                 asyncState.HasLocalsOrReturnValue = true;
                 asyncState.HasArguments = false;
-                numOfLocals++;
             }
         }
 
@@ -342,42 +320,34 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Finalize snapshot
         /// </summary>
-        /// <param name="asyncState">The async state</param>
-        /// <param name="task1">the task</param>
-        /// <param name="stackFrames">frames</param>
+        /// <param name="state">The async debugger state</param>
+        /// <param name="task">Task builder task</param>
+        /// <param name="stackFrames">Stack frames of the kick-off method</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void FinalizeSnapshot(ref AsyncMethodDebuggerState asyncState, Task task1, StackFrame[] stackFrames)
+        public static void FinalizeSnapshot(ref AsyncMethodDebuggerState state, Task task, StackFrame[] stackFrames)
         {
-            if (task1.IsCanceled || task1.IsFaulted)
+            if (task.IsCanceled)
             {
                 return;
             }
 
-            using (asyncState.SnapshotCreator)
+            using (state.SnapshotCreator)
             {
-                MethodBase method = null;
-                if (stackFrames.Length > 0)
-                {
-                    method = stackFrames[0]?.GetMethod();
-                }
+                var methodName = state.MethodMetadataInfo.Method?.Name;
+                var typeFullName = state.MethodMetadataInfo.DeclaringType?.FullName;
 
-                var probeId = asyncState.ProbeId;
-                var methodName = method?.Name;
-                var type = method?.DeclaringType?.FullName;
-                var duration = DateTimeOffset.UtcNow - asyncState.StartTime;
+                state.SnapshotCreator.AddMethodProbeInfo(
+                          state.ProbeId,
+                          methodName,
+                          typeFullName)
+                     .FinalizeSnapshot(
+                              stackFrames,
+                              methodName,
+                              typeFullName,
+                              state.StartTime,
+                              null);
 
-                asyncState.SnapshotCreator
-                          .AddMethodProbeInfo(probeId, methodName, type)
-                          .AddStackInfo(stackFrames)
-                          .EndSnapshot(duration)
-                          .EndDebugger()
-                          .AddLoggerInfo(methodName, type)
-                          .AddGeneralInfo(Settings.ServiceName, null, null) // todo
-                          .AddMessage()
-                          .Complete()
-                    ;
-
-                // TODO: uncomment when the native side of async probe method will be implemented
+                // Uncomment when the native side of async probe method will be implemented
                 // var snapshot = asyncState.SnapshotCreator.GetSnapshotJson();
                 // LiveDebugger.Instance.AddSnapshot(snapshot);
             }

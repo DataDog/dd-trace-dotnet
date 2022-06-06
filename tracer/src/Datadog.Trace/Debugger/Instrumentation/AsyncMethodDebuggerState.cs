@@ -26,18 +26,35 @@ namespace Datadog.Trace.Debugger.Instrumentation
             SnapshotCreator = new DebuggerSnapshotCreator();
         }
 
-        // Determines whether we should still be capturing values, or halt for any reason (e.g an exception was caused by our instrumentation, rate limiter threshold reached).
+        /// <summary>
+        /// Gets or sets a value indicating whether we should still be capturing values,
+        /// or halt for any reason (e.g an exception was caused by our instrumentation, rate limiter threshold reached).
+        /// </summary>
         internal bool IsActive { get; set; } = true;
 
-        // Gets or sets if the current async method run is in the first entry - i.e. in kick off method - or in the state machine run
+        /// <summary>
+        /// Gets or sets a value indicating whether the current async method run is in the first entry - i.e. in kick off method - or in the state machine run
+        /// </summary>
         internal bool IsFirstEntry { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the current state of the async method captured locals or return value
+        /// </summary>
         internal bool HasLocalsOrReturnValue { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value indicating whether the current state of the async method captured arguments
+        /// </summary>
         internal bool HasArguments { get; set; }
 
+        /// <summary>
+        /// Gets or sets a value of the parent (caller) state
+        /// </summary>
         internal AsyncMethodDebuggerState Parent { get; set; }
 
+        /// <summary>
+        /// Gets the value of the MethodMetadataInfo that related to the current async method
+        /// </summary>
         internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataProvider.Get(MethodMetadataIndex);
 
         /// <summary>
@@ -65,6 +82,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// We can save it in some cases as TTarget but because we use it in serialization as boxed object anyway, we save it as object here
         /// </summary>
         public object InvocationTarget { get; set; }
+
+        /// <summary>
+        /// Gets or sets the type that represents the "this" object of the async kick-off method (i.e. original method)
+        /// </summary>
+        public Type InvocationTargetType { get; set; }
 
         /// <summary>
         /// Gets or sets the MethodMetadataIndex

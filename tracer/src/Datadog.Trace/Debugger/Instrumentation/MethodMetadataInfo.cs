@@ -4,6 +4,9 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using System.Reflection;
+using Datadog.Trace.Debugger.Helpers;
 
 namespace Datadog.Trace.Debugger.Instrumentation
 {
@@ -12,11 +15,18 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// </summary>
     internal readonly record struct MethodMetadataInfo
     {
-        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, Type type)
+        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, Type type, MethodBase method)
+            : this(parameterNames, localVariableNames, null, type, method)
+        {
+        }
+
+        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, List<AsyncHelper.FieldNameValue> asyncMethodHoistedLocals, Type type, MethodBase method)
         {
             ParameterNames = parameterNames;
             LocalVariableNames = localVariableNames;
+            AsyncMethodHoistedLocals = asyncMethodHoistedLocals;
             DeclaringType = type;
+            Method = method;
         }
 
         public string[] ParameterNames { get; }
@@ -27,6 +37,20 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// </summary>
         public string[] LocalVariableNames { get; }
 
+        /// <summary>
+        /// Gets the names and the values of the async method's local variable from the hoist object - i.e. the state machine.
+        /// May contains fields that they not locals in the kick off method, ATM we skip only the `builder` and `this` fields
+        /// </summary>
+        public List<AsyncHelper.FieldNameValue> AsyncMethodHoistedLocals { get; }
+
+        /// <summary>
+        /// Gets the declaring type of the instrumented method
+        /// </summary>
         public Type DeclaringType { get; }
+
+        /// <summary>
+        /// Gets the method base of the instrumented method
+        /// </summary>
+        public MethodBase Method { get;  }
     }
 }

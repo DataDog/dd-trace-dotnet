@@ -49,7 +49,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             SnapshotCreator = new DebuggerSnapshotCreator();
         }
 
-        internal readonly ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataProvider.Get(_methodMetadataIndex);
+        internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataProvider.Get(_methodMetadataIndex);
 
         /// <summary>
         /// Gets the LiveDebugger SnapshotCreator

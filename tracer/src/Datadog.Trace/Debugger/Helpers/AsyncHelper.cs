@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
@@ -18,48 +19,10 @@ namespace Datadog.Trace.Debugger.Helpers
         private const string BuilderFieldName = StateMachineFieldsPrefix + "t__builder"; // "<>t__builder";
         private const string StateFieldName = StateMachineFieldsPrefix + "1__state"; // "<>t__builder";
         private const string StateMachineThisFieldName = StateMachineFieldsPrefix + "4__this";
-        private const string BuilderTaskFieldName = "m_task";
         private const BindingFlags AllFieldsBindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static FieldInfo GetStateMachineBuilderField(object stateMachine) => stateMachine?.GetType().GetField(BuilderFieldName);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static object GetStateMachineBuilderValue(object stateMachine) => GetStateMachineBuilderField(stateMachine).GetValue(stateMachine);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static Task GetBuilderTaskValue(object taskBuilder) => (Task)taskBuilder?.GetType().GetField(BuilderTaskFieldName)?.GetValue(taskBuilder);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static Task GetStateMachineBuilderTaskValue(object stateMachine) => GetBuilderTaskValue(GetStateMachineBuilderValue(stateMachine));
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        // if 1__state not found, it's better to throw here
-        internal static int GetStateMachineStateValue(object stateMachine) => (int)stateMachine?.GetType().GetField(StateFieldName)?.GetValue(stateMachine);
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static object GetKickoffThisObjectFromStateMachine<TTarget>(TTarget stateMachine)
-        {
-            FieldInfo thisField = stateMachine.GetType().GetField(StateMachineThisFieldName, BindingFlags.Instance | BindingFlags.Public);
-            if (thisField == null)
-            {
-                if (GetAsyncKickoffMethod(stateMachine.GetType()).IsStatic)
-                {
-                    return null;
-                }
-                else
-                {
-                    // hoisted "this" has not found
-                    // TODO: ???
-                    return null;
-                }
-            }
-
-            return thisField.GetValue(stateMachine);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static FieldNameValue[] GetKickOffMethodArgumentsFromStateMachine<TTarget>(TTarget instance, ParameterInfo[] originalMethodParameters)
+        internal static FieldNameValue[] GetHoistedArgumentsFromStateMachine<TTarget>(TTarget instance, ParameterInfo[] originalMethodParameters)
         {
             if (originalMethodParameters is null || originalMethodParameters.Length == 0)
             {
@@ -79,7 +42,7 @@ namespace Datadog.Trace.Debugger.Helpers
                 }
 
                 var field = allFields[i];
-                // early exit here based on generated name pattern
+                // early exit here based on generated name pattern https://datadoghq.atlassian.net/browse/DEBUG-928
                 if (field.Name.StartsWith(StateMachineNamePrefix, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
@@ -99,32 +62,32 @@ namespace Datadog.Trace.Debugger.Helpers
             return foundFields;
         }
 
+        /// <summary>
+        /// MethodMetadataInfo saves locals from MoveNext localVarSig,
+        /// this isn't enough in async scenario because we need to extract more locals the may hoisted in the builder object
+        /// and we need to subtract some locals that exist in the localVarSig but they are not belongs to the kickoff method
+        /// For know we capturing here all locals the are hoisted (except known generated locals)
+        /// and we capturing in LogLocal the locals form localVarSig
+        /// </summary>
+        /// <typeparam name="TTarget">Instance type</typeparam>
+        /// <param name="instance">Instance object</param>
+        /// <returns>List of locals</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static FieldNameValue[] GetKickOffMethodLocalsFromStateMachine<TTarget>(TTarget instance, Type stateMachineType)
+        internal static List<FieldNameValue> GetHoistedLocalsFromStateMachine<TTarget>(TTarget instance)
         {
-            var kickOffMethod = GetAsyncKickoffMethod(stateMachineType);
-            var originalLocals = kickOffMethod.GetMethodBody()?.LocalVariables;
-            if (originalLocals is null || originalLocals.Count == 0)
-            {
-                return null;
-            }
-
-            var foundFields = new FieldNameValue[originalLocals.Count];
+            var foundFields = new List<FieldNameValue>();
             var allFields = instance.GetType().GetFields(AllFieldsBindingFlags);
-            int found = 0;
             for (int i = 0; i < allFields.Length; i++)
             {
-                // we have more fields than locals, so we break once we found all parameters
-                if (found == foundFields.Length)
+                var field = allFields[i];
+                if (field.Name is BuilderFieldName or StateFieldName or StateMachineThisFieldName)
                 {
-                    break;
+                    continue;
                 }
 
-                var field = allFields[i];
                 if (field.Name.Contains(StateMachineNameSuffix))
                 {
-                    foundFields[found] = new FieldNameValue(field.Name, field.GetValue(instance));
-                    found++;
+                    foundFields.Add(new FieldNameValue(field.Name, field.GetValue(instance)));
                 }
             }
 

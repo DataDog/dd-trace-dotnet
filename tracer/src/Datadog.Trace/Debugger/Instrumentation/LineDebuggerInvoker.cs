@@ -6,9 +6,7 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 
@@ -45,7 +43,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            var paramName = state.MethodMetadaInfo.ParameterNames[index];
+            var paramName = state.MethodMetadataInfo.ParameterNames[index];
             state.SnapshotCreator.CaptureArgument(arg, paramName, index == 0, state.HasLocalsOrReturnValue);
             state.HasLocalsOrReturnValue = false;
         }
@@ -65,25 +63,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            var localNamesFromPdb = state.MethodMetadaInfo.LocalVariableNames;
-            if (localNamesFromPdb != null)
+            var localNamesFromPdb = state.MethodMetadataInfo.LocalVariableNames;
+            if (!MethodDebuggerInvoker.TryGetLocalName(index, localNamesFromPdb, out var localName))
             {
-                if (index >= localNamesFromPdb.Length)
-                {
-                    // This is an extra local that does not appear in the PDB. This should only happen if the customer
-                    // is using an IL weaving or obfuscation tool that neglects to update the PDB.
-                    // There's nothing we can do, so let's just ignore it.
-                    return;
-                }
-
-                if (localNamesFromPdb[index] == null)
-                {
-                    // If the local does not appear in the PDB, then it is a compiler generated local and we shouldn't capture it.
-                    return;
-                }
+                return;
             }
 
-            string localName = localNamesFromPdb?[index] ?? "local_" + index;
             state.SnapshotCreator.CaptureLocal(local, localName, index == 0 && !state.HasLocalsOrReturnValue);
             state.HasLocalsOrReturnValue = true;
         }
@@ -140,7 +125,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             state.SnapshotCreator.StartSnapshot();
             state.SnapshotCreator.StartCaptures();
             state.SnapshotCreator.StartLines(lineNumber);
-            state.SnapshotCreator.CaptureInstance(instance, state.MethodMetadaInfo.DeclaringType);
+            state.SnapshotCreator.CaptureInstance(instance, state.MethodMetadataInfo.DeclaringType);
             return state;
         }
 
@@ -156,38 +141,26 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            var duration = DateTimeOffset.UtcNow - state.StartTime;
             state.SnapshotCreator.LineProbeEndReturn();
-            FinalizeSnapshot(ref state, duration);
+            FinalizeSnapshot(ref state);
         }
 
-        private static void FinalizeSnapshot(ref LineDebuggerState state, TimeSpan? duration)
+        private static void FinalizeSnapshot(ref LineDebuggerState state)
         {
             using (state.SnapshotCreator)
             {
-                var frames = new StackTrace(skipFrames: 2, true).GetFrames() ?? Array.Empty<StackFrame>();
-                MethodBase method = null;
-                if (frames.Length > 0)
-                {
-                    method = frames[0]?.GetMethod();
-                }
+                var stackFrames = new StackTrace(skipFrames: 2, true).GetFrames();
 
-                var probeId = state.ProbeId;
-                var probeFilePath = state.ProbeFilePath;
-                var methodName = method?.Name;
-                var type = method?.DeclaringType?.FullName;
-                var lineNumber = state.LineNumber;
-
-                state.SnapshotCreator
-                     .AddLineProbeInfo(probeId, probeFilePath, lineNumber)
-                     .AddStackInfo(frames)
-                     .EndSnapshot(duration)
-                     .EndDebugger()
-                     .AddLoggerInfo(methodName, type)
-                     .AddGeneralInfo(LiveDebugger.Instance.ServiceName, null, null) // todo
-                     .AddMessage()
-                     .Complete()
-                    ;
+                state.SnapshotCreator.AddLineProbeInfo(
+                          state.ProbeId,
+                          state.ProbeFilePath,
+                          state.LineNumber)
+                     .FinalizeSnapshot(
+                          stackFrames,
+                          state.MethodMetadataInfo.Method?.Name,
+                          state.MethodMetadataInfo.DeclaringType?.FullName,
+                          state.StartTime,
+                          state.ProbeFilePath);
 
                 var snapshot = state.SnapshotCreator.GetSnapshotJson();
                 LiveDebugger.Instance.AddSnapshot(snapshot);
