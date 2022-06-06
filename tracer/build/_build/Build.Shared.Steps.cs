@@ -82,8 +82,10 @@ partial class Build
             foreach (var architecture in ArchitecturesForPlatform)
             {
                 var dest = MonitoringHomeDirectory / $"win-{architecture}";
+                var symbolsDest = SymbolsDirectory / $"win-{architecture}";
+
                 var nativeLoaderBuildDir = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString();
-                CopyNativeLoaderAssets(dest, nativeLoaderBuildDir, "dll");
+                CopyNativeLoaderAssets(dest, symbolsDest, nativeLoaderBuildDir, "dll");
             }
         });
 
@@ -96,13 +98,16 @@ partial class Build
             var (arch, ext) = GetUnixArchitectureAndExtension();
 
             var dest = MonitoringHomeDirectory / arch;
+            var symbolsDest = SymbolsDirectory / arch;
+
             var nativeLoaderBuildDir = NativeLoaderProject.Directory / "bin";
 
-            CopyNativeLoaderAssets(dest, nativeLoaderBuildDir, ext);
+            CopyNativeLoaderAssets(dest, symbolsDest, nativeLoaderBuildDir, ext);
         });
 
     void CopyNativeLoaderAssets(
         AbsolutePath destination,
+        AbsolutePath symbolsDestination,
         AbsolutePath nativeLoaderBuildDir,
         string fileExtension)
     {
@@ -116,7 +121,7 @@ partial class Build
         if (IsWin)
         {
             var nativeLoaderPdb = nativeLoaderBuildDir / $"{NativeLoaderProject.Name}.pdb";
-            var nativeLoaderPdbDest = destination / $"{Constants.NativeLoaderFilename}.pdb";
+            var nativeLoaderPdbDest = symbolsDestination / $"{Constants.NativeLoaderFilename}.pdb";
             CopyFile(nativeLoaderPdb, nativeLoaderPdbDest, FileExistsPolicy.Overwrite);
         }
     }
