@@ -184,4 +184,13 @@ internal static partial class DotNetSettingsExtensions
                     .Add($"--blame-hang-timeout {timeoutInMinutes}m")
         );
     }
+    
+    public static DotNetTestSettings WithJUnitLogger(this DotNetTestSettings settings, string resultsDirectory)
+    {
+        var filePath = Path.Combine(resultsDirectory, "{framework}\\junit-result.xml");
+        return settings.SetProcessArgumentConfigurator(
+            args =>
+                args.Add("--logger:{value}", "junit;LogFilePath=" + filePath)
+        );
+    }
 }
