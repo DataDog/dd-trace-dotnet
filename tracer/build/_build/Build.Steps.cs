@@ -596,12 +596,11 @@ partial class Build
             var directory = new DirectoryInfo(MonitoringHomeDirectory);
             var files = directory.GetFiles("*.so", SearchOption.AllDirectories);
 
-            var symbolsDirectory = SharedDirectory / "symbols";
-            EnsureExistingDirectory(symbolsDirectory);
+            EnsureExistingDirectory(SymbolsDirectory);
 
             foreach (var file in files)
             {
-                var outputFile = Path.Combine(symbolsDirectory, Path.GetFileNameWithoutExtension(file.Name));
+                var outputFile = Path.Combine(SymbolsDirectory, Path.GetFileNameWithoutExtension(file.Name));
 
                 Logger.Info($"Extracting debug symbol for {file.FullName} to {outputFile}.debug");
                 ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file.FullName} {outputFile}.debug");
