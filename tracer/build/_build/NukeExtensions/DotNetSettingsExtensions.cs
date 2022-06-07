@@ -190,7 +190,7 @@ internal static partial class DotNetSettingsExtensions
         var filePath = Path.Combine(resultsDirectory, "{framework}\\junit-result.xml");
         return settings.SetProcessArgumentConfigurator(
             args =>
-                args.Add("--logger:{value}", "junit;LogFilePath=" + filePath)
+                args.Add("--logger:{value}", "junit;MethodFormat=Class;FailureBodyFormat=Verbose;LogFilePath=" + filePath)
         );
     }
 }
