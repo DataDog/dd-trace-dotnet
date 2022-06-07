@@ -363,7 +363,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "BuildNativeLoader ZipMonitoringHome"
+        command: "BuildNativeLoader ZipMonitoringHome ExtractDebugInfoAndStripSymbols"
 
     - publish: $(artifacts)/linux-x64
       displayName: Upload linux-x64 packages
@@ -398,7 +398,7 @@ stages:
         build: true
         target: builder
         baseImage: debian
-        command: "Clean BuildTracerHome ZipMonitoringHome"
+        command: "Clean BuildTracerHome ZipMonitoringHome ExtractDebugInfoAndStripSymbols"
 
     - publish: $(tracerHome)
       displayName: Uploading linux tracer home artifact
