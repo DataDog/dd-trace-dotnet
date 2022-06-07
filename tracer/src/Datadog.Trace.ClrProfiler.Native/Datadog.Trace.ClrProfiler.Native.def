@@ -12,3 +12,4 @@ EXPORTS
     AddTraceAttributeInstrumentation
     InitializeTraceMethods
     InstrumentProbes
+    GetProbesStatuses

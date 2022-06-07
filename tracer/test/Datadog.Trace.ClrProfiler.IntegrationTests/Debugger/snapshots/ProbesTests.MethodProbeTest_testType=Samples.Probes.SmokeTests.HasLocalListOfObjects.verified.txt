@@ -1,551 +1,553 @@
-{
-  "dd.span_id": "ScrubbedValue",
-  "dd.trace_id": "ScrubbedValue",
-  "ddsource": "dd_debugger",
-  "ddtags": "Unknown",
-  "debugger": {
-    "snapshot": {
-      "captures": {
-        "entry": {
-          "arguments": {
-            "age": {
-              "fields": null,
-              "type": "Int32",
-              "value": "36"
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "age": {
+                "fields": null,
+                "type": "Int32",
+                "value": "36"
+              },
+              "name": {
+                "fields": null,
+                "type": "String",
+                "value": "Greg"
+              }
             },
-            "name": {
-              "fields": null,
-              "type": "String",
-              "value": "Greg"
-            }
+            "fields": null
           },
-          "fields": null
-        },
-        "return": {
-          "arguments": {
-            "age": {
-              "fields": null,
-              "type": "Int32",
-              "value": "36"
-            },
-            "name": {
-              "fields": null,
-              "type": "String",
-              "value": "Greg"
-            }
-          },
-          "fields": null,
-          "locals": {
-            "@return": {
-              "fields": null,
-              "type": "String",
-              "value": "Hello Greg (36)!"
-            },
-            "children": {
-              "Collection": [
-                {
-                  "fields": {
-                    "_shouldCloned": {
-                      "fields": null,
-                      "type": "Int32",
-                      "value": "30"
-                    },
-                    "Address": {
-                      "fields": {
-                        "City": {
-                          "fields": {
-                            "Name": {
-                              "fields": null,
-                              "type": "String",
-                              "value": "null"
-                            },
-                            "Type": {
-                              "fields": null,
-                              "type": "PlaceType",
-                              "value": "City"
-                            }
-                          },
-                          "type": "Place",
-                          "value": "Place"
-                        },
-                        "HomeType": {
-                          "fields": null,
-                          "type": "BuildingType",
-                          "value": "Hotel"
-                        },
-                        "Number": {
-                          "fields": null,
-                          "type": "Int32",
-                          "value": "3"
-                        },
-                        "Street": {
-                          "fields": null,
-                          "type": "String",
-                          "value": "Elsewhere"
-                        }
-                      },
-                      "type": "Address",
-                      "value": "Address"
-                    },
-                    "Age": {
-                      "fields": null,
-                      "type": "Double",
-                      "value": "30"
-                    },
-                    "Children": {
-                      "fields": null,
-                      "type": "List`1",
-                      "value": "null"
-                    },
-                    "Id": {
-                      "fields": null,
-                      "type": "Guid",
-                      "value": "ScrubbedValue"
-                    },
-                    "Name": {
-                      "fields": null,
-                      "type": "String",
-                      "value": "Simon"
-                    }
-                  },
-                  "type": "Person",
-                  "value": "Person"
-                },
-                {
-                  "fields": {
-                    "_shouldCloned": {
-                      "fields": null,
-                      "type": "Int32",
-                      "value": "7"
-                    },
-                    "Address": {
-                      "fields": {
-                        "City": {
-                          "fields": {
-                            "Name": {
-                              "fields": null,
-                              "type": "String",
-                              "value": "null"
-                            },
-                            "Type": {
-                              "fields": null,
-                              "type": "PlaceType",
-                              "value": "City"
-                            }
-                          },
-                          "type": "Place",
-                          "value": "Place"
-                        },
-                        "HomeType": {
-                          "fields": null,
-                          "type": "BuildingType",
-                          "value": "House"
-                        },
-                        "Number": {
-                          "fields": null,
-                          "type": "Int32",
-                          "value": "100"
-                        },
-                        "Street": {
-                          "fields": null,
-                          "type": "String",
-                          "value": "Here"
-                        }
-                      },
-                      "type": "Address",
-                      "value": "Address"
-                    },
-                    "Age": {
-                      "fields": null,
-                      "type": "Double",
-                      "value": "7.5"
-                    },
-                    "Children": {
-                      "fields": null,
-                      "type": "List`1",
-                      "value": "null"
-                    },
-                    "Id": {
-                      "fields": null,
-                      "type": "Guid",
-                      "value": "ScrubbedValue"
-                    },
-                    "Name": {
-                      "fields": null,
-                      "type": "String",
-                      "value": "Lucy"
-                    }
-                  },
-                  "type": "Person",
-                  "value": "Person"
-                }
-              ],
-              "type": "List`1",
-              "value": "count: 2"
-            },
-            "p": {
-              "fields": {
-                "_shouldCloned": {
-                  "fields": null,
-                  "type": "Int32",
-                  "value": "36"
-                },
-                "Address": {
-                  "fields": {
-                    "City": {
-                      "fields": {
-                        "Name": {
-                          "fields": null,
-                          "type": "String",
-                          "value": "null"
-                        },
-                        "Type": {
-                          "fields": null,
-                          "type": "PlaceType",
-                          "value": "City"
-                        }
-                      },
-                      "type": "Place",
-                      "value": "Place"
-                    },
-                    "HomeType": {
-                      "fields": null,
-                      "type": "BuildingType",
-                      "value": "Cottage"
-                    },
-                    "Number": {
-                      "fields": null,
-                      "type": "Int32",
-                      "value": "17"
-                    },
-                    "Street": {
-                      "fields": null,
-                      "type": "String",
-                      "value": "Somewhere"
-                    }
-                  },
-                  "type": "Address",
-                  "value": "Address"
-                },
-                "Age": {
-                  "fields": null,
-                  "type": "Double",
-                  "value": "36"
-                },
-                "Children": {
-                  "Collection": [
-                    {
-                      "fields": {
-                        "_shouldCloned": {
-                          "fields": null,
-                          "type": "Int32",
-                          "value": "30"
-                        },
-                        "Address": {
-                          "fields": {
-                            "City": {
-                              "fields": null,
-                              "type": "Place",
-                              "value": "Place"
-                            },
-                            "HomeType": {
-                              "fields": null,
-                              "type": "BuildingType",
-                              "value": "Hotel"
-                            },
-                            "Number": {
-                              "fields": null,
-                              "type": "Int32",
-                              "value": "3"
-                            },
-                            "Street": {
-                              "fields": null,
-                              "type": "String",
-                              "value": "Elsewhere"
-                            }
-                          },
-                          "type": "Address",
-                          "value": "Address"
-                        },
-                        "Age": {
-                          "fields": null,
-                          "type": "Double",
-                          "value": "30"
-                        },
-                        "Children": {
-                          "fields": null,
-                          "type": "List`1",
-                          "value": "null"
-                        },
-                        "Id": {
-                          "fields": null,
-                          "type": "Guid",
-                          "value": "ScrubbedValue"
-                        },
-                        "Name": {
-                          "fields": null,
-                          "type": "String",
-                          "value": "Simon"
-                        }
-                      },
-                      "type": "Person",
-                      "value": "Person"
-                    },
-                    {
-                      "fields": {
-                        "_shouldCloned": {
-                          "fields": null,
-                          "type": "Int32",
-                          "value": "7"
-                        },
-                        "Address": {
-                          "fields": {
-                            "City": {
-                              "fields": null,
-                              "type": "Place",
-                              "value": "Place"
-                            },
-                            "HomeType": {
-                              "fields": null,
-                              "type": "BuildingType",
-                              "value": "House"
-                            },
-                            "Number": {
-                              "fields": null,
-                              "type": "Int32",
-                              "value": "100"
-                            },
-                            "Street": {
-                              "fields": null,
-                              "type": "String",
-                              "value": "Here"
-                            }
-                          },
-                          "type": "Address",
-                          "value": "Address"
-                        },
-                        "Age": {
-                          "fields": null,
-                          "type": "Double",
-                          "value": "7.5"
-                        },
-                        "Children": {
-                          "fields": null,
-                          "type": "List`1",
-                          "value": "null"
-                        },
-                        "Id": {
-                          "fields": null,
-                          "type": "Guid",
-                          "value": "ScrubbedValue"
-                        },
-                        "Name": {
-                          "fields": null,
-                          "type": "String",
-                          "value": "Lucy"
-                        }
-                      },
-                      "type": "Person",
-                      "value": "Person"
-                    }
-                  ],
-                  "type": "List`1",
-                  "value": "count: 2"
-                },
-                "Id": {
-                  "fields": null,
-                  "type": "Guid",
-                  "value": "ScrubbedValue"
-                },
-                "Name": {
-                  "fields": null,
-                  "type": "String",
-                  "value": "Greg"
-                }
+          "return": {
+            "arguments": {
+              "age": {
+                "fields": null,
+                "type": "Int32",
+                "value": "36"
               },
-              "type": "Person",
-              "value": "Person"
+              "name": {
+                "fields": null,
+                "type": "String",
+                "value": "Greg"
+              }
             },
-            "p2": {
-              "fields": {
-                "_shouldCloned": {
-                  "fields": null,
-                  "type": "Int32",
-                  "value": "30"
-                },
-                "Address": {
-                  "fields": {
-                    "City": {
-                      "fields": {
-                        "Name": {
-                          "fields": null,
-                          "type": "String",
-                          "value": "null"
-                        },
-                        "Type": {
-                          "fields": null,
-                          "type": "PlaceType",
-                          "value": "City"
-                        }
-                      },
-                      "type": "Place",
-                      "value": "Place"
-                    },
-                    "HomeType": {
-                      "fields": null,
-                      "type": "BuildingType",
-                      "value": "Hotel"
-                    },
-                    "Number": {
-                      "fields": null,
-                      "type": "Int32",
-                      "value": "3"
-                    },
-                    "Street": {
-                      "fields": null,
-                      "type": "String",
-                      "value": "Elsewhere"
-                    }
-                  },
-                  "type": "Address",
-                  "value": "Address"
-                },
-                "Age": {
-                  "fields": null,
-                  "type": "Double",
-                  "value": "30"
-                },
-                "Children": {
-                  "fields": null,
-                  "type": "List`1",
-                  "value": "null"
-                },
-                "Id": {
-                  "fields": null,
-                  "type": "Guid",
-                  "value": "ScrubbedValue"
-                },
-                "Name": {
-                  "fields": null,
-                  "type": "String",
-                  "value": "Simon"
-                }
+            "fields": null,
+            "locals": {
+              "@return": {
+                "fields": null,
+                "type": "String",
+                "value": "Hello Greg (36)!"
               },
-              "type": "Person",
-              "value": "Person"
-            },
-            "p3": {
-              "fields": {
-                "_shouldCloned": {
-                  "fields": null,
-                  "type": "Int32",
-                  "value": "7"
-                },
-                "Address": {
-                  "fields": {
-                    "City": {
-                      "fields": {
-                        "Name": {
-                          "fields": null,
-                          "type": "String",
-                          "value": "null"
-                        },
-                        "Type": {
-                          "fields": null,
-                          "type": "PlaceType",
-                          "value": "City"
-                        }
+              "children": {
+                "Collection": [
+                  {
+                    "fields": {
+                      "_shouldCloned": {
+                        "fields": null,
+                        "type": "Int32",
+                        "value": "30"
                       },
-                      "type": "Place",
-                      "value": "Place"
+                      "Address": {
+                        "fields": {
+                          "City": {
+                            "fields": {
+                              "Name": {
+                                "fields": null,
+                                "type": "String",
+                                "value": "null"
+                              },
+                              "Type": {
+                                "fields": null,
+                                "type": "PlaceType",
+                                "value": "City"
+                              }
+                            },
+                            "type": "Place",
+                            "value": "Place"
+                          },
+                          "HomeType": {
+                            "fields": null,
+                            "type": "BuildingType",
+                            "value": "Hotel"
+                          },
+                          "Number": {
+                            "fields": null,
+                            "type": "Int32",
+                            "value": "3"
+                          },
+                          "Street": {
+                            "fields": null,
+                            "type": "String",
+                            "value": "Elsewhere"
+                          }
+                        },
+                        "type": "Address",
+                        "value": "Address"
+                      },
+                      "Age": {
+                        "fields": null,
+                        "type": "Double",
+                        "value": "30"
+                      },
+                      "Children": {
+                        "fields": null,
+                        "type": "List`1",
+                        "value": "null"
+                      },
+                      "Id": {
+                        "fields": null,
+                        "type": "Guid",
+                        "value": "ScrubbedValue"
+                      },
+                      "Name": {
+                        "fields": null,
+                        "type": "String",
+                        "value": "Simon"
+                      }
                     },
-                    "HomeType": {
-                      "fields": null,
-                      "type": "BuildingType",
-                      "value": "House"
-                    },
-                    "Number": {
-                      "fields": null,
-                      "type": "Int32",
-                      "value": "100"
-                    },
-                    "Street": {
-                      "fields": null,
-                      "type": "String",
-                      "value": "Here"
-                    }
+                    "type": "Person",
+                    "value": "Person"
                   },
-                  "type": "Address",
-                  "value": "Address"
-                },
-                "Age": {
-                  "fields": null,
-                  "type": "Double",
-                  "value": "7.5"
-                },
-                "Children": {
-                  "fields": null,
-                  "type": "List`1",
-                  "value": "null"
-                },
-                "Id": {
-                  "fields": null,
-                  "type": "Guid",
-                  "value": "ScrubbedValue"
-                },
-                "Name": {
-                  "fields": null,
-                  "type": "String",
-                  "value": "Lucy"
-                }
+                  {
+                    "fields": {
+                      "_shouldCloned": {
+                        "fields": null,
+                        "type": "Int32",
+                        "value": "7"
+                      },
+                      "Address": {
+                        "fields": {
+                          "City": {
+                            "fields": {
+                              "Name": {
+                                "fields": null,
+                                "type": "String",
+                                "value": "null"
+                              },
+                              "Type": {
+                                "fields": null,
+                                "type": "PlaceType",
+                                "value": "City"
+                              }
+                            },
+                            "type": "Place",
+                            "value": "Place"
+                          },
+                          "HomeType": {
+                            "fields": null,
+                            "type": "BuildingType",
+                            "value": "House"
+                          },
+                          "Number": {
+                            "fields": null,
+                            "type": "Int32",
+                            "value": "100"
+                          },
+                          "Street": {
+                            "fields": null,
+                            "type": "String",
+                            "value": "Here"
+                          }
+                        },
+                        "type": "Address",
+                        "value": "Address"
+                      },
+                      "Age": {
+                        "fields": null,
+                        "type": "Double",
+                        "value": "7.5"
+                      },
+                      "Children": {
+                        "fields": null,
+                        "type": "List`1",
+                        "value": "null"
+                      },
+                      "Id": {
+                        "fields": null,
+                        "type": "Guid",
+                        "value": "ScrubbedValue"
+                      },
+                      "Name": {
+                        "fields": null,
+                        "type": "String",
+                        "value": "Lucy"
+                      }
+                    },
+                    "type": "Person",
+                    "value": "Person"
+                  }
+                ],
+                "type": "List`1",
+                "value": "count: 2"
               },
-              "type": "Person",
-              "value": "Person"
+              "p": {
+                "fields": {
+                  "_shouldCloned": {
+                    "fields": null,
+                    "type": "Int32",
+                    "value": "36"
+                  },
+                  "Address": {
+                    "fields": {
+                      "City": {
+                        "fields": {
+                          "Name": {
+                            "fields": null,
+                            "type": "String",
+                            "value": "null"
+                          },
+                          "Type": {
+                            "fields": null,
+                            "type": "PlaceType",
+                            "value": "City"
+                          }
+                        },
+                        "type": "Place",
+                        "value": "Place"
+                      },
+                      "HomeType": {
+                        "fields": null,
+                        "type": "BuildingType",
+                        "value": "Cottage"
+                      },
+                      "Number": {
+                        "fields": null,
+                        "type": "Int32",
+                        "value": "17"
+                      },
+                      "Street": {
+                        "fields": null,
+                        "type": "String",
+                        "value": "Somewhere"
+                      }
+                    },
+                    "type": "Address",
+                    "value": "Address"
+                  },
+                  "Age": {
+                    "fields": null,
+                    "type": "Double",
+                    "value": "36"
+                  },
+                  "Children": {
+                    "Collection": [
+                      {
+                        "fields": {
+                          "_shouldCloned": {
+                            "fields": null,
+                            "type": "Int32",
+                            "value": "30"
+                          },
+                          "Address": {
+                            "fields": {
+                              "City": {
+                                "fields": null,
+                                "type": "Place",
+                                "value": "Place"
+                              },
+                              "HomeType": {
+                                "fields": null,
+                                "type": "BuildingType",
+                                "value": "Hotel"
+                              },
+                              "Number": {
+                                "fields": null,
+                                "type": "Int32",
+                                "value": "3"
+                              },
+                              "Street": {
+                                "fields": null,
+                                "type": "String",
+                                "value": "Elsewhere"
+                              }
+                            },
+                            "type": "Address",
+                            "value": "Address"
+                          },
+                          "Age": {
+                            "fields": null,
+                            "type": "Double",
+                            "value": "30"
+                          },
+                          "Children": {
+                            "fields": null,
+                            "type": "List`1",
+                            "value": "null"
+                          },
+                          "Id": {
+                            "fields": null,
+                            "type": "Guid",
+                            "value": "ScrubbedValue"
+                          },
+                          "Name": {
+                            "fields": null,
+                            "type": "String",
+                            "value": "Simon"
+                          }
+                        },
+                        "type": "Person",
+                        "value": "Person"
+                      },
+                      {
+                        "fields": {
+                          "_shouldCloned": {
+                            "fields": null,
+                            "type": "Int32",
+                            "value": "7"
+                          },
+                          "Address": {
+                            "fields": {
+                              "City": {
+                                "fields": null,
+                                "type": "Place",
+                                "value": "Place"
+                              },
+                              "HomeType": {
+                                "fields": null,
+                                "type": "BuildingType",
+                                "value": "House"
+                              },
+                              "Number": {
+                                "fields": null,
+                                "type": "Int32",
+                                "value": "100"
+                              },
+                              "Street": {
+                                "fields": null,
+                                "type": "String",
+                                "value": "Here"
+                              }
+                            },
+                            "type": "Address",
+                            "value": "Address"
+                          },
+                          "Age": {
+                            "fields": null,
+                            "type": "Double",
+                            "value": "7.5"
+                          },
+                          "Children": {
+                            "fields": null,
+                            "type": "List`1",
+                            "value": "null"
+                          },
+                          "Id": {
+                            "fields": null,
+                            "type": "Guid",
+                            "value": "ScrubbedValue"
+                          },
+                          "Name": {
+                            "fields": null,
+                            "type": "String",
+                            "value": "Lucy"
+                          }
+                        },
+                        "type": "Person",
+                        "value": "Person"
+                      }
+                    ],
+                    "type": "List`1",
+                    "value": "count: 2"
+                  },
+                  "Id": {
+                    "fields": null,
+                    "type": "Guid",
+                    "value": "ScrubbedValue"
+                  },
+                  "Name": {
+                    "fields": null,
+                    "type": "String",
+                    "value": "Greg"
+                  }
+                },
+                "type": "Person",
+                "value": "Person"
+              },
+              "p2": {
+                "fields": {
+                  "_shouldCloned": {
+                    "fields": null,
+                    "type": "Int32",
+                    "value": "30"
+                  },
+                  "Address": {
+                    "fields": {
+                      "City": {
+                        "fields": {
+                          "Name": {
+                            "fields": null,
+                            "type": "String",
+                            "value": "null"
+                          },
+                          "Type": {
+                            "fields": null,
+                            "type": "PlaceType",
+                            "value": "City"
+                          }
+                        },
+                        "type": "Place",
+                        "value": "Place"
+                      },
+                      "HomeType": {
+                        "fields": null,
+                        "type": "BuildingType",
+                        "value": "Hotel"
+                      },
+                      "Number": {
+                        "fields": null,
+                        "type": "Int32",
+                        "value": "3"
+                      },
+                      "Street": {
+                        "fields": null,
+                        "type": "String",
+                        "value": "Elsewhere"
+                      }
+                    },
+                    "type": "Address",
+                    "value": "Address"
+                  },
+                  "Age": {
+                    "fields": null,
+                    "type": "Double",
+                    "value": "30"
+                  },
+                  "Children": {
+                    "fields": null,
+                    "type": "List`1",
+                    "value": "null"
+                  },
+                  "Id": {
+                    "fields": null,
+                    "type": "Guid",
+                    "value": "ScrubbedValue"
+                  },
+                  "Name": {
+                    "fields": null,
+                    "type": "String",
+                    "value": "Simon"
+                  }
+                },
+                "type": "Person",
+                "value": "Person"
+              },
+              "p3": {
+                "fields": {
+                  "_shouldCloned": {
+                    "fields": null,
+                    "type": "Int32",
+                    "value": "7"
+                  },
+                  "Address": {
+                    "fields": {
+                      "City": {
+                        "fields": {
+                          "Name": {
+                            "fields": null,
+                            "type": "String",
+                            "value": "null"
+                          },
+                          "Type": {
+                            "fields": null,
+                            "type": "PlaceType",
+                            "value": "City"
+                          }
+                        },
+                        "type": "Place",
+                        "value": "Place"
+                      },
+                      "HomeType": {
+                        "fields": null,
+                        "type": "BuildingType",
+                        "value": "House"
+                      },
+                      "Number": {
+                        "fields": null,
+                        "type": "Int32",
+                        "value": "100"
+                      },
+                      "Street": {
+                        "fields": null,
+                        "type": "String",
+                        "value": "Here"
+                      }
+                    },
+                    "type": "Address",
+                    "value": "Address"
+                  },
+                  "Age": {
+                    "fields": null,
+                    "type": "Double",
+                    "value": "7.5"
+                  },
+                  "Children": {
+                    "fields": null,
+                    "type": "List`1",
+                    "value": "null"
+                  },
+                  "Id": {
+                    "fields": null,
+                    "type": "Guid",
+                    "value": "ScrubbedValue"
+                  },
+                  "Name": {
+                    "fields": null,
+                    "type": "String",
+                    "value": "Lucy"
+                  }
+                },
+                "type": "Person",
+                "value": "Person"
+              }
             }
           }
-        }
-      },
-      "duration": "ScrubbedValue",
-      "id": "ScrubbedValue",
-      "language": "dotnet",
-      "probe": {
+        },
+        "duration": "ScrubbedValue",
         "id": "ScrubbedValue",
-        "location": {
-          "method": "Method",
-          "type": "Samples.Probes.SmokeTests.HasLocalListOfObjects"
-        }
-      },
-      "stack": [
-        {
-          "fileName": "HasLocalListOfObjects.cs",
-          "function": "Samples.Probes.SmokeTests.HasLocalListOfObjects.Method",
-          "lineNumber": "ScrubbedValue"
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.SmokeTests.HasLocalListOfObjects"
+          }
         },
-        {
-          "fileName": "HasLocalListOfObjects.cs",
-          "function": "Samples.Probes.SmokeTests.HasLocalListOfObjects.Run",
-          "lineNumber": "ScrubbedValue"
-        },
-        {
-          "function": "Program.RunTest",
-          "lineNumber": "ScrubbedValue"
-        },
-        {
-          "fileName": "Program.cs",
-          "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-          "lineNumber": "ScrubbedValue"
-        }
-      ],
-      "timestamp": "ScrubbedValue"
-    }
-  },
-  "logger": {
-    "method": "Samples.Probes.SmokeTests.HasLocalListOfObjects",
-    "name": "Method",
-    "thread_id": "ScrubbedValue",
-    "thread_name": "ScrubbedValue",
-    "version": "2"
-  },
-  "message": "HasLocalListOfObjects.Method(age=36, name=Greg): Hello Greg (36)!\r\n@return=Hello Greg (36)!, children=count: 2, p=Person, p2=Person, p3=Person",
-  "service": "Unknown"
-}
+        "stack": [
+          {
+            "fileName": "HasLocalListOfObjects.cs",
+            "function": "Samples.Probes.SmokeTests.HasLocalListOfObjects.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "HasLocalListOfObjects.cs",
+            "function": "Samples.Probes.SmokeTests.HasLocalListOfObjects.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Samples.Probes.SmokeTests.HasLocalListOfObjects",
+      "name": "Method",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "HasLocalListOfObjects.Method(age=36, name=Greg): Hello Greg (36)!\r\n@return=Hello Greg (36)!, children=count: 2, p=Person, p2=Person, p3=Person",
+    "service": "Unknown"
+  }
+]

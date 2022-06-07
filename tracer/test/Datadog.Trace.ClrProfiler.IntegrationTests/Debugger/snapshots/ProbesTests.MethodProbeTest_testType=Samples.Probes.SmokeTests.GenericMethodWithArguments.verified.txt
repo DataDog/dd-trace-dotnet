@@ -199,11 +199,8 @@
             "lineNumber": "ScrubbedValue"
           },
           {
-            "function": "Program.Main",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.<Main>",
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],
@@ -213,11 +210,147 @@
     "logger": {
       "method": "Samples.Probes.SmokeTests.GenericMethodWithArguments",
       "name": "Method",
-      "thread_id": 1,
+      "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
     "message": "GenericMethodWithArguments.Method(genericParam=Person): Alfred Hitchcock (30)\r\n@return=Alfred Hitchcock (30)",
+    "service": "Unknown"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "22": {
+              "arguments": {
+                "genericParam": {
+                  "fields": {
+                    "_shouldCloned": {
+                      "fields": null,
+                      "type": "Int32",
+                      "value": "30"
+                    },
+                    "Address": {
+                      "fields": {
+                        "City": {
+                          "fields": {
+                            "Name": {
+                              "fields": null,
+                              "type": "String",
+                              "value": "null"
+                            },
+                            "Type": {
+                              "fields": null,
+                              "type": "PlaceType",
+                              "value": "City"
+                            }
+                          },
+                          "type": "Place",
+                          "value": "Place"
+                        },
+                        "HomeType": {
+                          "fields": null,
+                          "type": "BuildingType",
+                          "value": "Duplex"
+                        },
+                        "Number": {
+                          "fields": null,
+                          "type": "Int32",
+                          "value": "5"
+                        },
+                        "Street": {
+                          "fields": null,
+                          "type": "String",
+                          "value": "Elsewhere"
+                        }
+                      },
+                      "type": "Address",
+                      "value": "Address"
+                    },
+                    "Age": {
+                      "fields": null,
+                      "type": "Double",
+                      "value": "30"
+                    },
+                    "Children": {
+                      "fields": null,
+                      "type": "List`1",
+                      "value": "null"
+                    },
+                    "Id": {
+                      "fields": null,
+                      "type": "Guid",
+                      "value": "ScrubbedValue"
+                    },
+                    "Name": {
+                      "fields": null,
+                      "type": "String",
+                      "value": "Alfred Hitchcock"
+                    }
+                  },
+                  "type": "Person",
+                  "value": "Person"
+                }
+              },
+              "fields": {
+                "Prop": {
+                  "fields": null,
+                  "type": "String",
+                  "value": "GenericMethodWithArguments"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "GenericMethodWithArgumentsAndLocals.cs",
+            "lines": [
+              22
+            ]
+          }
+        },
+        "stack": [
+          {
+            "fileName": "GenericMethodWithArgumentsAndLocals.cs",
+            "function": "Samples.Probes.SmokeTests.GenericMethodWithArguments.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "GenericMethodWithArgumentsAndLocals.cs",
+            "function": "Samples.Probes.SmokeTests.GenericMethodWithArguments.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Samples.Probes.SmokeTests.GenericMethodWithArguments",
+      "name": "Method",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "GenericMethodWithArguments.Method(genericParam=Person)",
     "service": "Unknown"
   }
 ]

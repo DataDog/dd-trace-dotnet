@@ -46,11 +46,11 @@ namespace Datadog.Trace.Tests.Debugger
             probes.Count.Should().Be(1);
 
             var probe = probes.First();
-            probe.Diagnostics.Status.Should().Be(Status.RECEIVED);
-            probe.Diagnostics.ProbeId.Should().Be(probeId);
+            probe.DebuggerDiagnostics.Diagnostics.Status.Should().Be(Status.RECEIVED);
+            probe.DebuggerDiagnostics.Diagnostics.ProbeId.Should().Be(probeId);
             probe.Service.Should().Be(nameof(ProbeStatusSinkTests));
             probe.Message.Should().Be($"Received probe {probeId}.");
-            probe.Diagnostics.Exception.Should().BeNull();
+            probe.DebuggerDiagnostics.Diagnostics.Exception.Should().BeNull();
         }
 
         [Fact]
@@ -64,11 +64,11 @@ namespace Datadog.Trace.Tests.Debugger
             probes.Count.Should().Be(1);
 
             var probe = probes.First();
-            probe.Diagnostics.Status.Should().Be(Status.INSTALLED);
-            probe.Diagnostics.ProbeId.Should().Be(probeId);
+            probe.DebuggerDiagnostics.Diagnostics.Status.Should().Be(Status.INSTALLED);
+            probe.DebuggerDiagnostics.Diagnostics.ProbeId.Should().Be(probeId);
             probe.Service.Should().Be(nameof(ProbeStatusSinkTests));
             probe.Message.Should().Be($"Installed probe {probeId}.");
-            probe.Diagnostics.Exception.Should().BeNull();
+            probe.DebuggerDiagnostics.Diagnostics.Exception.Should().BeNull();
         }
 
         [Fact]
@@ -82,11 +82,11 @@ namespace Datadog.Trace.Tests.Debugger
             probes.Count.Should().Be(1);
 
             var probe = probes.First();
-            probe.Diagnostics.Status.Should().Be(Status.BLOCKED);
-            probe.Diagnostics.ProbeId.Should().Be(probeId);
+            probe.DebuggerDiagnostics.Diagnostics.Status.Should().Be(Status.BLOCKED);
+            probe.DebuggerDiagnostics.Diagnostics.ProbeId.Should().Be(probeId);
             probe.Service.Should().Be(nameof(ProbeStatusSinkTests));
             probe.Message.Should().Be($"Blocked probe {probeId}.");
-            probe.Diagnostics.Exception.Should().BeNull();
+            probe.DebuggerDiagnostics.Diagnostics.Exception.Should().BeNull();
         }
 
         [Fact]
@@ -101,14 +101,14 @@ namespace Datadog.Trace.Tests.Debugger
             probes.Count.Should().Be(1);
 
             var probe = probes.First();
-            probe.Diagnostics.Status.Should().Be(Status.ERROR);
-            probe.Diagnostics.ProbeId.Should().Be(probeId);
+            probe.DebuggerDiagnostics.Diagnostics.Status.Should().Be(Status.ERROR);
+            probe.DebuggerDiagnostics.Diagnostics.ProbeId.Should().Be(probeId);
             probe.Service.Should().Be(nameof(ProbeStatusSinkTests));
             probe.Message.Should().Be($"Error installing probe {probeId}.");
-            probe.Diagnostics.Exception.Should().NotBeNull();
-            probe.Diagnostics.Exception.Type.Should().Be(exception.GetType().Name);
-            probe.Diagnostics.Exception.Message.Should().Be(exception.Message);
-            probe.Diagnostics.Exception.StackTrace.Should().Be(exception.StackTrace);
+            probe.DebuggerDiagnostics.Diagnostics.Exception.Should().NotBeNull();
+            probe.DebuggerDiagnostics.Diagnostics.Exception.Type.Should().Be(exception.GetType().Name);
+            probe.DebuggerDiagnostics.Diagnostics.Exception.Message.Should().Be(exception.Message);
+            probe.DebuggerDiagnostics.Diagnostics.Exception.StackTrace.Should().Be(exception.StackTrace);
         }
 
         [Fact]

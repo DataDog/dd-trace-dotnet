@@ -250,7 +250,7 @@ void DebuggerRejitPreprocessor::UpdateMethod(RejitHandlerModuleMethod* methodHan
 {
     const auto debuggerMethodHandler = dynamic_cast<DebuggerRejitHandlerModuleMethod*>(methodHandler);
     debuggerMethodHandler->AddProbe(probe);
-    ProbesTracker::Instance()->AddProbe(probe->probeId,
+    ProbesMetadataTracker::Instance()->AddMethodToProbe(probe->probeId,
         debuggerMethodHandler->GetModule()->GetModuleId(),
         debuggerMethodHandler->GetMethodDef());
 }

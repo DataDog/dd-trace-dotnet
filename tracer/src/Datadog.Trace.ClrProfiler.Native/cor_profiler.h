@@ -173,6 +173,7 @@ public:
     void InstrumentProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,
                    debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,
                    debugger::DebuggerRemoveProbesDefinition* revertProbes, int revertProbesLength) const;
+    int GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses);
 
     friend class debugger::DebuggerProbesInstrumentationRequester;
     friend class debugger::DebuggerMethodRewriter;
