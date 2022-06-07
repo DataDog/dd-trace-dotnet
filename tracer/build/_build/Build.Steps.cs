@@ -589,30 +589,29 @@ partial class Build
         });
 
     Target ExtractDebugInfoAndStripSymbols => _ => _
-        .After(PublishProfilerLinux, PublishNativeLoaderLinux, PublishNativeProfilerLinux)
+        .After(ZipMonitoringHome)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var files = MonitoringHomeDirectory.GlobFiles("*.so");
+            var files = MonitoringHomeDirectory.GlobFiles("**/*.so");
 
             EnsureExistingDirectory(SymbolsDirectory);
 
             foreach (var file in files)
             {
-                var outputFile = SymbolsDirectory / Path.GetFileNameWithoutExtension(file.Name);
+                var outputFile = SymbolsDirectory / Path.GetFileNameWithoutExtension(file);
 
-                Logger.Info($"Extracting debug symbol for {file.FullName} to {outputFile}.debug");
-                ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file.FullName} {outputFile}.debug");
+                Logger.Info($"Extracting debug symbol for {file} to {outputFile}.debug");
+                ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {outputFile}.debug");
 
-                Logger.Info($"Stripping out unneeded information from {file.FullName}");
-                StripBinary.Value(arguments: $"--strip-unneeded {file.FullName}");
+                Logger.Info($"Stripping out unneeded information from {file}");
+                StripBinary.Value(arguments: $"--strip-unneeded {file}");
             }
         });
 
     Target ZipMonitoringHome => _ => _
         .Unlisted()
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
-        .DependsOn(ExtractDebugInfoAndStripSymbols)
         .Requires(() => Version)
         .Executes(() =>
         {
