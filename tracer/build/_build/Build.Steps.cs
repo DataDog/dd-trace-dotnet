@@ -593,14 +593,13 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var directory = new DirectoryInfo(MonitoringHomeDirectory);
-            var files = directory.GetFiles("*.so", SearchOption.AllDirectories);
+            var files = MonitoringHomeDirectory.GlobFiles("*.so");
 
             EnsureExistingDirectory(SymbolsDirectory);
 
             foreach (var file in files)
             {
-                var outputFile = Path.Combine(SymbolsDirectory, Path.GetFileNameWithoutExtension(file.Name));
+                var outputFile = SymbolsDirectory / Path.GetFileNameWithoutExtension(file.Name);
 
                 Logger.Info($"Extracting debug symbol for {file.FullName} to {outputFile}.debug");
                 ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file.FullName} {outputFile}.debug");
