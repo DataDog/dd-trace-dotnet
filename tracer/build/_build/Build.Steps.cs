@@ -83,6 +83,8 @@ partial class Build
     [LazyPathExecutable(name: "gzip")] readonly Lazy<Tool> GZip;
     [LazyPathExecutable(name: "cmd")] readonly Lazy<Tool> Cmd;
     [LazyPathExecutable(name: "chmod")] readonly Lazy<Tool> Chmod;
+    [LazyPathExecutable(name: "objcopy")] readonly Lazy<Tool> ExtractDebugInfo;
+    [LazyPathExecutable(name: "strip")] readonly Lazy<Tool> StripBinary;
 
     IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform =>
         Equals(TargetPlatform, MSBuildTargetPlatform.x64)
@@ -586,9 +588,33 @@ partial class Build
             CompressZip(SymbolsDirectory, WindowsSymbolsZip, fileMode: FileMode.Create);
         });
 
+    Target ExtractDebugInfoAndStripSymbols => _ => _
+        .After(PublishProfilerLinux, PublishNativeLoaderLinux, PublishNativeProfilerLinux)
+        .OnlyWhenStatic(() => IsLinux)
+        .Executes(() =>
+        {
+            var directory = new DirectoryInfo(MonitoringHomeDirectory);
+            var files = directory.GetFiles("*.so");
+
+            var symbolsDirectory = SharedDirectory / "symbols";
+            EnsureExistingDirectory(symbolsDirectory);
+
+            foreach (var file in files)
+            {
+                var outputFile = Path.Combine(symbolsDirectory, Path.GetFileNameWithoutExtension(file.Name));
+
+                Logger.Info($"Extracting debug symbol for {file.FullName} to {outputFile}");
+                ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file.FullName} {outputFile}.debug");
+
+                Logger.Info($"Stripping out unneeded information from {file.FullName}");
+                StripBinary.Value(arguments: $"--strip-unneeded {file.FullName}");
+            }
+        });
+
     Target ZipMonitoringHome => _ => _
         .Unlisted()
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
+        .DependsOn(ExtractDebugInfoAndStripSymbols)
         .Requires(() => Version)
         .Executes(() =>
         {

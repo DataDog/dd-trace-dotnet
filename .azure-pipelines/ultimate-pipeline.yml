@@ -373,6 +373,10 @@ stages:
       displayName: Upload linux-x64 monitoring home
       artifact: linux-monitoring-home-$(baseImage)
 
+    - publish: $(System.DefaultWorkingDirectory)/shared/symbols
+      displayName: Upload linux-x64 symbols
+      artifact: linux-symbols-home-$(baseImage)
+
 - stage: build_arm64
   dependsOn: [master_commit_id]
   variables:
