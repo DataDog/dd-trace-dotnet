@@ -450,26 +450,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
 #if NET461
+                new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
                 new object[] { "2.1.9" },
 #endif
 #if NETCOREAPP2_1
+                new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
                 new object[] { "2.1.9" },
 #endif
 #if NETCOREAPP3_0
+                new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
                 new object[] { "2.1.9" },
 #endif
 #if NETCOREAPP3_1
+                new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
                 new object[] { "2.1.9" },
 #endif
 #if NET5_0
+                new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
                 new object[] { "2.1.9" },
 #endif
 #if NET6_0
+                new object[] { "0.69.10" },
                 new object[] { "1.3.14" },
                 new object[] { "2.1.9" },
 #endif

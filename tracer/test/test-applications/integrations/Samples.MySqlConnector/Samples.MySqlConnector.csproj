@@ -7,6 +7,8 @@
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <!-- Prior to version 1, the namespaces where different -->
+    <DefineConstants Condition="'$(ApiVersion)'&lt;'1.0.0'">$(DefineConstants);MYSQLCONNECTOR_0</DefineConstants>
 
   </PropertyGroup>
 
