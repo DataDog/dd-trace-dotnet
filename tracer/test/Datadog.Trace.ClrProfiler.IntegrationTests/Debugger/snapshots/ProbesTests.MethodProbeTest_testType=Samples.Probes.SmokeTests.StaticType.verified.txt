@@ -1,105 +1,182 @@
-{
-  "dd.span_id": "ScrubbedValue",
-  "dd.trace_id": "ScrubbedValue",
-  "ddsource": "dd_debugger",
-  "ddtags": "Unknown",
-  "debugger": {
-    "snapshot": {
-      "captures": {
-        "entry": {
-          "arguments": {
-            "lastName": {
-              "fields": null,
-              "type": "String",
-              "value": "Last name"
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "lastName": {
+                "fields": null,
+                "type": "String",
+                "value": "Last name"
+              }
+            },
+            "fields": {
+              "_staticField": {
+                "fields": null,
+                "type": "String",
+                "value": "Static Field"
+              },
+              "StaticProperty": {
+                "fields": null,
+                "type": "String",
+                "value": "Static Property"
+              }
             }
           },
-          "fields": {
-            "_staticField": {
-              "fields": null,
-              "type": "String",
-              "value": "Static Field"
+          "return": {
+            "arguments": {
+              "lastName": {
+                "fields": null,
+                "type": "String",
+                "value": "Last name"
+              }
             },
-            "StaticProperty": {
-              "fields": null,
-              "type": "String",
-              "value": "Static Property"
+            "fields": {
+              "_staticField": {
+                "fields": null,
+                "type": "String",
+                "value": "Static Field"
+              },
+              "StaticProperty": {
+                "fields": null,
+                "type": "String",
+                "value": "Static Property"
+              }
+            },
+            "locals": {
+              "@return": {
+                "fields": null,
+                "type": "String",
+                "value": "Last name"
+              }
             }
           }
         },
-        "return": {
-          "arguments": {
-            "lastName": {
-              "fields": null,
-              "type": "String",
-              "value": "Last name"
-            }
-          },
-          "fields": {
-            "_staticField": {
-              "fields": null,
-              "type": "String",
-              "value": "Static Field"
-            },
-            "StaticProperty": {
-              "fields": null,
-              "type": "String",
-              "value": "Static Property"
-            }
-          },
-          "locals": {
-            "@return": {
-              "fields": null,
-              "type": "String",
-              "value": "Last name"
-            }
-          }
-        }
-      },
-      "duration": "ScrubbedValue",
-      "id": "ScrubbedValue",
-      "language": "dotnet",
-      "probe": {
+        "duration": "ScrubbedValue",
         "id": "ScrubbedValue",
-        "location": {
-          "method": "Method",
-          "type": "Samples.Probes.SmokeTests.StaticType+StaticTypeInner"
-        }
-      },
-      "stack": [
-        {
-          "fileName": "StaticType.cs",
-          "function": "Samples.Probes.SmokeTests.StaticType+StaticTypeInner.Method",
-          "lineNumber": "ScrubbedValue"
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.SmokeTests.StaticType+StaticTypeInner"
+          }
         },
-        {
-          "fileName": "StaticType.cs",
-          "function": "Samples.Probes.SmokeTests.StaticType.Run",
-          "lineNumber": "ScrubbedValue"
-        },
-        {
-          "function": "Program.RunTest",
-          "lineNumber": "ScrubbedValue"
-        },
-        {
-          "function": "Program.Main",
-          "lineNumber": "ScrubbedValue"
-        },
-        {
-          "function": "Program.<Main>",
-          "lineNumber": "ScrubbedValue"
-        }
-      ],
-      "timestamp": "ScrubbedValue"
-    }
+        "stack": [
+          {
+            "fileName": "StaticType.cs",
+            "function": "Samples.Probes.SmokeTests.StaticType+StaticTypeInner.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "StaticType.cs",
+            "function": "Samples.Probes.SmokeTests.StaticType.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Samples.Probes.SmokeTests.StaticType+StaticTypeInner",
+      "name": "Method",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "StaticType+StaticTypeInner.Method(lastName=Last name): Last name\r\n@return=Last name",
+    "service": "Unknown"
   },
-  "logger": {
-    "method": "Samples.Probes.SmokeTests.StaticType+StaticTypeInner",
-    "name": "Method",
-    "thread_id": 1,
-    "thread_name": "ScrubbedValue",
-    "version": "2"
-  },
-  "message": "StaticType+StaticTypeInner.Method(lastName=Last name): Last name\r\n@return=Last name",
-  "service": "Unknown"
-}
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "22": {
+              "arguments": {
+                "lastName": {
+                  "fields": null,
+                  "type": "String",
+                  "value": "Last name"
+                }
+              },
+              "fields": {
+                "_staticField": {
+                  "fields": null,
+                  "type": "String",
+                  "value": "Static Field"
+                },
+                "StaticProperty": {
+                  "fields": null,
+                  "type": "String",
+                  "value": "Static Property"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "StaticType.cs",
+            "lines": [
+              22
+            ]
+          }
+        },
+        "stack": [
+          {
+            "fileName": "StaticType.cs",
+            "function": "Samples.Probes.SmokeTests.StaticType+StaticTypeInner.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "StaticType.cs",
+            "function": "Samples.Probes.SmokeTests.StaticType.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Samples.Probes.SmokeTests.StaticType+StaticTypeInner",
+      "name": "Method",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "StaticType+StaticTypeInner.Method(lastName=Last name)",
+    "service": "Unknown"
+  }
+]

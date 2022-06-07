@@ -55,7 +55,7 @@ public class ProbesTests : TestHelper
     {
         const int expectedNumberOfSnapshots = 9;
 
-        var probes = GetProbeConfiguration(testType, true);
+        var probes = GetProbeConfiguration(testType, true, new DeterministicGuidGenerator());
 
         if (probes.Length != 1)
         {
@@ -75,9 +75,14 @@ public class ProbesTests : TestHelper
         try
         {
             var snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
-            AssertSnapshots(snapshots, expectedNumberOfSnapshots);
+            Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
             await ApproveSnapshots(snapshots, testType, isMultiPhase: true, phaseNumber: 1);
             agent.ClearSnapshots();
+
+            var statuses = await agent.WaitForProbesStatuses(probes.Length);
+            Assert.Equal(probes.Length, statuses?.Length);
+            await ApproveStatuses(statuses, testType, isMultiPhase: true, phaseNumber: 1);
+            agent.ClearProbeStatuses();
 
             var emptyDefinition = DebuggerTestHelper.CreateProbeDefinition(Array.Empty<SnapshotProbe>());
             SetProbeConfiguration(emptyDefinition);
@@ -98,7 +103,7 @@ public class ProbesTests : TestHelper
         var testType = typeof(Emit100LineProbeSnapshotsTest);
         const int expectedNumberOfSnapshots = 100;
 
-        var probes = GetProbeConfiguration(testType, true);
+        var probes = GetProbeConfiguration(testType, true, new DeterministicGuidGenerator());
         var agent = GetMockAgent();
 
         SetDebuggerEnvironment();
@@ -111,8 +116,11 @@ public class ProbesTests : TestHelper
         await sample.RunCodeSample();
         try
         {
+            var statuses = await agent.WaitForProbesStatuses(probes.Length);
+            Assert.Equal(probes.Length, statuses?.Length);
+
             var snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
-            AssertSnapshots(snapshots, expectedNumberOfSnapshots);
+            Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
             Assert.True(snapshots.All(IsSaneSnapshot), "Not all snapshots are sane.");
             Assert.True(snapshots.Distinct().Count() == snapshots.Length, "All snapshots should be unique.");
         }
@@ -136,7 +144,7 @@ public class ProbesTests : TestHelper
     [MemberData(nameof(ProbeTests))]
     public async Task MethodProbeTest(Type testType)
     {
-        var probes = GetProbeConfiguration(testType, false);
+        var probes = GetProbeConfiguration(testType, false, new DeterministicGuidGenerator());
         var agent = GetMockAgent();
 
         SetDebuggerEnvironment();
@@ -199,48 +207,66 @@ public class ProbesTests : TestHelper
             if (expectedNumberOfSnapshots == 0)
             {
                 Assert.True(await agent.WaitForNoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
-                snapshots = Array.Empty<string>();
             }
             else
             {
                 snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
+                Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
+                await ApproveSnapshots(snapshots, testType, isMultiPhase, phaseNumber);
+                agent.ClearSnapshots();
             }
 
-            AssertSnapshots(snapshots, expectedNumberOfSnapshots);
-            await ApproveSnapshots(snapshots, testType, isMultiPhase, phaseNumber);
-            agent.ClearSnapshots();
+            var statuses = await agent.WaitForProbesStatuses(probeData.Length);
+
+            Assert.Equal(probeData.Length, statuses?.Length);
+            await ApproveStatuses(statuses, testType, isMultiPhase, phaseNumber);
+            agent.ClearProbeStatuses();
         }
     }
 
-    private async Task ApproveSnapshots(string[] snapshots, Type testType, bool isMultiPhase = false, int phaseNumber = 1)
+    private async Task ApproveSnapshots(string[] snapshots, Type testType, bool isMultiPhase, int phaseNumber)
     {
-        if (snapshots.Length > 1)
+        await ApproveOnDisk(snapshots, testType, isMultiPhase, phaseNumber, "snapshots");
+    }
+
+    private async Task ApproveStatuses(string[] statuses, Type testType, bool isMultiPhase, int phaseNumber)
+    {
+        await ApproveOnDisk(statuses, testType, isMultiPhase, phaseNumber, "statuses");
+    }
+
+    private async Task ApproveOnDisk(string[] dataToApprove, Type testType, bool isMultiPhase, int phaseNumber, string path)
+    {
+        if (dataToApprove.Length > 1)
         {
             // Order the snapshots alphabetically so we'll be able to create deterministic approvals
-            snapshots = snapshots.OrderBy(snapshot => snapshot).ToArray();
+            dataToApprove = dataToApprove.OrderBy(snapshot => snapshot).ToArray();
         }
 
-        for (var snapshotIndex = 0; snapshotIndex < snapshots.Length; snapshotIndex++)
-        {
-            var settings = new VerifySettings();
+        var settings = new VerifySettings();
 
-            var phaseText = isMultiPhase ? $"{phaseNumber}." : string.Empty;
-            var trailingSnapshotText = snapshots.Length > 1 || isMultiPhase ? $"#{phaseText}{snapshotIndex + 1}" : string.Empty;
-            settings.UseParameters(testType + trailingSnapshotText);
+        var phaseText = isMultiPhase ? $"#{phaseNumber}." : string.Empty;
+        settings.UseParameters(testType + phaseText);
 
-            settings.ScrubEmptyLines();
-            settings.AddScrubber(ScrubSnapshotJson);
+        settings.ScrubEmptyLines();
+        settings.AddScrubber(ScrubSnapshotJson);
 
-            VerifierSettings.DerivePathInfo(
-                (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "snapshots")));
+        VerifierSettings.DerivePathInfo(
+            (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", path)));
 
-            var toVerify = string.Join(Environment.NewLine, JsonUtility.NormalizeJsonString(snapshots[snapshotIndex]));
-            await Verifier.Verify(NormalizeLineEndings(toVerify), settings);
-        }
+        var toVerify =
+            "["
+           +
+            string.Join(
+                ",",
+                dataToApprove.Select(JsonUtility.NormalizeJsonString))
+           +
+            "]";
+
+        await Verifier.Verify(NormalizeLineEndings(toVerify), settings);
 
         void ScrubSnapshotJson(StringBuilder input)
         {
-            var json = JObject.Parse(input.ToString());
+            var json = JArray.Parse(input.ToString());
 
             var toRemove = new List<JToken>();
             foreach (var descendant in json.DescendantsAndSelf().OfType<JObject>())
@@ -316,9 +342,9 @@ public class ProbesTests : TestHelper
                .Replace(@"\n", @"\r\n");
     }
 
-    private (ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)[] GetProbeConfiguration(Type testType, bool unlisted)
+    private (ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)[] GetProbeConfiguration(Type testType, bool unlisted, DeterministicGuidGenerator guidGenerator)
     {
-        var probes = DebuggerTestHelper.GetAllProbes(testType, EnvironmentHelper.GetTargetFramework(), unlisted);
+        var probes = DebuggerTestHelper.GetAllProbes(testType, EnvironmentHelper.GetTargetFramework(), unlisted, guidGenerator);
         if (!probes.Any())
         {
             throw new SkipException($"No probes for {testType.Name}, skipping.");
@@ -335,6 +361,7 @@ public class ProbesTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.Debugger.ProbeFile, path);
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DebuggerEnabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "3");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.DiagnosticsInterval, "1");
     }
 
     private string SetProbeConfiguration(ProbeConfiguration probeConfiguration)
@@ -355,11 +382,5 @@ public class ProbesTests : TestHelper
         SetEnvironmentVariable(ConfigurationKeys.AgentPort, agent.Port.ToString());
         agent.ShouldDeserializeTraces = false;
         return agent;
-    }
-
-    private void AssertSnapshots(string[] snapshots, int expectedNumberOfSnapshots)
-    {
-        Assert.NotNull(snapshots);
-        Assert.Equal(expectedNumberOfSnapshots, snapshots.Length);
     }
 }

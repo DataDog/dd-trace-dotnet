@@ -166,10 +166,10 @@ void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemo
         for (const auto& probeIdToRemove : probeIdsToRemove)
         {
             // Remove from `DebuggerRejitHandlerModuleMethod`
-            std::set<MethodIdentifier> methods;
-            if (ProbesTracker::Instance()->TryGetMethods(probeIdToRemove, methods))
+            std::shared_ptr<ProbeMetadata> probeMetadata;
+            if (ProbesMetadataTracker::Instance()->TryGetMetadata(probeIdToRemove, probeMetadata))
             {
-                for (const auto& method : methods)
+                for (const auto& method : probeMetadata->methods)
                 {
                     const auto moduleHandler = m_rejit_handler->GetOrAddModule(method.moduleId);
                     if (moduleHandler == nullptr)
@@ -244,8 +244,8 @@ void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemo
         }
 
         // Remove from ProbesTracker
-        const auto& removedProbes = ProbesTracker::Instance()->RemoveProbes(probeIdsToRemove);
-        Logger::Info("Successfully removed ", removedProbes.size(), " probes from the ProbesTracker.");
+        const auto removedProbesCount = ProbesMetadataTracker::Instance()->RemoveProbes(probeIdsToRemove);
+        Logger::Info("Successfully removed ", removedProbesCount, " probes from the ProbesTracker.");
     }
 }
 
@@ -304,6 +304,7 @@ void DebuggerProbesInstrumentationRequester::AddMethodProbes(
             }
 
             methodProbeDefinitions.push_back(methodProbe);
+            ProbesMetadataTracker::Instance()->CreateNewProbeIfNotExists(probeId);
         }
 
         std::scoped_lock<std::mutex> moduleLock(trace::profiler->module_ids_lock_);
@@ -507,6 +508,42 @@ void DebuggerProbesInstrumentationRequester::InstrumentProbes(debugger::Debugger
     }
 }
 
+int DebuggerProbesInstrumentationRequester::GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses)
+{
+    if (probeIds == nullptr)
+    {
+        return 0;
+    }
+
+    Logger::Info("Received ", probeIdsLength, " probes (ids) from managed side for status.");
+
+    if (probeIdsLength <= 0)
+    {
+        return 0;
+    }
+
+    int probeStatusesCount = 0;
+
+    for (auto probeIndex = 0; probeIndex < probeIdsLength; probeIndex++)
+    {
+        const auto& probeId = shared::WSTRING(probeIds[probeIndex]);
+        std::shared_ptr<ProbeMetadata> probeMetadata;
+        if (ProbesMetadataTracker::Instance()->TryGetMetadata(probeId, probeMetadata))
+        {
+            probeStatuses[probeStatusesCount] = 
+                {probeMetadata->probeId.c_str(), probeMetadata->status};
+            probeStatusesCount++;
+        }
+        else
+        {
+            Logger::Warn("Failed to get probe metadata for probeId = ", probeId,
+                            " while trying to obtain its probe status.");
+        }
+    }
+
+    return probeStatusesCount;
+}
+
 const std::vector<std::shared_ptr<ProbeDefinition>>& DebuggerProbesInstrumentationRequester::GetProbes() const
 {
     return m_probes;
@@ -539,6 +576,23 @@ ULONG DebuggerProbesInstrumentationRequester::RequestRejitForLoadedModule(const 
 
     return m_debugger_rejit_preprocessor->RequestRejitForLoadedModules(std::vector<ModuleID>{moduleId}, methodProbes);
     // TODO do it also for line probes (scenario: module loaded (line probe request arrived) & unloaded & loaded)
+}
+
+HRESULT DebuggerProbesInstrumentationRequester::NotifyReJITError(ModuleID moduleId, mdMethodDef methodId,
+                                                                 FunctionID functionId, HRESULT hrStatus)
+{
+    const auto probeIds = ProbesMetadataTracker::Instance()->GetProbeIds(moduleId, methodId);
+    if (!probeIds.empty())
+    {
+        Logger::Info("Marking ", probeIds.size(), " probes as failed due to ReJITError notification.");
+        for (const auto& probeId : probeIds)
+        {
+            Logger::Info("Marking ", probeId, " as Error.");
+            ProbesMetadataTracker::Instance()->SetProbeStatus(probeId, ProbeStatus::_ERROR);
+        }
+    }
+
+    return S_OK;
 }
 
 } // namespace debugger

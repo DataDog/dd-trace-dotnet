@@ -1555,6 +1555,11 @@ void CorProfiler::InstrumentProbes(debugger::DebuggerMethodProbeDefinition* meth
                                                   removeProbes, revertProbesLength);
 }
 
+int CorProfiler::GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses)
+{
+    return debugger_instrumentation_requester->GetProbesStatuses(probeIds, probeIdsLength, probeStatuses);
+}
+
 //
 // ICorProfilerCallback6 methods
 //
@@ -3194,9 +3199,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef
     {
         Logger::Warn("ReJITError: [functionId: ", functionId, ", moduleId: ", moduleId, ", methodId: ", methodId,
                      ", hrStatus: ", hrStatus, "]");
+        return S_OK;
     }
 
-    return S_OK;
+    return debugger_instrumentation_requester->NotifyReJITError(moduleId, methodId, functionId, hrStatus);
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID functionId, BOOL* pbUseCachedFunction)

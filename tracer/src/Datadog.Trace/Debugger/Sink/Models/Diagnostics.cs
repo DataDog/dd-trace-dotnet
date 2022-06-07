@@ -4,10 +4,14 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Converters;
 
 namespace Datadog.Trace.Debugger.Sink.Models;
 
-internal record Diagnostics(string ProbeId, Status Status)
+internal record Diagnostics(
+    [property:JsonProperty("probeId")] string ProbeId,
+    [property:JsonProperty("status")] Status Status)
 {
     public ProbeException Exception { get; private set; }
 

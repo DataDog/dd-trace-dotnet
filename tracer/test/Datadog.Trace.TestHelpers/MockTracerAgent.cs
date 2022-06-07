@@ -70,6 +70,8 @@ namespace Datadog.Trace.TestHelpers
 
         public List<string> Snapshots { get; private set; } = new();
 
+        public List<string> ProbesStatuses { get; private set; } = new();
+
         public ConcurrentQueue<string> StatsdRequests { get; } = new();
 
         /// <summary>
@@ -277,6 +279,40 @@ namespace Datadog.Trace.TestHelpers
             Snapshots.Clear();
         }
 
+        /// <summary>
+        /// Wait for the given number of probe statuses to appear.
+        /// </summary>
+        /// <param name="statusCount">The expected number of probe statuses when more than one status is expected (e.g. multiple line probes in method).</param>
+        /// <param name="timeout">The timeout</param>
+        /// <returns>The list of probe statuses.</returns>
+        public async Task<string[]> WaitForProbesStatuses(int statusCount, TimeSpan? timeout = null)
+        {
+            using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(5));
+
+            var isFound = false;
+            while (!isFound && !cancellationSource.IsCancellationRequested)
+            {
+                isFound = ProbesStatuses.Count == statusCount;
+
+                if (!isFound)
+                {
+                    await Task.Delay(100);
+                }
+            }
+
+            if (!isFound)
+            {
+                throw new InvalidOperationException($"Snapshot count not found. Expected {statusCount}, actual {Snapshots.Count}");
+            }
+
+            return ProbesStatuses.ToArray();
+        }
+
+        public void ClearProbeStatuses()
+        {
+            ProbesStatuses.Clear();
+        }
+
         public virtual void Dispose()
         {
             _cancellationTokenSource.Cancel();
@@ -481,6 +517,32 @@ namespace Datadog.Trace.TestHelpers
             return body;
         }
 
+        private void ReceiveDebuggerBatch(string batch)
+        {
+            var arr = JArray.Parse(batch);
+
+            var probeStatuses = new List<string>();
+            var snapshots = new List<string>();
+
+            foreach (var token in arr)
+            {
+                var stringifiedToken = token.ToString();
+                if (token["debugger"]?["diagnostics"]?["status"] != null)
+                {
+                    probeStatuses.Add(stringifiedToken);
+                }
+                else
+                {
+                    snapshots.Add(stringifiedToken);
+                }
+            }
+
+            // We override the previous Probes Statuses as the debugger-agent is always emitting complete set of probes statuses, so we can
+            // solely rely on that.
+            ProbesStatuses = probeStatuses;
+            Snapshots.AddRange(snapshots);
+        }
+
         public class TcpUdpAgent : MockTracerAgent
         {
             private readonly HttpListener _listener;
@@ -640,10 +702,7 @@ namespace Datadog.Trace.TestHelpers
                                 using var body = ctx.Request.InputStream;
                                 using var streamReader = new StreamReader(body);
                                 var batch = streamReader.ReadToEnd();
-                                var arr = JArray.Parse(batch);
-                                var snapshots = arr.Select(token => token.ToString());
-
-                                Snapshots.AddRange(snapshots);
+                                ReceiveDebuggerBatch(batch);
                             }
                             else if (ShouldDeserializeTraces)
                             {

@@ -125,6 +125,53 @@ struct LineProbeDefinition : public ProbeDefinition
 
 typedef std::shared_ptr<LineProbeDefinition> LineProbeDefinition_S;
 
+enum class ProbeStatus
+{
+    RECEIVED,
+    INSTALLED,
+    BLOCKED,
+    /**
+     * \brief Preceding with underscore because ERROR is a widely used preprocessor constant.
+     */
+    // ReSharper disable once CppInconsistentNaming
+    _ERROR  // NOLINT(clang-diagnostic-reserved-identifier, bugprone-reserved-identifier)
+};
+
+struct ProbeMetadata
+{
+    shared::WSTRING probeId;
+    std::set<trace::MethodIdentifier> methods;
+    ProbeStatus status;
+
+    ProbeMetadata() = default;
+    ProbeMetadata(const ProbeMetadata& other) = default;
+    ProbeMetadata(ProbeMetadata&& other) = default;
+
+    ProbeMetadata(shared::WSTRING probeId, std::set<trace::MethodIdentifier>&& methods, ProbeStatus initialStatus) : probeId(probeId), methods(std::move(methods)), status(initialStatus)
+    {
+    }
+    
+
+    inline bool operator==(const ProbeMetadata& other) const
+    {
+        return probeId == other.probeId;
+    }
+
+    virtual ~ProbeMetadata() = default;
+};
+
+typedef struct _ProbeStatusesRequest
+{
+    WCHAR** probeIds;
+    int probeIdsLength;
+} ProbeStatusesRequest;
+
+typedef struct _DebuggerProbeStatus
+{
+    const WCHAR* probeId;
+    ProbeStatus status;
+} DebuggerProbeStatus;
+
 } // namespace debugger
 
 #endif // DD_CLR_PROFILER_LIVE_DEBUGGER_H_

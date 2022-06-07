@@ -6,6 +6,7 @@
 #include "stats.h"
 #include "version.h"
 #include "environment_variables_util.h"
+#include "probes_tracker.h"
 
 namespace debugger
 {
@@ -264,7 +265,16 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     
     if (!methodProbes.empty() || !lineProbes.empty())
     {
-        return Rewrite(moduleHandler, methodHandler, methodProbes, lineProbes);
+        const auto hr = Rewrite(moduleHandler, methodHandler, methodProbes, lineProbes);
+
+        if (FAILED(hr))
+        {
+            // Mark all probes as Error
+            for (const auto& probe : probes)
+            {
+                ProbesMetadataTracker::Instance()->SetProbeStatus(probe->probeId, ProbeStatus::_ERROR);
+            }
+        }
     }
 
     return S_OK;
@@ -785,7 +795,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     {
         Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Call to ILRewriter.Import() failed for ", module_id, " ",
                      function_token);
-        return S_FALSE;
+        return E_FAIL;
     }
 
     // *** Store the original il code text if the dump_il option is enabled.
@@ -804,7 +814,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     {
         Logger::Warn("*** DebuggerMethodRewriter::Rewrite() failed to parse locals signature for ", module_id, " ",
                      function_token);
-        return S_FALSE;
+        return E_FAIL;
     }
 
     std::vector<TypeSignature> methodLocals = localSignature.GetMethodLocals();
@@ -835,7 +845,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     if (FAILED(hr))
     {
         // Error message is already written in ModifyLocalSigAndInitialize
-        return S_FALSE;
+        return S_FALSE; // TODO https://datadoghq.atlassian.net/browse/DEBUG-706
     }
 
     ULONG lineProbeCallTargetStateIndex = static_cast<ULONG>(ULONG_MAX);
@@ -846,7 +856,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     if (FAILED(hr))
     {
         Logger::Error("Failed to get DebuggerLocals for ", module_id, " ", function_token);
-        return S_FALSE;
+        return E_FAIL;
     }
 
     const auto instrumentedMethodIndex = GetNextInstrumentedMethodIndex();
@@ -868,7 +878,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         if (FAILED(hr))
         {
             // Appropriate error message is already logged in ApplyLineProbes.
-            return S_FALSE;
+            return E_FAIL;
         }
     }
 
@@ -890,7 +900,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         if (FAILED(hr))
         {
             // Appropriate error message is already logged in ApplyMethodProbe.
-            return S_FALSE;
+            return E_FAIL;
         }
     }
 
@@ -934,7 +944,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Call to ILRewriter.Export() failed for "
                      "ModuleID=",
                      module_id, " ", function_token);
-        return S_FALSE;
+        return E_FAIL;
     }
 
     Logger::Info("*** DebuggerMethodRewriter::Rewrite() Finished: ", caller->type.name, ".", caller->name,
