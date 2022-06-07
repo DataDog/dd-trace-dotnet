@@ -594,7 +594,7 @@ partial class Build
         .Executes(() =>
         {
             var directory = new DirectoryInfo(MonitoringHomeDirectory);
-            var files = directory.GetFiles("*.so");
+            var files = directory.GetFiles("*.so", SearchOption.AllDirectories);
 
             var symbolsDirectory = SharedDirectory / "symbols";
             EnsureExistingDirectory(symbolsDirectory);
@@ -603,7 +603,7 @@ partial class Build
             {
                 var outputFile = Path.Combine(symbolsDirectory, Path.GetFileNameWithoutExtension(file.Name));
 
-                Logger.Info($"Extracting debug symbol for {file.FullName} to {outputFile}");
+                Logger.Info($"Extracting debug symbol for {file.FullName} to {outputFile}.debug");
                 ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file.FullName} {outputFile}.debug");
 
                 Logger.Info($"Stripping out unneeded information from {file.FullName}");
