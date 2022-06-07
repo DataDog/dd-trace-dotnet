@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -12,6 +13,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Sink.Models;
 using FluentAssertions;
@@ -35,8 +37,9 @@ public class LiveDebuggerTests
         var configurationPoller = new ConfigurationPollerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
+        var probeStatusPoller = new ProbeStatusPollerMock();
 
-        LiveDebugger.Create(settings, discoveryService, configurationPoller, lineProbeResolver, debuggerSink);
+        LiveDebugger.Create(settings, discoveryService, configurationPoller, lineProbeResolver, debuggerSink, probeStatusPoller);
 
         var counter = 0;
 
@@ -52,6 +55,7 @@ public class LiveDebuggerTests
         discoveryService.Called.Should().BeTrue();
         configurationPoller.Called.Should().BeTrue();
         debuggerSink.Called.Should().BeTrue();
+        probeStatusPoller.Called.Should().BeTrue();
     }
 
     [Fact]
@@ -67,13 +71,15 @@ public class LiveDebuggerTests
         var configurationPoller = new ConfigurationPollerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
+        var probeStatusPoller = new ProbeStatusPollerMock();
 
-        LiveDebugger.Create(settings, discoveryService, configurationPoller, lineProbeResolver, debuggerSink);
+        LiveDebugger.Create(settings, discoveryService, configurationPoller, lineProbeResolver, debuggerSink, probeStatusPoller);
 
         discoveryService.Called.Should().BeFalse();
         configurationPoller.Called.Should().BeFalse();
         lineProbeResolver.Called.Should().BeFalse();
         debuggerSink.Called.Should().BeFalse();
+        probeStatusPoller.Called.Should().BeFalse();
     }
 
     private class DiscoveryServiceMock : IDiscoveryService
@@ -141,6 +147,30 @@ public class LiveDebuggerTests
         public void AddProbeStatus(string probeId, Status status, Exception exception = null, string errorMessage = null)
         {
             throw new NotImplementedException();
+        }
+
+        public void Dispose()
+        {
+        }
+    }
+
+    private class ProbeStatusPollerMock : IProbeStatusPoller
+    {
+        internal bool Called { get; private set; }
+
+        public void StartPolling()
+        {
+            Called = true;
+        }
+
+        public void AddProbes(string[] newProbes)
+        {
+            Called = true;
+        }
+
+        public void RemoveProbes(string[] newProbes)
+        {
+            Called = true;
         }
 
         public void Dispose()

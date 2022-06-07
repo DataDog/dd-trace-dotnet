@@ -35,10 +35,13 @@ public:
     void InstrumentProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,
                    debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,
                    debugger::DebuggerRemoveProbesDefinition* removeProbes, int removeProbesLength);
+    static int GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses);
     void PerformInstrumentAllIfNeeded(const ModuleInfo& module_info, const ModuleID& module_id, const mdToken& function_token);
     const std::vector<std::shared_ptr<ProbeDefinition>>& GetProbes() const;
     DebuggerRejitPreprocessor* GetPreprocessor();
     ULONG RequestRejitForLoadedModule(const ModuleID moduleId);
+
+    static HRESULT NotifyReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId, HRESULT hrStatus);
 };
 
 } // namespace debugger

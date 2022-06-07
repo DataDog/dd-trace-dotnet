@@ -4,12 +4,9 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
-using Datadog.Trace.Debugger.PInvoke;
+using Datadog.Trace.Debugger.ProbeStatuses;
 
 namespace Datadog.Trace.Debugger.PInvoke
 {
@@ -27,6 +24,31 @@ namespace Datadog.Trace.Debugger.PInvoke
             }
         }
 
+        public static ProbeStatus[] GetProbesStatuses(string[] probeIds)
+        {
+            if (probeIds is null || probeIds.Length == 0)
+            {
+                return Array.Empty<ProbeStatus>();
+            }
+
+            var probesStatuses = new NativeProbeStatus[probeIds.Length];
+            int probesLength = Datadog.Trace.ClrProfiler.NativeMethods.IsWindows ?
+                Windows.GetProbesStatuses(probeIds, probeIds.Length, probesStatuses) :
+                NonWindows.GetProbesStatuses(probeIds, probeIds.Length, probesStatuses);
+
+            if (probesLength == 0)
+            {
+                return Array.Empty<ProbeStatus>();
+            }
+
+            return probesStatuses.Take(probesLength)
+                                 .Select(
+                                      nativeProbeStatus =>
+                                          new ProbeStatus(
+                                              Marshal.PtrToStringUni(nativeProbeStatus.ProbeId), nativeProbeStatus.Status))
+                                 .ToArray();
+        }
+
         // the "dll" extension is required on .NET Framework
         // and optional on .NET Core
         private static partial class Windows
@@ -39,6 +61,12 @@ namespace Datadog.Trace.Debugger.PInvoke
                 int lineProbesLength,
                 [In] NativeRemoveProbeRequest[] revertProbes,
                 int revertProbesLength);
+
+            [DllImport("Datadog.Trace.ClrProfiler.Native.dll", CharSet = CharSet.Unicode)]
+            public static extern int GetProbesStatuses(
+                [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr, SizeParamIndex = 1)] string[] probeIds,
+                int probeIdsLength,
+                [In, Out] NativeProbeStatus[] probeStatuses);
         }
 
         // assume .NET Core if not running on Windows
@@ -52,6 +80,12 @@ namespace Datadog.Trace.Debugger.PInvoke
                 int lineProbesLength,
                 [In] NativeRemoveProbeRequest[] revertProbes,
                 int revertProbesLength);
+
+            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            public static extern int GetProbesStatuses(
+                [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr, SizeParamIndex = 1)] string[] probeIds,
+                int probeIdsLength,
+                [In, Out] NativeProbeStatus[] probeStatuses);
         }
     }
 }

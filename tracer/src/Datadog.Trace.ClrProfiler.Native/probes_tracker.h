@@ -8,23 +8,27 @@
 #include <unordered_map>
 #include "../../../shared/src/native-src/util.h"
 #include "../../../shared/src/native-src/string.h"
+#include "debugger_members.h"
 
 namespace debugger
 {
-    class ProbesTracker : public shared::Singleton<ProbesTracker>
+    class ProbesMetadataTracker : public shared::Singleton<ProbesMetadataTracker>
     {
-        friend class shared::Singleton<ProbesTracker>;
+        friend class shared::Singleton<ProbesMetadataTracker>;
 
     private:
-        std::recursive_mutex _probeIdMapMutex;
-        std::unordered_map<shared::WSTRING, std::set<trace::MethodIdentifier>> _probeIdMap{};
+        std::recursive_mutex _probeMetadataMapMutex;
+        std::unordered_map<shared::WSTRING, std::shared_ptr<ProbeMetadata>> _probeMetadataMap{};
 
     public:
-        ProbesTracker() = default;
+        ProbesMetadataTracker() = default;
 
-        bool TryGetMethods(const shared::WSTRING& probeId, std::set<trace::MethodIdentifier>& methods);
-        void AddProbe(const shared::WSTRING& probeId, const ModuleID moduleId, const mdMethodDef methodId);
-        std::set<trace::MethodIdentifier> RemoveProbes(const std::vector<shared::WSTRING>& probes);
+        bool TryGetMetadata(const shared::WSTRING& probeId, std::shared_ptr<ProbeMetadata>& probeMetadata);
+        std::set<WSTRING> GetProbeIds(const ModuleID moduleId, const mdMethodDef methodId);
+        void CreateNewProbeIfNotExists(const shared::WSTRING& probeId);
+        void AddMethodToProbe(const shared::WSTRING& probeId, const ModuleID moduleId, const mdMethodDef methodId);
+        bool SetProbeStatus(const shared::WSTRING& probeId, ProbeStatus newStatus);
+        int RemoveProbes(const std::vector<shared::WSTRING>& probes);
     };
 
 } // namespace debugger

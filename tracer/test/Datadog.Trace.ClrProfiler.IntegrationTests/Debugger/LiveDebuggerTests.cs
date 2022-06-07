@@ -56,11 +56,12 @@ public class LiveDebuggerTests : TestHelper
 
     private async Task RunTest()
     {
+        var guidGenerator = new DeterministicGuidGenerator();
         var testType =
             typeof(IRun)
                .Assembly.GetTypes()
                .Where(t => t.GetInterface(nameof(IRun)) != null)
-               .First(t => DebuggerTestHelper.GetAllProbes(t, EnvironmentHelper.GetTargetFramework(), unlisted: false).Any());
+               .First(t => DebuggerTestHelper.GetAllProbes(t, EnvironmentHelper.GetTargetFramework(), unlisted: false, guidGenerator).Any());
 
         using var agent = EnvironmentHelper.GetMockAgent();
 

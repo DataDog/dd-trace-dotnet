@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Sink.Models;
 
@@ -14,11 +15,11 @@ internal record ProbeStatus
         Message = GetMessage();
         Service = service;
 
-        Diagnostics = new Diagnostics(probeId, status);
+        DebuggerDiagnostics = new DebuggerDiagnostics(new Diagnostics(probeId, status));
 
         if (status == Status.ERROR)
         {
-            Diagnostics.SetException(exception, errorMessage);
+            DebuggerDiagnostics.Diagnostics.SetException(exception, errorMessage);
         }
 
         string GetMessage()
@@ -34,11 +35,15 @@ internal record ProbeStatus
         }
     }
 
+    [JsonProperty("ddsource")]
     public string DdSource { get; } = "dd_debugger";
 
+    [JsonProperty("service")]
     public string Service { get; }
 
+    [JsonProperty("message")]
     public string Message { get; }
 
-    public Diagnostics Diagnostics { get; }
+    [JsonProperty("debugger")]
+    public DebuggerDiagnostics DebuggerDiagnostics { get; }
 }

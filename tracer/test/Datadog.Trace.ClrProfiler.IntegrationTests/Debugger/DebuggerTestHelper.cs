@@ -32,10 +32,7 @@ internal static class DebuggerTestHelper
 
     internal static int CalculateExpectedNumberOfSnapshots(ProbeAttributeBase[] probes)
     {
-        var lineProbes = probes.OfType<LineProbeTestDataAttribute>().ToArray();
-        var lineProbesExpected = lineProbes
-           .Aggregate(0, (accuNumOfSnapshots, next) => accuNumOfSnapshots + next.ExpectedNumberOfSnapshots);
-        return probes.Length + lineProbesExpected - lineProbes.Length;
+        return probes.Aggregate(0, (accuNumOfSnapshots, next) => accuNumOfSnapshots + next.ExpectedNumberOfSnapshots);
     }
 
     internal static ProbeConfiguration CreateProbeDefinition(SnapshotProbe[] probes)
@@ -43,7 +40,7 @@ internal static class DebuggerTestHelper
         return new ProbeConfiguration { Id = Guid.Empty.ToString(), SnapshotProbes = probes };
     }
 
-    internal static (ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)[] GetAllProbes(Type type, string targetFramework, bool unlisted)
+    internal static (ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)[] GetAllProbes(Type type, string targetFramework, bool unlisted, DeterministicGuidGenerator guidGenerator)
     {
         const BindingFlags allMask =
             BindingFlags.Public |
@@ -60,21 +57,21 @@ internal static class DebuggerTestHelper
                                                 var att = m.GetCustomAttribute<MethodProbeTestDataAttribute>();
                                                 return att?.Skip == false && att?.Unlisted == unlisted && att?.SkipOnFrameworks.Contains(targetFramework) == false;
                                             })
-                                       .Select(m => (m.GetCustomAttribute<MethodProbeTestDataAttribute>().As<ProbeAttributeBase>(), CreateSnapshotMethodProbe(m)))
+                                       .Select(m => (m.GetCustomAttribute<MethodProbeTestDataAttribute>().As<ProbeAttributeBase>(), CreateSnapshotMethodProbe(m, guidGenerator)))
                                        .ToArray();
 
         var snapshotLineProbes = type.GetCustomAttributes<LineProbeTestDataAttribute>()
                                      .Where(att => att?.Skip == false && att?.Unlisted == unlisted && att?.SkipOnFrameworks.Contains(targetFramework) == false)
-                                     .Select(att => (att.As<ProbeAttributeBase>(), CreateSnapshotLineProbe(type, att)))
+                                     .Select(att => (att.As<ProbeAttributeBase>(), CreateSnapshotLineProbe(type, att, guidGenerator)))
                                      .ToArray();
 
         return snapshotLineProbes.Concat(snapshotMethodProbes).ToArray();
     }
 
-    private static SnapshotProbe CreateSnapshotLineProbe(Type type, LineProbeTestDataAttribute line)
+    private static SnapshotProbe CreateSnapshotLineProbe(Type type, LineProbeTestDataAttribute line, DeterministicGuidGenerator guidGenerator)
     {
         var where = CreateLineProbeWhere(type, line);
-        return CreateSnapshotProbe(where);
+        return CreateSnapshotProbe(where, guidGenerator);
     }
 
     private static Where CreateLineProbeWhere(Type type, LineProbeTestDataAttribute line)
@@ -85,16 +82,16 @@ internal static class DebuggerTestHelper
         return new Where() { SourceFile = filePath, Lines = new[] { line.LineNumber.ToString() } };
     }
 
-    private static SnapshotProbe CreateSnapshotMethodProbe(MethodInfo method)
+    private static SnapshotProbe CreateSnapshotMethodProbe(MethodInfo method, DeterministicGuidGenerator guidGenerator)
     {
         var probeTestData = method.GetCustomAttribute<MethodProbeTestDataAttribute>();
         var where = CreateMethodProbeWhere(method, probeTestData);
-        return CreateSnapshotProbe(where);
+        return CreateSnapshotProbe(where, guidGenerator);
     }
 
-    private static SnapshotProbe CreateSnapshotProbe(Where where)
+    private static SnapshotProbe CreateSnapshotProbe(Where where, DeterministicGuidGenerator guidGenerator)
     {
-        return new SnapshotProbe { Id = Guid.Empty.ToString(), Language = TracerConstants.Language, Active = true, Where = where };
+        return new SnapshotProbe { Id = guidGenerator.New().ToString(), Language = TracerConstants.Language, Active = true, Where = where };
     }
 
     private static Where CreateMethodProbeWhere(MethodInfo method, MethodProbeTestDataAttribute probeTestData)

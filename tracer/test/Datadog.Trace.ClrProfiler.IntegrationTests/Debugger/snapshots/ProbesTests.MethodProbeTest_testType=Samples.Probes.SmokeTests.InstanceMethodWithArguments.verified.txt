@@ -61,11 +61,8 @@
             "lineNumber": "ScrubbedValue"
           },
           {
-            "function": "Program.Main",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.<Main>",
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
             "lineNumber": "ScrubbedValue"
           }
         ],
@@ -75,11 +72,78 @@
     "logger": {
       "method": "Samples.Probes.SmokeTests.InstanceMethodWithArguments",
       "name": "Method",
-      "thread_id": 1,
+      "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
     "message": "InstanceMethodWithArguments.Method(lastName=Last): Last\r\n@return=Last",
+    "service": "Unknown"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "18": {
+              "arguments": {
+                "lastName": {
+                  "fields": null,
+                  "type": "String",
+                  "value": "Last"
+                }
+              },
+              "fields": null
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "InstanceMethodWithArguments.cs",
+            "lines": [
+              18
+            ]
+          }
+        },
+        "stack": [
+          {
+            "fileName": "InstanceMethodWithArguments.cs",
+            "function": "Samples.Probes.SmokeTests.InstanceMethodWithArguments.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "InstanceMethodWithArguments.cs",
+            "function": "Samples.Probes.SmokeTests.InstanceMethodWithArguments.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Samples.Probes.SmokeTests.InstanceMethodWithArguments",
+      "name": "Method",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "InstanceMethodWithArguments.Method(lastName=Last)",
     "service": "Unknown"
   }
 ]

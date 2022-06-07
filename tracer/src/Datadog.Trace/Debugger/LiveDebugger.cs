@@ -15,6 +15,7 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.PInvoke;
+using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Logging;
 
@@ -31,15 +32,17 @@ namespace Datadog.Trace.Debugger
         private readonly IDebuggerSink _debuggerSink;
         private readonly ILineProbeResolver _lineProbeResolver;
         private readonly List<ProbeDefinition> _unboundProbes;
+        private readonly IProbeStatusPoller _probeStatusPoller;
         private readonly object _locker = new();
 
-        private LiveDebugger(ImmutableDebuggerSettings settings, IDiscoveryService discoveryService, IConfigurationPoller configurationPoller, ILineProbeResolver lineProbeResolver, IDebuggerSink debuggerSink)
+        private LiveDebugger(ImmutableDebuggerSettings settings, IDiscoveryService discoveryService, IConfigurationPoller configurationPoller, ILineProbeResolver lineProbeResolver, IDebuggerSink debuggerSink, IProbeStatusPoller probeStatusPoller)
         {
             _settings = settings;
             _discoveryService = discoveryService;
             _configurationPoller = configurationPoller;
             _lineProbeResolver = lineProbeResolver;
             _debuggerSink = debuggerSink;
+            _probeStatusPoller = probeStatusPoller;
             _unboundProbes = new List<ProbeDefinition>();
         }
 
@@ -51,7 +54,7 @@ namespace Datadog.Trace.Debugger
             var settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromSource(source));
             if (!settings.Enabled)
             {
-                return Create(settings, null, null, null, null);
+                return Create(settings, null, null, null, null, null);
             }
 
             var apiFactory = DebuggerTransportStrategy.Get(new ExporterSettings().AgentUri);
@@ -69,14 +72,15 @@ namespace Datadog.Trace.Debugger
             var debuggerSink = DebuggerSink.Create(snapshotStatusSink, probeStatusSink, settings, batchUploader);
 
             var lineProbeResolver = LineProbeResolver.Create();
+            var probeStatusPoller = ProbeStatusPoller.Create(settings, probeStatusSink);
 
-            return Create(settings, discoveryService, configurationPoller, lineProbeResolver, debuggerSink);
+            return Create(settings, discoveryService, configurationPoller, lineProbeResolver, debuggerSink, probeStatusPoller);
         }
 
         // for tests
-        internal static LiveDebugger Create(ImmutableDebuggerSettings settings, IDiscoveryService discoveryService, IConfigurationPoller configurationPoller, ILineProbeResolver lineProbeResolver, IDebuggerSink debuggerSink)
+        internal static LiveDebugger Create(ImmutableDebuggerSettings settings, IDiscoveryService discoveryService, IConfigurationPoller configurationPoller, ILineProbeResolver lineProbeResolver, IDebuggerSink debuggerSink, IProbeStatusPoller probeStatusPoller)
         {
-            var debugger = new LiveDebugger(settings, discoveryService, configurationPoller, lineProbeResolver, debuggerSink);
+            var debugger = new LiveDebugger(settings, discoveryService, configurationPoller, lineProbeResolver, debuggerSink, probeStatusPoller);
             debugger.Initialize();
 
             return debugger;
@@ -127,11 +131,18 @@ namespace Datadog.Trace.Debugger
 
             Task StartAsync()
             {
-                LifetimeManager.Instance.AddShutdownTask(() => _configurationPoller.Dispose());
-                LifetimeManager.Instance.AddShutdownTask(() => _debuggerSink.Dispose());
+                LifetimeManager.Instance.AddShutdownTask(OnShutdown);
 
+                _probeStatusPoller.StartPolling();
                 return Task.WhenAll(_configurationPoller.StartPollingAsync(), _debuggerSink.StartFlushingAsync());
             }
+        }
+
+        private void OnShutdown()
+        {
+            _configurationPoller.Dispose();
+            _debuggerSink.Dispose();
+            _probeStatusPoller.Dispose();
         }
 
         internal void UpdateProbeInstrumentations(IReadOnlyList<ProbeDefinition> addedProbes, IReadOnlyList<ProbeDefinition> removedProbes)
@@ -182,6 +193,9 @@ namespace Datadog.Trace.Debugger
                 RemoveUnboundProbes(removedProbes);
                 using var disposable = new DisposableEnumerable<NativeMethodProbeDefinition>(methodProbes);
                 DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), revertProbes.ToArray());
+
+                _probeStatusPoller.AddProbes(addedProbes.Select(probe => probe.Id).ToArray());
+                _probeStatusPoller.RemoveProbes(removedProbes.Select(probe => probe.Id).ToArray());
 
                 // This log is checked in integration test
                 Log.Information("Live Debugger.InstrumentProbes: Request to instrument probes definitions completed.");

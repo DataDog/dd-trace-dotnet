@@ -62,7 +62,7 @@ namespace Datadog.Trace.Debugger.Sink
         {
             var shouldSkip =
                 _diagnostics.TryGetValue(probeId, out var current) &&
-                !ShouldOverwrite(current.Message.Diagnostics.Status, status);
+                !ShouldOverwrite(current.Message.DebuggerDiagnostics.Diagnostics.Status, status);
 
             if (shouldSkip)
             {
@@ -141,7 +141,7 @@ namespace Datadog.Trace.Debugger.Sink
             {
                 if (_queue.TryDequeue(out var probe))
                 {
-                    if (_diagnostics.ContainsKey(probe.Diagnostics.ProbeId))
+                    if (_diagnostics.ContainsKey(probe.DebuggerDiagnostics.Diagnostics.ProbeId))
                     {
                         probeStatusList.Add(probe);
                     }
