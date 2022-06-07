@@ -894,7 +894,57 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [msi_tests]
+      jobs: [msi_tests, msi_snapshot_tests]
+
+  - job: msi_snapshot_tests
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_msi_matrix'] ]
+    pool:
+      name: azure-windows-scale-set
+    variables:
+      relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
+      USE_NATIVE_LOADER: true
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - template: steps/install-latest-dotnet-sdk.yml
+      parameters:
+        includeX86: true
+    - template: steps/restore-working-directory.yml
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download MSI
+      inputs:
+        artifact: windows-msi-$(targetPlatform)
+        patterns: '**/*-$(targetPlatform).msi'
+        path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
+
+    - script: |
+        docker build -t dd-trace-dotnet/msi-installer-test --build-arg DOTNET_TRACER_MSI=.$(relativeMsiOutputDirectory)/*.msi -f ./tracer/build/_build/docker/msi.dockerfile ./
+      displayName: docker build msi.dockerfile
+      retryCountOnTaskFailure: 5
+
+    - script: |
+        docker run -d --name msi-installer-test dd-trace-dotnet/msi-installer-test-running
+        docker exec msi-installer-test msiexec /qn /i datadog-apm.msi
+        docker stop msi-installer-test
+        docker diff msi-installer-test > $(System.DefaultWorkingDirectory)/tracer/test/snapshots/msi.files.received.txt
+        docker rm -f msi-installer-test
+      displayName: run msi installer and generate snapshot 
+
+    - script: tracer\build.cmd CompareMsiSnapshots
+      displayName: RunWindowsIisIntegrationTests
+
+
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: integration_tests_windows_msi_snapshotting_snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
 
   - job: msi_tests
     timeoutInMinutes: 60 #default value
@@ -962,6 +1012,8 @@ stages:
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
+
+
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))

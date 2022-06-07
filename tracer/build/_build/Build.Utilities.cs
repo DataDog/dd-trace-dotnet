@@ -197,6 +197,81 @@ partial class Build
             await UpdateVendorsTool.UpdateVendors(downloadDirectory, vendorDirectory);
        });
 
+    Target CompareMsiSnapshots => _ => _
+       .Description("Compares the MSI snapshots for the MSI installer")
+       .Executes(async () =>
+       {
+           var snapshots = TracerDirectory / "test" / "snapshots";
+           var verified = File.ReadAllLines(snapshots / "msi.files.verified.txt");
+           var received = File.ReadAllLines(snapshots / "msi.files.received.txt");
+
+           var error = false;
+           foreach (var line in received.Where(IncludeFile))
+           {
+               if (!verified.Contains(line))
+               {
+                   Logger.Error($"Found unexpected file modification '{line}' in msi.files.received.txt");
+                   error = true;
+               }
+           }
+
+           foreach (var line in verified.Where(IncludeFile))
+           {
+               if (!received.Contains(line))
+               {
+                   Logger.Error($"Missing expected file modification '{line}' in msi.files.received.txt");
+                   error = true;
+               }
+           }
+
+           foreach (var line in ExpectedGacFiles(Version))
+           {
+               if (!received.Contains(line))
+               {
+                   Logger.Error($"Missing expected GAC file modification '{line}' in msi.files.received.txt");
+                   error = true;
+               }
+           }
+
+           if (error)
+           {
+               throw new Exception("Unexpected differences found in MSI snapshots");
+           }
+
+           Logger.Info($"MSI files verified successfully");
+
+           static bool IncludeFile(string line)
+           {
+               var filename = line.Substring(2);
+               return filename switch
+               {
+                   "Files/ProgramData/Microsoft" => false,
+                   "Files/ProgramData/USOPrivate" => false,
+                   "Files/ProgramData/USOShared" => false,
+                   "Files/Windows/INF" => false,
+                   _ when filename.StartsWith("Files/Windows/System32") => false,
+                   _ when filename.StartsWith("Files/ProgramData/Microsoft/Windows") => false,
+                   _ when filename.StartsWith("Files/ProgramData/USOPrivate/UpdateStore") => false,
+                   _ when filename.StartsWith("Files/ProgramData/USOShared/Logs") => false,
+                   _ when filename.StartsWith("Files/Windows/INF/wmiaprpl") => false,
+                   _ when filename.StartsWith("Files/Windows/Installer") => false,
+                   _ when filename.StartsWith("Files/Windows/Logs") => false,
+                   _ when filename.StartsWith("Files/Windows/System32") => false,
+                   _ when filename.StartsWith("Files/Windows/Temp") => false,
+                   _ when filename.StartsWith("Files/Windows/Microsoft.NET/assembly/GAC_MSIL/Datadog") => false, // we explicitly compare these
+                   _ => true,
+               };
+           }
+
+           static string[] ExpectedGacFiles(string version) => new []
+           {
+               $"C Files/Windows/Microsoft.NET/assembly/GAC_MSIL/Datadog.Trace/v4.0_{version}.0__def86d061d0d2eeb",
+               $"C Files/Windows/Microsoft.NET/assembly/GAC_MSIL/Datadog.Trace/v4.0_{version}.0__def86d061d0d2eeb/Datadog.Trace.dll",
+               $"C Files/Windows/Microsoft.NET/assembly/GAC_MSIL/Datadog.Trace.MSBuild/v4.0_{version}.0__def86d061d0d2eeb",
+               $"C Files/Windows/Microsoft.NET/assembly/GAC_MSIL/Datadog.Trace.MSBuild/v4.0_{version}.0__def86d061d0d2eeb/Datadog.Trace.MSBuild.dll",
+           };
+       });
+
     Target UpdateVersion => _ => _
        .Description("Update the version number for the tracer")
        .Before(Clean, BuildTracerHome)
