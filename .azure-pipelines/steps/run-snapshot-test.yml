@@ -13,7 +13,7 @@ steps:
   displayName: docker-compose run start-test-agent
   retryCountOnTaskFailure: 3
 
-- script: |
+- bash: |
     token=$(cat /proc/sys/kernel/random/uuid)
     echo "##vso[task.setvariable variable=snapshot_token]$token"
     endpoint="/test/session/start?test_session_token=$token"
@@ -28,7 +28,7 @@ steps:
   displayName: docker-compose run ${{ parameters.target }}
 
 
-- script: |
+- bash: |
     token=$(token)
     endpoint="/test/session/traces?test_session_token=$token"
     echo "Dumping traces with $endpoint"

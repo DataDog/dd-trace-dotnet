@@ -230,8 +230,8 @@ partial class Build : NukeBuild
                 GenerateLinuxSmokeTestsArm64Matrix();
                 
                 // nuget smoke tests
-                GenerateNuGetSmokeTestsMatrix();
-                GenerateNuGetSmokeTestsArm64Matrix();
+                GenerateLinuxNuGetSmokeTestsMatrix();
+                GenerateLinuxNuGetSmokeTestsArm64Matrix();
 
                 void GenerateLinuxInstallerSmokeTestsMatrix()
                 {
@@ -407,7 +407,7 @@ partial class Build : NukeBuild
                     }
                 }
                 
-                void GenerateNuGetSmokeTestsMatrix()
+                void GenerateLinuxNuGetSmokeTestsMatrix()
                 {
                     var matrix = new Dictionary<string, object>();
 
@@ -483,10 +483,10 @@ partial class Build : NukeBuild
 
                     Logger.Info($"Installer smoke tests matrix");
                     Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                    AzurePipelines.Instance.SetVariable("nuget_installer_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                    AzurePipelines.Instance.SetVariable("nuget_installer_linux_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
-                void GenerateNuGetSmokeTestsArm64Matrix()
+                void GenerateLinuxNuGetSmokeTestsArm64Matrix()
                 {
                     var matrix = new Dictionary<string, object>();
 
@@ -506,7 +506,7 @@ partial class Build : NukeBuild
 
                     Logger.Info($"Installer smoke tests nuget matrix ARM64");
                     Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
-                    AzurePipelines.Instance.SetVariable("nuget_installer_smoke_tests_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                    AzurePipelines.Instance.SetVariable("nuget_installer_linux_smoke_tests_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
                 void AddToNuGetSmokeTestsMatrix(
