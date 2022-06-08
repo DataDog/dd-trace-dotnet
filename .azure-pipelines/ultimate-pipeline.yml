@@ -2067,7 +2067,8 @@ stages:
             tar -zcf  $(Build.ArtifactStagingDirectory)/linux-native-symbols.tar.gz $(Build.ArtifactStagingDirectory)/symbols
             rm -rf $(Build.ArtifactStagingDirectory)/symbols
           displayName: Tar native linux symbols
-          failOnStderr
+          failOnStderr: true
+
 
         # NuGet
         - task: DownloadPipelineArtifact@2
