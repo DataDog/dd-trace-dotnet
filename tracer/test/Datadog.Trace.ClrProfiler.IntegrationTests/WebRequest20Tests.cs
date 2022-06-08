@@ -4,11 +4,13 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System;
 using System.Globalization;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.FSharp;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -43,9 +45,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal(expectedOperationName, span.Name);
+                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isWebRequest, span);
+                    Assert.True(result, message);
+
                     Assert.Equal(expectedServiceName, span.Service);
-                    Assert.Equal(SpanTypes.Http, span.Type);
                     Assert.Equal("WebRequest", span.Tags[Tags.InstrumentationName]);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
