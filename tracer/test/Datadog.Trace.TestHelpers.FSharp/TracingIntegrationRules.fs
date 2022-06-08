@@ -156,7 +156,7 @@ module TracingIntegrationRules =
         &&& tagIsPresent "redis.raw_command"
         &&& tagIsPresent "out.host"
         &&& tagIsPresent "out.port"
-        &&& tagMatches "component" "stackexchangeredis"
+        &&& tagMatches "component" "StackExchangeRedis"
         &&& tagMatches "span.kind" "client"
 
     let ``isWcf (server)`` : MockSpan -> Result<MockSpan, string> =
