@@ -83,6 +83,23 @@ db.type | `cosmosdb`
 out.host | Yes
 span.kind | `client`
 
+## Couchbase
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `couchbase.query`
+Type | `db`
+### Tags
+Name | Required |
+---------|----------------|
+component | `Couchbase`
+couchbase.operation.bucket | No
+couchbase.operation.code | Yes
+couchbase.operation.key | Yes
+out.host | No
+out.port | No
+span.kind | `client`
+
 ## Elasticsearch
 ### Span properties
 Name | Required |

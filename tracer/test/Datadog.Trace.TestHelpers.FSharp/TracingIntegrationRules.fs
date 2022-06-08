@@ -59,6 +59,17 @@ module TracingIntegrationRules =
         &&& tagMatches "component" "CosmosDb"
         &&& tagMatches "span.kind" "client"
 
+    let isCouchbase : MockSpan -> Result<MockSpan, string> =
+        matches name "couchbase.query"
+        &&& matches ``type`` "db"
+        &&& tagIsOptional "couchbase.operation.bucket"
+        &&& tagIsPresent "couchbase.operation.code"
+        &&& tagIsPresent "couchbase.operation.key"
+        &&& tagIsOptional "out.port"
+        &&& tagIsOptional "out.host"
+        &&& tagMatches "component" "Couchbase"
+        &&& tagMatches "span.kind" "client"
+
     let isElasticsearch : MockSpan -> Result<MockSpan, string> =
         matches name "elasticsearch.query"
         &&& matches ``type`` "elasticsearch"
