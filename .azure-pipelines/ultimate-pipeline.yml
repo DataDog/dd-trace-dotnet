@@ -97,6 +97,7 @@ variables:
   profilerSrcDirectory: $(System.DefaultWorkingDirectory)/../dd-continuous-profiler-dotnet
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
+  symbols: $(System.DefaultWorkingDirectory)/tracer/bin/symbols
   relativeRunnerTool: tracer/src/bin/runnerTool
   relativeRunnerStandalone: tracer/src/bin/runnerStandalone
   ddApiKey: $(DD_API_KEY)
@@ -369,6 +370,10 @@ stages:
       displayName: Upload linux-x64 packages
       artifact: linux-packages-$(baseImage)
 
+    - publish: $(symbols)
+      displayName: Upload linux-x64 symbols
+      artifact: linux-symbols-$(baseImage)
+
     - publish: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
       displayName: Upload linux-x64 monitoring home
       artifact: linux-monitoring-home-$(baseImage)
@@ -407,6 +412,10 @@ stages:
     - publish: $(artifacts)/linux-arm64
       displayName: Upload linux-arm64 packages
       artifact: linux-packages-arm64
+
+    - publish: $(symbols)
+      displayName: Upload linux-arm64 symbols
+      artifact: linux-symbols-arm64
 
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the build
@@ -2016,6 +2025,7 @@ stages:
             echo "##vso[task.setvariable variable=tracer_version]$VERSION_NUMBER"
           displayName: Extract version number
 
+        # Linux packages
         - task: DownloadPipelineArtifact@2
           displayName: Download linux Alpine packages
           inputs:
@@ -2034,12 +2044,41 @@ stages:
             artifact: linux-packages-arm64
             path: $(Build.ArtifactStagingDirectory)
 
+        # Linux symbols
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux Alpine symbols
+          inputs:
+            artifact: linux-symbols-alpine
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
+  
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux Debian symbols
+          inputs:
+            artifact: linux-symbols-debian
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
+  
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux Arm64 symbols
+          inputs:
+            artifact: linux-symbols-arm64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
+
+        - bash: |
+            tar -zcf  $(Build.ArtifactStagingDirectory)/linux-native-symbols.tar.gz ./symbols
+            rm -rf $(Build.ArtifactStagingDirectory)/symbols
+          displayName: Tar native linux symbols
+          failOnStderr: true
+          workingDirectory: $(Build.ArtifactStagingDirectory)
+
+
+        # NuGet
         - task: DownloadPipelineArtifact@2
           displayName: Download distribution nuget package
           inputs:
             artifact: distribution-nuget-package
             path: $(Build.ArtifactStagingDirectory)
 
+        # runner tool
         - task: DownloadPipelineArtifact@2
           displayName: Download runner dotnet tool
           inputs:
@@ -2068,6 +2107,7 @@ stages:
             patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
 
+        # release artifacts
         - publish: "$(Build.ArtifactStagingDirectory)"
           displayName: Publish release artifacts
           artifact: $(tracer_version)-release-artifacts
