@@ -154,13 +154,13 @@ Type | `queue`
 Name | Required |
 ---------|----------------|
 amqp.command | Yes
-amqp.delivery_mode | Yes
-amqp.exchange | Yes
-amqp.queue | Yes
-amqp.routing_key | Yes
-component | `rabbitmq`
-message.size | Yes
-span.kind | `client`
+amqp.delivery_mode | No
+amqp.exchange | No
+amqp.queue | No
+amqp.routing_key | No
+component | `RabbitMQ`
+message.size | No
+span.kind | Yes
 
 ## Service Fabric
 ### Span properties
