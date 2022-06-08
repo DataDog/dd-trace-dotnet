@@ -7,6 +7,7 @@
 using System.Collections.Generic;
 using System.Web;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util.Http
@@ -96,6 +97,24 @@ namespace Datadog.Trace.Util.Http
             };
 
             return dict;
+        }
+
+        internal static string GetUrlWithQueryString(this IHttpRequestMessage request, string obfuscatorPattern)
+        {
+            var queryString = Obfuscate(request.RequestUri.Query, obfuscatorPattern);
+            return HttpRequestUtils.GetUrl(request.RequestUri.Scheme, request.RequestUri.Host, string.Empty, request.RequestUri.AbsolutePath, queryString);
+        }
+
+        internal static string GetUrlWithQueryString(this HttpRequestBase request, string obfuscatorPattern)
+        {
+            var queryString = Obfuscate(request.Url.Query, obfuscatorPattern);
+            return HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, queryString);
+        }
+
+        private static string Obfuscate(string queryString, string obfuscatorPattern)
+        {
+            var obfuscator = QueryStringObfuscator.Instance(obfuscatorPattern);
+            return obfuscator.Obfuscate(queryString);
         }
     }
 }

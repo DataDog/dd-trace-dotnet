@@ -168,6 +168,8 @@ namespace Datadog.Trace.Configuration
             DelayWcfInstrumentationEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                             ?? false;
 
+            ObfuscationQueryStringRegex = source?.GetString(ConfigurationKeys.ObfuscationQueryStringRegex) ?? @"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)(?:\s*=[^&]+|""\s*:\s*""[^""]+"")|bearer\s+[a-z0-9\._\-]|token:[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\w=-]+\.ey[I-L][\w=-]+(?:\.[\w.+\/=-]+)?|[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}[^\-]+[\-]{5}END[a-z\s]+PRIVATE\sKEY|ssh-rsa\s*[a-z0-9\/\.+]{100,}";
+
             PropagationStyleInject = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleInject) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
 
             PropagationStyleExtract = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleExtract) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
@@ -350,6 +352,11 @@ namespace Datadog.Trace.Configuration
         /// until later in the WCF pipeline when the WCF server exception handling is established.
         /// </summary>
         internal bool DelayWcfInstrumentationEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating the regex to apply to obfuscate http query strings.
+        /// </summary>
+        internal string ObfuscationQueryStringRegex { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled

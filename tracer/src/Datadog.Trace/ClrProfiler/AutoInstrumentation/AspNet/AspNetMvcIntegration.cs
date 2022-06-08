@@ -15,6 +15,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
@@ -59,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     string host = httpContext.Request.Headers.Get("Host");
                     var userAgent = httpContext.Request.Headers.Get(HttpHeaderNames.UserAgent);
                     string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
-                    string url = httpContext.Request.Url.ToString().ToLowerInvariant();
+                    var url = httpContext.Request.GetUrlWithQueryString(tracer.Settings.ObfuscationQueryStringRegex);
                     string resourceName = null;
 
                     RouteData routeData = controllerContext.RouteData;

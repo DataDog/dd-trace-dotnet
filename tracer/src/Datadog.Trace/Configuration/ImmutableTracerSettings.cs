@@ -78,6 +78,7 @@ namespace Datadog.Trace.Configuration
             _domainMetadata = DomainMetadata.Instance;
 
             ExpandRouteTemplatesEnabled = settings.ExpandRouteTemplatesEnabled || !RouteTemplateResourceNamesEnabled;
+            ObfuscationQueryStringRegex = settings.ObfuscationQueryStringRegex;
         }
 
         /// <summary>
@@ -249,6 +250,11 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ExpandRouteTemplatesEnabled"/>
         internal bool ExpandRouteTemplatesEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating the regex to apply to obfuscate http query strings.
+        /// </summary>
+        internal string ObfuscationQueryStringRegex { get; }
 
         internal ImmutableDirectLogSubmissionSettings LogSubmissionSettings { get; }
 

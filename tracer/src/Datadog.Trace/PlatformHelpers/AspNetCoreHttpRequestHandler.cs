@@ -24,15 +24,18 @@ namespace Datadog.Trace.PlatformHelpers
         private readonly IDatadogLogger _log;
         private readonly IntegrationId _integrationId;
         private readonly string _requestInOperationName;
+        private readonly QueryStringObfuscator _queryStringObfuscator;
 
         public AspNetCoreHttpRequestHandler(
             IDatadogLogger log,
             string requestInOperationName,
-            IntegrationId integrationInfo)
+            IntegrationId integrationInfo,
+            string queryStringObfuscatorPattern)
         {
             _log = log;
             _integrationId = integrationInfo;
             _requestInOperationName = requestInOperationName;
+            _queryStringObfuscator = QueryStringObfuscator.Instance(queryStringObfuscatorPattern);
         }
 
         public string GetDefaultResourceName(HttpRequest request)
@@ -98,7 +101,7 @@ namespace Datadog.Trace.PlatformHelpers
         {
             string host = request.Host.Value;
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-            string url = request.GetUrl();
+            var url = request.GetUrlWithQueryString(_queryStringObfuscator);
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
             resourceName ??= GetDefaultResourceName(request);
 
@@ -121,7 +124,7 @@ namespace Datadog.Trace.PlatformHelpers
             var scope = tracer.StartActiveInternal(_requestInOperationName, propagatedContext, tags: tags);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags, tagsFromHeaders);
             var peerIp = new Headers.Ip.IpInfo(httpContext.Connection.RemoteIpAddress?.ToString(), httpContext.Connection.RemotePort);
-            Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, key => request.Headers[key], tracer.Settings.IpHeader, tags);
+            Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, key => request.Headers.TryGetValue(key, out var value) ? value : string.Empty, tracer.Settings.IpHeader, tags);
 
             tags.SetAnalyticsSampleRate(_integrationId, tracer.Settings, enabledWithGlobalSetting: true);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(_integrationId);

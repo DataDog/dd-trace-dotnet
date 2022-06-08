@@ -5,19 +5,20 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Headers.Ip
 {
     internal static class RequestIpExtractor
     {
-        internal static readonly IReadOnlyList<string> IpHeaders = new[] { "x-forwarded-for", "x-real-ip", "x-client-ip", "x-forwarded", "x-cluster-client-ip", "forwarded-for", "forwarded", "via", "true-client-ip" };
+        internal static readonly IReadOnlyList<string> IpHeaders = new[] { "x-forwarded-for", "x-real-ip", "client-ip", "x-forwarded", "x-cluster-client-ip", "forwarded-for", "forwarded", "via", "true-client-ip" };
         internal static readonly IReadOnlyList<string> MainHeaders = new[] { "user-agent", "referer" };
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RequestIpExtractor));
 
         internal static IpInfo ExtractIpAndPort(Func<string, string> getHeader, string customIpHeader, bool isSecureConnection, IpInfo peerIpFallback)
         {
             var ipPotentialValues = new List<string>();
-
             if (!string.IsNullOrEmpty(customIpHeader))
             {
                 var value = getHeader(customIpHeader);
@@ -36,7 +37,13 @@ namespace Datadog.Trace.Headers.Ip
                 }
             }
 
-            var result = IpExtractor.GetRealIpFromValues(ipPotentialValues, isSecureConnection);
+            if (ipPotentialValues.Count > 1)
+            {
+                Log.Error("More than one IP header have been found in headers {headers}, no IP will be reported", string.Join(", ", ipPotentialValues));
+                return peerIpFallback;
+            }
+
+            var result = IpExtractor.GetRealIpFromValue(ipPotentialValues[0], isSecureConnection);
             return result ?? peerIpFallback;
         }
 

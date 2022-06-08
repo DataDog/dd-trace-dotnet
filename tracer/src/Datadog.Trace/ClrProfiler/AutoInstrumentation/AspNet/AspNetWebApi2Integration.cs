@@ -14,6 +14,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
@@ -83,13 +84,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         {
             try
             {
-                var newResourceNamesEnabled = Tracer.Instance.Settings.RouteTemplateResourceNamesEnabled;
+                var tracerSettings = Tracer.Instance.Settings;
+                var newResourceNamesEnabled = tracerSettings.RouteTemplateResourceNamesEnabled;
                 var request = controllerContext.Request;
                 Uri requestUri = request.RequestUri;
 
                 string host = request.Headers.Host ?? string.Empty;
                 var userAgent = request.Headers.UserAgent?.ToString() ?? string.Empty;
-                string rawUrl = requestUri?.ToString().ToLowerInvariant() ?? string.Empty;
                 string method = request.Method.Method?.ToUpperInvariant() ?? "GET";
                 string route = null;
                 try
@@ -155,11 +156,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     }
                 }
 
+                var url = request.GetUrlWithQueryString(tracerSettings.ObfuscationQueryStringRegex);
+
                 span.DecorateWebServerSpan(
                     resourceName: resourceName,
                     method: method,
                     host: host,
-                    httpUrl: rawUrl,
+                    httpUrl: url,
                     userAgent: userAgent,
                     tags,
                     headerTags);

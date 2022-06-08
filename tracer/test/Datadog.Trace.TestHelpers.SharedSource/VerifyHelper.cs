@@ -21,6 +21,9 @@ namespace Datadog.Trace.TestHelpers
         private static readonly Regex LoopBackRegex = new(@"127.0.0.1\:\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex KeepRateRegex = new(@"_dd.tracer_kr: \d\.\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex ProcessIdRegex = new(@"process_id: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex ClientIpRegex = new(@"http.client_ip: (.)*(?=,)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex GrpcUserAgentRegex = new(@"http.useragent: grpc-dotnet\/(.)*(?=,)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex ErrorIdRegex = new(@"errorId=[a-zA-Z0-9-]*", RegexOptions.IgnoreCase | RegexOptions.Compiled);
 
         /// <summary>
         /// With <see cref="Verify"/>, parameters are used as part of the filename.
@@ -62,6 +65,9 @@ namespace Datadog.Trace.TestHelpers
             settings.AddRegexScrubber(LoopBackRegex, "localhost:00000");
             settings.AddRegexScrubber(KeepRateRegex, "_dd.tracer_kr: 1.0");
             settings.AddRegexScrubber(ProcessIdRegex, "process_id: 0");
+            settings.AddRegexScrubber(ClientIpRegex, "http.client_ip: 127.0.0.1");
+            settings.AddRegexScrubber(ErrorIdRegex, "errorId=123");
+            settings.AddRegexScrubber(GrpcUserAgentRegex, "http.useragent: grpc-dotnet/123");
             return settings;
         }
 
