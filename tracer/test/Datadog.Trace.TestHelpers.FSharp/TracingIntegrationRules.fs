@@ -80,12 +80,12 @@ module TracingIntegrationRules =
     let isMongoDB : MockSpan -> Result<MockSpan, string> =
         matches name "mongodb.query"
         &&& matches ``type`` "mongodb"
-        &&& tagIsPresent "db.name"
-        &&& tagIsPresent "mongodb.collection"
-        &&& tagIsPresent "mongodb.query"
+        &&& tagIsOptional "db.name"
+        &&& tagIsOptional "mongodb.collection"
+        &&& tagIsOptional "mongodb.query"
         &&& tagIsPresent "out.host"
         &&& tagIsPresent "out.port"
-        &&& tagMatches "component" "mongodb"
+        &&& tagMatches "component" "MongoDb"
         &&& tagMatches "span.kind" "client"
 
     let isPostgreSQL : MockSpan -> Result<MockSpan, string> =

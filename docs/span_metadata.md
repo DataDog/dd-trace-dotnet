@@ -122,10 +122,10 @@ Type | `mongodb`
 ### Tags
 Name | Required |
 ---------|----------------|
-component | `mongodb`
-db.name | Yes
-mongodb.collection | Yes
-mongodb.query | Yes
+component | `MongoDb`
+db.name | No
+mongodb.collection | No
+mongodb.query | No
 out.host | Yes
 out.port | Yes
 span.kind | `client`
