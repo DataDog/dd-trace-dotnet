@@ -180,7 +180,6 @@ partial class Build : NukeBuild
         .After(Clean, BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(ZipMonitoringHome)
-        .DependsOn(ExtractDebugInfoAndStripSymbols)
         .DependsOn(BuildMsi)
         .DependsOn(PackNuGet);
 
