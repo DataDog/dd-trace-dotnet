@@ -25,7 +25,7 @@ jobs:
         targetUrl="https://github.com/DataDog/dd-trace-dotnet/actions/workflows/auto_code_freeze_block_pr.yml"
         state="success"
         description="No code freeze is in place"
-        json=$(cat << ENDOFMESSAGE
+        json=$(cat << 'ENDOFMESSAGE'
           ${{ steps.milestones.outputs.data }}
         ENDOFMESSAGE
         )

@@ -42,7 +42,7 @@ jobs:
 
     - run: |
         set -o pipefail
-        json=$(cat << ENDOFMESSAGE
+        json=$(cat << 'ENDOFMESSAGE'
           ${{ steps.prs.outputs.data }}
         ENDOFMESSAGE
         )
