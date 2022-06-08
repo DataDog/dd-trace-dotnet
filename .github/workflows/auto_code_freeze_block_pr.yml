@@ -13,7 +13,7 @@ jobs:
       id: milestones
       with:
         route: GET /repos/{owner}/{repo}/milestones
-        owner: Datadog
+        owner: DataDog
         repo: dd-trace-dotnet
         state: open
       env:

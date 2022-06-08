@@ -9,7 +9,7 @@ jobs:
   start_code_freeze:
     if: | 
       github.event_name == 'workflow_dispatch' || 
-      (github.event.milestone.title == 'Core Freeze' && github.event.milestone.state == 'open') 
+      (github.event.milestone.title == 'Code Freeze' && github.event.milestone.state == 'open') 
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
@@ -21,7 +21,7 @@ jobs:
       if: github.event_name == 'workflow_dispatch'
       with:
         route: POST /repos/{owner}/{repo}/milestones
-        owner: Datadog
+        owner: DataDog
         repo: dd-trace-dotnet
         state: open
         title: 'Code Freeze'
@@ -34,7 +34,7 @@ jobs:
       id: prs
       with:
         route: GET /repos/{owner}/{repo}/pulls
-        owner: Datadog
+        owner: DataDog
         repo: dd-trace-dotnet
         state: open
         base: master
@@ -44,7 +44,7 @@ jobs:
 
     - run: |
         set -o pipefail
-        json=${{ steps.milestones.outputs.data }}
+        json=${{ steps.prs.outputs.data }}
         arrayLength=$(echo $json | jq -r 'length')
         echo "Updating code freeze  status for $arrayLength PRs" 
 
