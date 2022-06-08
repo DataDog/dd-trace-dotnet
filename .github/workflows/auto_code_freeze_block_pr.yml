@@ -1,4 +1,4 @@
-name: Block PR on Code Freeze
+name: Auto Block PR on Code Freeze
 
 on:
   pull_request:
@@ -25,8 +25,12 @@ jobs:
         targetUrl="https://github.com/DataDog/dd-trace-dotnet/actions/workflows/auto_code_freeze_block_pr.yml"
         state="success"
         description="No code freeze is in place"
+        json=$(cat << 'ENDOFMESSAGE'
+          ${{ steps.milestones.outputs.data }}
+        ENDOFMESSAGE
+        )
         
-        if addr=$(echo "${{ steps.milestones.outputs.data }}" | jq -er '.[] | select(.title == "Code Freeze")'); then
+        if addr=$(echo $json | jq -er '.[] | select(.title == "Code Freeze")'); then
           state="failure"
           description="A code freeze is in place"
         fi
