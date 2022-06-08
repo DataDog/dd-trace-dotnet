@@ -2064,10 +2064,11 @@ stages:
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
 
         - bash: |
-            tar -zcf  $(Build.ArtifactStagingDirectory)/linux-native-symbols.tar.gz $(Build.ArtifactStagingDirectory)/symbols
+            tar -zcf  $(Build.ArtifactStagingDirectory)/linux-native-symbols.tar.gz ./symbols
             rm -rf $(Build.ArtifactStagingDirectory)/symbols
           displayName: Tar native linux symbols
           failOnStderr: true
+          workingDirectory: $(Build.ArtifactStagingDirectory)
 
 
         # NuGet
