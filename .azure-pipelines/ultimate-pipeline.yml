@@ -2064,9 +2064,10 @@ stages:
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
 
         - bash: |
-            tar -xcf  $(Build.ArtifactStagingDirectory)/linux-native-symbols.tar.gz $(Build.ArtifactStagingDirectory)/symbols
+            tar -zcf  $(Build.ArtifactStagingDirectory)/linux-native-symbols.tar.gz $(Build.ArtifactStagingDirectory)/symbols
             rm -rf $(Build.ArtifactStagingDirectory)/symbols
           displayName: Tar native linux symbols
+          failOnStderr
 
         # NuGet
         - task: DownloadPipelineArtifact@2
