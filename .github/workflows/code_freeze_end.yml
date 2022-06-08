@@ -20,11 +20,10 @@ jobs:
       id: milestones
       if: github.event_name == 'workflow_dispatch'
       with:
-        route: POST /repos/{owner}/{repo}/milestones
+        route: PATCH /repos/{owner}/{repo}/milestones/115
         owner: DataDog
         repo: dd-trace-dotnet
-        state: open
-        title: 'Code Freeze'
+        state: closed
       env:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
@@ -43,7 +42,10 @@ jobs:
 
     - run: |
         set -o pipefail
-        json=${{ steps.prs.outputs.data }}
+        json=$(cat << ENDOFMESSAGE
+          ${{ steps.prs.outputs.data }}
+        ENDOFMESSAGE
+        )
         arrayLength=$(echo $json | jq -r 'length')
         echo "Updating code freeze status for $arrayLength PRs" 
 
