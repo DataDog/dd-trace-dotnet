@@ -50,7 +50,7 @@ jobs:
         echo "Updating code freeze  status for $arrayLength PRs" 
 
         arrayLength=$((arrayLength-1))
-        for i in $(seq 1 $arrayLength); do
+        for i in $(seq 0 $arrayLength); do
           title=$(echo $json | jq -r ".[$i].title")
           echo "Setting code freeze for '$title'" 
           sha=$(echo $json | jq -r ".[$i].head.sha")
