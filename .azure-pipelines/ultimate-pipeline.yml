@@ -2610,7 +2610,7 @@ stages:
     - job: linux
       timeoutInMinutes: 60 #default value
       strategy:
-        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_linux_smoke_tests_arm64_matrix'] ]
+        matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_smoke_tests_arm64_matrix'] ]
       variables:
         smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
       pool:
@@ -2669,7 +2669,7 @@ stages:
   - job: linux
     timeoutInMinutes: 60 #default value
     strategy:
-      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.nuget_installer_smoke_tests_arm64_matrix'] ]
+      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.nuget_installer_linux_smoke_tests_arm64_matrix'] ]
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
