@@ -43,7 +43,7 @@ jobs:
 
     - run: |
         set -o pipefail
-        json=${{ steps.prs.outputs.data }}
+        json="${{ steps.prs.outputs.data }}"
         arrayLength=$(echo $json | jq -r 'length')
         echo "Updating code freeze status for $arrayLength PRs" 
 
