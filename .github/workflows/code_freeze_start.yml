@@ -1,0 +1,67 @@
+name: Start code freeze
+
+on:
+  workflow_dispatch:
+  milestone:
+    types: [opened, created, edited]
+
+jobs:
+  start_code_freeze:
+    if: | 
+      github.event_name == 'workflow_dispatch' || 
+      (github.event.milestone.title == 'Code Freeze' && github.event.milestone.state == 'open') 
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+    steps:
+    - uses: octokit/request-action@v2.x
+      name: 'Create Code Freeze Milestone'
+      id: milestones
+      if: github.event_name == 'workflow_dispatch'
+      with:
+        route: POST /repos/{owner}/{repo}/milestones
+        owner: DataDog
+        repo: dd-trace-dotnet
+        state: open
+        title: 'Code Freeze'
+        description: 'When opened, indicates a code freeze is in place'
+      env:
+        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+    - uses: octokit/request-action@v2.x
+      name: 'Get open PRs'
+      id: prs
+      with:
+        route: GET /repos/{owner}/{repo}/pulls
+        owner: DataDog
+        repo: dd-trace-dotnet
+        state: open
+        base: master
+        per_page: 100 # max value, for simplicity. If we have more than 100 pull requests open, then we need to revisit!
+      env:
+        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+    - run: |
+        set -o pipefail
+        json=${{ steps.prs.outputs.data }}
+        arrayLength=$(echo $json | jq -r 'length')
+        echo "Updating code freeze  status for $arrayLength PRs" 
+
+        arrayLength=$((arrayLength-1))
+        for i in $(seq 1 $arrayLength); do
+          title=$(echo $json | jq -r ".[$i].title")
+          echo "Setting code freeze for '$title'" 
+          sha=$(echo $json | jq -r ".[$i].head.sha")
+          targetUrl="https://github.com/DataDog/dd-trace-dotnet/actions/workflows/code_freeze_start.yml"
+
+          curl -X POST \
+            -H "Accept: application/vnd.github.v3+json" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              "https://api.github.com/repos/DataDog/dd-trace-dotnet/statuses/$sha" \
+              -d '{"state":"failure","context":"code_freeze","description":"A code freeze is in place","target_url":"'"$targetUrl"'"}'
+        done
+      name: 'Update all PRs with Code Freeze status'
+
+        
+        
