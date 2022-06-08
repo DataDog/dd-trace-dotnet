@@ -42,7 +42,10 @@ jobs:
 
     - run: |
         set -o pipefail
-        json="${{ steps.prs.outputs.data }}"
+        json=$(CAT << ENDOFMESSAGE
+          ${{ steps.prs.outputs.data }}
+        ENDOFMESSAGE
+        )
         arrayLength=$(echo $json | jq -r 'length')
         echo "Updating code freeze  status for $arrayLength PRs" 
 
