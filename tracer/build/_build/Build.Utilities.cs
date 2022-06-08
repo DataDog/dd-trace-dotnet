@@ -234,12 +234,10 @@ partial class Build
       .Requires(() => BuildId)
       .Executes(async () =>
       {
-          if (!int.TryParse(BuildId, out var buildNumber))
-          {
+            if (!int.TryParse(BuildId, out var buildNumber))
+            {
               throw new InvalidParametersException(("BuildId should be an int"));
-          }
-
-          var client = new HttpClient();
+            }
 
             // Connect to Azure DevOps Services
             var connection = new VssConnection(
@@ -260,19 +258,19 @@ partial class Build
                     continue;
                 }
 
-                var tempZipLocation = (AbsolutePath)Path.GetFileNameWithoutExtension(Path.GetTempFileName());
+                var extractLocation = Path.Combine((AbsolutePath)Path.GetTempPath(), artifact.Name);
                 var snapshotsDirectory = TestsDirectory / "snapshots";
 
-                await DownloadAzureArtifact(tempZipLocation, artifact, AzureDevopsToken);
+                await DownloadAzureArtifact((AbsolutePath)Path.GetTempPath(), artifact, AzureDevopsToken);
 
                 CopyDirectoryRecursively(
-                    source: tempZipLocation,
+                    source: extractLocation,
                     target: snapshotsDirectory,
                     DirectoryExistsPolicy.Merge,
                     FileExistsPolicy.Skip,
                     excludeFile: file => !Path.GetFileNameWithoutExtension(file.FullName).EndsWith(".received"));
 
-                DeleteDirectory(tempZipLocation);
+                DeleteDirectory(extractLocation);
             }
 
             ReplaceReceivedFilesInSnapshots();
@@ -281,21 +279,21 @@ partial class Build
     private void ReplaceReceivedFilesInSnapshots()
     {
         var snapshotsDirectory = TestsDirectory / "snapshots";
-        var files = snapshotsDirectory.GlobFiles("*.received.*")
+        var files = snapshotsDirectory.GlobFiles("*.received.*");
 
         var suffixLength = "received".Length;
-        foreach (var file in files)
+        foreach (var source in files)
         {
-            var source = file.FullName;
             var fileName = Path.GetFileNameWithoutExtension(source);
             if (!fileName.EndsWith("received"))
             {
                 Logger.Warn($"Skipping file '{source}' as filename did not end with 'received'");
                 continue;
             }
+
             var trimmedName = fileName.Substring(0, fileName.Length - suffixLength);
-            var dest = Path.Combine(directory.FullName, $"{trimmedName}verified{Path.GetExtension(source)}");
-            MoveFile(file, dest, FileExistsPolicy.Overwrite, createDirectories: true);
+            var dest = Path.Combine(snapshotsDirectory, $"{trimmedName}verified{Path.GetExtension(source)}");
+            MoveFile(source, dest, FileExistsPolicy.Overwrite, createDirectories: true);
         }
     }
 }
