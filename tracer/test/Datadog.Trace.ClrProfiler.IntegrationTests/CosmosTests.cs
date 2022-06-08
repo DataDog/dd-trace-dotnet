@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.FSharp;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -61,13 +62,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    span.Name.Should().Be(ExpectedOperationName);
+                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isCosmosDb, span);
+                    Assert.True(result, message);
+
                     span.Service.Should().Be(ExpectedServiceName);
-                    span.Type.Should().Be(SpanTypes.Sql);
                     span.Resource.Should().StartWith("SELECT * FROM");
                     span.Tags.Should().NotContain(Tags.Version, "External service span should not have service version tag.");
-                    span.Tags.Should().Contain(new KeyValuePair<string, string>(Tags.DbType, "cosmosdb"));
-                    span.Tags.Should().Contain(new KeyValuePair<string, string>(Tags.OutHost, "https://localhost:8081/"));
 
                     if (span.Tags.ContainsKey(Tags.CosmosDbContainer))
                     {

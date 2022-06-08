@@ -49,6 +49,16 @@ module TracingIntegrationRules =
         &&& tagIsPresent "http.url"
         &&& tagMatches "span.kind" "client"
 
+    let isCosmosDb : MockSpan -> Result<MockSpan, string> =
+        matches name "cosmosdb.query"
+        &&& matches ``type`` "sql"
+        &&& tagIsOptional "cosmosdb.container"
+        &&& tagIsOptional "db.name"
+        &&& tagMatches "db.type" "cosmosdb"
+        &&& tagIsPresent "out.host"
+        &&& tagMatches "component" "CosmosDb"
+        &&& tagMatches "span.kind" "client"
+
     let isElasticsearch : MockSpan -> Result<MockSpan, string> =
         matches name "elasticsearch.query"
         &&& matches ``type`` "elasticsearch"

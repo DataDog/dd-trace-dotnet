@@ -67,6 +67,22 @@ http.status_code | Yes
 http.url | Yes
 span.kind | `client`
 
+## CosmosDb
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `cosmosdb.query`
+Type | `sql`
+### Tags
+Name | Required |
+---------|----------------|
+component | `CosmosDb`
+cosmosdb.container | No
+db.name | No
+db.type | `cosmosdb`
+out.host | Yes
+span.kind | `client`
+
 ## Elasticsearch
 ### Span properties
 Name | Required |
