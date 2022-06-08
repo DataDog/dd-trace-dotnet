@@ -26,7 +26,7 @@ jobs:
         state="success"
         description="No code freeze is in place"
         
-        if addr=$(${{ steps.milestones.outputs.data }} | jq -er '.[] | select(.title == "Code Freeze")'); then
+        if addr=$(echo "${{ steps.milestones.outputs.data }}" | jq -er '.[] | select(.title == "Code Freeze")'); then
           state="failure"
           description="A code freeze is in place"
         fi
