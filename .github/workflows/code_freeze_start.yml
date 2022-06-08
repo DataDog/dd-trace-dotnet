@@ -16,16 +16,14 @@ jobs:
 
     steps:
     - uses: octokit/request-action@v2.x
-      name: 'Create Code Freeze Milestone'
+      name: 'Open Code Freeze Milestone'
       id: milestones
       if: github.event_name == 'workflow_dispatch'
       with:
-        route: POST /repos/{owner}/{repo}/milestones
+        route: PATCH /repos/{owner}/{repo}/milestones/115
         owner: DataDog
         repo: dd-trace-dotnet
         state: open
-        title: 'Code Freeze'
-        description: 'When opened, indicates a code freeze is in place'
       env:
         GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
