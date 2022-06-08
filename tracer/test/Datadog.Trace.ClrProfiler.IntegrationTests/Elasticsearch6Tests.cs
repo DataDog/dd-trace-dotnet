@@ -9,6 +9,7 @@ using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.FSharp;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -141,9 +142,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal("elasticsearch.query", span.Name);
+                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isElasticsearch, span);
+                    Assert.True(result, message);
+
                     Assert.Equal("Samples.Elasticsearch-elasticsearch", span.Service);
-                    Assert.Equal("elasticsearch", span.Type);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
 
