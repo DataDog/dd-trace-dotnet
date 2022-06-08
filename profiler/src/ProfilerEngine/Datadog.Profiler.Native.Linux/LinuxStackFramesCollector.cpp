@@ -304,7 +304,6 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread()
 
         if (count == 0)
         {
-            AddFakeFrame();
             return S_FALSE;
         }
 
