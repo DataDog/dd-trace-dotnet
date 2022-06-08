@@ -2722,7 +2722,7 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         build: true
-        baseImage: alpine
+        baseImage: debian
         command: "CheckBuildLogsForErrors"
 
 - stage: trace_pipeline
