@@ -33,6 +33,22 @@ module TracingIntegrationRules =
         &&& tagMatches "component" "aspnet_core"
         &&& tagMatches "span.kind" "server"
 
+    let isAwsSqs : MockSpan -> Result<MockSpan, string> =
+        matches name "sqs.request"
+        &&& matches ``type`` "http"
+        &&& tagMatches "aws.agent" "dotnet-aws-sdk"
+        &&& tagIsPresent "aws.operation"
+        &&& tagIsOptional "aws.region"
+        &&& tagIsPresent "aws.requestId"
+        &&& tagMatches "aws.service" "SQS"
+        &&& tagIsOptional "aws.queue.name"
+        &&& tagIsOptional "aws.queue.url"
+        &&& tagMatches "component" "aws-sdk"
+        &&& tagIsPresent "http.method"
+        &&& tagIsPresent "http.status_code"
+        &&& tagIsPresent "http.url"
+        &&& tagMatches "span.kind" "client"
+
     let isElasticsearch : MockSpan -> Result<MockSpan, string> =
         matches name "elasticsearch.query"
         &&& matches ``type`` "elasticsearch"
@@ -153,7 +169,6 @@ module TracingIntegrationRules =
         matches name "http.request"
         &&& matches ``type`` "http"
         &&& tagIsPresent "component"
-        &&& tagIsPresent "http-client-handler-type"
         &&& tagIsPresent "http.method"
         &&& tagIsPresent "http.status_code"
         &&& tagIsPresent "http.url"

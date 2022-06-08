@@ -3,11 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.FSharp;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -128,12 +130,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var spans = agent.WaitForSpans(_expectedSpans.Count, operationName: "sqs.request");
                 spans.Should().HaveCountGreaterOrEqualTo(_expectedSpans.Count);
 
+                foreach (var span in spans)
+                {
+                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAwsSqs, span);
+                    Assert.True(result, message);
+                }
+
                 spans.OrderBy(s => s.Start).Should().BeEquivalentTo(_expectedSpans, options => options
-                    .WithStrictOrdering()
-                    .ExcludingMissingMembers()
-                    .ExcludingDefaultSpanProperties()
-                    .AssertMetricsMatchExcludingKeys("_dd.tracer_kr", "_sampling_priority_v1")
-                    .AssertTagsMatchAndSpecifiedTagsPresent("env", "aws.requestId", "aws.queue.url", "runtime-id"));
+                                                                                              .WithStrictOrdering()
+                                                                                              .ExcludingMissingMembers()
+                                                                                              .ExcludingDefaultSpanProperties()
+                                                                                              .AssertMetricsMatchExcludingKeys("_dd.tracer_kr", "_sampling_priority_v1")
+                                                                                              .AssertTagsMatchAndSpecifiedTagsPresent("env", "aws.requestId", "aws.queue.url", "runtime-id"));
                 telemetry.AssertIntegrationEnabled(IntegrationId.AwsSqs);
             }
         }

@@ -45,6 +45,28 @@ aspnet_core.route | Yes
 component | `aspnet_core`
 span.kind | `server`
 
+## AwsSqs
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `sqs.request`
+Type | `http`
+### Tags
+Name | Required |
+---------|----------------|
+aws.agent | `dotnet-aws-sdk`
+aws.operation | Yes
+aws.queue.name | No
+aws.queue.url | No
+aws.region | No
+aws.requestId | Yes
+aws.service | `SQS`
+component | `aws-sdk`
+http.method | Yes
+http.status_code | Yes
+http.url | Yes
+span.kind | `client`
+
 ## Elasticsearch
 ### Span properties
 Name | Required |
@@ -243,7 +265,6 @@ Type | `http`
 Name | Required |
 ---------|----------------|
 component | Yes
-http-client-handler-type | Yes
 http.method | Yes
 http.status_code | Yes
 http.url | Yes
