@@ -38,7 +38,7 @@ partial class Build
 
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
     AbsolutePath TracerHomeDirectory => TracerHome ?? (MonitoringHomeDirectory / "tracer");
-    AbsolutePath SymbolsDirectory => TracerHome ?? (OutputDirectory / "symbols");
+    AbsolutePath SymbolsDirectory => OutputDirectory / "symbols";
     AbsolutePath DDTracerHomeDirectory => DDTracerHome ?? (OutputDirectory / "dd-tracer-home");
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
@@ -83,6 +83,8 @@ partial class Build
     [LazyPathExecutable(name: "gzip")] readonly Lazy<Tool> GZip;
     [LazyPathExecutable(name: "cmd")] readonly Lazy<Tool> Cmd;
     [LazyPathExecutable(name: "chmod")] readonly Lazy<Tool> Chmod;
+    [LazyPathExecutable(name: "objcopy")] readonly Lazy<Tool> ExtractDebugInfo;
+    [LazyPathExecutable(name: "strip")] readonly Lazy<Tool> StripBinary;
 
     IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform =>
         Equals(TargetPlatform, MSBuildTargetPlatform.x64)
@@ -599,6 +601,24 @@ partial class Build
             }
             else if (IsLinux)
             {
+                void ExtractDebugInfoAndStripSymbols()
+                {
+                    var files = MonitoringHomeDirectory.GlobFiles("**/*.so");
+
+                    EnsureExistingDirectory(SymbolsDirectory);
+
+                    foreach (var file in files)
+                    {
+                        var outputFile = SymbolsDirectory / Path.GetFileNameWithoutExtension(file);
+
+                        Logger.Info($"Extracting debug symbol for {file} to {outputFile}.debug");
+                        ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {outputFile}.debug");
+
+                        Logger.Info($"Stripping out unneeded information from {file}");
+                        StripBinary.Value(arguments: $"--strip-unneeded {file}");
+                    }
+                }
+
                 var fpm = Fpm.Value;
                 var gzip = GZip.Value;
                 var packageName = "datadog-dotnet-apm";
@@ -617,6 +637,8 @@ partial class Build
                     var newName = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
                     RenameFile(sourceFile, newName);
                 }
+
+                ExtractDebugInfoAndStripSymbols();
 
                 foreach (var packageType in LinuxPackageTypes)
                 {
@@ -1203,7 +1225,7 @@ partial class Build
                     (_, null) => true,
                     (_, { } p) when p.Name.Contains("Samples.AspNetCoreRazorPages") => true, // always have to build this one
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) && p.Name.Contains(SampleName) => true,
-                    (var required, {} p) => p.RequiresDockerDependency() == required,
+                    (var required, { } p) => p.RequiresDockerDependency() == required,
                 })
                 .Where(x =>
                 {
