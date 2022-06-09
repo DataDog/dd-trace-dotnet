@@ -49,16 +49,7 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
             {
                 foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes)
                 {
-                    IMethodSymbol? attributeSymbol = context.SemanticModel.GetSymbolInfo(attributeSyntax).Symbol as IMethodSymbol;
-                    if (attributeSymbol is null)
-                    {
-                        continue;
-                    }
-
-                    INamedTypeSymbol attributeContainingTypeSymbol = attributeSymbol.ContainingType;
-                    string fullName = attributeContainingTypeSymbol.ToDisplayString();
-
-                    if (fullName == Constants.TagAttribute || fullName == Constants.MetricAttribute)
+                    if (attributeSyntax.Name.ToString() is "Tag" or "TagAttribute" or "Metric" or "MetricAttribute")
                     {
                         return propertyDeclarationSyntax.Parent as ClassDeclarationSyntax;
                     }
