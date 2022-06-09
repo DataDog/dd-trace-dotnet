@@ -156,36 +156,6 @@ stages:
       displayName: Fetch master id
       name: set_sha
 
-- stage: build_datadog_ci_on_arm64
-  dependsOn: []
-  jobs:
-  - job: fetch
-    timeoutInMinutes: 60 #default value
-    pool:
-      name: aws-arm64-auto-scaling
-    workspace:
-      clean: all
-    steps:
-    - checkout: none
-    - script: git clone --branch andrew/add-arm64-build --depth 1 https://github.com/DataDog/datadog-ci.git .
-      displayName: Get datadog-ci repo
-    - task: NodeTool@0 
-      inputs:
-        versionSpec: '14.x'
-    - script: |
-        npm install --global yarn
-        yarn install --immutable
-        yarn build
-        yarn dist-standalone -t node14-linux-arm64 -o datadog-ci_linux-arm64
-        rm -rf dist
-        rm -rf src
-        yarn dist-standalone:test
-      displayName: Build tool
-
-    - publish: ./datadog-ci_linux-arm64
-      artifact: datadog-ci_linux-arm64
-      condition: succeededOrFailed()
-
 - stage: generate_variables
   dependsOn: [master_commit_id]
   variables:
