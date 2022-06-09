@@ -187,19 +187,19 @@ elasticsearch.method | Yes
 elasticsearch.url | Yes
 span.kind | `client`
 
-## GraphQL Server
+## GraphQL
 ### Span properties
 Name | Required |
 ---------|----------------|
-Name | `http.request`
 Type | `graphql`
 ### Tags
 Name | Required |
 ---------|----------------|
-component | `graphql`
-graphql.operation.name | Yes
-graphql.operation.type | Yes
+component | `GraphQL`
+graphql.operation.name | No
+graphql.operation.type | No
 graphql.source | Yes
+name | `graphql.execute`; `graphql.validate`
 span.kind | `server`
 
 ## Grpc

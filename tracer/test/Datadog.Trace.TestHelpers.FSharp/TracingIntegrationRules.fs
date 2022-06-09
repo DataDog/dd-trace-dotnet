@@ -131,13 +131,13 @@ module TracingIntegrationRules =
         &&& tagMatches "component" "elasticsearch-net"
         &&& tagMatches "span.kind" "client"
 
-    let ``isGraphQL Server`` : MockSpan -> Result<MockSpan, string> =
-        matches name "http.request"
+    let isGraphQL : MockSpan -> Result<MockSpan, string> =
+        matchesOneOf name [| "graphql.execute"; "graphql.validate" |]
         &&& matches ``type`` "graphql"
-        &&& tagIsPresent "graphql.operation.name"
-        &&& tagIsPresent "graphql.operation.type"
+        &&& tagIsOptional "graphql.operation.name"
+        &&& tagIsOptional "graphql.operation.type"
         &&& tagIsPresent "graphql.source"
-        &&& tagMatches "component" "graphql"
+        &&& tagMatches "component" "GraphQL"
         &&& tagMatches "span.kind" "server"
 
     let isGrpc : MockSpan -> Result<MockSpan, string> =
