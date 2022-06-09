@@ -154,12 +154,12 @@ module TracingIntegrationRules =
         &&& tagMatches "component" "MongoDb"
         &&& tagMatches "span.kind" "client"
 
-    let isPostgreSQL : MockSpan -> Result<MockSpan, string> =
+    let isNpgsql : MockSpan -> Result<MockSpan, string> =
         matches name "postgres.query"
         &&& matches ``type`` "sql"
         &&& tagIsPresent "db.name"
         &&& tagMatches "db.type" "postgres"
-        &&& tagMatches "component" "mongodb"
+        &&& tagMatches "component" "Npgsql"
         &&& tagMatches "span.kind" "client"
 
     let isRabbitMQ : MockSpan -> Result<MockSpan, string> =

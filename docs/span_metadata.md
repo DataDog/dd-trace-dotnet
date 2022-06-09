@@ -222,7 +222,7 @@ out.host | Yes
 out.port | Yes
 span.kind | `client`
 
-## PostgreSQL
+## Npgsql
 ### Span properties
 Name | Required |
 ---------|----------------|
@@ -231,7 +231,7 @@ Type | `sql`
 ### Tags
 Name | Required |
 ---------|----------------|
-component | `mongodb`
+component | `Npgsql`
 db.name | Yes
 db.type | `postgres`
 span.kind | `client`
