@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -64,6 +66,9 @@ partial class Build
 
     string FullVersion => IsPrerelease ? $"{Version}-prerelease" : Version;
 
+    [LazyLocalExecutable(@"datadog-ci")]
+    readonly Lazy<Tool> DatadogCiTool;
+    
     Target AssignPullRequestToMilestone => _ => _
        .Unlisted()
        .Requires(() => GitHubRepositoryName)
@@ -841,6 +846,95 @@ partial class Build
              await HideCommentsInPullRequest(prNumber, "## Benchmarks Report");
              await PostCommentToPullRequest(prNumber, markdown);
          });
+
+    Target UploadJunitArtifacts => _ => _
+        .Description("Downloads the datadog-ci CLI and imports junit results")
+        .Unlisted()
+        .Executes(async () =>
+        {
+            var extension = OperatingSystem.IsWindows() ? ".exe" : "";
+            var toolPath = TempDirectory / $"datadog-ci{extension}";
+            if (!File.Exists(toolPath))
+            {
+                var artifactName = (IsArm64, IsAlpine) switch
+                {
+                    (false, _) when OperatingSystem.IsWindows() => "datadog-ci_win-x64.exe",
+                    (false, _) when OperatingSystem.IsMacOS() => "datadog-ci_darwin-x64",
+                    (false, false) when OperatingSystem.IsLinux() => "datadog-ci_linux-x64",
+                    (false, true) when OperatingSystem.IsLinux() => "datadog-ci_linux-musl-x64",
+                    (true, false) when OperatingSystem.IsLinux() => "datadog-ci_linux-arm64",
+                    _ => throw new Exception($"Unsupported operating system: {Environment.OSVersion}"),
+                };
+
+                // no official arm or alpine tool yet, so just uploaded to Azure
+                var toolUrl = (IsArm64 || IsAlpine)
+                    ? $"https://apmdotnetci.blob.core.windows.net/apm-datadog-ci-tool/{artifactName}"
+                    : $"https://github.com/DataDog/datadog-ci/releases/latest/download/{artifactName}";
+
+                Logger.Info($"Downloading datadog-ci tool from {toolUrl} to {toolPath}");
+                var httpClient = new HttpClient();
+                using var response = await httpClient.GetAsync(toolUrl);
+                response.EnsureSuccessStatusCode();
+
+                using var fs = new FileStream(toolPath, System.IO.FileMode.CreateNew);
+                await response.Content.CopyToAsync(fs);
+            }
+
+            if (!OperatingSystem.IsWindows())
+            {
+                Logger.Info($"Running chmod +x on {toolPath}");
+                Chmod.Value.Invoke("+x " + toolPath);
+            }
+
+            var ciTool = ToolResolver.GetLocalTool(toolPath);
+
+            // Calculate tags and upload with datadog-ci tool
+            var runtimeArchitecture = TargetPlatform.ToString().ToLowerInvariant();
+            var osPlatform = OperatingSystem.IsWindows() ? "windows"
+                : OperatingSystem.IsLinux() ? "linux"
+                : OperatingSystem.IsMacOS() ? "macos"
+                : Environment.OSVersion.ToString().ToLowerInvariant();
+            var osArchitecture = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
+            
+            Logger.Info($"Upload junit results for {osPlatform} ({osArchitecture}) - {runtimeArchitecture} runtime");
+
+            var count = 0;
+            foreach (var file in BuildDataDirectory.GlobFiles("**/junit-result.xml"))
+            {
+                Logger.Info("Processing " + Path.GetRelativePath(BuildDataDirectory, file));
+            
+                var targetFramework =  Path.GetFileName(Path.GetDirectoryName(file));
+                var (runtimeName, runtimeVersion) = targetFramework switch
+                {
+                    "NETCoreApp21" => (".NET", "2.1.0"),
+                    "NETCoreApp30" => (".NET", "3.0.0"),
+                    "NETCoreApp31" => (".NET", "3.1.0"),
+                    "NETCoreApp50" => (".NET", "5.0.0"),
+                    "NETCoreApp60" => (".NET", "6.0.0"),
+                    "NETFramework461" => (".NET Framework", "4.6.1"),
+                    _ => throw new InvalidOperationException("Unknown targetFramework " + targetFramework)
+                };
+
+                var envVars = new Dictionary<string,string>(new ProcessStartInfo().Environment);
+                var tags = string.Join(",",
+                    $"os.platform:{osPlatform}",
+                    $"os.architecture:{osArchitecture}",
+                    $"runtime.name:{runtimeName}",
+                    $"runtime.version:{runtimeVersion}",
+                    $"runtime.architecture:{runtimeArchitecture}",
+                    $"runtime.vendor:{targetFramework}",
+                    "language:dotnet"
+                );
+                envVars["DD_ENV"] = "ci";
+                envVars["DD_TAGS"] = tags;
+
+                Logger.Info($"Uploading results for {runtimeName} {runtimeVersion} with tags {tags}");
+                ciTool($"junit upload --logs --service dd-trace-dotnet --logs {file}", environmentVariables: envVars);
+                count++;
+            }
+
+            Logger.Info($"Finished uploading {count} junit files");
+        });
 
     async Task PostCommentToPullRequest(int prNumber, string markdown)
     {

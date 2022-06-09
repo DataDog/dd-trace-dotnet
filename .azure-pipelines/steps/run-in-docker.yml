@@ -11,6 +11,14 @@ parameters:
     type: boolean
     default: false
     
+  - name: alwaysRun
+    type: boolean
+    default: false
+
+  - name: apiKey
+    type: string
+    default: ''
+    
   - name: command
     type: string
 
@@ -37,6 +45,10 @@ steps:
         --env TestAllPackageVersions=$(TestAllPackageVersions) \
         --env IncludeMinorPackageVersions=$(IncludeMinorPackageVersions) \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
+        --env DD_API_KEY=${{ parameters.apiKey }} \
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
   displayName: Run '${{ parameters.command }}' in Docker
+  ${{ if eq(parameters.alwaysRun, true) }}:
+    condition: succeededOrFailed()
+    continueOnError: true

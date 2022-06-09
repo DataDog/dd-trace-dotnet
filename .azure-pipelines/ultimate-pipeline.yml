@@ -527,6 +527,13 @@ stages:
         condition: succeededOrFailed()
         continueOnError: true
 
+      - script: tracer\build.cmd UploadJunitArtifacts
+        displayName: Upload junit results
+        condition: succeededOrFailed()
+        continueOnError: true
+        env:
+          DD_API_KEY: $(ddApiKey)
+
       - task: PublishTestResults@2
         displayName: publish test results
         inputs:
@@ -582,6 +589,13 @@ stages:
         condition: succeededOrFailed()
         continueOnError: true
 
+      - script: ./tracer/build.sh UploadJunitArtifacts
+        displayName: Upload junit artifacts
+        condition: succeededOrFailed()
+        continueOnError: true
+        env:
+          DD_API_KEY: $(ddApiKey)
+
       - task: PublishTestResults@2
         displayName: publish test results
         inputs:
@@ -629,6 +643,13 @@ stages:
       artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        alwaysRun: true
+        apiKey: $(ddApiKey)
+        baseImage: $(baseImage)
+        command: "UploadJunitArtifacts"
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -717,6 +738,13 @@ stages:
             testResultsFiles: tracer/build_data/results/**/*.trx
           condition: succeededOrFailed()
 
+        - template: steps/run-in-docker.yml
+          parameters:
+            alwaysRun: true
+            apiKey: $(ddApiKey)
+            baseImage: debian
+            command: "UploadJunitArtifacts"
+
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
   dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
@@ -770,6 +798,13 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+    - script: tracer\build.cmd UploadJunitArtifacts
+      displayName: Upload junit results
+      condition: succeededOrFailed()
+      continueOnError: true
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows tracer logs
@@ -826,6 +861,13 @@ stages:
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
+    - script: tracer\build.cmd UploadJunitArtifacts
+      displayName: Upload junit results
+      condition: succeededOrFailed()
+      continueOnError: true
+      env:
+        DD_API_KEY: $(ddApiKey)
+
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
       artifact: integration_tests_windows_iis_tracer_logs_$(targetPlatform)_$(framework)
@@ -869,6 +911,13 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+    - script: tracer\build.cmd UploadJunitArtifacts
+      displayName: Upload junit results
+      condition: succeededOrFailed()
+      continueOnError: true
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows_iis tracer logs
@@ -940,6 +989,13 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+    - script: tracer\build.cmd UploadJunitArtifacts
+      displayName: Upload junit results
+      condition: succeededOrFailed()
+      continueOnError: true
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -1030,6 +1086,13 @@ stages:
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
+    - template: steps/run-in-docker.yml
+      parameters:
+        alwaysRun: true
+        apiKey: $(ddApiKey)
+        baseImage: $(baseImage)
+        command: "UploadJunitArtifacts"
+
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: integration_tests_linux_snapshots_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
@@ -1119,6 +1182,13 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        alwaysRun: true
+        apiKey: $(ddApiKey)
+        baseImage: $(baseImage)
+        command: "UploadJunitArtifacts"
 
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
@@ -1264,6 +1334,13 @@ stages:
             testResultsFiles: tracer/build_data/results/**/*.trx
           condition: succeededOrFailed()
 
+        - template: steps/run-in-docker.yml
+          parameters:
+            alwaysRun: true
+            apiKey: $(ddApiKey)
+            baseImage: $(baseImage)
+            command: "UploadJunitArtifacts"
+
         - publish: tracer/test/snapshots
           displayName: Uploading snapshots
           artifact: integration_tests_linux_snapshots_arm64_$(publishTargetFramework)_$(System.JobAttempt)
@@ -1341,6 +1418,13 @@ stages:
             testResultsFormat: VSTest
             testResultsFiles: tracer/build_data/results/**/*.trx
           condition: succeededOrFailed()
+
+        - template: steps/run-in-docker.yml
+          parameters:
+            alwaysRun: true
+            apiKey: $(ddApiKey)
+            baseImage: $(baseImage)
+            command: "UploadJunitArtifacts"
 
         - publish: tracer/test/snapshots
           displayName: Uploading snapshots
@@ -1819,6 +1903,13 @@ stages:
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
+    - script: tracer\build.cmd UploadJunitArtifacts
+      displayName: Upload junit results
+      condition: succeededOrFailed()
+      continueOnError: true
+      env:
+        DD_API_KEY: $(ddApiKey)
+
 - stage: tool_artifacts_tests_linux
   dependsOn: [dotnet_tool, master_commit_id]
   variables:
@@ -1895,6 +1986,13 @@ stages:
         testResultsFormat: VSTest
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        alwaysRun: true
+        apiKey: $(ddApiKey)
+        baseImage: $(baseImage)
+        command: "UploadJunitArtifacts"
 
 - stage: upload_to_s3
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
@@ -2289,6 +2387,9 @@ stages:
       displayName: Crank
       env:
         DD_SERVICE: dd-trace-dotnet-appsec
+        DD_ENV: CI
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_API_KEY: $(ddApiKey)
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
@@ -2401,6 +2502,7 @@ stages:
       displayName: Execute Samples.$(sampleName) benchmark
       env:
         DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
 
     - task: PowerShell@2
       displayName: Wait 20 seconds to agent flush before finishing pipeline
