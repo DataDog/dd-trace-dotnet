@@ -15,6 +15,47 @@ module TracingIntegrationRules =
         &&& tagMatches "component" "aerospike"
         &&& tagMatches "span.kind" "client"
 
+    let isAspNet : MockSpan -> Result<MockSpan, string> =
+        matches name "aspnet.request"
+        &&& matches ``type`` "web"
+        &&& tagIsPresent "http.method"
+        &&& tagIsPresent "http.request.headers.host"
+        &&& tagIsPresent "http.status_code"
+        &&& tagIsPresent "http.url"
+        // BUG: component tag is not set
+        // &&& tagMatches "component" "aspnet"
+        &&& tagMatches "span.kind" "server"
+
+    let isAspNetMvc : MockSpan -> Result<MockSpan, string> =
+        matches name "aspnet-mvc.request"
+        &&& matches ``type`` "web"
+        &&& tagIsPresent "aspnet.action"
+        &&& tagIsOptional "aspnet.area"
+        &&& tagIsPresent "aspnet.controller"
+        &&& tagIsPresent "aspnet.route"
+        &&& tagIsPresent "http.method"
+        &&& tagIsPresent "http.request.headers.host"
+        &&& tagIsPresent "http.status_code"
+        &&& tagIsPresent "http.url"
+        // BUG: component tag is not set
+        // &&& tagMatches "component" "aspnet"
+        &&& tagMatches "span.kind" "server"
+
+    let isAspNetWebApi2 : MockSpan -> Result<MockSpan, string> =
+        matches name "aspnet-webapi.request"
+        &&& matches ``type`` "web"
+        &&& tagIsOptional "aspnet.action"
+        &&& tagIsOptional "aspnet.controller"
+        &&& tagIsPresent "aspnet.route"
+        &&& tagIsPresent "http.method"
+        &&& tagIsPresent "http.request.headers.host"
+        // BUG: some test cases do not set http.status_code
+        // &&& tagIsPresent "http.status_code"
+        &&& tagIsPresent "http.url"
+        // BUG: component tag is not set
+        // &&& tagMatches "component" "aspnet"
+        &&& tagMatches "span.kind" "server"
+
     let isAspNetCore : MockSpan -> Result<MockSpan, string> =
         matches name "aspnet_core.request"
         &&& matches ``type`` "web"

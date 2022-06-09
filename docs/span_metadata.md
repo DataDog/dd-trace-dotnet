@@ -15,6 +15,61 @@ aerospike.userkey | No
 component | `aerospike`
 span.kind | `client`
 
+## AspNet
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `aspnet.request`
+Type | `web`
+### Tags
+Name | Required |
+---------|----------------|
+component | `aspnet`
+http.method | Yes
+http.request.headers.host | Yes
+http.status_code | Yes
+http.url | Yes
+span.kind | `server`
+
+## AspNetMvc
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `aspnet-mvc.request`
+Type | `web`
+### Tags
+Name | Required |
+---------|----------------|
+aspnet.action | Yes
+aspnet.area | No
+aspnet.controller | Yes
+aspnet.route | Yes
+component | `aspnet`
+http.method | Yes
+http.request.headers.host | Yes
+http.status_code | Yes
+http.url | Yes
+span.kind | `server`
+
+## AspNetWebApi2
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `aspnet-webapi.request`
+Type | `web`
+### Tags
+Name | Required |
+---------|----------------|
+aspnet.action | No
+aspnet.controller | No
+aspnet.route | Yes
+component | `aspnet`
+http.method | Yes
+http.request.headers.host | Yes
+http.status_code | Yes
+http.url | Yes
+span.kind | `server`
+
 ## AspNetCore
 ### Span properties
 Name | Required |
