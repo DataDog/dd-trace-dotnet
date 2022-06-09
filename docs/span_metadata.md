@@ -24,8 +24,11 @@ Type | `web`
 ### Tags
 Name | Required |
 ---------|----------------|
+aspnet_core.endpoint | No
+aspnet_core.route | No
 component | `aspnet_core`
 http.method | Yes
+http.request.headers.host | Yes
 http.status_code | Yes
 http.url | Yes
 span.kind | `server`
@@ -40,8 +43,9 @@ Type | `web`
 Name | Required |
 ---------|----------------|
 aspnet_core.action | Yes
+aspnet_core.area | No
 aspnet_core.controller | Yes
-aspnet_core.route | Yes
+aspnet_core.page | No
 component | `aspnet_core`
 span.kind | `server`
 

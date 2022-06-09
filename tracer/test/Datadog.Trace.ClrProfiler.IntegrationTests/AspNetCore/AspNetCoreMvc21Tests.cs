@@ -6,9 +6,12 @@
 #if NETCOREAPP2_1
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
+using System;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.FSharp;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -51,8 +54,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             var spans = await Fixture.WaitForSpans(path);
 
-            var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
+            var aspnetCoreSpans = spans.Where(s => s.Name == "aspnet_core.request");
+            foreach (var aspnetCoreSpan in aspnetCoreSpans)
+            {
+                (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAspNetCore, aspnetCoreSpan);
+                Assert.True(result, message);
+            }
 
+            var aspnetCoreMvcSpans = spans.Where(s => s.Name == "aspnet_core_mvc.request");
+            foreach (var aspnetCoreMvcSpan in aspnetCoreMvcSpans)
+            {
+                (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAspNetCoreMvc, aspnetCoreMvcSpan);
+                Assert.True(result, message);
+            }
+
+            var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
 
             // Overriding the type name here as we have multiple test classes in the file

@@ -54,26 +54,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 
             var spans = await Fixture.WaitForSpans(path);
 
-            var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
-
-            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
-
-            bool result;
-            string message;
-
             var aspnetCoreSpans = spans.Where(s => s.Name == "aspnet_core.request");
             foreach (var aspnetCoreSpan in aspnetCoreSpans)
             {
-                (result, message) = SpanValidator.validateAspNetCoreSpan(aspnetCoreSpan);
+                (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAspNetCore, aspnetCoreSpan);
                 Assert.True(result, message);
             }
 
             var aspnetCoreMvcSpans = spans.Where(s => s.Name == "aspnet_core_mvc.request");
             foreach (var aspnetCoreMvcSpan in aspnetCoreMvcSpans)
             {
-                (result, message) = SpanValidator.validateAspNetCoreMvcSpan(aspnetCoreMvcSpan);
+                (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAspNetCoreMvc, aspnetCoreMvcSpan);
                 Assert.True(result, message);
             }
+
+            var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
 
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer

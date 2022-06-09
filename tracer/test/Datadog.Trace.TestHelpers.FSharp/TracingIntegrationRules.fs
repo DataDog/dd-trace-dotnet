@@ -18,7 +18,10 @@ module TracingIntegrationRules =
     let isAspNetCore : MockSpan -> Result<MockSpan, string> =
         matches name "aspnet_core.request"
         &&& matches ``type`` "web"
+        &&& tagIsOptional "aspnet_core.endpoint"
+        &&& tagIsOptional "aspnet_core.route"
         &&& tagIsPresent "http.method"
+        &&& tagIsPresent "http.request.headers.host"
         &&& tagIsPresent "http.status_code"
         &&& tagIsPresent "http.url"
         &&& tagMatches "component" "aspnet_core"
@@ -28,8 +31,9 @@ module TracingIntegrationRules =
         matches name "aspnet_core_mvc.request"
         &&& matches ``type`` "web"
         &&& tagIsPresent "aspnet_core.action"
+        &&& tagIsOptional "aspnet_core.area"
         &&& tagIsPresent "aspnet_core.controller"
-        &&& tagIsPresent "aspnet_core.route"
+        &&& tagIsOptional "aspnet_core.page"
         &&& tagMatches "component" "aspnet_core"
         &&& tagMatches "span.kind" "server"
 
