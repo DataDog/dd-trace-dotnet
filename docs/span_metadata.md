@@ -349,6 +349,20 @@ out.port | Yes
 redis.raw_command | Yes
 span.kind | `client`
 
+## Sqlite
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `sqlite.query`
+Type | `sql`
+### Tags
+Name | Required |
+---------|----------------|
+component | `Sqlite`
+db.name | No
+db.type | `sqlite`
+span.kind | `client`
+
 ## Wcf (server)
 ### Span properties
 Name | Required |
