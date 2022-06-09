@@ -12,11 +12,6 @@ variables:
     description: "Set to true to override rules in the reliability-env pipeline (e.g. override 'only deploy master')"
     
 build:
-  only:
-    - master
-    - main
-    - /^hotfix.*$/
-    - /^release.*$/
   stage: build
   tags: ["runner:windows-docker", "windowsversion:1809"]
   script:
