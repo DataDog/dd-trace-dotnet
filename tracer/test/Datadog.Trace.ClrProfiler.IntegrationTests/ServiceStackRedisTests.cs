@@ -9,6 +9,7 @@ using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.FSharp;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -44,11 +45,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal("redis.command", span.Name);
+                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isServiceStackRedis, span);
+                    Assert.True(result, message);
+
                     Assert.Equal("Samples.ServiceStack.Redis-redis", span.Service);
-                    Assert.Equal(SpanTypes.Redis, span.Type);
-                    Assert.Equal(host, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.host"));
-                    Assert.Equal(port, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.port"));
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
 

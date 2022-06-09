@@ -26,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class RedisExecuteAsyncIntegration
     {
+        private const string IntegrationName = nameof(Configuration.IntegrationId.StackExchangeRedis);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.StackExchangeRedis;
 
         /// <summary>
@@ -47,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
             string rawCommand = message.CommandAndKey ?? "COMMAND";
             StackExchangeRedisHelper.HostAndPort hostAndPort = StackExchangeRedisHelper.GetHostAndPort(instance.Multiplexer.Configuration);
 
-            Scope scope = RedisHelper.CreateScope(Tracer.Instance, IntegrationId, hostAndPort.Host, hostAndPort.Port, rawCommand);
+            Scope scope = RedisHelper.CreateScope(Tracer.Instance, IntegrationId, IntegrationName, hostAndPort.Host, hostAndPort.Port, rawCommand);
             if (scope is not null)
             {
                 return new CallTargetState(scope);

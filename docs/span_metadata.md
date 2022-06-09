@@ -259,7 +259,7 @@ Type | `redis`
 ### Tags
 Name | Required |
 ---------|----------------|
-component | `stackexchangeredis`
+component | `ServiceStackRedis`
 out.host | Yes
 out.port | Yes
 redis.raw_command | Yes
