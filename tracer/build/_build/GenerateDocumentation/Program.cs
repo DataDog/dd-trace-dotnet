@@ -213,7 +213,10 @@ namespace GenerateDocumentation
 
                 public static Requirement GenerateRequirement(string line)
                 {
-                    var parts = line.Split();
+                    var parts = line.Replace(";", "")
+                                    .Replace("[|", "")
+                                    .Replace("|]", "")
+                                    .Split(" ", StringSplitOptions.RemoveEmptyEntries);
                     if (parts is null || parts.Length == 0)
                     {
                         return Unknown;
@@ -259,6 +262,12 @@ namespace GenerateDocumentation
                                 Property = $"{parts[1]}",
                                 PropertyType = PropertyType.Tag,
                                 RequiredValue = $"`{parts[2]}`",
+                            },
+                        "tagMatchesOneOf" => new Requirement
+                            {
+                                Property = $"{parts[1]}",
+                                PropertyType = PropertyType.Tag,
+                                RequiredValue = string.Join("; ", parts.Skip(2).Select(s => $"`{s}`")),
                             },
                         "metricIsPresent" => new Requirement
                             {

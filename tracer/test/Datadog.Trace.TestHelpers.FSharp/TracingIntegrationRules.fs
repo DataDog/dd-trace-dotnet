@@ -140,6 +140,18 @@ module TracingIntegrationRules =
         &&& tagMatches "component" "graphql"
         &&& tagMatches "span.kind" "server"
 
+    let isGrpc : MockSpan -> Result<MockSpan, string> =
+        matches name "grpc.request"
+        &&& matches ``type`` "grpc"
+        &&& tagIsPresent "grpc.method.kind"
+        &&& tagIsPresent "grpc.method.name"
+        &&& tagIsPresent "grpc.method.package"
+        &&& tagIsPresent "grpc.method.path"
+        &&& tagIsPresent "grpc.method.service"
+        &&& tagIsPresent "grpc.status.code"
+        &&& tagMatches "component" "Grpc"
+        &&& tagMatchesOneOf "span.kind" [| "client"; "server" |]
+
     let isHttpMessageHandler : MockSpan -> Result<MockSpan, string> =
         matches name "http.request"
         &&& matches ``type`` "http"

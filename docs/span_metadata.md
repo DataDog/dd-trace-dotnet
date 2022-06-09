@@ -202,6 +202,24 @@ graphql.operation.type | Yes
 graphql.source | Yes
 span.kind | `server`
 
+## Grpc
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `grpc.request`
+Type | `grpc`
+### Tags
+Name | Required |
+---------|----------------|
+component | `Grpc`
+grpc.method.kind | Yes
+grpc.method.name | Yes
+grpc.method.package | Yes
+grpc.method.path | Yes
+grpc.method.service | Yes
+grpc.status.code | Yes
+span.kind | `client`; `server`
+
 ## HttpMessageHandler
 ### Span properties
 Name | Required |

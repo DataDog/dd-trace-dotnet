@@ -24,6 +24,12 @@ module SpanModelHelpers =
     let ``type`` (span: MockSpan) =
         ( (nameof span.Type), span.Type )
 
+    // Helper functions
+    let surroundStringWithQuotes (value: string) = $"\"{value}\""
+
+    let stringJoinWithComma (values: string[]) = System.String.Join(", ", values)
+
+    // Comparison functions
     let tagIsPresent tagName (span: MockSpan) =
         match span.GetTag tagName with
         | null -> Failure $"Tag \"{tagName}\" was expected to be present, but the tag is missing"
@@ -38,6 +44,12 @@ module SpanModelHelpers =
         | null -> Failure $"Tag \"{tagName}\" was expected to have value \"{expectedValue}\", but the tag is missing"
         | value when value <> expectedValue -> Failure $"Tag \"{tagName}\" was expected to have value \"{expectedValue}\", but the tag value is \"{value}\""
         | _ -> Success span
+
+    let tagMatchesOneOf tagName (expectedValueArray: string[]) (span: MockSpan) =
+        let value = span.GetTag tagName
+        match expectedValueArray |> Array.tryFind (fun elm -> elm = value) with
+            | Some result -> Success span
+            | None -> Failure ($"Tag \"{tagName}\" has value \"{value}\" but was expected to have one of the following values: " + (expectedValueArray |> Array.map surroundStringWithQuotes |> stringJoinWithComma))
 
     let metricIsPresent metricName (span: MockSpan) =
         match span.GetMetric metricName with
