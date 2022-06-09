@@ -263,6 +263,20 @@ db.name | Yes
 db.type | `postgres`
 span.kind | `client`
 
+## Oracle
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `oracle.query`
+Type | `sql`
+### Tags
+Name | Required |
+---------|----------------|
+component | `Oracle`
+db.name | Yes
+db.type | `oracle`
+span.kind | `client`
+
 ## RabbitMQ
 ### Span properties
 Name | Required |

@@ -177,6 +177,14 @@ module TracingIntegrationRules =
         &&& tagMatches "component" "Npgsql"
         &&& tagMatches "span.kind" "client"
 
+    let isOracle : MockSpan -> Result<MockSpan, string> =
+        matches name "oracle.query"
+        &&& matches ``type`` "sql"
+        &&& tagIsPresent "db.name"
+        &&& tagMatches "db.type" "oracle"
+        &&& tagMatches "component" "Oracle"
+        &&& tagMatches "span.kind" "client"
+
     let isRabbitMQ : MockSpan -> Result<MockSpan, string> =
         matches name "amqp.command"
         &&& matches ``type`` "queue"
