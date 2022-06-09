@@ -245,6 +245,12 @@ namespace GenerateDocumentation
                                 Property = $"{Capitalize(parts[1])}",
                                 RequiredValue = $"`{parts[2]}`",
                             },
+                        "matchesOneOf" => new Requirement
+                            {
+                                Property = $"{parts[1]}",
+                                PropertyType = PropertyType.Tag,
+                                RequiredValue = string.Join("; ", parts.Skip(2).Select(s => $"`{s}`")),
+                            },
                         "tagIsOptional" => new Requirement
                             {
                                 Property = $"{parts[1]}",

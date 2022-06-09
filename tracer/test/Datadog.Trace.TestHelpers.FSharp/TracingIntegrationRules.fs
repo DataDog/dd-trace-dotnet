@@ -162,6 +162,16 @@ module TracingIntegrationRules =
         &&& tagIsPresent "http.url"
         &&& tagMatches "span.kind" "client"
 
+    let isKafka : MockSpan -> Result<MockSpan, string> =
+        matchesOneOf name [|"kafka.consume"; "kafka.produce" |]
+        &&& matches ``type`` "queue"
+        &&& tagIsOptional "kafka.offset"
+        &&& tagIsOptional "kafka.partition"
+        &&& tagIsOptional "kafka.tombstone"
+        &&& tagIsOptional "message.queue_time_ms"
+        &&& tagMatches "component" "kafka"
+        &&& tagIsPresent "span.kind"
+
     let isMongoDB : MockSpan -> Result<MockSpan, string> =
         matches name "mongodb.query"
         &&& matches ``type`` "mongodb"

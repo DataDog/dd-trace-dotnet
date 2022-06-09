@@ -236,6 +236,22 @@ http.status_code | Yes
 http.url | Yes
 span.kind | `client`
 
+## Kafka
+### Span properties
+Name | Required |
+---------|----------------|
+Type | `queue`
+### Tags
+Name | Required |
+---------|----------------|
+component | `kafka`
+kafka.offset | No
+kafka.partition | No
+kafka.tombstone | No
+message.queue_time_ms | No
+name | `kafka.consume`; `kafka.produce`
+span.kind | Yes
+
 ## MongoDB
 ### Span properties
 Name | Required |

@@ -79,3 +79,9 @@ module SpanModelHelpers =
         match extractProperty span with
         | (propertyName, value) when value <> expectedValue -> Failure $"Property \"{propertyName}\" was expected to have value \"{expectedValue}\", but the property is \"{value}\""
         | (_, _) -> Success span
+
+    let matchesOneOf extractProperty (expectedValueArray: string[]) (span:MockSpan) =
+        let (propertyName, value) = extractProperty span
+        match expectedValueArray |> Array.tryFind (fun elm -> elm = value) with
+        | Some result -> Success span
+        | None -> Failure ($"Property \"{propertyName}\" has value \"{value}\" but was expected to have one of the following values: " + (expectedValueArray |> Array.map surroundStringWithQuotes |> stringJoinWithComma))

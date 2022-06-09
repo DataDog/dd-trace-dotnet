@@ -3,12 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.FSharp;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -58,6 +60,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // We use HaveCountGreaterOrEqualTo because _both_ consumers may handle the message
             // Due to manual/autocommit behaviour
             allSpans.Should().HaveCountGreaterOrEqualTo(TotalExpectedSpanCount);
+
+            foreach (var span in allSpans)
+            {
+                (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isKafka, span);
+                Assert.True(result, message);
+            }
 
             var allProducerSpans = allSpans.Where(x => x.Name == "kafka.produce").ToList();
             var successfulProducerSpans = allProducerSpans.Where(x => x.Error == 0).ToList();
