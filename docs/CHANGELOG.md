@@ -3,6 +3,110 @@
 
 
 
+
+## [Release 2.10.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.10.0)
+
+## Summary
+
+Main changes are:
+- Continuous profiler now available on linux (needs GLIBC 2.18+, which means Centos 7 is not supported in this release)
+- CPU profiling and Exception profiling are available.
+
+Also here are more minor changes on the Tracer integrations:
+- `NLog` integration supports v5.0.0
+- Stops prefixing `aspnet.request` resource name with IIS virtual apps in the rare cases it happened
+- Fixes the incorrect `http.status_code` tag for ASP.NET MVC with IIS in Classsic-mode when an exception is thrown
+- `MySqlConnector` support starts at v0.61.0
+
+## Changes
+
+### Tracer
+* Add support for UDS to telemetry transport (#2617)
+* Return const char* instead of std::string on C linkage function (#2824)
+* Fix SamplingPriority in B3 and W3C headers (#2828)
+* Add Redis obfuscator (#2847)
+* Exclude dynamic assemblies from telemetry (#2855)
+* Avoid calling AsyncLocal.Value twice when GetSpanContextRaw() is null (#2857)
+* Rewrite P/Invoke maps for Native Loader (#2858)
+* [Tracer] Support MySqlConnector from version 0.61.0 (#2870)
+* Update NLog integration to be compatible with v5.0.0 (#2820)
+
+### CI App
+* [CIApp] - Per-test Code Coverage (#2739)
+* [CIApp] - Adds library_version to the message metadata (#2831)
+* [CIApp] - Refactor CodeOwner feature + Zero duration on Skipped Tests (#2845)
+
+### ASM
+* [ASM] Change to rate limit tests (#2759)
+
+### Continuous Profiler
+* [Profiler] Implement exception profiler (#2743)
+* [Profiler] Update CPU profiling implementation (#2765)
+* Package the profiler, tracer and native loader together on Linux (#2777)
+* Add throughput tests for profiler (#2784)
+* [Profiler] Fix error reported by UBSAN (#2799)
+* [Profiler] Do not aggregate sample with empty callstack (#2805)
+* [Profiler] Flush samples and export a last .pprof on exit (#2814)
+* [Profiler] Add a cache for native frame resolution (#2817)
+* [Profiler] Add a profile_seq tag to each uploaded .pprof (#2819)
+* [Profiler] Allow stack sampler metrics for Linux (#2822)
+* [Profiler] Implement sampling for exceptions (#2823)
+* [Profiler] Activate log message only in debug build (#2825)
+* [Profiler] Run profiler integration tests in AzDo (#2830)
+* [Profiler] Fix empty labels (#2832)
+* [Profiler] Fix profiler throughput test on master (#2837)
+* [Profiler] Add async scenario to demo application (#2840)
+* [Profiler] Disable debug logging for throughput tests (#2841)
+* [Profiler] Fix analyzer error (#2844)
+* [Profiler] Add exceptions throughput test scenario (#2856)
+* [Profiler] Set _GLIBCXX_USE_CXX11_ABI to 0 and remove liblzma dependency (#2861)
+* [Profiler] Run profiler benchmark tests with monitoring home instead for windows (#2862)
+* [Profiler] Add CPU and exceptions to profiler benchmarks (#2865)
+* [Profiler] Prevent from blocking the application (#2866)
+* [Profiler] Do not resolve native frame if not needed (#2868)
+
+### Serverless
+* [Serverless] Support sampling in universal instrumentation (#2751)
+
+### Fixes
+* [CallTarget] - Fix Nested Types Instrumentation (#2818)
+* Stop prefixing resource names with IIS app name when TracingHttpModule only (#2852)
+* Fix incorrect `http.status_code` in ASP.NET MVC with IIS classic mode (#2854)
+
+### Build / Test
+* Execution Benchmark and Throughput cleanup (#2790)
+* Replace wiremock with `dd-apm-test-agent` in smoke tests (#2793)
+* [Test Package Versions Bump] Updating package versions (#2803)
+* Speed up native compilation on Linux (profiler, tracer, native loader) (#2804)
+* Use azure scale-sets for more jobs (#2806)
+* Split linux integration tests to reduce overall runtime (#2807)
+* Fix Gitlab job (#2821)
+* Fix `ThreadAbortAnalyzer` to work with the latest .NET SDK (#2833)
+* Split ARM64 integration tests to reduce overall run time (#2834)
+* [Release] Changes following last release (#2835)
+* Fix downstream job trigger for deployments to rel-env (#2838)
+* Change code ownership (#2839)
+* Use Native Loader for exploration tests (#2842)
+* [Tests] Allow updating snapshots from an AzDo build (#2843)
+* Add workaround for race condition in GRPC library (#2848)
+* Increase timeout in `AspNetCoreDiagnosticObserver` tests (#2849)
+* Revert "Use azure scale-sets for more jobs (#2806)" (#2850)
+* Add snapshot tests for ASP.NET virtual applications (#2851)
+* Fix flaky `LambdaRequestBuilderTests` (#2863)
+* Fix crash in execution benchmark tests (#2873)
+* Stripping out unneeded information from native `so` library files (#2874)
+* Upload linux-native-symbols artifacts and add to release artifacts (#2879)
+* Create a Code Freeze bot (#2881)
+* Fix code freeze workflow (#2882)
+* Fix code-freeze bot (part deux) (#2885)
+
+### Miscellaneous
+* [Test Package Versions Bump] Updating package versions (#2827)
+* [Doc] Add a quick comment on docker for integrations (#2869)
+
+
+[Changes since 2.9.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.9.0...v2.10.0)
+
 ## [Release 2.9.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.9.0)
 
 ## Summary
