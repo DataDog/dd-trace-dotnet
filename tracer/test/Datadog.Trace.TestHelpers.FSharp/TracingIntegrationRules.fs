@@ -5,6 +5,13 @@ module TracingIntegrationRules =
     open Datadog.Trace.TestHelpers
     open SpanModelHelpers
 
+    let isAdoNet : MockSpan -> Result<MockSpan, string> =
+        matches ``type`` "sql"
+        &&& tagIsOptional "db.name"
+        &&& tagIsPresent "db.type"
+        &&& tagMatches "component" "AdoNet"
+        &&& tagMatches "span.kind" "client"
+
     let isAerospike : MockSpan -> Result<MockSpan, string> =
         matches name "aerospike.command"
         &&& matches ``type`` "aerospike"

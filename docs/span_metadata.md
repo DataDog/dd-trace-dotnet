@@ -1,4 +1,17 @@
 # Span Metadata
+## AdoNet
+### Span properties
+Name | Required |
+---------|----------------|
+Type | `sql`
+### Tags
+Name | Required |
+---------|----------------|
+component | `AdoNet`
+db.name | No
+db.type | Yes
+span.kind | `client`
+
 ## Aerospike
 ### Span properties
 Name | Required |
