@@ -222,6 +222,20 @@ out.host | Yes
 out.port | Yes
 span.kind | `client`
 
+## MySql
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `mysql.query`
+Type | `sql`
+### Tags
+Name | Required |
+---------|----------------|
+component | `MySql`
+db.name | Yes
+db.type | `mysql`
+span.kind | `client`
+
 ## Npgsql
 ### Span properties
 Name | Required |
