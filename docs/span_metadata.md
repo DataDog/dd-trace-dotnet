@@ -253,6 +253,22 @@ out.host | Yes
 out.port | Yes
 span.kind | `client`
 
+## Msmq
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `msmq.command`
+Type | `queue`
+### Tags
+Name | Required |
+---------|----------------|
+component | `msmq`
+msmq.command | Yes
+msmq.message.transactional | No
+msmq.queue.path | Yes
+msmq.queue.transactional | No
+span.kind | `client`; `consumer`; `producer`
+
 ## MySql
 ### Span properties
 Name | Required |

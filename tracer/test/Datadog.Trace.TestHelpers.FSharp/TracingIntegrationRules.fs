@@ -173,6 +173,16 @@ module TracingIntegrationRules =
         &&& tagMatches "component" "MongoDb"
         &&& tagMatches "span.kind" "client"
 
+    let isMsmq : MockSpan -> Result<MockSpan, string> =
+        matches name "msmq.command"
+        &&& matches ``type`` "queue"
+        &&& tagIsPresent "msmq.command"
+        &&& tagIsOptional "msmq.message.transactional"
+        &&& tagIsPresent "msmq.queue.path"
+        &&& tagIsOptional "msmq.queue.transactional"
+        &&& tagMatches "component" "msmq"
+        &&& tagMatchesOneOf "span.kind" [| "client"; "consumer"; "producer" |]
+
     let isMySql : MockSpan -> Result<MockSpan, string> =
         matches name "mysql.query"
         &&& matches ``type`` "sql"

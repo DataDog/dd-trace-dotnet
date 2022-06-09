@@ -8,6 +8,7 @@ using System;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.FSharp;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -53,7 +54,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var msmqSpans = spans.Where(span => string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
             foreach (var span in msmqSpans)
             {
-                span.Type.Should().Be(SpanTypes.Queue);
+                (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isMsmq, span);
+                Assert.True(result, message);
+
                 span.Service.Should().Be(ExpectedServiceName);
                 span.Tags.Should().Contain(new System.Collections.Generic.KeyValuePair<string, string>(Tags.InstrumentationName, "msmq"));
                 if (span.Tags[Tags.MsmqIsTransactionalQueue] == "True")
@@ -67,7 +70,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     nonTransactionalTraces++;
                 }
 
-                span.Name.Should().Be("msmq.command");
                 span.Tags?.ContainsKey(Tags.Version).Should().BeFalse("External service span should not have service version tag.");
 
                 var command = span.Tags[Tags.MsmqCommand];
