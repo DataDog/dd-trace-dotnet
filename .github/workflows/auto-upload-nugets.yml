@@ -1,0 +1,45 @@
+name: Auto upload nugets after release
+
+on:
+  workflow_dispatch:
+    inputs:
+      forced_commit_id:
+        description: 'Force using artifacts from specific commit? If provided, this will try and use the artifacts from the given commit, regardless of build status'
+        required: false
+  release:
+    types: [published]
+
+jobs:
+  trigger_aas_release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '6.0.100'
+
+      - name: "Configure Git Credentials"
+        run: |
+          git config user.name "${{ github.actor }}"
+          git config user.email "${{ github.actor }}@users.noreply.github.com"
+
+      - name: "Get current version"
+        id: versions
+        run: ./tracer/build.sh OutputCurrentVersionToGitHub
+
+      - name: "Download build assets from Azure Pipelines"
+        id: assets
+        run: ./tracer/build.sh DownloadAzurePipelineAndGitlabArtifacts
+        env:
+          TargetBranch: ${{ github.event.ref }}
+          CommitSha: "${{ github.event.inputs.forced_commit_id }}"
+
+      - name: "Publish nuget packages to nuget.org"
+        working-directory: ${{steps.assets.outputs.artifacts_path}}
+        run: |
+          dotnet nuget push "*.${{steps.versions.outputs.full_version}}*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
