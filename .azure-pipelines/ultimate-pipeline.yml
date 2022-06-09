@@ -2697,7 +2697,6 @@ stages:
 
 - stage: trace_pipeline
   condition: eq(variables['isScheduledBuild'], 'False')
-  dependsOn: [integration_tests_windows, integration_tests_windows_iis, msi_integration_tests_windows, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows, unit_tests_arm64, master_commit_id, integration_tests_arm64, benchmarks, throughput, throughput_appsec, tool_artifacts_tests_windows, tool_artifacts_tests_linux, upload_to_s3, upload_to_azure, installer_smoke_tests, installer_smoke_tests_arm64]
   jobs:
   - job: build_and_run
     timeoutInMinutes: 60 #default value
