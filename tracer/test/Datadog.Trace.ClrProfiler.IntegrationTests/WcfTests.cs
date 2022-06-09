@@ -90,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    (bool result, string message) = SpanValidator.validateWcfServerSpan(span);
+                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isWcf, span);
                     Assert.True(result, message);
                 }
 

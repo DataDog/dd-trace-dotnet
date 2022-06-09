@@ -454,7 +454,7 @@ db.name | No
 db.type | `sql-server`
 span.kind | `client`
 
-## Wcf (server)
+## Wcf
 ### Span properties
 Name | Required |
 ---------|----------------|

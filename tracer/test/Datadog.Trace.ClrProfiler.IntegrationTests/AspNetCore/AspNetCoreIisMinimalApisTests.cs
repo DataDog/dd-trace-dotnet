@@ -87,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             var aspnetCoreMvcSpans = spans.Where(s => s.Name == "aspnet_core_mvc.request");
             foreach (var aspnetCoreMvcSpan in aspnetCoreMvcSpans)
             {
-                (bool result, string message) = SpanValidator.validateAspNetCoreMvcSpan(aspnetCoreMvcSpan);
+                (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAspNetCoreMvc, aspnetCoreMvcSpan);
                 Assert.True(result, message);
             }
 

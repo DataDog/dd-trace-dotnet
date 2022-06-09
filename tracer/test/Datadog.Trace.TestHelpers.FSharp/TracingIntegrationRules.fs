@@ -296,7 +296,7 @@ module TracingIntegrationRules =
         &&& tagMatches "component" "SqlClient"
         &&& tagMatches "span.kind" "client"
 
-    let ``isWcf (server)`` : MockSpan -> Result<MockSpan, string> =
+    let isWcf : MockSpan -> Result<MockSpan, string> =
         matches name "wcf.request"
         &&& matches ``type`` "web"
         &&& tagIsPresent "http.url"
