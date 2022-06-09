@@ -4,9 +4,11 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.FSharp;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -39,10 +41,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             foreach (var span in spans)
             {
-                Assert.Equal(expectedOperationName, span.Name);
+                (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isSqlClient, span);
+                Assert.True(result, message);
+
                 Assert.Equal(expectedServiceName, span.Service);
-                Assert.Equal(SpanTypes.Sql, span.Type);
-                Assert.Equal(dbType, span.Tags[Tags.DbType]);
                 Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
             }
 

@@ -363,6 +363,20 @@ db.name | No
 db.type | `sqlite`
 span.kind | `client`
 
+## SqlClient
+### Span properties
+Name | Required |
+---------|----------------|
+Name | `sql-server.query`
+Type | `sql`
+### Tags
+Name | Required |
+---------|----------------|
+component | `SqlClient`
+db.name | No
+db.type | `sql-server`
+span.kind | `client`
+
 ## Wcf (server)
 ### Span properties
 Name | Required |

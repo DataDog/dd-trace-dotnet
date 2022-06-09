@@ -241,6 +241,14 @@ module TracingIntegrationRules =
         &&& tagMatches "component" "Sqlite"
         &&& tagMatches "span.kind" "client"
 
+    let isSqlClient : MockSpan -> Result<MockSpan, string> =
+        matches name "sql-server.query"
+        &&& matches ``type`` "sql"
+        &&& tagIsOptional "db.name"
+        &&& tagMatches "db.type" "sql-server"
+        &&& tagMatches "component" "SqlClient"
+        &&& tagMatches "span.kind" "client"
+
     let ``isWcf (server)`` : MockSpan -> Result<MockSpan, string> =
         matches name "wcf.request"
         &&& matches ``type`` "web"
