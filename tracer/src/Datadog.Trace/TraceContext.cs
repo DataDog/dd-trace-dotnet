@@ -36,6 +36,9 @@ namespace Datadog.Trace
 
         public IDatadogTracer Tracer { get; }
 
+        /// <summary>
+        /// Gets the collection of trace-level tags.
+        /// </summary>
         public TraceTagCollection Tags { get; }
 
         /// <summary>
