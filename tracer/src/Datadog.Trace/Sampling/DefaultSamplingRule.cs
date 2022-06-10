@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Formatting;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
