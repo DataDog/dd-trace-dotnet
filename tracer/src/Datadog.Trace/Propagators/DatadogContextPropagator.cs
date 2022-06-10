@@ -41,6 +41,13 @@ namespace Datadog.Trace.Propagators
                     });
 #pragma warning restore SA1118 // Parameter should not span multiple lines
             }
+
+            var propagatedTraceTags = context.TraceContext?.Tags?.ToPropagationHeader() ?? context.PropagatedTags;
+
+            if (propagatedTraceTags != null)
+            {
+                carrierSetter.Set(carrier, HttpHeaderNames.PropagatedTags, propagatedTraceTags);
+            }
         }
 
         public bool TryExtract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter, out SpanContext? spanContext)
@@ -58,8 +65,12 @@ namespace Datadog.Trace.Propagators
             var parentId = ParseUtility.ParseUInt64(carrier, carrierGetter, HttpHeaderNames.ParentId) ?? 0;
             var samplingPriority = ParseUtility.ParseInt32(carrier, carrierGetter, HttpHeaderNames.SamplingPriority);
             var origin = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.Origin);
+            var propagatedTraceTags = ParseUtility.ParseString(carrier, carrierGetter, HttpHeaderNames.PropagatedTags);
 
-            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin);
+            spanContext = new SpanContext(traceId, parentId, samplingPriority, serviceName: null, origin)
+                          {
+                              PropagatedTags = propagatedTraceTags
+                          };
             return true;
         }
     }
