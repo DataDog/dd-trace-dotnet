@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
+using System.Text.RegularExpressions;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
@@ -21,17 +22,39 @@ internal class DatadogTestResultSerializer : ITestResultSerializer
     {
         var framework = FrameworkDescription.Instance;
 
-        string runtimeName = runConfiguration.TargetFramework.IndexOf("NETFramework") != -1 ? ".NET Framework" : ".NET";
-        string runtimeVersion = runConfiguration.TargetFramework switch
+        string runtimeName = string.Empty;
+        string runtimeVersion = string.Empty;
+
+        var runtimeNameAndVersionRegex = new Regex("([a-zA-Z.]*),Version=v([0-9.]*)");
+        var match = runtimeNameAndVersionRegex.Match(runConfiguration.TargetFramework);
+        if (match.Success && match.Groups.Count == 3)
         {
-            "NETCoreApp21" => "2.1.0",
-            "NETCoreApp30" => "3.0.0",
-            "NETCoreApp31" => "3.1.0",
-            "NETCoreApp50" => "5.0.0",
-            "NETCoreApp60" => "6.0.0",
-            "NETFramework461" => "4.6.1",
-            _ => runConfiguration.TargetFramework
-        };
+            runtimeName = match.Groups[1].Value;
+            if (runtimeName == ".NETFramework")
+            {
+                runtimeName = ".NET Framework";
+            }
+            else if (runtimeName == ".NETCoreApp")
+            {
+                runtimeName = ".NET";
+            }
+
+            runtimeVersion = match.Groups[2].Value;
+        }
+        else
+        {
+            runtimeName = runConfiguration.TargetFramework.IndexOf("NETFramework") != -1 ? ".NET Framework" : ".NET";
+            runtimeVersion = runConfiguration.TargetFramework switch
+            {
+                "NETCoreApp21" => "2.1.0",
+                "NETCoreApp30" => "3.0.0",
+                "NETCoreApp31" => "3.1.0",
+                "NETCoreApp50" => "5.0.0",
+                "NETCoreApp60" => "6.0.0",
+                "NETFramework461" => "4.6.1",
+                _ => runConfiguration.TargetFramework
+            };
+        }
 
         foreach (var result in results)
         {
