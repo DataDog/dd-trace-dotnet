@@ -40,6 +40,11 @@ internal class DatadogTestResultSerializer : ITestResultSerializer
             }
 
             runtimeVersion = match.Groups[2].Value;
+
+            if (new Version(runtimeVersion).Major < 4)
+            {
+                runtimeName = ".NET Core";
+            }
         }
         else
         {
@@ -141,6 +146,7 @@ internal class DatadogTestResultSerializer : ITestResultSerializer
             scope.Dispose();
         }
 
+ 
         CIVisibility.FlushSpans();
 
         return string.Empty;
