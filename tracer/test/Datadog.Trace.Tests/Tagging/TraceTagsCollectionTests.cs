@@ -142,48 +142,6 @@ public class TraceTagsCollectionTests
         headerValue.Should().Be(expectedHeader);
     }
 
-    [Theory]
-    [InlineData(8)]   // this produces "_dd.p.a=" which is too short and invalid
-    [InlineData(9)]   // this produces the shortest possible header, "_dd.p.a=b"
-    [InlineData(512)] // this produces the longest possible header
-    [InlineData(513)] // this produces a header that is too long
-    public void ToPropagationHeaderValue_Length(int totalHeaderLength)
-    {
-        var traceTags = new TraceTagCollection();
-
-        // single tag with "_dd.p.a={...}", which has 8 chars plus the value's length
-        traceTags.SetTag("_dd.p.a", new string('b', totalHeaderLength - 8));
-
-        var headerValue = traceTags.ToPropagationHeader();
-
-        if (totalHeaderLength < TraceTagCollection.MinimumPropagationHeaderLength)
-        {
-            // too short
-            headerValue.Should().BeNullOrEmpty();
-            traceTags.GetTag(TraceTagNames.Propagation.PropagationHeadersError).Should().BeNull();
-        }
-        else if (totalHeaderLength > TraceTagCollection.MaximumPropagationHeaderLength)
-        {
-            // too long
-            headerValue.Should().BeNullOrEmpty();
-            traceTags.GetTag(TraceTagNames.Propagation.PropagationHeadersError).Should().Be("max_size");
-        }
-        else
-        {
-            // valid length
-            headerValue.Should().NotBeNullOrEmpty();
-            traceTags.GetTag(TraceTagNames.Propagation.PropagationHeadersError).Should().BeNull();
-        }
-    }
-
-    [Theory]
-    [MemberData(nameof(ParseData))]
-    public void ParseFromPropagationHeader(string header, KeyValuePair<string, string>[] expectedPairs)
-    {
-        var tags = TraceTagCollection.ParseFromPropagationHeader(header);
-        tags.ToEnumerable().Should().BeEquivalentTo(expectedPairs);
-    }
-
     [Fact]
     public void NewCollectionIsEmpty()
     {
@@ -236,43 +194,5 @@ public class TraceTagsCollectionTests
 
         var header = tags.ToPropagationHeader();
         header.Should().Be("_dd.p.key1=value1");
-    }
-
-    [Fact]
-    public void HeaderIsCached()
-    {
-        var header = "_dd.p.key1=value1";
-
-        // should cache original header
-        var tags = TraceTagCollection.ParseFromPropagationHeader(header);
-        var cachedHeader = tags.ToPropagationHeader();
-        cachedHeader.Should().BeSameAs(header);
-
-        // set tag to same value, should not invalidate the cached header
-        tags.SetTag("_dd.p.key1", "value1");
-        cachedHeader = tags.ToPropagationHeader();
-        cachedHeader.Should().BeSameAs(header);
-
-        // add valid non-distributed trace tag, should not invalidate the cached header
-        tags.SetTag("key2", "value2");
-        cachedHeader = tags.ToPropagationHeader();
-        cachedHeader.Should().BeSameAs(header);
-
-        // add valid distributed trace tag, invalidates the cached header
-        tags.SetTag("_dd.p.key3", "value3");
-        cachedHeader = tags.ToPropagationHeader();
-        cachedHeader.Should().NotBe(header);
-    }
-
-    [Fact]
-    public void HeaderIsNotCached()
-    {
-        // missing prefix, tag is ignored
-        var header = "key1=value1";
-
-        // should not cache original header
-        var tags = TraceTagCollection.ParseFromPropagationHeader(header);
-        var cachedHeader = tags.ToPropagationHeader();
-        cachedHeader.Should().NotBeSameAs(header);
     }
 }
