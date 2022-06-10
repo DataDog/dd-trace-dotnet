@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+
 namespace Datadog.Trace
 {
     /// <summary>
@@ -43,10 +45,16 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Internal Datadog tags.
-        /// A collection of internal Datadog tags. Only tags with names that
-        /// begin with "_dd.p.*" will be propagated using this header.
+        /// A collection of internal Datadog tags. Only trace-level tags with
+        /// the "_dd.p.*" prefix will be propagated using this header.
         /// </summary>
-        public const string DatadogTags = "x-datadog-tags";
+        public const string PropagatedTags = "x-datadog-tags";
+
+        /// <summary>
+        /// Deprecated. Use <see cref="PropagatedTags"/> instead.
+        /// </summary>
+        [Obsolete("Use PropagatedTags.", error: false)]
+        public const string DatadogTags = PropagatedTags;
 
         /// <summary>
         /// ID of a span.
