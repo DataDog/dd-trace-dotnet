@@ -10,8 +10,5 @@ namespace Datadog.Trace;
 /// </summary>
 internal static class TraceTagNames
 {
-    internal static class Propagation
-    {
-        internal const string PropagationHeadersError = "_dd.propagation_error";
-    }
+    internal const string PropagationError = "_dd.propagation_error";
 }
