@@ -2418,7 +2418,7 @@ stages:
         inputs:
           reports: '$(Build.SourcesDirectory)\cover\**\coverage.cobertura.xml'
           targetdir: '$(Build.SourcesDirectory)\coveragereport'
-          sourcedirs: '$(Build.SourcesDirectory);..'
+          sourcedirs: '$(Build.SourcesDirectory);'
           reporttypes: 'Cobertura'
 
       - task: PublishCodeCoverageResults@1
