@@ -135,7 +135,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isElasticsearch, span);
+                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isElasticsearchNet, span);
                     Assert.True(result, message);
 
                     Assert.Equal("Samples.Elasticsearch.V5-elasticsearch", span.Service);

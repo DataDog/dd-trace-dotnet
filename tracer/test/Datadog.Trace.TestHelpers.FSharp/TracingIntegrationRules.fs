@@ -122,7 +122,7 @@ module TracingIntegrationRules =
         &&& tagMatches "component" "Couchbase"
         &&& tagMatches "span.kind" "client"
 
-    let isElasticsearch : MockSpan -> Result<MockSpan, string> =
+    let isElasticsearchNet : MockSpan -> Result<MockSpan, string> =
         matches name "elasticsearch.query"
         &&& matches ``type`` "elasticsearch"
         &&& tagIsPresent "elasticsearch.action"

@@ -172,7 +172,7 @@ out.host | No
 out.port | No
 span.kind | `client`
 
-## Elasticsearch
+## ElasticsearchNet
 ### Span properties
 Name | Required |
 ---------|----------------|
