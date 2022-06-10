@@ -83,7 +83,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     }
                 }
 
-                var tags = new WebTags();
+                var tags = new WcfTags();
                 scope = tracer.StartActiveInternal("wcf.request", propagatedContext, tags: tags);
                 var span = scope.Span;
 

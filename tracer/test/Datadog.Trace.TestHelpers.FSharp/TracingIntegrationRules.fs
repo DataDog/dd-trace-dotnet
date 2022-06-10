@@ -300,6 +300,7 @@ module TracingIntegrationRules =
         matches name "wcf.request"
         &&& matches ``type`` "web"
         &&& tagIsPresent "http.url"
+        &&& tagMatches "component" "Wcf"
         &&& tagMatches "span.kind" "server"
 
     let isWebRequest : MockSpan -> Result<MockSpan, string> =

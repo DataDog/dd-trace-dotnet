@@ -7,6 +7,7 @@
     Service: Samples.Wcf,
     Type: web,
     Tags: {
+      component: Wcf,
       env: integration_tests,
       http.url: net.tcp://localhost:00000/WcfSample/CalculatorService,
       language: dotnet,
@@ -29,6 +30,7 @@
     Service: Samples.Wcf,
     Type: web,
     Tags: {
+      component: Wcf,
       env: integration_tests,
       http.url: net.tcp://localhost:00000/WcfSample/CalculatorService,
       language: dotnet,
@@ -51,6 +53,7 @@
     Service: Samples.Wcf,
     Type: web,
     Tags: {
+      component: Wcf,
       env: integration_tests,
       http.url: net.tcp://localhost:00000/WcfSample/CalculatorService,
       language: dotnet,
@@ -73,6 +76,7 @@
     Service: Samples.Wcf,
     Type: web,
     Tags: {
+      component: Wcf,
       env: integration_tests,
       http.url: net.tcp://localhost:00000/WcfSample/CalculatorService,
       language: dotnet,
@@ -95,6 +99,7 @@
     Service: Samples.Wcf,
     Type: web,
     Tags: {
+      component: Wcf,
       env: integration_tests,
       http.url: net.tcp://localhost:00000/WcfSample/CalculatorService,
       language: dotnet,
@@ -117,6 +122,7 @@
     Service: Samples.Wcf,
     Type: web,
     Tags: {
+      component: Wcf,
       env: integration_tests,
       http.url: net.tcp://localhost:00000/WcfSample/CalculatorService,
       language: dotnet,

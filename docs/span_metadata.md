@@ -463,6 +463,7 @@ Type | `web`
 ### Tags
 Name | Required |
 ---------|----------------|
+component | `Wcf`
 http.url | Yes
 span.kind | `server`
 
