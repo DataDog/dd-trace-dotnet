@@ -142,11 +142,10 @@ internal class DatadogTestResultSerializer : ITestResultSerializer
                 scope.Span.SetTag(Trace.Tags.ErrorStack, result.ErrorStackTrace);
             }
 
-            span.Finish(result.EndTime);
+            span.Finish(result.Duration);
             scope.Dispose();
         }
 
- 
         CIVisibility.FlushSpans();
 
         return string.Empty;
