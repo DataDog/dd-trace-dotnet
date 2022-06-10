@@ -121,7 +121,7 @@ namespace Datadog.Trace.MSBuild
                 _buildSpan.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
                 CIEnvironmentValues.Instance.DecorateSpan(_buildSpan);
 
-                _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(e.Message, _buildSpan));
+                _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, _buildSpan));
             }
             catch (Exception ex)
             {
@@ -145,7 +145,7 @@ namespace Datadog.Trace.MSBuild
                     _buildSpan.Error = true;
                 }
 
-                _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(e.Message, _buildSpan));
+                _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, _buildSpan));
                 _buildSpan.Finish(e.Timestamp);
             }
             catch (Exception ex)
@@ -204,7 +204,7 @@ namespace Datadog.Trace.MSBuild
                 projectSpan.SetTag(BuildTags.ProjectToolsVersion, e.ToolsVersion);
                 projectSpan.SetTag(BuildTags.BuildName, projectName);
                 _projects.TryAdd(context, projectSpan);
-                _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(e.Message, projectSpan));
+                _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, projectSpan));
             }
             catch (Exception ex)
             {
@@ -227,7 +227,7 @@ namespace Datadog.Trace.MSBuild
                         projectSpan.Error = true;
                     }
 
-                    _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(e.Message, projectSpan));
+                    _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, projectSpan));
                     projectSpan.Finish(e.Timestamp);
                 }
             }
@@ -298,7 +298,7 @@ namespace Datadog.Trace.MSBuild
                         projectSpan.SetTag(BuildTags.ErrorEndColumn, endColumnNumber.ToString());
                     }
 
-                    _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(e.Message, projectSpan));
+                    _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Error, e.Message, projectSpan));
                 }
             }
             catch (Exception ex)
@@ -343,7 +343,7 @@ namespace Datadog.Trace.MSBuild
                         }
                     }
 
-                    _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(e.Message, projectSpan));
+                    _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Warning, e.Message, projectSpan));
                 }
             }
             catch (Exception ex)
@@ -354,11 +354,13 @@ namespace Datadog.Trace.MSBuild
 
         private class MsBuildLogEvent : DatadogLogEvent
         {
+            private readonly string _level;
             private readonly string _message;
             private readonly Context? _context;
 
-            public MsBuildLogEvent(string message, Span span)
+            public MsBuildLogEvent(string level, string message, Span span)
             {
+                _level = level;
                 _message = message;
                 _context = span is null ? null : new Context(span.TraceId, span.SpanId, span.Context.Origin);
             }
@@ -367,11 +369,11 @@ namespace Datadog.Trace.MSBuild
             {
                 formatter.FormatLog<Context?>(
                     sb,
-                    _context,
+                    in _context,
                     DateTime.UtcNow,
                     _message,
                     eventId: null,
-                    logLevel: DirectSubmissionLogLevelExtensions.Information,
+                    logLevel: _level,
                     exception: null,
                     (JsonTextWriter writer, in Context? state) =>
                     {
