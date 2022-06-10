@@ -18,6 +18,10 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
     <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Datadog.Trace.TestLogger\Datadog.Trace.TestLogger.csproj" />
+  </ItemGroup>
 
   <!-- StyleCop -->
   <ItemGroup>

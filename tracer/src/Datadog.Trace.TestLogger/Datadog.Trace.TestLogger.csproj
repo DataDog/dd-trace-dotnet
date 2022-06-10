@@ -1,13 +1,38 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Version>2.11.0</Version>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
+
+    <!-- Required for StrongNamer: https://github.com/dsplaisted/strongnamer/issues/61 -->
+    <ErrorOnDuplicatePublishOutputFiles>False</ErrorOnDuplicatePublishOutputFiles>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="JunitXml.TestLogger" Version="3.0.114" />
+    <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="15.5.0" />
+    <PackageReference Include="StrongNamer" Version="0.2.5" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Spekt.TestLogger">
+      <HintPath>Spekt.TestLogger.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <Target Name="RemoveDuplicate" AfterTargets="ComputeFilesToPublish" BeforeTargets="_HandleFileConflictsForPublish">
+    <!-- Required for StrongNamer: https://github.com/dsplaisted/strongnamer/issues/61 -->
+    <PropertyGroup>
+      <DuplicateFileToRemove>$(BaseIntermediateOutputPath)$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\linked\Spectre.Console.dll</DuplicateFileToRemove>
+    </PropertyGroup>
+
+    <Message Text="Removing $(DuplicateFileToRemove) from publish output" Importance="high" />
+    <ItemGroup>
+      <ResolvedFileToPublish Remove="$(DuplicateFileToRemove)" />
+    </ItemGroup>
+  </Target>
 </Project>
