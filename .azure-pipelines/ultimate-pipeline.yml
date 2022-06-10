@@ -108,8 +108,8 @@ variables:
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   relativeNugetPackageDirectory: packages
-  # For scheduled builds, only run benchmarks and crank (and deps).
-  isScheduledBuild: ${{ eq(variables['Build.Reason'], 'Schedule') }} # only works if you have a main branch
+  # For scheduled builds, only run benchmarks and crank (and deps). Always do a full build on master.
+  isBenchmarksOnlyBuild: ${{ and(eq(variables['Build.Reason'], 'Schedule'), not(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'))) }} # only works if you have a main branch
   dotnetToolTag: build-dotnet-tool
   Verify_DisableClipboard: true
   DiffEngine_Disabled: true
@@ -321,7 +321,7 @@ stages:
       artifact: linux-profiler-home-$(baseImage)
 
 - stage: package_linux
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [master_commit_id, build_linux_tracer, build_linux_profiler]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -422,7 +422,7 @@ stages:
       artifact: build-linux-arm64-working-directory
 
 - stage: build_macos
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -454,7 +454,7 @@ stages:
       artifact: build-macos-working-directory
 
 - stage: package_windows
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [ build_windows_tracer, build_windows_profiler, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -499,7 +499,7 @@ stages:
         artifact: nuget-packages
 
 - stage: unit_tests_windows
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -555,7 +555,7 @@ stages:
         condition: succeededOrFailed()
 
 - stage: unit_tests_macos
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_macos, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -590,7 +590,7 @@ stages:
         condition: succeededOrFailed()
 
 - stage: unit_tests_linux
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_linux_tracer, build_linux_profiler, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -676,7 +676,7 @@ stages:
       condition: succeededOrFailed()
 
 - stage: unit_tests_arm64
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_arm64, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -718,7 +718,7 @@ stages:
           condition: succeededOrFailed()
 
 - stage: integration_tests_windows
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -787,7 +787,7 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_windows_iis
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -886,7 +886,7 @@ stages:
       displayName: Check logs for errors
 
 - stage: msi_integration_tests_windows
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, package_windows, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -964,7 +964,7 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_linux
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_linux, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -1132,7 +1132,7 @@ stages:
         command: "CheckBuildLogsForErrors"
 
 - stage: profiler_integration_tests_linux
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_linux, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -1201,7 +1201,7 @@ stages:
       condition: succeededOrFailed()
 
 - stage: integration_tests_arm64
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_arm64, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -1357,7 +1357,7 @@ stages:
   condition: >
     and(
       succeeded(),
-      eq(variables['isScheduledBuild'], 'False'),
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
       or(
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'],'True'),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
@@ -1414,7 +1414,7 @@ stages:
   condition: >
     and(
       succeeded(),
-      eq(variables['isScheduledBuild'], 'False'),
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
       or(
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'],'True'),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
@@ -1619,7 +1619,7 @@ stages:
 
 
 - stage: dotnet_tool
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [build_windows_tracer, build_linux_tracer, build_arm64, build_macos, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -1897,7 +1897,7 @@ stages:
       condition: succeededOrFailed()
 
 - stage: upload_to_s3
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
   dependsOn: [package_windows, package_linux, build_arm64, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -1997,7 +1997,7 @@ stages:
         )
 
 - stage: upload_to_azure
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), eq(variables.isMainRepository, true))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables.isMainRepository, true))
   dependsOn: [package_windows, package_linux, build_arm64, dotnet_tool, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -2291,7 +2291,7 @@ stages:
         DD_SERVICE: dd-trace-dotnet-appsec
 
 - stage: coverage
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
   dependsOn: [integration_tests_windows, integration_tests_windows_iis, msi_integration_tests_windows, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -2409,7 +2409,7 @@ stages:
         script: 'Start-Sleep -s 20'
 
 - stage: system_tests
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_linux, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -2467,7 +2467,7 @@ stages:
         artifact: system-tests-uds_$(System.JobAttempt)
 
 - stage: installer_smoke_tests
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_linux, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -2583,7 +2583,7 @@ stages:
         command: "CheckBuildLogsForErrors"
 
 - stage: installer_smoke_tests_arm64
-  condition: and(succeeded(), eq(variables['isScheduledBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_arm64, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -2696,7 +2696,7 @@ stages:
             command: "CheckBuildLogsForErrors"
 
 - stage: trace_pipeline
-  condition: eq(variables['isScheduledBuild'], 'False')
+  condition: eq(variables['isBenchmarksOnlyBuild'], 'False')
   dependsOn: [integration_tests_windows, integration_tests_windows_iis, msi_integration_tests_windows, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows, unit_tests_arm64, master_commit_id, integration_tests_arm64, benchmarks, throughput, throughput_appsec, tool_artifacts_tests_windows, tool_artifacts_tests_linux, upload_to_s3, upload_to_azure, installer_smoke_tests, installer_smoke_tests_arm64]
   jobs:
   - job: build_and_run
