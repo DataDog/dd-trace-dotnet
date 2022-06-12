@@ -306,8 +306,8 @@ module TracingIntegrationRules =
     let isWebRequest : MockSpan -> Result<MockSpan, string> =
         matches name "http.request"
         &&& matches ``type`` "http"
-        &&& tagIsPresent "component"
         &&& tagIsPresent "http.method"
         &&& tagIsPresent "http.status_code"
         &&& tagIsPresent "http.url"
+        &&& tagMatchesOneOf "component" [| "HttpMessageHandler"; "WebRequest" |]
         &&& tagMatches "span.kind" "client"

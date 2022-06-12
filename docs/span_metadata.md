@@ -476,7 +476,7 @@ Type | `http`
 ### Tags
 Name | Required |
 ---------|----------------|
-component | Yes
+component | `HttpMessageHandler`; `WebRequest`
 http.method | Yes
 http.status_code | Yes
 http.url | Yes
