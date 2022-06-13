@@ -56,7 +56,12 @@ module TracingIntegrationRules =
         &&& tagIsPresent "aspnet.route"
         &&& tagIsPresent "http.method"
         &&& tagIsPresent "http.request.headers.host"
-        // BUG: some test cases do not set http.status_code
+        // BUG: When WebApi2 throws an exception, we cannot immediately set the
+        // status code because the response hasn't been written yet.
+        // For ASP.NET, we register a callback to populate http.status_code
+        // when the request has completed, but on OWIN there is no such mechanism.
+        // What we should do is instrument OWIN and assert that that has the
+        // "http.status_code" tag
         // &&& tagIsPresent "http.status_code"
         &&& tagIsPresent "http.url"
         // BUG: component tag is not set
