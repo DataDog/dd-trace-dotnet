@@ -21,7 +21,8 @@ public class DatadogTestLogger : SpektTestLogger
     {
         try
         {
-            Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
+            Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.Enabled, "true", EnvironmentVariableTarget.Process);
+            Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.AgentlessEnabled, "true", EnvironmentVariableTarget.Process);
         }
         catch
         {

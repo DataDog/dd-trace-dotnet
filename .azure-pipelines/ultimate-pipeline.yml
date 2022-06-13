@@ -503,7 +503,6 @@ stages:
   dependsOn: [build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_CIVISIBILITY_AGENTLESS_ENABLED: true
     DD_API_KEY: $(ddApiKey)
   pool:
     vmImage: windows-2019
@@ -561,7 +560,6 @@ stages:
   dependsOn: [build_macos, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_CIVISIBILITY_AGENTLESS_ENABLED: true
     DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -598,7 +596,6 @@ stages:
   dependsOn: [build_linux_tracer, build_linux_profiler, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_CIVISIBILITY_AGENTLESS_ENABLED: true
     DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -686,7 +683,6 @@ stages:
   dependsOn: [build_arm64, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_CIVISIBILITY_AGENTLESS_ENABLED: true
     DD_API_KEY: $(ddApiKey)
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -730,7 +726,6 @@ stages:
   dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_CIVISIBILITY_AGENTLESS_ENABLED: true
     DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -801,7 +796,6 @@ stages:
   dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_CIVISIBILITY_AGENTLESS_ENABLED: true
     DD_API_KEY: $(ddApiKey)
 
   jobs:
@@ -902,7 +896,6 @@ stages:
   dependsOn: [build_windows_tracer, package_windows, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_CIVISIBILITY_AGENTLESS_ENABLED: true
     DD_API_KEY: $(ddApiKey)
 
   jobs:
@@ -982,7 +975,6 @@ stages:
   dependsOn: [package_linux, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_CIVISIBILITY_AGENTLESS_ENABLED: true
     DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1152,7 +1144,6 @@ stages:
   dependsOn: [package_linux, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_CIVISIBILITY_AGENTLESS_ENABLED: true
     DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1226,7 +1217,6 @@ stages:
     TestAllPackageVersions: true
     IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
     baseImage: debian
-    DD_CIVISIBILITY_AGENTLESS_ENABLED: true
     DD_API_KEY: $(ddApiKey)
 
   jobs:
@@ -1387,7 +1377,6 @@ stages:
   dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_CIVISIBILITY_AGENTLESS_ENABLED: true
     DD_API_KEY: $(ddApiKey)
 
   jobs:
@@ -1446,7 +1435,6 @@ stages:
   dependsOn: [package_linux, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_CIVISIBILITY_AGENTLESS_ENABLED: true
     DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1535,7 +1523,6 @@ stages:
   dependsOn: [build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_CIVISIBILITY_AGENTLESS_ENABLED: true
     DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1794,7 +1781,6 @@ stages:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
     runnerTool: $(System.DefaultWorkingDirectory)/$(relativeRunnerTool)
     runnerStandalone: $(System.DefaultWorkingDirectory)/$(relativeRunnerStandalone)
-    DD_CIVISIBILITY_AGENTLESS_ENABLED: true
     DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1853,7 +1839,6 @@ stages:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
     runnerTool: $(System.DefaultWorkingDirectory)/$(relativeRunnerTool)
     runnerStandalone: $(System.DefaultWorkingDirectory)/$(relativeRunnerStandalone)
-    DD_CIVISIBILITY_AGENTLESS_ENABLED: true
     DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -2443,7 +2428,6 @@ stages:
   dependsOn: [package_linux, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_CIVISIBILITY_AGENTLESS_ENABLED: true
     DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -2503,7 +2487,6 @@ stages:
   dependsOn: [package_linux, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_CIVISIBILITY_AGENTLESS_ENABLED: true
     DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -2621,7 +2604,6 @@ stages:
   dependsOn: [build_arm64, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_CIVISIBILITY_AGENTLESS_ENABLED: true
     DD_API_KEY: $(ddApiKey)
   jobs:
     - template: steps/update-github-status-jobs.yml
