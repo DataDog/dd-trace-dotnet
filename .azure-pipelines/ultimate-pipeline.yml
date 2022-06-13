@@ -1045,7 +1045,7 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=false IntegrationTests
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=false IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_API_KEY: $(ddApiKey)
@@ -1132,7 +1132,7 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=true IntegrationTests
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=true IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_API_KEY: $(ddApiKey)
@@ -1223,7 +1223,7 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e DD_API_KEY=$(DD_API_KEY) -e IncludeTestsRequiringDocker=false ProfilerIntegrationTests
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e DD_API_KEY=$(DD_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e IncludeTestsRequiringDocker=false ProfilerIntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_API_KEY: $(ddApiKey)
@@ -1291,7 +1291,7 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
+            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_API_KEY: $(ddApiKey)
@@ -1365,7 +1365,7 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
+            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_API_KEY: $(ddApiKey)
