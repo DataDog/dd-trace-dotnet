@@ -630,8 +630,6 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildAndRunManagedUnitTests --code-coverage"
-      env:
-        DD_API_KEY: $(ddApiKey)
 
     - publish: tracer/build_data
       artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
@@ -676,8 +674,6 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildAndRunNativeUnitTests"
-      env:
-        DD_API_KEY: $(ddApiKey)
 
     - task: PublishTestResults@2
       displayName: publish profiler test results
@@ -714,8 +710,6 @@ stages:
             build: true
             baseImage: debian
             command: "BuildAndRunManagedUnitTests"
-          env:
-            DD_API_KEY: $(ddApiKey)
 
         - publish: tracer/build_data
           artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
@@ -1021,8 +1015,6 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false"
-      env:
-        DD_API_KEY: $(ddApiKey)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
@@ -1093,8 +1085,6 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true"
-      env:
-        DD_API_KEY: $(ddApiKey)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home for serverless
@@ -1206,8 +1196,6 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildProfilerLinuxIntegrationTests"
-      env:
-        DD_API_KEY: $(ddApiKey)
 
     - task: DockerCompose@0
       displayName: docker-compose run --no-deps ProfilerIntegrationTests
@@ -1273,8 +1261,6 @@ stages:
             build: true
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false"
-          env:
-            DD_API_KEY: $(ddApiKey)
 
         - task: DockerCompose@0
           displayName: docker-compose run --no-deps IntegrationTests
@@ -1504,8 +1490,6 @@ stages:
         build: false
         baseImage: $(baseImage)
         command: "SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) --explorationTestName $(explorationTestName) --framework $(publishTargetFramework)"
-      env:
-        DD_API_KEY: $(ddApiKey)
 
     - task: DockerCompose@0
       displayName: docker-compose build ExplorationTests
@@ -1930,15 +1914,11 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildAndRunToolArtifactTests --ToolSource /project/$(relativeRunnerTool)"
-      env:
-        DD_API_KEY: $(ddApiKey)
 
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
         command: "RunToolArtifactTests --ToolDestination /project/$(relativeRunnerStandalone)"
-      env:
-        DD_API_KEY: $(ddApiKey)
 
     - task: PublishTestResults@2
       displayName: publish test results
