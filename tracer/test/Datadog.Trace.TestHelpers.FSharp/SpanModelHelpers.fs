@@ -38,21 +38,21 @@ module SpanModelHelpers =
     let sprintMatchesOneOfFailure propertyKind propertyName expectedValue actualValue = sprintf "%s \"%s\" was expected to have one of the following values %s, but the value is \"%s\"" propertyKind propertyName expectedValue actualValue
 
     // Comparison functions
-    let isOptional result (span: MockSpan) =
+    let isOptional result span =
         match result with
         | _ -> Success span
 
-    let isPresent result failureString (span: MockSpan) =
+    let isPresent result failureString span =
         match result with
         | null -> Failure failureString
         | _ -> Success span
 
-    let matches expectedValue result sprintFailureString (span: MockSpan) =
+    let matches expectedValue result sprintFailureString span =
         match result with
         | actualValue when actualValue <> expectedValue -> Failure (sprintFailureString actualValue)
         | _ -> Success span
 
-    let matchesOneOf (expectedValueArray: string[]) result sprintFailureString (span: MockSpan) =
+    let matchesOneOf (expectedValueArray: string[]) result sprintFailureString span =
         match expectedValueArray |> Array.tryFind (fun elm -> elm = result) with
             | Some _ -> Success span
             | None -> Failure (sprintFailureString result)
