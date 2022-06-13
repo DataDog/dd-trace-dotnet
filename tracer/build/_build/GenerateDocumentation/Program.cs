@@ -230,17 +230,12 @@ namespace GenerateDocumentation
                     return parts[0] switch
                     {
                         null => Unknown,
-                        "isPresent" => new Requirement
-                            {
-                                Property = $"{Capitalize(parts[1])}",
-                                RequiredValue = $"Yes",
-                            },
-                        "matches" => new Requirement
+                        "propertyMatches" => new Requirement
                             {
                                 Property = $"{Capitalize(parts[1])}",
                                 RequiredValue = $"`{parts[2]}`",
                             },
-                        "matchesOneOf" => new Requirement
+                        "propertyMatchesOneOf" => new Requirement
                             {
                                 Property = $"{parts[1]}",
                                 PropertyType = PropertyType.Tag,

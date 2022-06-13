@@ -30,40 +30,46 @@ module SpanModelHelpers =
     let stringJoinWithComma (values: string[]) = System.String.Join(", ", values)
 
     // Comparison functions
-    let tagIsPresent tagName (span: MockSpan) =
-        match span.GetTag tagName with
-        | null -> Failure $"Tag \"{tagName}\" was expected to be present, but the tag is missing"
+    let isOptional result propertyKind propertyName (span: MockSpan) =
+        match result with
         | _ -> Success span
+
+    let isPresent result propertyKind propertyName (span: MockSpan) =
+        match result with
+        | null -> Failure $"{propertyKind} \"{propertyName}\" was expected to be present, but the {propertyKind} value is null"
+        | _ -> Success span
+
+    let matches result propertyKind propertyName expectedValue (span: MockSpan) =
+        match result with
+        | value when value <> expectedValue -> Failure $"{propertyKind} \"{propertyName}\" was expected to have value \"{expectedValue}\", but the {propertyKind} value is \"{value}\""
+        | _ -> Success span
+
+    let matchesOneOf result propertyKind propertyName (expectedValueArray: string[]) (span: MockSpan) =
+        match expectedValueArray |> Array.tryFind (fun elm -> elm = result) with
+            | Some _ -> Success span
+            | None -> Failure ($"{propertyKind} \"{propertyName}\" was expected to have one of the following values [" + (expectedValueArray |> Array.map surroundStringWithQuotes |> stringJoinWithComma) + $"], but the {propertyKind} value is \"{result}\"")
+    
+    // DSL functions for easier parsing and documentation generation
+    let propertyIsPresent extractProperty (span: MockSpan) =
+        let (propertyName, result) = extractProperty span
+        isPresent result "property" propertyName span
+
+    let propertyMatches extractProperty (expectedValue: string) (span:MockSpan) =
+        let (propertyName, result) = extractProperty span
+        matches result "property" propertyName expectedValue span
+
+    let propertyMatchesOneOf extractProperty (expectedValueArray: string[]) (span:MockSpan) =
+        let (propertyName, result) = extractProperty span
+        matchesOneOf result "property" propertyName expectedValueArray span
 
     let tagIsOptional tagName (span: MockSpan) =
-        match span.GetTag tagName with
-        | _ -> Success span
-            
-    let tagMatches tagName expectedValue (span: MockSpan) =
-        match span.GetTag tagName with
-        | null -> Failure $"Tag \"{tagName}\" was expected to have value \"{expectedValue}\", but the tag is missing"
-        | value when value <> expectedValue -> Failure $"Tag \"{tagName}\" was expected to have value \"{expectedValue}\", but the tag value is \"{value}\""
-        | _ -> Success span
+        isOptional (span.GetTag tagName) "tag" tagName span
+
+    let tagIsPresent tagName (span: MockSpan) =
+        isPresent (span.GetTag tagName) "tag" tagName span
+
+    let tagMatches tagName (expectedValue: string) (span:MockSpan) =
+        matches (span.GetTag tagName) "tag" tagName expectedValue span
 
     let tagMatchesOneOf tagName (expectedValueArray: string[]) (span: MockSpan) =
-        let value = span.GetTag tagName
-        match expectedValueArray |> Array.tryFind (fun elm -> elm = value) with
-            | Some result -> Success span
-            | None -> Failure ($"Tag \"{tagName}\" has value \"{value}\" but was expected to have one of the following values: " + (expectedValueArray |> Array.map surroundStringWithQuotes |> stringJoinWithComma))
-
-    let isPresent extractProperty (span: MockSpan) =
-        match extractProperty span with
-        | (propertyName, "") -> Failure $"Property \"{propertyName}\" was expected to be present, but the property is empty"
-        | (propertyName, null) -> Failure $"Property \"{propertyName}\" was expected to be present, but the property is null"
-        | (_, _) -> Success span
-
-    let matches extractProperty (expectedValue: string) (span:MockSpan) =
-        match extractProperty span with
-        | (propertyName, value) when value <> expectedValue -> Failure $"Property \"{propertyName}\" was expected to have value \"{expectedValue}\", but the property is \"{value}\""
-        | (_, _) -> Success span
-
-    let matchesOneOf extractProperty (expectedValueArray: string[]) (span:MockSpan) =
-        let (propertyName, value) = extractProperty span
-        match expectedValueArray |> Array.tryFind (fun elm -> elm = value) with
-        | Some result -> Success span
-        | None -> Failure ($"Property \"{propertyName}\" has value \"{value}\" but was expected to have one of the following values: " + (expectedValueArray |> Array.map surroundStringWithQuotes |> stringJoinWithComma))
+        matchesOneOf (span.GetTag tagName) "tag" tagName expectedValueArray span
