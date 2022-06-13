@@ -63,16 +63,7 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
         {
             foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes)
             {
-                IMethodSymbol? attributeSymbol = context.SemanticModel.GetSymbolInfo(attributeSyntax).Symbol as IMethodSymbol;
-                if (attributeSymbol is null)
-                {
-                    continue;
-                }
-
-                INamedTypeSymbol attributeContainingTypeSymbol = attributeSymbol.ContainingType;
-                string fullName = attributeContainingTypeSymbol.ToDisplayString();
-
-                if (fullName == Constants.InstrumentAttribute || fullName == Constants.AdoNetTargetSignatureAttribute)
+                if (attributeSyntax.Name.ToString() is "InstrumentMethod" or "InstrumentMethodAttribute" or "AdoNetTargetSignatureAttribute" or "AdoNetTargetSignature")
                 {
                     return classDeclarationSyntax;
                 }
