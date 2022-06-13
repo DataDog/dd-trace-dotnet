@@ -525,6 +525,8 @@ stages:
         displayName: Build and Test
         env:
           DD_API_KEY: $(ddApiKey)
+          DD_SERVICE: dd-trace-dotnet
+          DD_ENV: CI
 
       - publish: tracer/build_data
         artifact: profiler-logs_unit_tests_windows_$(System.JobAttempt)
@@ -551,6 +553,8 @@ stages:
         displayName: Build and Test
         env:
           DD_API_KEY: $(ddApiKey)
+          DD_SERVICE: dd-trace-dotnet
+          DD_ENV: CI
 
       - task: PublishTestResults@2
         displayName: publish test results
@@ -584,6 +588,8 @@ stages:
         displayName: Build and Test
         env:
           DD_API_KEY: $(ddApiKey)
+          DD_SERVICE: dd-trace-dotnet
+          DD_ENV: CI
 
       - publish: tracer/build_data
         artifact: profiler-logs_unit_tests_macos_$(System.JobAttempt)
@@ -773,6 +779,8 @@ stages:
       displayName: Run integration tests
       env:
         DD_API_KEY: $(ddApiKey)
+        DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -830,6 +838,8 @@ stages:
       displayName: RunWindowsIisTracerIntegrationTests
       env:
         DD_API_KEY: $(ddApiKey)
+        DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -875,7 +885,9 @@ stages:
     - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsSecurityIisIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisSecurityIntegrationTests
       env:
-        DD_API_KEY: $(ddApiKey)      
+        DD_API_KEY: $(ddApiKey)
+        DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -949,6 +961,8 @@ stages:
       displayName: RunWindowsIisIntegrationTests
       env:
         DD_API_KEY: $(ddApiKey)
+        DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1035,6 +1049,8 @@ stages:
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_API_KEY: $(ddApiKey)
+        DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
 
     - publish: tracer/build_data
       artifact: integration_tests_linux_tracer_logs_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
@@ -1120,6 +1136,8 @@ stages:
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_API_KEY: $(ddApiKey)
+        DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -1209,6 +1227,8 @@ stages:
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_API_KEY: $(ddApiKey)
+        DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
 
     - publish: profiler/build_data
       artifact: continuous-profiler-logs_integration_tests_linux_$(baseImage)_$(System.JobAttempt)
@@ -1274,7 +1294,9 @@ stages:
             dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
           env:
-            DD_API_KEY: $(ddApiKey)            
+            DD_API_KEY: $(ddApiKey)
+            DD_SERVICE: dd-trace-dotnet
+            DD_ENV: CI
 
         - publish: tracer/build_data
           artifact: integration_tests_linux_tracer_logs_arm64_$(publishTargetFramework)_$(System.JobAttempt)
@@ -1347,6 +1369,8 @@ stages:
             projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_API_KEY: $(ddApiKey)
+            DD_SERVICE: dd-trace-dotnet
+            DD_ENV: CI
 
         - task: DockerCompose@0
           displayName: docker-compose stop services
@@ -1428,6 +1452,8 @@ stages:
       displayName: RunExplorationTest
       env:
         DD_API_KEY: $(ddApiKey)
+        DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
 
     - publish: tracer/build_data
       displayName: Uploading exploration_tests_windows tracer logs
@@ -1839,11 +1865,15 @@ stages:
       displayName: Build and Test tool
       env:
         DD_API_KEY: $(ddApiKey)
+        DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
 
     - script: tracer\build.cmd RunToolArtifactTests --ToolDestination $(runnerStandalone)
       displayName: Test standalone
       env:
         DD_API_KEY: $(ddApiKey)
+        DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
 
     - task: PublishTestResults@2
       displayName: publish test results
