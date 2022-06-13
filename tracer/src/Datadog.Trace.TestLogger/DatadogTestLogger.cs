@@ -17,21 +17,6 @@ namespace Datadog.Trace.TestLogger;
 [ExtensionUri("logger://Microsoft/TestPlatform/DatadogTestLogger/v1")]
 public class DatadogTestLogger : SpektTestLogger
 {
-    static DatadogTestLogger()
-    {
-        try
-        {
-            Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.Enabled, "true", EnvironmentVariableTarget.Process);
-            Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.AgentlessEnabled, "true", EnvironmentVariableTarget.Process);
-        }
-        catch
-        {
-            // .
-        }
-
-        CIVisibility.Initialize();
-    }
-
     /// <summary>
     /// Initializes a new instance of the <see cref="DatadogTestLogger"/> class.
     /// </summary>

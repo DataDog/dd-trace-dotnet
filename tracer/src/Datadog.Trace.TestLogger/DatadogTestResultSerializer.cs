@@ -20,6 +20,18 @@ internal class DatadogTestResultSerializer : ITestResultSerializer
 {
     public string Serialize(LoggerConfiguration loggerConfiguration, TestRunConfiguration runConfiguration, List<TestResultInfo> results, List<TestMessageInfo> messages)
     {
+        try
+        {
+            Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.Enabled, "true", EnvironmentVariableTarget.Process);
+            Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.AgentlessEnabled, "true", EnvironmentVariableTarget.Process);
+        }
+        catch
+        {
+            // .
+        }
+
+        CIVisibility.Initialize();
+
         var framework = FrameworkDescription.Instance;
 
         string runtimeName = string.Empty;
