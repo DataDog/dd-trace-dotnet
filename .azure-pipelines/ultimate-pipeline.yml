@@ -503,7 +503,6 @@ stages:
   dependsOn: [build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_API_KEY: $(ddApiKey)
   pool:
     vmImage: windows-2019
   jobs:
@@ -522,6 +521,8 @@ stages:
 
       - script: tracer\build.cmd BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
+        env:
+          DD_API_KEY: $(ddApiKey)
 
       - publish: tracer/build_data
         artifact: profiler-logs_unit_tests_windows_$(System.JobAttempt)
@@ -546,6 +547,8 @@ stages:
 
       - script: tracer\build.cmd BuildAndRunNativeUnitTests
         displayName: Build and Test
+        env:
+          DD_API_KEY: $(ddApiKey)
 
       - task: PublishTestResults@2
         displayName: publish test results
@@ -560,7 +563,6 @@ stages:
   dependsOn: [build_macos, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -578,6 +580,8 @@ stages:
 
       - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
+        env:
+          DD_API_KEY: $(ddApiKey)
 
       - publish: tracer/build_data
         artifact: profiler-logs_unit_tests_macos_$(System.JobAttempt)
@@ -596,7 +600,6 @@ stages:
   dependsOn: [build_linux_tracer, build_linux_profiler, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -627,6 +630,8 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildAndRunManagedUnitTests --code-coverage"
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - publish: tracer/build_data
       artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
@@ -671,6 +676,8 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildAndRunNativeUnitTests"
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - task: PublishTestResults@2
       displayName: publish profiler test results
@@ -683,7 +690,6 @@ stages:
   dependsOn: [build_arm64, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_API_KEY: $(ddApiKey)
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -708,6 +714,8 @@ stages:
             build: true
             baseImage: debian
             command: "BuildAndRunManagedUnitTests"
+          env:
+            DD_API_KEY: $(ddApiKey)
 
         - publish: tracer/build_data
           artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
@@ -726,7 +734,6 @@ stages:
   dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -768,6 +775,8 @@ stages:
 
     - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --code-coverage
       displayName: Run integration tests
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -796,7 +805,6 @@ stages:
   dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_API_KEY: $(ddApiKey)
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -824,6 +832,8 @@ stages:
 
     - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisTracerIntegrationTests
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -868,6 +878,8 @@ stages:
 
     - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsSecurityIisIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisSecurityIntegrationTests
+      env:
+        DD_API_KEY: $(ddApiKey)      
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -896,7 +908,6 @@ stages:
   dependsOn: [build_windows_tracer, package_windows, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_API_KEY: $(ddApiKey)
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -940,6 +951,8 @@ stages:
 
     - script: tracer\build.cmd RunWindowsMsiIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisIntegrationTests
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -975,7 +988,6 @@ stages:
   dependsOn: [package_linux, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1009,6 +1021,8 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false"
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
@@ -1023,8 +1037,10 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=false IntegrationTests
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=false IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - publish: tracer/build_data
       artifact: integration_tests_linux_tracer_logs_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
@@ -1077,6 +1093,8 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true"
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home for serverless
@@ -1106,8 +1124,10 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=true IntegrationTests
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=true IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -1144,7 +1164,6 @@ stages:
   dependsOn: [package_linux, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1187,6 +1206,8 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildProfilerLinuxIntegrationTests"
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - task: DockerCompose@0
       displayName: docker-compose run --no-deps ProfilerIntegrationTests
@@ -1194,8 +1215,10 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e IncludeTestsRequiringDocker=false ProfilerIntegrationTests
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e DD_API_KEY=$(DD_API_KEY) -e IncludeTestsRequiringDocker=false ProfilerIntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - publish: profiler/build_data
       artifact: continuous-profiler-logs_integration_tests_linux_$(baseImage)_$(System.JobAttempt)
@@ -1217,7 +1240,6 @@ stages:
     TestAllPackageVersions: true
     IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
     baseImage: debian
-    DD_API_KEY: $(ddApiKey)
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -1251,6 +1273,8 @@ stages:
             build: true
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false"
+          env:
+            DD_API_KEY: $(ddApiKey)
 
         - task: DockerCompose@0
           displayName: docker-compose run --no-deps IntegrationTests
@@ -1259,8 +1283,10 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
+            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
+          env:
+            DD_API_KEY: $(ddApiKey)            
 
         - publish: tracer/build_data
           artifact: integration_tests_linux_tracer_logs_arm64_$(publishTargetFramework)_$(System.JobAttempt)
@@ -1329,8 +1355,10 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
+            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
+          env:
+            DD_API_KEY: $(ddApiKey)
 
         - task: DockerCompose@0
           displayName: docker-compose stop services
@@ -1377,7 +1405,6 @@ stages:
   dependsOn: [build_windows_tracer, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_API_KEY: $(ddApiKey)
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1411,6 +1438,8 @@ stages:
 
     - script: tracer\build.cmd RunExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
       displayName: RunExplorationTest
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - publish: tracer/build_data
       displayName: Uploading exploration_tests_windows tracer logs
@@ -1435,7 +1464,6 @@ stages:
   dependsOn: [package_linux, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1476,6 +1504,8 @@ stages:
         build: false
         baseImage: $(baseImage)
         command: "SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) --explorationTestName $(explorationTestName) --framework $(publishTargetFramework)"
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - task: DockerCompose@0
       displayName: docker-compose build ExplorationTests
@@ -1491,6 +1521,7 @@ stages:
       displayName: docker-compose run ExplorationTests
       env:
         azdo_network: $(agent.containernetwork)
+        DD_API_KEY: $(ddApiKey)
       inputs:
         containerregistrytype: Container Registry
         additionalDockerComposeFiles: docker-compose.ci.azdo.yml
@@ -1499,7 +1530,7 @@ stages:
           framework=$(publishTargetFramework)
           explorationTestUseCase=$(explorationTestUseCase)
           explorationTestName=$(explorationTestName)
-        dockerComposeCommand: run --rm -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) ExplorationTests
+        dockerComposeCommand: run --rm -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) ExplorationTests
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -1523,7 +1554,6 @@ stages:
   dependsOn: [build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1781,7 +1811,6 @@ stages:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
     runnerTool: $(System.DefaultWorkingDirectory)/$(relativeRunnerTool)
     runnerStandalone: $(System.DefaultWorkingDirectory)/$(relativeRunnerStandalone)
-    DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1822,9 +1851,13 @@ stages:
 
     - script: tracer\build.cmd BuildAndRunToolArtifactTests --ToolSource $(runnerTool)
       displayName: Build and Test tool
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - script: tracer\build.cmd RunToolArtifactTests --ToolDestination $(runnerStandalone)
       displayName: Test standalone
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1839,7 +1872,6 @@ stages:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
     runnerTool: $(System.DefaultWorkingDirectory)/$(relativeRunnerTool)
     runnerStandalone: $(System.DefaultWorkingDirectory)/$(relativeRunnerStandalone)
-    DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1898,11 +1930,15 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildAndRunToolArtifactTests --ToolSource /project/$(relativeRunnerTool)"
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
         command: "RunToolArtifactTests --ToolDestination /project/$(relativeRunnerStandalone)"
+      env:
+        DD_API_KEY: $(ddApiKey)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -2428,7 +2464,6 @@ stages:
   dependsOn: [package_linux, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -2487,7 +2522,6 @@ stages:
   dependsOn: [package_linux, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_API_KEY: $(ddApiKey)
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -2542,6 +2576,7 @@ stages:
         docker-compose -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) smoke-tests
       env:
         dockerTag: $(dockerTag)
+        DD_API_KEY: $(ddApiKey)
       displayName: docker-compose run smoke-tests
 
     - script: |
@@ -2604,7 +2639,6 @@ stages:
   dependsOn: [build_arm64, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_API_KEY: $(ddApiKey)
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -2656,6 +2690,7 @@ stages:
             docker-compose -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) smoke-tests
           env:
             dockerTag: $(dockerTag)
+            DD_API_KEY: $(ddApiKey)
           displayName: docker-compose run smoke-tests
 
         - script: |
