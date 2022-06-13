@@ -235,11 +235,6 @@ namespace GenerateDocumentation
                                 Property = $"{Capitalize(parts[1])}",
                                 RequiredValue = $"Yes",
                             },
-                        "isPresentAndNonZero" => new Requirement
-                            {
-                                Property = $"{Capitalize(parts[1])}",
-                                RequiredValue = $"Yes, _non-zero value_",
-                            },
                         "matches" => new Requirement
                             {
                                 Property = $"{Capitalize(parts[1])}",
@@ -274,18 +269,6 @@ namespace GenerateDocumentation
                                 Property = $"{parts[1]}",
                                 PropertyType = PropertyType.Tag,
                                 RequiredValue = string.Join("; ", parts.Skip(2).Select(s => $"`{s}`")),
-                            },
-                        "metricIsPresent" => new Requirement
-                            {
-                                Property = $"{parts[1]}",
-                                PropertyType = PropertyType.Metric,
-                                RequiredValue = "Yes",
-                            },
-                        "metricMatches" => new Requirement
-                            {
-                                Property = $"{parts[1]}",
-                                PropertyType = PropertyType.Metric,
-                                RequiredValue = $"`{parts[2]}`",
                             },
                         _ => throw new Exception($"Requirement {parts[0]} not recognized"),
                     };
