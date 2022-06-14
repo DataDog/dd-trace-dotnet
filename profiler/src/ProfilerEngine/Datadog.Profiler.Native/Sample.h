@@ -56,7 +56,7 @@ static constexpr size_t array_size = sizeof(SampleTypeDefinitions) / sizeof(Samp
 //---------------------------------------------------------------
 
 typedef std::array<int64_t, array_size> Values;
-typedef std::pair<std::string, std::string> Label; // TODO: use stringview to avoid copy
+typedef std::pair<std::string_view, std::string> Label; // TODO: use stringview to avoid copy
 typedef std::list<Label> Labels;
 typedef std::vector<std::pair<std::string_view, std::string_view>> CallStack;
 
