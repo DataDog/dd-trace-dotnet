@@ -1224,12 +1224,8 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e IncludeTestsRequiringDocker=false ProfilerIntegrationTests
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e IncludeTestsRequiringDocker=false ProfilerIntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
-      env:
-        DD_LOGGER_API_KEY: $(ddApiKey)
-        DD_SERVICE: dd-trace-dotnet
-        DD_ENV: CI
 
     - publish: profiler/build_data
       artifact: continuous-profiler-logs_integration_tests_linux_$(baseImage)_$(System.JobAttempt)
