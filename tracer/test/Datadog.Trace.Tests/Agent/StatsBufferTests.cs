@@ -142,7 +142,7 @@ namespace Datadog.Trace.Tests.Agent
             group.Errors.Should().Be(expectedBucket.Errors);
             group.Duration.Should().Be(expectedBucket.Duration);
             group.Synthetics.Should().Be(expectedKey.IsSyntheticsRequest);
-            group.TopLevelhits.Should().Be(expectedBucket.TopLevelHits);
+            group.TopLevelHits.Should().Be(expectedBucket.TopLevelHits);
 
             var stream = new MemoryStream();
             expectedBucket.ErrorSummary.Serialize(stream);

@@ -101,7 +101,7 @@ namespace Datadog.Trace.IntegrationTests
                 group.Name.Should().Be(span.OperationName);
                 group.OkSummary.Should().NotBeEmpty();
                 group.Synthetics.Should().Be(false);
-                group.TopLevelhits.Should().Be(1);
+                group.TopLevelHits.Should().Be(1);
                 group.Type.Should().Be(span.Type);
             }
 

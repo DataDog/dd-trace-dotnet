@@ -47,5 +47,5 @@ public class MockClientGroupedStats
     public bool Synthetics { get; set; }
 
     [Key("TopLevelHits")]
-    public long TopLevelhits { get; set; }
+    public long TopLevelHits { get; set; }
 }
