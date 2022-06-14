@@ -1046,7 +1046,7 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=false IntegrationTests
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e TF_BUILD -e BUILD_DEFINITIONNAME -e BUILD_BUILDID -e BUILD_SOURCESDIRECTORY -e BUILD_REPOSITORY_URI -e BUILD_SOURCEBRANCH -e BUILD_SOURCEVERSION -e SYSTEM_TEAMFOUNDATIONSERVERURI -e SYSTEM_TEAMPROJECT -e SYSTEM_TEAMPROJECTID -e SYSTEM_JOBID -e SYSTEM_TASKINSTANCEID -e SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI -e SYSTEM_PULLREQUEST_SOURCEBRANCH -e SYSTEM_PULLREQUEST_SOURCECOMMITID -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=false IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_API_KEY: $(ddApiKey)
@@ -1133,7 +1133,7 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=true IntegrationTests
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e TF_BUILD -e BUILD_DEFINITIONNAME -e BUILD_BUILDID -e BUILD_SOURCESDIRECTORY -e BUILD_REPOSITORY_URI -e BUILD_SOURCEBRANCH -e BUILD_SOURCEVERSION -e SYSTEM_TEAMFOUNDATIONSERVERURI -e SYSTEM_TEAMPROJECT -e SYSTEM_TEAMPROJECTID -e SYSTEM_JOBID -e SYSTEM_TASKINSTANCEID -e SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI -e SYSTEM_PULLREQUEST_SOURCEBRANCH -e SYSTEM_PULLREQUEST_SOURCECOMMITID -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=true IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_API_KEY: $(ddApiKey)
@@ -1288,7 +1288,7 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
+            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e TF_BUILD -e BUILD_DEFINITIONNAME -e BUILD_BUILDID -e BUILD_SOURCESDIRECTORY -e BUILD_REPOSITORY_URI -e BUILD_SOURCEBRANCH -e BUILD_SOURCEVERSION -e SYSTEM_TEAMFOUNDATIONSERVERURI -e SYSTEM_TEAMPROJECT -e SYSTEM_TEAMPROJECTID -e SYSTEM_JOBID -e SYSTEM_TASKINSTANCEID -e SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI -e SYSTEM_PULLREQUEST_SOURCEBRANCH -e SYSTEM_PULLREQUEST_SOURCECOMMITID -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_LOGGER_API_KEY: $(ddApiKey)
@@ -1362,7 +1362,7 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
+            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e TF_BUILD -e BUILD_DEFINITIONNAME -e BUILD_BUILDID -e BUILD_SOURCESDIRECTORY -e BUILD_REPOSITORY_URI -e BUILD_SOURCEBRANCH -e BUILD_SOURCEVERSION -e SYSTEM_TEAMFOUNDATIONSERVERURI -e SYSTEM_TEAMPROJECT -e SYSTEM_TEAMPROJECTID -e SYSTEM_JOBID -e SYSTEM_TASKINSTANCEID -e SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI -e SYSTEM_PULLREQUEST_SOURCEBRANCH -e SYSTEM_PULLREQUEST_SOURCECOMMITID -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_LOGGER_API_KEY: $(ddApiKey)
