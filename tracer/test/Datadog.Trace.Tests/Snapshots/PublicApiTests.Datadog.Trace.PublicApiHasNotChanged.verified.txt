@@ -198,9 +198,11 @@ namespace Datadog.Trace
     }
     public static class HttpHeaderNames
     {
+        [System.Obsolete("Use PropagatedTags.", false)]
         public const string DatadogTags = "x-datadog-tags";
         public const string Origin = "x-datadog-origin";
         public const string ParentId = "x-datadog-parent-id";
+        public const string PropagatedTags = "x-datadog-tags";
         public const string SamplingPriority = "x-datadog-sampling-priority";
         public const string TraceId = "x-datadog-trace-id";
         public const string TracingEnabled = "x-datadog-tracing-enabled";
