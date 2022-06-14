@@ -15,6 +15,7 @@
 #include <mutex>
 #include <signal.h>
 #include <atomic>
+#include <unordered_map>
 
 class IManagedThreadList;
 
@@ -41,6 +42,8 @@ private:
     void InitializeSignalHandler();
     bool SetupSignalHandler();
     void NotifyStackWalkCompleted(std::int32_t resultErrorCode);
+    void UpdateStackwalkingStats(std::int32_t errorCode);
+    void PrintStatistics(std::unordered_map<std::int32_t, std::int32_t>& errorStats);
 
 
     std::int32_t _lastStackWalkErrorCode;

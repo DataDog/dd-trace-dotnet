@@ -9,6 +9,7 @@
 #include <mutex>
 #include <signal.h>
 #include <sys/syscall.h>
+#include <unordered_map>
 
 #include <libunwind-x86_64.h>
 
@@ -43,6 +44,55 @@ LinuxStackFramesCollector::~LinuxStackFramesCollector()
 bool IsThreadAlive(::pid_t processId, ::pid_t threadId)
 {
     return syscall(SYS_tgkill, processId, threadId, 0) == 0;
+}
+
+void LinuxStackFramesCollector::PrintStatistics(std::unordered_map<std::int32_t, std::int32_t>& errorStats)
+{
+    static std::time_t PreviousPrintTimestamp = 0;
+    static const std::int64_t TimeIntervalInSeconds = 600;
+
+    time_t currentTime;
+    time(&currentTime);
+
+    if (currentTime == static_cast<time_t>(-1))
+    {
+        return;
+    }
+
+    if (currentTime - PreviousPrintTimestamp < TimeIntervalInSeconds)
+    {
+        return;
+    }
+
+    PreviousPrintTimestamp = currentTime;
+
+    std::stringstream ss;
+    bool hasErrors = false;
+    for (auto& errorCodeAndStats : errorStats)
+    {
+        ss << "   " <<  ErrorCodeToString(errorCodeAndStats.first) << " (" << errorCodeAndStats.first << "): " << errorCodeAndStats.second << "\n";
+        hasErrors = true;
+    }
+
+    if (hasErrors)
+    {
+        Log::Info("LinuxStackFramesCollector::CollectStackSampleImplementation: The sampler thread encoutered errors in the last ", TimeIntervalInSeconds, "s\n", ss.str());
+        errorStats.clear();
+    }
+}
+
+void LinuxStackFramesCollector::UpdateStackwalkingStats(std::int32_t errorCode)
+{
+    //                        v- error code v- # of errors
+    static std::unordered_map<std::int32_t, std::int32_t> ErrorStatistics;
+
+    if (Log::IsDebugEnabled())
+    {
+        auto& value = ErrorStatistics[errorCode];
+        value++;
+
+        PrintStatistics(ErrorStatistics);
+    }
 }
 
 StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
@@ -119,11 +169,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
     // * == 0 : success
     if (errorCode < 0)
     {
-        Log::Info("LinuxStackFramesCollector::CollectStackSampleImplementation:"
-                  " A problem occured while collecting a stack sample:",
-                  " ", ErrorCodeToString(errorCode), " (", errorCode, ").",
-                  " The stack sample collection may have been aborted, and the sample may",
-                  " be invalid, however the execution will continue normally.");
+        UpdateStackwalkingStats(errorCode);
     }
 
     *pHR = (errorCode == 0) ? S_OK : E_FAIL;
