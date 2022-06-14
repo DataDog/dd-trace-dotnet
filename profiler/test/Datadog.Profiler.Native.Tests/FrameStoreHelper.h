@@ -12,7 +12,7 @@ public:
 
 public:
     // Inherited via IFrameStore
-    std::tuple<bool, std::string, std::string> GetFrame(uintptr_t instructionPointer) override;
+    std::tuple<bool, std::string_view, std::string_view> GetFrame(uintptr_t instructionPointer) override;
 
 private:
     std::unordered_map<uintptr_t, std::tuple<bool, std::string, std::string>> _mapping;
