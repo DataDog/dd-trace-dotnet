@@ -10,10 +10,11 @@
 #include "ProviderBase.h"
 #include "Sample.h"
 
-Sample GetTestSample(std::string_view runtimeId, const std::string& framePrefix, const std::string& labelId, const std::string& labelValue)
+Sample GetTestSample(std::string_view runtimeId, const std::string& framePrefix, std::string_view labelId, const std::string& labelValue)
 {
     static std::string ModuleName = "module";
     static std::forward_list<std::string> FunctionsCache;
+
 
     Sample sample{runtimeId};
     // wall values
@@ -56,7 +57,7 @@ void ValidateTestSample(const Sample& sample, const std::string& framePrefix, co
     //    ExceptionCount
     // --> should be increased when a new profiler is added
     //     this is a good reminder to add dedicated tests  :^)
-    auto values = sample.GetValues();
+    auto& values = sample.GetValues();
     ASSERT_EQ(3, values.size());
 
     for (size_t current = 0; current < 3; current++)
