@@ -76,7 +76,9 @@ void LinuxStackFramesCollector::PrintStatistics(std::unordered_map<std::int32_t,
 
     if (hasErrors)
     {
-        Log::Info("LinuxStackFramesCollector::CollectStackSampleImplementation: The sampler thread encoutered errors in the last ", TimeIntervalInSeconds, "s\n", ss.str());
+        Log::Info("LinuxStackFramesCollector::CollectStackSampleImplementation: The sampler thread encoutered errors in the last ", TimeIntervalInSeconds, "s\n",
+                  "Below, we print for each error code the message, the code in parentheses and the number of times we encountered it.\n",
+                  ss.str());
         errorStats.clear();
     }
 }
