@@ -32,7 +32,7 @@ namespace Datadog.Trace.Agent
         private readonly Uri _statsEndpoint;
         private readonly Action<Dictionary<string, float>> _updateSampleRates;
         private readonly bool _partialFlushEnabled;
-        private readonly bool _tracerStatsEnabled;
+        private readonly bool _statsComputationEnabled;
         private readonly SendCallback<SendStatsState> _sendStats;
         private readonly SendCallback<SendTracesState> _sendTraces;
         private string _cachedResponse;
@@ -43,7 +43,7 @@ namespace Datadog.Trace.Agent
             IDogStatsd statsd,
             Action<Dictionary<string, float>> updateSampleRates,
             bool partialFlushEnabled,
-            bool tracerStatsEnabled,
+            bool statsComputationEnabled,
             IDatadogLogger log = null)
         {
             // optionally injecting a log instance in here for testing purposes
@@ -59,8 +59,8 @@ namespace Datadog.Trace.Agent
             _tracesEndpoint = _apiRequestFactory.GetEndpoint(TracesPath);
             _log.Debug("Using traces endpoint {TracesEndpoint}", _tracesEndpoint.ToString());
             _statsEndpoint = _apiRequestFactory.GetEndpoint(StatsPath);
-            _log.Debug("Using trace stats endpoint {TraceStatsEndpoint}", _statsEndpoint.ToString());
-            _tracerStatsEnabled = tracerStatsEnabled;
+            _log.Debug("Using stats endpoint {StatsEndpoint}", _statsEndpoint.ToString());
+            _statsComputationEnabled = statsComputationEnabled;
         }
 
         private delegate Task<bool> SendCallback<T>(IApiRequest request, bool isFinalTry, T state);
@@ -245,9 +245,9 @@ namespace Datadog.Trace.Agent
                 request.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
             }
 
-            if (_tracerStatsEnabled)
+            if (_statsComputationEnabled)
             {
-                request.AddHeader(AgentHttpHeaderNames.TracerStats, "true");
+                request.AddHeader(AgentHttpHeaderNames.StatsComputation, "true");
             }
 
             try

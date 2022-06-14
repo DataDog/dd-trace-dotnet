@@ -29,7 +29,7 @@ namespace Datadog.Trace.IntegrationTests
 
             var settings = new TracerSettings
             {
-                TracerStatsEnabled = true,
+                StatsComputationEnabled = true,
                 ServiceVersion = "V",
                 Environment = "Test",
                 Exporter = new ExporterSettings

@@ -282,9 +282,9 @@ namespace Datadog.Trace.Configuration
         public const string ExpandRouteTemplatesEnabled = "DD_TRACE_EXPAND_ROUTE_TEMPLATES_ENABLED";
 
         /// <summary>
-        /// Configuration key for enabling computation of trace metrics (aka stats) on the tracer side
+        /// Configuration key for enabling computation of stats (aka trace metrics) on the tracer side
         /// </summary>
-        public const string TracerStatsEnabled = "DD_TRACE_TRACER_METRICS_ENABLED";
+        public const string StatsComputationEnabled = "DD_TRACE_STATS_COMPUTATION_ENABLED";
 
         /// <summary>
         /// Configuration key for setting the propagation style injection.

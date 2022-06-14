@@ -116,7 +116,7 @@ namespace Datadog.Trace.Configuration
                                    // default value
                                    false;
 
-            TracerStatsEnabled = source?.GetBool(ConfigurationKeys.TracerStatsEnabled) ?? false;
+            StatsComputationEnabled = source?.GetBool(ConfigurationKeys.StatsComputationEnabled) ?? false;
 
             RuntimeMetricsEnabled = source?.GetBool(ConfigurationKeys.RuntimeMetricsEnabled) ??
                                     false;
@@ -311,9 +311,9 @@ namespace Datadog.Trace.Configuration
         public bool TracerMetricsEnabled { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether metrics are computed on the tracer side
+        /// Gets or sets a value indicating whether stats are computed on the tracer side
         /// </summary>
-        public bool TracerStatsEnabled { get; set; }
+        public bool StatsComputationEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the use

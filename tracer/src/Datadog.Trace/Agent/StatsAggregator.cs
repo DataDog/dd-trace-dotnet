@@ -64,7 +64,7 @@ namespace Datadog.Trace.Agent
 
         public static IStatsAggregator Create(IApi api, ImmutableTracerSettings settings)
         {
-            return settings.TracerStatsEnabled ? new StatsAggregator(api, settings, TimeSpan.FromSeconds(BucketDurationSeconds)) : new NullStatsAggregator();
+            return settings.StatsComputationEnabled ? new StatsAggregator(api, settings, TimeSpan.FromSeconds(BucketDurationSeconds)) : new NullStatsAggregator();
         }
 
         public Task DisposeAsync()
