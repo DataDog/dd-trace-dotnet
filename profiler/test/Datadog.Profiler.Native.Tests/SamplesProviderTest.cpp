@@ -3,6 +3,7 @@
 
 #include "gtest/gtest.h"
 
+#include <forward_list>
 #include <sstream>
 #include <thread>
 
@@ -25,6 +26,9 @@ public:
 
 Sample GetTestSample(std::string_view runtimeId, const std::string& framePrefix, const std::string& labelId, const std::string& labelValue)
 {
+    static std::string ModuleName = "module";
+    static std::forward_list<std::string> FunctionsCache;
+
     Sample sample{runtimeId};
     // wall values
     sample.AddValue(100, SampleValue::WallTimeDuration);
@@ -45,9 +49,14 @@ Sample GetTestSample(std::string_view runtimeId, const std::string& framePrefix,
     l.second = labelValue;
     sample.AddLabel(l);
 
-    sample.AddFrame("module", framePrefix + " #1");
-    sample.AddFrame("module", framePrefix + " #2");
-    sample.AddFrame("module", framePrefix + " #3");
+    auto& functionName = FunctionsCache.emplace_front(framePrefix + " #1");
+    sample.AddFrame(ModuleName, functionName);
+
+    auto& functionName2 = FunctionsCache.emplace_front(framePrefix + " #2");
+    sample.AddFrame(ModuleName, functionName2);
+
+    auto& functionName3 = FunctionsCache.emplace_front(framePrefix + " #3");
+    sample.AddFrame(ModuleName, functionName3);
 
     return sample;
 }
