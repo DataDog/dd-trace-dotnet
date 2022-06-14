@@ -117,6 +117,7 @@ variables:
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
   DD_SERVICE: dd-trace-dotnet
   DD_ENV: CI
+  DD_LOGGER_API_KEY: $(DD_API_KEY)
   DefaultTimeout: 60
 
 # Declare the datadog agent as a resource to be used as a pipeline service
@@ -524,7 +525,7 @@ stages:
       - script: tracer\build.cmd BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
         env:
-          DD_API_KEY: $(ddApiKey)
+          DD_LOGGER_API_KEY: $(ddApiKey)
           DD_SERVICE: dd-trace-dotnet
           DD_ENV: CI
 
@@ -552,7 +553,7 @@ stages:
       - script: tracer\build.cmd BuildAndRunNativeUnitTests
         displayName: Build and Test
         env:
-          DD_API_KEY: $(ddApiKey)
+          DD_LOGGER_API_KEY: $(ddApiKey)
           DD_SERVICE: dd-trace-dotnet
           DD_ENV: CI
 
@@ -587,7 +588,7 @@ stages:
       - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
         env:
-          DD_API_KEY: $(ddApiKey)
+          DD_LOGGER_API_KEY: $(ddApiKey)
           DD_SERVICE: dd-trace-dotnet
           DD_ENV: CI
 
@@ -778,7 +779,7 @@ stages:
     - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --code-coverage
       displayName: Run integration tests
       env:
-        DD_API_KEY: $(ddApiKey)
+        DD_LOGGER_API_KEY: $(ddApiKey)
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
 
@@ -837,7 +838,7 @@ stages:
     - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisTracerIntegrationTests
       env:
-        DD_API_KEY: $(ddApiKey)
+        DD_LOGGER_API_KEY: $(ddApiKey)
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
 
@@ -885,7 +886,7 @@ stages:
     - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsSecurityIisIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisSecurityIntegrationTests
       env:
-        DD_API_KEY: $(ddApiKey)
+        DD_LOGGER_API_KEY: $(ddApiKey)
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
 
@@ -960,7 +961,7 @@ stages:
     - script: tracer\build.cmd RunWindowsMsiIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisIntegrationTests
       env:
-        DD_API_KEY: $(ddApiKey)
+        DD_LOGGER_API_KEY: $(ddApiKey)
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
 
@@ -1045,10 +1046,10 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=false IntegrationTests
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=false IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
-        DD_API_KEY: $(ddApiKey)
+        DD_LOGGER_API_KEY: $(ddApiKey)
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
 
@@ -1132,10 +1133,10 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=true IntegrationTests
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=true IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
-        DD_API_KEY: $(ddApiKey)
+        DD_LOGGER_API_KEY: $(ddApiKey)
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
 
@@ -1223,10 +1224,10 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e DD_API_KEY=$(DD_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e IncludeTestsRequiringDocker=false ProfilerIntegrationTests
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e IncludeTestsRequiringDocker=false ProfilerIntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
-        DD_API_KEY: $(ddApiKey)
+        DD_LOGGER_API_KEY: $(ddApiKey)
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
 
@@ -1291,10 +1292,10 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
+            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
           env:
-            DD_API_KEY: $(ddApiKey)
+            DD_LOGGER_API_KEY: $(ddApiKey)
             DD_SERVICE: dd-trace-dotnet
             DD_ENV: CI
 
@@ -1365,10 +1366,10 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
+            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) -e DD_SERVICE=$(DD_SERVICE) -e DD_ENV=$(DD_ENV) -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
           env:
-            DD_API_KEY: $(ddApiKey)
+            DD_LOGGER_API_KEY: $(ddApiKey)
             DD_SERVICE: dd-trace-dotnet
             DD_ENV: CI
 
@@ -1451,7 +1452,7 @@ stages:
     - script: tracer\build.cmd RunExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
       displayName: RunExplorationTest
       env:
-        DD_API_KEY: $(ddApiKey)
+        DD_LOGGER_API_KEY: $(ddApiKey)
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
 
@@ -1533,7 +1534,7 @@ stages:
       displayName: docker-compose run ExplorationTests
       env:
         azdo_network: $(agent.containernetwork)
-        DD_API_KEY: $(ddApiKey)
+        DD_LOGGER_API_KEY: $(ddApiKey)
       inputs:
         containerregistrytype: Container Registry
         additionalDockerComposeFiles: docker-compose.ci.azdo.yml
@@ -1542,7 +1543,7 @@ stages:
           framework=$(publishTargetFramework)
           explorationTestUseCase=$(explorationTestUseCase)
           explorationTestName=$(explorationTestName)
-        dockerComposeCommand: run --rm -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) -e DD_API_KEY=$(DD_API_KEY) ExplorationTests
+        dockerComposeCommand: run --rm -e DD_AGENT_HOST=dd_agent -e baseImage=$(baseImage) -e explorationTestUseCase=$(explorationTestUseCase) -e explorationTestName=$(explorationTestName) -e framework=$(publishTargetFramework) -e DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) ExplorationTests
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -1864,14 +1865,14 @@ stages:
     - script: tracer\build.cmd BuildAndRunToolArtifactTests --ToolSource $(runnerTool)
       displayName: Build and Test tool
       env:
-        DD_API_KEY: $(ddApiKey)
+        DD_LOGGER_API_KEY: $(ddApiKey)
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
 
     - script: tracer\build.cmd RunToolArtifactTests --ToolDestination $(runnerStandalone)
       displayName: Test standalone
       env:
-        DD_API_KEY: $(ddApiKey)
+        DD_LOGGER_API_KEY: $(ddApiKey)
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
 
@@ -2585,10 +2586,10 @@ stages:
       displayName: start snapshot session
       
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) smoke-tests
+        docker-compose -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) -e DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) smoke-tests
       env:
         dockerTag: $(dockerTag)
-        DD_API_KEY: $(ddApiKey)
+        DD_LOGGER_API_KEY: $(ddApiKey)
       displayName: docker-compose run smoke-tests
 
     - script: |
@@ -2699,10 +2700,10 @@ stages:
           displayName: start snapshot session
           
         - script: |
-            docker-compose -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) smoke-tests
+            docker-compose -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) -e DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) smoke-tests
           env:
             dockerTag: $(dockerTag)
-            DD_API_KEY: $(ddApiKey)
+            DD_LOGGER_API_KEY: $(ddApiKey)
           displayName: docker-compose run smoke-tests
 
         - script: |

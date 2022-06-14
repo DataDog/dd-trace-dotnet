@@ -5,12 +5,15 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Spekt.TestLogger.Core;
 
@@ -18,19 +21,26 @@ namespace Datadog.Trace.TestLogger;
 
 internal class DatadogTestResultSerializer : ITestResultSerializer
 {
+    private static int _firstInitialization = 1;
+
     public string Serialize(LoggerConfiguration loggerConfiguration, TestRunConfiguration runConfiguration, List<TestResultInfo> results, List<TestMessageInfo> messages)
     {
-        try
+        if (Interlocked.Exchange(ref _firstInitialization, 0) == 1)
         {
-            Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.Enabled, "true", EnvironmentVariableTarget.Process);
-            Environment.SetEnvironmentVariable(Configuration.ConfigurationKeys.CIVisibility.AgentlessEnabled, "true", EnvironmentVariableTarget.Process);
+            var configurationSource = new CompositeConfigurationSource
+            {
+                new NameValueConfigurationSource(new NameValueCollection
+                {
+                    [ConfigurationKeys.CIVisibility.Enabled] = "true",
+                    [ConfigurationKeys.CIVisibility.AgentlessEnabled] = "true",
+                    [ConfigurationKeys.ApiKey] = GetLoggerApiKey(),
+                    [ConfigurationKeys.CIVisibility.Logs] = "true",
+                }),
+                new EnvironmentConfigurationSource(),
+            };
+            var ciVisibilitySettings = new CIVisibilitySettings(configurationSource);
+            CIVisibility.Initialize(ciVisibilitySettings);
         }
-        catch
-        {
-            // .
-        }
-
-        CIVisibility.Initialize();
 
         var framework = FrameworkDescription.Instance;
 
@@ -161,5 +171,16 @@ internal class DatadogTestResultSerializer : ITestResultSerializer
         CIVisibility.FlushSpans();
 
         return string.Empty;
+    }
+
+    private string GetLoggerApiKey()
+    {
+        var apiKey = Util.EnvironmentHelpers.GetEnvironmentVariable("DD_LOGGER_API_KEY");
+        if (string.IsNullOrEmpty(apiKey))
+        {
+            apiKey = Util.EnvironmentHelpers.GetEnvironmentVariable("DD_API_KEY");
+        }
+
+        return apiKey;
     }
 }

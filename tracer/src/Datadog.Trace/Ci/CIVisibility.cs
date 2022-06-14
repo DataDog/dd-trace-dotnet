@@ -17,12 +17,12 @@ namespace Datadog.Trace.Ci
 {
     internal class CIVisibility
     {
-        private static readonly CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
+        private static readonly Lazy<bool> EnabledLazy = new(() => InternalEnabled(), true);
+        private static CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
         private static int _firstInitialization = 1;
-        private static Lazy<bool> _enabledLazy = new Lazy<bool>(() => InternalEnabled(), true);
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
 
-        public static bool Enabled => _enabledLazy.Value;
+        public static bool Enabled => EnabledLazy.Value;
 
         public static bool IsRunning => Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
 
@@ -43,6 +43,11 @@ namespace Datadog.Trace.Ci
 
         public static void Initialize()
         {
+            Initialize(_settings);
+        }
+
+        public static void Initialize(CIVisibilitySettings settings)
+        {
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
             {
                 // Initialize() was already called before
@@ -50,10 +55,11 @@ namespace Datadog.Trace.Ci
             }
 
             Log.Information("Initializing CI Visibility");
+            _settings = settings;
 
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
-            TracerSettings tracerSettings = _settings.TracerSettings;
+            TracerSettings tracerSettings = settings.TracerSettings;
 
             // Set the service name if empty
             Log.Information("Setting up the service name");
@@ -65,7 +71,7 @@ namespace Datadog.Trace.Ci
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings));
+            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(settings));
         }
 
         internal static void FlushSpans()

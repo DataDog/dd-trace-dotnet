@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using Datadog.Trace.Ci;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel;
 using SpektTestLogger = Spekt.TestLogger.TestLogger;
 

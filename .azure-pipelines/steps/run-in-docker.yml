@@ -38,6 +38,7 @@ steps:
         --env IncludeMinorPackageVersions=$(IncludeMinorPackageVersions) \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
         --env DD_API_KEY=$(DD_API_KEY) \
+        --env DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) \
         --env DD_SERVICE=dd-trace-dotnet \
         --env DD_ENV=CI \
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
