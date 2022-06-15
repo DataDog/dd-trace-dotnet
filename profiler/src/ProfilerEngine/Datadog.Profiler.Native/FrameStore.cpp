@@ -373,7 +373,7 @@ bool FrameStore::GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, st
     }
 
     // convert from UTF16 to UTF8
-    assemblyName = shared::ToString(buffer.get(), nameCharCount);
+    assemblyName = shared::ToString(shared::WSTRING(buffer.get()));
     return true;
 }
 
