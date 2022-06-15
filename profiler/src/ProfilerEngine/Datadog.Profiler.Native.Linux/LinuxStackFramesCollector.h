@@ -10,11 +10,11 @@
 
 #include "StackFramesCollectorBase.h"
 
+#include <atomic>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <signal.h>
-#include <atomic>
 #include <unordered_map>
 
 class IManagedThreadList;
@@ -39,12 +39,23 @@ protected:
                                                                 bool selfCollect) override;
 
 private:
+    class ErrorStatistics
+    {
+    public:
+        void Add(std::int32_t errorCode);
+        void Log();
+
+    private:
+        //                 v- error code v- # of errors
+        std::unordered_map<std::int32_t, std::int32_t> _stats;
+    };
+
+private:
     void InitializeSignalHandler();
     bool SetupSignalHandler();
     void NotifyStackWalkCompleted(std::int32_t resultErrorCode);
-    void UpdateStackwalkingStats(std::int32_t errorCode);
-    void PrintStatistics(std::unordered_map<std::int32_t, std::int32_t>& errorStats);
-
+    void UpdateErrorStats(std::int32_t errorCode);
+    bool ShouldLogStats();
 
     std::int32_t _lastStackWalkErrorCode;
     std::condition_variable _stackWalkInProgressWaiter;
@@ -69,4 +80,6 @@ private:
     static LinuxStackFramesCollector* s_pInstanceCurrentlyStackWalking;
 
     std::int32_t CollectCallStackCurrentThread();
+
+    ErrorStatistics _errorStatistics;
 };
