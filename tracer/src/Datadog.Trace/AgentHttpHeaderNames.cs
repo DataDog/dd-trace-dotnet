@@ -54,6 +54,11 @@ namespace Datadog.Trace
         public const string AgentVersion = "Datadog-Agent-Version";
 
         /// <summary>
+        /// Tells the agent whether stats are computer by the tracer
+        /// </summary>
+        public const string StatsComputation = "Datadog-Client-Computed-Stats";
+
+        /// <summary>
         /// Gets the default constant header that should be added to any request to the agent
         /// </summary>
         internal static KeyValuePair<string, string>[] DefaultHeaders { get; } =
