@@ -89,7 +89,7 @@
     <!-- Integration: Confluent.Kafka -->
     <!-- Assembly: Confluent.Kafka -->
     <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/1.8.2 -->
-    <PackageReference Include="Confluent.Kafka" Version="1.8.2" />
+    <PackageReference Include="Confluent.Kafka" Version="1.9.0" />
 
     <!-- Integration: log4net -->
     <!-- Assembly: log4net -->
