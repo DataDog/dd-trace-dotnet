@@ -11,5 +11,7 @@ namespace Datadog.Trace.Agent
     internal interface IApi
     {
         Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces);
+
+        Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration);
     }
 }

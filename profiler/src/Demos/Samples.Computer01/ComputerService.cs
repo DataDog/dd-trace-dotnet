@@ -25,6 +25,7 @@ namespace Samples.Computer01
         private FibonacciComputation _fibonacciComputation;
         private SleepManager _sleepManager;
         private AsyncComputation _asyncComputation;
+        private IteratorComputation _iteratorComputation;
 
         public void StartService(Scenario scenario, int nbThreads)
         {
@@ -72,6 +73,10 @@ namespace Samples.Computer01
                     StartAsyncComputation(nbThreads);
                     break;
 
+                case Scenario.Iterator:
+                    StartIteratorComputation(nbThreads);
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
             }
@@ -116,6 +121,10 @@ namespace Samples.Computer01
 
                 case Scenario.Async:
                     StopAsyncComputation();
+                    break;
+
+                case Scenario.Iterator:
+                    StopIteratorComputation();
                     break;
             }
         }
@@ -164,6 +173,10 @@ namespace Samples.Computer01
 
                     case Scenario.Async:
                         RunAsyncComputation(nbThreads);
+                        break;
+
+                    case Scenario.Iterator:
+                        RunIteratorComputation(nbThreads);
                         break;
 
                     default:
@@ -224,6 +237,12 @@ namespace Samples.Computer01
             _asyncComputation.Start();
         }
 
+        private void StartIteratorComputation(int nbThreads)
+        {
+            _iteratorComputation = new IteratorComputation(nbThreads);
+            _iteratorComputation.Start();
+        }
+
         private void StopComputer()
         {
             using (_computer)
@@ -273,6 +292,11 @@ namespace Samples.Computer01
             _asyncComputation.Stop();
         }
 
+        private void StopIteratorComputation()
+        {
+            _iteratorComputation.Stop();
+        }
+
         private void RunComputer()
         {
             using (var computer = new Computer<byte, KeyValuePair<char, KeyValuePair<int, KeyValuePair<float, object>>>>())
@@ -312,6 +336,12 @@ namespace Samples.Computer01
         }
 
         private void RunAsyncComputation(int nbThreads)
+        {
+            var computation = new AsyncComputation(nbThreads);
+            computation.Run();
+        }
+
+        private void RunIteratorComputation(int nbThreads)
         {
             var computation = new AsyncComputation(nbThreads);
             computation.Run();

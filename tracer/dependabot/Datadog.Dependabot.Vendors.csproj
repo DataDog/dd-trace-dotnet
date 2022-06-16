@@ -24,6 +24,9 @@
     <!-- https://www.nuget.org/packages/dnlib/3.4.0 -->
     <PackageReference Include="dnlib" Version="3.4.0" />
 
+    <!-- https://www.nuget.org/packages/Datadog.Sketches/1.0.0 -->
+    <PackageReference Include="Datadog.Sketches" Version="1.0.0" />
+
   </ItemGroup>
 
 </Project>
