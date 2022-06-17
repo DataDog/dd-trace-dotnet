@@ -7,11 +7,14 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Tagging;
 
 internal class TraceTagCollection
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceTagCollection>();
+
     private readonly object _listLock = new();
     private readonly List<KeyValuePair<string, string>> _tags;
     private string? _cachedPropagationHeader;
@@ -19,7 +22,7 @@ internal class TraceTagCollection
     public TraceTagCollection(List<KeyValuePair<string, string>>? tags = null, int maxHeaderLength = 512)
     {
         _tags = tags ?? new List<KeyValuePair<string, string>>(2);
-        MaximumPropagationHeaderLength = maxHeaderLength;
+        PropagationHeaderMaxLength = maxHeaderLength;
     }
 
     /// <summary>
@@ -27,7 +30,7 @@ internal class TraceTagCollection
     /// </summary>
     public int Count => _tags.Count;
 
-    public int MaximumPropagationHeaderLength { get; }
+    public int PropagationHeaderMaxLength { get; }
 
     public void SetTag(string name, string? value)
     {
@@ -106,7 +109,7 @@ internal class TraceTagCollection
         {
             lock (_listLock)
             {
-                _cachedPropagationHeader = TagPropagation.ToHeader(this, MaximumPropagationHeaderLength);
+                _cachedPropagationHeader = TagPropagation.ToHeader(this, PropagationHeaderMaxLength);
             }
         }
 

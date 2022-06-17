@@ -71,7 +71,7 @@ public class TagPropagationTests
     [MemberData(nameof(ParseData))]
     public void ParseFromPropagationHeader(string header, KeyValuePair<string, string>[] expectedPairs)
     {
-        var parsed = TagPropagation.TryParseHeader(header, /* TODO */ 128, out var tags);
+        var parsed = TagPropagation.TryParseHeader(header, 512, out var tags);
 
         parsed.Should().BeTrue();
         tags.ToEnumerable().Should().BeEquivalentTo(expectedPairs);
@@ -95,19 +95,19 @@ public class TagPropagationTests
         {
             // too short
             headerValue.Should().BeNullOrEmpty();
-            traceTags.GetTag(TraceTagNames.PropagationError).Should().BeNull();
+            traceTags.GetTag(Tags.TagPropagation.Error).Should().BeNull();
         }
         else if (totalHeaderLength > maxHeaderLength)
         {
             // too long
             headerValue.Should().BeNullOrEmpty();
-            traceTags.GetTag(TraceTagNames.PropagationError).Should().Be("max_size");
+            traceTags.GetTag(Tags.TagPropagation.Error).Should().Be("max_size");
         }
         else
         {
             // valid length
             headerValue.Should().NotBeNullOrEmpty();
-            traceTags.GetTag(TraceTagNames.PropagationError).Should().BeNull();
+            traceTags.GetTag(Tags.TagPropagation.Error).Should().BeNull();
         }
     }
 
@@ -117,7 +117,7 @@ public class TagPropagationTests
         var header = "_dd.p.key1=value1";
 
         // should cache original header
-        var parsed = TagPropagation.TryParseHeader(header, /* TODO */ 128, out var tags);
+        var parsed = TagPropagation.TryParseHeader(header, 512, out var tags);
         parsed.Should().BeTrue();
         var cachedHeader = tags!.ToPropagationHeader();
         cachedHeader.Should().BeSameAs(header);
@@ -145,7 +145,7 @@ public class TagPropagationTests
         var header = "key1=value1";
 
         // should not cache original header
-        var parsed = TagPropagation.TryParseHeader(header, /* TODO */ 128, out var tags);
+        var parsed = TagPropagation.TryParseHeader(header, 512, out var tags);
         parsed.Should().BeTrue();
         var cachedHeader = tags!.ToPropagationHeader();
         cachedHeader.Should().NotBeSameAs(header);
