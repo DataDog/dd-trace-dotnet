@@ -77,6 +77,10 @@ namespace Datadog.Trace.Configuration
             _domainMetadata = DomainMetadata.Instance;
 
             ExpandRouteTemplatesEnabled = settings.ExpandRouteTemplatesEnabled || !RouteTemplateResourceNamesEnabled;
+
+            // tag propagation
+            ServiceNamePropagationEnabled = settings.ServiceNamePropagationEnabled;
+            PropagationHeaderMaxLength = settings.PropagationHeaderMaxLength;
         }
 
         /// <summary>
@@ -271,6 +275,20 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the activity listener is enabled or not.
         /// </summary>
         internal bool IsActivityListenerEnabled { get; }
+
+        /// <summary>
+        /// Gets the maximum length of the
+        /// propagation header's value. ("x-datadog-tags")
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.TagPropagation.HeaderMaxLength"/>
+        public int PropagationHeaderMaxLength { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether to propagate
+        /// the service name to downstream or upstream services.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.TagPropagation.ServiceNamePropagationEnabled"/>
+        public bool ServiceNamePropagationEnabled { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

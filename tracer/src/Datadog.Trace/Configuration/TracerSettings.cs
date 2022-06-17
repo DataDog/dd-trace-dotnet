@@ -11,7 +11,6 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Configuration
@@ -185,6 +184,12 @@ namespace Datadog.Trace.Configuration
             // Filter out tags with empty keys or empty values, and trim whitespaces
             GrpcTags = InitializeHeaderTags(grpcTags, headerTagsNormalizationFixEnabled: true);
 
+            PropagationHeaderMaxLength = source?.GetInt32(ConfigurationKeys.TagPropagation.HeaderMaxLength) ??
+                                         512;
+
+            ServiceNamePropagationEnabled = source?.GetBool(ConfigurationKeys.TagPropagation.ServiceNamePropagationEnabled) ??
+                                            true;
+
             IsActivityListenerEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.ActivityListenerEnabled) ??
                                 // default value
                                 false;
@@ -348,6 +353,20 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
         /// </summary>
         public bool StartupDiagnosticLogEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum length of the
+        /// propagation header's value. ("x-datadog-tags")
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.TagPropagation.HeaderMaxLength"/>
+        public int PropagationHeaderMaxLength { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to propagate
+        /// the service name to downstream or upstream services.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.TagPropagation.ServiceNamePropagationEnabled"/>
+        public bool ServiceNamePropagationEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating the injection propagation style.

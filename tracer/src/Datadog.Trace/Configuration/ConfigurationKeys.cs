@@ -450,5 +450,12 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             public const string Uri = "DD_INSTRUMENTATION_TELEMETRY_URL";
         }
+
+        internal static class TagPropagation
+        {
+            public const string HeaderMaxLength = "DD_TRACE_X_DATADOG_TAGS_MAX_LENGTH";
+
+            public const string ServiceNamePropagationEnabled = "DD_TRACE_PROPAGATE_SERVICE";
+        }
     }
 }
