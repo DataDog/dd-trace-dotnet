@@ -58,11 +58,6 @@ module SpanModelHelpers =
             | None -> Failure (sprintFailureString result)
     
     // DSL functions for easier parsing and documentation generation
-    let propertyIsPresent extractProperty (span: MockSpan) =
-        let (propertyName, result) = extractProperty span
-        let failureString = sprintPresentFailure "property" propertyName
-        isPresent result failureString span
-
     let propertyMatches extractProperty (expectedValue: string) (span:MockSpan) =
         let (propertyName, result) = extractProperty span
         let sprintFailureWithActualValue = sprintMatchesFailure "property" propertyName expectedValue
