@@ -84,6 +84,59 @@ namespace Datadog.Trace.TestHelpers
         }
     }
 
+#pragma warning disable SA1402 // File may only contain a single type
+    public class PropertyAssertions
+    {
+        private readonly Result _result;
+
+        internal PropertyAssertions(Result result)
+        {
+            _result = result;
+        }
+
+        public PropertyAssertions Matches(Func<MockSpan, (string PropertyName, string Result)> property, string value)
+        {
+            _result.PropertyMatches(property, value);
+            return this;
+        }
+
+        public PropertyAssertions MatchesOneOf(Func<MockSpan, (string PropertyName, string Result)> property, params string[] values)
+        {
+            _result.PropertyMatchesOneOf(property, values);
+            return this;
+        }
+    }
+
+    public class TagAssertions
+    {
+        private readonly Result _result;
+
+        internal TagAssertions(Result result)
+        {
+            _result = result;
+        }
+
+        public TagAssertions IsPresent(string key)
+        {
+            _result.TagIsPresent(key);
+            return this;
+        }
+
+        public TagAssertions IsOptional(string key) => this;
+
+        public TagAssertions Matches(string key, string value)
+        {
+            _result.TagMatches(key, value);
+            return this;
+        }
+
+        public TagAssertions MatchesOneOf(string tagName, params string[] values)
+        {
+            _result.TagMatchesOneOf(tagName, values);
+            return this;
+        }
+    }
+
 #pragma warning disable SA1201 // Elements should appear in the correct order
     public struct Result
     {
@@ -116,6 +169,20 @@ namespace Datadog.Trace.TestHelpers
                 Message = Message + ";" + failureMessage;
             }
 
+            return this;
+        }
+
+        public Result Properties(Action<PropertyAssertions> propertyAssertions)
+        {
+            var p = new PropertyAssertions(this);
+            propertyAssertions(p);
+            return this;
+        }
+
+        public Result Tags(Action<TagAssertions> tagAssertions)
+        {
+            var t = new TagAssertions(this);
+            tagAssertions(t);
             return this;
         }
     }
