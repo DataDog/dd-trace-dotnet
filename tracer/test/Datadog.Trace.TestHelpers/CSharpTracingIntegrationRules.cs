@@ -16,33 +16,39 @@ namespace Datadog.Trace.TestHelpers
     public static partial class CSharpTracingIntegrationRules
     {
         public static Result IsCouchbase(this MockSpan span) => Result.FromSpan(span)
-            .PropertyMatches(Name, "couchbase.query")
-            .PropertyMatches(Type, "db")
-            .TagIsOptional("couchbase.operation.bucket")
-            .TagIsPresent("couchbase.operation.code")
-            .TagIsPresent("couchbase.operation.key")
-            .TagIsOptional("out.port")
-            .TagIsOptional("out.host")
-            .TagMatches("component", "Couchbase")
-            .TagMatches("span.kind", "client");
+            .Properties(s => s
+                .Matches(Name, "couchbase.query")
+                .Matches(Type, "db"))
+            .Tags(s => s
+                .IsOptional("couchbase.operation.bucket")
+                .IsPresent("couchbase.operation.code")
+                .IsPresent("couchbase.operation.key")
+                .IsOptional("out.port")
+                .IsOptional("out.host")
+                .Matches("component", "Couchbase")
+                .Matches("span.kind", "client"));
 
         public static Result IsKafka(this MockSpan span) => Result.FromSpan(span)
-            .PropertyMatchesOneOf(Name, "kafka.consume", "kafka.produce")
-            .PropertyMatches(Type, "queue")
-            .TagIsOptional("kafka.offset")
-            .TagIsOptional("kafka.partition")
-            .TagIsOptional("kafka.tombstone")
-            .TagIsOptional("message.queue_time_ms")
-            .TagMatches("component", "kafka")
-            .TagIsPresent("span.kind");
+            .Properties(s => s
+                .MatchesOneOf(Name, "kafka.consume", "kafka.produce")
+                .Matches(Type, "queue"))
+            .Tags(s => s
+                .IsOptional("kafka.offset")
+                .IsOptional("kafka.partition")
+                .IsOptional("kafka.tombstone")
+                .IsOptional("message.queue_time_ms")
+                .Matches("component", "kakfa")
+                .IsPresent("span.kind"));
 
         public static Result IsWebRequest(this MockSpan span) => Result.FromSpan(span)
-            .PropertyMatches(Name, "http.request")
-            .PropertyMatches(Type, "http")
-            .TagIsPresent("http.method")
-            .TagIsPresent("http.status_code")
-            .TagIsPresent("http.url")
-            .TagMatchesOneOf("component", "HttpMessageHandler", "WebRequest")
-            .TagMatches("span.kind", "client");
+            .Properties(s => s
+                .Matches(Name, "http.request")
+                .Matches(Type, "http"))
+            .Tags(s => s
+                .IsPresent("http.method")
+                .IsPresent("http.status_code")
+                .IsPresent("http.url")
+                .MatchesOneOf("component", "HttpMessageHandler", "WebRequest")
+                .Matches("span.kind", "client"));
     }
 }
