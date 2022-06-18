@@ -11,131 +11,12 @@ namespace Datadog.Trace.TestHelpers
 #pragma warning disable SA1601 // Partial elements should be documented
     public static partial class CSharpTracingIntegrationRules
     {
-        private const string MatchesFailureStringFormat = "{0} \"{1}\" was expected to have value {2}, but the value is \"{3}\"";
-        private const string PresentFailureStringFormat = "{0} \"{1}\" was expected to be present";
-        private const string MatchesOneOfFailure = "{0} \"{1}\" was expected to have one of the following values {2}, but the value is \"{3}\"";
-
         internal static (string PropertyName, string Result) Name(MockSpan span) => (nameof(span.Name), span.Name);
 
         internal static (string PropertyName, string Result) Type(MockSpan span) => (nameof(span.Type), span.Type);
-
-        internal static Func<string, string> GenerateMatchesFailureString(string propertyKind, string propertyName, string expectedValue) =>
-            (actualValue) => string.Format(MatchesFailureStringFormat, propertyKind, propertyName, expectedValue, actualValue);
-
-        internal static Func<string, string> GenerateMatchesOneOfFailureString(string propertyKind, string propertyName, string expectedValue) =>
-            (actualValue) => string.Format(MatchesOneOfFailure, propertyKind, propertyName, expectedValue, actualValue);
-
-        internal static string GeneratePresentFailureString(string propertyKind, string propertyName) =>
-            string.Format(PresentFailureStringFormat, propertyKind, propertyName);
-
-        internal static Result IsOptional(this Result span, string result) => span;
-
-        internal static Result IsPresent(this Result span, string result, string failureString) =>
-            result switch
-            {
-                null => span.WithFailure(failureString),
-                _ => span,
-            };
-
-        internal static Result Matches(this Result span, string expectedValue, string result, Func<string, string> failureStringFunc) =>
-            result switch
-            {
-                string actualValue when actualValue != expectedValue => span.WithFailure(failureStringFunc(result)),
-                _ => span,
-            };
-
-        internal static Result MatchesOneOf(this Result span, string[] expectedValueArray, string result, Func<string, string> failureStringFunc) =>
-            expectedValueArray.Where(s => s == result).SingleOrDefault() switch
-            {
-                null => span.WithFailure(failureStringFunc(result)),
-                _ => span,
-            };
-
-        internal static Result PropertyMatches(this Result span, Func<MockSpan, (string PropertyName, string Result)> property, string expectedValue)
-        {
-            (string propertyName, string result) = property(span.Span);
-            return span.Matches(expectedValue, result, GenerateMatchesFailureString("property", propertyName, expectedValue));
-        }
-
-        internal static Result PropertyMatchesOneOf(this Result span, Func<MockSpan, (string PropertyName, string Result)> property, params string[] expectedValueArray)
-        {
-            (string propertyName, string result) = property(span.Span);
-            string expectedValueString = "["
-                                         + string.Join(",", expectedValueArray.Select(s => $"\"{s}\"").ToArray())
-                                         + "]";
-            return span.MatchesOneOf(expectedValueArray, result, GenerateMatchesOneOfFailureString("property", propertyName, expectedValueString));
-        }
-
-        internal static Result TagIsOptional(this Result span, string tagName) =>
-            span.IsOptional(span.Span.GetTag(tagName));
-
-        internal static Result TagIsPresent(this Result span, string tagName) =>
-            span.IsPresent(span.Span.GetTag(tagName), GeneratePresentFailureString("tag", tagName));
-
-        internal static Result TagMatches(this Result span, string tagName, string expectedValue) =>
-            span.Matches(expectedValue, span.Span.GetTag(tagName), GenerateMatchesFailureString("tag", tagName, expectedValue));
-
-        internal static Result TagMatchesOneOf(this Result span, string tagName, params string[] expectedValueArray)
-        {
-            string expectedValueString = "["
-                                         + string.Join(",", expectedValueArray.Select(s => $"\"{s}\"").ToArray())
-                                         + "]";
-            return span.MatchesOneOf(expectedValueArray, span.Span.GetTag(tagName), GenerateMatchesOneOfFailureString("tag", tagName, expectedValueString));
-        }
     }
 
 #pragma warning disable SA1402 // File may only contain a single type
-    public class PropertyAssertions
-    {
-        private readonly Result _result;
-
-        internal PropertyAssertions(Result result)
-        {
-            _result = result;
-        }
-
-        public PropertyAssertions Matches(Func<MockSpan, (string PropertyName, string Result)> property, string value)
-        {
-            _result.PropertyMatches(property, value);
-            return this;
-        }
-
-        public PropertyAssertions MatchesOneOf(Func<MockSpan, (string PropertyName, string Result)> property, params string[] values)
-        {
-            _result.PropertyMatchesOneOf(property, values);
-            return this;
-        }
-    }
-
-    public class TagAssertions
-    {
-        private readonly Result _result;
-
-        internal TagAssertions(Result result)
-        {
-            _result = result;
-        }
-
-        public TagAssertions IsPresent(string key)
-        {
-            _result.TagIsPresent(key);
-            return this;
-        }
-
-        public TagAssertions IsOptional(string key) => this;
-
-        public TagAssertions Matches(string key, string value)
-        {
-            _result.TagMatches(key, value);
-            return this;
-        }
-
-        public TagAssertions MatchesOneOf(string tagName, params string[] values)
-        {
-            _result.TagMatchesOneOf(tagName, values);
-            return this;
-        }
-    }
 
 #pragma warning disable SA1201 // Elements should appear in the correct order
     public struct Result
@@ -172,16 +53,16 @@ namespace Datadog.Trace.TestHelpers
             return this;
         }
 
-        public Result Properties(Action<PropertyAssertions> propertyAssertions)
+        public Result Properties(Action<SpanPropertyAssertion> propertyAssertions)
         {
-            var p = new PropertyAssertions(this);
+            var p = new SpanPropertyAssertion(this);
             propertyAssertions(p);
             return this;
         }
 
-        public Result Tags(Action<TagAssertions> tagAssertions)
+        public Result Tags(Action<SpanTagAssertion> tagAssertions)
         {
-            var t = new TagAssertions(this);
+            var t = new SpanTagAssertion(this);
             tagAssertions(t);
             return this;
         }
