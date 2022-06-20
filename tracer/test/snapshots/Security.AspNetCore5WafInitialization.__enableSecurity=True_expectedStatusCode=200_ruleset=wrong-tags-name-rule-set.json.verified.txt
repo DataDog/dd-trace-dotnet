@@ -35,6 +35,7 @@
     },
     Metrics: {
       process_id: 0,
+      _dd.agent_psr: 1.0,
       _dd.appsec.enabled: 1.0,
       _dd.appsec.event_rules.error_count: 5.0,
       _dd.appsec.event_rules.loaded: 121.0,

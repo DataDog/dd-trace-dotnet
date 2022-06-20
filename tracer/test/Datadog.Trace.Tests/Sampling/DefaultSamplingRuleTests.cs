@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Sampling;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Sampling
@@ -29,7 +30,7 @@ namespace Datadog.Trace.Tests.Sampling
         {
             var rule = new DefaultSamplingRule();
 
-            rule.SetDefaultSampleRates(new[] { new KeyValuePair<string, float>(key, .5f) });
+            rule.SetDefaultSampleRates(new Dictionary<string, float> { { key, .5f } });
 
             var span = new Span(new SpanContext(1, 1, null, serviceName: expectedService), DateTimeOffset.Now);
             span.SetTag(Tags.Env, expectedEnv);
@@ -37,6 +38,31 @@ namespace Datadog.Trace.Tests.Sampling
             var samplingRate = rule.GetSamplingRate(span);
 
             Assert.Equal(expectedRate, samplingRate);
+        }
+
+        [Fact]
+        public void DefaultSamplingRuleIsApplied()
+        {
+            const string configuredService = "NiceService";
+            const string configuredEnv = "BeautifulEnv";
+            const string unconfiguredService = "RogueService";
+
+            var rule = new DefaultSamplingRule();
+            var span = new Span(new SpanContext(1, 1, null, serviceName: configuredService), DateTimeOffset.Now);
+            var secondSpan = new Span(new SpanContext(2, 2, null, serviceName: unconfiguredService), DateTimeOffset.Now);
+            span.SetTag(Tags.Env, configuredEnv);
+            secondSpan.SetTag(Tags.Env, configuredEnv);
+
+            rule.GetSamplingRate(span).Should().Be(1f); // as we haven't configured it yet.
+
+            rule.SetDefaultSampleRates(new Dictionary<string, float>
+            {
+                { "service:,env:", .5f },
+                { $"service:{configuredService},env:{configuredEnv}", .1f }
+            });
+
+            rule.GetSamplingRate(span).Should().Be(.1f);
+            rule.GetSamplingRate(secondSpan).Should().Be(.5f); // as it should use the new default sampling.
         }
     }
 }

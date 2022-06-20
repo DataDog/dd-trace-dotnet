@@ -19,7 +19,7 @@ namespace Datadog.Trace.Ci.Sampling
         {
         }
 
-        public void SetDefaultSampleRates(IEnumerable<KeyValuePair<string, float>> sampleRates)
+        public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
         {
         }
     }
