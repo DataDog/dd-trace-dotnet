@@ -57,6 +57,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isMsmq, span);
                 Assert.True(result, message);
 
+                var newResult = span.IsMsmq();
+                Assert.True(newResult.Success, newResult.ToString());
+
                 span.Service.Should().Be(ExpectedServiceName);
                 span.Tags.Should().Contain(new System.Collections.Generic.KeyValuePair<string, string>(Tags.InstrumentationName, "msmq"));
                 if (span.Tags[Tags.MsmqIsTransactionalQueue] == "True")

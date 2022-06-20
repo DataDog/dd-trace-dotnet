@@ -267,6 +267,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isStackExchangeRedis, span);
                     Assert.True(result, message);
 
+                    var newResult = span.IsStackExchangeRedis();
+                    Assert.True(newResult.Success, newResult.ToString());
+
                     Assert.Equal("Samples.StackExchange.Redis-redis", span.Service);
                     Assert.Equal(host, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.host"));
                     Assert.Equal(port, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.port"));

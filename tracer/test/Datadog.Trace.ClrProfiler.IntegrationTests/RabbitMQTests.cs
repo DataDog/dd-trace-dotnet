@@ -68,6 +68,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isRabbitMQ, span);
                     Assert.True(result, message);
 
+                    var newResult = span.IsRabbitMQ();
+                    Assert.True(newResult.Success, newResult.ToString());
+
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
 
                     var command = span.Tags[Tags.AmqpCommand];

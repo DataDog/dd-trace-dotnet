@@ -65,6 +65,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isKafka, span);
                 Assert.True(result, message);
+
+                var newResult = span.IsKafka();
+                Assert.True(newResult.Success, newResult.ToString());
             }
 
             var allProducerSpans = allSpans.Where(x => x.Name == "kafka.produce").ToList();

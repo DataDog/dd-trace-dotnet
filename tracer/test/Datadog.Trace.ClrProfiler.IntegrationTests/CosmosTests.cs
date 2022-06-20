@@ -65,6 +65,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isCosmosDb, span);
                     Assert.True(result, message);
 
+                    var newResult = span.IsCosmosDb();
+                    Assert.True(newResult.Success, newResult.ToString());
+
                     span.Service.Should().Be(ExpectedServiceName);
                     span.Resource.Should().StartWith("SELECT * FROM");
                     span.Tags.Should().NotContain(Tags.Version, "External service span should not have service version tag.");

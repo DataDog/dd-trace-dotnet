@@ -73,6 +73,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isHttpMessageHandler, span);
                     Assert.True(result, message);
 
+                    var newResult = span.IsHttpMessageHandler();
+                    Assert.True(newResult.Success, newResult.ToString());
+
                     Assert.Equal(expectedServiceName, span.Service);
                     Assert.Equal("HttpMessageHandler", span.Tags[Tags.InstrumentationName]);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");

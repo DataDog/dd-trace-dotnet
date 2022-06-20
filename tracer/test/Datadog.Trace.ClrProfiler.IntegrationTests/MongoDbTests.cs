@@ -84,6 +84,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isMongoDB, span);
                     Assert.True(result, message);
+
+                    var newResult = span.IsMongoDB();
+                    Assert.True(newResult.Success, newResult.ToString());
                 }
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.MongoDb);

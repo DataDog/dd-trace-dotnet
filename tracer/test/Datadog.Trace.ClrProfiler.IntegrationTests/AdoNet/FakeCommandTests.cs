@@ -52,6 +52,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAdoNet, span);
                 Assert.True(result, message);
 
+                var newResult = span.IsAdoNet();
+                Assert.True(newResult.Success, newResult.ToString());
+
                 Assert.Equal(expectedOperationName, span.Name);
                 Assert.Equal(expectedServiceName, span.Service);
                 Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");

@@ -48,6 +48,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isWebRequest, span);
                     Assert.True(result, message);
 
+                    var newResult = span.IsWebRequest();
+                    Assert.True(newResult.Success, newResult.ToString());
+
                     Assert.Equal(expectedServiceName, span.Service);
                     Assert.Equal("WebRequest", span.Tags[Tags.InstrumentationName]);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");

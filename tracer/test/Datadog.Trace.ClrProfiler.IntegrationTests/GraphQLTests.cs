@@ -170,6 +170,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isGraphQL, graphQLSpan);
                     Assert.True(result, message);
+
+                    var newResult = graphQLSpan.IsGraphQL();
+                    Assert.True(newResult.Success, newResult.ToString());
                 }
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();

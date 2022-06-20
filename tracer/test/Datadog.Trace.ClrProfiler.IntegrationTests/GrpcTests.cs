@@ -323,6 +323,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isGrpc, grpcSpan);
                     Assert.True(result, message);
+
+                    var newResult = grpcSpan.IsGrpc();
+                    Assert.True(newResult.Success, newResult.ToString());
                 }
 
                 await VerifyHelper.VerifySpans(spans, settings)

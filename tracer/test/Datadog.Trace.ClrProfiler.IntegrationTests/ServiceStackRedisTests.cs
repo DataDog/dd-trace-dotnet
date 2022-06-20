@@ -48,6 +48,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isServiceStackRedis, span);
                     Assert.True(result, message);
 
+                    var newResult = span.IsServiceStackRedis();
+                    Assert.True(newResult.Success, newResult.ToString());
+
                     Assert.Equal("Samples.ServiceStack.Redis-redis", span.Service);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }

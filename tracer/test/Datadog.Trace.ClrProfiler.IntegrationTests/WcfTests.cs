@@ -92,6 +92,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isWcf, span);
                     Assert.True(result, message);
+
+                    var newResult = span.IsWcf();
+                    Assert.True(newResult.Success, newResult.ToString());
                 }
 
                 // The custom binding doesn't trigger the integration

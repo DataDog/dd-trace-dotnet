@@ -143,6 +143,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isElasticsearchNet, span);
                     Assert.True(result, message);
 
+                    var newResult = span.IsElasticsearchNet();
+                    Assert.True(newResult.Success, newResult.ToString());
+
                     Assert.Equal("Samples.Elasticsearch.V7-elasticsearch", span.Service);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }

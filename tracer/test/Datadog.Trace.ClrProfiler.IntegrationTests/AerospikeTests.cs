@@ -73,6 +73,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 {
                     (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAerospike, span);
                     Assert.True(result, message);
+
+                    var newResult = span.IsAerospike();
+                    Assert.True(newResult.Success, newResult.ToString());
                 }
 
                 spans.Select(span => span.Resource).Should().ContainInOrder(expectedSpans);

@@ -134,6 +134,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 {
                     (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAwsSqs, span);
                     Assert.True(result, message);
+
+                    var newResult = span.IsAwsSqs();
+                    Assert.True(newResult.Success, newResult.ToString());
                 }
 
                 spans.OrderBy(s => s.Start).Should().BeEquivalentTo(_expectedSpans, options => options

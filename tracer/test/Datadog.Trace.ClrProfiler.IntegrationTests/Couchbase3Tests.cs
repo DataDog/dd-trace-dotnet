@@ -52,6 +52,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isCouchbase, span);
                     Assert.True(result, message);
 
+                    var newResult = span.IsCouchbase();
+                    Assert.True(newResult.Success, newResult.ToString());
+
                     Assert.Equal("Samples.Couchbase3-couchbase", span.Service);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }

@@ -1,4 +1,4 @@
-﻿// <copyright file="SystemDataSqliteTests.cs" company="Datadog">
+// <copyright file="SystemDataSqliteTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -43,6 +43,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             {
                 (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isSqlite, span);
                 Assert.True(result, message);
+
+                var newResult = span.IsSqlite();
+                Assert.True(newResult.Success, newResult.ToString());
 
                 Assert.Equal(expectedServiceName, span.Service);
                 Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");

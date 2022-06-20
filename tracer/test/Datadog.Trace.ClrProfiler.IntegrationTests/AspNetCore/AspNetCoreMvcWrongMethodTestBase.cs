@@ -42,6 +42,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             {
                 (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAspNetCore, aspnetCoreSpan);
                 Assert.True(result, message);
+
+                var newResult = aspnetCoreSpan.IsAspNetCore();
+                Assert.True(newResult.Success, newResult.ToString());
             }
 
             var aspnetCoreMvcSpans = spans.Where(s => s.Name == "aspnet_core_mvc.request");
@@ -49,6 +52,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             {
                 (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAspNetCoreMvc, aspnetCoreMvcSpan);
                 Assert.True(result, message);
+
+                var newResult = aspnetCoreMvcSpan.IsAspNetCoreMvc();
+                Assert.True(newResult.Success, newResult.ToString());
             }
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);

@@ -44,6 +44,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isSqlClient, span);
                 Assert.True(result, message);
 
+                var newResult = span.IsSqlClient();
+                Assert.True(newResult.Success, newResult.ToString());
+
                 Assert.Equal(expectedServiceName, span.Service);
                 Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
             }

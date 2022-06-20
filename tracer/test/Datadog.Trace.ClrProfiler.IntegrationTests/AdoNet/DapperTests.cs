@@ -41,6 +41,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                     (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isNpgsql, span);
                     Assert.True(result, message);
 
+                    var newResult = span.IsNpgsql();
+                    Assert.True(newResult.Success, newResult.ToString());
+
                     Assert.Equal(expectedOperationName, span.Name);
                     Assert.Equal(expectedServiceName, span.Service);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
@@ -68,6 +71,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                     // Assert Npgsql because the Dapper application uses Postgres for the actual client
                     (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isNpgsql, span);
                     Assert.True(result, message);
+
+                    var newResult = span.IsNpgsql();
+                    Assert.True(newResult.Success, newResult.ToString());
 
                     Assert.Equal(expectedOperationName, span.Name);
                     Assert.Equal(expectedServiceName, span.Service);

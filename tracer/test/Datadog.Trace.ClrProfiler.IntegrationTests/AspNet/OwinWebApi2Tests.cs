@@ -126,6 +126,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAspNetWebApi2, aspnetWebApi2Span);
                 Assert.True(result, message);
+
+                var newResult = aspnetWebApi2Span.IsAspNetWebApi2();
+                Assert.True(newResult.Success, newResult.ToString());
             }
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
