@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Datadog.Trace.TestHelpers
@@ -19,37 +20,31 @@ namespace Datadog.Trace.TestHelpers
 #pragma warning disable SA1402 // File may only contain a single type
 
 #pragma warning disable SA1201 // Elements should appear in the correct order
-    public struct Result
+    public class Result
     {
-        public MockSpan Span;
-        public string Message;
-        public bool Success;
+        public MockSpan Span { get; }
 
-        public Result(MockSpan span, string message)
+        public List<string> Errors { get; }
+
+        public bool Success
+        {
+            get => Errors.Count == 0;
+        }
+
+        public Result(MockSpan span)
         {
             Span = span;
-            Message = message;
-            Success = true;
+            Errors = new List<string>();
         }
 
         public static Result FromSpan(MockSpan span)
         {
-            return new Result(span, string.Empty);
+            return new Result(span);
         }
 
         public Result WithFailure(string failureMessage)
         {
-            Success = false;
-
-            if (Message.Length == 0)
-            {
-                Message = failureMessage;
-            }
-            else
-            {
-                Message = Message + ";" + failureMessage;
-            }
-
+            Errors.Add(failureMessage);
             return this;
         }
 
@@ -65,6 +60,15 @@ namespace Datadog.Trace.TestHelpers
             var t = new SpanTagAssertion(this);
             tagAssertions(t);
             return this;
+        }
+
+        public override string ToString()
+        {
+            string errorMessage = string.Concat(Errors.Select(s => $"{Environment.NewLine}- {s}"));
+
+            return $"Result: {Success}{Environment.NewLine}"
+                 + $"Span: {Span}{Environment.NewLine}"
+                 + $"Errors:{errorMessage}";
         }
     }
 }
