@@ -146,7 +146,7 @@ std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(Functi
         // try to get the type description
         if (!GetTypeDesc(pMetadataImport.Get(), classId, moduleId, mdTokenType, typeDesc))
         {
-            // This should never happen but in case it happens, we cached the module/frame value.
+            // This should never happen but in case it happens, we cache the module/frame value.
             // It's safe to cache, because there is no reason that the next calls to
             // GetTypeDesc will succeed.
             auto& value = _methods[functionId];
