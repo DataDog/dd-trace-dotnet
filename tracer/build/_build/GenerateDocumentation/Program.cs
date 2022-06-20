@@ -14,14 +14,14 @@ namespace GenerateDocumentation
     public class DocumentationGenerator
     {
         private readonly AbsolutePath _spanModelRulesFilePath;
-        private readonly AbsolutePath _docsDirectory;
+        private readonly AbsolutePath _outputFilePath;
 
         public DocumentationGenerator(
             AbsolutePath spanModelRulesFilePath,
-            AbsolutePath docsDirectory)
+            AbsolutePath outputFilePath)
         {
             _spanModelRulesFilePath = spanModelRulesFilePath;
-            _docsDirectory = docsDirectory;
+            _outputFilePath = outputFilePath;
 
             if (!File.Exists(_spanModelRulesFilePath))
             {
@@ -29,7 +29,7 @@ namespace GenerateDocumentation
             }
         }
 
-        public void GenerateDocumentation()
+        public void GenerateDocumentationFSharp()
         {
             var contents = File.ReadAllText(_spanModelRulesFilePath);
             if (contents == null)
@@ -88,12 +88,12 @@ namespace GenerateDocumentation
                             if (functionStartIndex > -1)
                             {
                                 functionStartIndex += 4;
-                                var newRequirement = SpanModel.Requirement.GenerateRequirement(line.Substring(functionStartIndex));
+                                var newRequirement = SpanModel.Requirement.GenerateRequirementFSharp(line.Substring(functionStartIndex));
                                 currentModel.Requirements.Add(newRequirement);
                             }
                             else if (currentModel.State == SpanModel.ModelState.Initialized)
                             {
-                                var newRequirement = SpanModel.Requirement.GenerateRequirement(line.Trim());
+                                var newRequirement = SpanModel.Requirement.GenerateRequirementFSharp(line.Trim());
                                 currentModel.Requirements.Add(newRequirement);
                             }
 
@@ -106,8 +106,109 @@ namespace GenerateDocumentation
                 }
             }
 
-            var spanModelFilePath = _docsDirectory / "span_metadata.md";
-            File.WriteAllText(spanModelFilePath, sb.ToString());
+            File.WriteAllText(_outputFilePath, sb.ToString());
+        }
+
+        public void GenerateDocumentationCSharp()
+        {
+            var contents = File.ReadAllText(_spanModelRulesFilePath);
+            if (contents == null)
+            {
+                return;
+            }
+
+            var sb = new StringBuilder();
+            sb.AppendLine("# Span Metadata");
+
+            var reader = new StringReader(contents);
+            var currentModel = new SpanModel();
+            while (true)
+            {
+                string line = reader.ReadLine();
+
+                if (line == null)
+                {
+                    if (currentModel.State == SpanModel.ModelState.Initialized)
+                    {
+                        GenerateSectionMarkdown(sb, currentModel);
+                    }
+
+                    break;
+                }
+
+                int functionStartIndex;
+                int functionEndIndex;
+
+                switch (currentModel.State)
+                {
+                    case SpanModel.ModelState.Missing:
+                        functionStartIndex = line.IndexOf("public static Result Is");
+                        if (functionStartIndex > -1)
+                        {
+                            functionStartIndex += 23;
+                            functionEndIndex = line.IndexOf("(", functionStartIndex);
+                            currentModel.SectionName = line.Substring(functionStartIndex, functionEndIndex - functionStartIndex).TrimEnd();
+                            currentModel.State = SpanModel.ModelState.Initialized;
+                        }
+                        break;
+                    case SpanModel.ModelState.Initialized:
+                    case SpanModel.ModelState.ParsingProperties:
+                    case SpanModel.ModelState.ParsingTags:
+                    case SpanModel.ModelState.ParsingMetrics:
+                        var trimmedLine = line.Trim();
+
+                        // Finish the section
+                        if (string.IsNullOrWhiteSpace(trimmedLine)
+                            || trimmedLine.StartsWith("}"))
+                        {
+                            GenerateSectionMarkdown(sb, currentModel);
+                            currentModel = new SpanModel();
+                        }
+                        else if (trimmedLine.StartsWith("//"))
+                        {
+                            // Do nothing
+                        }
+                        // Add requirements
+                        else
+                        {
+                            bool processRequirement = true;
+                            functionStartIndex = line.IndexOf("Properties(");
+                            if (functionStartIndex > -1)
+                            {
+                                processRequirement = false;
+                                currentModel.State = SpanModel.ModelState.ParsingProperties;
+                            }
+
+                            functionStartIndex = line.IndexOf("Tags(");
+                            if (functionStartIndex > -1)
+                            {
+                                processRequirement = false;
+                                currentModel.State = SpanModel.ModelState.ParsingTags;
+                            }
+
+                            functionStartIndex = line.IndexOf("Metrics(");
+                            if (functionStartIndex > -1)
+                            {
+                                processRequirement = false;
+                                currentModel.State = SpanModel.ModelState.ParsingMetrics;
+                            }
+
+                            if (processRequirement)
+                            {
+                                functionStartIndex = line.IndexOf(".");
+                                functionStartIndex += 1;
+                                var newRequirement = SpanModel.Requirement.GenerateRequirementCSharp(line.Substring(functionStartIndex), currentModel.State);
+                                currentModel.Requirements.Add(newRequirement);
+                            }
+                        }
+
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            File.WriteAllText(_outputFilePath, sb.ToString());
         }
 
         private static void GenerateSectionMarkdown(StringBuilder sb, SpanModel model)
@@ -180,6 +281,9 @@ namespace GenerateDocumentation
                 Missing,
                 Initialized,
                 AtLeastOneRequirementAdded,
+                ParsingProperties,
+                ParsingTags,
+                ParsingMetrics,
             }
 
             public enum PropertyType
@@ -211,7 +315,7 @@ namespace GenerateDocumentation
                     return input.Substring(0, 1).ToUpper() + input.Substring(1);
                 }
 
-                public static Requirement GenerateRequirement(string line)
+                public static Requirement GenerateRequirementFSharp(string line)
                 {
                     var parts = line.Replace(";", "")
                                     .Replace("[|", "")
@@ -226,7 +330,7 @@ namespace GenerateDocumentation
                     {
                         parts[i] = parts[i].Replace("`", "").Trim('"');
                     }
-                    
+
                     return parts[0] switch
                     {
                         null => Unknown,
@@ -266,6 +370,61 @@ namespace GenerateDocumentation
                                 RequiredValue = string.Join("; ", parts.Skip(2).Select(s => $"`{s}`")),
                             },
                         _ => throw new Exception($"Requirement {parts[0]} not recognized"),
+                    };
+                }
+
+                public static Requirement GenerateRequirementCSharp(string line, ModelState state)
+                {
+                    var parts = line.Replace(";", "")
+                                    .Replace(",", "")
+                                    .Replace("(", " ")
+                                    .Replace(")", "")
+                                    .Split(" ", StringSplitOptions.RemoveEmptyEntries);
+                    if (parts is null || parts.Length == 0)
+                    {
+                        return Unknown;
+                    }
+
+                    for (int i = 0; i < parts.Length; i++)
+                    {
+                        parts[i] = parts[i].Replace("`", "").Trim('"');
+                    }
+
+                    var propertyType = state switch
+                    {
+                        ModelState.ParsingProperties => PropertyType.Span,
+                        ModelState.ParsingTags => PropertyType.Tag,
+                        ModelState.ParsingMetrics => PropertyType.Metric,
+                        _ => throw new ArgumentException()
+                    };
+
+                    return (state, parts[0]) switch
+                    {
+                        (_, "Matches") => new Requirement
+                            {
+                                Property = $"{parts[1]}",
+                                PropertyType = propertyType,
+                                RequiredValue = $"`{parts[2]}`",
+                            },
+                        (_, "MatchesOneOf") => new Requirement
+                            {
+                                Property = $"{parts[1]}",
+                                PropertyType = propertyType,
+                                RequiredValue = string.Join("; ", parts.Skip(2).Select(s => $"`{s}`")),
+                            },
+                        (ModelState.ParsingTags, "IsOptional") => new Requirement
+                            {
+                                Property = $"{parts[1]}",
+                                PropertyType = propertyType,
+                                RequiredValue = "No",
+                            },
+                        (ModelState.ParsingTags, "IsPresent") => new Requirement
+                            {
+                                Property = $"{parts[1]}",
+                                PropertyType = propertyType,
+                                RequiredValue = "Yes",
+                            },
+                        (_, _) => throw new Exception($"Invalid requirement. RequirementName:{parts[0]}, State:{state}"),
                     };
                 }
             }

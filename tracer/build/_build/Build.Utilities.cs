@@ -190,10 +190,16 @@ partial class Build
         .Executes(() =>
         {
             var rulesFilePath = TestsDirectory / "Datadog.Trace.TestHelpers.FSharp" / "TracingIntegrationRules.fs";
-            var docsDirectory = RootDirectory / "docs";
+            var rulesOutput = RootDirectory / "docs" / "span_metadata.md";
 
-            var documentationGenerator = new DocumentationGenerator(rulesFilePath, docsDirectory);
-            documentationGenerator.GenerateDocumentation();
+            var documentationGenerator = new DocumentationGenerator(rulesFilePath, rulesOutput);
+            documentationGenerator.GenerateDocumentationFSharp();
+
+            var csharpRulesFilePath = TestsDirectory / "Datadog.Trace.TestHelpers" / "CSharpTracingIntegrationRules.cs";
+            var csharpRulesOutput = RootDirectory / "docs" / "csharp_span_metadata.md";
+
+            var csharpDocumentationGenerator = new DocumentationGenerator(csharpRulesFilePath, csharpRulesOutput);
+            csharpDocumentationGenerator.GenerateDocumentationCSharp();
         });
 
     Target UpdateVendoredCode => _ => _
