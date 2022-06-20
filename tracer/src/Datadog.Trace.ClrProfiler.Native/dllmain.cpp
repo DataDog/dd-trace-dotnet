@@ -4,6 +4,7 @@
 
 #include "dllmain.h"
 #include "class_factory.h"
+#include <iostream>
 
 const IID IID_IUnknown = {0x00000000, 0x0000, 0x0000, {0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46}};
 
@@ -15,12 +16,15 @@ extern "C"
 {
     BOOL STDMETHODCALLTYPE DllMain(HMODULE hModule, DWORD ul_reason_for_call, LPVOID lpReserved)
     {
+        std::cout << "DllMain";
         DllHandle = hModule;
         return TRUE;
     }
 
     HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID riid, LPVOID* ppv)
     {
+        std::cout << "DllGetClassObject";
+
         // {846F5F1C-F9AE-4B07-969E-05C26BC060D8}
         const GUID CLSID_CorProfiler = {0x846f5f1c, 0xf9ae, 0x4b07, {0x96, 0x9e, 0x5, 0xc2, 0x6b, 0xc0, 0x60, 0xd8}};
 

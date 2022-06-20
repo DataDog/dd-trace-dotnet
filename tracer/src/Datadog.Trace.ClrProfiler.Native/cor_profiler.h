@@ -38,6 +38,7 @@ private:
     RuntimeInformation runtime_information_;
     std::vector<IntegrationDefinition> integration_definitions_;
     std::deque<std::pair<ModuleID, std::vector<MethodReference>>> rejit_module_method_pairs;
+    std::atomic_bool from_attached_profiler_ = {false};
 
     std::unordered_set<shared::WSTRING> definitions_ids_;
     std::mutex definitions_ids_lock_;
@@ -96,10 +97,12 @@ private:
     HRESULT RunILStartupHook(const ComPtr<IMetaDataEmit2>&, const ModuleID module_id, const mdToken function_token, const FunctionInfo& caller, const ModuleMetadata& module_metadata);
     HRESULT GenerateVoidILStartupMethod(const ModuleID module_id, mdMethodDef* ret_method_token);
     HRESULT AddIISPreStartInitFlags(const ModuleID module_id, const mdToken function_token);
+    HRESULT SetupTracerAssembly(AssemblyInfo assembly_info);
 
     //
     // Initialization methods
     //
+    HRESULT Init(IUnknown* cor_profiler_info_unknown);
     void InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived);
 
 public:
@@ -114,6 +117,10 @@ public:
     // ICorProfilerCallback methods
     //
     HRESULT STDMETHODCALLTYPE Initialize(IUnknown* cor_profiler_info_unknown) override;
+
+    HRESULT STDMETHODCALLTYPE InitializeForAttach(IUnknown* cor_profiler_info_unknown, 
+                                                  void* pvClientData,
+                                                  UINT cbClientData) override;
 
     HRESULT STDMETHODCALLTYPE AssemblyLoadFinished(AssemblyID assembly_id, HRESULT hr_status) override;
 

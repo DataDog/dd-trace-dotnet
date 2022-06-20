@@ -443,7 +443,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Telemetry", "tracer
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sandbox.AutomaticInstrumentation", "tracer\test\test-applications\regression\Sandbox.AutomaticInstrumentation\Sandbox.AutomaticInstrumentation.csproj", "{10619BA2-AED1-482A-8570-BB7C7B83DDDC}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.Coverage.collector", "tracer\src\Datadog.Trace.Coverage.collector\Datadog.Trace.Coverage.collector.csproj", "{7A0D8A39-C60D-4BA1-93AB-D429080BBFA5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Coverage.collector", "tracer\src\Datadog.Trace.Coverage.collector\Datadog.Trace.Coverage.collector.csproj", "{7A0D8A39-C60D-4BA1-93AB-D429080BBFA5}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.TraceAnnotations", "tracer\test\test-applications\integrations\Samples.TraceAnnotations\Samples.TraceAnnotations.csproj", "{230A9B80-E1AA-469F-86F2-B7E257F14E66}"
 EndProject
@@ -466,6 +466,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Annotations", "tracer\src\Datadog.Trace.Annotations\Datadog.Trace.Annotations.csproj", "{4067EAF6-28C5-4B04-9C8A-80720C0541E6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AssemblyLoadContextRedirect", "tracer\test\test-applications\regression\AssemblyLoadContextRedirect\AssemblyLoadContextRedirect.csproj", "{C4CDF6A6-40E5-4CCD-AC4C-143F9F4398CA}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AspNetCoreMvc31.BuildDistributionNuget", "tracer\test\test-applications\integrations\Samples.AspNetCoreMvc31.BuildDistributionNuget\Samples.AspNetCoreMvc31.BuildDistributionNuget.csproj", "{864B731A-1355-4AD0-8E49-7952F1B43234}"
 EndProject
 Global
 	GlobalSection(SharedMSBuildProjectFiles) = preSolution
@@ -2329,6 +2331,18 @@ Global
 		{C4CDF6A6-40E5-4CCD-AC4C-143F9F4398CA}.Release|x64.Build.0 = Release|x64
 		{C4CDF6A6-40E5-4CCD-AC4C-143F9F4398CA}.Release|x86.ActiveCfg = Release|x86
 		{C4CDF6A6-40E5-4CCD-AC4C-143F9F4398CA}.Release|x86.Build.0 = Release|x86
+		{864B731A-1355-4AD0-8E49-7952F1B43234}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{864B731A-1355-4AD0-8E49-7952F1B43234}.Debug|Any CPU.Build.0 = Debug|x64
+		{864B731A-1355-4AD0-8E49-7952F1B43234}.Debug|x64.ActiveCfg = Debug|x64
+		{864B731A-1355-4AD0-8E49-7952F1B43234}.Debug|x64.Build.0 = Debug|x64
+		{864B731A-1355-4AD0-8E49-7952F1B43234}.Debug|x86.ActiveCfg = Debug|x86
+		{864B731A-1355-4AD0-8E49-7952F1B43234}.Debug|x86.Build.0 = Debug|x86
+		{864B731A-1355-4AD0-8E49-7952F1B43234}.Release|Any CPU.ActiveCfg = Release|x64
+		{864B731A-1355-4AD0-8E49-7952F1B43234}.Release|Any CPU.Build.0 = Release|x64
+		{864B731A-1355-4AD0-8E49-7952F1B43234}.Release|x64.ActiveCfg = Release|x64
+		{864B731A-1355-4AD0-8E49-7952F1B43234}.Release|x64.Build.0 = Release|x64
+		{864B731A-1355-4AD0-8E49-7952F1B43234}.Release|x86.ActiveCfg = Release|x86
+		{864B731A-1355-4AD0-8E49-7952F1B43234}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2504,6 +2518,7 @@ Global
 		{F6A03B6C-EBF9-4581-9904-EDC7270CF3BD} = {0972AD57-B16B-494F-AE0A-091DD6F3B42B}
 		{4067EAF6-28C5-4B04-9C8A-80720C0541E6} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{C4CDF6A6-40E5-4CCD-AC4C-143F9F4398CA} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
+		{864B731A-1355-4AD0-8E49-7952F1B43234} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

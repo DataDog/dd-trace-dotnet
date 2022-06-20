@@ -1,0 +1,29 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFrameworks>netcoreapp3.1</TargetFrameworks>
+    <RootNamespace>Samples.AspNetCoreMvc</RootNamespace>
+    <RestoreAdditionalProjectSources>
+      $(MSBuildThisFileDirectory)/../../../../src/Datadog.Monitoring.Distribution/bin/Release/packages
+    </RestoreAdditionalProjectSources>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Runtime.InteropServices.RuntimeInformation" Version="4.3.0" />
+  </ItemGroup>
+
+  <!--Files shared with AspNetCoreMvc21 -->
+  <ItemGroup>
+    <Compile Include="..\Samples.AspNetCoreMvc21\Controllers\**\*.*" Link="Controllers\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\Samples.AspNetCoreMvc21\Shared\**\*.*" Link="Shared\%(RecursiveDir)%(Filename)%(Extension)" />
+    <Content Include="..\Samples.AspNetCoreMvc21\Views\**\*.*" Link="Views\%(RecursiveDir)%(Filename)%(Extension)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="..\Samples.AspNetCoreMvc21\web.config" Link="web.config" CopyToOutputDirectory="Always" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+  </ItemGroup>
+</Project>

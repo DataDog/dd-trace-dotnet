@@ -32,10 +32,8 @@ namespace trace
 
 CorProfiler* profiler = nullptr;
 
-//
-// ICorProfilerCallback methods
-//
-HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown)
+
+HRESULT CorProfiler::Init(IUnknown* cor_profiler_info_unknown)
 {
     auto _ = trace::Stats::Instance()->InitializeMeasure();
 
@@ -52,8 +50,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     {
         if (IsAzureAppServices() && (NeedsAgentInAAS() || NeedsDogstatsdInAAS()))
         {
-            // In AAS, the profiler is used to load other processes, so we bypass this check. If the tracer is disabled, the managed loader won't initialize instrumentation
-            Logger::Info("DATADOG TRACER DIAGNOSTICS - In AAS, automatic tracing is disabled but keeping the profiler up to start child processes.");
+            // In AAS, the profiler is used to load other processes, so we bypass this check. If the tracer is disabled,
+            // the managed loader won't initialize instrumentation
+            Logger::Info("DATADOG TRACER DIAGNOSTICS - In AAS, automatic tracing is disabled but keeping the profiler "
+                         "up to start child processes.");
         }
         else
         {
@@ -181,7 +181,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
                        COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_ASSEMBLY_LOADS | COR_PRF_MONITOR_APPDOMAIN_LOADS |
                        COR_PRF_ENABLE_REJIT;
 
-    if (!EnableInlining())
+    if (!EnableInlining() || from_attached_profiler_)
     {
         Logger::Info("JIT Inlining is disabled.");
         event_mask |= COR_PRF_DISABLE_INLINING;
@@ -197,7 +197,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         event_mask |= COR_PRF_DISABLE_OPTIMIZATIONS;
     }
 
-    if (IsNGENEnabled())
+    if (IsNGENEnabled() && !from_attached_profiler_)
     {
         Logger::Info("NGEN is enabled.");
         event_mask |= COR_PRF_MONITOR_CACHE_SEARCHES;
@@ -209,7 +209,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
 
     // set event mask to subscribe to events and disable NGEN images
-    hr = this->info_->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
+    if (!from_attached_profiler_)
+    {
+        hr = this->info_->SetEventMask2(event_mask, COR_PRF_HIGH_ADD_ASSEMBLY_REFERENCES);
+    }
+    else
+    {
+        hr = this->info_->SetEventMask(event_mask & COR_PRF_ALLOWABLE_AFTER_ATTACH);
+    }
     if (FAILED(hr))
     {
         Logger::Warn("DATADOG TRACER DIAGNOSTICS - Failed to attach profiler: unable to set event mask.");
@@ -235,6 +242,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     //
     managed_profiler_assembly_reference = AssemblyReference::GetFromCache(managed_profiler_full_assembly_version);
 
+    if (from_attached_profiler_)
+    {
+        // it's the managed profiler that loaded us
+        managed_profiler_loaded_domain_neutral = true;
+    }
+
     const auto currentModuleFileName = shared::GetCurrentModuleFileName();
     if (currentModuleFileName == shared::EmptyWStr)
     {
@@ -249,6 +262,24 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     is_attached_.store(true);
     profiler = this;
     return S_OK;
+}
+
+//
+// ICorProfilerCallback methods
+//
+HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_unknown)
+{
+    auto result = CorProfiler::Init(cor_profiler_info_unknown);
+    return result;
+}
+
+HRESULT STDMETHODCALLTYPE CorProfiler::InitializeForAttach(IUnknown* cor_profiler_info_unknown, void* pvClientData,
+                                                               UINT cbClientData)
+{
+    from_attached_profiler_.store(true);
+
+    auto result = CorProfiler::Init(cor_profiler_info_unknown);
+    return result;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_id, HRESULT hr_status)
@@ -284,75 +315,81 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
             Logger::Debug("AssemblyLoadFinished: ", assembly_id, " ", hr_status);
         }
 
-        ComPtr<IUnknown> metadata_interfaces;
-        auto hr = this->info_->GetModuleMetaData(assembly_info.manifest_module_id, ofRead | ofWrite,
-                                                 IID_IMetaDataImport2, metadata_interfaces.GetAddressOf());
+        return SetupTracerAssembly(assembly_info);
+    }
 
-        if (FAILED(hr))
+    return S_OK;
+}
+
+HRESULT CorProfiler::SetupTracerAssembly(AssemblyInfo assembly_info)
+{
+    ComPtr<IUnknown> metadata_interfaces;
+    auto hr = this->info_->GetModuleMetaData(assembly_info.manifest_module_id, ofRead | ofWrite, IID_IMetaDataImport2,
+                                             metadata_interfaces.GetAddressOf());
+
+    if (FAILED(hr))
+    {
+        Logger::Warn("AssemblyLoadFinished failed to get metadata interface for module id ",
+                     assembly_info.manifest_module_id, " from assembly ", assembly_info.name, " HRESULT=0x",
+                     std::setfill('0'), std::setw(8), std::hex, hr);
+        return S_OK;
+    }
+
+    // Get the IMetaDataAssemblyImport interface to get metadata from the managed assembly
+    const auto& assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+    const auto& assembly_metadata = GetAssemblyImportMetadata(assembly_import);
+
+    // used multiple times for logging
+    const auto& assembly_version = assembly_metadata.version.str();
+
+    if (Logger::IsDebugEnabled())
+    {
+        Logger::Debug("AssemblyLoadFinished: AssemblyName=", assembly_info.name, " AssemblyVersion=", assembly_version);
+    }
+
+    const auto& expected_assembly_reference = trace::AssemblyReference(managed_profiler_full_assembly_version);
+
+    // used multiple times for logging
+    const auto& expected_version = expected_assembly_reference.version.str();
+
+    bool is_viable_version;
+
+    if (runtime_information_.is_core())
+    {
+        is_viable_version = (assembly_metadata.version >= expected_assembly_reference.version);
+    }
+    else
+    {
+        is_viable_version = (assembly_metadata.version == expected_assembly_reference.version);
+    }
+
+    // Check that Major.Minor.Build matches the profiler version.
+    // On .NET Core, allow managed library to be a higher version than the native library.
+    if (is_viable_version)
+    {
+        Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version, " matched profiler version v",
+                     expected_version);
+        managed_profiler_loaded_app_domains.insert(assembly_info.app_domain_id);
+
+        if (runtime_information_.is_desktop() && corlib_module_loaded)
         {
-            Logger::Warn("AssemblyLoadFinished failed to get metadata interface for module id ",
-                         assembly_info.manifest_module_id, " from assembly ", assembly_info.name, " HRESULT=0x",
-                         std::setfill('0'), std::setw(8), std::hex, hr);
-            return S_OK;
-        }
-
-        // Get the IMetaDataAssemblyImport interface to get metadata from the managed assembly
-        const auto& assembly_import = metadata_interfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
-        const auto& assembly_metadata = GetAssemblyImportMetadata(assembly_import);
-
-        // used multiple times for logging
-        const auto& assembly_version = assembly_metadata.version.str();
-
-        if (Logger::IsDebugEnabled())
-        {
-            Logger::Debug("AssemblyLoadFinished: AssemblyName=", assembly_info.name,
-                          " AssemblyVersion=", assembly_version);
-        }
-
-        const auto& expected_assembly_reference = trace::AssemblyReference(managed_profiler_full_assembly_version);
-
-        // used multiple times for logging
-        const auto& expected_version = expected_assembly_reference.version.str();
-
-        bool is_viable_version;
-
-        if (runtime_information_.is_core())
-        {
-            is_viable_version = (assembly_metadata.version >= expected_assembly_reference.version);
-        }
-        else
-        {
-            is_viable_version = (assembly_metadata.version == expected_assembly_reference.version);
-        }
-
-        // Check that Major.Minor.Build matches the profiler version.
-        // On .NET Core, allow managed library to be a higher version than the native library.
-        if (is_viable_version)
-        {
-            Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version, " matched profiler version v",
-                         expected_version);
-            managed_profiler_loaded_app_domains.insert(assembly_info.app_domain_id);
-
-            if (runtime_information_.is_desktop() && corlib_module_loaded)
+            // Set the managed_profiler_loaded_domain_neutral flag whenever the
+            // managed profiler is loaded shared
+            if (assembly_info.app_domain_id == corlib_app_domain_id)
             {
-                // Set the managed_profiler_loaded_domain_neutral flag whenever the
-                // managed profiler is loaded shared
-                if (assembly_info.app_domain_id == corlib_app_domain_id)
-                {
-                    Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll was loaded domain-neutral");
-                    managed_profiler_loaded_domain_neutral = true;
-                }
-                else
-                {
-                    Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll was not loaded domain-neutral");
-                }
+                Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll was loaded domain-neutral");
+                managed_profiler_loaded_domain_neutral = true;
+            }
+            else
+            {
+                Logger::Info("AssemblyLoadFinished: Datadog.Trace.dll was not loaded domain-neutral");
             }
         }
-        else
-        {
-            Logger::Warn("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version,
-                         " did not match profiler version v", expected_version);
-        }
+    }
+    else
+    {
+        Logger::Warn("AssemblyLoadFinished: Datadog.Trace.dll v", assembly_version, " did not match profiler version v",
+                     expected_version);
     }
 
     return S_OK;
@@ -567,7 +604,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                       " | IsResource = ", module_info.IsResource(), std::noboolalpha);
     }
 
-    if (module_info.IsNGEN())
+    if (module_info.IsNGEN() && !from_attached_profiler_)
     {
         // We check if the Module contains NGEN images and added to the
         // rejit handler list to verify the inlines.
@@ -3198,7 +3235,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     }
 
     // Call RequestRejit for register inliners and current NGEN module.
-    if (rejit_handler != nullptr)
+    if (rejit_handler != nullptr && !from_attached_profiler_)
     {
         // Process the current module to detect inliners.
         rejit_handler->AddNGenInlinerModule(module_id);

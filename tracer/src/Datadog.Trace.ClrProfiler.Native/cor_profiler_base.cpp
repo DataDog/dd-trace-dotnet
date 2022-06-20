@@ -434,6 +434,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerBase::HandleDestroyed(GCHandleID handleId)
 HRESULT STDMETHODCALLTYPE CorProfilerBase::InitializeForAttach(IUnknown* pCorProfilerInfoUnk, void* pvClientData,
                                                                UINT cbClientData)
 {
+    Logger::Debug("InitializeForAttach");
     return S_OK;
 }
 

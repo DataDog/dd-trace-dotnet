@@ -55,7 +55,7 @@ namespace UpdateVendors
                 downloadUrl: "https://github.com/JamesNK/Newtonsoft.Json/archive/12.0.1.zip",
                 pathToSrc: new[] { "Newtonsoft.Json-12.0.1", "src", "Newtonsoft.Json" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Newtonsoft.Json"));
-            
+
             Add(
                 libraryName: "dnlib",
                 version: "3.4.0",
@@ -71,6 +71,14 @@ namespace UpdateVendors
                 pathToSrc: new[] { "sketches-dotnet-1.0.0", "src", "Datadog.Sketches" },
                 // Perform standard CS file transform with additional '#nullable enable' directive at the beginning of the files, since the vendored project was built with <Nullable>enable</Nullable>
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Datadog.Sketches", AddNullableDirectiveTransform));
+
+            Add(
+                libraryName: "Microsoft.Diagnostics.NETCore.Client",
+                version: "6.0.328102",
+                downloadUrl: "https://github.com/dotnet/diagnostics/archive/refs/tags/v6.0.328102.zip",
+                pathToSrc: new[] { "diagnostics-6.0.328102", "src", "Microsoft.Diagnostics.NETCore.Client" },
+                // Perform standard CS file transform with additional '#nullable enable' directive at the beginning of the files, since the vendored project was built with <Nullable>enable</Nullable>
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Microsoft.Diagnostics.NETCore.Client"));
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();
@@ -145,7 +153,7 @@ namespace UpdateVendors
 
                         if (originalNamespace.Equals("dnlib"))
                         {
-                            // dnlib's only targets net461 and netstandard2.0. 
+                            // dnlib's only targets net461 and netstandard2.0.
                             // For our needs, it's more correct to consider `NETSTANDARD` as 'everything not .NET Framework'
                             builder.Replace("#if NETSTANDARD", "#if !NETFRAMEWORK");
                         }
@@ -164,8 +172,8 @@ namespace UpdateVendors
                                 @$"using\s+(\S+)\s+=\s+{Regex.Escape(originalNamespace)}.(.*);",
                                 match => $"using {match.Groups[1].Value} = Datadog.Trace.Vendors.{originalNamespace}.{match.Groups[2].Value};");
 
-                        
-                        
+
+
                         // Don't expose anything we don't intend to
                         // by replacing all "public" access modifiers with "internal"
                         return Regex.Replace(
@@ -178,13 +186,13 @@ namespace UpdateVendors
 
         static string GenerateWarningDisablePragma() =>
             "#pragma warning disable " +
-            "CS0618, " +      // Type or member is obsolete 
-            "CS0649, " +      // Field is never assigned to, and will always have its default value 
+            "CS0618, " +      // Type or member is obsolete
+            "CS0649, " +      // Field is never assigned to, and will always have its default value
             "CS1574, " +      // XML comment has a cref attribute that could not be resolved
-            "CS1580, " +      // Invalid type for parameter in XML comment cref attribute 
+            "CS1580, " +      // Invalid type for parameter in XML comment cref attribute
             "CS1581, " +      // Invalid return type in XML comment cref attribute
             "CS1584, " +      // XML comment has syntactically incorrect cref attribute
-            "SYSLIB0011, " +  // BinaryFormatter serialization is obsolete and should not be used. 
+            "SYSLIB0011, " +  // BinaryFormatter serialization is obsolete and should not be used.
             "SYSLIB0032";     // Recovery from corrupted process state exceptions is not supported; HandleProcessCorruptedStateExceptionsAttribute is ignored."
 
         private static void RewriteFileWithTransform(string filePath, Func<string, string> transform)

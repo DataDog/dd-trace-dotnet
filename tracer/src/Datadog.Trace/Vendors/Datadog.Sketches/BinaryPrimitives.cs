@@ -13,7 +13,7 @@
 using System.Runtime.CompilerServices;
 
 // ReSharper disable once CheckNamespace - Polyfill for netstandard2.0
-namespace System.Buffers.Binary
+namespace Datadog.Sketches.Vendors.System.Buffers.Binary
 {
     internal class BinaryPrimitives
     {

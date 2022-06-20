@@ -32,7 +32,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 tracerFrameworkDirectory = version.Major >= 6 ? "net6.0" : "netcoreapp3.1";
             }
 
-            var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME") ?? string.Empty;
+            var tracerHomeDirectory = ReadEnvironmentVariable("DD_DOTNET_TRACER_HOME");
+            if (tracerHomeDirectory == null)
+            {
+                _assemblies = new CachedAssembly[0];
+                return null;
+            }
+
             var fullPath = Path.Combine(tracerHomeDirectory, tracerFrameworkDirectory);
 
             // We use the List/Array approach due the number of files in the tracer home folder (7 in netstandard, 2 netcoreapp3.1+)
@@ -55,6 +61,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
 
         private static Assembly ResolveAssembly(string name)
         {
+            if (ManagedProfilerDirectory == null)
+            {
+                return null;
+            }
+
             var assemblyName = new AssemblyName(name);
             StartupLogger.Debug("Assembly Resolve event received for: {0}", name);
 

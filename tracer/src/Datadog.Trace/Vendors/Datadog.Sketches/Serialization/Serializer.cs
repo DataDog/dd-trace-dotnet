@@ -172,20 +172,8 @@ namespace Datadog.Trace.Vendors.Datadog.Sketches.Serialization
 
         private void WriteDoubleLittleEndian(double value)
         {
-#if NETFRAMEWORK
-            // .NET Framework is only supported on little-endian architectures
+            // TODO don't forget to undo these changes
             _writer.Write(value);
-#else
-            if (!BitConverter.IsLittleEndian)
-            {
-                var tmp = System.Buffers.Binary.BinaryPrimitives.ReverseEndianness(BitConverter.DoubleToInt64Bits(value));
-                _writer.Write(tmp);
-            }
-            else
-            {
-                _writer.Write(value);
-            }
-#endif
         }
 
         private void WriteTag(int fieldIndex, int wireType)
