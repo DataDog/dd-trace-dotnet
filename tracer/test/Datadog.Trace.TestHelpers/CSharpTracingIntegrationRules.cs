@@ -3,13 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Linq;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Vendors.StatsdClient;
-
 namespace Datadog.Trace.TestHelpers
 {
 #pragma warning disable SA1601 // Partial elements should be documented
