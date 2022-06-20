@@ -79,3 +79,20 @@ scenarios:
         duration: 240
         serverPort: 5000
         path: /hello/Exception
+
+  profiler_cpu:
+    application:
+      job: server
+      environmentVariables:
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
+        DD_PROFILING_ENABLED: 1
+        DD_PROFILING_CPU_ENABLED: 1
+        COMPlus_EnableDiagnostics: 1
+    load:
+      job: bombardier
+      variables:
+        warmup: 30
+        duration: 240
+        serverPort: 5000
+        path: /hello
