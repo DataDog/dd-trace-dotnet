@@ -71,7 +71,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             _tracer = tracer;
             _security = security;
-            aspNetCoreRequestHandler = new(Log, HttpRequestInOperationName, IntegrationId, CurrentTracer.Settings.ObfuscationQueryStringRegex);
+            aspNetCoreRequestHandler = new(Log, HttpRequestInOperationName, IntegrationId);
         }
 
         protected override string ListenerName => DiagnosticListenerName;

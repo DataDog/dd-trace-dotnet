@@ -172,7 +172,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     }
                 }
 
-                var url = request.GetUrlWithQueryString(tracerSettings.ObfuscationQueryStringRegex);
+                var url = request.GetUrlWithQueryString(tracerSettings.EnableQueryStringReporting);
 
                 span.DecorateWebServerSpan(
                     resourceName: resourceName,

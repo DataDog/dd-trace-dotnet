@@ -24,18 +24,15 @@ namespace Datadog.Trace.PlatformHelpers
         private readonly IDatadogLogger _log;
         private readonly IntegrationId _integrationId;
         private readonly string _requestInOperationName;
-        private readonly QueryStringObfuscator _queryStringObfuscator;
 
         public AspNetCoreHttpRequestHandler(
             IDatadogLogger log,
             string requestInOperationName,
-            IntegrationId integrationInfo,
-            string queryStringObfuscatorPattern)
+            IntegrationId integrationInfo)
         {
             _log = log;
             _integrationId = integrationInfo;
             _requestInOperationName = requestInOperationName;
-            _queryStringObfuscator = QueryStringObfuscator.Instance(queryStringObfuscatorPattern);
         }
 
         public string GetDefaultResourceName(HttpRequest request)
@@ -101,7 +98,7 @@ namespace Datadog.Trace.PlatformHelpers
         {
             string host = request.Host.Value;
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-            var url = request.GetUrlWithQueryString(_queryStringObfuscator);
+            var url = request.GetUrlWithQueryString(tracer.Settings.EnableQueryStringReporting);
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
             resourceName ??= GetDefaultResourceName(request);
 

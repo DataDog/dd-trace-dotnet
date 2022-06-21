@@ -76,33 +76,19 @@ namespace Datadog.Trace.Util.Http
 
             var dict = new Dictionary<string, object>
             {
-                {
-                    AddressesConstants.RequestMethod, request.Method
-                },
-                {
-                    AddressesConstants.RequestUriRaw, request.GetUrl()
-                },
-                {
-                    AddressesConstants.RequestQuery, queryStringDic
-                },
-                {
-                    AddressesConstants.RequestHeaderNoCookies, headersDic
-                },
-                {
-                    AddressesConstants.RequestCookies, cookiesDic
-                },
+                { AddressesConstants.RequestMethod, request.Method },
+                { AddressesConstants.RequestUriRaw, request.GetUrl() },
+                { AddressesConstants.RequestQuery, queryStringDic },
+                { AddressesConstants.RequestHeaderNoCookies, headersDic },
+                { AddressesConstants.RequestCookies, cookiesDic },
             };
 
             return dict;
         }
 
-        internal static string GetUrl(this HttpRequest request) => HttpRequestUtils.GetUrl(request.Scheme, request.Host.Value, request.PathBase.ToUriComponent(), request.Path.ToUriComponent());
+        internal static string GetUrl(this HttpRequest request) => HttpRequestUtils.GetUrl(request.Scheme, request.Host.Value, request.PathBase.ToUriComponent(), request.Path.ToUriComponent(), false);
 
-        internal static string GetUrlWithQueryString(this HttpRequest request, QueryStringObfuscator obfuscator)
-        {
-            var queryString = obfuscator.Obfuscate(request.QueryString.Value);
-            return HttpRequestUtils.GetUrl(request.Scheme, request.Host.Value, request.PathBase.ToUriComponent(), request.Path.ToUriComponent(), queryString);
-        }
+        internal static string GetUrlWithQueryString(this HttpRequest request, bool reportQueryString) => HttpRequestUtils.GetUrl(request.Scheme, request.Host.Value, request.PathBase.ToUriComponent(), request.Path.ToUriComponent(), reportQueryString, () => request.QueryString.Value);
     }
 }
 #endif

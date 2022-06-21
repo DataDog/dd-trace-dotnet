@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 #if NETFRAMEWORK
 
 using System.Collections.Generic;
@@ -79,43 +80,19 @@ namespace Datadog.Trace.Util.Http
 
             var dict = new Dictionary<string, object>(capacity: 5)
             {
-                {
-                    AddressesConstants.RequestMethod, request.HttpMethod
-                },
-                {
-                    AddressesConstants.RequestUriRaw, request.Url.AbsoluteUri
-                },
-                {
-                    AddressesConstants.RequestQuery, queryDic
-                },
-                {
-                    AddressesConstants.RequestHeaderNoCookies, headersDic
-                },
-                {
-                    AddressesConstants.RequestCookies, cookiesDic
-                }
+                { AddressesConstants.RequestMethod, request.HttpMethod },
+                { AddressesConstants.RequestUriRaw, request.Url.AbsoluteUri },
+                { AddressesConstants.RequestQuery, queryDic },
+                { AddressesConstants.RequestHeaderNoCookies, headersDic },
+                { AddressesConstants.RequestCookies, cookiesDic }
             };
 
             return dict;
         }
 
-        internal static string GetUrlWithQueryString(this IHttpRequestMessage request, string obfuscatorPattern)
-        {
-            var queryString = Obfuscate(request.RequestUri.Query, obfuscatorPattern);
-            return HttpRequestUtils.GetUrl(request.RequestUri.Scheme, request.RequestUri.Host, string.Empty, request.RequestUri.AbsolutePath, queryString);
-        }
+        internal static string GetUrlWithQueryString(this IHttpRequestMessage request, bool reportQueryString) => HttpRequestUtils.GetUrl(request.RequestUri.Scheme, request.RequestUri.Host, string.Empty, request.RequestUri.AbsolutePath, reportQueryString, () => request.RequestUri.Query);
 
-        internal static string GetUrlWithQueryString(this HttpRequestBase request, string obfuscatorPattern)
-        {
-            var queryString = Obfuscate(request.Url.Query, obfuscatorPattern);
-            return HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, queryString);
-        }
-
-        private static string Obfuscate(string queryString, string obfuscatorPattern)
-        {
-            var obfuscator = QueryStringObfuscator.Instance(obfuscatorPattern);
-            return obfuscator.Obfuscate(queryString);
-        }
+        internal static string GetUrlWithQueryString(this HttpRequestBase request, bool reportQueryString) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, reportQueryString, () => request.Url.Query);
     }
 }
 #endif

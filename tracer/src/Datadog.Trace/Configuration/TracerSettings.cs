@@ -168,7 +168,7 @@ namespace Datadog.Trace.Configuration
             DelayWcfInstrumentationEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                             ?? false;
 
-            ObfuscationQueryStringRegex = source?.GetString(ConfigurationKeys.ObfuscationQueryStringRegex) ?? .Util.Http.QueryStringObfuscator.DefaultObfuscationQueryStringRegex;
+            ObfuscationQueryStringRegex = source?.GetString(ConfigurationKeys.ObfuscationQueryStringRegex) ?? Util.Http.QueryStringObfuscator.DefaultObfuscationQueryStringRegex;
 
             EnableQueryStringReporting = source?.GetBool(ConfigurationKeys.EnableQueryStringReporting) ?? true;
 
