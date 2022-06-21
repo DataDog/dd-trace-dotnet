@@ -570,11 +570,6 @@ namespace Datadog.Trace.DiagnosticListeners
             mvcSpanTags.AspNetCoreArea = areaName;
             mvcSpanTags.AspNetCorePage = pagePath;
             mvcSpanTags.AspNetCoreRoute = aspNetRoute;
-            var rootSpan = span.Context.TraceContext?.RootSpan;
-            if (rootSpan != null)
-            {
-                rootSpan.SetTag(Tags.HttpRoute, aspNetRoute);
-            }
 
             if (!isUsingEndpointRouting && isFirstExecution)
             {
@@ -582,6 +577,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 // these will already be set correctly
                 parentTags.AspNetCoreRoute = aspNetRoute;
                 parentSpan.ResourceName = span.ResourceName;
+                parentSpan.SetTag(Tags.HttpRoute, aspNetRoute);
             }
 
             return span;
@@ -760,6 +756,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     span.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
+                    span.SetTag(Tags.HttpRoute, normalizedRoute);
                 }
             }
         }

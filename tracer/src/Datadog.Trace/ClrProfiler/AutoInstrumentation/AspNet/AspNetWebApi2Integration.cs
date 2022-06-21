@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -47,6 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 var request = controllerContext.Request;
                 SpanContext propagatedContext = null;
                 var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
+                tags = new AspNetTags();
 
                 if (request != null && tracer.InternalActiveScope == null)
                 {
@@ -63,12 +65,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     {
                         Log.Error(ex, "Error extracting propagated HTTP headers.");
                     }
+
+                    if (request.Properties.TryGetValue("MS_OwinContext", out var owinContextObj))
+                    {
+                        if (owinContextObj != null)
+                        {
+                            if (owinContextObj.TryDuckCast<IOwinContext>(out var owinContext))
+                            {
+                                Headers.Ip.RequestIpExtractor.AddIpToTags(
+                                    owinContext.Request.RemoteIpAddress,
+                                    owinContext.Request.IsSecure,
+                                    key => request.Headers.TryGetValues(key, out var values) ? values?.FirstOrDefault() : string.Empty,
+                                    tracer.Settings.IpHeader,
+                                    tags);
+                            }
+                        }
+                    }
                 }
 
-                tags = new AspNetTags();
                 scope = tracer.StartActiveInternal(OperationName, propagatedContext, tags: tags);
                 UpdateSpan(controllerContext, scope.Span, tags, tagsFromHeaders);
-
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
@@ -173,6 +189,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     tags.AspNetController = controller;
                     tags.AspNetArea = area;
                     tags.AspNetRoute = route;
+                    span.Context.TraceContext.RootSpan?.SetTag(Tags.HttpRoute, route);
                 }
 
                 if (newResourceNamesEnabled)
