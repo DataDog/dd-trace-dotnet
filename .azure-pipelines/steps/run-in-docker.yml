@@ -38,24 +38,24 @@ steps:
         --env IncludeMinorPackageVersions=$(IncludeMinorPackageVersions) \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
         --env DD_API_KEY=$(DD_API_KEY) \
-        --env DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) \
         --env DD_SERVICE=dd-trace-dotnet \
         --env DD_ENV=CI \
-        --env TF_BUILD=$(TF_BUILD) \
-        --env BUILD_DEFINITIONNAME=$(BUILD_DEFINITIONNAME) \
-        --env BUILD_BUILDID=$(BUILD_BUILDID) \
-        --env BUILD_SOURCESDIRECTORY=$(BUILD_SOURCESDIRECTORY) \
-        --env BUILD_REPOSITORY_URI=$(BUILD_REPOSITORY_URI) \
-        --env BUILD_SOURCEBRANCH=$(BUILD_SOURCEBRANCH) \
-        --env BUILD_SOURCEVERSION=$(BUILD_SOURCEVERSION) \
-        --env SYSTEM_TEAMFOUNDATIONSERVERURI=$(SYSTEM_TEAMFOUNDATIONSERVERURI) \
-        --env SYSTEM_TEAMPROJECT=$(SYSTEM_TEAMPROJECT) \
-        --env SYSTEM_TEAMPROJECTID=$(SYSTEM_TEAMPROJECTID) \
-        --env SYSTEM_JOBID=$(SYSTEM_JOBID) \
-        --env SYSTEM_TASKINSTANCEID=$(SYSTEM_TASKINSTANCEID) \
-        --env SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI=$(SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI) \
-        --env SYSTEM_PULLREQUEST_SOURCEBRANCH=$(SYSTEM_PULLREQUEST_SOURCEBRANCH) \
-        --env SYSTEM_PULLREQUEST_SOURCECOMMITID=$(SYSTEM_PULLREQUEST_SOURCECOMMITID) \
+        --env DD_LOGGER_API_KEY \
+        --env TF_BUILD \
+        --env BUILD_DEFINITIONNAME \
+        --env BUILD_BUILDID \
+        --env BUILD_SOURCESDIRECTORY \
+        --env BUILD_REPOSITORY_URI \
+        --env BUILD_SOURCEBRANCH \
+        --env BUILD_SOURCEVERSION \
+        --env SYSTEM_TEAMFOUNDATIONSERVERURI \
+        --env SYSTEM_TEAMPROJECT \
+        --env SYSTEM_TEAMPROJECTID \
+        --env SYSTEM_JOBID \
+        --env SYSTEM_TASKINSTANCEID \
+        --env SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI \
+        --env SYSTEM_PULLREQUEST_SOURCEBRANCH \
+        --env SYSTEM_PULLREQUEST_SOURCECOMMITID \
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
   displayName: Run '${{ parameters.command }}' in Docker
