@@ -108,13 +108,13 @@ internal class TraceTagCollection
     /// The returned string is cached and reused if no relevant tags are changed between calls.
     /// </summary>
     /// <returns>A string that can be used for horizontal propagation using the "x-datadog-tags" header.</returns>
-    public string ToPropagationHeader()
+    public string ToPropagationHeader(int maxLength)
     {
         if (_cachedPropagationHeader == null)
         {
             lock (_listLock)
             {
-                _cachedPropagationHeader = TagPropagation.ToHeader(this, PropagationHeaderMaxLength);
+                _cachedPropagationHeader = TagPropagation.ToHeader(this, maxLength);
             }
         }
 
