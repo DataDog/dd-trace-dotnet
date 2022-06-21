@@ -17,56 +17,63 @@ namespace Datadog.Trace.Util.Http
         /// </summary>
         public const string DefaultObfuscationQueryStringRegex = @"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)(?:\s*=[^&]+|""\s*:\s*""[^""]+"")|bearer\s+[a-z0-9\._\-]|token:[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\w=-]+\.ey[I-L][\w=-]+(?:\.[\w.+\/=-]+)?|[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}[^\-]+[\-]{5}END[a-z\s]+PRIVATE\sKEY|ssh-rsa\s*[a-z0-9\/\.+]{100,}";
 
-        private const string ReplacementString = "<redacted>";
-
         private static QueryStringObfuscator _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
-        private readonly Regex _regex;
-        private readonly IDatadogLogger _log = DatadogLogging.GetLoggerFor(typeof(QueryStringObfuscator));
-        private readonly bool _disabled;
+        private readonly Obfuscator _obfuscator;
 
-        private QueryStringObfuscator()
-        {
-            var tracerInstance = Tracer.Instance;
-            var obfuscationQueryStringRegex = tracerInstance.Settings.ObfuscationQueryStringRegex;
-            if (string.IsNullOrEmpty(obfuscationQueryStringRegex))
-            {
-                _disabled = true;
-            }
-            else
-            {
-                _regex = new(obfuscationQueryStringRegex, RegexOptions.IgnoreCase | RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
-            }
-        }
+        private QueryStringObfuscator() => _obfuscator = new();
+
+        internal string Obfuscate(string queryString) => _obfuscator.Obfuscate(queryString);
 
         /// <summary>
         /// Gets or sets the global <see cref="QueryStringObfuscator"/> instance.
         /// </summary>
-        public static QueryStringObfuscator Instance() => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock);
+        public static QueryStringObfuscator Instance() => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock, () => new());
 
-        internal string Obfuscate(string queryString)
+        internal class Obfuscator
         {
-            if (_disabled || string.IsNullOrEmpty(queryString))
+            private const string ReplacementString = "<redacted>";
+            private readonly Regex _regex;
+            private readonly IDatadogLogger _log = DatadogLogging.GetLoggerFor(typeof(QueryStringObfuscator));
+            private readonly bool _disabled;
+
+            internal Obfuscator(string pattern = null)
             {
-                return queryString;
+                pattern ??= Tracer.Instance.Settings.ObfuscationQueryStringRegex;
+                if (string.IsNullOrEmpty(pattern))
+                {
+                    _disabled = true;
+                }
+                else
+                {
+                    _regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
+                }
             }
 
-            try
+            internal string Obfuscate(string queryString)
             {
-                return _regex.Replace(queryString, ReplacementString);
-            }
-            catch (RegexMatchTimeoutException)
-            {
-                Log();
+                if (_disabled || string.IsNullOrEmpty(queryString))
+                {
+                    return queryString;
+                }
+
+                try
+                {
+                    return _regex.Replace(queryString, ReplacementString);
+                }
+                catch (RegexMatchTimeoutException)
+                {
+                    Log();
+                }
+
+                return string.Empty;
             }
 
-            return string.Empty;
-        }
-
-        internal virtual void Log()
-        {
-            _log.Error("Query string could not be redacted using regex {pattern}", _regex.ToString());
+            internal virtual void Log()
+            {
+                _log.Error("Query string could not be redacted using regex {pattern}", _regex.ToString());
+            }
         }
     }
 }
