@@ -12,39 +12,44 @@ namespace Datadog.Trace.Headers.Ip
 {
     internal static class RequestIpExtractor
     {
-        internal static readonly IReadOnlyList<string> IpHeaders = new[] { "x-forwarded-for", "x-real-ip", "client-ip", "x-forwarded", "x-cluster-client-ip", "forwarded-for", "forwarded", "via", "true-client-ip" };
+        private static readonly IReadOnlyList<string> IpHeaders = new[] { "x-forwarded-for", "x-real-ip", "client-ip", "x-forwarded", "x-cluster-client-ip", "forwarded-for", "forwarded", "via", "true-client-ip" };
         internal static readonly IReadOnlyList<string> MainHeaders = new[] { "user-agent", "referer" };
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RequestIpExtractor));
 
         internal static IpInfo ExtractIpAndPort(Func<string, string> getHeader, string customIpHeader, bool isSecureConnection, IpInfo peerIpFallback)
         {
-            var ipPotentialValues = new List<string>();
+            IpInfo result = null;
             if (!string.IsNullOrEmpty(customIpHeader))
             {
                 var value = getHeader(customIpHeader);
                 if (!string.IsNullOrEmpty(value))
                 {
-                    ipPotentialValues.Add(getHeader(customIpHeader));
+                    result = IpExtractor.RealIpFromValue(value, isSecureConnection);
+                    if (result == null)
+                    {
+                        Log.Warning("A custom header for ip with value {value} was configured but no ip could be read", value);
+                        return null;
+                    }
                 }
             }
 
+            string potentialIp = null;
             foreach (var headerIp in IpHeaders)
             {
-                var potentialIp = getHeader(headerIp);
-                if (!string.IsNullOrEmpty(potentialIp))
+                var headerValue = getHeader(headerIp);
+                if (!string.IsNullOrEmpty(headerValue))
                 {
-                    ipPotentialValues.Add(potentialIp);
+                    if (!string.IsNullOrEmpty(potentialIp) || !string.IsNullOrEmpty(customIpHeader))
+                    {
+                        Log.Warning("Multiple ip headers have been found, none will be reported", potentialIp);
+                        return null;
+                    }
+
+                    potentialIp = headerValue;
                 }
             }
 
-            if (ipPotentialValues.Count > 1)
-            {
-                Log.Error("More than one IP header have been found in headers {headers}, no IP will be reported", string.Join(", ", ipPotentialValues));
-                return peerIpFallback;
-            }
-
-            var result = IpExtractor.GetRealIpFromValue(ipPotentialValues[0], isSecureConnection);
-            return result ?? peerIpFallback;
+            return result ?? (!string.IsNullOrEmpty(potentialIp) ? IpExtractor.RealIpFromValue(potentialIp, isSecureConnection) : peerIpFallback);
         }
 
         internal static void AddIpToTags(string peerIpAddress, bool isSecureConnection, Func<string, string> getHeader, string customIpHeader, WebTags tags)
@@ -56,7 +61,10 @@ namespace Datadog.Trace.Headers.Ip
         internal static void AddIpToTags(IpInfo peerIp, bool isSecureConnection, Func<string, string> getHeader, string customIpHeader, WebTags tags)
         {
             var ipInfo = ExtractIpAndPort(getHeader, customIpHeader, isSecureConnection, peerIp);
-            tags.SetTag(Tags.HttpClientIp, ipInfo.IpAddress);
+            if (ipInfo != null)
+            {
+                tags.SetTag(Tags.HttpClientIp, ipInfo.IpAddress);
+            }
         }
     }
 }
