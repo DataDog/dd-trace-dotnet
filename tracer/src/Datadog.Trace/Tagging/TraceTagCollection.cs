@@ -20,9 +20,12 @@ internal class TraceTagCollection
     private string? _cachedPropagationHeader;
 
     public TraceTagCollection(List<KeyValuePair<string, string>>? tags = null, int maxHeaderLength = 512)
+    public TraceTagCollection(List<KeyValuePair<string, string>>? tags = null, string? cachedPropagationHeader = null)
     {
         _tags = tags ?? new List<KeyValuePair<string, string>>(2);
         PropagationHeaderMaxLength = maxHeaderLength;
+        _tags = tags;
+        _cachedPropagationHeader = cachedPropagationHeader;
     }
 
     /// <summary>

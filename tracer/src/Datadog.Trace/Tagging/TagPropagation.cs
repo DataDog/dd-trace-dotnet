@@ -73,6 +73,7 @@ internal static class TagPropagation
 
         var headerTags = propagationHeader.Split(TagPairSeparators, StringSplitOptions.RemoveEmptyEntries);
         traceTags = new List<KeyValuePair<string, string>>(headerTags.Length);
+        string? cachedHeader = propagationHeader;
 
         foreach (var headerTag in headerTags)
         {
@@ -97,10 +98,21 @@ internal static class TagPropagation
 
                     traceTags.Add(new(name, value));
                 }
+
+                else
+                {
+                    // we can't reuse the same string if we skip any key/value pair
+                    cachedHeader = null;
+                }
+            }
+            else
+            {
+                // we can't reuse the same string if we skip any key/value pair
+                cachedHeader = null;
             }
         }
 
-        tagCollection = new TraceTagCollection(traceTags, maxHeaderLength);
+        tagCollection = new TraceTagCollection(traceTags, cachedHeader);
         return true;
     }
 
