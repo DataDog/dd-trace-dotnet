@@ -285,7 +285,6 @@ namespace Datadog.Trace.AppSec
             LogMatchesIfDebugEnabled(resultData, blocked);
 
             span.SetTag(Tags.AppSecJson, "{\"triggers\":" + resultData + "}");
-            // todo what to do here
             var clientIp = span.GetTag(Tags.HttpClientIp);
             if (!string.IsNullOrEmpty(clientIp))
             {
@@ -294,8 +293,6 @@ namespace Datadog.Trace.AppSec
 
             span.SetTag(Tags.Origin, "appsec");
 
-            // todo ip
-            // span.SetTag(Tags.ActorIp, ipInfo.IpAddress);
             span.SetTag(Tags.AppSecRuleFileVersion, _waf.InitializationResult.RuleFileVersion);
             span.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
             span.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
