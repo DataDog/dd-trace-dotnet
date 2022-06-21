@@ -211,7 +211,6 @@
     <ClInclude Include="..\..\..\shared\src\native-src\dynamic_library_base.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\miniutf.hpp" />
     <ClInclude Include="..\..\..\shared\src\native-src\miniutfdata.h" />
-    <ClInclude Include="com_ptr.h" />
     <ClInclude Include="cor_profiler_class_factory.h" />
     <ClInclude Include="cor_profiler.h" />
     <ClInclude Include="dynamic_instance.h" />

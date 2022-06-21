@@ -96,8 +96,13 @@ namespace Datadog.InstrumentedAssemblyGenerator
 
             if (originalsModulesOfRewrittenMembers.Length != instrumentedMethodsByModule.Count)
             {
-                throw new InvalidOperationException("Can't find all original modules to modify. " +
-                                                    "Verify that modules in 'INPUT_OriginalAssemblies' directory are from the same compilation as it exported in '.instrlog' file");
+                // if we have in the list multiple modules with same name, we will fail but it should not an issue for instrumentation so skip this case
+                if (instrumentedMethodsByModule.Select(d => d.Key.ModuleName).Distinct().Count() != originalsModulesOfRewrittenMembers.Length)
+                {
+                    throw new InvalidOperationException(
+                        "Can't find all original modules to modify. " +
+                        "Verify that modules in 'INPUT_OriginalAssemblies' directory are from the same compilation as it exported in '.instrlog' file");
+                }
             }
 
             if (_args.ModulesToGenerate.Any())

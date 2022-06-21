@@ -3,63 +3,57 @@
 
 namespace instrumented_assembly_generator
 {
-namespace
+HRESULT GetTypeRefName(const ComPtr<IMetaDataImport>& metadataImport, const mdToken& token, shared::WSTRING& name)
 {
-    HRESULT GetTypeRefName(const ComPtr<IMetaDataImport>& metadataImport, const mdToken& token, shared::WSTRING& name)
-    {
-        HRESULT hr;
-        WCHAR szTypeName[name_length_limit]{};
-        mdModule scope;
-        ULONG cchTypeDefActualSize;
-        IfFailRet(metadataImport->GetModuleFromScope(&scope));
-        IfFailRet(metadataImport->GetTypeRefProps(
-            token, &scope, szTypeName, instrumented_assembly_generator::name_length_limit, &cchTypeDefActualSize));
-        name = shared::WSTRING(szTypeName);
-        return hr;
-    }
+    HRESULT hr;
+    WCHAR szTypeName[name_length_limit]{};
+    mdModule scope;
+    ULONG cchTypeDefActualSize;
+    IfFailRet(metadataImport->GetModuleFromScope(&scope));
+    IfFailRet(metadataImport->GetTypeRefProps(
+        token, &scope, szTypeName, instrumented_assembly_generator::name_length_limit, &cchTypeDefActualSize));
+    name = shared::WSTRING(szTypeName);
+    return hr;
+}
 
-    HRESULT GetTypeSpecName(const ComPtr<IMetaDataImport>& metadataImport, const mdToken& token, shared::WSTRING& name)
-    {
-        HRESULT hr;
-        PCCOR_SIGNATURE signature;
-        ULONG signature_length;
-        IfFailRet(metadataImport->GetTypeSpecFromToken(token, &signature, &signature_length));
-        const auto typeSpecSig = MemberSignature(signature, signature_length, 0);
-        name = typeSpecSig.TypeSigToString(metadataImport);
-        return hr;
-    }
+HRESULT GetTypeSpecName(const ComPtr<IMetaDataImport>& metadataImport, const mdToken& token, shared::WSTRING& name)
+{
+    HRESULT hr;
+    PCCOR_SIGNATURE signature;
+    ULONG signature_length;
+    IfFailRet(metadataImport->GetTypeSpecFromToken(token, &signature, &signature_length));
+    const auto typeSpecSig = MemberSignature(signature, signature_length, 0);
+    name = typeSpecSig.TypeSigToString(metadataImport);
+    return hr;
+}
 
-    HRESULT GetMethodSpecName(const ComPtr<IMetaDataImport2>& metadataImport2, const mdToken& token, shared::WSTRING& name)
-    {
-        HRESULT hr;
-        PCCOR_SIGNATURE signature;
-        ULONG signature_length;
-        mdToken parent;
-        IfFailRet(metadataImport2->GetMethodSpecProps(token, &parent, &signature, &signature_length));
-        const auto methodSpecSig = MemberSignature(signature, signature_length, 0);
-        name = methodSpecSig.MethodSigToString(metadataImport2);
-        return hr;
-    }
+HRESULT GetMethodSpecName(const ComPtr<IMetaDataImport2>& metadataImport2, const mdToken& token, shared::WSTRING& name)
+{
+    HRESULT hr;
+    PCCOR_SIGNATURE signature;
+    ULONG signature_length;
+    mdToken parent;
+    IfFailRet(metadataImport2->GetMethodSpecProps(token, &parent, &signature, &signature_length));
+    const auto methodSpecSig = MemberSignature(signature, signature_length, 0);
+    name = methodSpecSig.MethodSigToString(metadataImport2);
+    return hr;
+}
 
-    shared::WSTRING GetMethodSpecSigName(PCCOR_SIGNATURE& pSig, const ComPtr<IMetaDataImport>& metadataImport)
+shared::WSTRING GetMethodSpecSigName(PCCOR_SIGNATURE& pSig, const ComPtr<IMetaDataImport>& metadataImport)
+{
+    shared::WSTRING name;
+    auto const numOfParams = *pSig;
+    pSig++;
+    for (auto i = 0; i < numOfParams; i++)
     {
-        shared::WSTRING name;
-        auto const numOfParams = *pSig;
-        pSig++;
-        for (auto i = 0; i < numOfParams; i++)
+        if (i > 0)
         {
-            if (i > 0 && i < numOfParams)
-            {
-                name += WStr(",");
-            }
-            name += MemberSignature::GetTypeSigName(pSig, metadataImport);
+            name += WStr(",");
         }
-        return name;
+        name += MemberSignature::GetTypeSigName(pSig, metadataImport);
     }
-
-   
-
-} // namespace
+    return name;
+}
 
 HRESULT GetTypeName(const ComPtr<IMetaDataImport>& metadataImport, const mdToken& token, shared::WSTRING& name)
 {

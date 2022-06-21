@@ -4,30 +4,27 @@
 
 namespace instrumented_assembly_generator
 {
-    //TODO:
-// The behaviour of the IMetadata interface when defining members is to creat ea new one if no one exist, and return the
-// existing one if it's already exist
-// so by definition we may write to disk more than one identical member. To avoid this, we have to keep hashset of the
+// TODO:
+// The behaviour of the IMetadata interface when defining members is to create a new one if no one exist,
+// and return the existing one if it's already exist, so by definition we may write to disk more than one identical member.
+// To avoid this, we have to keep hashset of the
 // created tokens.
 
-InstrumentedAssemblyGeneratorMetadataInterfaces::InstrumentedAssemblyGeneratorMetadataInterfaces(
-    const ComPtr<IUnknown>& metadataInterfaces, ICorProfilerInfo12* corProfilerInfo) :
-    m_metadataInterfaces(metadataInterfaces), m_corProfilerInfo(corProfilerInfo)
+MetadataInterfaces::MetadataInterfaces(
+    const ComPtr<IUnknown>& metadataInterfaces) :
+    m_metadataInterfaces(metadataInterfaces)
 {
-    Log::Debug("InstrumentedAssemblyGeneratorMetadataInterfaces::.ctor");
-    // attach from tests, we can do it also with ev and spin
-    //std::this_thread::sleep_for(std::chrono::milliseconds(20000));
-
     AddRef();
+    // attach from tests, we can do it also with ev and spin
+    // std::this_thread::sleep_for(std::chrono::milliseconds(20000));
 }
 
-InstrumentedAssemblyGeneratorMetadataInterfaces::~InstrumentedAssemblyGeneratorMetadataInterfaces()
+MetadataInterfaces::~MetadataInterfaces()
 {
 }
 
-HRESULT STDMETHODCALLTYPE InstrumentedAssemblyGeneratorMetadataInterfaces::QueryInterface(REFIID riid, void** ppvObject)
+HRESULT STDMETHODCALLTYPE MetadataInterfaces::QueryInterface(REFIID riid, void** ppvObject)
 {
-    Log::Debug("InstrumentedAssemblyGeneratorMetadataInterfaces::QueryInterface");
     if (ppvObject == nullptr)
     {
         return E_POINTER;
@@ -42,7 +39,7 @@ HRESULT STDMETHODCALLTYPE InstrumentedAssemblyGeneratorMetadataInterfaces::Query
         riid == IID_IUnknown)
     {
         ComPtr<IUnknown> temp;
-        const HRESULT hr = m_metadataInterfaces->QueryInterface(riid, reinterpret_cast<void**>(&temp));
+        const HRESULT hr = m_metadataInterfaces->QueryInterface(riid, reinterpret_cast<void**>(temp.GetAddressOf()));
         if (FAILED(hr))
         {
             Log::Warn(
@@ -135,15 +132,13 @@ HRESULT STDMETHODCALLTYPE InstrumentedAssemblyGeneratorMetadataInterfaces::Query
     return E_NOINTERFACE;
 }
 
-ULONG STDMETHODCALLTYPE InstrumentedAssemblyGeneratorMetadataInterfaces::AddRef(void)
+ULONG STDMETHODCALLTYPE MetadataInterfaces::AddRef(void)
 {
-    Log::Debug("InstrumentedAssemblyGeneratorMetadataInterfaces::AddRef");
     return std::atomic_fetch_add(&this->m_refCount, 1) + 1;
 }
 
-ULONG STDMETHODCALLTYPE InstrumentedAssemblyGeneratorMetadataInterfaces::Release(void)
+ULONG STDMETHODCALLTYPE MetadataInterfaces::Release(void)
 {
-    Log::Debug("InstrumentedAssemblyGeneratorMetadataInterfaces::Release");
     int count = std::atomic_fetch_sub(&this->m_refCount, 1) - 1;
 
     if (count <= 0)
@@ -154,7 +149,7 @@ ULONG STDMETHODCALLTYPE InstrumentedAssemblyGeneratorMetadataInterfaces::Release
     return count;
 }
 
-void InstrumentedAssemblyGeneratorMetadataInterfaces::WriteMetadataChange(const mdToken* pToken,
+void MetadataInterfaces::WriteMetadataChange(const mdToken* pToken,
                                                                           const shared::WSTRING& metadataName) const
 {
     const auto metadataImport = m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport);
@@ -172,7 +167,7 @@ void InstrumentedAssemblyGeneratorMetadataInterfaces::WriteMetadataChange(const 
     WriteTextToFile(fileNameStream.str(), stringStream.str());
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineTypeDef(LPCWSTR szTypeDef, DWORD dwTypeDefFlags,
+HRESULT MetadataInterfaces::DefineTypeDef(LPCWSTR szTypeDef, DWORD dwTypeDefFlags,
                                                                        mdToken tkExtends, mdToken rtkImplements[],
                                                                        mdTypeDef* ptd)
 {
@@ -182,7 +177,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineTypeDef(LPCWSTR s
     return hr;
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineMethod(mdTypeDef td, LPCWSTR szName, DWORD dwMethodFlags,
+HRESULT MetadataInterfaces::DefineMethod(mdTypeDef td, LPCWSTR szName, DWORD dwMethodFlags,
                                                                       PCCOR_SIGNATURE pvSigBlob, ULONG cbSigBlob,
                                                                       ULONG ulCodeRVA, DWORD dwImplFlags,
                                                                       mdMethodDef* pmd)
@@ -208,7 +203,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineMethod(mdTypeDef 
     return hr;
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineTypeRefByName(mdToken tkResolutionScope, LPCWSTR szName,
+HRESULT MetadataInterfaces::DefineTypeRefByName(mdToken tkResolutionScope, LPCWSTR szName,
                                                                              mdTypeRef* ptr)
 {
     const auto hr =
@@ -217,7 +212,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineTypeRefByName(mdT
     return hr;
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineMemberRef(mdToken tkImport, LPCWSTR szName,
+HRESULT MetadataInterfaces::DefineMemberRef(mdToken tkImport, LPCWSTR szName,
                                                                          PCCOR_SIGNATURE pvSigBlob, ULONG cbSigBlob,
                                                                          mdMemberRef* pmr)
 {
@@ -256,14 +251,14 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineMemberRef(mdToken
     return hr;
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineModuleRef(LPCWSTR szName, mdModuleRef* pmur)
+HRESULT MetadataInterfaces::DefineModuleRef(LPCWSTR szName, mdModuleRef* pmur)
 {
     const auto hr = m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->DefineModuleRef(szName, pmur);
     if (SUCCEEDED(hr)) WriteMetadataChange(pmur, szName);
     return hr;
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineUserString(LPCWSTR szString, ULONG cchString,
+HRESULT MetadataInterfaces::DefineUserString(LPCWSTR szString, ULONG cchString,
                                                                           mdString* pstk)
 {
     const auto hr =
@@ -272,7 +267,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineUserString(LPCWST
     return hr;
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineField(mdTypeDef td, LPCWSTR szName, DWORD dwFieldFlags,
+HRESULT MetadataInterfaces::DefineField(mdTypeDef td, LPCWSTR szName, DWORD dwFieldFlags,
                                                                      PCCOR_SIGNATURE pvSigBlob, ULONG cbSigBlob,
                                                                      DWORD dwCPlusTypeFlag, void const* pValue,
                                                                      ULONG cchValue, mdFieldDef* pmd)
@@ -297,7 +292,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineField(mdTypeDef t
     return hr;
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineProperty(
+HRESULT MetadataInterfaces::DefineProperty(
     mdTypeDef td, LPCWSTR szProperty, DWORD dwPropFlags, PCCOR_SIGNATURE pvSig, ULONG cbSig, DWORD dwCPlusTypeFlag,
     void const* pValue, ULONG cchValue, mdMethodDef mdSetter, mdMethodDef mdGetter, mdMethodDef rmdOtherMethods[],
     mdProperty* pmdProp)
@@ -317,7 +312,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineProperty(
     return hr;
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineMethodSpec(mdToken tkParent, PCCOR_SIGNATURE pvSigBlob,
+HRESULT MetadataInterfaces::DefineMethodSpec(mdToken tkParent, PCCOR_SIGNATURE pvSigBlob,
                                                                           ULONG cbSigBlob, mdMethodSpec* pmi)
 {
     auto hr = m_metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit2)
@@ -383,13 +378,13 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineMethodSpec(mdToke
     return hr;
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetTokenFromSig(PCCOR_SIGNATURE pvSig, ULONG cbSig,
+HRESULT MetadataInterfaces::GetTokenFromSig(PCCOR_SIGNATURE pvSig, ULONG cbSig,
                                                                          mdSignature* pmsig)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->GetTokenFromSig(pvSig, cbSig, pmsig);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineAssembly(const void* pbPublicKey, ULONG cbPublicKey,
+HRESULT MetadataInterfaces::DefineAssembly(const void* pbPublicKey, ULONG cbPublicKey,
                                                                         ULONG ulHashAlgId, LPCWSTR szName,
                                                                         const ASSEMBLYMETADATA* pMetaData,
                                                                         DWORD dwAssemblyFlags, mdAssembly* pma)
@@ -401,7 +396,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineAssembly(const vo
     return hr;
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineAssemblyRef(
+HRESULT MetadataInterfaces::DefineAssemblyRef(
     const void* pbPublicKeyOrToken, ULONG cbPublicKeyOrToken, LPCWSTR szName, const ASSEMBLYMETADATA* pMetaData,
     const void* pbHashValue, ULONG cbHashValue, DWORD dwAssemblyRefFlags, mdAssemblyRef* pmdar)
 {
@@ -415,7 +410,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineAssemblyRef(
 ///////////////////////////////////////////////////////////
 /// We will add support to the following functions ASAP ///
 ///////////////////////////////////////////////////////////
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineNestedType(LPCWSTR szTypeDef, DWORD dwTypeDefFlags,
+HRESULT MetadataInterfaces::DefineNestedType(LPCWSTR szTypeDef, DWORD dwTypeDefFlags,
                                                                           mdToken tkExtends, mdToken rtkImplements[],
                                                                           mdTypeDef tdEncloser, mdTypeDef* ptd)
 {
@@ -423,12 +418,12 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineNestedType(LPCWST
         ->DefineNestedType(szTypeDef, dwTypeDefFlags, tkExtends, rtkImplements, tdEncloser, ptd);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineMethodImpl(mdTypeDef td, mdToken tkBody, mdToken tkDecl)
+HRESULT MetadataInterfaces::DefineMethodImpl(mdTypeDef td, mdToken tkBody, mdToken tkDecl)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->DefineMethodImpl(td, tkBody, tkDecl);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineImportType(IMetaDataAssemblyImport* pAssemImport,
+HRESULT MetadataInterfaces::DefineImportType(IMetaDataAssemblyImport* pAssemImport,
                                                                           const void* pbHashValue, ULONG cbHashValue,
                                                                           IMetaDataImport* pImport, mdTypeDef tdImport,
                                                                           IMetaDataAssemblyEmit* pAssemEmit,
@@ -438,7 +433,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineImportType(IMetaD
         ->DefineImportType(pAssemImport, pbHashValue, cbHashValue, pImport, tdImport, pAssemEmit, ptr);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineImportMember(IMetaDataAssemblyImport* pAssemImport,
+HRESULT MetadataInterfaces::DefineImportMember(IMetaDataAssemblyImport* pAssemImport,
                                                                             const void* pbHashValue, ULONG cbHashValue,
                                                                             IMetaDataImport* pImport, mdToken mbMember,
                                                                             IMetaDataAssemblyEmit* pAssemEmit,
@@ -448,7 +443,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineImportMember(IMet
         ->DefineImportMember(pAssemImport, pbHashValue, cbHashValue, pImport, mbMember, pAssemEmit, tkParent, pmr);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineEvent(mdTypeDef td, LPCWSTR szEvent, DWORD dwEventFlags,
+HRESULT MetadataInterfaces::DefineEvent(mdTypeDef td, LPCWSTR szEvent, DWORD dwEventFlags,
                                                                      mdToken tkEventType, mdMethodDef mdAddOn,
                                                                      mdMethodDef mdRemoveOn, mdMethodDef mdFire,
                                                                      mdMethodDef rmdOtherMethods[], mdEvent* pmdEvent)
@@ -457,7 +452,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineEvent(mdTypeDef t
         ->DefineEvent(td, szEvent, dwEventFlags, tkEventType, mdAddOn, mdRemoveOn, mdFire, rmdOtherMethods, pmdEvent);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineCustomAttribute(mdToken tkOwner, mdToken tkCtor,
+HRESULT MetadataInterfaces::DefineCustomAttribute(mdToken tkOwner, mdToken tkCtor,
                                                                                void const* pCustomAttribute,
                                                                                ULONG cbCustomAttribute,
                                                                                mdCustomAttribute* pcv)
@@ -466,7 +461,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineCustomAttribute(m
         ->DefineCustomAttribute(tkOwner, tkCtor, pCustomAttribute, cbCustomAttribute, pcv);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineParam(mdMethodDef md, ULONG ulParamSeq, LPCWSTR szName,
+HRESULT MetadataInterfaces::DefineParam(mdMethodDef md, ULONG ulParamSeq, LPCWSTR szName,
                                                                      DWORD dwParamFlags, DWORD dwCPlusTypeFlag,
                                                                      void const* pValue, ULONG cchValue,
                                                                      mdParamDef* ppd)
@@ -475,7 +470,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineParam(mdMethodDef
         ->DefineParam(md, ulParamSeq, szName, dwParamFlags, dwCPlusTypeFlag, pValue, cchValue, ppd);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineGenericParam(mdToken tk, ULONG ulParamSeq,
+HRESULT MetadataInterfaces::DefineGenericParam(mdToken tk, ULONG ulParamSeq,
                                                                             DWORD dwParamFlags, LPCWSTR szname,
                                                                             DWORD reserved, mdToken rtkConstraints[],
                                                                             mdGenericParam* pgp)
@@ -484,7 +479,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineGenericParam(mdTo
         ->DefineGenericParam(tk, ulParamSeq, dwParamFlags, szname, reserved, rtkConstraints, pgp);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineExportedType(LPCWSTR szName, mdToken tkImplementation,
+HRESULT MetadataInterfaces::DefineExportedType(LPCWSTR szName, mdToken tkImplementation,
                                                                             mdTypeDef tkTypeDef,
                                                                             DWORD dwExportedTypeFlags,
                                                                             mdExportedType* pmdct)
@@ -493,7 +488,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineExportedType(LPCW
         ->DefineExportedType(szName, tkImplementation, tkTypeDef, dwExportedTypeFlags, pmdct);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EmitString(LPWSTR lpString, ULONG* RVA)
+HRESULT MetadataInterfaces::EmitString(LPWSTR lpString, ULONG* RVA)
 {
     return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->EmitString(lpString, RVA);
 }
@@ -502,14 +497,14 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EmitString(LPWSTR lpStr
 /// Delegate all the remaining functions to the "real" IMetaDataXXX //
 //////////////////////////////////////////////////////////////////////
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineFile(LPCWSTR szName, const void* pbHashValue,
+HRESULT MetadataInterfaces::DefineFile(LPCWSTR szName, const void* pbHashValue,
                                                                     ULONG cbHashValue, DWORD dwFileFlags, mdFile* pmdf)
 {
     return m_metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit)
         ->DefineFile(szName, pbHashValue, cbHashValue, dwFileFlags, pmdf);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineManifestResource(LPCWSTR szName,
+HRESULT MetadataInterfaces::DefineManifestResource(LPCWSTR szName,
                                                                                 mdToken tkImplementation,
                                                                                 DWORD dwOffset, DWORD dwResourceFlags,
                                                                                 mdManifestResource* pmdmr)
@@ -518,31 +513,31 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineManifestResource(
         ->DefineManifestResource(szName, tkImplementation, dwOffset, dwResourceFlags, pmdmr);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::OnError(HRESULT hrError, mdToken token)
+HRESULT MetadataInterfaces::OnError(HRESULT hrError, mdToken token)
 {
     return m_metadataInterfaces.As<IMetaDataError>(IID_IMetaDataError)->OnError(hrError, token);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::Map(mdToken tkImp, mdToken tkEmit)
+HRESULT MetadataInterfaces::Map(mdToken tkImp, mdToken tkEmit)
 {
     return m_metadataInterfaces.As<IMapToken>(IID_IMapToken)->Map(tkImp, tkEmit);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineScope(const IID& rclsid, DWORD dwCreateFlags,
+HRESULT MetadataInterfaces::DefineScope(const IID& rclsid, DWORD dwCreateFlags,
                                                                      const IID& riid, IUnknown** ppIUnk)
 {
     return m_metadataInterfaces.As<IMetaDataDispenser>(IID_IMetaDataDispenser)
         ->DefineScope(rclsid, dwCreateFlags, riid, ppIUnk);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::OpenScope(LPCWSTR szScope, DWORD dwOpenFlags, const IID& riid,
+HRESULT MetadataInterfaces::OpenScope(LPCWSTR szScope, DWORD dwOpenFlags, const IID& riid,
                                                                    IUnknown** ppIUnk)
 {
     return m_metadataInterfaces.As<IMetaDataDispenser>(IID_IMetaDataDispenser)
         ->OpenScope(szScope, dwOpenFlags, riid, ppIUnk);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::OpenScopeOnMemory(LPCVOID pData, ULONG cbData,
+HRESULT MetadataInterfaces::OpenScopeOnMemory(LPCVOID pData, ULONG cbData,
                                                                            DWORD dwOpenFlags, const IID& riid,
                                                                            IUnknown** ppIUnk)
 {
@@ -550,32 +545,32 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::OpenScopeOnMemory(LPCVO
         ->OpenScopeOnMemory(pData, cbData, dwOpenFlags, riid, ppIUnk);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetModuleProps(LPCWSTR szName)
+HRESULT MetadataInterfaces::SetModuleProps(LPCWSTR szName)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->SetModuleProps(szName);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::Save(LPCWSTR szFile, DWORD dwSaveFlags)
+HRESULT MetadataInterfaces::Save(LPCWSTR szFile, DWORD dwSaveFlags)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->Save(szFile, dwSaveFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SaveToStream(IStream* pIStream, DWORD dwSaveFlags)
+HRESULT MetadataInterfaces::SaveToStream(IStream* pIStream, DWORD dwSaveFlags)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->SaveToStream(pIStream, dwSaveFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetSaveSize(CorSaveSize fSave, DWORD* pdwSaveSize)
+HRESULT MetadataInterfaces::GetSaveSize(CorSaveSize fSave, DWORD* pdwSaveSize)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->GetSaveSize(fSave, pdwSaveSize);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetHandler(IUnknown* pUnk)
+HRESULT MetadataInterfaces::SetHandler(IUnknown* pUnk)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->SetHandler(pUnk);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetClassLayout(mdTypeDef td, DWORD dwPackSize,
+HRESULT MetadataInterfaces::SetClassLayout(mdTypeDef td, DWORD dwPackSize,
                                                                         COR_FIELD_OFFSET rFieldOffsets[],
                                                                         ULONG ulClassSize)
 {
@@ -583,23 +578,23 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetClassLayout(mdTypeDe
         ->SetClassLayout(td, dwPackSize, rFieldOffsets, ulClassSize);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DeleteClassLayout(mdTypeDef td)
+HRESULT MetadataInterfaces::DeleteClassLayout(mdTypeDef td)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->DeleteClassLayout(td);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetFieldMarshal(mdToken tk, PCCOR_SIGNATURE pvNativeType,
+HRESULT MetadataInterfaces::SetFieldMarshal(mdToken tk, PCCOR_SIGNATURE pvNativeType,
                                                                          ULONG cbNativeType)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->SetFieldMarshal(tk, pvNativeType, cbNativeType);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DeleteFieldMarshal(mdToken tk)
+HRESULT MetadataInterfaces::DeleteFieldMarshal(mdToken tk)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->DeleteFieldMarshal(tk);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefinePermissionSet(mdToken tk, DWORD dwAction,
+HRESULT MetadataInterfaces::DefinePermissionSet(mdToken tk, DWORD dwAction,
                                                                              void const* pvPermission,
                                                                              ULONG cbPermission, mdPermission* ppm)
 {
@@ -607,47 +602,47 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefinePermissionSet(mdT
         ->DefinePermissionSet(tk, dwAction, pvPermission, cbPermission, ppm);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetRVA(mdMethodDef md, ULONG ulRVA)
+HRESULT MetadataInterfaces::SetRVA(mdMethodDef md, ULONG ulRVA)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->SetRVA(md, ulRVA);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetParent(mdMemberRef mr, mdToken tk)
+HRESULT MetadataInterfaces::SetParent(mdMemberRef mr, mdToken tk)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->SetParent(mr, tk);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetTokenFromTypeSpec(PCCOR_SIGNATURE pvSig, ULONG cbSig,
+HRESULT MetadataInterfaces::GetTokenFromTypeSpec(PCCOR_SIGNATURE pvSig, ULONG cbSig,
                                                                               mdTypeSpec* ptypespec)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->GetTokenFromTypeSpec(pvSig, cbSig, ptypespec);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SaveToMemory(void* pbData, ULONG cbData)
+HRESULT MetadataInterfaces::SaveToMemory(void* pbData, ULONG cbData)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->SaveToMemory(pbData, cbData);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DeleteToken(mdToken tkObj)
+HRESULT MetadataInterfaces::DeleteToken(mdToken tkObj)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->DeleteToken(tkObj);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetMethodProps(mdMethodDef md, DWORD dwMethodFlags,
+HRESULT MetadataInterfaces::SetMethodProps(mdMethodDef md, DWORD dwMethodFlags,
                                                                         ULONG ulCodeRVA, DWORD dwImplFlags)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)
         ->SetMethodProps(md, dwMethodFlags, ulCodeRVA, dwImplFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetTypeDefProps(mdTypeDef td, DWORD dwTypeDefFlags,
+HRESULT MetadataInterfaces::SetTypeDefProps(mdTypeDef td, DWORD dwTypeDefFlags,
                                                                          mdToken tkExtends, mdToken rtkImplements[])
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)
         ->SetTypeDefProps(td, dwTypeDefFlags, tkExtends, rtkImplements);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetEventProps(mdEvent ev, DWORD dwEventFlags,
+HRESULT MetadataInterfaces::SetEventProps(mdEvent ev, DWORD dwEventFlags,
                                                                        mdToken tkEventType, mdMethodDef mdAddOn,
                                                                        mdMethodDef mdRemoveOn, mdMethodDef mdFire,
                                                                        mdMethodDef rmdOtherMethods[])
@@ -656,7 +651,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetEventProps(mdEvent e
         ->SetEventProps(ev, dwEventFlags, tkEventType, mdAddOn, mdRemoveOn, mdFire, rmdOtherMethods);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetPermissionSetProps(mdToken tk, DWORD dwAction,
+HRESULT MetadataInterfaces::SetPermissionSetProps(mdToken tk, DWORD dwAction,
                                                                                void const* pvPermission,
                                                                                ULONG cbPermission, mdPermission* ppm)
 {
@@ -664,26 +659,26 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetPermissionSetProps(m
         ->SetPermissionSetProps(tk, dwAction, pvPermission, cbPermission, ppm);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefinePinvokeMap(mdToken tk, DWORD dwMappingFlags,
+HRESULT MetadataInterfaces::DefinePinvokeMap(mdToken tk, DWORD dwMappingFlags,
                                                                           LPCWSTR szImportName, mdModuleRef mrImportDLL)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)
         ->DefinePinvokeMap(tk, dwMappingFlags, szImportName, mrImportDLL);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetPinvokeMap(mdToken tk, DWORD dwMappingFlags,
+HRESULT MetadataInterfaces::SetPinvokeMap(mdToken tk, DWORD dwMappingFlags,
                                                                        LPCWSTR szImportName, mdModuleRef mrImportDLL)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)
         ->SetPinvokeMap(tk, dwMappingFlags, szImportName, mrImportDLL);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DeletePinvokeMap(mdToken tk)
+HRESULT MetadataInterfaces::DeletePinvokeMap(mdToken tk)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->DeletePinvokeMap(tk);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetCustomAttributeValue(mdCustomAttribute pcv,
+HRESULT MetadataInterfaces::SetCustomAttributeValue(mdCustomAttribute pcv,
                                                                                  void const* pCustomAttribute,
                                                                                  ULONG cbCustomAttribute)
 {
@@ -691,7 +686,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetCustomAttributeValue
         ->SetCustomAttributeValue(pcv, pCustomAttribute, cbCustomAttribute);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetFieldProps(mdFieldDef fd, DWORD dwFieldFlags,
+HRESULT MetadataInterfaces::SetFieldProps(mdFieldDef fd, DWORD dwFieldFlags,
                                                                        DWORD dwCPlusTypeFlag, void const* pValue,
                                                                        ULONG cchValue)
 {
@@ -699,7 +694,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetFieldProps(mdFieldDe
         ->SetFieldProps(fd, dwFieldFlags, dwCPlusTypeFlag, pValue, cchValue);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetPropertyProps(mdProperty pr, DWORD dwPropFlags,
+HRESULT MetadataInterfaces::SetPropertyProps(mdProperty pr, DWORD dwPropFlags,
                                                                           DWORD dwCPlusTypeFlag, void const* pValue,
                                                                           ULONG cchValue, mdMethodDef mdSetter,
                                                                           mdMethodDef mdGetter,
@@ -709,7 +704,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetPropertyProps(mdProp
         ->SetPropertyProps(pr, dwPropFlags, dwCPlusTypeFlag, pValue, cchValue, mdSetter, mdGetter, rmdOtherMethods);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetParamProps(mdParamDef pd, LPCWSTR szName,
+HRESULT MetadataInterfaces::SetParamProps(mdParamDef pd, LPCWSTR szName,
                                                                        DWORD dwParamFlags, DWORD dwCPlusTypeFlag,
                                                                        void const* pValue, ULONG cchValue)
 {
@@ -717,7 +712,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetParamProps(mdParamDe
         ->SetParamProps(pd, szName, dwParamFlags, dwCPlusTypeFlag, pValue, cchValue);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineSecurityAttributeSet(mdToken tkObj,
+HRESULT MetadataInterfaces::DefineSecurityAttributeSet(mdToken tkObj,
                                                                                     COR_SECATTR rSecAttrs[],
                                                                                     ULONG cSecAttrs,
                                                                                     ULONG* pulErrorAttr)
@@ -726,12 +721,12 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::DefineSecurityAttribute
         ->DefineSecurityAttributeSet(tkObj, rSecAttrs, cSecAttrs, pulErrorAttr);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::ApplyEditAndContinue(IUnknown* pImport)
+HRESULT MetadataInterfaces::ApplyEditAndContinue(IUnknown* pImport)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->ApplyEditAndContinue(pImport);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::TranslateSigWithScope(
+HRESULT MetadataInterfaces::TranslateSigWithScope(
     IMetaDataAssemblyImport* pAssemImport, const void* pbHashValue, ULONG cbHashValue, IMetaDataImport* import,
     PCCOR_SIGNATURE pbSigBlob, ULONG cbSigBlob, IMetaDataAssemblyEmit* pAssemEmit, IMetaDataEmit* emit,
     PCOR_SIGNATURE pvTranslatedSig, ULONG cbTranslatedSigMax, ULONG* pcbTranslatedSig)
@@ -741,48 +736,48 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::TranslateSigWithScope(
                                 pvTranslatedSig, cbTranslatedSigMax, pcbTranslatedSig);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetMethodImplFlags(mdMethodDef md, DWORD dwImplFlags)
+HRESULT MetadataInterfaces::SetMethodImplFlags(mdMethodDef md, DWORD dwImplFlags)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->SetMethodImplFlags(md, dwImplFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetFieldRVA(mdFieldDef fd, ULONG ulRVA)
+HRESULT MetadataInterfaces::SetFieldRVA(mdFieldDef fd, ULONG ulRVA)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->SetFieldRVA(fd, ulRVA);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::Merge(IMetaDataImport* pImport, IMapToken* pHostMapToken,
+HRESULT MetadataInterfaces::Merge(IMetaDataImport* pImport, IMapToken* pHostMapToken,
                                                                IUnknown* pHandler)
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->Merge(pImport, pHostMapToken, pHandler);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::MergeEnd()
+HRESULT MetadataInterfaces::MergeEnd()
 {
     return m_metadataInterfaces.As<IMetaDataEmit>(IID_IMetaDataEmit)->MergeEnd();
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetDeltaSaveSize(CorSaveSize fSave, DWORD* pdwSaveSize)
+HRESULT MetadataInterfaces::GetDeltaSaveSize(CorSaveSize fSave, DWORD* pdwSaveSize)
 {
     return m_metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit2)->GetDeltaSaveSize(fSave, pdwSaveSize);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SaveDelta(LPCWSTR szFile, DWORD dwSaveFlags)
+HRESULT MetadataInterfaces::SaveDelta(LPCWSTR szFile, DWORD dwSaveFlags)
 {
     return m_metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit2)->SaveDelta(szFile, dwSaveFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SaveDeltaToStream(IStream* pIStream, DWORD dwSaveFlags)
+HRESULT MetadataInterfaces::SaveDeltaToStream(IStream* pIStream, DWORD dwSaveFlags)
 {
     return m_metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit2)->SaveDeltaToStream(pIStream, dwSaveFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SaveDeltaToMemory(void* pbData, ULONG cbData)
+HRESULT MetadataInterfaces::SaveDeltaToMemory(void* pbData, ULONG cbData)
 {
     return m_metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit2)->SaveDeltaToMemory(pbData, cbData);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetGenericParamProps(mdGenericParam gp, DWORD dwParamFlags,
+HRESULT MetadataInterfaces::SetGenericParamProps(mdGenericParam gp, DWORD dwParamFlags,
                                                                               LPCWSTR szName, DWORD reserved,
                                                                               mdToken rtkConstraints[])
 {
@@ -790,34 +785,34 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetGenericParamProps(md
         ->SetGenericParamProps(gp, dwParamFlags, szName, reserved, rtkConstraints);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::ResetENCLog()
+HRESULT MetadataInterfaces::ResetENCLog()
 {
     return m_metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit2)->ResetENCLog();
 }
 
-void InstrumentedAssemblyGeneratorMetadataInterfaces::CloseEnum(HCORENUM hEnum)
+void MetadataInterfaces::CloseEnum(HCORENUM hEnum)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)->CloseEnum(hEnum);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::CountEnum(HCORENUM hEnum, ULONG* pulCount)
+HRESULT MetadataInterfaces::CountEnum(HCORENUM hEnum, ULONG* pulCount)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)->CountEnum(hEnum, pulCount);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::ResetEnum(HCORENUM hEnum, ULONG ulPos)
+HRESULT MetadataInterfaces::ResetEnum(HCORENUM hEnum, ULONG ulPos)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)->ResetEnum(hEnum, ulPos);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumTypeDefs(HCORENUM* phEnum, mdTypeDef rTypeDefs[],
+HRESULT MetadataInterfaces::EnumTypeDefs(HCORENUM* phEnum, mdTypeDef rTypeDefs[],
                                                                       ULONG cMax, ULONG* pcTypeDefs)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->EnumTypeDefs(phEnum, rTypeDefs, cMax, pcTypeDefs);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumInterfaceImpls(HCORENUM* phEnum, mdTypeDef td,
+HRESULT MetadataInterfaces::EnumInterfaceImpls(HCORENUM* phEnum, mdTypeDef td,
                                                                             mdInterfaceImpl rImpls[], ULONG cMax,
                                                                             ULONG* pcImpls)
 {
@@ -825,33 +820,33 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumInterfaceImpls(HCOR
         ->EnumInterfaceImpls(phEnum, td, rImpls, cMax, pcImpls);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumTypeRefs(HCORENUM* phEnum, mdTypeRef rTypeRefs[],
+HRESULT MetadataInterfaces::EnumTypeRefs(HCORENUM* phEnum, mdTypeRef rTypeRefs[],
                                                                       ULONG cMax, ULONG* pcTypeRefs)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->EnumTypeRefs(phEnum, rTypeRefs, cMax, pcTypeRefs);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::FindTypeDefByName(LPCWSTR szTypeDef, mdToken tkEnclosingClass,
+HRESULT MetadataInterfaces::FindTypeDefByName(LPCWSTR szTypeDef, mdToken tkEnclosingClass,
                                                                            mdTypeDef* ptd)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->FindTypeDefByName(szTypeDef, tkEnclosingClass, ptd);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetScopeProps(LPWSTR szName, ULONG cchName, ULONG* pchName,
+HRESULT MetadataInterfaces::GetScopeProps(LPWSTR szName, ULONG cchName, ULONG* pchName,
                                                                        GUID* pmvid)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->GetScopeProps(szName, cchName, pchName, pmvid);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetModuleFromScope(mdModule* pmd)
+HRESULT MetadataInterfaces::GetModuleFromScope(mdModule* pmd)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)->GetModuleFromScope(pmd);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetTypeDefProps(mdTypeDef td, LPWSTR szTypeDef,
+HRESULT MetadataInterfaces::GetTypeDefProps(mdTypeDef td, LPWSTR szTypeDef,
                                                                          ULONG cchTypeDef, ULONG* pchTypeDef,
                                                                          DWORD* pdwTypeDefFlags, mdToken* ptkExtends)
 {
@@ -859,34 +854,34 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetTypeDefProps(mdTypeD
         ->GetTypeDefProps(td, szTypeDef, cchTypeDef, pchTypeDef, pdwTypeDefFlags, ptkExtends);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetInterfaceImplProps(mdInterfaceImpl iiImpl,
+HRESULT MetadataInterfaces::GetInterfaceImplProps(mdInterfaceImpl iiImpl,
                                                                                mdTypeDef* pClass, mdToken* ptkIface)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->GetInterfaceImplProps(iiImpl, pClass, ptkIface);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetTypeRefProps(mdTypeRef tr, mdToken* ptkResolutionScope,
+HRESULT MetadataInterfaces::GetTypeRefProps(mdTypeRef tr, mdToken* ptkResolutionScope,
                                                                          LPWSTR szName, ULONG cchName, ULONG* pchName)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->GetTypeRefProps(tr, ptkResolutionScope, szName, cchName, pchName);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::ResolveTypeRef(mdTypeRef tr, const IID& riid,
+HRESULT MetadataInterfaces::ResolveTypeRef(mdTypeRef tr, const IID& riid,
                                                                         IUnknown** ppIScope, mdTypeDef* ptd)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)->ResolveTypeRef(tr, riid, ppIScope, ptd);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumMembers(HCORENUM* phEnum, mdTypeDef cl, mdToken rMembers[],
+HRESULT MetadataInterfaces::EnumMembers(HCORENUM* phEnum, mdTypeDef cl, mdToken rMembers[],
                                                                      ULONG cMax, ULONG* pcTokens)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->EnumMembers(phEnum, cl, rMembers, cMax, pcTokens);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumMembersWithName(HCORENUM* phEnum, mdTypeDef cl,
+HRESULT MetadataInterfaces::EnumMembersWithName(HCORENUM* phEnum, mdTypeDef cl,
                                                                              LPCWSTR szName, mdToken rMembers[],
                                                                              ULONG cMax, ULONG* pcTokens)
 {
@@ -894,7 +889,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumMembersWithName(HCO
         ->EnumMembersWithName(phEnum, cl, szName, rMembers, cMax, pcTokens);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumMethods(HCORENUM* phEnum, mdTypeDef cl,
+HRESULT MetadataInterfaces::EnumMethods(HCORENUM* phEnum, mdTypeDef cl,
                                                                      mdMethodDef rMethods[], ULONG cMax,
                                                                      ULONG* pcTokens)
 {
@@ -902,7 +897,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumMethods(HCORENUM* p
         ->EnumMethods(phEnum, cl, rMethods, cMax, pcTokens);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumMethodsWithName(HCORENUM* phEnum, mdTypeDef cl,
+HRESULT MetadataInterfaces::EnumMethodsWithName(HCORENUM* phEnum, mdTypeDef cl,
                                                                              LPCWSTR szName, mdMethodDef rMethods[],
                                                                              ULONG cMax, ULONG* pcTokens)
 {
@@ -910,14 +905,14 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumMethodsWithName(HCO
         ->EnumMethodsWithName(phEnum, cl, szName, rMethods, cMax, pcTokens);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumFields(HCORENUM* phEnum, mdTypeDef cl,
+HRESULT MetadataInterfaces::EnumFields(HCORENUM* phEnum, mdTypeDef cl,
                                                                     mdFieldDef rFields[], ULONG cMax, ULONG* pcTokens)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->EnumFields(phEnum, cl, rFields, cMax, pcTokens);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumFieldsWithName(HCORENUM* phEnum, mdTypeDef cl,
+HRESULT MetadataInterfaces::EnumFieldsWithName(HCORENUM* phEnum, mdTypeDef cl,
                                                                             LPCWSTR szName, mdFieldDef rFields[],
                                                                             ULONG cMax, ULONG* pcTokens)
 {
@@ -925,14 +920,14 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumFieldsWithName(HCOR
         ->EnumFieldsWithName(phEnum, cl, szName, rFields, cMax, pcTokens);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumParams(HCORENUM* phEnum, mdMethodDef mb,
+HRESULT MetadataInterfaces::EnumParams(HCORENUM* phEnum, mdMethodDef mb,
                                                                     mdParamDef rParams[], ULONG cMax, ULONG* pcTokens)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->EnumParams(phEnum, mb, rParams, cMax, pcTokens);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumMemberRefs(HCORENUM* phEnum, mdToken tkParent,
+HRESULT MetadataInterfaces::EnumMemberRefs(HCORENUM* phEnum, mdToken tkParent,
                                                                         mdMemberRef rMemberRefs[], ULONG cMax,
                                                                         ULONG* pcTokens)
 {
@@ -940,7 +935,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumMemberRefs(HCORENUM
         ->EnumMemberRefs(phEnum, tkParent, rMemberRefs, cMax, pcTokens);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumMethodImpls(HCORENUM* phEnum, mdTypeDef td,
+HRESULT MetadataInterfaces::EnumMethodImpls(HCORENUM* phEnum, mdTypeDef td,
                                                                          mdToken rMethodBody[], mdToken rMethodDecl[],
                                                                          ULONG cMax, ULONG* pcTokens)
 {
@@ -948,7 +943,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumMethodImpls(HCORENU
         ->EnumMethodImpls(phEnum, td, rMethodBody, rMethodDecl, cMax, pcTokens);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumPermissionSets(HCORENUM* phEnum, mdToken tk,
+HRESULT MetadataInterfaces::EnumPermissionSets(HCORENUM* phEnum, mdToken tk,
                                                                             DWORD dwActions, mdPermission rPermission[],
                                                                             ULONG cMax, ULONG* pcTokens)
 {
@@ -956,7 +951,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumPermissionSets(HCOR
         ->EnumPermissionSets(phEnum, tk, dwActions, rPermission, cMax, pcTokens);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::FindMember(mdTypeDef td, LPCWSTR szName,
+HRESULT MetadataInterfaces::FindMember(mdTypeDef td, LPCWSTR szName,
                                                                     PCCOR_SIGNATURE pvSigBlob, ULONG cbSigBlob,
                                                                     mdToken* pmb)
 {
@@ -964,7 +959,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::FindMember(mdTypeDef td
         ->FindMember(td, szName, pvSigBlob, cbSigBlob, pmb);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::FindMethod(mdTypeDef td, LPCWSTR szName,
+HRESULT MetadataInterfaces::FindMethod(mdTypeDef td, LPCWSTR szName,
                                                                     PCCOR_SIGNATURE pvSigBlob, ULONG cbSigBlob,
                                                                     mdMethodDef* pmb)
 {
@@ -972,7 +967,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::FindMethod(mdTypeDef td
         ->FindMethod(td, szName, pvSigBlob, cbSigBlob, pmb);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::FindField(mdTypeDef td, LPCWSTR szName,
+HRESULT MetadataInterfaces::FindField(mdTypeDef td, LPCWSTR szName,
                                                                    PCCOR_SIGNATURE pvSigBlob, ULONG cbSigBlob,
                                                                    mdFieldDef* pmb)
 {
@@ -980,7 +975,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::FindField(mdTypeDef td,
         ->FindField(td, szName, pvSigBlob, cbSigBlob, pmb);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::FindMemberRef(mdTypeRef td, LPCWSTR szName,
+HRESULT MetadataInterfaces::FindMemberRef(mdTypeRef td, LPCWSTR szName,
                                                                        PCCOR_SIGNATURE pvSigBlob, ULONG cbSigBlob,
                                                                        mdMemberRef* pmr)
 {
@@ -988,7 +983,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::FindMemberRef(mdTypeRef
         ->FindMemberRef(td, szName, pvSigBlob, cbSigBlob, pmr);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetMethodProps(mdMethodDef mb, mdTypeDef* pClass,
+HRESULT MetadataInterfaces::GetMethodProps(mdMethodDef mb, mdTypeDef* pClass,
                                                                         LPWSTR szMethod, ULONG cchMethod,
                                                                         ULONG* pchMethod, DWORD* pdwAttr,
                                                                         PCCOR_SIGNATURE* ppvSigBlob, ULONG* pcbSigBlob,
@@ -999,7 +994,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetMethodProps(mdMethod
                          pdwImplFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetMemberRefProps(mdMemberRef mr, mdToken* ptk,
+HRESULT MetadataInterfaces::GetMemberRefProps(mdMemberRef mr, mdToken* ptk,
                                                                            LPWSTR szMember, ULONG cchMember,
                                                                            ULONG* pchMember,
                                                                            PCCOR_SIGNATURE* ppvSigBlob, ULONG* pbSig)
@@ -1008,7 +1003,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetMemberRefProps(mdMem
         ->GetMemberRefProps(mr, ptk, szMember, cchMember, pchMember, ppvSigBlob, pbSig);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumProperties(HCORENUM* phEnum, mdTypeDef td,
+HRESULT MetadataInterfaces::EnumProperties(HCORENUM* phEnum, mdTypeDef td,
                                                                         mdProperty rProperties[], ULONG cMax,
                                                                         ULONG* pcProperties)
 {
@@ -1016,14 +1011,14 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumProperties(HCORENUM
         ->EnumProperties(phEnum, td, rProperties, cMax, pcProperties);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumEvents(HCORENUM* phEnum, mdTypeDef td, mdEvent rEvents[],
+HRESULT MetadataInterfaces::EnumEvents(HCORENUM* phEnum, mdTypeDef td, mdEvent rEvents[],
                                                                     ULONG cMax, ULONG* pcEvents)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->EnumEvents(phEnum, td, rEvents, cMax, pcEvents);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetEventProps(
+HRESULT MetadataInterfaces::GetEventProps(
     mdEvent ev, mdTypeDef* pClass, LPCWSTR szEvent, ULONG cchEvent, ULONG* pchEvent, DWORD* pdwEventFlags,
     mdToken* ptkEventType, mdMethodDef* pmdAddOn, mdMethodDef* pmdRemoveOn, mdMethodDef* pmdFire,
     mdMethodDef rmdOtherMethod[], ULONG cMax, ULONG* pcOtherMethod)
@@ -1033,7 +1028,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetEventProps(
                         pmdFire, rmdOtherMethod, cMax, pcOtherMethod);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumMethodSemantics(HCORENUM* phEnum, mdMethodDef mb,
+HRESULT MetadataInterfaces::EnumMethodSemantics(HCORENUM* phEnum, mdMethodDef mb,
                                                                              mdToken rEventProp[], ULONG cMax,
                                                                              ULONG* pcEventProp)
 {
@@ -1041,14 +1036,14 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumMethodSemantics(HCO
         ->EnumMethodSemantics(phEnum, mb, rEventProp, cMax, pcEventProp);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetMethodSemantics(mdMethodDef mb, mdToken tkEventProp,
+HRESULT MetadataInterfaces::GetMethodSemantics(mdMethodDef mb, mdToken tkEventProp,
                                                                             DWORD* pdwSemanticsFlags)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->GetMethodSemantics(mb, tkEventProp, pdwSemanticsFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetClassLayout(mdTypeDef td, DWORD* pdwPackSize,
+HRESULT MetadataInterfaces::GetClassLayout(mdTypeDef td, DWORD* pdwPackSize,
                                                                         COR_FIELD_OFFSET rFieldOffset[], ULONG cMax,
                                                                         ULONG* pcFieldOffset, ULONG* pulClassSize)
 {
@@ -1056,19 +1051,19 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetClassLayout(mdTypeDe
         ->GetClassLayout(td, pdwPackSize, rFieldOffset, cMax, pcFieldOffset, pulClassSize);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetFieldMarshal(mdToken tk, PCCOR_SIGNATURE* ppvNativeType,
+HRESULT MetadataInterfaces::GetFieldMarshal(mdToken tk, PCCOR_SIGNATURE* ppvNativeType,
                                                                          ULONG* pcbNativeType)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->GetFieldMarshal(tk, ppvNativeType, pcbNativeType);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetRVA(mdToken tk, ULONG* pulCodeRVA, DWORD* pdwImplFlags)
+HRESULT MetadataInterfaces::GetRVA(mdToken tk, ULONG* pulCodeRVA, DWORD* pdwImplFlags)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)->GetRVA(tk, pulCodeRVA, pdwImplFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetPermissionSetProps(mdPermission pm, DWORD* pdwAction,
+HRESULT MetadataInterfaces::GetPermissionSetProps(mdPermission pm, DWORD* pdwAction,
                                                                                void const** ppvPermission,
                                                                                ULONG* pcbPermission)
 {
@@ -1076,53 +1071,53 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetPermissionSetProps(m
         ->GetPermissionSetProps(pm, pdwAction, ppvPermission, pcbPermission);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetSigFromToken(mdSignature mdSig, PCCOR_SIGNATURE* ppvSig,
+HRESULT MetadataInterfaces::GetSigFromToken(mdSignature mdSig, PCCOR_SIGNATURE* ppvSig,
                                                                          ULONG* pcbSig)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)->GetSigFromToken(mdSig, ppvSig, pcbSig);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetModuleRefProps(mdModuleRef mur, LPWSTR szName,
+HRESULT MetadataInterfaces::GetModuleRefProps(mdModuleRef mur, LPWSTR szName,
                                                                            ULONG cchName, ULONG* pchName)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->GetModuleRefProps(mur, szName, cchName, pchName);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumModuleRefs(HCORENUM* phEnum, mdModuleRef rModuleRefs[],
+HRESULT MetadataInterfaces::EnumModuleRefs(HCORENUM* phEnum, mdModuleRef rModuleRefs[],
                                                                         ULONG cmax, ULONG* pcModuleRefs)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->EnumModuleRefs(phEnum, rModuleRefs, cmax, pcModuleRefs);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetTypeSpecFromToken(mdTypeSpec typespec,
+HRESULT MetadataInterfaces::GetTypeSpecFromToken(mdTypeSpec typespec,
                                                                               PCCOR_SIGNATURE* ppvSig, ULONG* pcbSig)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->GetTypeSpecFromToken(typespec, ppvSig, pcbSig);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetNameFromToken(mdToken tk, MDUTF8CSTR* pszUtf8NamePtr)
+HRESULT MetadataInterfaces::GetNameFromToken(mdToken tk, MDUTF8CSTR* pszUtf8NamePtr)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)->GetNameFromToken(tk, pszUtf8NamePtr);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumUnresolvedMethods(HCORENUM* phEnum, mdToken rMethods[],
+HRESULT MetadataInterfaces::EnumUnresolvedMethods(HCORENUM* phEnum, mdToken rMethods[],
                                                                                ULONG cMax, ULONG* pcTokens)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->EnumUnresolvedMethods(phEnum, rMethods, cMax, pcTokens);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetUserString(mdString stk, LPWSTR szString, ULONG cchString,
+HRESULT MetadataInterfaces::GetUserString(mdString stk, LPWSTR szString, ULONG cchString,
                                                                        ULONG* pchString)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->GetUserString(stk, szString, cchString, pchString);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetPinvokeMap(mdToken tk, DWORD* pdwMappingFlags,
+HRESULT MetadataInterfaces::GetPinvokeMap(mdToken tk, DWORD* pdwMappingFlags,
                                                                        LPWSTR szImportName, ULONG cchImportName,
                                                                        ULONG* pchImportName, mdModuleRef* pmrImportDLL)
 {
@@ -1130,34 +1125,34 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetPinvokeMap(mdToken t
         ->GetPinvokeMap(tk, pdwMappingFlags, szImportName, cchImportName, pchImportName, pmrImportDLL);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumSignatures(HCORENUM* phEnum, mdSignature rSignatures[],
+HRESULT MetadataInterfaces::EnumSignatures(HCORENUM* phEnum, mdSignature rSignatures[],
                                                                         ULONG cmax, ULONG* pcSignatures)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->EnumSignatures(phEnum, rSignatures, cmax, pcSignatures);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumTypeSpecs(HCORENUM* phEnum, mdTypeSpec rTypeSpecs[],
+HRESULT MetadataInterfaces::EnumTypeSpecs(HCORENUM* phEnum, mdTypeSpec rTypeSpecs[],
                                                                        ULONG cmax, ULONG* pcTypeSpecs)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->EnumTypeSpecs(phEnum, rTypeSpecs, cmax, pcTypeSpecs);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumUserStrings(HCORENUM* phEnum, mdString rStrings[],
+HRESULT MetadataInterfaces::EnumUserStrings(HCORENUM* phEnum, mdString rStrings[],
                                                                          ULONG cmax, ULONG* pcStrings)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->EnumUserStrings(phEnum, rStrings, cmax, pcStrings);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetParamForMethodIndex(mdMethodDef md, ULONG ulParamSeq,
+HRESULT MetadataInterfaces::GetParamForMethodIndex(mdMethodDef md, ULONG ulParamSeq,
                                                                                 mdParamDef* ppd)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)->GetParamForMethodIndex(md, ulParamSeq, ppd);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumCustomAttributes(HCORENUM* phEnum, mdToken tk,
+HRESULT MetadataInterfaces::EnumCustomAttributes(HCORENUM* phEnum, mdToken tk,
                                                                               mdToken tkType,
                                                                               mdCustomAttribute rCustomAttributes[],
                                                                               ULONG cMax, ULONG* pcCustomAttributes)
@@ -1166,7 +1161,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumCustomAttributes(HC
         ->EnumCustomAttributes(phEnum, tk, tkType, rCustomAttributes, cMax, pcCustomAttributes);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetCustomAttributeProps(mdCustomAttribute cv, mdToken* ptkObj,
+HRESULT MetadataInterfaces::GetCustomAttributeProps(mdCustomAttribute cv, mdToken* ptkObj,
                                                                                  mdToken* ptkType, void const** ppBlob,
                                                                                  ULONG* pcbSize)
 {
@@ -1174,13 +1169,13 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetCustomAttributeProps
         ->GetCustomAttributeProps(cv, ptkObj, ptkType, ppBlob, pcbSize);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::FindTypeRef(mdToken tkResolutionScope, LPCWSTR szName,
+HRESULT MetadataInterfaces::FindTypeRef(mdToken tkResolutionScope, LPCWSTR szName,
                                                                      mdTypeRef* ptr)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)->FindTypeRef(tkResolutionScope, szName, ptr);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetMemberProps(mdToken mb, mdTypeDef* pClass, LPWSTR szMember,
+HRESULT MetadataInterfaces::GetMemberProps(mdToken mb, mdTypeDef* pClass, LPWSTR szMember,
                                                                         ULONG cchMember, ULONG* pchMember,
                                                                         DWORD* pdwAttr, PCCOR_SIGNATURE* ppvSigBlob,
                                                                         ULONG* pcbSigBlob, ULONG* pulCodeRVA,
@@ -1192,7 +1187,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetMemberProps(mdToken 
                          pdwImplFlags, pdwCPlusTypeFlag, ppValue, pcchValue);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetFieldProps(mdFieldDef mb, mdTypeDef* pClass, LPWSTR szField,
+HRESULT MetadataInterfaces::GetFieldProps(mdFieldDef mb, mdTypeDef* pClass, LPWSTR szField,
                                                                        ULONG cchField, ULONG* pchField, DWORD* pdwAttr,
                                                                        PCCOR_SIGNATURE* ppvSigBlob, ULONG* pcbSigBlob,
                                                                        DWORD* pdwCPlusTypeFlag, UVCP_CONSTANT* ppValue,
@@ -1203,7 +1198,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetFieldProps(mdFieldDe
                         ppValue, pcchValue);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetPropertyProps(
+HRESULT MetadataInterfaces::GetPropertyProps(
     mdProperty prop, mdTypeDef* pClass, LPCWSTR szProperty, ULONG cchProperty, ULONG* pchProperty, DWORD* pdwPropFlags,
     PCCOR_SIGNATURE* ppvSig, ULONG* pbSig, DWORD* pdwCPlusTypeFlag, UVCP_CONSTANT* ppDefaultValue,
     ULONG* pcchDefaultValue, mdMethodDef* pmdSetter, mdMethodDef* pmdGetter, mdMethodDef rmdOtherMethod[], ULONG cMax,
@@ -1215,7 +1210,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetPropertyProps(
                            cMax, pcOtherMethod);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetParamProps(mdParamDef tk, mdMethodDef* pmd,
+HRESULT MetadataInterfaces::GetParamProps(mdParamDef tk, mdMethodDef* pmd,
                                                                        ULONG* pulSequence, LPWSTR szName, ULONG cchName,
                                                                        ULONG* pchName, DWORD* pdwAttr,
                                                                        DWORD* pdwCPlusTypeFlag, UVCP_CONSTANT* ppValue,
@@ -1225,38 +1220,38 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetParamProps(mdParamDe
         ->GetParamProps(tk, pmd, pulSequence, szName, cchName, pchName, pdwAttr, pdwCPlusTypeFlag, ppValue, pcchValue);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetCustomAttributeByName(mdToken tkObj, LPCWSTR szName,
+HRESULT MetadataInterfaces::GetCustomAttributeByName(mdToken tkObj, LPCWSTR szName,
                                                                                   const void** ppData, ULONG* pcbData)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->GetCustomAttributeByName(tkObj, szName, ppData, pcbData);
 }
 
-BOOL InstrumentedAssemblyGeneratorMetadataInterfaces::IsValidToken(mdToken tk)
+BOOL MetadataInterfaces::IsValidToken(mdToken tk)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)->IsValidToken(tk);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetNestedClassProps(mdTypeDef tdNestedClass,
+HRESULT MetadataInterfaces::GetNestedClassProps(mdTypeDef tdNestedClass,
                                                                              mdTypeDef* ptdEnclosingClass)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->GetNestedClassProps(tdNestedClass, ptdEnclosingClass);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetNativeCallConvFromSig(void const* pvSig, ULONG cbSig,
+HRESULT MetadataInterfaces::GetNativeCallConvFromSig(void const* pvSig, ULONG cbSig,
                                                                                   ULONG* pCallConv)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)
         ->GetNativeCallConvFromSig(pvSig, cbSig, pCallConv);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::IsGlobal(mdToken pd, int* pbGlobal)
+HRESULT MetadataInterfaces::IsGlobal(mdToken pd, int* pbGlobal)
 {
     return m_metadataInterfaces.As<IMetaDataImport>(IID_IMetaDataImport)->IsGlobal(pd, pbGlobal);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumGenericParams(HCORENUM* phEnum, mdToken tk,
+HRESULT MetadataInterfaces::EnumGenericParams(HCORENUM* phEnum, mdToken tk,
                                                                            mdGenericParam rGenericParams[], ULONG cMax,
                                                                            ULONG* pcGenericParams)
 {
@@ -1264,7 +1259,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumGenericParams(HCORE
         ->EnumGenericParams(phEnum, tk, rGenericParams, cMax, pcGenericParams);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetGenericParamProps(mdGenericParam gp, ULONG* pulParamSeq,
+HRESULT MetadataInterfaces::GetGenericParamProps(mdGenericParam gp, ULONG* pulParamSeq,
                                                                               DWORD* pdwParamFlags, mdToken* ptOwner,
                                                                               DWORD* reserved, LPWSTR wzname,
                                                                               ULONG cchName, ULONG* pchName)
@@ -1273,7 +1268,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetGenericParamProps(md
         ->GetGenericParamProps(gp, pulParamSeq, pdwParamFlags, ptOwner, reserved, wzname, cchName, pchName);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetMethodSpecProps(mdMethodSpec mi, mdToken* tkParent,
+HRESULT MetadataInterfaces::GetMethodSpecProps(mdMethodSpec mi, mdToken* tkParent,
                                                                             PCCOR_SIGNATURE* ppvSigBlob,
                                                                             ULONG* pcbSigBlob)
 {
@@ -1281,7 +1276,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetMethodSpecProps(mdMe
         ->GetMethodSpecProps(mi, tkParent, ppvSigBlob, pcbSigBlob);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumGenericParamConstraints(
+HRESULT MetadataInterfaces::EnumGenericParamConstraints(
     HCORENUM* phEnum, mdGenericParam tk, mdGenericParamConstraint rGenericParamConstraints[], ULONG cMax,
     ULONG* pcGenericParamConstraints)
 {
@@ -1289,7 +1284,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumGenericParamConstra
         ->EnumGenericParamConstraints(phEnum, tk, rGenericParamConstraints, cMax, pcGenericParamConstraints);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetGenericParamConstraintProps(mdGenericParamConstraint gpc,
+HRESULT MetadataInterfaces::GetGenericParamConstraintProps(mdGenericParamConstraint gpc,
                                                                                         mdGenericParam* ptGenericParam,
                                                                                         mdToken* ptkConstraintType)
 {
@@ -1297,19 +1292,19 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetGenericParamConstrai
         ->GetGenericParamConstraintProps(gpc, ptGenericParam, ptkConstraintType);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetPEKind(DWORD* pdwPEKind, DWORD* pdwMAchine)
+HRESULT MetadataInterfaces::GetPEKind(DWORD* pdwPEKind, DWORD* pdwMAchine)
 {
     return m_metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport2)->GetPEKind(pdwPEKind, pdwMAchine);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetVersionString(LPWSTR pwzBuf, DWORD ccBufSize,
+HRESULT MetadataInterfaces::GetVersionString(LPWSTR pwzBuf, DWORD ccBufSize,
                                                                           DWORD* pccBufSize)
 {
     return m_metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport2)
         ->GetVersionString(pwzBuf, ccBufSize, pccBufSize);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumMethodSpecs(HCORENUM* phEnum, mdToken tk,
+HRESULT MetadataInterfaces::EnumMethodSpecs(HCORENUM* phEnum, mdToken tk,
                                                                          mdMethodSpec rMethodSpecs[], ULONG cMax,
                                                                          ULONG* pcMethodSpecs)
 {
@@ -1317,22 +1312,22 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumMethodSpecs(HCORENU
         ->EnumMethodSpecs(phEnum, tk, rMethodSpecs, cMax, pcMethodSpecs);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::UnmarkAll()
+HRESULT MetadataInterfaces::UnmarkAll()
 {
     return m_metadataInterfaces.As<IMetaDataFilter>(IID_IMetaDataFilter)->UnmarkAll();
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::MarkToken(mdToken tk)
+HRESULT MetadataInterfaces::MarkToken(mdToken tk)
 {
     return m_metadataInterfaces.As<IMetaDataFilter>(IID_IMetaDataFilter)->MarkToken(tk);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::IsTokenMarked(mdToken tk, BOOL* pIsMarked)
+HRESULT MetadataInterfaces::IsTokenMarked(mdToken tk, BOOL* pIsMarked)
 {
     return m_metadataInterfaces.As<IMetaDataFilter>(IID_IMetaDataFilter)->IsTokenMarked(tk, pIsMarked);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetAssemblyProps(mdAssembly pma, const void* pbPublicKey,
+HRESULT MetadataInterfaces::SetAssemblyProps(mdAssembly pma, const void* pbPublicKey,
                                                                           ULONG cbPublicKey, ULONG ulHashAlgId,
                                                                           LPCWSTR szName,
                                                                           const ASSEMBLYMETADATA* pMetaData,
@@ -1342,7 +1337,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetAssemblyProps(mdAsse
         ->SetAssemblyProps(pma, pbPublicKey, cbPublicKey, ulHashAlgId, szName, pMetaData, dwAssemblyFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetAssemblyRefProps(
+HRESULT MetadataInterfaces::SetAssemblyRefProps(
     mdAssemblyRef ar, const void* pbPublicKeyOrToken, ULONG cbPublicKeyOrToken, LPCWSTR szName,
     const ASSEMBLYMETADATA* pMetaData, const void* pbHashValue, ULONG cbHashValue, DWORD dwAssemblyRefFlags)
 {
@@ -1351,14 +1346,14 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetAssemblyRefProps(
                               dwAssemblyRefFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetFileProps(mdFile file, const void* pbHashValue,
+HRESULT MetadataInterfaces::SetFileProps(mdFile file, const void* pbHashValue,
                                                                       ULONG cbHashValue, DWORD dwFileFlags)
 {
     return m_metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit)
         ->SetFileProps(file, pbHashValue, cbHashValue, dwFileFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetExportedTypeProps(mdExportedType ct,
+HRESULT MetadataInterfaces::SetExportedTypeProps(mdExportedType ct,
                                                                               mdToken tkImplementation,
                                                                               mdTypeDef tkTypeDef,
                                                                               DWORD dwExportedTypeFlags)
@@ -1367,7 +1362,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetExportedTypeProps(md
         ->SetExportedTypeProps(ct, tkImplementation, tkTypeDef, dwExportedTypeFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetManifestResourceProps(mdManifestResource mr,
+HRESULT MetadataInterfaces::SetManifestResourceProps(mdManifestResource mr,
                                                                                   mdToken tkImplementation,
                                                                                   DWORD dwOffset, DWORD dwResourceFlags)
 {
@@ -1375,7 +1370,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetManifestResourceProp
         ->SetManifestResourceProps(mr, tkImplementation, dwOffset, dwResourceFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetAssemblyProps(mdAssembly mda, const void** ppbPublicKey,
+HRESULT MetadataInterfaces::GetAssemblyProps(mdAssembly mda, const void** ppbPublicKey,
                                                                           ULONG* pcbPublicKey, ULONG* pulHashAlgId,
                                                                           LPWSTR szName, ULONG cchName, ULONG* pchName,
                                                                           ASSEMBLYMETADATA* pMetaData,
@@ -1386,7 +1381,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetAssemblyProps(mdAsse
                            pdwAssemblyFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetAssemblyRefProps(
+HRESULT MetadataInterfaces::GetAssemblyRefProps(
     mdAssemblyRef mdar, const void** ppbPublicKeyOrToken, ULONG* pcbPublicKeyOrToken, LPWSTR szName, ULONG cchName,
     ULONG* pchName, ASSEMBLYMETADATA* pMetaData, const void** ppbHashValue, ULONG* pcbHashValue,
     DWORD* pdwAssemblyRefFlags)
@@ -1396,7 +1391,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetAssemblyRefProps(
                               ppbHashValue, pcbHashValue, pdwAssemblyRefFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetFileProps(mdFile mdf, LPWSTR szName, ULONG cchName,
+HRESULT MetadataInterfaces::GetFileProps(mdFile mdf, LPWSTR szName, ULONG cchName,
                                                                       ULONG* pchName, const void** ppbHashValue,
                                                                       ULONG* pcbHashValue, DWORD* pdwFileFlags)
 {
@@ -1404,7 +1399,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetFileProps(mdFile mdf
         ->GetFileProps(mdf, szName, cchName, pchName, ppbHashValue, pcbHashValue, pdwFileFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetExportedTypeProps(mdExportedType mdct, LPWSTR szName,
+HRESULT MetadataInterfaces::GetExportedTypeProps(mdExportedType mdct, LPWSTR szName,
                                                                               ULONG cchName, ULONG* pchName,
                                                                               mdToken* ptkImplementation,
                                                                               mdTypeDef* ptkTypeDef,
@@ -1414,7 +1409,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetExportedTypeProps(md
         ->GetExportedTypeProps(mdct, szName, cchName, pchName, ptkImplementation, ptkTypeDef, pdwExportedTypeFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetManifestResourceProps(
+HRESULT MetadataInterfaces::GetManifestResourceProps(
     mdManifestResource mdmr, LPWSTR szName, ULONG cchName, ULONG* pchName, mdToken* ptkImplementation, DWORD* pdwOffset,
     DWORD* pdwResourceFlags)
 {
@@ -1422,7 +1417,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetManifestResourceProp
         ->GetManifestResourceProps(mdmr, szName, cchName, pchName, ptkImplementation, pdwOffset, pdwResourceFlags);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumAssemblyRefs(HCORENUM* phEnum,
+HRESULT MetadataInterfaces::EnumAssemblyRefs(HCORENUM* phEnum,
                                                                           mdAssemblyRef rAssemblyRefs[], ULONG cMax,
                                                                           ULONG* pcTokens)
 {
@@ -1430,14 +1425,14 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumAssemblyRefs(HCOREN
         ->EnumAssemblyRefs(phEnum, rAssemblyRefs, cMax, pcTokens);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumFiles(HCORENUM* phEnum, mdFile rFiles[], ULONG cMax,
+HRESULT MetadataInterfaces::EnumFiles(HCORENUM* phEnum, mdFile rFiles[], ULONG cMax,
                                                                    ULONG* pcTokens)
 {
     return m_metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport)
         ->EnumFiles(phEnum, rFiles, cMax, pcTokens);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumExportedTypes(HCORENUM* phEnum,
+HRESULT MetadataInterfaces::EnumExportedTypes(HCORENUM* phEnum,
                                                                            mdExportedType rExportedTypes[], ULONG cMax,
                                                                            ULONG* pcTokens)
 {
@@ -1445,7 +1440,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumExportedTypes(HCORE
         ->EnumExportedTypes(phEnum, rExportedTypes, cMax, pcTokens);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumManifestResources(HCORENUM* phEnum,
+HRESULT MetadataInterfaces::EnumManifestResources(HCORENUM* phEnum,
                                                                                mdManifestResource rManifestResources[],
                                                                                ULONG cMax, ULONG* pcTokens)
 {
@@ -1453,13 +1448,13 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::EnumManifestResources(H
         ->EnumManifestResources(phEnum, rManifestResources, cMax, pcTokens);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetAssemblyFromScope(mdAssembly* ptkAssembly)
+HRESULT MetadataInterfaces::GetAssemblyFromScope(mdAssembly* ptkAssembly)
 {
     return m_metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport)
         ->GetAssemblyFromScope(ptkAssembly);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::FindExportedTypeByName(LPCWSTR szName, mdToken mdtExportedType,
+HRESULT MetadataInterfaces::FindExportedTypeByName(LPCWSTR szName, mdToken mdtExportedType,
                                                                                 mdExportedType* ptkExportedType)
 {
     return m_metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport)
@@ -1467,14 +1462,14 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::FindExportedTypeByName(
 }
 
 HRESULT
-InstrumentedAssemblyGeneratorMetadataInterfaces::FindManifestResourceByName(LPCWSTR szName,
+MetadataInterfaces::FindManifestResourceByName(LPCWSTR szName,
                                                                             mdManifestResource* ptkManifestResource)
 {
     return m_metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport)
         ->FindManifestResourceByName(szName, ptkManifestResource);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::FindAssembliesByName(LPCWSTR szAppBase, LPCWSTR szPrivateBin,
+HRESULT MetadataInterfaces::FindAssembliesByName(LPCWSTR szAppBase, LPCWSTR szPrivateBin,
                                                                               LPCWSTR szAssemblyName,
                                                                               IUnknown* ppIUnk[], ULONG cMax,
                                                                               ULONG* pcAssemblies)
@@ -1483,41 +1478,41 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::FindAssembliesByName(LP
         ->FindAssembliesByName(szAppBase, szPrivateBin, szAssemblyName, ppIUnk, cMax, pcAssemblies);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::ValidatorInit(DWORD dwModuleType, IUnknown* pUnk)
+HRESULT MetadataInterfaces::ValidatorInit(DWORD dwModuleType, IUnknown* pUnk)
 {
     return m_metadataInterfaces.As<IMetaDataValidate>(IID_IMetaDataValidate)->ValidatorInit(dwModuleType, pUnk);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::ValidateMetaData()
+HRESULT MetadataInterfaces::ValidateMetaData()
 {
     return m_metadataInterfaces.As<IMetaDataValidate>(IID_IMetaDataValidate)->ValidateMetaData();
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::SetOption(const GUID& optionid, const VARIANT* value)
+HRESULT MetadataInterfaces::SetOption(const GUID& optionid, const VARIANT* value)
 {
     return m_metadataInterfaces.As<IMetaDataDispenserEx>(IID_IMetaDataDispenserEx)->SetOption(optionid, value);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetOption(const GUID& optionid, VARIANT* pvalue)
+HRESULT MetadataInterfaces::GetOption(const GUID& optionid, VARIANT* pvalue)
 {
     return m_metadataInterfaces.As<IMetaDataDispenserEx>(IID_IMetaDataDispenserEx)->GetOption(optionid, pvalue);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::OpenScopeOnITypeInfo(ITypeInfo* pITI, DWORD dwOpenFlags,
+HRESULT MetadataInterfaces::OpenScopeOnITypeInfo(ITypeInfo* pITI, DWORD dwOpenFlags,
                                                                               const IID& riid, IUnknown** ppIUnk)
 {
     return m_metadataInterfaces.As<IMetaDataDispenserEx>(IID_IMetaDataDispenserEx)
         ->OpenScopeOnITypeInfo(pITI, dwOpenFlags, riid, ppIUnk);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetCORSystemDirectory(LPWSTR szBuffer, DWORD cchBuffer,
+HRESULT MetadataInterfaces::GetCORSystemDirectory(LPWSTR szBuffer, DWORD cchBuffer,
                                                                                DWORD* pchBuffer)
 {
     return m_metadataInterfaces.As<IMetaDataDispenserEx>(IID_IMetaDataDispenserEx)
         ->GetCORSystemDirectory(szBuffer, cchBuffer, pchBuffer);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::FindAssembly(LPCWSTR szAppBase, LPCWSTR szPrivateBin,
+HRESULT MetadataInterfaces::FindAssembly(LPCWSTR szAppBase, LPCWSTR szPrivateBin,
                                                                       LPCWSTR szGlobalBin, LPCWSTR szAssemblyName,
                                                                       LPCWSTR szName, ULONG cchName, ULONG* pcName)
 {
@@ -1525,7 +1520,7 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::FindAssembly(LPCWSTR sz
         ->FindAssembly(szAppBase, szPrivateBin, szGlobalBin, szAssemblyName, szName, cchName, pcName);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::FindAssemblyModule(LPCWSTR szAppBase, LPCWSTR szPrivateBin,
+HRESULT MetadataInterfaces::FindAssemblyModule(LPCWSTR szAppBase, LPCWSTR szPrivateBin,
                                                                             LPCWSTR szGlobalBin, LPCWSTR szAssemblyName,
                                                                             LPCWSTR szModuleName, LPWSTR szName,
                                                                             ULONG cchName, ULONG* pcName)
@@ -1535,197 +1530,197 @@ HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::FindAssemblyModule(LPCW
                              pcName);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetString(ULONG RVA, LPWSTR* lpString)
+HRESULT MetadataInterfaces::GetString(ULONG RVA, LPWSTR* lpString)
 {
     return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GetString(RVA, lpString);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::AllocateMethodBuffer(ULONG cchBuffer, UCHAR** lpBuffer,
+HRESULT MetadataInterfaces::AllocateMethodBuffer(ULONG cchBuffer, UCHAR** lpBuffer,
                                                                               ULONG* RVA)
 {
     return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->AllocateMethodBuffer(cchBuffer, lpBuffer, RVA);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetMethodBuffer(ULONG RVA, UCHAR** lpBuffer)
+HRESULT MetadataInterfaces::GetMethodBuffer(ULONG RVA, UCHAR** lpBuffer)
 {
     return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GetMethodBuffer(RVA, lpBuffer);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetIMapTokenIface(IUnknown** pIMapToken)
+HRESULT MetadataInterfaces::GetIMapTokenIface(IUnknown** pIMapToken)
 {
     return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GetIMapTokenIface(pIMapToken);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GenerateCeeFile()
+HRESULT MetadataInterfaces::GenerateCeeFile()
 {
     return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GenerateCeeFile();
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetIlSection(HCEESECTION* section)
+HRESULT MetadataInterfaces::GetIlSection(HCEESECTION* section)
 {
     return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GetIlSection(section);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetStringSection(HCEESECTION* section)
+HRESULT MetadataInterfaces::GetStringSection(HCEESECTION* section)
 {
     return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GetStringSection(section);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::AddSectionReloc(HCEESECTION section, ULONG offset,
+HRESULT MetadataInterfaces::AddSectionReloc(HCEESECTION section, ULONG offset,
                                                                          HCEESECTION relativeTo,
                                                                          CeeSectionRelocType relocType)
 {
     return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->AddSectionReloc(section, offset, relativeTo, relocType);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetSectionCreate(const char* name, DWORD flags,
+HRESULT MetadataInterfaces::GetSectionCreate(const char* name, DWORD flags,
                                                                           HCEESECTION* section)
 {
     return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GetSectionCreate(name, flags, section);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetSectionDataLen(HCEESECTION section, ULONG* dataLen)
+HRESULT MetadataInterfaces::GetSectionDataLen(HCEESECTION section, ULONG* dataLen)
 {
     return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GetSectionDataLen(section, dataLen);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetSectionBlock(HCEESECTION section, ULONG len, ULONG align,
+HRESULT MetadataInterfaces::GetSectionBlock(HCEESECTION section, ULONG len, ULONG align,
                                                                          void** ppBytes)
 {
     return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GetSectionBlock(section, len, align, ppBytes);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::TruncateSection(HCEESECTION section, ULONG len)
+HRESULT MetadataInterfaces::TruncateSection(HCEESECTION section, ULONG len)
 {
     return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->TruncateSection(section, len);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GenerateCeeMemoryImage(void** ppImage)
+HRESULT MetadataInterfaces::GenerateCeeMemoryImage(void** ppImage)
 {
     return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->GenerateCeeMemoryImage(ppImage);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::ComputePointer(HCEESECTION section, ULONG RVA,
+HRESULT MetadataInterfaces::ComputePointer(HCEESECTION section, ULONG RVA,
                                                                         UCHAR** lpBuffer)
 {
     return m_metadataInterfaces.As<ICeeGen>(IID_ICeeGen)->ComputePointer(section, RVA, lpBuffer);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetStringHeapSize(ULONG* pcbStrings)
+HRESULT MetadataInterfaces::GetStringHeapSize(ULONG* pcbStrings)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)->GetStringHeapSize(pcbStrings);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetBlobHeapSize(ULONG* pcbBlobs)
+HRESULT MetadataInterfaces::GetBlobHeapSize(ULONG* pcbBlobs)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)->GetBlobHeapSize(pcbBlobs);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetGuidHeapSize(ULONG* pcbGuids)
+HRESULT MetadataInterfaces::GetGuidHeapSize(ULONG* pcbGuids)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)->GetGuidHeapSize(pcbGuids);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetUserStringHeapSize(ULONG* pcbBlobs)
+HRESULT MetadataInterfaces::GetUserStringHeapSize(ULONG* pcbBlobs)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)->GetUserStringHeapSize(pcbBlobs);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetNumTables(ULONG* pcTables)
+HRESULT MetadataInterfaces::GetNumTables(ULONG* pcTables)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)->GetNumTables(pcTables);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetTableIndex(ULONG token, ULONG* pixTbl)
+HRESULT MetadataInterfaces::GetTableIndex(ULONG token, ULONG* pixTbl)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)->GetTableIndex(token, pixTbl);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetTableInfo(ULONG ixTbl, ULONG* pcbRow, ULONG* pcRows,
+HRESULT MetadataInterfaces::GetTableInfo(ULONG ixTbl, ULONG* pcbRow, ULONG* pcRows,
                                                                       ULONG* pcCols, ULONG* piKey, const char** ppName)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)
         ->GetTableInfo(ixTbl, pcbRow, pcRows, pcCols, piKey, ppName);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetColumnInfo(ULONG ixTbl, ULONG ixCol, ULONG* poCol,
+HRESULT MetadataInterfaces::GetColumnInfo(ULONG ixTbl, ULONG ixCol, ULONG* poCol,
                                                                        ULONG* pcbCol, ULONG* pType, const char** ppName)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)
         ->GetColumnInfo(ixTbl, ixCol, poCol, pcbCol, pType, ppName);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetCodedTokenInfo(ULONG ixCdTkn, ULONG* pcTokens,
+HRESULT MetadataInterfaces::GetCodedTokenInfo(ULONG ixCdTkn, ULONG* pcTokens,
                                                                            ULONG** ppTokens, const char** ppName)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)
         ->GetCodedTokenInfo(ixCdTkn, pcTokens, ppTokens, ppName);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetRow(ULONG ixTbl, ULONG rid, void** ppRow)
+HRESULT MetadataInterfaces::GetRow(ULONG ixTbl, ULONG rid, void** ppRow)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)->GetRow(ixTbl, rid, ppRow);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetColumn(ULONG ixTbl, ULONG ixCol, ULONG rid, ULONG* pVal)
+HRESULT MetadataInterfaces::GetColumn(ULONG ixTbl, ULONG ixCol, ULONG rid, ULONG* pVal)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)->GetColumn(ixTbl, ixCol, rid, pVal);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetString(ULONG ixString, const char** ppString)
+HRESULT MetadataInterfaces::GetString(ULONG ixString, const char** ppString)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)->GetString(ixString, ppString);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetBlob(ULONG ixBlob, ULONG* pcbData, const void** ppData)
+HRESULT MetadataInterfaces::GetBlob(ULONG ixBlob, ULONG* pcbData, const void** ppData)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)->GetBlob(ixBlob, pcbData, ppData);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetGuid(ULONG ixGuid, const GUID** ppGUID)
+HRESULT MetadataInterfaces::GetGuid(ULONG ixGuid, const GUID** ppGUID)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)->GetGuid(ixGuid, ppGUID);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetUserString(ULONG ixUserString, ULONG* pcbData,
+HRESULT MetadataInterfaces::GetUserString(ULONG ixUserString, ULONG* pcbData,
                                                                        const void** ppData)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)->GetUserString(ixUserString, pcbData, ppData);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetNextString(ULONG ixString, ULONG* pNext)
+HRESULT MetadataInterfaces::GetNextString(ULONG ixString, ULONG* pNext)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)->GetNextString(ixString, pNext);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetNextBlob(ULONG ixBlob, ULONG* pNext)
+HRESULT MetadataInterfaces::GetNextBlob(ULONG ixBlob, ULONG* pNext)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)->GetNextBlob(ixBlob, pNext);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetNextGuid(ULONG ixGuid, ULONG* pNext)
+HRESULT MetadataInterfaces::GetNextGuid(ULONG ixGuid, ULONG* pNext)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)->GetNextGuid(ixGuid, pNext);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetNextUserString(ULONG ixUserString, ULONG* pNext)
+HRESULT MetadataInterfaces::GetNextUserString(ULONG ixUserString, ULONG* pNext)
 {
     return m_metadataInterfaces.As<IMetaDataTables>(IID_IMetaDataTables)->GetNextUserString(ixUserString, pNext);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetMetaDataStorage(const void** ppvMd, ULONG* pcbMd)
+HRESULT MetadataInterfaces::GetMetaDataStorage(const void** ppvMd, ULONG* pcbMd)
 {
     return m_metadataInterfaces.As<IMetaDataTables2>(IID_IMetaDataTables2)->GetMetaDataStorage(ppvMd, pcbMd);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetMetaDataStreamInfo(ULONG ix, const char** ppchName,
+HRESULT MetadataInterfaces::GetMetaDataStreamInfo(ULONG ix, const char** ppchName,
                                                                                const void** ppv, ULONG* pcb)
 {
     return m_metadataInterfaces.As<IMetaDataTables2>(IID_IMetaDataTables2)
         ->GetMetaDataStreamInfo(ix, ppchName, ppv, pcb);
 }
 
-HRESULT InstrumentedAssemblyGeneratorMetadataInterfaces::GetFileMapping(const void** ppvData, ULONGLONG* pcbData,
+HRESULT MetadataInterfaces::GetFileMapping(const void** ppvData, ULONGLONG* pcbData,
                                                                         DWORD* pdwMappingType)
 {
     return m_metadataInterfaces.As<IMetaDataInfo>(IID_IMetaDataInfo)->GetFileMapping(ppvData, pcbData, pdwMappingType);

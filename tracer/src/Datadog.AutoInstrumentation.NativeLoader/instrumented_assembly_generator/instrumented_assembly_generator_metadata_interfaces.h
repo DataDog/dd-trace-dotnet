@@ -4,7 +4,7 @@
 
 namespace instrumented_assembly_generator
 {
-class InstrumentedAssemblyGeneratorMetadataInterfaces : public IMetaDataError,
+class MetadataInterfaces : public IMetaDataError,
                                       IMapToken,
                                       IMetaDataEmit2,
                                       IMetaDataImport2,
@@ -21,12 +21,10 @@ class InstrumentedAssemblyGeneratorMetadataInterfaces : public IMetaDataError,
 private:
     std::atomic<int> m_refCount;
     ComPtr<IUnknown> m_metadataInterfaces;
-    ICorProfilerInfo12* m_corProfilerInfo;
 
 public:
-    explicit InstrumentedAssemblyGeneratorMetadataInterfaces(const ComPtr<IUnknown>& metadataInterfaces,
-                                           ICorProfilerInfo12* corProfilerInfo);
-    ~InstrumentedAssemblyGeneratorMetadataInterfaces();
+    MetadataInterfaces(const ComPtr<IUnknown>& metadataInterfaces);
+    ~MetadataInterfaces();
 
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
     ULONG STDMETHODCALLTYPE AddRef(void) override;

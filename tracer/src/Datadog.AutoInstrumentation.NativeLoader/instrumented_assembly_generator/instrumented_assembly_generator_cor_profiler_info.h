@@ -1,5 +1,4 @@
 #pragma once
-#include "../com_ptr.h"
 #include <atomic>
 #include <corhlpr.h>
 #include <corprof.h>
@@ -7,17 +6,16 @@
 
 namespace instrumented_assembly_generator
 {
-class InstrumentedAssemblyGeneratorCorProfilerInfo : public ICorProfilerInfo12
+class CorProfilerInfo : public ICorProfilerInfo12
 {
 private:
     std::atomic<int> m_refCount;
     ComPtr<ICorProfilerInfo12> m_corProfilerInfo;
-    IUnknown* m_pICorProfilerInfoUnk;
-    InstrumentedAssemblyGeneratorMetadataInterfaces* m_metadataInterfaces;
+    ComPtr<IUnknown> m_pICorProfilerInfoUnk;
 
 public:
-    InstrumentedAssemblyGeneratorCorProfilerInfo(IUnknown* pICorProfilerInfoUnk);
-    ~InstrumentedAssemblyGeneratorCorProfilerInfo();
+    CorProfilerInfo(IUnknown* pICorProfilerInfoUnk);
+    ~CorProfilerInfo();
 
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
     ULONG STDMETHODCALLTYPE AddRef(void) override;

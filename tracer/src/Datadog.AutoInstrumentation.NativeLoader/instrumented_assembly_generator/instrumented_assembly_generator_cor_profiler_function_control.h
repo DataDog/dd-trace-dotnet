@@ -2,23 +2,28 @@
 #include <atomic>
 #include <corhlpr.h>
 #include <corprof.h>
+#include <memory>
+#include "../../../../shared/src/native-src/com_ptr.h"
 
 namespace instrumented_assembly_generator
 {
-class InstrumentedAssemblyGeneratorCorProfilerFunctionControl : public ICorProfilerFunctionControl
+class CorProfilerFunctionControl : public ICorProfilerFunctionControl
 {
 private:
     std::atomic<int> m_refCount;
-    ICorProfilerFunctionControl* m_pICorProfilerFunctionControl;
-    ICorProfilerInfo12* m_corProfilerInfo;
+    ComPtr<ICorProfilerFunctionControl> m_pICorProfilerFunctionControl;
+    std::shared_ptr<ICorProfilerInfo12> m_corProfilerInfo;
     ModuleID m_moduleId;
     mdMethodDef m_methodId;
 
 public:
-    explicit InstrumentedAssemblyGeneratorCorProfilerFunctionControl(ICorProfilerFunctionControl* corProfilerFunctionControl,
-                                                   ICorProfilerInfo12* corProfilerInfo12, ModuleID moduleId,
-                                                   mdMethodDef methodId);
-    ~InstrumentedAssemblyGeneratorCorProfilerFunctionControl();
+    CorProfilerFunctionControl(
+        ICorProfilerFunctionControl* corProfilerFunctionControl, 
+        std::shared_ptr<ICorProfilerInfo12> corProfilerInfo12,
+        ModuleID moduleId,
+        mdMethodDef methodId);
+
+    ~CorProfilerFunctionControl();
 
     HRESULT STDMETHODCALLTYPE QueryInterface(REFIID riid, void** ppvObject) override;
     ULONG STDMETHODCALLTYPE AddRef(void) override;

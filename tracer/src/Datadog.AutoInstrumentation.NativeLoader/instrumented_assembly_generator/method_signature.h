@@ -1,13 +1,13 @@
 #pragma once
 #include <memory>
 #include <vector>
-#include "../com_ptr.h"
 #include "member_signature.h"
 
 namespace instrumented_assembly_generator
 {
 class MethodSignature
 {
+private:
     PCCOR_SIGNATURE _methodSig;
     unsigned _sigLength;
     ULONG _numberOfTypeArguments = 0;
