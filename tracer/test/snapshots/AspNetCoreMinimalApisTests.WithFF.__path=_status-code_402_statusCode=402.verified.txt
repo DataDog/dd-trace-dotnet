@@ -43,6 +43,7 @@
       http.status_code: 402,
       http.url: http://localhost:00000/status-code/402,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0

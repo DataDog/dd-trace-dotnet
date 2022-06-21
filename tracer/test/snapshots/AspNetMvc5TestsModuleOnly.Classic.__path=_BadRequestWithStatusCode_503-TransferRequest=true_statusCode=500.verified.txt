@@ -21,6 +21,7 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequestWithStatusCode(Int32 
       http.url: http://localhost:00000/badrequestwithstatuscode/503?transferrequest=true,
       http.useragent: testhelper,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0

@@ -40,6 +40,7 @@
       http.status_code: 203,
       http.url: http://localhost:00000/status-code/203,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0

@@ -21,6 +21,7 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequest(),
       http.url: http://localhost:00000/my-app/badrequest,
       http.useragent: testhelper,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0

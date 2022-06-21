@@ -15,6 +15,7 @@
       http.status_code: 405,
       http.url: http://localhost:00000/delay/0,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server
     },

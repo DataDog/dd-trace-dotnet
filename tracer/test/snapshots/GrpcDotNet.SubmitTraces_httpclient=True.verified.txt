@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -89,6 +89,7 @@
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingBothWays,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server
     },
@@ -214,6 +215,7 @@
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingFromClient,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server
     },
@@ -341,6 +343,7 @@
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server
     },
@@ -470,6 +473,7 @@
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server
     },
@@ -599,6 +603,7 @@
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server
     },
@@ -728,6 +733,7 @@
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server
     },
@@ -861,6 +867,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server
     },
@@ -990,6 +997,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server
     },
@@ -1119,6 +1127,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server
     },
@@ -1248,6 +1257,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server
     },
@@ -1379,6 +1389,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingFromServer,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server
     },
@@ -1504,6 +1515,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/Unary,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server
     },
@@ -1629,6 +1641,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/Unary,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server
     },
@@ -1754,6 +1767,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/VerySlow,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server
     },
@@ -1881,6 +1895,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/VerySlow,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server
     },

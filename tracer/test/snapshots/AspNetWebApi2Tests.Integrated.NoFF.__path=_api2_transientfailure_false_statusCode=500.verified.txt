@@ -36,6 +36,7 @@ at Samples.AspNetMvc5.Controllers.ConventionsController.TransientFailure(String 
       http.url: http://localhost:00000/api2/transientfailure/false,
       http.useragent: testhelper,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0

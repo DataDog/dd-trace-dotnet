@@ -39,6 +39,7 @@
       http.url: http://localhost:00000/error/index?errorId=123&errorstatuscode=401,
       http.useragent: testhelper,
       language: dotnet,
+      network.client.ip: ::1,
       span.kind: server,
       version: 1.0.0
     }
@@ -61,11 +62,12 @@ at Samples.AspNetMvc4.Controllers.HomeController.BadRequestWithStatusCode(Int32 
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.route: {controller}/{action}/{id},
+      http.route: error/index,
       http.status_code: 401,
       http.url: http://localhost:00000/home/badrequestwithstatuscode?statuscode=401&transferrequest=true,
       http.useragent: testhelper,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0

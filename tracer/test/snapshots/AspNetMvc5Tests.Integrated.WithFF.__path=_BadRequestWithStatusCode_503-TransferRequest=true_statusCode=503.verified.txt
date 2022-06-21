@@ -43,6 +43,7 @@
       http.url: http://localhost:00000/error/index?errorId=123&errorstatuscode=503,
       http.useragent: testhelper,
       language: dotnet,
+      network.client.ip: ::1,
       span.kind: server,
       version: 1.0.0
     }
@@ -65,11 +66,12 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequestWithStatusCode(Int32 
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.route: {controller}/{action}/{id},
+      http.route: error/index,
       http.status_code: 503,
       http.url: http://localhost:00000/badrequestwithstatuscode/503?transferrequest=true,
       http.useragent: testhelper,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0

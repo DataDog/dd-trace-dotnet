@@ -35,6 +35,7 @@ at Samples.AspNetMvc5.Handlers.TerminatingQuerySuccessMessageHandler.SendAsync(H
       http.url: http://localhost:00000/my-app/handler-api/api?ps=true&ts=false,
       http.useragent: testhelper,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0
