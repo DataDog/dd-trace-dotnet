@@ -15,15 +15,17 @@ internal class TraceTagCollection
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceTagCollection>();
 
+    // used when tag list is null because "new List<KeyValuePair<string, string>>.Enumerator" returns an invalid enumerator.
+    private static readonly List<KeyValuePair<string, string>>.Enumerator EmptyEnumerator = new List<KeyValuePair<string, string>>(0).GetEnumerator();
+
     private readonly object _listLock = new();
-    private readonly List<KeyValuePair<string, string>> _tags;
+
+    private List<KeyValuePair<string, string>>? _tags;
+
     private string? _cachedPropagationHeader;
 
-    public TraceTagCollection(List<KeyValuePair<string, string>>? tags = null, int maxHeaderLength = 512)
     public TraceTagCollection(List<KeyValuePair<string, string>>? tags = null, string? cachedPropagationHeader = null)
     {
-        _tags = tags ?? new List<KeyValuePair<string, string>>(2);
-        PropagationHeaderMaxLength = maxHeaderLength;
         _tags = tags;
         _cachedPropagationHeader = cachedPropagationHeader;
     }
@@ -31,9 +33,7 @@ internal class TraceTagCollection
     /// <summary>
     /// Gets the number of elements contained in the <see cref="TraceTagCollection"/>.
     /// </summary>
-    public int Count => _tags.Count;
-
-    public int PropagationHeaderMaxLength { get; }
+    public int Count => _tags?.Count ?? 0;
 
     public void SetTag(string name, string? value)
     {
@@ -41,6 +41,8 @@ internal class TraceTagCollection
 
         lock (_listLock)
         {
+            _tags ??= new List<KeyValuePair<string, string>>(1);
+
             if (_tags.Count > 0)
             {
                 for (int i = 0; i < _tags.Count; i++)
@@ -83,7 +85,7 @@ internal class TraceTagCollection
 
     public string? GetTag(string name)
     {
-        if (_tags.Count > 0)
+        if (_tags?.Count > 0)
         {
             lock (_listLock)
             {
@@ -121,15 +123,15 @@ internal class TraceTagCollection
 
     public List<KeyValuePair<string, string>>.Enumerator GetEnumerator()
     {
-        return _tags.GetEnumerator();
+        return _tags?.GetEnumerator() ?? EmptyEnumerator;
     }
 
     /// <summary>
     /// Returns the trace tags an <see cref="IEnumerable{T}"/>.
-    /// Use for testing only as it will allocate on the heap.
+    /// Use for testing only as it will allocate the enumerator on the heap.
     /// </summary>
-    public IEnumerable<KeyValuePair<string, string>> ToEnumerable()
+    internal IEnumerable<KeyValuePair<string, string>> ToEnumerable()
     {
-        return _tags;
+        return _tags ?? (IEnumerable<KeyValuePair<string, string>>)Array.Empty<KeyValuePair<string, string>>();
     }
 }
