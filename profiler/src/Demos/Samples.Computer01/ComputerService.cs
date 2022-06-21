@@ -24,6 +24,8 @@ namespace Samples.Computer01
         private PiComputation _piComputation;
         private FibonacciComputation _fibonacciComputation;
         private SleepManager _sleepManager;
+        private AsyncComputation _asyncComputation;
+        private IteratorComputation _iteratorComputation;
 
         public void StartService(Scenario scenario, int nbThreads)
         {
@@ -40,6 +42,7 @@ namespace Samples.Computer01
                     StartPiComputation();
                     StartFibonacciComputation(nbThreads);
                     StartSleep(nbThreads);
+                    StartAsyncComputation(nbThreads);
                     break;
 
                 case Scenario.Computer:
@@ -64,6 +67,14 @@ namespace Samples.Computer01
 
                 case Scenario.Sleep:
                     StartSleep(nbThreads);
+                    break;
+
+                case Scenario.Async:
+                    StartAsyncComputation(nbThreads);
+                    break;
+
+                case Scenario.Iterator:
+                    StartIteratorComputation(nbThreads);
                     break;
 
                 default:
@@ -106,6 +117,14 @@ namespace Samples.Computer01
 
                 case Scenario.Sleep:
                     StopSleep();
+                    break;
+
+                case Scenario.Async:
+                    StopAsyncComputation();
+                    break;
+
+                case Scenario.Iterator:
+                    StopIteratorComputation();
                     break;
             }
         }
@@ -150,6 +169,14 @@ namespace Samples.Computer01
 
                     case Scenario.Sleep:
                         RunSleep(nbThreads);
+                        break;
+
+                    case Scenario.Async:
+                        RunAsyncComputation(nbThreads);
+                        break;
+
+                    case Scenario.Iterator:
+                        RunIteratorComputation(nbThreads);
                         break;
 
                     default:
@@ -204,6 +231,18 @@ namespace Samples.Computer01
             _sleepManager.Start();
         }
 
+        private void StartAsyncComputation(int nbThreads)
+        {
+            _asyncComputation = new AsyncComputation(nbThreads);
+            _asyncComputation.Start();
+        }
+
+        private void StartIteratorComputation(int nbThreads)
+        {
+            _iteratorComputation = new IteratorComputation(nbThreads);
+            _iteratorComputation.Start();
+        }
+
         private void StopComputer()
         {
             using (_computer)
@@ -248,6 +287,16 @@ namespace Samples.Computer01
             _sleepManager.Stop();
         }
 
+        private void StopAsyncComputation()
+        {
+            _asyncComputation.Stop();
+        }
+
+        private void StopIteratorComputation()
+        {
+            _iteratorComputation.Stop();
+        }
+
         private void RunComputer()
         {
             using (var computer = new Computer<byte, KeyValuePair<char, KeyValuePair<int, KeyValuePair<float, object>>>>())
@@ -284,6 +333,18 @@ namespace Samples.Computer01
         {
             var manager = new SleepManager(nbThreads);
             manager.Run();
+        }
+
+        private void RunAsyncComputation(int nbThreads)
+        {
+            var computation = new AsyncComputation(nbThreads);
+            computation.Run();
+        }
+
+        private void RunIteratorComputation(int nbThreads)
+        {
+            var computation = new AsyncComputation(nbThreads);
+            computation.Run();
         }
 
         public class MySpecialClassA

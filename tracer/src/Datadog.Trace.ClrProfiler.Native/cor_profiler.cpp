@@ -523,6 +523,34 @@ bool ShouldRewriteProfilerMaps()
     return shared::TryParseBooleanEnvironmentValue(strValue, is_profiler_enabled) && is_profiler_enabled;
 }
 
+std::string GetNativeLoaderFilePath()
+{
+    auto native_loader_filename =
+#ifdef LINUX
+        "Datadog.Trace.ClrProfiler.Native.so";
+#elif MACOS
+        "Datadog.AutoInstrumentation.NativeLoader.dylib";
+#else
+        "Datadog.AutoInstrumentation.NativeLoader."
+#ifdef BIT64
+        "x64"
+#else
+        "x86"
+#endif
+        ".dll";
+#endif
+
+    auto module_file_path = fs::path(shared::GetCurrentModuleFileName());
+
+    auto native_loader_file_path =
+        module_file_path.parent_path() / ".." /
+#ifdef _WIN32
+        ".." / // On Windows, the tracer native library is 2 levels away from the native loader.
+#endif
+        native_loader_filename;
+    return native_loader_file_path.string();
+}
+
 HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 {
     const auto& module_info = GetModuleInfo(this->info_, module_id);
@@ -677,6 +705,13 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         RewritingPInvokeMaps(module_metadata, nonwindows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, appsec_nonwindows_nativemethods_type);
 #endif // _WIN32
+
+        auto native_loader_library_path = GetNativeLoaderFilePath();
+        if (fs::exists(native_loader_library_path))
+        {
+            auto native_loader_file_path = shared::ToWSTRING(native_loader_library_path);
+            RewritingPInvokeMaps(module_metadata, native_loader_nativemethods_type, native_loader_file_path);
+        }
 
         if (ShouldRewriteProfilerMaps())
         {

@@ -19,7 +19,7 @@ at System.Web.Mvc.ActionDescriptor.ExtractParameterFromDictionary(ParameterInfo 
       error.type: System.ArgumentException,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.status_code: 200,
+      http.status_code: 500,
       http.url: /home/identifier/badvalue,
       language: dotnet,
       runtime-id: Guid_1,
@@ -28,6 +28,7 @@ at System.Web.Mvc.ActionDescriptor.ExtractParameterFromDictionary(ParameterInfo 
     },
     Metrics: {
       process_id: 0,
+      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -57,7 +58,7 @@ at System.Web.Mvc.ActionDescriptor.ExtractParameterFromDictionary(ParameterInfo 
       error.type: System.ArgumentException,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.status_code: 200,
+      http.status_code: 500,
       http.url: /home/identifier/badvalue,
       language: dotnet,
       span.kind: server,

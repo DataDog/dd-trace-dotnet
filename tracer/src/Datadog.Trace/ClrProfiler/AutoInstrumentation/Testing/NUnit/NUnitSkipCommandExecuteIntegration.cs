@@ -60,7 +60,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             if (scope != null)
             {
                 NUnitIntegration.FinishScope(scope, exception);
-                scope.Dispose();
             }
 
             return new CallTargetReturn<TResult>(returnValue);

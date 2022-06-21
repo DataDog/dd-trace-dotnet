@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading;
 using Datadog.Trace.Agent;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
@@ -166,8 +167,11 @@ namespace Datadog.Trace
         protected virtual IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ISampler sampler)
         {
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
-            var api = new Api(apiRequestFactory, statsd, rates => sampler.SetDefaultSampleRates(rates), settings.Exporter.PartialFlushEnabled);
-            return new AgentWriter(api, statsd, maxBufferSize: settings.TraceBufferSize);
+            var api = new Api(apiRequestFactory, statsd, rates => sampler.SetDefaultSampleRates(rates), settings.Exporter.PartialFlushEnabled, settings.StatsComputationEnabled);
+
+            var statsAggregator = StatsAggregator.Create(api, settings);
+
+            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize);
         }
 
         private static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, string serviceName)

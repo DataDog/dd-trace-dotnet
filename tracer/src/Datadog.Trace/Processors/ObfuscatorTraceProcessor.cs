@@ -17,6 +17,7 @@ namespace Datadog.Trace.TraceProcessors
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ObfuscatorTraceProcessor>();
         private static readonly BitArray NumericLiteralPrefix = new BitArray(256, false);
         private static readonly BitArray Splitters = new BitArray(256, false);
+        private readonly ObfuscatorTagsProcessor _tagsProcessor;
 
         static ObfuscatorTraceProcessor()
         {
@@ -42,9 +43,10 @@ namespace Datadog.Trace.TraceProcessors
             }
         }
 
-        public ObfuscatorTraceProcessor()
+        public ObfuscatorTraceProcessor(bool redisTagObfuscationEnabled)
         {
-            Log.Information("ObfuscatorTraceProcessor initialized.");
+            _tagsProcessor = new(redisTagObfuscationEnabled);
+            Log.Information("ObfuscatorTraceProcessor initialized. Redis tag obfuscation enabled: {RedisObfuscation}", redisTagObfuscationEnabled);
         }
 
         public ArraySegment<Span> Process(ArraySegment<Span> trace)
@@ -63,14 +65,15 @@ namespace Datadog.Trace.TraceProcessors
             {
                 span.ResourceName = ObfuscateSqlResource(span.ResourceName);
             }
+            else if (span.Type == SpanTypes.Redis)
+            {
+                span.ResourceName = ObfuscateRedisResource(span.ResourceName);
+            }
 
             return span;
         }
 
-        public ITagProcessor GetTagProcessor()
-        {
-            return null;
-        }
+        public ITagProcessor GetTagProcessor() => _tagsProcessor;
 
         internal static string ObfuscateSqlResource(string sqlQuery)
         {
@@ -133,6 +136,16 @@ namespace Datadog.Trace.TraceProcessors
             }
 
             return sqlQuery;
+        }
+
+        internal static string ObfuscateRedisResource(string redisResource)
+        {
+            if (string.IsNullOrEmpty(redisResource))
+            {
+                return string.Empty;
+            }
+
+            return RedisObfuscationUtil.Quantize(redisResource);
         }
 
         private static BitArray FindSplitterPositions(char[] sqlChars)

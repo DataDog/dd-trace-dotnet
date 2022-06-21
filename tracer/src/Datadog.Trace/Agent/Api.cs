@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.Transports;
@@ -19,6 +20,7 @@ namespace Datadog.Trace.Agent
     internal class Api : IApi
     {
         private const string TracesPath = "/v0.4/traces";
+        private const string StatsPath = "/v0.6/stats";
 
         private static readonly IDatadogLogger StaticLog = DatadogLogging.GetLoggerFor<Api>();
 
@@ -27,8 +29,12 @@ namespace Datadog.Trace.Agent
         private readonly IDogStatsd _statsd;
         private readonly string _containerId;
         private readonly Uri _tracesEndpoint;
+        private readonly Uri _statsEndpoint;
         private readonly Action<Dictionary<string, float>> _updateSampleRates;
-        private readonly bool _isPartialFlushEnabled;
+        private readonly bool _partialFlushEnabled;
+        private readonly bool _statsComputationEnabled;
+        private readonly SendCallback<SendStatsState> _sendStats;
+        private readonly SendCallback<SendTracesState> _sendTraces;
         private string _cachedResponse;
         private string _agentVersion;
 
@@ -36,29 +42,75 @@ namespace Datadog.Trace.Agent
             IApiRequestFactory apiRequestFactory,
             IDogStatsd statsd,
             Action<Dictionary<string, float>> updateSampleRates,
-            bool isPartialFlushEnabled,
+            bool partialFlushEnabled,
+            bool statsComputationEnabled,
             IDatadogLogger log = null)
         {
             // optionally injecting a log instance in here for testing purposes
             _log = log ?? StaticLog;
             _log.Debug("Creating new Api");
+            _sendStats = SendStatsAsyncImpl;
+            _sendTraces = SendTracesAsyncImpl;
             _updateSampleRates = updateSampleRates;
             _statsd = statsd;
             _containerId = ContainerMetadata.GetContainerId();
             _apiRequestFactory = apiRequestFactory;
-            _isPartialFlushEnabled = isPartialFlushEnabled;
+            _partialFlushEnabled = partialFlushEnabled;
             _tracesEndpoint = _apiRequestFactory.GetEndpoint(TracesPath);
             _log.Debug("Using traces endpoint {TracesEndpoint}", _tracesEndpoint.ToString());
+            _statsEndpoint = _apiRequestFactory.GetEndpoint(StatsPath);
+            _log.Debug("Using stats endpoint {StatsEndpoint}", _statsEndpoint.ToString());
+            _statsComputationEnabled = statsComputationEnabled;
         }
 
-        public async Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces)
+        private delegate Task<bool> SendCallback<T>(IApiRequest request, bool isFinalTry, T state);
+
+        public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
+        {
+            _log.Debug("Sending stats to the Datadog Agent.");
+
+            var state = new SendStatsState(stats, bucketDuration);
+
+            return SendWithRetry(_statsEndpoint, _sendStats, state);
+        }
+
+        public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces)
+        {
+            _log.Debug<int>("Sending {Count} traces to the Datadog Agent.", numberOfTraces);
+
+            var state = new SendTracesState(traces, numberOfTraces);
+
+            return SendWithRetry(_tracesEndpoint, _sendTraces, state);
+        }
+
+        // internal for testing
+        internal bool LogPartialFlushWarningIfRequired(string agentVersion)
+        {
+            if (agentVersion != _agentVersion)
+            {
+                _agentVersion = agentVersion;
+
+                if (_partialFlushEnabled)
+                {
+                    if (!Version.TryParse(agentVersion, out var parsedVersion) || parsedVersion < new Version(7, 26, 0))
+                    {
+                        var detectedVersion = string.IsNullOrEmpty(agentVersion) ? "{detection failed}" : agentVersion;
+
+                        _log.Warning("DATADOG TRACER DIAGNOSTICS - Partial flush should only be enabled with agent 7.26.0+ (detected version: {version})", detectedVersion);
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
+        private async Task<bool> SendWithRetry<T>(Uri endpoint, SendCallback<T> callback, T state)
         {
             // retry up to 5 times with exponential back-off
             var retryLimit = 5;
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
-
-            _log.Debug<int>("Sending {Count} traces to the DD agent", numberOfTraces);
 
             while (true)
             {
@@ -66,20 +118,12 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
-                    request = _apiRequestFactory.Create(_tracesEndpoint);
+                    request = _apiRequestFactory.Create(endpoint);
                 }
                 catch (Exception ex)
                 {
-                    _log.Error(ex, "An error occurred while generating http request to send traces to the agent at {AgentEndpoint}", _apiRequestFactory.Info(_tracesEndpoint));
+                    _log.Error(ex, "An error occurred while generating http request to send data to the agent at {AgentEndpoint}", _apiRequestFactory.Info(endpoint));
                     return false;
-                }
-
-                // Set additional headers
-                request.AddHeader(AgentHttpHeaderNames.TraceCount, numberOfTraces.ToString());
-
-                if (_containerId != null)
-                {
-                    request.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
                 }
 
                 bool success = false;
@@ -88,7 +132,7 @@ namespace Datadog.Trace.Agent
 
                 try
                 {
-                    success = await SendTracesAsync(traces, numberOfTraces, request, isFinalTry).ConfigureAwait(false);
+                    success = await callback(request, isFinalTry, state).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -96,7 +140,7 @@ namespace Datadog.Trace.Agent
 #if DEBUG
                     if (ex.InnerException is InvalidOperationException ioe)
                     {
-                        _log.Error<int, string>(ex, "An error occurred while sending {Count} traces to the agent at {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(_tracesEndpoint));
+                        _log.Error(ex, "An error occurred while sending data to the agent at {AgentEndpoint}", _apiRequestFactory.Info(endpoint));
                         return false;
                     }
 #endif
@@ -108,7 +152,7 @@ namespace Datadog.Trace.Agent
                     if (isFinalTry)
                     {
                         // stop retrying
-                        _log.Error<int, string>(exception, "An error occurred while sending {Count} traces to the agent at {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(_tracesEndpoint));
+                        _log.Error(exception, "An error occurred while sending data to the agent at {AgentEndpoint}", _apiRequestFactory.Info(endpoint));
                         return false;
                     }
 
@@ -129,7 +173,7 @@ namespace Datadog.Trace.Agent
 
                     if (isSocketException)
                     {
-                        _log.Debug(exception, "Unable to communicate with the trace agent at {AgentEndpoint}", _apiRequestFactory.Info(_tracesEndpoint));
+                        _log.Debug(exception, "Unable to communicate with the trace agent at {AgentEndpoint}", _apiRequestFactory.Info(endpoint));
                     }
 
                     // Execute retry delay
@@ -140,14 +184,71 @@ namespace Datadog.Trace.Agent
                     continue;
                 }
 
-                _log.Debug<int>("Successfully sent {Count} traces to the DD agent", numberOfTraces);
                 return true;
             }
         }
 
-        private async Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, IApiRequest request, bool finalTry)
+        private async Task<bool> SendStatsAsyncImpl(IApiRequest request, bool isFinalTry, SendStatsState state)
+        {
+            bool success = false;
+
+            // Set additional headers
+            if (_containerId != null)
+            {
+                request.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
+            }
+
+            using var stream = new MemoryStream();
+            state.Stats.Serialize(stream, state.BucketDuration);
+
+            var buffer = stream.GetBuffer();
+
+            using var response = await request.PostAsync(new ArraySegment<byte>(buffer, 0, (int)stream.Length), MimeTypes.MsgPack).ConfigureAwait(false);
+
+            if (response.StatusCode is >= 200 and < 300)
+            {
+                success = true;
+            }
+            else if (isFinalTry)
+            {
+                try
+                {
+                    var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                    _log.Error<int, string>("Failed to submit stats. Status code {StatusCode}, message: {ResponseContent}", response.StatusCode, responseContent);
+                }
+                catch (Exception ex)
+                {
+                    _log.Error<int>(ex, "Unable to read response for failed request. Status code {StatusCode}", response.StatusCode);
+                }
+            }
+
+            if (success)
+            {
+                _log.Debug("Successfully sent stats to the Datadog Agent.");
+            }
+
+            return success;
+        }
+
+        private async Task<bool> SendTracesAsyncImpl(IApiRequest request, bool finalTry, SendTracesState state)
         {
             IApiResponse response = null;
+
+            var traces = state.Traces;
+            var numberOfTraces = state.NumberOfTraces;
+
+            // Set additional headers
+            request.AddHeader(AgentHttpHeaderNames.TraceCount, numberOfTraces.ToString());
+
+            if (_containerId != null)
+            {
+                request.AddHeader(AgentHttpHeaderNames.ContainerId, _containerId);
+            }
+
+            if (_statsComputationEnabled)
+            {
+                request.AddHeader(AgentHttpHeaderNames.StatsComputation, "true");
+            }
 
             try
             {
@@ -224,35 +325,39 @@ namespace Datadog.Trace.Agent
                 response?.Dispose();
             }
 
+            _log.Debug<int>("Successfully sent {Count} traces to the Datadog Agent.", numberOfTraces);
+
             return true;
-        }
-
-        // internal for testing
-        internal bool LogPartialFlushWarningIfRequired(string agentVersion)
-        {
-            if (agentVersion != _agentVersion)
-            {
-                _agentVersion = agentVersion;
-
-                if (_isPartialFlushEnabled)
-                {
-                    if (!Version.TryParse(agentVersion, out var parsedVersion) || parsedVersion < new Version(7, 26, 0))
-                    {
-                        var detectedVersion = string.IsNullOrEmpty(agentVersion) ? "{detection failed}" : agentVersion;
-
-                        _log.Warning("DATADOG TRACER DIAGNOSTICS - Partial flush should only be enabled with agent 7.26.0+ (detected version: {version})", detectedVersion);
-                        return true;
-                    }
-                }
-            }
-
-            return false;
         }
 
         internal struct ApiResponse
         {
             [JsonProperty("rate_by_service")]
             public Dictionary<string, float> RateByService { get; set; }
+        }
+
+        private readonly struct SendTracesState
+        {
+            public readonly ArraySegment<byte> Traces;
+            public readonly int NumberOfTraces;
+
+            public SendTracesState(ArraySegment<byte> traces, int numberOfTraces)
+            {
+                Traces = traces;
+                NumberOfTraces = numberOfTraces;
+            }
+        }
+
+        private readonly struct SendStatsState
+        {
+            public readonly StatsBuffer Stats;
+            public readonly long BucketDuration;
+
+            public SendStatsState(StatsBuffer stats, long bucketDuration)
+            {
+                Stats = stats;
+                BucketDuration = bucketDuration;
+            }
         }
     }
 }

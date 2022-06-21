@@ -1,11 +1,18 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net.Http;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
+using System.Net;
 using System.Reflection;
+using Amazon.SimpleSystemsManagement.Model;
 using GeneratePackageVersions;
 using Honeypot;
+using Microsoft.TeamFoundation.Build.WebApi;
+using Microsoft.VisualStudio.Services.Common;
+using Microsoft.VisualStudio.Services.WebApi;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tooling;
@@ -17,6 +24,7 @@ using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
+using Target = Nuke.Common.Target;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -28,6 +36,9 @@ partial class Build
 {
     [Parameter("The sample name to execute when running or building sample apps")]
     readonly string SampleName;
+
+    [Parameter("The id of a build in AzureDevops")]
+    readonly string BuildId;
 
     [Parameter("Additional environment variables, in the format KEY1=Value1 Key2=Value2 to use when running the IIS Sample")]
     readonly string[] ExtraEnvVars;
@@ -213,4 +224,76 @@ partial class Build
         {
             SyncMsiContent.Run(SharedDirectory, TracerHomeDirectory);
         });
+
+    Target UpdateSnapshots => _ => _
+        .Description("Updates verified snapshots files with received ones")
+        .Executes(ReplaceReceivedFilesInSnapshots);
+
+    Target UpdateSnapshotsFromBuild => _ => _
+      .Description("Updates verified snapshots downloading them from the CI given a build id")
+      .Requires(() => BuildId)
+      .Executes(async () =>
+      {
+            if (!int.TryParse(BuildId, out var buildNumber))
+            {
+              throw new InvalidParametersException(("BuildId should be an int"));
+            }
+
+            // Connect to Azure DevOps Services
+            var connection = new VssConnection(
+                new Uri(AzureDevopsOrganisation),
+                new VssBasicCredential(string.Empty, AzureDevopsToken));
+
+            // Get an Azure devops client
+            using var buildHttpClient = connection.GetClient<BuildHttpClient>();
+
+            var artifacts = await buildHttpClient.GetArtifactsAsync(
+                             project: AzureDevopsProjectId,
+                             buildId: buildNumber);
+
+            foreach(var artifact in artifacts)
+            {
+                if (!artifact.Name.Contains("snapshots"))
+                {
+                    continue;
+                }
+
+                var extractLocation = Path.Combine((AbsolutePath)Path.GetTempPath(), artifact.Name);
+                var snapshotsDirectory = TestsDirectory / "snapshots";
+
+                await DownloadAzureArtifact((AbsolutePath)Path.GetTempPath(), artifact, AzureDevopsToken);
+
+                CopyDirectoryRecursively(
+                    source: extractLocation,
+                    target: snapshotsDirectory,
+                    DirectoryExistsPolicy.Merge,
+                    FileExistsPolicy.Skip,
+                    excludeFile: file => !Path.GetFileNameWithoutExtension(file.FullName).EndsWith(".received"));
+
+                DeleteDirectory(extractLocation);
+            }
+
+            ReplaceReceivedFilesInSnapshots();
+      });
+
+    private void ReplaceReceivedFilesInSnapshots()
+    {
+        var snapshotsDirectory = TestsDirectory / "snapshots";
+        var files = snapshotsDirectory.GlobFiles("*.received.*");
+
+        var suffixLength = "received".Length;
+        foreach (var source in files)
+        {
+            var fileName = Path.GetFileNameWithoutExtension(source);
+            if (!fileName.EndsWith("received"))
+            {
+                Logger.Warn($"Skipping file '{source}' as filename did not end with 'received'");
+                continue;
+            }
+
+            var trimmedName = fileName.Substring(0, fileName.Length - suffixLength);
+            var dest = Path.Combine(snapshotsDirectory, $"{trimmedName}verified{Path.GetExtension(source)}");
+            MoveFile(source, dest, FileExistsPolicy.Overwrite, createDirectories: true);
+        }
+    }
 }

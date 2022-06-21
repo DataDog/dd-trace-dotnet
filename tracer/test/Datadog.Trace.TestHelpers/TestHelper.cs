@@ -272,7 +272,7 @@ namespace Datadog.Trace.TestHelpers
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
 
-        public (Process Process, string ConfigFile) StartIISExpress(MockTracerAgent agent, int iisPort, IisAppType appType)
+        public (Process Process, string ConfigFile) StartIISExpress(MockTracerAgent agent, int iisPort, IisAppType appType, string subAppPath)
         {
             var iisExpress = EnvironmentHelper.GetIisExpressPath();
 
@@ -298,10 +298,19 @@ namespace Datadog.Trace.TestHelpers
 
             var newConfig = Path.GetTempFileName();
 
+            var virtualAppSection = subAppPath switch
+            {
+                null or "" or "/" => string.Empty,
+                _ when !subAppPath.StartsWith("/") => throw new ArgumentException("Application path must start with '/'", nameof(subAppPath)),
+                _ when subAppPath.EndsWith("/") => throw new ArgumentException("Application path must not end with '/'", nameof(subAppPath)),
+                _ => $"<application path=\"{subAppPath}\" applicationPool=\"{appPool}\"><virtualDirectory path=\"/\" physicalPath=\"{appPath}\" /></application>",
+            };
+
             configTemplate = configTemplate
                             .Replace("[PATH]", appPath)
                             .Replace("[PORT]", iisPort.ToString())
-                            .Replace("[POOL]", appPool);
+                            .Replace("[POOL]", appPool)
+                            .Replace("[VIRTUAL_APPLICATION]", virtualAppSection);
 
             var isAspNetCore = appType == IisAppType.AspNetCoreInProcess || appType == IisAppType.AspNetCoreOutOfProcess;
             if (isAspNetCore)

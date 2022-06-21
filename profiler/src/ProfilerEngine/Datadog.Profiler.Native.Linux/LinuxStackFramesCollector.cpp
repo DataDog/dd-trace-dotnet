@@ -4,17 +4,23 @@
 #include "LinuxStackFramesCollector.h"
 
 #include <cassert>
+#include <chrono>
 #include <errno.h>
 #include <mutex>
 #include <signal.h>
 #include <sys/syscall.h>
+#include <unordered_map>
+#include <iomanip>
 
 #include <libunwind-x86_64.h>
 
 #include "Log.h"
 #include "ManagedThreadInfo.h"
+#include "OpSysTools.h"
 #include "ScopeFinalizer.h"
 #include "StackSnapshotResultReusableBuffer.h"
+
+using namespace std::chrono_literals;
 
 std::mutex LinuxStackFramesCollector::s_signalHandlerInitLock;
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
@@ -24,7 +30,9 @@ LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackW
 
 LinuxStackFramesCollector::LinuxStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo) :
     _pCorProfilerInfo(_pCorProfilerInfo),
-    _lastStackWalkErrorCode{0}
+    _lastStackWalkErrorCode{0},
+    _stackWalkFinished{false},
+    _errorStatistics{}
 {
     _pCorProfilerInfo->AddRef();
     InitializeSignalHandler();
@@ -32,7 +40,48 @@ LinuxStackFramesCollector::LinuxStackFramesCollector(ICorProfilerInfo4* const _p
 LinuxStackFramesCollector::~LinuxStackFramesCollector()
 {
     _pCorProfilerInfo->Release();
+    _errorStatistics.Log();
     // !! @ToDo: We must uninstall the signal handler!!
+}
+
+bool IsThreadAlive(::pid_t processId, ::pid_t threadId)
+{
+    return syscall(SYS_tgkill, processId, threadId, 0) == 0;
+}
+
+bool LinuxStackFramesCollector::ShouldLogStats()
+{
+    static std::time_t PreviousPrintTimestamp = 0;
+    static const std::int64_t TimeIntervalInSeconds = 600; // print stats every 10min
+
+    time_t currentTime;
+    time(&currentTime);
+
+    if (currentTime == static_cast<time_t>(-1))
+    {
+        return false;
+    }
+
+    if (currentTime - PreviousPrintTimestamp < TimeIntervalInSeconds)
+    {
+        return false;
+    }
+
+    PreviousPrintTimestamp = currentTime;
+
+    return true;
+}
+
+void LinuxStackFramesCollector::UpdateErrorStats(std::int32_t errorCode)
+{
+    if (Log::IsDebugEnabled())
+    {
+        _errorStatistics.Add(errorCode);
+        if (ShouldLogStats())
+        {
+            _errorStatistics.Log();
+        }
+    }
 }
 
 StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
@@ -59,7 +108,8 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 
         std::unique_lock<std::mutex> stackWalkInProgressLock(s_stackWalkInProgressMutex);
 
-        const DWORD osThreadId = pThreadInfo->GetOsThreadId();
+        const auto osThreadId = static_cast<::pid_t>(pThreadInfo->GetOsThreadId());
+        const auto processId = static_cast<::pid_t>(OpSysTools::GetProcId());
 
 #ifndef NDEBUG
         Log::Debug("LinuxStackFramesCollector::CollectStackSampleImplementation: Sending signal ",
@@ -71,7 +121,9 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
                 s_pInstanceCurrentlyStackWalking = nullptr;
             });
 
-        errorCode = syscall(SYS_tgkill, static_cast<::pid_t>(getpid()), static_cast<::pid_t>(osThreadId), s_signalToSend);
+        _stackWalkFinished = false;
+
+        errorCode = syscall(SYS_tgkill, processId, osThreadId, s_signalToSend);
 
         if (errorCode == -1)
         {
@@ -82,7 +134,20 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
         }
         else
         {
-            _stackWalkInProgressWaiter.wait(stackWalkInProgressLock);
+            do
+            {
+                // When the application ends and the CLR shuts down, it might happen that
+                // the currently walked thread gets terminated without noticing us.
+                // This loop ensures that the code does not stay stuck waiting for a lock that will
+                // never be released. It will exit if the stack walked thread does not run anymore or
+                // the stack walk finishes as expected.
+                _stackWalkInProgressWaiter.wait_for(stackWalkInProgressLock, 500ms);
+                if (!IsThreadAlive(processId, osThreadId))
+                {
+                    _lastStackWalkErrorCode = E_ABORT;
+                    break;
+                }
+            } while (!_stackWalkFinished);
             errorCode = _lastStackWalkErrorCode;
         }
     }
@@ -93,11 +158,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
     // * == 0 : success
     if (errorCode < 0)
     {
-        Log::Info("LinuxStackFramesCollector::CollectStackSampleImplementation:"
-                  " A problem occured while collecting a stack sample:",
-                  " ", ErrorCodeToString(errorCode), " (", errorCode, ").",
-                  " The stack sample collection may have been aborted, and the sample may",
-                  " be invalid, however the execution will continue normally.");
+        UpdateErrorStats(errorCode);
     }
 
     *pHR = (errorCode == 0) ? S_OK : E_FAIL;
@@ -109,6 +170,7 @@ void LinuxStackFramesCollector::NotifyStackWalkCompleted(std::int32_t resultErro
 {
     _lastStackWalkErrorCode = resultErrorCode;
     _stackWalkInProgressWaiter.notify_one();
+    _stackWalkFinished = true;
 }
 
 void LinuxStackFramesCollector::InitializeSignalHandler()
@@ -158,6 +220,7 @@ bool LinuxStackFramesCollector::TrySetHandlerForSignal(int signal, struct sigact
               " Unable to set signal for ",
               signal, ". The default one is overriden by ",
               oldAction.sa_handler, ".");
+
     return false;
 }
 
@@ -223,31 +286,22 @@ char const* LinuxStackFramesCollector::ErrorCodeToString(int errorCode)
 
 std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread()
 {
-    std::int32_t resultErrorCode;
-
+    try
     {
-        // Collect data for TraceContext tracking:
-        bool traceContextDataCollected = TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
+        std::int32_t resultErrorCode;
 
-        // Now walk the stack:
-
-        unw_context_t uc;
-        unw_getcontext(&uc);
-
-        unw_cursor_t cursor;
-        unw_init_local(&cursor, &uc);
-
-        // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
-        if (IsCurrentCollectionAbortRequested())
         {
-            AddFakeFrame();
-            return E_ABORT;
-        }
+            // Collect data for TraceContext tracking:
+            bool traceContextDataCollected = TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
 
-        resultErrorCode = unw_step(&cursor);
+            // Now walk the stack:
 
-        while (resultErrorCode > 0)
-        {
+            unw_context_t uc;
+            unw_getcontext(&uc);
+
+            unw_cursor_t cursor;
+            unw_init_local(&cursor, &uc);
+
             // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
             if (IsCurrentCollectionAbortRequested())
             {
@@ -255,22 +309,38 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread()
                 return E_ABORT;
             }
 
-            unw_word_t nativeInstructionPointer;
-            resultErrorCode = unw_get_reg(&cursor, UNW_REG_IP, &nativeInstructionPointer);
-            if (resultErrorCode != 0)
-            {
-                return resultErrorCode;
-            }
-
-            if (!AddFrame(nativeInstructionPointer))
-            {
-                return S_FALSE;
-            }
-
             resultErrorCode = unw_step(&cursor);
+
+            while (resultErrorCode > 0)
+            {
+                // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
+                if (IsCurrentCollectionAbortRequested())
+                {
+                    AddFakeFrame();
+                    return E_ABORT;
+                }
+
+                unw_word_t nativeInstructionPointer;
+                resultErrorCode = unw_get_reg(&cursor, UNW_REG_IP, &nativeInstructionPointer);
+                if (resultErrorCode != 0)
+                {
+                    return resultErrorCode;
+                }
+
+                if (!AddFrame(nativeInstructionPointer))
+                {
+                    return S_FALSE;
+                }
+
+                resultErrorCode = unw_step(&cursor);
+            }
         }
+        return resultErrorCode;
     }
-    return resultErrorCode;
+    catch (...)
+    {
+        return E_ABORT;
+    }
 }
 
 void LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal)
@@ -281,4 +351,27 @@ void LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal)
     std::int32_t resultErrorCode = pCollectorInstanceCurrentlyStackWalking->CollectCallStackCurrentThread();
     stackWalkInProgressLock.unlock();
     pCollectorInstanceCurrentlyStackWalking->NotifyStackWalkCompleted(resultErrorCode);
+}
+
+void LinuxStackFramesCollector::ErrorStatistics::Add(std::int32_t errorCode)
+{
+    auto& value = _stats[errorCode];
+    value++;
+}
+
+void LinuxStackFramesCollector::ErrorStatistics::Log()
+{
+    if (!_stats.empty())
+    {
+        std::stringstream ss;
+        ss << std::setfill(' ') << std::setw(13) << "# occurrences" << "  |  " << "Error message\n";
+        for (auto& errorCodeAndStats : _stats)
+        {
+            ss << std::setfill(' ') << std::setw(10) << errorCodeAndStats.second << "  |  " << ErrorCodeToString(errorCodeAndStats.first) << " (" << errorCodeAndStats.first << ")\n";
+        }
+
+        Log::Info("LinuxStackFramesCollector::CollectStackSampleImplementation: The sampler thread encoutered errors in the interval\n",
+                  ss.str());
+        _stats.clear();
+    }
 }

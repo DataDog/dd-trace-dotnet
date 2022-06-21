@@ -35,7 +35,7 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DEPLOY_DIR})
 # ******************************************************
 
 add_library(${API_WRAPPER_SHARED_LIB_NAME} SHARED
-    dl_iterate_phdr_wrapper.c
+    functions_to_wrap.c
 )
 
 # Define linker libraries

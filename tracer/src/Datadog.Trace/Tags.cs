@@ -391,6 +391,11 @@ namespace Datadog.Trace
         internal const string Measured = "_dd.measured";
 
         /// <summary>
+        /// Marks a span as a partial snapshot.
+        /// </summary>
+        internal const string PartialSnapshot = "_dd.partial_version";
+
+        /// <summary>
         /// The name of the Msmq command the message was published to.
         /// </summary>
         internal const string MsmqCommand = "msmq.command";

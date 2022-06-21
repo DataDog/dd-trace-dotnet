@@ -22,6 +22,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         MinimumVersion = "2.1.0",
         MaximumVersion = "4.*.*",
         IntegrationName = NLogConstants.IntegrationName)]
+    [InstrumentMethod(
+        AssemblyName = "NLog",
+        TypeName = "NLog.LogFactory",
+        MethodName = "BuildLoggerConfiguration",
+        ReturnTypeName = ClrNames.Void,
+        ParameterTypeNames = new[] { ClrNames.String, "NLog.Config.LoggingConfiguration" },
+        MinimumVersion = "5.0.0",
+        MaximumVersion = "5.*.*",
+        IntegrationName = NLogConstants.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class LogFactoryGetConfigurationForLoggerInstrumentation
