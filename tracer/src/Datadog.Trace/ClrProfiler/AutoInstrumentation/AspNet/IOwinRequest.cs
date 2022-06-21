@@ -1,4 +1,4 @@
-// <copyright file="IHttpRequestMessage.cs" company="Datadog">
+﻿// <copyright file="IOwinRequest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,27 +12,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
     /// <summary>
     /// HttpRequestMessage interface for ducktyping
     /// </summary>
-    internal interface IHttpRequestMessage
+    internal interface IOwinRequest
     {
         /// <summary>
-        /// Gets the Http Method
+        /// Gets the RemoteIpAddress
         /// </summary>
-        HttpMethodStruct Method { get; }
+        string RemoteIpAddress { get; }
 
         /// <summary>
-        /// Gets the request uri
+        /// Gets the RemotePort
         /// </summary>
-        Uri RequestUri { get; }
+        int? RemotePort { get; }
 
         /// <summary>
-        /// Gets the request headers
+        /// Gets a value indicating whether its an encrypted connection
         /// </summary>
-        IRequestHeaders Headers { get; }
-
-        /// <summary>
-        /// Gets the request properties
-        /// </summary>
-        Dictionary<string, object> Properties { get; }
+        bool IsSecure { get; }
     }
 }
 #endif

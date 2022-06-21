@@ -120,7 +120,7 @@ namespace Datadog.Trace.AspNet
                 }
 
                 string host = httpRequest.Headers.Get("Host");
-                string userAgent = httpRequest.Headers[HttpHeaderNames.UserAgent];
+                var userAgent = httpRequest.Headers.Get(HttpHeaderNames.UserAgent);
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
                 string url = httpRequest.Url.ToString().ToLowerInvariant();
 
