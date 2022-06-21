@@ -61,6 +61,7 @@ namespace Datadog.Trace.Headers.Ip
         internal static void AddIpToTags(IpInfo peerIp, bool isSecureConnection, Func<string, string> getHeader, string customIpHeader, WebTags tags)
         {
             var ipInfo = ExtractIpAndPort(getHeader, customIpHeader, isSecureConnection, peerIp);
+            tags.SetTag(Tags.NetworkClientIp, peerIp?.IpAddress);
             if (ipInfo != null)
             {
                 tags.SetTag(Tags.HttpClientIp, ipInfo.IpAddress);
