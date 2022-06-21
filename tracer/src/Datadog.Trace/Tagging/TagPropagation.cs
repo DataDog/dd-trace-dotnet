@@ -15,6 +15,8 @@ namespace Datadog.Trace.Tagging;
 
 internal static class TagPropagation
 {
+    public const int DefaultMaximumPropagationHeaderLength = 512;
+
     // tags with this prefix are propagated horizontally
     // (i.e. from upstream services and to downstream services)
     // using the "x-datadog-tags" header
@@ -28,7 +30,7 @@ internal static class TagPropagation
 
     // the smallest possible header length, 1-char key and 1-char value:
     // "_dd.p.a=b" = "_dd.p.".Length + "a=b".Length
-    public const int MinimumPropagationHeaderLength = PropagatedTagPrefixLength + 3;
+    internal const int MinimumPropagationHeaderLength = PropagatedTagPrefixLength + 3;
 
     private static readonly char[] TagPairSeparators = { TagPairSeparator };
 
@@ -62,13 +64,13 @@ internal static class TagPropagation
         {
             Log.Debug<int, int>("Incoming tag propagation header too long. Length {0}, maximum {1}.", propagationHeader.Length, maxHeaderLength);
 
-            traceTags = new List<KeyValuePair<string, string>>(1)
-                        {
-                            new(Tags.TagPropagation.Error, PropagationErrorTagValues.ExtractMaxSize)
-                        };
+            traceTags = new List<KeyValuePair<string, string>>(1) { new(Tags.TagPropagation.Error, PropagationErrorTagValues.ExtractMaxSize) };
 
             tagCollection = new TraceTagCollection(traceTags);
-            return false;
+
+            // NOTE: return true to indicate that tagCollection is not null and contains span tags
+            // (even though we failed to parse)
+            return true;
         }
 
         var headerTags = propagationHeader.Split(TagPairSeparators, StringSplitOptions.RemoveEmptyEntries);
@@ -93,10 +95,19 @@ internal static class TagPropagation
                     separatorIndex < headerTag.Length - 1)
                 {
                     // TODO: implement something like StringSegment to avoid allocating new (sub)strings?
-                    var name = headerTag.Substring(0, separatorIndex);
+                    var key = headerTag.Substring(0, separatorIndex);
                     var value = headerTag.Substring(separatorIndex + 1);
 
-                    traceTags.Add(new(name, value));
+                    if (IsValid(key, value))
+                    {
+                        traceTags.Add(new(key, value));
+                    }
+                    else
+                    {
+                        cachedHeader = null;
+
+                        return false;
+                    }
                 }
 
                 else
@@ -129,12 +140,6 @@ internal static class TagPropagation
             return string.Empty;
         }
 
-        // validate all tags first
-        foreach (var tag in tags)
-        {
-            // TODO
-        }
-
         var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 
         foreach (var tag in tags)
@@ -143,6 +148,18 @@ internal static class TagPropagation
                 !string.IsNullOrEmpty(tag.Value) &&
                 tag.Key.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
             {
+                // validate tag: if any propagated tags contain invalid chars,
+                // set tag "_dd.propagation_error=encoding_error"
+
+                if (!IsValid(tag.Key, tag.Value))
+                {
+                    // if tag contains invalid chars, // set tag "_dd.propagation_error:encoding_error"...
+                    tags.SetTag(Tags.TagPropagation.Error, PropagationErrorTagValues.EncodingError);
+
+                    // ... and don't set the header
+                    return string.Empty;
+                }
+
                 if (sb.Length > 0)
                 {
                     sb.Append(TagPairSeparator);
@@ -165,5 +182,28 @@ internal static class TagPropagation
         }
 
         return StringBuilderCache.GetStringAndRelease(sb);
+    }
+
+    internal static bool IsValid(string key, string value)
+    {
+        // keys don't allow comma, space, or equals
+        foreach (char c in key)
+        {
+            if (c is < (char)32 or > (char)126 or ',' or ' ' or '=')
+            {
+                return false;
+            }
+        }
+
+        // values don't allow comma
+        foreach (char c in value)
+        {
+            if (c is < (char)32 or > (char)126 or ',')
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
