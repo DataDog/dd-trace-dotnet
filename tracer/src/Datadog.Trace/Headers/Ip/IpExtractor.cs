@@ -42,10 +42,9 @@ namespace Datadog.Trace.Headers.Ip
         /// <param name="headerValue">the extracted values from releveant ip related header</param>
         /// <param name="https">is a secure connection</param>
         /// <returns>return ip and port, may be null</returns>
-        internal static IpInfo GetRealIpFromValue(string headerValue, bool https)
+        internal static IpInfo RealIpFromValue(string headerValue, bool https)
         {
             IpInfo privateIpInfo = null;
-            IpInfo publicIpInfo = null;
             var values = headerValue.Split(',');
             foreach (var potentialIp in values)
             {
@@ -66,14 +65,14 @@ namespace Datadog.Trace.Headers.Ip
                         ipAddress = ipAddress.MapToIPv4();
                     }
 
-                    // only set the oldest (so the first one)
-                    if (IsPrivateIp(ipAddress) && privateIpInfo == null)
+                    if (IsPrivateIp(ipAddress))
                     {
-                        privateIpInfo = addressAndPort;
+                        // only set the oldest (so the first one)
+                        privateIpInfo ??= addressAndPort;
                     }
                     else
                     {
-                        publicIpInfo = new IpInfo(ipAddress.ToString(), addressAndPort.Port);
+                        var publicIpInfo = new IpInfo(ipAddress.ToString(), addressAndPort.Port);
                         return publicIpInfo;
                     }
                 }

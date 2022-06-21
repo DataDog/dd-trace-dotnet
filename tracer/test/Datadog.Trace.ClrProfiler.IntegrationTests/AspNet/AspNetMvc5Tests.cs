@@ -142,6 +142,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/DataDog/DogHouse", 200 }, // Contains child actions
             { "/DataDog/DogHouse/Woof", 200 }, // Contains child actions
             { "/", 200 },
+            { "/?key1=val1&token=a0b21ce2-006f-4cc6-95d5-d7b550698482&key2=val2", 200 },
             { "/Home", 200 },
             { "/Home/Index", 200 },
             { "/Home/Get", 500 },
