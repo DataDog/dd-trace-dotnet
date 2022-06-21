@@ -621,6 +621,7 @@ partial class Build
 
                 var fpm = Fpm.Value;
                 var gzip = GZip.Value;
+                var chmod = Chmod.Value;
                 var packageName = "datadog-dotnet-apm";
 
                 var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
@@ -637,6 +638,10 @@ partial class Build
                     var newName = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
                     RenameFile(sourceFile, newName);
                 }
+
+                // somehow the permissions are lost along the way, ensure they are correctly set here
+                var createLogPathScript = (IsArm64 ? TracerHomeDirectory : MonitoringHomeDirectory) / "createLogPath.sh";
+                chmod.Invoke("+x " + createLogPathScript);
 
                 ExtractDebugInfoAndStripSymbols();
 
