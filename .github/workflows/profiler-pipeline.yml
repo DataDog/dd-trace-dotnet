@@ -256,6 +256,11 @@ jobs:
           - Debug
 
     steps:
+    
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '6.0.x'
+        
       - name: Support longpaths
         run: git config --system core.longpaths true
 
@@ -320,6 +325,11 @@ jobs:
           - Debug
 
     steps:
+    
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '6.0.x' 
+    
       - name: Support longpaths
         run: git config --system core.longpaths true
 
@@ -386,6 +396,11 @@ jobs:
           - net50
 
     steps:
+    
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '6.0.x'
+    
       - name: Install Datadog agent
         continue-on-error: false
         shell: pwsh
@@ -487,6 +502,11 @@ jobs:
           - Release
 
     steps:
+    
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: '6.0.x'    
+    
       - name: Install Datadog agent
         continue-on-error: false
         shell: pwsh
