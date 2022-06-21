@@ -15,15 +15,10 @@ CorProfilerFunctionControl::CorProfilerFunctionControl(ICorProfilerFunctionContr
     m_methodId(methodId)
 {
     m_pICorProfilerFunctionControl.Attach(corProfilerFunctionControl);
-    AddRef();
 }
 
 CorProfilerFunctionControl::~CorProfilerFunctionControl()
 {
-    // Release();
-    // m_corProfilerInfo->Release();
-    // m_corProfilerInfo = nullptr;
-    // m_pICorProfilerFunctionControl.Reset();
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerFunctionControl::QueryInterface(REFIID riid, void** ppvObject)

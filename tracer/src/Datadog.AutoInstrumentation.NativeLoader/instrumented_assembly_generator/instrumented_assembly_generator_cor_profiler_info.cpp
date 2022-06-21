@@ -7,13 +7,10 @@ namespace instrumented_assembly_generator
 CorProfilerInfo::CorProfilerInfo(IUnknown* pICorProfilerInfoUnk)
 {
     m_pICorProfilerInfoUnk.Attach(pICorProfilerInfoUnk);
-    AddRef();
 }
 
 CorProfilerInfo::~CorProfilerInfo()
 {
-    // Release();
-    // m_pICorProfilerInfoUnk.Reset();
 }
 
 HRESULT STDMETHODCALLTYPE CorProfilerInfo::QueryInterface(REFIID riid, void** ppvObject)

@@ -21,8 +21,6 @@ MetadataInterfaces::MetadataInterfaces(
 
 MetadataInterfaces::~MetadataInterfaces()
 {
-    // Release();
-    // m_metadataInterfaces.Reset();
 }
 
 HRESULT STDMETHODCALLTYPE MetadataInterfaces::QueryInterface(REFIID riid, void** ppvObject)

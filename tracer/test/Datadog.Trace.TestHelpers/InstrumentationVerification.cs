@@ -60,7 +60,7 @@ internal static class InstrumentationVerification
 
         if (processSpecificInstrumentationLogsFolder == null)
         {
-            throw new Exception($"Unable to find instrumentation verification directory that matches pattern '{pattern}'");
+            throw new Exception($"Unable to find instrumentation verification directory that matches pattern '{pattern}' in {instrumentationLogsFolder}");
         }
 
         return processSpecificInstrumentationLogsFolder.FullName;
