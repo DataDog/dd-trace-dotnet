@@ -1,6 +1,6 @@
 #pragma once
-#include "../com_ptr.h"
 #include "../util.h"
+#include "../../../../shared/src/native-src/com_ptr.h"
 
 namespace instrumented_assembly_generator
 {
@@ -8,6 +8,7 @@ HRESULT GetTypeName(const ComPtr<IMetaDataImport>& metadataImport, const mdToken
 
 class MemberSignature
 {
+private:
     const PCCOR_SIGNATURE _sig;
     const ULONG _sigLength;
     const ULONG _offset;

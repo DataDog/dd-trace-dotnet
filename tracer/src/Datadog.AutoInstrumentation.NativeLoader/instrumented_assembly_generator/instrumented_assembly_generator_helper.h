@@ -1,20 +1,17 @@
 #pragma once
-#include "../com_ptr.h"
+#include "../../../../shared/src/native-src/dd_filesystem.hpp"
 #include "../cor_profiler.h"
 #include "../log.h"
 #include "../util.h"
 #include "instrumented_assembly_generator_consts.h"
 #include "method_info.h"
-#include "../../../../shared/src/native-src/dd_filesystem.hpp"
 #include <fstream>
-#include <random>
 #include <iomanip>
+#include <random>
 #include <utility>
 #if !_WIN32
 #include <unistd.h>
 #endif
-
-using namespace shared;
 
 namespace instrumented_assembly_generator
 {
@@ -23,7 +20,7 @@ shared::WSTRING IntToHex(T i)
 {
     std::stringstream stream;
     stream << "0x" << std::setfill('0') << std::setw(sizeof(T) * 2) << std::hex << i;
-    return ToWSTRING(stream.str());
+    return shared::ToWSTRING(stream.str());
 }
 
 inline fs::path instrumentedAssemblyGeneratorOutputFolder;
@@ -85,7 +82,8 @@ inline fs::path GetInstrumentedAssemblyGeneratorCurrentProcessFolder()
     {
         if (!instrumentedAssemblyGeneratorOutputFolder.empty()) return instrumentedAssemblyGeneratorOutputFolder;
 
-        const auto logsDirectory = fs::path(GetDatadogLogsDirectoryPath());
+        const auto logsDirectory =
+            fs::path(shared::GetDatadogLogFilePath<Log::NativeLoaderLoggerPolicy>("not_in_use")).parent_path();
         const auto instrumentedAssemblyGeneratorDir = logsDirectory / InstrumentedAssemblyGeneratorLogsFolder;
 
         const auto processName = shared::GetCurrentProcessName();
@@ -104,7 +102,8 @@ inline fs::path GetInstrumentedAssemblyGeneratorCurrentProcessFolder()
     }
     catch (const std::exception& e)
     {
-        Log::Error("GetInstrumentedAssemblyGeneratorCurrentProcessFolder: failed to get instrumented log path. ", e.what());
+        Log::Error("GetInstrumentedAssemblyGeneratorCurrentProcessFolder: failed to get instrumented log path. ",
+                   e.what());
     }
     catch (...)
     {
@@ -118,7 +117,8 @@ inline bool IsInstrumentedAssemblyGeneratorEnabled()
 {
     try
     {
-        const auto isInstrumentedAssemblyGeneratorEnabled = shared::GetEnvironmentValue(cfg_instrumentation_verification_env);
+        const auto isInstrumentedAssemblyGeneratorEnabled =
+            shared::GetEnvironmentValue(cfg_instrumentation_verification_env);
         if (isInstrumentedAssemblyGeneratorEnabled == WStr("1") ||
             isInstrumentedAssemblyGeneratorEnabled == WStr("true"))
         {
@@ -128,10 +128,9 @@ inline bool IsInstrumentedAssemblyGeneratorEnabled()
                 Log::Info("Instrumentation Verification log is enabled. Output folder is: ", path);
                 return true;
             }
-#else 
+#else
             Log::Warn("Instrumentation Verification is currently only supported on Windows and will be disabled.");
 #endif
-
         }
     }
     catch (...)
@@ -140,7 +139,8 @@ inline bool IsInstrumentedAssemblyGeneratorEnabled()
     return false;
 }
 
-inline std::tuple<HRESULT, shared::WSTRING, shared::WSTRING> GetModuleNameAndMvid(const ComPtr<IMetaDataImport>& metadataImport)
+inline std::tuple<HRESULT, shared::WSTRING, shared::WSTRING>
+GetModuleNameAndMvid(const ComPtr<IMetaDataImport>& metadataImport)
 {
     ULONG pchName;
     GUID pmvid;
@@ -157,15 +157,13 @@ inline std::tuple<HRESULT, shared::WSTRING, shared::WSTRING> GetModuleNameAndMvi
 
 inline bool ShouldSkipCopyModule(const shared::WSTRING& moduleName)
 {
-    if (shared::WStringStartWithCaseInsensitive(moduleName, WStr("RefEmit_"))) return true;
-    return false;
+    return shared::WStringStartWithCaseInsensitive(moduleName, WStr("RefEmit_"));
 }
 
 inline void CopyOriginalModuleForInstrumentationVerification(const shared::WSTRING& modulePath)
 {
-    const fs::path toFolder =
-        GetInstrumentedAssemblyGeneratorCurrentProcessFolder() / fs::path(OriginalModulesFolder);
-    
+    const fs::path toFolder = GetInstrumentedAssemblyGeneratorCurrentProcessFolder() / fs::path(OriginalModulesFolder);
+
     const auto fileName = fs::path(modulePath).filename();
 
     if (ShouldSkipCopyModule(shared::ToWSTRING(fileName.string())) == false)
@@ -177,12 +175,12 @@ inline void CopyOriginalModuleForInstrumentationVerification(const shared::WSTRI
         catch (const std::exception& e)
         {
             Log::Error("CopyOriginalModuleForInstrumentationVerification: failed to copy module ", fileName, " to ",
-                  toFolder, " Error: ", e.what());
+                       toFolder, " Error: ", e.what());
         }
         catch (...)
         {
             Log::Error("CopyOriginalModuleForInstrumentationVerification: failed to copy module ", fileName, " to ",
-                  toFolder);
+                       toFolder);
         }
     }
 }
@@ -264,7 +262,7 @@ inline shared::WSTRING GetLocalsTypes(const ComPtr<IMetaDataImport>& metadataImp
 }
 
 inline HRESULT WriteILChanges(ModuleID moduleId, mdMethodDef methodToken, LPCBYTE pbNewILMethodHeader, ULONG ilSize,
-                              ICorProfilerInfo* corProfilerInfo)
+                              ICorProfilerInfo12* corProfilerInfo)
 {
     HRESULT hr;
     try
@@ -279,8 +277,8 @@ inline HRESULT WriteILChanges(ModuleID moduleId, mdMethodDef methodToken, LPCBYT
         if (methodAndTypeInfo.token == 0 || !methodAndTypeInfo.methodSig.IsValid())
         {
             Log::Warn("InstrumentationVerificationCorProfilerInfo::WriteILChanges: fail in GetMethodInfo. Token or "
-                 "methodSig is not valid. Method token is: ",
-                 methodToken);
+                      "methodSig is not valid. Method token is: ",
+                      methodToken);
             return E_FAIL;
         }
 
@@ -308,7 +306,7 @@ inline HRESULT WriteILChanges(ModuleID moduleId, mdMethodDef methodToken, LPCBYT
             if (FAILED(hr) || ilSize == 0)
             {
                 Log::Error("InstrumentationVerificationCorProfilerInfo::WriteILChanges: failed to get IL size. Token: ",
-                      methodToken);
+                           methodToken);
                 return E_FAIL;
             }
         }

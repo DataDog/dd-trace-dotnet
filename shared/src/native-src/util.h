@@ -99,9 +99,8 @@ namespace shared
     WSTRING WHexStr(const void* pData, int len);
 
     std::string GenerateRuntimeId();
-	
-	bool WStringStartWithCaseInsensitive(const WSTRING& longer, const WSTRING& shorter);
 
+    bool WStringStartWithCaseInsensitive(const WSTRING& longer, const WSTRING& shorter);
 
     template <class Container>
     bool Contains(const Container& items, const typename Container::value_type& value)
