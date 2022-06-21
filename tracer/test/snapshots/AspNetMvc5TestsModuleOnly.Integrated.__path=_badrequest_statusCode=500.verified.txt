@@ -14,10 +14,12 @@
 System.Exception: Oops, it broke.
 at Samples.AspNetMvc5.Controllers.HomeController.BadRequest(),
       error.type: System.Exception,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,
-      http.url: /badrequest,
+      http.url: http://localhost:00000/badrequest,
+      http.useragent: testhelper,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,

@@ -17,7 +17,8 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 503,
-      http.url: /my-app/badrequestwithstatuscode/503?transferrequest=true,
+      http.url: http://localhost/my-app/Error/Index?errorId=123&ErrorStatusCode=503,
+      http.useragent: testhelper,
       language: dotnet,
       span.kind: server,
       version: 1.0.0
@@ -35,10 +36,12 @@
     Tags: {
       env: integration_tests,
       error.msg: The HTTP response has status code 503.,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 503,
-      http.url: /my-app/badrequestwithstatuscode/503?transferrequest=true,
+      http.url: http://localhost:00000/my-app/error/index?errorId=123&errorstatuscode=503,
+      http.useragent: testhelper,
       language: dotnet,
       span.kind: server,
       version: 1.0.0
@@ -59,10 +62,13 @@
 System.Exception: Oops, it broke. Specified status code was: 503
 at Samples.AspNetMvc5.Controllers.HomeController.BadRequestWithStatusCode(Int32 statuscode),
       error.type: System.Exception,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: {controller}/{action}/{id},
       http.status_code: 503,
-      http.url: /my-app/badrequestwithstatuscode/503?transferrequest=true,
+      http.url: http://localhost:00000/my-app/badrequestwithstatuscode/503?transferrequest=true,
+      http.useragent: testhelper,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
@@ -98,7 +104,8 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequestWithStatusCode(Int32 
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /my-app/badrequestwithstatuscode/503?transferrequest=true,
+      http.url: http://localhost/my-app/BadRequestWithStatusCode/503?TransferRequest=true,
+      http.useragent: testhelper,
       language: dotnet,
       span.kind: server,
       version: 1.0.0

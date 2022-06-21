@@ -28,10 +28,12 @@
 System.ArgumentException: Source: PassThroughQuerySuccessMessageHandler. Error: Query param ps was set to a non-true value
 at Samples.AspNetMvc5.Handlers.PassThroughQuerySuccessMessageHandler.<SendAsync>d__1.MoveNext(),
       error.type: System.ArgumentException,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,
-      http.url: /api2/statuscode/201?ps=false&ts=false,
+      http.url: http://localhost:00000/api2/statuscode/201?ps=false&ts=false,
+      http.useragent: testhelper,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,

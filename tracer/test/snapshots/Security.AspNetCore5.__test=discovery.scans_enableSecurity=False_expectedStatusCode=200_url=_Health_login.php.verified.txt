@@ -9,7 +9,7 @@
     Tags: {
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 86.242.244.246,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 404,
@@ -37,7 +37,7 @@
     Tags: {
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 86.242.244.246,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 404,
@@ -65,7 +65,7 @@
     Tags: {
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 86.242.244.246,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 404,
@@ -93,7 +93,7 @@
     Tags: {
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 86.242.244.246,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 404,
@@ -121,7 +121,7 @@
     Tags: {
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 86.242.244.246,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 404,

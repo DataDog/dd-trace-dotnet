@@ -15,7 +15,8 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/wp-config,
+      http.url: http://localhost/Health/wp-config,
+      http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
     }
@@ -29,10 +30,13 @@
     Type: web,
     Tags: {
       env: integration_tests,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: {controller}/{action}/{id},
       http.status_code: 200,
-      http.url: /health/wp-config,
+      http.url: http://localhost:00000/health/wp-config,
+      http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
@@ -63,7 +67,8 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/wp-config,
+      http.url: http://localhost/Health/wp-config,
+      http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
     }
@@ -77,10 +82,13 @@
     Type: web,
     Tags: {
       env: integration_tests,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: {controller}/{action}/{id},
       http.status_code: 200,
-      http.url: /health/wp-config,
+      http.url: http://localhost:00000/health/wp-config,
+      http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
@@ -111,7 +119,8 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/wp-config,
+      http.url: http://localhost/Health/wp-config,
+      http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
     }
@@ -125,10 +134,13 @@
     Type: web,
     Tags: {
       env: integration_tests,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: {controller}/{action}/{id},
       http.status_code: 200,
-      http.url: /health/wp-config,
+      http.url: http://localhost:00000/health/wp-config,
+      http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
@@ -159,7 +171,8 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/wp-config,
+      http.url: http://localhost/Health/wp-config,
+      http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
     }
@@ -173,10 +186,13 @@
     Type: web,
     Tags: {
       env: integration_tests,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: {controller}/{action}/{id},
       http.status_code: 200,
-      http.url: /health/wp-config,
+      http.url: http://localhost:00000/health/wp-config,
+      http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
@@ -207,7 +223,8 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /health/wp-config,
+      http.url: http://localhost/Health/wp-config,
+      http.useragent: Mistake Not...,
       language: dotnet,
       span.kind: server
     }
@@ -221,10 +238,13 @@
     Type: web,
     Tags: {
       env: integration_tests,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: {controller}/{action}/{id},
       http.status_code: 200,
-      http.url: /health/wp-config,
+      http.url: http://localhost:00000/health/wp-config,
+      http.useragent: Mistake Not...,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,

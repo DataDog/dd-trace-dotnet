@@ -12,6 +12,7 @@
       datadog-header-tag: asp-net-core,
       env: integration_tests,
       error.msg: The HTTP response has status code 500.,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.request.headers.sample_correlation_identifier: 0000-0000-0000,

@@ -17,10 +17,12 @@ System.ArgumentException: The parameters dictionary contains a null entry for pa
 Parameter name: parameters
 at System.Web.Mvc.ActionDescriptor.ExtractParameterFromDictionary(ParameterInfo parameterInfo, IDictionary`2 parameters, MethodInfo methodInfo),
       error.type: System.ArgumentException,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,
-      http.url: /home/get,
+      http.url: http://localhost:00000/home/get,
+      http.useragent: testhelper,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
