@@ -22,8 +22,9 @@ namespace Datadog.Trace.Util.Http
         private static object _globalInstanceLock = new();
         private readonly Obfuscator _obfuscator;
 
-        private QueryStringObfuscator(string pattern)
+        private QueryStringObfuscator(string pattern = null)
         {
+            pattern ??= Tracer.Instance.Settings.ObfuscationQueryStringRegex;
             _obfuscator = new(pattern);
         }
 
@@ -32,16 +33,16 @@ namespace Datadog.Trace.Util.Http
         /// <summary>
         /// Gets or sets the global <see cref="QueryStringObfuscator"/> instance.
         /// </summary>
-        public static QueryStringObfuscator Instance(string pattern) => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock, () => new(pattern));
+        public static QueryStringObfuscator Instance(string pattern = null) => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock, () => new(pattern));
 
         internal class Obfuscator
         {
             private const string ReplacementString = "<redacted>";
             private readonly Regex _regex;
-            private readonly IDatadogLogger _log = DatadogLogging.GetLoggerFor(typeof(QueryStringObfuscator));
+            private readonly IDatadogLogger _log = DatadogLogging.GetLoggerFor(typeof(Obfuscator));
             private readonly bool _disabled;
 
-            internal Obfuscator(string pattern)
+            internal Obfuscator(string pattern = null)
             {
                 if (string.IsNullOrEmpty(pattern))
                 {

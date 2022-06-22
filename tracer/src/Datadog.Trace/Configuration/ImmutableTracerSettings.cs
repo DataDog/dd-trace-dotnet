@@ -83,6 +83,7 @@ namespace Datadog.Trace.Configuration
             TagPropagationHeaderMaxLength = settings.TagPropagationHeaderMaxLength;
             
             ObfuscationQueryStringRegex = settings.ObfuscationQueryStringRegex;
+            EnableQueryStringReporting = settings.EnableQueryStringReporting;
         }
 
         /// <summary>
@@ -259,6 +260,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating the regex to apply to obfuscate http query strings.
         /// </summary>
         internal string ObfuscationQueryStringRegex { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether or not http.url should contain the query string, enabled by default
+        /// </summary>
+        internal bool EnableQueryStringReporting { get; }
 
         internal ImmutableDirectLogSubmissionSettings LogSubmissionSettings { get; }
 

@@ -167,7 +167,9 @@ namespace Datadog.Trace.Configuration
             DelayWcfInstrumentationEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                             ?? false;
 
-            ObfuscationQueryStringRegex = source?.GetString(ConfigurationKeys.ObfuscationQueryStringRegex) ?? @"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)(?:\s*=[^&]+|""\s*:\s*""[^""]+"")|bearer\s+[a-z0-9\._\-]|token:[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\w=-]+\.ey[I-L][\w=-]+(?:\.[\w.+\/=-]+)?|[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}[^\-]+[\-]{5}END[a-z\s]+PRIVATE\sKEY|ssh-rsa\s*[a-z0-9\/\.+]{100,}";
+            ObfuscationQueryStringRegex = source?.GetString(ConfigurationKeys.ObfuscationQueryStringRegex) ?? Util.Http.QueryStringObfuscator.DefaultObfuscationQueryStringRegex;
+
+            EnableQueryStringReporting = source?.GetBool(ConfigurationKeys.EnableQueryStringReporting) ?? true;
 
             PropagationStyleInject = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleInject) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
 
@@ -362,6 +364,11 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating the regex to apply to obfuscate http query strings.
         /// </summary>
         internal string ObfuscationQueryStringRegex { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether or not http.url should contain the query string, enabled by default
+        /// </summary>
+        internal bool EnableQueryStringReporting { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled

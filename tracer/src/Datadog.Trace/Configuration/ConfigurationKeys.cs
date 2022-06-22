@@ -316,6 +316,11 @@ namespace Datadog.Trace.Configuration
         public const string ObfuscationQueryStringRegex = "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP";
 
         /// <summary>
+        /// Configuration key for enabling/disabling reporting query string
+        /// </summary>
+        public const string EnableQueryStringReporting = "DD_HTTP_SERVER_TAG_QUERY_STRING";
+
+        /// <summary>
         /// String constants for CI Visibility configuration keys.
         /// </summary>
         public static class CIVisibility
