@@ -26,6 +26,7 @@
       http.url: http://localhost:00000/Health/?[$slice]=value,
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.event_rules.errors: {"missing key 'name'":["crs-913-110","crs-913-120","crs-920-260"],"missing key 'tags'":["crs-921-110","crs-921-140"]},

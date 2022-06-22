@@ -26,6 +26,7 @@
       http.url: http://localhost:00000/Health/?[$slice]=value,
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.event_rules.version: 1.3.1,
