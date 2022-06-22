@@ -22,7 +22,7 @@ at System.Web.Mvc.ActionDescriptor.ExtractParameterFromDictionary(ParameterInfo 
       http.request.headers.host: localhost:00000,
       http.route: /home/identifier,
       http.status_code: 500,
-      http.url: http://localhost:00000/home/identifier/badvalue,
+      http.url: http://localhost/Home/identifier/BadValue,
       http.useragent: testhelper,
       language: dotnet,
       network.client.ip: ::1,

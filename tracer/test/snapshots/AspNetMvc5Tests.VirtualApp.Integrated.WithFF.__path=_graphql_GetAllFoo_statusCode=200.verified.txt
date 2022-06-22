@@ -36,7 +36,7 @@
       http.request.headers.host: localhost:00000,
       http.route: graphql/{*slug},
       http.status_code: 200,
-      http.url: http://localhost:00000/my-app/graphql/getallfoo,
+      http.url: http://localhost/my-app/graphql/GetAllFoo,
       http.useragent: testhelper,
       language: dotnet,
       network.client.ip: ::1,

@@ -36,7 +36,7 @@
       http.request.headers.host: localhost:00000,
       http.route: /home/index,
       http.status_code: 200,
-      http.url: http://localhost:00000/,
+      http.url: http://localhost/,
       http.useragent: testhelper,
       language: dotnet,
       network.client.ip: ::1,
