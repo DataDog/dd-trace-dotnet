@@ -38,7 +38,7 @@ partial class Build
 
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
     AbsolutePath TracerHomeDirectory => TracerHome ?? (MonitoringHomeDirectory / "tracer");
-    AbsolutePath SymbolsDirectory => TracerHome ?? (OutputDirectory / "symbols");
+    AbsolutePath SymbolsDirectory => OutputDirectory / "symbols";
     AbsolutePath DDTracerHomeDirectory => DDTracerHome ?? (OutputDirectory / "dd-tracer-home");
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
@@ -50,10 +50,14 @@ partial class Build
 
     AbsolutePath MonitoringHomeDirectory => MonitoringHome ?? (SharedDirectory / "bin" / "monitoring-home");
 
+    [Solution("profiler/src/Demos/Datadog.Demos.sln")] readonly Solution ProfilerSamplesSolution;
+    [Solution("Datadog.Profiler.sln")] readonly Solution ProfilerSolution;
     AbsolutePath ProfilerHomeDirectory => ProfilerHome ?? (MonitoringHomeDirectory / "continuousprofiler");
     AbsolutePath ProfilerMsBuildProject => ProfilerDirectory / "src" / "ProfilerEngine" / "Datadog.Profiler.Native.Windows" / "Datadog.Profiler.Native.Windows.WithTests.proj";
     AbsolutePath ProfilerOutputDirectory => RootDirectory / "profiler" / "_build";
     AbsolutePath ProfilerLinuxBuildDirectory => ProfilerOutputDirectory / "cmake";
+    AbsolutePath ProfilerBuildDataDirectory => ProfilerDirectory / "build_data";
+    AbsolutePath ProfilerTestLogsDirectory => ProfilerBuildDataDirectory / "logs";
 
     const string LibDdwafVersion = "1.3.0";
     AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{LibDdwafVersion}";
@@ -79,6 +83,8 @@ partial class Build
     [LazyPathExecutable(name: "gzip")] readonly Lazy<Tool> GZip;
     [LazyPathExecutable(name: "cmd")] readonly Lazy<Tool> Cmd;
     [LazyPathExecutable(name: "chmod")] readonly Lazy<Tool> Chmod;
+    [LazyPathExecutable(name: "objcopy")] readonly Lazy<Tool> ExtractDebugInfo;
+    [LazyPathExecutable(name: "strip")] readonly Lazy<Tool> StripBinary;
 
     IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform =>
         Equals(TargetPlatform, MSBuildTargetPlatform.x64)
@@ -187,11 +193,9 @@ partial class Build
             var buildDirectory = NativeProfilerProject.Directory / "build";
 
             CMake.Value(
-                arguments: $"../ -DCMAKE_BUILD_TYPE=Release",
-                workingDirectory: buildDirectory);
+                arguments: $"-B {buildDirectory} -S {NativeProfilerProject.Directory} -DCMAKE_BUILD_TYPE=Release");
             CMake.Value(
-                arguments: $"--build . --parallel",
-                workingDirectory: buildDirectory);
+                arguments: $"--build {buildDirectory} --parallel");
         });
 
     Target CompileNativeSrcMacOs => _ => _
@@ -597,8 +601,27 @@ partial class Build
             }
             else if (IsLinux)
             {
+                void ExtractDebugInfoAndStripSymbols()
+                {
+                    var files = MonitoringHomeDirectory.GlobFiles("**/*.so");
+
+                    EnsureExistingDirectory(SymbolsDirectory);
+
+                    foreach (var file in files)
+                    {
+                        var outputFile = SymbolsDirectory / Path.GetFileNameWithoutExtension(file);
+
+                        Logger.Info($"Extracting debug symbol for {file} to {outputFile}.debug");
+                        ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {outputFile}.debug");
+
+                        Logger.Info($"Stripping out unneeded information from {file}");
+                        StripBinary.Value(arguments: $"--strip-unneeded {file}");
+                    }
+                }
+
                 var fpm = Fpm.Value;
                 var gzip = GZip.Value;
+                var chmod = Chmod.Value;
                 var packageName = "datadog-dotnet-apm";
 
                 var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
@@ -615,6 +638,12 @@ partial class Build
                     var newName = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
                     RenameFile(sourceFile, newName);
                 }
+
+                // somehow the permissions are lost along the way, ensure they are correctly set here
+                var createLogPathScript = (IsArm64 ? TracerHomeDirectory : MonitoringHomeDirectory) / "createLogPath.sh";
+                chmod.Invoke("+x " + createLogPathScript);
+
+                ExtractDebugInfoAndStripSymbols();
 
                 foreach (var packageType in LinuxPackageTypes)
                 {
@@ -1211,14 +1240,14 @@ partial class Build
                 .Concat(regressionProjects)
                 .Concat(instrumentationProjects)
                 .Select(path => (path, project: Solution.GetProject(path)))
-                .Where(x => (IncludeTestsRequiringDocker, x.project) switch 
+                .Where(x => (IncludeTestsRequiringDocker, x.project) switch
                 {
-                    // filter out or to integration tests that have docker dependencies 
+                    // filter out or to integration tests that have docker dependencies
                     (null, _) => true,
                     (_, null) => true,
                     (_, { } p) when p.Name.Contains("Samples.AspNetCoreRazorPages") => true, // always have to build this one
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) && p.Name.Contains(SampleName) => true,
-                    (var required, {} p) => p.RequiresDockerDependency() == required,   
+                    (var required, { } p) => p.RequiresDockerDependency() == required,
                 })
                 .Where(x =>
                 {
@@ -1485,29 +1514,6 @@ partial class Build
                 .EnableTrxLogOutput(GetResultsDirectory(project)));
         });
 
-    Target UpdateSnapshots => _ => _
-        .Description("Updates verified snapshots files with received ones")
-        .Executes(() =>
-        {
-            var snapshotsDirectory = Path.Combine(TestsDirectory, "snapshots");
-            var directory = new DirectoryInfo(snapshotsDirectory);
-            var files = directory.GetFiles("*.received*");
-
-            var suffixLength = "received".Length;
-            foreach (var file in files)
-            {
-                var source = file.FullName;
-                var fileName = Path.GetFileNameWithoutExtension(source);
-                if (!fileName.EndsWith("received"))
-                {
-                    Logger.Warn($"Skipping file '{source}' as filename did not end with 'received'");
-                    continue;
-                }
-                var trimmedName = fileName.Substring(0, fileName.Length - suffixLength);
-                var dest = Path.Combine(directory.FullName, $"{trimmedName}verified{Path.GetExtension(source)}");
-                file.MoveTo(dest, overwrite: true);
-            }
-        });
 
     Target CheckBuildLogsForErrors => _ => _
        .Unlisted()

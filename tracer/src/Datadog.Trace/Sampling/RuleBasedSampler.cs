@@ -24,7 +24,7 @@ namespace Datadog.Trace.Sampling
             RegisterRule(_defaultRule);
         }
 
-        public void SetDefaultSampleRates(IEnumerable<KeyValuePair<string, float>> sampleRates)
+        public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
         {
             _defaultRule.SetDefaultSampleRates(sampleRates);
         }

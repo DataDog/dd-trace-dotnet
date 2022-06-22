@@ -29,28 +29,28 @@ namespace Datadog.Profiler.SmokeTests
         [TestAppFact("Samples.Computer01", DisplayName = "AppDomain")]
         public void CheckAppDomain(string appName, string framework, string appAssembly)
         {
-            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output);
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output);
             runner.RunAndCheck();
         }
 
         [TestAppFact("Samples.Computer01", DisplayName = "Generics")]
         public void CheckGenerics(string appName, string framework, string appAssembly)
         {
-            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", _output);
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", _output);
             runner.RunAndCheck();
         }
 
         [TestAppFact("Samples.Computer01", DisplayName = "Pi")]
         public void CheckPi(string appName, string framework, string appAssembly)
         {
-            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", _output);
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", _output);
             runner.RunAndCheck();
         }
 
         [TestAppFact("Samples.Computer01", DisplayName = "Fibonacci")]
         public void CheckFibonacci(string appName, string framework, string appAssembly)
         {
-            using var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", _output);
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", _output);
             runner.RunAndCheck();
         }
     }

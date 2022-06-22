@@ -19,7 +19,9 @@ namespace Samples.Computer01
         SimpleWallTime,
         PiComputation,
         FibonacciComputation,
-        Sleep
+        Sleep,
+        Async,
+        Iterator
     }
 
     public class Program
@@ -36,6 +38,8 @@ namespace Samples.Computer01
             // 4: start a thread to compute pi at a certain precision (high CPU usage)
             // 5: start n threads computing fibonacci
             // 6: start n threads sleeping
+            // 7: start n threads doing async calls with CPU consumption along the way
+            // 8: start n threads doing iterator calls in constructors
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} [--service] [--iterations <number of iterations to execute>] [--scenario <0=all 1=computer 2=generics 3=wall time 4=pi computation>] [--timeout <duration in seconds> | --run-infinitely]");
             Console.WriteLine();
 

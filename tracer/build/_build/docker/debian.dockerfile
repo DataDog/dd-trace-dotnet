@@ -37,6 +37,7 @@ RUN apt-get update \
         autoconf \
         libtool \
         liblzma-dev \
+        gdb \
     && gem install --no-document fpm \
     && rm -rf /var/lib/apt/lists/*
 

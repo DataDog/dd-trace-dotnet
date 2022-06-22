@@ -1050,6 +1050,12 @@ namespace datadog::shared::nativeloader
 
     AppDomainID CorProfiler::GetCurrentAppDomainId()
     {
+        if (m_this == nullptr)
+        {
+            Log::Warn("The native loader library is not properly initialized. We cannot get the current AppDomain Id.");
+            return (AppDomainID)0;
+        }
+
         ThreadID threadId;
         auto hr = m_this->m_info->GetCurrentThreadID(&threadId);
 
@@ -1075,6 +1081,12 @@ namespace datadog::shared::nativeloader
 
     const char* CorProfiler::GetRuntimeId(AppDomainID appDomain)
     {
+        if (m_this == nullptr)
+        {
+            Log::Warn("The native loader library is not properly initialized. We cannot get the runtime id for the AppDomain ID #", appDomain);
+            return nullptr;
+        }
+
         return m_this->m_runtimeIdStore.Get(appDomain).c_str();
     }
 

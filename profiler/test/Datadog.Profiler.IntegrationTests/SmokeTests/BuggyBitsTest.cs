@@ -19,7 +19,7 @@ namespace Datadog.Profiler.SmokeTests
         [TestAppFact("Samples.BuggyBits", DisplayName = "BuggyBits")]
         public void CheckSmoke(string appName, string framework, string appAssembly)
         {
-            using var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, _output);
             runner.RunAndCheck();
         }
     }

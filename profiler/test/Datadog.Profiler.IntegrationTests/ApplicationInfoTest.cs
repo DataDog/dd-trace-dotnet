@@ -25,10 +25,10 @@ namespace Datadog.Profiler.IntegrationTests
             _output = output;
         }
 
-        [TestAppFact("Samples.BuggyBits", UseNativeLoader = true)]
+        [TestAppFact("Samples.BuggyBits")]
         public void UseTracerServiceName(string appName, string framework, string appAssembly)
         {
-            using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true);
 
             // Set no service name through environment variables to force the tracer to use the value from the datadog.json file
             runner.ServiceName = null;

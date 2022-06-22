@@ -39,106 +39,28 @@ jobs:
     runs-on: ubuntu-18.04
 
     steps:
-      - name: Install uuid-dev
-        run: sudo apt-get install -y uuid-dev
-
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v2
 
-      - name: Build Managed Loader
-        run: dotnet build -c Release shared/src/managed-lib/ManagedLoader/Datadog.AutoInstrumentation.ManagedLoader.csproj
-
-      - name: Build Managed Profiler Engine
-        run: dotnet build -c Release profiler/src/ProfilerEngine/Datadog.Profiler.Managed/Datadog.Profiler.Managed.csproj
-
-      - name: Build Native Profiler Engine and Tests
-        run: |
-          CXX=clang++ CC=clang cmake -S profiler -B __build
-          cmake --build __build --config Release --parallel
-
-      - name: Run Managed Unit tests
-        shell: bash
-        run: ./.github/scripts/run-managed-unit-tests.sh profiler/test Release
+      - uses: ./.github/actions/run-in-docker
+        name: Build Monitoring Home in Docker
+        with:
+          command: "Clean BuildTracerHome BuildNativeLoader BuildProfilerHome ZipMonitoringHome --TracerHome /project/shared/bin/monitoring-home"
 
       - name: Run Native Unit tests
         shell: bash
         run: |
           sudo mkdir /var/log/datadog
           sudo chmod 777 /var/log/datadog 
-          cd __build
-          ctest --output-on-failure
-
-      - name: Prepare environment to run the application
-        run: |
-          echo "PROFILER_OUTPUT_DIR=$(realpath ./profiler)/_build" >> $GITHUB_ENV
+          sudo chmod +x ./profiler/_build/bin/Datadog.Profiler.Native.Tests/Datadog.Profiler.Native.Tests
+          ./profiler/_build/bin/Datadog.Profiler.Native.Tests/Datadog.Profiler.Native.Tests --gtest_output=xml
 
       - name: Publish artifact
         uses: actions/upload-artifact@v2
         with:
           if-no-files-found: error
-          name: DDProf-Deploy.Linux.Release.x64
-          path: '${{ env.PROFILER_OUTPUT_DIR }}/DDProf-Deploy'
-          retention-days: 7
-
-  test_linux_profiler_x64:
-    name: STests Linux Profiler (x64, Release)
-    runs-on: ubuntu-latest
-    needs: build_linux_release_x64
-
-    steps:
-      - name: Clone dd-trace-dotnet repository
-        uses: actions/checkout@v2
-
-      - name: Download profiler artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: DDProf-Deploy.Linux.Release.x64
-          path: DDProf-Deploy
-
-      - name: Build sample applications
-        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
-
-      - name: Prepare environment to run the application
-        run: |
-          # download and setup dotnet-dump
-          mkdir tools
-          curl -o tools/dotnet-dump -L https://aka.ms/dotnet-dump/linux-x64
-          chmod +x tools/dotnet-dump
-
-          echo "$(realpath .)/tools" >> $GITHUB_PATH
-
-          #
-          # set profiler deployment and test output dir folder path for the test
-          #
-          echo "DD_TESTING_PROFILER_FOLDER=$(realpath .)/DDProf-Deploy" >> $GITHUB_ENV
-          # create
-          tests_output_dir=$(realpath .)/tests_output
-          mkdir $tests_output_dir
-          echo "DD_TESTING_OUPUT_DIR=$tests_output_dir" >> $GITHUB_ENV
-
-      - name: Run Integration tests
-        env:
-          DD_API_KEY: '${{ secrets.DD_API_KEY }}'
-        run: |
-          cd profiler/test/Datadog.Profiler.IntegrationTests &&
-          LD_PRELOAD=${DD_TESTING_PROFILER_FOLDER}/Datadog.Linux.ApiWrapper.x64.so dotnet test -c Release -p:Platform=x64 --logger "trx" -- RunConfiguration.TreatNoTestsAsError=true
-
-      - name: Generate tests report
-        uses: dorny/test-reporter@v1
-        if: '${{ always() }}'
-        with:
-          name: STests Linux x64 report
-          path: profiler/test/Datadog.Profiler.IntegrationTests/TestResults/*.trx
-          reporter: dotnet-trx
-
-      - name: 'Publish Tests result, Logs and PProf files'
-        uses: actions/upload-artifact@v2
-        if: '${{ always() }}'
-        with:
-          if-no-files-found: error
-          name: Tests_result_logs_and_pprofs_files.Linux.Release.x64
-          path: |
-            ${{ env.DD_TESTING_OUPUT_DIR }}
+          name: monitoring-home.Linux.Release.x64
+          path: '${{ github.workspace }}/shared/bin/monitoring-home'
           retention-days: 7
 
   benchmark_linux_x64:
@@ -169,8 +91,8 @@ jobs:
       - name: Download profiler artifact
         uses: actions/download-artifact@v2
         with:
-          name: DDProf-Deploy.Linux.Release.x64
-          path: DDProf-Deploy
+          name: monitoring-home.Linux.Release.x64
+          path: shared/bin/monitoring-home
 
       - name: Setup Go 1.16.8
         uses: actions/setup-go@v2
@@ -185,6 +107,8 @@ jobs:
           go_tool_dir=$(realpath .)/tools
           mkdir $go_tool_dir
           echo "GOPATH=$go_tool_dir" >> $GITHUB_ENV
+          sudo mkdir -p /var/log/datadog/dotnet
+          sudo chmod 777 /var/log/datadog/dotnet
 
       - name: Install timeit
         run: go install github.com/tonyredondo/timeit@latest
@@ -199,6 +123,14 @@ jobs:
 
       - name: Wait 20 seconds to agent flush before finishing pipeline
         run: sleep 20
+
+      - name: Publish artifact
+        uses: actions/upload-artifact@v2
+        with:
+          if-no-files-found: error
+          name: Benchmark.tests.linux.${{ matrix.framework }}.logs
+          path: '/var/log/datadog/dotnet'
+          retention-days: 7
 
   build_linux_asan:
     name: Build Linux Profiler ASAN
@@ -372,14 +304,6 @@ jobs:
           path: 'shared\bin\monitoring-home'
           retention-days: 7
 
-      - name: Publish artifact profiler-home
-        uses: actions/upload-artifact@v2
-        with:
-          if-no-files-found: error
-          name: 'profiler-home.Windows.${{matrix.configuration}}'
-          path: 'shared\bin\monitoring-home\continuousprofiler'
-          retention-days: 7
-
 
   test_windows_profiler:
     name: STests Windows Profiler
@@ -406,7 +330,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: monitoring-home.Windows.${{matrix.configuration}}
-          path: DDProf-Deploy
+          path: shared/bin/monitoring-home
 
       - name: Build sample applications
         run: dotnet build -c ${{matrix.configuration}} profiler/src/Demos/Datadog.Demos.sln -p:Platform=${{matrix.platform}}
@@ -422,14 +346,11 @@ jobs:
           #
           # set profiler deployment and test output dir folder path for the test
           #
-          echo "DD_TESTING_PROFILER_FOLDER=$(Join-Path -Path $(Resolve-Path .) -ChildPath DDProf-Deploy)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "MonitoringHomeDirectory=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "DD_TESTING_OUPUT_DIR=$(Join-Path -Path $(Resolve-Path .) -ChildPath tests_output)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Run Integration tests
         shell: cmd
-        env:
-          DD_API_KEY: '${{ secrets.DD_API_KEY }}'
-          USE_NATIVE_LOADER: 'true'
         run: >
           cd profiler/test/Datadog.Profiler.IntegrationTests &&
           dotnet test -c ${{matrix.configuration}} -p:Platform=${{matrix.platform}}  --logger "console;verbosity=detailed" --logger "trx" -- RunConfiguration.TreatNoTestsAsError=true
@@ -486,8 +407,8 @@ jobs:
       - name: Download profiler artifact
         uses: actions/download-artifact@v2
         with:
-          name: profiler-home.Windows.Release
-          path: DDProf-Deploy
+          name: monitoring-home.Windows.Release
+          path: shared/bin/monitoring-home
 
       - name: Setup Go 1.16.8
         uses: actions/setup-go@v2
@@ -508,12 +429,24 @@ jobs:
         run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
 
       - name: Execute PiComputation benchmark
+        env:
+          DD_PROFILING_LOG_DIR: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}'
+          DD_TRACE_LOG_DIRECTORY: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}' # for the loader
         run: |
           cd profiler\build
           .\run.cmd ${{ matrix.framework }}
 
       - name: Wait 20 seconds to agent flush before finishing pipeline
         run: Start-Sleep -s 20
+
+      - name: 'Publish Benchmark log files'
+        uses: actions/upload-artifact@v2
+        if: '${{ always() }}'
+        with:
+          if-no-files-found: error
+          name: Benchmark.tests.windows.x64.${{ matrix.framework }}.logs
+          path: '${{ github.workspace }}/tests_output_dir'
+          retention-days: 7
 
   deploy_windows_profiler:
     name: Deploying Windows Profiler to AWS S3 bucket
@@ -803,8 +736,8 @@ jobs:
       - name: Download profiler artifact
         uses: actions/download-artifact@v2
         with:
-          name: DDProf-Deploy.Linux.Release.x64
-          path: profiler-home-linux
+          name: monitoring-home.Linux.Release.x64
+          path: monitoring-home-linux
           
       - name: Run throughput tests
         shell: bash
