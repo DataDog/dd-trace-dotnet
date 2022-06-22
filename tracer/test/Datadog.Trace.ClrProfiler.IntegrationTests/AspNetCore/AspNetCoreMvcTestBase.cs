@@ -52,7 +52,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         public static TheoryData<string, int> Data() => new()
         {
             { "/", 200 },
-            { "/?key1=val1&token=a0b21ce2-006f-4cc6-95d5-d7b550698482&key2=val2", 200 },
             { "/delay/0", 200 },
             { "/api/delay/0", 200 },
             { "/not-found", 404 },
@@ -72,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             Fixture.SetOutput(null);
         }
 
-        protected string GetTestName(string testName)
+        protected virtual string GetTestName(string testName)
         {
             return testName
                  + (_enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF");
