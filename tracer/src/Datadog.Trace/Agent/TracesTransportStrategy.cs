@@ -11,11 +11,13 @@ namespace Datadog.Trace.Agent
 {
     internal static class TracesTransportStrategy
     {
+        private static readonly TimeSpan TcpTimeout = TimeSpan.FromSeconds(15);
+
         public static IApiRequestFactory Get(ImmutableExporterSettings settings)
             => AgentTransportStrategy.Get(
                 settings,
                 productName: "trace",
-                tcpTimeout: null,
+                tcpTimeout: TcpTimeout,
                 AgentHttpHeaderNames.DefaultHeaders,
                 () => new TraceAgentHttpHeaderHelper(),
                 uri => uri);
