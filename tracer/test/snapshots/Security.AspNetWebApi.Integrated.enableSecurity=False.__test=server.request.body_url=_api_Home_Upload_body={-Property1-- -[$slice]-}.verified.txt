@@ -37,6 +37,7 @@
       http.url: http://localhost:00000/api/home/upload,
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server
     },
@@ -86,6 +87,7 @@
       http.url: http://localhost:00000/api/home/upload,
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server
     },
@@ -135,6 +137,7 @@
       http.url: http://localhost:00000/api/home/upload,
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server
     },
@@ -184,6 +187,7 @@
       http.url: http://localhost:00000/api/home/upload,
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server
     },
@@ -233,6 +237,7 @@
       http.url: http://localhost:00000/api/home/upload,
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server
     },

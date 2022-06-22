@@ -37,6 +37,7 @@
       http.url: http://localhost:00000/api/health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.runtime_family: dotnet
@@ -88,6 +89,7 @@
       http.url: http://localhost:00000/api/health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.runtime_family: dotnet
@@ -139,6 +141,7 @@
       http.url: http://localhost:00000/api/health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.runtime_family: dotnet
@@ -190,6 +193,7 @@
       http.url: http://localhost:00000/api/health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.runtime_family: dotnet
@@ -241,6 +245,7 @@
       http.url: http://localhost:00000/api/health/?arg&[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.runtime_family: dotnet
