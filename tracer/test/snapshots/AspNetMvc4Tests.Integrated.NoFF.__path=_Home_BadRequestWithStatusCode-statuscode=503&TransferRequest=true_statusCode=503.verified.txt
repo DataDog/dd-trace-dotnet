@@ -17,7 +17,8 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 503,
-      http.url: /home/badrequestwithstatuscode?statuscode=503&transferrequest=true,
+      http.url: http://localhost/Error/Index?errorId=123&ErrorStatusCode=503,
+      http.useragent: testhelper,
       language: dotnet,
       span.kind: server,
       version: 1.0.0
@@ -35,11 +36,14 @@
     Tags: {
       env: integration_tests,
       error.msg: The HTTP response has status code 503.,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 503,
-      http.url: /home/badrequestwithstatuscode?statuscode=503&transferrequest=true,
+      http.url: http://localhost/Error/Index?errorId=123&ErrorStatusCode=503,
+      http.useragent: testhelper,
       language: dotnet,
+      network.client.ip: ::1,
       span.kind: server,
       version: 1.0.0
     }
@@ -59,11 +63,15 @@
 System.Exception: Oops, it broke. Specified status code was: 503
 at Samples.AspNetMvc4.Controllers.HomeController.BadRequestWithStatusCode(Int32 statuscode),
       error.type: System.Exception,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: /error/index,
       http.status_code: 503,
-      http.url: /home/badrequestwithstatuscode?statuscode=503&transferrequest=true,
+      http.url: http://localhost/Home/BadRequestWithStatusCode?statuscode=503&TransferRequest=true,
+      http.useragent: testhelper,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0
@@ -98,7 +106,8 @@ at Samples.AspNetMvc4.Controllers.HomeController.BadRequestWithStatusCode(Int32 
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /home/badrequestwithstatuscode?statuscode=503&transferrequest=true,
+      http.url: http://localhost/Home/BadRequestWithStatusCode?statuscode=503&TransferRequest=true,
+      http.useragent: testhelper,
       language: dotnet,
       span.kind: server,
       version: 1.0.0

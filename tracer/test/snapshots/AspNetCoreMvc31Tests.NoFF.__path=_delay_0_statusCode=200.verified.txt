@@ -10,6 +10,7 @@
       component: aspnet_core,
       datadog-header-tag: asp-net-core,
       env: integration_tests,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.request.headers.sample_correlation_identifier: 0000-0000-0000,
@@ -18,6 +19,7 @@
       http.status_code: 200,
       http.url: http://localhost:00000/delay/0,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0

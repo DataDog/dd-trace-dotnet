@@ -93,6 +93,8 @@ namespace Datadog.Trace.Util.Http
         internal static string GetUrlWithQueryString(this IHttpRequestMessage request, bool reportQueryString) => HttpRequestUtils.GetUrl(request.RequestUri.Scheme, request.RequestUri.Host, string.Empty, request.RequestUri.AbsolutePath, reportQueryString, () => request.RequestUri.Query);
 
         internal static string GetUrlWithQueryString(this HttpRequestBase request, bool reportQueryString) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, reportQueryString, () => request.Url.Query);
+
+        internal static string GetUrlWithQueryString(this HttpRequest request, bool reportQueryString) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, reportQueryString, () => request.Url.Query);
     }
 }
 #endif

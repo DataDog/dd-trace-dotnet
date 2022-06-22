@@ -9,11 +9,14 @@
     ParentId: Id_3,
     Tags: {
       env: integration_tests,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 401,
-      http.url: /badrequestwithstatuscode/401?transferrequest=true,
+      http.url: http://localhost/Error/Index?errorId=123&ErrorStatusCode=401,
+      http.useragent: testhelper,
       language: dotnet,
+      network.client.ip: ::1,
       span.kind: server,
       version: 1.0.0
     }
@@ -33,11 +36,14 @@
 System.Exception: Oops, it broke. Specified status code was: 401
 at Samples.AspNetMvc5.Controllers.HomeController.BadRequestWithStatusCode(Int32 statuscode),
       error.type: System.Exception,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 401,
-      http.url: /badrequestwithstatuscode/401?transferrequest=true,
+      http.url: http://localhost/BadRequestWithStatusCode/401?TransferRequest=true,
+      http.useragent: testhelper,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0
