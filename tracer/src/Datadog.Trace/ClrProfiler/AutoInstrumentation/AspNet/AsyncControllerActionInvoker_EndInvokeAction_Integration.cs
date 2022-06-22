@@ -76,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     // us to defer finishing the span later while making sure callers of this method do not
                     // get this scope when calling Tracer.ActiveScope
                     var now = scope.Span.Context.TraceContext.UtcNow;
-                    httpContext.AddOnRequestCompleted(h => OnRequestCompletedAfterException(h, scope, now));
+                    httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h, scope, now));
 
                     scope.SetFinishOnClose(false);
                     scope.Dispose();
@@ -92,21 +92,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             return new CallTargetReturn<TResult>(returnValue);
         }
 
-        private static void OnRequestCompletedAfterException(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
+        private static void OnRequestCompleted(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
             HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
-
-            if (!HttpRuntime.UsingIntegratedPipeline && httpContext.Response.StatusCode == 200)
-            {
-                // in classic mode, the exception won't cause the correct status code to be set
-                // even though a 500 response will be sent, so set it manually instead
-                scope.Span.SetHttpStatusCode(500, isServer: true, Tracer.Instance.Settings);
-            }
-            else
-            {
-                scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
-            }
-
+            scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
             scope.Span.Finish(finishTime);
         }
     }

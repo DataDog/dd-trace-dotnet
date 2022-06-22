@@ -2,7 +2,7 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.AutoInstrumentation.Profiler.Native.Linux" VERSION 2.11.0)
+project("Datadog.AutoInstrumentation.Profiler.Native.Linux" VERSION 2.10.0)
 
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
@@ -175,6 +175,7 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -static-libstdc++
     -lstdc++fs
     -pthread
+    -llzma
     -ldl
 )
 

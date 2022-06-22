@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
         ReturnTypeName = ClrNames.Void,
         ParameterTypeNames = new[] { ClrNames.Type, "NLog.Internal.TargetWithFilterChain", "NLog.LogEventInfo", "NLog.LogFactory" },
         MinimumVersion = "1.0.0.505",
-        MaximumVersion = "5.*.*",
+        MaximumVersion = "4.*.*",
         IntegrationName = "NLog")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

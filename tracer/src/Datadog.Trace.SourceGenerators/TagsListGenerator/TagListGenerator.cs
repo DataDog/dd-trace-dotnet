@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -34,11 +35,7 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
             IncrementalValueProvider<(Compilation, ImmutableArray<ClassDeclarationSyntax>)> compilationAndClasses =
                 context.CompilationProvider.Combine(classDeclarations.Collect());
 
-            IncrementalValueProvider<(IReadOnlyList<TagList>, IReadOnlyList<Diagnostic>)> tagListsAndDiagnostics =
-                compilationAndClasses
-                   .Select(static (t, ct) => GetTagLists(t.Item1, t.Item2, ct));
-
-            context.RegisterSourceOutput(tagListsAndDiagnostics, static (spc, source) => Execute(source.Item1, source.Item2, spc));
+            context.RegisterSourceOutput(compilationAndClasses, static (spc, source) => Execute(source.Item1, source.Item2, spc));
         }
 
         private static bool IsAttributedProperty(SyntaxNode node, CancellationToken cancellationToken)
@@ -52,7 +49,16 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
             {
                 foreach (AttributeSyntax attributeSyntax in attributeListSyntax.Attributes)
                 {
-                    if (attributeSyntax.Name.ToString() is "Tag" or "TagAttribute" or "Metric" or "MetricAttribute")
+                    IMethodSymbol? attributeSymbol = context.SemanticModel.GetSymbolInfo(attributeSyntax).Symbol as IMethodSymbol;
+                    if (attributeSymbol is null)
+                    {
+                        continue;
+                    }
+
+                    INamedTypeSymbol attributeContainingTypeSymbol = attributeSymbol.ContainingType;
+                    string fullName = attributeContainingTypeSymbol.ToDisplayString();
+
+                    if (fullName == Constants.TagAttribute || fullName == Constants.MetricAttribute)
                     {
                         return propertyDeclarationSyntax.Parent as ClassDeclarationSyntax;
                     }
@@ -62,13 +68,17 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
             return null;
         }
 
-        private static void Execute(IReadOnlyList<TagList> tagLists, IReadOnlyList<Diagnostic> diagnostics, SourceProductionContext context)
+        private static void Execute(Compilation compilation, ImmutableArray<ClassDeclarationSyntax> classes, SourceProductionContext context)
         {
-            foreach (var diagnostic in diagnostics)
+            if (classes.IsDefaultOrEmpty)
             {
-                context.ReportDiagnostic(diagnostic);
+                // nothing to do yet
+                return;
             }
 
+            IEnumerable<ClassDeclarationSyntax> distinctClasses = classes.Distinct();
+
+            var tagLists = GetTagLists(compilation, distinctClasses, context.ReportDiagnostic, context.CancellationToken);
             if (tagLists.Count > 0)
             {
                 var sb = new StringBuilder();
@@ -81,23 +91,18 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
             }
         }
 
-        private static (IReadOnlyList<TagList> TagLists, IReadOnlyList<Diagnostic> Diagnostics) GetTagLists(
+        private static IReadOnlyList<TagList> GetTagLists(
             Compilation compilation,
-            ImmutableArray<ClassDeclarationSyntax> classes,
+            IEnumerable<ClassDeclarationSyntax> classes,
+            Action<Diagnostic> reportDiagnostic,
             CancellationToken cancellationToken)
         {
-            if (classes.IsDefaultOrEmpty)
-            {
-                // nothing to do yet
-                return (Array.Empty<TagList>(), Array.Empty<Diagnostic>());
-            }
-
             INamedTypeSymbol? tagAttribute = compilation.GetTypeByMetadataName(Constants.TagAttribute);
             INamedTypeSymbol? metricAttribute = compilation.GetTypeByMetadataName(Constants.MetricAttribute);
             if (tagAttribute is null || metricAttribute is null)
             {
                 // nothing to do if these types aren't available
-                return (Array.Empty<TagList>(), Array.Empty<Diagnostic>());
+                return Array.Empty<TagList>();
             }
 
             // get the double? return type
@@ -105,11 +110,10 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
             INamedTypeSymbol tagReturnType = compilation.GetSpecialType(SpecialType.System_String);
             INamedTypeSymbol metricReturnType = nullableT.Construct(compilation.GetSpecialType(SpecialType.System_Double));
 
-            List<Diagnostic>? diagnostics = null;
             var results = new List<TagList>();
 
             // we enumerate by syntax tree, to minimize the need to instantiate semantic models (since they're expensive)
-            foreach (var group in classes.Distinct().GroupBy(x => x.SyntaxTree))
+            foreach (var group in classes.GroupBy(x => x.SyntaxTree))
             {
                 SemanticModel? sm = null;
                 foreach (ClassDeclarationSyntax classDec in group)
@@ -171,18 +175,16 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
                             {
                                 // can't have both!
                                 hasMisconfiguredInput = true;
-                                diagnostics ??= new List<Diagnostic>();
-                                diagnostics.Add(DuplicateAttributeDiagnostic.Create(
-                                                metricAttributeData.ApplicationSyntaxReference?.GetSyntax(),
-                                                tagAttributeData.ApplicationSyntaxReference?.GetSyntax()));
+                                reportDiagnostic(DuplicateAttributeDiagnostic.Create(
+                                                     metricAttributeData.ApplicationSyntaxReference?.GetSyntax(),
+                                                     tagAttributeData.ApplicationSyntaxReference?.GetSyntax()));
                                 break;
                             }
 
                             if (isTag && propertyReturnType is not null
                                       && !tagReturnType.Equals(propertyReturnType, SymbolEqualityComparer.Default))
                             {
-                                diagnostics ??= new List<Diagnostic>();
-                                diagnostics.Add(InvalidTagPropertyReturnTypeDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                                reportDiagnostic(InvalidTagPropertyReturnTypeDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
                                 hasMisconfiguredInput = true;
                                 break;
                             }
@@ -190,8 +192,7 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
                             if (isMetric && propertyReturnType is not null
                                          && !metricReturnType.Equals(propertyReturnType, SymbolEqualityComparer.Default))
                             {
-                                diagnostics ??= new List<Diagnostic>();
-                                diagnostics.Add(InvalidMetricPropertyReturnTypeDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                                reportDiagnostic(InvalidMetricPropertyReturnTypeDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
                                 hasMisconfiguredInput = true;
                                 break;
                             }
@@ -220,24 +221,21 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
                             key = (string?)attributeData.ConstructorArguments[0].Value;
                             if (string.IsNullOrEmpty(key))
                             {
-                                diagnostics ??= new List<Diagnostic>();
-                                diagnostics.Add(InvalidKeyDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                                reportDiagnostic(InvalidKeyDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
                                 hasMisconfiguredInput = true;
                                 break;
                             }
 
                             if (key == "_dd.origin")
                             {
-                                diagnostics ??= new List<Diagnostic>();
-                                diagnostics.Add(InvalidUseOfOriginDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                                reportDiagnostic(InvalidUseOfOriginDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
                                 hasMisconfiguredInput = true;
                                 break;
                             }
 
                             if (key == "language")
                             {
-                                diagnostics ??= new List<Diagnostic>();
-                                diagnostics.Add(InvalidUseOfLanguageDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
+                                reportDiagnostic(InvalidUseOfLanguageDiagnostic.Create(attributeData.ApplicationSyntaxReference?.GetSyntax()));
                                 hasMisconfiguredInput = true;
                                 break;
                             }
@@ -279,7 +277,7 @@ namespace Datadog.Trace.SourceGenerators.TagsListGenerator
                 }
             }
 
-            return (results, (IReadOnlyList<Diagnostic>?)diagnostics ?? Array.Empty<Diagnostic>());
+            return results;
         }
 
         private static string GetClassNamespace(ClassDeclarationSyntax classDec)

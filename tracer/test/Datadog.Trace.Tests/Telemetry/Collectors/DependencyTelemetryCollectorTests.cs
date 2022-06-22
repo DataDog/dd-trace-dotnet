@@ -4,14 +4,9 @@
 // </copyright>
 
 using System;
-using System.IO;
-using System.Linq;
 using System.Reflection;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSubmission;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.Vendors.Serilog.Parsing;
 using FluentAssertions;
 using Xunit;
 
@@ -29,7 +24,7 @@ namespace Datadog.Trace.Tests.Telemetry
             collector.HasChanges().Should().BeFalse();
 
             var assembly = typeof(DependencyTelemetryCollectorTests).Assembly;
-            collector.AssemblyLoaded(assembly);
+            collector.AssemblyLoaded(assembly.GetName());
 
             collector.HasChanges().Should().BeTrue();
 
@@ -43,7 +38,7 @@ namespace Datadog.Trace.Tests.Telemetry
         [Fact]
         public void DoesNotHaveChangesWhenSameAssemblyAddedTwice()
         {
-            var assembly = typeof(DependencyTelemetryCollectorTests).Assembly;
+            var assembly = typeof(DependencyTelemetryCollectorTests).Assembly.GetName();
             var collector = new DependencyTelemetryCollector();
             collector.AssemblyLoaded(assembly);
 
@@ -54,56 +49,15 @@ namespace Datadog.Trace.Tests.Telemetry
             collector.HasChanges().Should().BeFalse();
         }
 
-        [Theory]
-        [InlineData("App_global.asax.zt8edv4m")]
-        [InlineData("App_Web_login.cshtml.6331810a.tvsbhzc3")]
-        [InlineData("App_GlobalResources.9ccedwue")]
-        [InlineData("App_Code.hhzpytyv")]
-        [InlineData("App_Theme_Standard.6wkna0wf")]
-        [InlineData("App_WebReferences.dvkaf7ph")]
-        public void DoesNotHaveChangesWhenAssemblyNameIsIgnoredAssembly(string assemblyName)
+        [Fact]
+        public void DoesNotHaveChangesWhenAssemblyNameIsIgnoredAssembly()
         {
-            var ignoredName = CreateAssemblyName(new Version(1, 0), name: assemblyName);
+            var duckTypedAssembly = CreateAssemblyName(new Version(1, 0), name: $"{DuckTypeConstants.DuckTypeAssemblyPrefix}SomeTest");
 
             var collector = new DependencyTelemetryCollector();
-            collector.AssemblyLoaded(ignoredName);
+            collector.AssemblyLoaded(duckTypedAssembly);
 
             collector.HasChanges().Should().BeFalse();
-        }
-
-        [Fact]
-        public void DoesNotHaveChangesWhenUsingDuckTypeAssembly()
-        {
-            // create a random proxy (this needs to succeed, but can be anything)
-            var original = new LogEvent(
-                DateTimeOffset.UtcNow,
-                LogEventLevel.Debug,
-                exception: null,
-                new MessageTemplate("Some text", Enumerable.Empty<MessageTemplateToken>()),
-                Enumerable.Empty<LogEventProperty>());
-            var proxy = original.DuckCast<ILogEvent>();
-
-            var assembly = proxy.GetType().Assembly;
-
-            var collector = new DependencyTelemetryCollector();
-            collector.AssemblyLoaded(assembly);
-
-            collector.HasChanges().Should().BeFalse();
-        }
-
-        [Fact]
-        public void DoesNotHaveChangesWhenAssemblyNameIsTempPath()
-        {
-            for (var i = 0; i < 1_000; i++)
-            {
-                var name = Path.GetRandomFileName();
-                var ignoredName = CreateAssemblyName(new Version(1, 0), name: name);
-
-                var collector = new DependencyTelemetryCollector();
-                collector.AssemblyLoaded(ignoredName);
-
-                collector.HasChanges().Should().BeFalse($"{name} is a temp file name");
-            }
         }
 
         [Fact]

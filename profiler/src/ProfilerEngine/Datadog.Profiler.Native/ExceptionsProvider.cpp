@@ -26,7 +26,7 @@ ExceptionsProvider::ExceptionsProvider(
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore)
     :
-    CollectorBase<RawExceptionSample>("ExceptionsProvider", pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
+    CollectorBase<RawExceptionSample>("ExceptionsProvider", pConfiguration, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),
@@ -35,8 +35,7 @@ ExceptionsProvider::ExceptionsProvider(
     _stringBufferOffset(0),
     _mscorlibModuleId(0),
     _exceptionClassId(0),
-    _loggedMscorlibError(false),
-    _sampler(pConfiguration)
+    _loggedMscorlibError(false)
 {
 }
 
@@ -97,11 +96,6 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     if (!GetExceptionType(classId, name))
     {
         return false;
-    }
-
-    if (!_sampler.Sample(name))
-    {
-        return true;
     }
 
     const auto messageAddress = *reinterpret_cast<UINT_PTR*>(thrownObjectId + _messageFieldOffset.ulOffset);

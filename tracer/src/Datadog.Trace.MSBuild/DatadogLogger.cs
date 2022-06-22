@@ -7,14 +7,10 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Logging.DirectSubmission.Formatting;
-using Datadog.Trace.Logging.DirectSubmission.Sink;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Microsoft.Build.Framework;
 
@@ -111,17 +107,20 @@ namespace Datadog.Trace.MSBuild
                 _buildSpan.Type = SpanTypes.Build;
                 _buildSpan.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
                 _buildSpan.SetTag(BuildTags.BuildName, e.SenderName);
+                foreach (KeyValuePair<string, string> envValue in e.BuildEnvironment)
+                {
+                    _buildSpan.SetTag($"{BuildTags.BuildEnvironment}.{envValue.Key}", envValue.Value);
+                }
 
                 _buildSpan.SetTag(BuildTags.BuildCommand, Environment.CommandLine);
                 _buildSpan.SetTag(BuildTags.BuildWorkingFolder, Environment.CurrentDirectory);
+                _buildSpan.SetTag(BuildTags.BuildStartMessage, e.Message);
 
                 _buildSpan.SetTag(CommonTags.OSArchitecture, Environment.Is64BitOperatingSystem ? "x64" : "x86");
                 _buildSpan.SetTag(CommonTags.OSVersion, Environment.OSVersion.VersionString);
                 _buildSpan.SetTag(CommonTags.RuntimeArchitecture, Environment.Is64BitProcess ? "x64" : "x86");
                 _buildSpan.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
                 CIEnvironmentValues.Instance.DecorateSpan(_buildSpan);
-
-                _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, _buildSpan));
             }
             catch (Exception ex)
             {
@@ -145,7 +144,7 @@ namespace Datadog.Trace.MSBuild
                     _buildSpan.Error = true;
                 }
 
-                _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, _buildSpan));
+                _buildSpan.SetTag(BuildTags.BuildEndMessage, e.Message);
                 _buildSpan.Finish(e.Timestamp);
             }
             catch (Exception ex)
@@ -175,36 +174,29 @@ namespace Datadog.Trace.MSBuild
 
                 string projectName = Path.GetFileName(e.ProjectFile);
 
-                string targetName = string.IsNullOrEmpty(e.TargetNames) ? "build" : e.TargetNames?.ToLowerInvariant();
-                Span projectSpan = _tracer.StartSpan($"msbuild.{targetName}", parent: parentSpan.Context);
+                Span projectSpan = _tracer.StartSpan(BuildTags.BuildOperationName, parent: parentSpan.Context);
 
                 if (projectName != null)
                 {
                     projectSpan.ServiceName = projectName;
                 }
 
+                projectSpan.ResourceName = projectName;
                 projectSpan.SetTraceSamplingPriority(SamplingPriorityValues.AutoKeep);
                 projectSpan.Type = SpanTypes.Build;
 
-                string targetFramework = null;
                 foreach (KeyValuePair<string, string> prop in e.GlobalProperties)
                 {
                     projectSpan.SetTag($"{BuildTags.ProjectProperties}.{prop.Key}", prop.Value);
-                    if (string.Equals(prop.Key, "TargetFramework", StringComparison.OrdinalIgnoreCase))
-                    {
-                        targetFramework = prop.Value;
-                    }
                 }
-
-                projectSpan.ResourceName = (string.IsNullOrEmpty(e.TargetNames) ? "Build" : e.TargetNames) + $"/{targetFramework}";
 
                 projectSpan.SetTag(BuildTags.ProjectFile, e.ProjectFile);
                 projectSpan.SetTag(BuildTags.ProjectSenderName, e.SenderName);
                 projectSpan.SetTag(BuildTags.ProjectTargetNames, e.TargetNames);
                 projectSpan.SetTag(BuildTags.ProjectToolsVersion, e.ToolsVersion);
                 projectSpan.SetTag(BuildTags.BuildName, projectName);
+                projectSpan.SetTag(BuildTags.BuildStartMessage, e.Message);
                 _projects.TryAdd(context, projectSpan);
-                _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, projectSpan));
             }
             catch (Exception ex)
             {
@@ -227,7 +219,7 @@ namespace Datadog.Trace.MSBuild
                         projectSpan.Error = true;
                     }
 
-                    _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, projectSpan));
+                    projectSpan.SetTag(BuildTags.BuildEndMessage, e.Message);
                     projectSpan.Finish(e.Timestamp);
                 }
             }
@@ -298,7 +290,9 @@ namespace Datadog.Trace.MSBuild
                         projectSpan.SetTag(BuildTags.ErrorEndColumn, endColumnNumber.ToString());
                     }
 
-                    _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Error, e.Message, projectSpan));
+                    LogItem logItem = new LogItem("error", message, type, code, lineNumber, columnNumber, endLineNumber, endColumnNumber, projectFile, filePath, stack, subCategory);
+                    string logMessage = correlation + JsonConvert.SerializeObject(logItem);
+                    Console.WriteLine(logMessage);
                 }
             }
             catch (Exception ex)
@@ -343,66 +337,14 @@ namespace Datadog.Trace.MSBuild
                         }
                     }
 
-                    _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Warning, e.Message, projectSpan));
+                    LogItem logItem = new LogItem("warn", message, type, code, lineNumber, columnNumber, endLineNumber, endColumnNumber, projectFile, filePath, stack, subCategory);
+                    string logMessage = correlation + JsonConvert.SerializeObject(logItem);
+                    Console.WriteLine(logMessage);
                 }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error in WarningRaised event");
-            }
-        }
-
-        private class MsBuildLogEvent : DatadogLogEvent
-        {
-            private readonly string _level;
-            private readonly string _message;
-            private readonly Context? _context;
-
-            public MsBuildLogEvent(string level, string message, Span span)
-            {
-                _level = level;
-                _message = message;
-                _context = span is null ? null : new Context(span.TraceId, span.SpanId, span.Context.Origin);
-            }
-
-            public override void Format(StringBuilder sb, LogFormatter formatter)
-            {
-                formatter.FormatLog<Context?>(
-                    sb,
-                    in _context,
-                    DateTime.UtcNow,
-                    _message,
-                    eventId: null,
-                    logLevel: _level,
-                    exception: null,
-                    (JsonTextWriter writer, in Context? state) =>
-                    {
-                        if (state.HasValue)
-                        {
-                            writer.WritePropertyName("dd.trace_id");
-                            writer.WriteValue($"{state.Value.TraceId}");
-                            writer.WritePropertyName("dd.span_id");
-                            writer.WriteValue($"{state.Value.SpanId}");
-                            writer.WritePropertyName("_dd.origin");
-                            writer.WriteValue($"{state.Value.Origin}");
-                        }
-
-                        return default;
-                    });
-            }
-
-            private readonly struct Context
-            {
-                public readonly ulong TraceId;
-                public readonly ulong SpanId;
-                public readonly string Origin;
-
-                public Context(ulong traceId, ulong spanId, string origin)
-                {
-                    TraceId = traceId;
-                    SpanId = spanId;
-                    Origin = origin;
-                }
             }
         }
     }

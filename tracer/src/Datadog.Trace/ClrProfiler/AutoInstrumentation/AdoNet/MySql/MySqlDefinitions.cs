@@ -83,31 +83,3 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
         // object MySqlConnector.MySqlCommand.ExecuteScalar()
         typeof(CommandExecuteScalarAttribute),
     })]
-
-[assembly: AdoNetClientInstrumentMethods(
-    AssemblyName = "MySqlConnector",
-    TypeName = "MySql.Data.MySqlClient.MySqlCommand",
-    MinimumVersion = "0.61.0",
-    MaximumVersion = "0.*.*",
-    IntegrationName = nameof(IntegrationId.MySql),
-    DataReaderType = "MySql.Data.MySqlClient.MySqlDataReader",
-    DataReaderTaskType = "System.Threading.Tasks.Task`1<MySql.Data.MySqlClient.MySqlDataReader>",
-    TargetMethodAttributes = new[]
-    {
-        // Task<int> MySql.Data.MySqlClient.MySqlCommand.ExecuteNonQueryAsync(CancellationToken)
-        typeof(CommandExecuteNonQueryAsyncAttribute),
-        // int MySql.Data.MySqlClient.MySqlCommand.ExecuteNonQuery()
-        typeof(CommandExecuteNonQueryAttribute),
-        // Task<DbDataReader> MySql.Data.MySqlClient.MySqlCommand.ExecuteDbDataReaderAsync(CommandBehavior, CancellationToken)
-        typeof(CommandExecuteDbDataReaderWithBehaviorAndCancellationAsyncAttribute),
-        // MySqlDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteReader()
-        typeof(CommandExecuteReaderAttribute),
-        // MySqlDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteReader(CommandBehavior)
-        typeof(CommandExecuteReaderWithBehaviorAttribute),
-        // DbDataReader MySql.Data.MySqlClient.MySqlCommand.ExecuteDbDataReader(CommandBehavior)
-        typeof(CommandExecuteDbDataReaderWithBehaviorAttribute),
-        // Task<object> MySql.Data.MySqlClient.MySqlCommand.ExecuteScalarAsync(CancellationToken)
-        typeof(CommandExecuteScalarAsyncAttribute),
-        // object MySql.Data.MySqlClient.MySqlCommand.ExecuteScalar()
-        typeof(CommandExecuteScalarAttribute),
-    })]

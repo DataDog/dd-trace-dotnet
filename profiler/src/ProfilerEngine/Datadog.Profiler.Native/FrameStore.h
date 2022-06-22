@@ -10,7 +10,6 @@
 
 #include "shared/src/native-src/com_ptr.h"
 
-class IConfiguration;
 
 class FrameStore : public IFrameStore
 {
@@ -29,7 +28,7 @@ private:
     };
 
 public:
-    FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration);
+    FrameStore(ICorProfilerInfo4* pCorProfilerInfo);
 
 public :
     std::tuple<bool, std::string, std::string> GetFrame(uintptr_t instructionPointer) override;
@@ -57,7 +56,7 @@ private:
 public:   // global helpers
     static bool GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName);
 
-private:  // global helpers
+private:  // global helpers    
     static void FixTrailingGeneric(WCHAR* name);
     static std::string GetTypeNameFromMetadata(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType);
     static std::pair<std::string, std::string> GetTypeWithNamespace(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType);
@@ -86,8 +85,6 @@ private:
     std::unordered_map<FunctionID, std::pair<std::string, std::string>> _methods;
     std::unordered_map<ClassID, TypeDesc> _types;
     std::unordered_map<std::string, std::string> _framePerNativeModule;
-
-    bool _resolveNativeFrames;
     // TODO: dump stats about caches size at the end of the application
 
     // TODO: would it be needed to have a cache (moduleId + mdTypeDef) -> TypeDesc?

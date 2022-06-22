@@ -18,7 +18,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Telemetry;
-using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Util;
 using MessagePack; // use nuget MessagePack to deserialize
 
@@ -181,8 +180,6 @@ namespace Datadog.Trace.TestHelpers
 
         public event EventHandler<EventArgs<IList<IList<MockSpan>>>> RequestDeserialized;
 
-        public event EventHandler<EventArgs<MockClientStatsPayload>> StatsDeserialized;
-
         public event EventHandler<EventArgs<string>> MetricsReceived;
 
         public string ListenerInfo { get; }
@@ -220,8 +217,6 @@ namespace Datadog.Trace.TestHelpers
 
         public IImmutableList<MockSpan> Spans { get; private set; } = ImmutableList<MockSpan>.Empty;
 
-        public IImmutableList<MockClientStatsPayload> Stats { get; private set; } = ImmutableList<MockClientStatsPayload>.Empty;
-
         public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
         public ConcurrentQueue<string> StatsdRequests { get; } = new();
@@ -254,12 +249,12 @@ namespace Datadog.Trace.TestHelpers
             DateTimeOffset? minDateTime = null,
             bool returnAllOperations = false)
         {
-            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
+            var deadline = DateTime.Now.AddMilliseconds(timeoutInMilliseconds);
             var minimumOffset = (minDateTime ?? DateTimeOffset.MinValue).ToUnixTimeNanoseconds();
 
             IImmutableList<MockSpan> relevantSpans = ImmutableList<MockSpan>.Empty;
 
-            while (DateTime.UtcNow < deadline)
+            while (DateTime.Now < deadline)
             {
                 relevantSpans =
                     Spans
@@ -347,29 +342,6 @@ namespace Datadog.Trace.TestHelpers
             return latest;
         }
 
-        public IImmutableList<MockClientStatsPayload> WaitForStats(
-            int count,
-            int timeoutInMilliseconds = 20000)
-        {
-            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
-
-            IImmutableList<MockClientStatsPayload> stats = ImmutableList<MockClientStatsPayload>.Empty;
-
-            while (DateTime.UtcNow < deadline)
-            {
-                stats = Stats;
-
-                if (stats.Count >= count)
-                {
-                    break;
-                }
-
-                Thread.Sleep(500);
-            }
-
-            return stats;
-        }
-
         public void Dispose()
         {
             _listener?.Close();
@@ -415,11 +387,6 @@ namespace Datadog.Trace.TestHelpers
         protected virtual void OnRequestDeserialized(IList<IList<MockSpan>> traces)
         {
             RequestDeserialized?.Invoke(this, new EventArgs<IList<IList<MockSpan>>>(traces));
-        }
-
-        protected virtual void OnStatsDeserialized(MockClientStatsPayload stats)
-        {
-            StatsDeserialized?.Invoke(this, new EventArgs<MockClientStatsPayload>(stats));
         }
 
         protected virtual void OnMetricsReceived(string stats)
@@ -718,32 +685,18 @@ namespace Datadog.Trace.TestHelpers
                     }
                     else
                     {
+                        // assume trace request
                         if (ShouldDeserializeTraces)
                         {
-                            if (ctx.Request.Url.AbsolutePath == "/v0.6/stats")
+                            var spans = MessagePackSerializer.Deserialize<IList<IList<MockSpan>>>(ctx.Request.InputStream);
+                            OnRequestDeserialized(spans);
+
+                            lock (this)
                             {
-                                var statsPayload = MessagePackSerializer.Deserialize<MockClientStatsPayload>(ctx.Request.InputStream);
-                                OnStatsDeserialized(statsPayload);
-
-                                lock (this)
-                                {
-                                    Stats = Stats.Add(statsPayload);
-                                }
-                            }
-
-                            // assume trace request
-                            else
-                            {
-                                var spans = MessagePackSerializer.Deserialize<IList<IList<MockSpan>>>(ctx.Request.InputStream);
-                                OnRequestDeserialized(spans);
-
-                                lock (this)
-                                {
-                                    // we only need to lock when replacing the span collection,
-                                    // not when reading it because it is immutable
-                                    Spans = Spans.AddRange(spans.SelectMany(trace => trace));
-                                    RequestHeaders = RequestHeaders.Add(new NameValueCollection(ctx.Request.Headers));
-                                }
+                                // we only need to lock when replacing the span collection,
+                                // not when reading it because it is immutable
+                                Spans = Spans.AddRange(spans.SelectMany(trace => trace));
+                                RequestHeaders = RequestHeaders.Add(new NameValueCollection(ctx.Request.Headers));
                             }
                         }
 

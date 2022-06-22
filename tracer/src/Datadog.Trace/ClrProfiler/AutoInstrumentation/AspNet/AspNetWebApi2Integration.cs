@@ -129,12 +129,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 }
                 else if (requestUri != null)
                 {
-                    var cleanUri = UriHelpers.GetCleanUriPath(requestUri, controllerContext.RequestContext.VirtualPathRoot);
+                    var cleanUri = UriHelpers.GetCleanUriPath(requestUri);
                     resourceName = $"{method} {cleanUri}";
                 }
                 else
                 {
-                    resourceName = method;
+                    resourceName = $"{method}";
                 }
 
                 if (route is null && routeValues is not null)

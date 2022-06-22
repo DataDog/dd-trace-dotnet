@@ -40,14 +40,11 @@ namespace UpdateVendors
             var sourceUrlLocation = Path.Combine(vendorFinalPath, "_last_downloaded_source_url.txt");
 
             // Ensure the url has changed, or don't bother upgrading
-            if (File.Exists(sourceUrlLocation))
+            var currentSource = File.ReadAllText(sourceUrlLocation);
+            if (currentSource.Equals(downloadUrl, StringComparison.OrdinalIgnoreCase))
             {
-                var currentSource = File.ReadAllText(sourceUrlLocation);
-                if (currentSource.Equals(downloadUrl, StringComparison.OrdinalIgnoreCase))
-                {
-                    Console.WriteLine($"No updates to be made for {libraryName}.");
-                    return;
-                }
+                Console.WriteLine($"No updates to be made for {libraryName}.");
+                return;
             }
 
             using (var repoDownloadClient = new HttpClient())

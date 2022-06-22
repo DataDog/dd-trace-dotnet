@@ -18,28 +18,28 @@
 
     <!-- Integration: AerospikeClient -->
     <!-- Assembly: AerospikeClient -->
-    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/5.1.1 -->
-    <PackageReference Include="Aerospike.Client" Version="5.1.1" />
+    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/5.1.0 -->
+    <PackageReference Include="Aerospike.Client" Version="5.1.0" />
 
     <!-- Integration: System.Web.Mvc -->
     <!-- Assembly: System.Web.Mvc -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNet.Mvc/5.2.9 -->
-    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.9" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNet.Mvc/5.2.8 -->
+    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.8" />
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.11.12 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.11.12" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.11.2 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.11.2" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2.65 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.65" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2.55 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.55" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.27.2 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.27.2" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.27.0 -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.27.0" />
 
     <!-- Integration: Couchbase.NetClient -->
     <!-- Assembly: Couchbase.NetClient -->
@@ -63,8 +63,8 @@
 
     <!-- Integration: Grpc.Core -->
     <!-- Assembly: Grpc.Core -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc/2.46.3 -->
-    <PackageReference Include="Grpc" Version="2.46.3" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc/2.46.1 -->
+    <PackageReference Include="Grpc" Version="2.46.1" />
 
     <!-- Integration: System.Net.Http -->
     <!-- Assembly: System.Net.Http -->
@@ -98,13 +98,13 @@
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.16.0 -->
-    <PackageReference Include="MongoDB.Driver.Core" Version="2.16.0" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.15.1 -->
+    <PackageReference Include="MongoDB.Driver.Core" Version="2.15.1" />
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.16.0 -->
-    <PackageReference Include="MongoDB.Driver" Version="2.16.0" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.15.1 -->
+    <PackageReference Include="MongoDB.Driver" Version="2.15.1" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!-- Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
@@ -123,13 +123,13 @@
 
     <!-- Integration: MySqlConnector -->
     <!-- Assembly: MySqlConnector -->
-    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.1.10 -->
-    <PackageReference Include="MySqlConnector" Version="2.1.10" />
+    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.1.9 -->
+    <PackageReference Include="MySqlConnector" Version="2.1.9" />
 
     <!-- Integration: NLog -->
     <!-- Assembly: NLog -->
     <!-- Latest package https://www.nuget.org/packages/NLog/5.0.0 -->
-    <PackageReference Include="NLog" Version="5.0.0" />
+    <PackageReference Include="NLog" Version="4.7.15" />
 
     <!-- Integration: Npgsql -->
     <!-- Assembly: Npgsql -->
@@ -183,8 +183,8 @@
 
     <!-- Integration: System.Data.SQLite -->
     <!-- Assembly: System.Data.SQLite -->
-    <!-- Latest package https://www.nuget.org/packages/System.Data.SQLite/1.0.116 -->
-    <PackageReference Include="System.Data.SQLite" Version="1.0.116" />
+    <!-- Latest package https://www.nuget.org/packages/System.Data.SQLite/1.0.115.5 -->
+    <PackageReference Include="System.Data.SQLite" Version="1.0.115.5" />
 
     <!-- Integration: StackExchange.Redis -->
     <!-- Assembly: StackExchange.Redis -->

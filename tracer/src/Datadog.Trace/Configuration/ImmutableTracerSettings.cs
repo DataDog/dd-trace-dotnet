@@ -51,7 +51,6 @@ namespace Datadog.Trace.Configuration
             HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
             GrpcTags = new ReadOnlyDictionary<string, string>(settings.GrpcTags);
             TracerMetricsEnabled = settings.TracerMetricsEnabled;
-            StatsComputationEnabled = settings.StatsComputationEnabled;
             RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled;
             KafkaCreateConsumerScopeEnabled = settings.KafkaCreateConsumerScopeEnabled;
             StartupDiagnosticLogEnabled = settings.StartupDiagnosticLogEnabled;
@@ -173,11 +172,6 @@ namespace Datadog.Trace.Configuration
         /// are enabled and sent to DogStatsd.
         /// </summary>
         public bool TracerMetricsEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether stats are computed on the tracer side
-        /// </summary>
-        public bool StatsComputationEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether a span context should be created on exiting a successful Kafka

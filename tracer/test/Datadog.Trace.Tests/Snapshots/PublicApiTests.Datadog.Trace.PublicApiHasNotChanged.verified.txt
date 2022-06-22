@@ -108,7 +108,6 @@ namespace Datadog.Trace.Configuration
         public string ServiceName { get; }
         public string ServiceVersion { get; }
         public bool StartupDiagnosticLogEnabled { get; }
-        public bool StatsComputationEnabled { get; }
         public bool TraceEnabled { get; }
         public bool TracerMetricsEnabled { get; }
         public static Datadog.Trace.Configuration.ImmutableTracerSettings FromDefaultSources() { }
@@ -175,7 +174,6 @@ namespace Datadog.Trace.Configuration
         public string ServiceName { get; set; }
         public string ServiceVersion { get; set; }
         public bool StartupDiagnosticLogEnabled { get; set; }
-        public bool StatsComputationEnabled { get; set; }
         public bool TraceEnabled { get; set; }
         public bool TracerMetricsEnabled { get; set; }
         public Datadog.Trace.Configuration.ImmutableTracerSettings Build() { }

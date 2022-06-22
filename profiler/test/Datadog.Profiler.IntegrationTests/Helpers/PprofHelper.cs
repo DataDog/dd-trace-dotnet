@@ -5,7 +5,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
-using Perftools.Profiles;
+using Perftools.Profiles.Tests;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {

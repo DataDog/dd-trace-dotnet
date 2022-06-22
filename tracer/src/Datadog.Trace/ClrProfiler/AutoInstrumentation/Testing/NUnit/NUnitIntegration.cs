@@ -140,10 +140,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             // Test code and code owners
-            Common.DecorateSpanWithSourceAndCodeOwners(span, testMethod);
+            if (MethodSymbolResolver.Instance.TryGetMethodSymbol(testMethod, out var methodSymbol))
+            {
+                span.SetTag(TestTags.SourceFile, CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File));
+                span.SetMetric(TestTags.SourceStart, methodSymbol.StartLine);
+                span.SetMetric(TestTags.SourceEnd, methodSymbol.EndLine);
 
-            Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            Ci.Coverage.CoverageReporter.Handler.StartSession();
+                if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
+                {
+                    var match = codeOwners.Match("/" + CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
+                    if (match is not null)
+                    {
+                        span.SetTag(TestTags.CodeOwners, match.Value.GetOwnersString());
+                    }
+                }
+            }
 
             if (skipReason != null)
             {
@@ -152,6 +163,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             span.ResetStartTime();
+            Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            Ci.Coverage.CoverageReporter.Handler.StartSession();
             return scope;
         }
 
@@ -193,8 +206,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             {
                 scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
             }
-
-            scope.Dispose();
         }
 
         internal static void FinishSkippedScope(Scope scope, string skipReason)
@@ -211,7 +222,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                     scope.Span.SetTag("test.coverage", Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(coverageSession));
                 }
 
-                span.Finish(TimeSpan.Zero);
+                span.Finish(new TimeSpan(10));
                 scope.Dispose();
             }
         }

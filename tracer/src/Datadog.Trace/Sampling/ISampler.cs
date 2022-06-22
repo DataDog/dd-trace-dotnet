@@ -9,7 +9,7 @@ namespace Datadog.Trace.Sampling
 {
     internal interface ISampler
     {
-        void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates);
+        void SetDefaultSampleRates(IEnumerable<KeyValuePair<string, float>> sampleRates);
 
         int GetSamplingPriority(Span span);
 

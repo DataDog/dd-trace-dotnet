@@ -12,11 +12,9 @@ namespace Datadog.Trace.Sampling
 {
     internal class DefaultSamplingRule : ISamplingRule
     {
-        private const string DefaultKey = "service:,env:";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DefaultSamplingRule>();
 
-        private Dictionary<SampleRateKey, float> _sampleRates = new();
-        private float _defaultSamplingRate = 1;
+        private Dictionary<SampleRateKey, float> _sampleRates = new Dictionary<SampleRateKey, float>();
 
         public string RuleName => "default-rule";
 
@@ -36,7 +34,6 @@ namespace Datadog.Trace.Sampling
 
             if (_sampleRates.Count == 0)
             {
-                span.SetMetric(Metrics.SamplingAgentDecision, 1); // Keep it to ease investigations
                 return 1;
             }
 
@@ -61,44 +58,39 @@ namespace Datadog.Trace.Sampling
                 return sampleRate;
             }
 
-            Log.Debug("Could not establish sample rate for trace {TraceId}. Using default rate instead: {rate}", span.TraceId, _defaultSamplingRate);
-            span.SetMetric(Metrics.SamplingAgentDecision, _defaultSamplingRate);
-            return _defaultSamplingRate;
+            Log.Debug("Could not establish sample rate for trace {TraceId}", span.TraceId);
+
+            return 1;
         }
 
-        public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
+        public void SetDefaultSampleRates(IEnumerable<KeyValuePair<string, float>> sampleRates)
         {
-            if (sampleRates is null || sampleRates.Count == 0)
-            {
-                Log.Debug("sampling rates received from the agent are empty");
-                return;
-            }
-
             // to avoid locking if writers and readers can access the dictionary at the same time,
             // build the new dictionary first, then replace the old one
-            var rates = new Dictionary<SampleRateKey, float>(sampleRates.Count);
-            var defaultSamplingRate = _defaultSamplingRate;
+            var rates = new Dictionary<SampleRateKey, float>();
 
-            foreach (var pair in sampleRates)
+            if (sampleRates != null)
             {
-                if (string.Equals(pair.Key, DefaultKey, StringComparison.OrdinalIgnoreCase))
+                foreach (var pair in sampleRates)
                 {
-                    defaultSamplingRate = pair.Value;
-                    continue;
+                    // No point in adding default rates
+                    if (pair.Value == 1.0f)
+                    {
+                        continue;
+                    }
+
+                    var key = SampleRateKey.Parse(pair.Key);
+
+                    if (key == null)
+                    {
+                        Log.Warning("Could not parse sample rate key {SampleRateKey}", pair.Key);
+                        continue;
+                    }
+
+                    rates.Add(key.Value, pair.Value);
                 }
-
-                var key = SampleRateKey.Parse(pair.Key);
-
-                if (key == null)
-                {
-                    Log.Warning("Could not parse sample rate key {SampleRateKey}", pair.Key);
-                    continue;
-                }
-
-                rates.Add(key.Value, pair.Value);
             }
 
-            _defaultSamplingRate = defaultSamplingRate;
             _sampleRates = rates;
         }
 

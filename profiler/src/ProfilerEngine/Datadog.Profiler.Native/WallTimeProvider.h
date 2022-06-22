@@ -23,6 +23,7 @@ class WallTimeProvider
 {
 public:
     WallTimeProvider(
+        IConfiguration* pConfiguration,
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAssemblyStore,

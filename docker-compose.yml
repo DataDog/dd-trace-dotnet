@@ -458,29 +458,6 @@ services:
     environment:
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
 
-  ProfilerIntegrationTests:
-    build:
-      context: ./tracer/build/_build/
-      dockerfile: docker/${baseImage:-debian}.dockerfile
-      args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunProfilerLinuxIntegrationTests
-    volumes:
-      - ./:/project
-    cap_add:
-      - SYS_PTRACE
-    environment:
-      - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - tracerHome=/project/${relativeTracerHome:-shared/bin/monitoring-home/tracer}
-      - profilerHome=/project/${relativeTracerHome:-shared/bin/monitoring-home/continuousprofiler}
-      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
-      - framework=${framework:-netcoreapp3.1}
-      - baseImage=${baseImage:-default}
-      - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
-      - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
-    hostname: integrationtests
-
   IntegrationTests:
     build:
       context: ./tracer/build/_build/

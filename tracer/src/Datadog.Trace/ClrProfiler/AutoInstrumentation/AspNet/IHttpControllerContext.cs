@@ -14,8 +14,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         IHttpRequestMessage Request { get; }
 
         IHttpRouteData RouteData { get; }
-
-        RequestContextStruct RequestContext { get; }
     }
 }
 #endif

@@ -53,30 +53,7 @@ namespace Datadog.Trace.Tests.Util
         [InlineData("ftp://example.org/controller/action/2022.png", "/controller/action/?.png")]
         public void GetCleanUriPath_ByUri_ShouldExtractThePathAndRemoveIds(string url, string expected)
         {
-            Assert.Equal(expected, Trace.Util.UriHelpers.GetCleanUriPath(new Uri(url), virtualPathToRemove: null));
-        }
-
-        [Theory]
-        [InlineData("http://localhost:5040", "", "/")]
-        [InlineData("http://localhost:5040", "/", "/")]
-        [InlineData("http://localhost:5040/", "", "/")]
-        [InlineData("http://localhost:5040/", "/", "/")]
-        [InlineData("http://localhost:5040/controller/", "", "/controller/")]
-        [InlineData("http://localhost:5040/controller/", "/", "/controller/")]
-        [InlineData("http://localhost:5040/controller/", "/Some-value", "/controller/")]
-        [InlineData("http://localhost:5040/Some-value/controller/", "", "/Some-value/controller/")]
-        [InlineData("http://localhost:5040/Some-value/controller/", "/", "/Some-value/controller/")]
-        [InlineData("http://localhost:5040/Some-value/controller/", "/Some-value", "/controller/")]
-        [InlineData("http://localhost:5040/controller/action/2022", "/weeble", "/controller/action/?")]
-        [InlineData("https://localhost:5040/WEEBLE/controller/action/2022", "/weeble", "/controller/action/?")]
-        [InlineData("https://example.org/controller/action/2022", "/sup", "/controller/action/?")]
-        [InlineData("https://example.org/supcontroller/action/2022", "/sup", "/supcontroller/action/?")]
-        [InlineData("https://example.org/sup/controller/action/2022", "/sup", "/controller/action/?")]
-        [InlineData("https://example.org/sup/sup/controller/action/2022", "/sup", "/sup/controller/action/?")]
-        [InlineData("https://example.org/sup/sup/controller/action/2022", "/sup/sup", "/controller/action/?")]
-        public void GetCleanUriPath_ByUri_ShouldRemoveThePrefixIfPresent(string url, string prefix, string expected)
-        {
-            Assert.Equal(expected, Trace.Util.UriHelpers.GetCleanUriPath(new Uri(url), prefix));
+            Assert.Equal(expected, Trace.Util.UriHelpers.GetCleanUriPath(new Uri(url)));
         }
 
         [Theory]

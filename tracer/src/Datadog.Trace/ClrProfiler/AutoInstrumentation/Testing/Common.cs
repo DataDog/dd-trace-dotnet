@@ -4,12 +4,8 @@
 // </copyright>
 
 using System;
-using System.Reflection;
-using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PDBs;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 {
@@ -24,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
                 return;
             }
 
-            CIVisibility.FlushSpans();
+            Ci.CIVisibility.FlushSpans();
         }
 
         internal static string GetParametersValueData(object paramValue)
@@ -33,8 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             {
                 return "(null)";
             }
-
-            if (paramValue is Array pValueArray)
+            else if (paramValue is Array pValueArray)
             {
                 const int maxArrayLength = 50;
                 int length = pValueArray.Length > maxArrayLength ? maxArrayLength : pValueArray.Length;
@@ -47,32 +42,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 
                 return "[" + string.Join(", ", strValueArray) + (pValueArray.Length > maxArrayLength ? ", ..." : string.Empty) + "]";
             }
-
-            if (paramValue is Delegate pValueDelegate)
+            else if (paramValue is Delegate pValueDelegate)
             {
                 return $"{paramValue}[{pValueDelegate.Target}|{pValueDelegate.Method}]";
             }
 
             return paramValue.ToString();
-        }
-
-        internal static void DecorateSpanWithSourceAndCodeOwners(Span span, MethodInfo testMethod)
-        {
-            if (MethodSymbolResolver.Instance.TryGetMethodSymbol(testMethod, out var methodSymbol))
-            {
-                span.SetTag(TestTags.SourceFile, CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File));
-                span.SetMetric(TestTags.SourceStart, methodSymbol.StartLine);
-                span.SetMetric(TestTags.SourceEnd, methodSymbol.EndLine);
-
-                if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
-                {
-                    var match = codeOwners.Match("/" + CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
-                    if (match is not null)
-                    {
-                        span.SetTag(TestTags.CodeOwners, match.Value.GetOwnersString());
-                    }
-                }
-            }
         }
     }
 }

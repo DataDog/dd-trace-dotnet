@@ -36,6 +36,16 @@ namespace Datadog.Trace.Ci.Tags
         public const string BuildEnvironment = "build.environment";
 
         /// <summary>
+        /// Build start message
+        /// </summary>
+        public const string BuildStartMessage = "build.start_message";
+
+        /// <summary>
+        /// Build start message
+        /// </summary>
+        public const string BuildEndMessage = "build.end_message";
+
+        /// <summary>
         /// Build status
         /// </summary>
         public const string BuildStatus = "build.status";

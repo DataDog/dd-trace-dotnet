@@ -23,6 +23,7 @@ class CpuTimeProvider
 {
 public:
     CpuTimeProvider(
+        IConfiguration* pConfiguration,
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAssemblyStore,

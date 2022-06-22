@@ -212,14 +212,6 @@ namespace Datadog.Trace.ClrProfiler
                new ("MySql.Data", "MySql.Data.MySqlClient.MySqlCommand", "ExecuteReader",  new[] { "MySql.Data.MySqlClient.MySqlDataReader", "System.Data.CommandBehavior" }, 8, 0, 0, 8, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"),
                new ("MySql.Data", "MySql.Data.MySqlClient.MySqlCommand", "ExecuteScalar",  new[] { "System.Object" }, 6, 7, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration"),
                new ("MySql.Data", "MySql.Data.MySqlClient.MySqlCommand", "ExecuteScalar",  new[] { "System.Object" }, 8, 0, 0, 8, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration"),
-               new ("MySqlConnector", "MySql.Data.MySqlClient.MySqlCommand", "ExecuteDbDataReader",  new[] { "System.Data.Common.DbDataReader", "System.Data.CommandBehavior" }, 0, 61, 0, 0, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"),
-               new ("MySqlConnector", "MySql.Data.MySqlClient.MySqlCommand", "ExecuteDbDataReaderAsync",  new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", "System.Data.CommandBehavior", "System.Threading.CancellationToken" }, 0, 61, 0, 0, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration"),
-               new ("MySqlConnector", "MySql.Data.MySqlClient.MySqlCommand", "ExecuteNonQuery",  new[] { "System.Int32" }, 0, 61, 0, 0, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"),
-               new ("MySqlConnector", "MySql.Data.MySqlClient.MySqlCommand", "ExecuteNonQueryAsync",  new[] { "System.Threading.Tasks.Task`1<System.Int32>", "System.Threading.CancellationToken" }, 0, 61, 0, 0, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryAsyncIntegration"),
-               new ("MySqlConnector", "MySql.Data.MySqlClient.MySqlCommand", "ExecuteReader",  new[] { "MySql.Data.MySqlClient.MySqlDataReader" }, 0, 61, 0, 0, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration"),
-               new ("MySqlConnector", "MySql.Data.MySqlClient.MySqlCommand", "ExecuteReader",  new[] { "MySql.Data.MySqlClient.MySqlDataReader", "System.Data.CommandBehavior" }, 0, 61, 0, 0, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"),
-               new ("MySqlConnector", "MySql.Data.MySqlClient.MySqlCommand", "ExecuteScalar",  new[] { "System.Object" }, 0, 61, 0, 0, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration"),
-               new ("MySqlConnector", "MySql.Data.MySqlClient.MySqlCommand", "ExecuteScalarAsync",  new[] { "System.Threading.Tasks.Task`1<System.Object>", "System.Threading.CancellationToken" }, 0, 61, 0, 0, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarAsyncIntegration"),
                new ("MySqlConnector", "MySqlConnector.MySqlCommand", "ExecuteDbDataReader",  new[] { "System.Data.Common.DbDataReader", "System.Data.CommandBehavior" }, 1, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"),
                new ("MySqlConnector", "MySqlConnector.MySqlCommand", "ExecuteDbDataReaderAsync",  new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", "System.Data.CommandBehavior", "System.Threading.CancellationToken" }, 1, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration"),
                new ("MySqlConnector", "MySqlConnector.MySqlCommand", "ExecuteNonQuery",  new[] { "System.Int32" }, 1, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"),
@@ -232,9 +224,8 @@ namespace Datadog.Trace.ClrProfiler
                new ("MySqlConnector", "MySqlConnector.MySqlCommand", "ExecuteScalarAsync",  new[] { "System.Threading.Tasks.Task`1<System.Object>", "System.Threading.CancellationToken" }, 1, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarAsyncIntegration"),
 
                 // NLog
-               new ("NLog", "NLog.LogFactory", "BuildLoggerConfiguration",  new[] { "System.Void", "System.String", "NLog.Config.LoggingConfiguration" }, 5, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LogFactoryGetConfigurationForLoggerInstrumentation"),
                new ("NLog", "NLog.LogFactory", "GetConfigurationForLogger",  new[] { "System.Void", "System.String", "NLog.Config.LoggingConfiguration" }, 2, 1, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LogFactoryGetConfigurationForLoggerInstrumentation"),
-               new ("NLog", "NLog.LoggerImpl", "Write",  new[] { "System.Void", "System.Type", "NLog.Internal.TargetWithFilterChain", "NLog.LogEventInfo", "NLog.LogFactory" }, 1, 0, 0, 5, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection.LoggerImplWriteIntegration"),
+               new ("NLog", "NLog.LoggerImpl", "Write",  new[] { "System.Void", "System.Type", "NLog.Internal.TargetWithFilterChain", "NLog.LogEventInfo", "NLog.LogFactory" }, 1, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection.LoggerImplWriteIntegration"),
 
                 // Npgsql
                new ("Npgsql", "Npgsql.NpgsqlCommand", "ExecuteDbDataReader",  new[] { "System.Data.Common.DbDataReader", "System.Data.CommandBehavior" }, 4, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"),
@@ -601,7 +592,6 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodAttributeExecuteIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.MsTestV2,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LogFactoryGetConfigurationForLoggerInstrumentation"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LogFactoryGetConfigurationForLoggerInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection.LoggerImplWriteIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.NLog,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestAssemblyRunnerWaitForCompletionIntegration"
@@ -691,14 +681,6 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryAsyncIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"
@@ -807,14 +789,6 @@ namespace Datadog.Trace.ClrProfiler
                     or { Key: "MySql.Data", Value: "MySql.Data.MySqlClient.MySqlCommand" }
                     or { Key: "MySql.Data", Value: "MySql.Data.MySqlClient.MySqlCommand" }
                     or { Key: "MySql.Data", Value: "MySql.Data.MySqlClient.MySqlCommand" }
-                    or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlCommand" }
-                    or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlCommand" }
-                    or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlCommand" }
-                    or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlCommand" }
-                    or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlCommand" }
-                    or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlCommand" }
-                    or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlCommand" }
-                    or { Key: "MySqlConnector", Value: "MySql.Data.MySqlClient.MySqlCommand" }
                     or { Key: "MySqlConnector", Value: "MySqlConnector.MySqlCommand" }
                     or { Key: "MySqlConnector", Value: "MySqlConnector.MySqlCommand" }
                     or { Key: "MySqlConnector", Value: "MySqlConnector.MySqlCommand" }

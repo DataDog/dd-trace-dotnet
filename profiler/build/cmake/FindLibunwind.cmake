@@ -7,7 +7,7 @@ ExternalProject_Add(libunwind
     INSTALL_COMMAND ""
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""
-    BUILD_COMMAND <SOURCE_DIR>/autogen.sh && <SOURCE_DIR>/configure CXXFLAGS=-fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0 CFLAGS=-fPIC --disable-minidebuginfo && make -j
+    BUILD_COMMAND <SOURCE_DIR>/autogen.sh && <SOURCE_DIR>/configure CXXFLAGS=-fPIC CFLAGS=-fPIC && make -j
     BUILD_ALWAYS false
 )
 

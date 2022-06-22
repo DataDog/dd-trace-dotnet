@@ -234,11 +234,8 @@ bool LibddprofExporter::Export()
     for (auto& [runtimeId, profileInfo] : _perAppInfo)
     {
         auto samplesCount = profileInfo.samplesCount;
-        const auto& applicationInfo = _applicationStore->GetApplicationInfo(std::string(runtimeId));
-
         if (samplesCount <= 0)
         {
-            Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be send.");
             continue;
         }
 
@@ -253,6 +250,7 @@ bool LibddprofExporter::Export()
             return false;
         }
 
+        const auto& applicationInfo = _applicationStore->GetApplicationInfo(std::string(runtimeId));
         if (!_pprofOutputPath.empty())
         {
             ExportToDisk(applicationInfo.ServiceName, serializedProfile, idx++);

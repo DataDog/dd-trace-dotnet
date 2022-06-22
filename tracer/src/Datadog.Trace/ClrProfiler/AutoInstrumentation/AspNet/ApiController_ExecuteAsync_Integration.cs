@@ -111,7 +111,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     // us to defer finishing the span later while making sure callers of this method do not
                     // get this scope when calling Tracer.ActiveScope
                     var now = scope.Span.Context.TraceContext.UtcNow;
-                    httpContext.AddOnRequestCompleted(h => OnRequestCompletedAfterException(h, scope, now));
+                    httpContext.AddOnRequestCompleted(h => OnRequestCompleted(h, scope, now));
 
                     scope.SetFinishOnClose(false);
                     scope.Dispose();
@@ -132,7 +132,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             return responseMessage;
         }
 
-        private static void OnRequestCompletedAfterException(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
+        private static void OnRequestCompleted(HttpContext httpContext, Scope scope, DateTimeOffset finishTime)
         {
             HttpContextHelper.AddHeaderTagsFromHttpResponse(httpContext, scope);
             scope.Span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, Tracer.Instance.Settings);

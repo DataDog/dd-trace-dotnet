@@ -39,8 +39,6 @@ namespace Datadog.Trace.Agent
         private readonly int _batchInterval;
         private readonly IKeepRateCalculator _traceKeepRateCalculator;
 
-        private readonly IStatsAggregator _statsAggregator;
-
         /// <summary>
         /// The currently active buffer.
         /// Note: Thread-safetiness in this class relies on the fact that only the serialization thread can change the active buffer
@@ -60,15 +58,13 @@ namespace Datadog.Trace.Agent
             EmptyPayload = new ArraySegment<byte>(data);
         }
 
-        public AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100)
-        : this(api, statsAggregator, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval)
+        public AgentWriter(IApi api, IDogStatsd statsd, bool automaticFlush = true, int maxBufferSize = 1024 * 1024 * 10, int batchInterval = 100)
+        : this(api, statsd, MovingAverageKeepRateCalculator.CreateDefaultKeepRateCalculator(), automaticFlush, maxBufferSize, batchInterval)
         {
         }
 
-        internal AgentWriter(IApi api, IStatsAggregator statsAggregator, IDogStatsd statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval)
+        internal AgentWriter(IApi api, IDogStatsd statsd, IKeepRateCalculator traceKeepRateCalculator, bool automaticFlush, int maxBufferSize, int batchInterval)
         {
-            _statsAggregator = statsAggregator;
-
             _api = api;
             _statsd = statsd;
             _batchInterval = batchInterval;
@@ -149,42 +145,29 @@ namespace Datadog.Trace.Agent
                 .ConfigureAwait(false);
 
             _traceKeepRateCalculator.CancelUpdates();
-
-            bool success = false;
-
             if (completedTask != delay)
             {
                 await Task.WhenAny(_flushTask, Task.Delay(TimeSpan.FromSeconds(20)))
                     .ConfigureAwait(false);
 
-                if (_frontBuffer.TraceCount != 0 || _backBuffer.TraceCount != 0)
+                if (_frontBuffer.TraceCount == 0 && _backBuffer.TraceCount == 0)
                 {
-                    // In some situations, the flush thread can exit before flushing all the threads
-                    // Force a flush for the leftover traces
-                    completedTask = await Task.WhenAny(Task.Run(() => FlushBuffers(flushAllBuffers: true)), delay)
-                        .ConfigureAwait(false);
-
-                    if (completedTask != delay)
-                    {
-                        success = true;
-                    }
+                    // All good
+                    return;
                 }
-                else
+
+                // In some situations, the flush thread can exit before flushing all the threads
+                // Force a flush for the leftover traces
+                completedTask = await Task.WhenAny(Task.Run(() => FlushBuffers(flushAllBuffers: true)), delay)
+                    .ConfigureAwait(false);
+
+                if (completedTask != delay)
                 {
-                    success = true;
+                    return;
                 }
             }
 
-            // Once all the spans have been processed, flush the stats
-            if (_statsAggregator != null)
-            {
-                await _statsAggregator.DisposeAsync().ConfigureAwait(false);
-            }
-
-            if (!success)
-            {
-                Log.Warning("Could not flush all traces before process exit");
-            }
+            Log.Warning("Could not flush all traces before process exit");
         }
 
         public async Task FlushTracesAsync()
@@ -357,8 +340,6 @@ namespace Datadog.Trace.Agent
 
                 return null;
             }
-
-            _statsAggregator?.AddRange(trace.Array, trace.Offset, trace.Count);
 
             // Add the current keep rate to the root span
             var rootSpan = trace.Array[trace.Offset].Context.TraceContext?.RootSpan;

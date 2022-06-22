@@ -2,8 +2,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "FrameStore.h"
-
-#include "IConfiguration.h"
 #include "HResultConverter.h"
 #include "Log.h"
 #include "OpSysTools.h"
@@ -12,17 +10,13 @@
 #include "shared/src/native-src/dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 
-FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration) :
-    _pCorProfilerInfo{pCorProfilerInfo},
-    _resolveNativeFrames{pConfiguration->IsNativeFramesEnabled()}
+FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo) :
+    _pCorProfilerInfo{pCorProfilerInfo}
 {
 }
 
 std::tuple<bool, std::string, std::string> FrameStore::GetFrame(uintptr_t instructionPointer)
 {
-    static const std::string NotResolvedModuleName("NotResolvedModule");
-    static const std::string NotResolvedFrame("NotResolvedFrame");
-
     FunctionID functionId;
     HRESULT hr = _pCorProfilerInfo->GetFunctionFromIP((LPCBYTE)instructionPointer, &functionId);
 
@@ -33,13 +27,8 @@ std::tuple<bool, std::string, std::string> FrameStore::GetFrame(uintptr_t instru
     }
     else
     {
-        if (!_resolveNativeFrames)
-        {
-            return {false, NotResolvedModuleName, NotResolvedFrame};
-        }
-
         auto [moduleName, frame] = GetNativeFrame(instructionPointer);
-        return {true, moduleName, frame};
+        return {false, moduleName, frame};
     }
 }
 

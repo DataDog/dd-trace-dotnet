@@ -48,7 +48,6 @@ Configuration::Configuration()
     _apiKey = GetEnvironmentValue(EnvironmentVariables::ApiKey, DefaultEmptyString);
     _serviceName = GetEnvironmentValue(EnvironmentVariables::ServiceName, OpSysTools::GetProcessName());
     _isAgentLess = GetEnvironmentValue(EnvironmentVariables::Agentless, false);
-    _exceptionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ExceptionSampleLimit, 100);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -97,11 +96,6 @@ bool Configuration::IsCpuProfilingEnabled() const
 bool Configuration::IsExceptionProfilingEnabled() const
 {
     return _isExceptionProfilingEnabled;
-}
-
-int Configuration::ExceptionSampleLimit() const
-{
-    return _exceptionSampleLimit;
 }
 
 std::chrono::seconds Configuration::GetUploadInterval() const

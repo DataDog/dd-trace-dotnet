@@ -2,11 +2,7 @@ using System.Data;
 using System.Data.Common;
 using System.Threading;
 using System.Threading.Tasks;
-#if MYSQLCONNECTOR_0
-using MySql.Data.MySqlClient;
-#else
 using MySqlConnector;
-#endif
 using Samples.DatabaseHelper;
 
 namespace Samples.MySqlConnector

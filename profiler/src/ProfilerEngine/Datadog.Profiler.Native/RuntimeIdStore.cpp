@@ -20,27 +20,21 @@ Error("unknown platform");
 const char* const RuntimeIdStore::ServiceName = "RuntimeID Store";
 const char* const RuntimeIdStore::ExternalFunctionName = "GetRuntimeId";
 const char* const RuntimeIdStore::NativeLoaderFilename =
-#ifdef _WINDOWS
 #ifdef BIT64
     "Datadog.AutoInstrumentation.NativeLoader.x64" LIBRARY_FILE_EXTENSION;
 #else
     "Datadog.AutoInstrumentation.NativeLoader.x86" LIBRARY_FILE_EXTENSION;
 #endif
-#else
-    "Datadog.Trace.ClrProfiler.Native.so";
-#endif
 
 bool RuntimeIdStore::Start()
 {
-#ifdef _WINDOWS
-    auto nativeLoaderFilename = NativeLoaderFilename;
+#ifdef LINUX
+    // Currently the Linux profiler runs without the native proxy.
+    // This will be done later.
+    // We do not need to try loading it otherwise it will fail the profiler initialization.
+    return true;
 #else
-    auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
-    // the native loader is in the parent directory
-    auto nativeLoaderPath = currentModulePath.parent_path() / ".." / NativeLoaderFilename;
-    auto nativeLoaderFilename = nativeLoaderPath.string();
-#endif
-    _instance = LoadDynamicLibrary(nativeLoaderFilename);
+    _instance = LoadDynamicLibrary(NativeLoaderFilename);
 
     if (_instance == nullptr)
     {
@@ -60,10 +54,14 @@ bool RuntimeIdStore::Start()
     // /!\ otherwise, the profiler will crash.
     _getIdFn = reinterpret_cast<const char*(STDMETHODCALLTYPE*)(AppDomainID)>(externalFunction);
     return _getIdFn != nullptr;
+#endif
 }
 
 bool RuntimeIdStore::Stop()
 {
+#ifdef LINUX
+    return true;
+#else
     if (_instance != nullptr)
     {
         bool success = FreeDynamicLibrary(_instance);
@@ -72,6 +70,7 @@ bool RuntimeIdStore::Stop()
     }
 
     return true;
+#endif
 }
 
 const char* RuntimeIdStore::GetName()

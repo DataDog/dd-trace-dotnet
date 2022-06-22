@@ -263,20 +263,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var assert = new AssertionScope();
-            using (var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
+            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion, aspNetCorePort: 0))
             {
                 var spans = agent.WaitForSpans(totalExpectedSpans, 500);
-
-                // There is a race condition in GRPC version < v2.43.0 that can cause ObjectDisposedException
-                // when a deadline is exceeded. Skip the test if we hit it: https://github.com/grpc/grpc-dotnet/pull/1550
-                if (processResult.ExitCode != 0
-                    && (string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) < new Version("2.43.0")))
-                {
-                    if (processResult.StandardError.Contains("ObjectDisposedException"))
-                    {
-                        throw new SkipException("Hit race condition in GRPC deadline exceeded");
-                    }
-                }
 
                 using var scope = new AssertionScope();
                 spans.Count.Should().Be(totalExpectedSpans);

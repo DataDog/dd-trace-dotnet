@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Samples.AspNetCoreSimpleController.Controllers
 {
@@ -17,20 +19,5 @@ namespace Samples.AspNetCoreSimpleController.Controllers
 
         [HttpGet]
         public string Get() => "Hello world";
-
-        [HttpGet]
-        [Route("exception")]
-        public string Exception()
-        {
-            try
-            {
-                throw new InvalidOperationException("Expected");
-            }
-            catch
-            {
-            }
-
-            return "InvalidOperationException";
-        }
     }
 }

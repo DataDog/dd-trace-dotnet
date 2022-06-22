@@ -214,7 +214,7 @@ namespace Datadog.Trace.AspNet
                         }
                         else
                         {
-                            string path = UriHelpers.GetCleanUriPath(app.Request.Url, app.Request.ApplicationPath);
+                            string path = UriHelpers.GetCleanUriPath(app.Request.Url);
                             scope.Span.ResourceName = $"{app.Request.HttpMethod.ToUpperInvariant()} {path.ToLowerInvariant()}";
                         }
 
@@ -253,14 +253,6 @@ namespace Datadog.Trace.AspNet
         {
             try
             {
-                var tracer = Tracer.Instance;
-
-                if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
-                {
-                    // integration disabled
-                    return;
-                }
-
                 var httpContext = (sender as HttpApplication)?.Context;
                 var exception = httpContext?.Error;
 
@@ -268,19 +260,13 @@ namespace Datadog.Trace.AspNet
                 var httpException = exception as HttpException;
                 var is404 = httpException?.GetHttpCode() == 404;
 
-                if (httpContext?.Items[_httpContextScopeKey] is Scope scope)
+                if (httpContext.Items[_httpContextScopeKey] is Scope scope)
                 {
                     AddHeaderTagsFromHttpResponse(httpContext, scope);
 
                     if (exception != null && !is404)
                     {
                         scope.Span.SetException(exception);
-                        if (!HttpRuntime.UsingIntegratedPipeline)
-                        {
-                            // in classic mode, the exception won't cause the correct status code to be set
-                            // even though a 500 response will be sent ultimately, so set it manually
-                            scope.Span.SetHttpStatusCode(500, isServer: true, tracer.Settings);
-                        }
                     }
                 }
             }

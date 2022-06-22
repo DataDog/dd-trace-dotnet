@@ -1,11 +1,10 @@
-// <copyright file="ProcessExtensions.cs" company="Datadog">
+﻿// <copyright file="ProcessExtensions.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
 using System;
 using System.Diagnostics;
-using System.IO;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
@@ -90,58 +89,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public static void KillTree(this Process process)
         {
             Microsoft.Extensions.Internal.ProcessExtensions.KillTree(process);
-        }
-
-        public static void GetAllThreadsStack(this Process process, string outputFolder, ITestOutputHelper output)
-        {
-            if (EnvironmentHelper.IsRunningOnWindows())
-            {
-                output.WriteLine("^^^^^^^^^^^^^^^^^^^^^^^^^ For now cannot get callstack of all threads on Windows");
-                return;
-            }
-
-            var pid = process.Id;
-            if (!EnvironmentHelper.IsAlpine)
-            {
-                // on Non-Alpine, the `dotnet` binary is launch by `catchsegv`
-                // we need to get the child process (`dotnet`) spawned by `catchsegv`
-                output.WriteLine($"== Get childrens of process {process.Id}");
-                Microsoft.Extensions.Internal.ProcessExtensions.RunProcessAndWaitForExit(
-                   "pgrep",
-                   $"-P {process.Id}",
-                   TimeSpan.FromSeconds(2),
-                   out var childrens);
-
-                output.WriteLine($"== children list: {childrens}");
-
-                if (int.TryParse(childrens, out var parsedPid))
-                {
-                    pid = parsedPid;
-                }
-                else
-                {
-                    output.WriteLine($"^^^^^^^^^^^^^^^^^^^^^^^^^ process {process.Id} may not have childrens or we were unable to parse the list of its childrens: {childrens}");
-                }
-            }
-
-            Microsoft.Extensions.Internal.ProcessExtensions.RunProcessAndWaitForExit(
-                "gdb",
-                $"-p {process.Id} -batch -ex \"thread apply all bt\" -ex \"detach\" -ex \"quit\"",
-                TimeSpan.FromMinutes(1),
-                out var stdout1);
-
-            output.WriteLine("================ Debug");
-            output.WriteLine(stdout1);
-            File.WriteAllText($"{outputFolder}/parallel_stacks_{process.Id}", stdout1);
-
-            Microsoft.Extensions.Internal.ProcessExtensions.RunProcessAndWaitForExit(
-                "gdb",
-                $"-p {pid} -batch -ex \"thread apply all bt\" -ex \"detach\" -ex \"quit\"",
-                TimeSpan.FromMinutes(1),
-                out var stdout);
-
-            File.WriteAllText($"{outputFolder}/parallel_stacks_{pid}", stdout);
-            output.WriteLine("================ Debug end");
         }
     }
 }

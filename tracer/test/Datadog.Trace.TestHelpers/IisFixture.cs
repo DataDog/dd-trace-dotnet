@@ -20,8 +20,6 @@ namespace Datadog.Trace.TestHelpers
 
         public string ShutdownPath { get; set; }
 
-        public string VirtualApplicationPath { get; set; } = string.Empty;
-
         public void TryStartIis(TestHelper helper, IisAppType appType)
         {
             lock (this)
@@ -34,7 +32,7 @@ namespace Datadog.Trace.TestHelpers
                     Agent = new MockTracerAgent(initialAgentPort);
 
                     HttpPort = TcpPortProvider.GetOpenPort();
-                    IisExpress = helper.StartIISExpress(Agent, HttpPort, appType, VirtualApplicationPath);
+                    IisExpress = helper.StartIISExpress(Agent, HttpPort, appType);
                 }
             }
         }

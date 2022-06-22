@@ -10,12 +10,10 @@
 
 #include "StackFramesCollectorBase.h"
 
-#include <atomic>
 #include <condition_variable>
 #include <memory>
 #include <mutex>
 #include <signal.h>
-#include <unordered_map>
 
 class IManagedThreadList;
 
@@ -39,31 +37,13 @@ protected:
                                                                 bool selfCollect) override;
 
 private:
-    class ErrorStatistics
-    {
-    public:
-        void Add(std::int32_t errorCode);
-        void Log();
-
-    private:
-        //                 v- error code v- # of errors
-        std::unordered_map<std::int32_t, std::int32_t> _stats;
-    };
-
-private:
     void InitializeSignalHandler();
     bool SetupSignalHandler();
     void NotifyStackWalkCompleted(std::int32_t resultErrorCode);
-    void UpdateErrorStats(std::int32_t errorCode);
-    bool ShouldLogStats();
+
 
     std::int32_t _lastStackWalkErrorCode;
     std::condition_variable _stackWalkInProgressWaiter;
-    // since we wait for a specific amount of time, if a call to notify_one
-    // is done while we are not waiting, we will miss it and
-    // we will block for ever.
-    // This flag is used to prevent blocking on successfull (but long) stackwalking
-    std::atomic<bool> _stackWalkFinished;
 
     ICorProfilerInfo4* const _pCorProfilerInfo;
 
@@ -80,6 +60,4 @@ private:
     static LinuxStackFramesCollector* s_pInstanceCurrentlyStackWalking;
 
     std::int32_t CollectCallStackCurrentThread();
-
-    ErrorStatistics _errorStatistics;
 };
