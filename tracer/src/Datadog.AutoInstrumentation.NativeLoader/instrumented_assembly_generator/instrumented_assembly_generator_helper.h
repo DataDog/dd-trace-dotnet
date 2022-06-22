@@ -49,7 +49,7 @@ inline shared::WSTRING GetCleanedFileName(const shared::WSTRING& fileName)
 #if _WIN32
     const shared::WSTRING illegalChars = WStr("\\/:?\"<>|*");
 #else
-    const WSTRING illegalChars = WStr("/");
+    const shared::WSTRING illegalChars = WStr("/");
 #endif
 
     for (const wchar_t charInFileName : fileName)

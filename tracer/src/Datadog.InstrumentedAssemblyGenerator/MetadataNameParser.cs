@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using dnlib.DotNet;
@@ -32,7 +32,7 @@ internal class MetadataNameParser
                 var (type, typeGenericArgs) = ParseGenericTypeOrMethod(parsedName.Value.type);
                 if (methodGenericArgs.Length <= 0 && name.Contains("<"))
                 {
-                    Logger.Warn("It seems that the method should be generic but failed to parse it");
+                    Logger.Warn($"{name}: It seems that the method should be generic but failed to parse it");
                     throw new TypeNameParserException(name);
                 }
                 SigMemberType[] typeGenericArgsSig = Array.Empty<SigMemberType>();
@@ -67,7 +67,7 @@ internal class MetadataNameParser
                 var (type, typeGenericArgs) = ParseGenericTypeOrMethod(name);
                 if (typeGenericArgs.Length <= 0 && name.Contains("<"))
                 {
-                    Logger.Warn("It seems that the ype should be generic but failed to parse it");
+                    Logger.Warn($"{name}: It seems that the ype should be generic but failed to parse it");
                     throw new TypeNameParserException(name);
                 }
                 var typeGenericArgsSig = typeGenericArgs.Select(arg => new SigMemberType(arg)).ToArray();

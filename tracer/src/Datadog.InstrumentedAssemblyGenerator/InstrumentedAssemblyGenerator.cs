@@ -84,7 +84,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
             Logger.Info("Collecting original modules metadata");
             // Collect all original modules that participating in the test - i.e. module name & mvid are same
             var originalsModulesOfRewrittenMembers = (from file in originalModulesPaths.Distinct()
-                                                      let extension = Path.GetExtension(file).ToLowerInvariant()
+                                                      let extension = Path.GetExtension(file).ToLower()
                                                       where extension is ".dll" or ".exe"
                                                       select LoadModuleWithDnlibSafe(file) into module
                                                       where module?.Mvid != null
@@ -173,7 +173,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
                  where !string.IsNullOrWhiteSpace(line)
                  let line2 = line.Trim(new char['"'])
                  let ext = Path.GetExtension(line2)
-                 where ext.ToLowerInvariant() is ".dll" or ".exe"
+                 where ext.ToLower() is ".dll" or ".exe"
                  let fileName = Path.GetFileName(line2)
                  where fileName != null
                  select Path.Combine(_args.OriginalModulesFolder, fileName)).ToList();

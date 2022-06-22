@@ -591,7 +591,7 @@ namespace Datadog.Trace.TestHelpers
         {
             // The Tracer is not currently utilizing the Native Loader in production. It is only being used in the Continuous Profiler beta.
             // Because of that, we don't test it in the default pipeline.
-            bool useNativeLoader = IsEnvironmentVariableSet(ConfigurationKeys.UseNativeLoader);
+            bool useNativeLoader = IsEnvironmentVariableSet(InstrumentationVerification.UseNativeLoader);
             return useNativeLoader ? GetNativeLoaderPath() : GetTracerNativeDLLPath();
         }
     }

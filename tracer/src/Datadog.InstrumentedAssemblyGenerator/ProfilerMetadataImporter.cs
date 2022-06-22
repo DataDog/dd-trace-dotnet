@@ -37,8 +37,6 @@ namespace Datadog.InstrumentedAssemblyGenerator
         {
             ImportInstrumentedAssemblyMetadata();
             ImportAssemblyReferences();
-            //EnforceUsage();
-            //return OriginalModule;
         }
 
         private void ImportInstrumentedAssemblyMetadata()
@@ -381,14 +379,16 @@ namespace Datadog.InstrumentedAssemblyGenerator
                 string[] loadedModuleNameParts = loadedModule.FullName.Split('.');
 
                 if (loadedModuleNameParts.Length > moduleToFindNameParts.Length)
-                { return false; }
+                {
+                    return false;
+                }
 
                 for (int index = 0; index < loadedModuleNameParts.Length; index++)
                 {
-                    if (loadedModuleNameParts[index].Equals("dll") || loadedModuleNameParts[index].Equals("exe"))
+                    if (loadedModuleNameParts[index].ToLower().Equals("dll") || loadedModuleNameParts[index].ToLower().Equals("exe"))
                     { break; }
 
-                    if (!loadedModuleNameParts[index].Equals(moduleToFindNameParts[index], StringComparison.InvariantCultureIgnoreCase))
+                    if (!loadedModuleNameParts[index].Equals(moduleToFindNameParts[index], StringComparison.OrdinalIgnoreCase))
                     { return false; }
                 }
 

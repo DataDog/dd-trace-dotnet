@@ -46,7 +46,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
                 return null;
             }
 
-            if (modulesToRead?.Any() == true && !modulesToRead.Contains(parts[1], StringComparer.InvariantCultureIgnoreCase))
+            if (modulesToRead?.Any() == true && !modulesToRead.Contains(parts[1], StringComparer.OrdinalIgnoreCase))
             {
                 return null;
             }

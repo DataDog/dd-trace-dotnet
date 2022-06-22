@@ -6,6 +6,7 @@
 #include <corprof.h>
 #include <unordered_map>
 #include <mutex>
+#include <memory>
 
 #include "string.h"
 #include "runtimeid_store.h"

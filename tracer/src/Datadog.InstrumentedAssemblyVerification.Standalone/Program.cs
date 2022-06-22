@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Runtime.InteropServices;
 using Datadog.InstrumentedAssemblyGenerator;
 
 namespace Datadog.InstrumentedAssemblyVerification.Standalone
@@ -15,7 +14,6 @@ namespace Datadog.InstrumentedAssemblyVerification.Standalone
         {
             try
             {
-                SetSize();
                 PrintWelcome();
 
                 var (output, modulesToVerify) = Parse(args);
@@ -93,18 +91,6 @@ namespace Datadog.InstrumentedAssemblyVerification.Standalone
             }
         }
 
-        private static void SetSize()
-        {
-            try
-            {
-                ShowWindow(GetConsoleWindow(), Maximize);
-            }
-            catch
-            {
-                // ignored
-            }
-        }
-
         private static void PrintWelcome()
         {
             string version = Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyFileVersionAttribute>()?.Version ?? "Unknown";
@@ -112,11 +98,4 @@ namespace Datadog.InstrumentedAssemblyVerification.Standalone
             Console.WriteLine($"\t Welcome to InstrumentedAssemblyVerification (version {version})");
             Console.WriteLine("\t---------------------------------------------------------------\r\n");
         }
-
-        [DllImport("kernel32.dll", ExactSpelling = true)]
-        private static extern IntPtr GetConsoleWindow();
-        [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
-        private static extern bool ShowWindow(IntPtr hWnd, int nCmdShow);
-        private const int Maximize = 3;
     }
-}

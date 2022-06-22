@@ -38,7 +38,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
                     }
                     else if (message.Contains("Error calculating max stack value."))
                     {
-                        ErrorsBuilder.AppendLine(message.Substring(0, message.IndexOf("Error calculating", StringComparison.InvariantCultureIgnoreCase) - 2));
+                        ErrorsBuilder.AppendLine(message.Substring(0, message.IndexOf("Error calculating", StringComparison.OrdinalIgnoreCase) - 2));
                     }
 
                     break;

@@ -96,13 +96,13 @@ namespace Datadog.InstrumentedAssemblyGenerator
             {
                 try
                 {
-                    string ext = Path.GetExtension(module).ToLowerInvariant();
+                    string ext = Path.GetExtension(module).ToLower();
                     if (ext != ".dll" && ext != ".exe")
                     {
                         continue;
                     }
 
-                    if (skip.Any(m => m.Equals(new FileInfo(module).Name, StringComparison.InvariantCultureIgnoreCase)))
+                    if (skip.Any(m => m.Equals(new FileInfo(module).Name, StringComparison.OrdinalIgnoreCase)))
                     {
                         continue;
                     }
