@@ -122,7 +122,7 @@ namespace Datadog.Trace.AspNet
                 string host = httpRequest.Headers.Get("Host");
                 var userAgent = httpRequest.Headers.Get(HttpHeaderNames.UserAgent);
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
-                string url = httpRequest.Url.ToString().ToLowerInvariant();
+                string url = httpContext.Request.GetUrlWithQueryString(tracer.Settings.EnableQueryStringReporting);
 
                 var tags = new WebTags();
                 scope = tracer.StartActiveInternal(_requestOperationName, propagatedContext, tags: tags);
@@ -210,7 +210,7 @@ namespace Datadog.Trace.AspNet
                         }
 
                         if (app.Context.Items[SharedItems.HttpContextPropagatedResourceNameKey] is string resourceName
-                             && !string.IsNullOrEmpty(resourceName))
+                         && !string.IsNullOrEmpty(resourceName))
                         {
                             scope.Span.ResourceName = resourceName;
                         }
