@@ -1,4 +1,4 @@
-﻿// <copyright file="AspNetResourceNameHelper.cs" company="Datadog">
+// <copyright file="AspNetResourceNameHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -31,8 +31,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             out string? areaName,
             out string? controllerName,
             out string? actionName,
+            out string? route,
             bool expandRouteTemplates) =>
-            CalculateResourceName(httpMethod, routeTemplate, routeValues, defaults, out areaName, out controllerName, out actionName, addSlashPrefix: routeTemplate[0] != '/', expandRouteTemplates);
+            CalculateResourceName(httpMethod, routeTemplate, routeValues, defaults, out areaName, out controllerName, out actionName, out route, addSlashPrefix: routeTemplate[0] != '/', expandRouteTemplates);
 
         public static string CalculateResourceName(
             string httpMethod,
@@ -42,6 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             out string? areaName,
             out string? controllerName,
             out string? actionName,
+            out string? route,
             bool addSlashPrefix,
             bool expandRouteTemplates)
         {
@@ -50,6 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             // (only action/controller/area unless expandRouteParameters = true,
             // but doesn't seem worth it
             var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            var sbRoute = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 
             sb.Append(httpMethod)
               .Append(' ');
@@ -59,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 sb.Append('/');
             }
 
-            sb.Append(routeTemplate.ToLowerInvariant());
+            sbRoute.Append(routeTemplate.ToLowerInvariant());
 
             areaName = null;
             controllerName = null;
@@ -70,17 +73,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 if (string.Equals(kvp.Key, "action", StringComparison.OrdinalIgnoreCase) && kvp.Value is string action)
                 {
                     actionName = action.ToLowerInvariant();
-                    sb.Replace("{action}", actionName);
+                    sbRoute.Replace("{action}", actionName);
                 }
                 else if (string.Equals(kvp.Key, "controller", StringComparison.OrdinalIgnoreCase) && kvp.Value is string controller)
                 {
                     controllerName = controller.ToLowerInvariant();
-                    sb.Replace("{controller}", controllerName);
+                    sbRoute.Replace("{controller}", controllerName);
                 }
                 else if (string.Equals(kvp.Key, "area", StringComparison.OrdinalIgnoreCase) && kvp.Value is string area)
                 {
                     areaName = area.ToLowerInvariant();
-                    sb.Replace("{area}", areaName);
+                    sbRoute.Replace("{area}", areaName);
                 }
                 else if (expandRouteTemplates)
                 {
@@ -89,11 +92,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     {
                         // We're replacing the key with itself, so that we strip out all the additional parameters etc
                         // We should probably be doing that for the non-expanded approach too, but we historically haven't
-                        ReplaceValue(sb, kvp.Key, kvp.Key, ReplaceType.ValueOnly);
+                        ReplaceValue(sbRoute, kvp.Key, kvp.Key, ReplaceType.ValueOnly);
                     }
                     else
                     {
-                        ReplaceValue(sb, kvp.Key, valueAsString, ReplaceType.ValueAndBraces);
+                        ReplaceValue(sbRoute, kvp.Key, valueAsString, ReplaceType.ValueAndBraces);
                     }
                 }
             }
@@ -108,10 +111,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         continue;
                     }
 
-                    ReplaceValue(sb, kvp.Key, null, replaceType: ReplaceType.ValueBracesAndLeadingSlash);
+                    ReplaceValue(sbRoute, kvp.Key, null, replaceType: ReplaceType.ValueBracesAndLeadingSlash);
                 }
             }
 
+            route = StringBuilderCache.GetStringAndRelease(sbRoute);
+            sb.Append(route);
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 

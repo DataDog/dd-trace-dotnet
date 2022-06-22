@@ -60,7 +60,7 @@ namespace Datadog.Trace.ExtensionMethods
                 tags.HttpUserAgent = userAgent;
             }
 
-            foreach (KeyValuePair<string, string> kvp in tagsFromHeaders)
+            foreach (var kvp in tagsFromHeaders)
             {
                 span.SetTag(kvp.Key, kvp.Value);
             }

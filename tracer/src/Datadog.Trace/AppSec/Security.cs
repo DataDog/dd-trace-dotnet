@@ -5,10 +5,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Transports;
 using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
@@ -18,7 +16,6 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -288,6 +285,11 @@ namespace Datadog.Trace.AppSec
             LogMatchesIfDebugEnabled(resultData, blocked);
 
             span.SetTag(Tags.AppSecJson, "{\"triggers\":" + resultData + "}");
+            var clientIp = span.GetTag(Tags.HttpClientIp);
+            if (!string.IsNullOrEmpty(clientIp))
+            {
+                span.SetTag(Tags.ActorIp, clientIp);
+            }
 
             span.SetTag(Tags.Origin, "appsec");
 
