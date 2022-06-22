@@ -325,7 +325,7 @@ jobs:
     steps:
     
       - uses: actions/setup-dotnet@v2
-        if: matrix.platform == x64
+        if: matrix.platform == 'x64'
         with:
           dotnet-version: | 
             3.1.x
