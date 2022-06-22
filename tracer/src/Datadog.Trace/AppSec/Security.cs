@@ -292,9 +292,6 @@ namespace Datadog.Trace.AppSec
             }
 
             span.SetTag(Tags.Origin, "appsec");
-
-            // todo ip
-            // span.SetTag(Tags.ActorIp, ipInfo.IpAddress);
             span.SetTag(Tags.AppSecRuleFileVersion, _waf.InitializationResult.RuleFileVersion);
             span.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
             span.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
