@@ -184,8 +184,8 @@ namespace Datadog.Trace.Configuration
             // Filter out tags with empty keys or empty values, and trim whitespaces
             GrpcTags = InitializeHeaderTags(grpcTags, headerTagsNormalizationFixEnabled: true);
 
-            PropagationHeaderMaxLength = source?.GetInt32(ConfigurationKeys.TagPropagation.HeaderMaxLength) ??
-                                         512;
+            PropagationHeaderMaximumLength = source?.GetInt32(ConfigurationKeys.TagPropagation.HeaderMaxLength) ??
+                                             Tagging.TagPropagation.DefaultMaximumPropagationHeaderLength;
 
             ServiceNamePropagationEnabled = source?.GetBool(ConfigurationKeys.TagPropagation.ServiceNamePropagationEnabled) ??
                                             true;
@@ -359,7 +359,7 @@ namespace Datadog.Trace.Configuration
         /// propagation header's value. ("x-datadog-tags")
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TagPropagation.HeaderMaxLength"/>
-        public int PropagationHeaderMaxLength { get; set; }
+        public int PropagationHeaderMaximumLength { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether to propagate

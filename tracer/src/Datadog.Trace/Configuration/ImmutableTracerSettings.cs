@@ -80,7 +80,7 @@ namespace Datadog.Trace.Configuration
 
             // tag propagation
             ServiceNamePropagationEnabled = settings.ServiceNamePropagationEnabled;
-            PropagationHeaderMaxLength = settings.PropagationHeaderMaxLength;
+            PropagationHeaderMaxLength = settings.PropagationHeaderMaximumLength;
         }
 
         /// <summary>
