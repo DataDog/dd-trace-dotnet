@@ -40,7 +40,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                     new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"),
                     new StackFrame("|lm:mscorlib |ns:System.Threading |ct:ThreadHelper |fn:ThreadStart"));
             }
-            else if (framework == "net60")
+            else if (framework == "net6.0")
             {
                 expectedStack = new StackTrace(
                     new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"),
