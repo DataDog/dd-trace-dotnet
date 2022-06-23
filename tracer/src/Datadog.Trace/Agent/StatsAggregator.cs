@@ -93,6 +93,24 @@ namespace Datadog.Trace.Agent
             }
         }
 
+        internal static StatsAggregationKey BuildKey(Span span)
+        {
+            var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
+
+            if (rawHttpStatusCode == null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
+            {
+                httpStatusCode = 0;
+            }
+
+            return new StatsAggregationKey(
+                span.ResourceName,
+                span.ServiceName,
+                span.OperationName,
+                span.Type,
+                httpStatusCode,
+                span.Context.Origin == "synthetics");
+        }
+
         internal async Task Flush()
         {
             // Use a do/while loop to still flush once if _processExit is already completed (this makes testing easier)
@@ -137,24 +155,6 @@ namespace Datadog.Trace.Agent
             }
 
             return ns << shift;
-        }
-
-        private static StatsAggregationKey BuildKey(Span span)
-        {
-            var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
-
-            if (rawHttpStatusCode == null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
-            {
-                httpStatusCode = 0;
-            }
-
-            return new StatsAggregationKey(
-                span.ResourceName,
-                span.ServiceName,
-                span.OperationName,
-                span.Type,
-                httpStatusCode,
-                span.Context.Origin == "synthetics");
         }
 
         private void AddToBuffer(Span span)
