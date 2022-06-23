@@ -2,8 +2,8 @@
 
   <PropertyGroup>
     <OutputType>Library</OutputType>
-    <Company>Datadog Ltd.</Company>
-    <Copyright>Datadog Ltd.</Copyright>
+    <Company>Datadog</Company>
+    <Copyright>Copyright 2022 Datadog, Inc.</Copyright>
     
     <LangVersion>latest</LangVersion>
     <TargetFramework>netstandard2.0</TargetFramework>

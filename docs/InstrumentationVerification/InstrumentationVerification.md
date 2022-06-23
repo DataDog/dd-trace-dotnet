@@ -13,7 +13,7 @@ The library is meant to be used in several distinct two-cases:
 1. As part of CI, the tool can be used:
     1. By the Tracer team, to verify that we produce valid IL for every integration we add
     2. By the Debugger team, to verify that adding probes produces valid IL on a wide range of methods
-2. As a diagnostic tool, the InstrumentationVerification tool can be used to quickly triage support cases where the customer is complaining that our CLR Profiler causes a `BadImageFormationException`, `InvalidProgramException`, `TypeLoadException`, etc etc. 
+2. As a diagnostic tool, the InstrumentationVerification tool can be used to quickly triage support cases where the customer is complaining that our CLR Profiler causes a `BadImageFormatException`, `InvalidProgramException`, `TypeLoadException`, etc etc. 
 
     A primary goal of this tool is to support the scenario where we need to perform a post-mortem diagnosis of a crash that we suspect may have been caused due to faulty instrumentation (for example, a crash due to an ExecutionEngineException or an AccessViolationException). 
 
@@ -58,7 +58,7 @@ The Instrumentation Verification process is divided into three main steps:
 
     
 
-    The files in section (a) are written to a folder named **INPUT_OriginalAssemblies** whereas the files in sections (b) and (c) are written to a folder named **INPUT_InstrumentationLog.**
+    The files in section (i) are written to a folder named **INPUT_OriginalAssemblies** whereas the files in sections (ii) and (iii) are written to a folder named **INPUT_InstrumentationLog.**
 
 
     The logic of writing this information to disk resides within the Native Loader and is abstracted away inside proxy classes that implement the raw CLR Profiling API interfaces. As a result, the Tracer, Continuous Profiler, or any other client library that the Native Loader may dispatch calls to in the future does not need to know that IL Verification is taking place.

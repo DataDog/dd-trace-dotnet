@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Company>Datadog Ltd.</Company>
-    <Copyright>Datadog Ltd.</Copyright>
+    <Company>Datadog</Company>
+    <Copyright>Copyright 2022 Datadog, Inc.</Copyright>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RunAnalyzersDuringLiveAnalysis>False</RunAnalyzersDuringLiveAnalysis>
     <AnalysisLevel>none</AnalysisLevel>
