@@ -72,7 +72,7 @@ jobs:
       matrix:
         framework:
           - netcoreapp31
-          - net50
+          - net60
     services:
       dd-agent:
         image: 'datadog/agent:latest'
@@ -174,7 +174,7 @@ jobs:
         timeout-minutes: 4
         run: |
           source profiler/src/ProfilerEngine/DeployResources/DDProf-SetEnv.sh `pwd`/profiler/_build/DDProf-Deploy &&
-          cd profiler/_build/bin/Release-x64/profiler/src/Demos/Samples.Computer01/net5.0 &&
+          cd profiler/_build/bin/Release-x64/profiler/src/Demos/Samples.Computer01/net6.0 &&
           # LD_PRELOAD was previously set in the DDProf-SetEnv.sh script, but ASAN does not work with other
           # library in LD_PRELOAD (segfault)
           ASAN_OPTIONS="detect_leaks=0" LD_PRELOAD="libasan.so.6" dotnet Samples.Computer01.dll --scenario 1 --timeout 120
@@ -232,7 +232,7 @@ jobs:
         if: '${{ always() }}'
         run: |
           source profiler/src/ProfilerEngine/DeployResources/DDProf-SetEnv.sh `pwd`/profiler/_build/DDProf-Deploy &&
-          cd profiler/_build/bin/Release-x64/profiler/src/Demos/Samples.Computer01/net5.0 &&
+          cd profiler/_build/bin/Release-x64/profiler/src/Demos/Samples.Computer01/net6.0 &&
           UBSAN_OPTIONS=print_stacktrace=1 LD_PRELOAD="libubsan.so.1:$LD_PRELOAD" dotnet Samples.Computer01.dll --scenario 1 --timeout 120
 
       - name: 'Publish Test results, Logs and PProf files'
@@ -256,6 +256,13 @@ jobs:
           - Debug
 
     steps:
+    
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            3.1.x
+            6.0.100
+        
       - name: Support longpaths
         run: git config --system core.longpaths true
 
@@ -289,10 +296,6 @@ jobs:
         shell: bash
         run: ./.github/scripts/run-native-unit-tests.sh profiler/test ${{matrix.configuration}} x86
 
-      - uses: actions/setup-dotnet@v1
-        with:
-          dotnet-version: '6.0.100'
-
       - name: Build Monitoring home
         run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader --build-configuration ${{matrix.configuration}}
 
@@ -320,6 +323,14 @@ jobs:
           - Debug
 
     steps:
+    
+      - uses: Datadog/setup-dotnet@v2
+        with:
+          architecture: ${{ matrix.platform }}
+          dotnet-version: | 
+            3.1.x
+            6.0.100
+    
       - name: Support longpaths
         run: git config --system core.longpaths true
 
@@ -383,9 +394,16 @@ jobs:
         framework:
           - net45
           - netcoreapp31
-          - net50
+          - net60
 
     steps:
+    
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            3.1.x
+            6.0.100
+    
       - name: Install Datadog agent
         continue-on-error: false
         shell: pwsh
@@ -487,6 +505,13 @@ jobs:
           - Release
 
     steps:
+    
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            3.1.x
+            6.0.100
+    
       - name: Install Datadog agent
         continue-on-error: false
         shell: pwsh

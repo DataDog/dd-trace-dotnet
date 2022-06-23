@@ -12,8 +12,8 @@
 
     <PropertyGroup>
       <!-- only run .NET Framework tests on Windows -->
-      <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp3.1;net5.0</TargetFrameworks>
-      <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp3.1;net5.0</TargetFrameworks>
+      <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net461;netcoreapp3.1;net6.0</TargetFrameworks>
+      <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp3.1;net6.0</TargetFrameworks>
       <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
       <CheckEolTargetFramework>false</CheckEolTargetFramework>
     </PropertyGroup>
