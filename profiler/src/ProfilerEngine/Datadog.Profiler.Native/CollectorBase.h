@@ -66,21 +66,11 @@ public:
 public:
     bool Start() override
     {
-        _transformerThread = std::thread(&CollectorBase<TRawSample>::ProcessSamples, this);
-
         return true;
     }
 
     bool Stop() override
     {
-        if (_stopRequested.load())
-        {
-            return true;
-        }
-
-        _stopRequested.store(true);
-        _transformerThread.join();
-
         return true;
     }
 
@@ -96,10 +86,7 @@ public:
         _collectedSamples.push_back(std::forward<TRawSample>(sample));
     }
 
-private:
-    inline static const std::chrono::nanoseconds CollectingPeriod = 60ms;
-
-    void Flush()
+    inline void ProcessRawSamples() override
     {
         std::list<TRawSample> input = FetchRawSamples();
         if (input.size() != 0)
@@ -108,28 +95,7 @@ private:
         }
     }
 
-    void ProcessSamples()
-    {
-        auto name = GetName();
-        shared::WSTRINGSTREAM builder;
-        builder << WStr("DD.Profiler.") << name << WStr(".Thread");
-        auto threadName = builder.str();
-        OpSysTools::SetNativeThreadName(&_transformerThread, threadName.c_str());
-        _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), threadName.c_str());
-
-        Log::Info("Starting to process raw '", name, "' samples.");
-        while (!_stopRequested.load())
-        {
-            // TODO: instead of sleeping, we could wait on an event
-            //       that would be set in the Add() method
-            std::this_thread::sleep_for(CollectingPeriod);
-
-            Flush();
-        }
-        // Note: the last raw samples added since Stop was requested have been flushed
-
-        Log::Info("Stop processing raw '", name, "' samples.");
-    }
+private:
 
     std::list<TRawSample> FetchRawSamples()
     {
@@ -248,7 +214,6 @@ private:
     // A thread is responsible for asynchronously fetching raw samples from the input queue
     // and feeding the output sample list with symbolized frames and thread/appdomain names
     std::atomic<bool> _stopRequested = false;
-    std::thread _transformerThread;
 
     std::mutex _rawSamplesLock;
     std::list<TRawSample> _collectedSamples;

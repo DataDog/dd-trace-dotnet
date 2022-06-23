@@ -64,6 +64,10 @@ public:
         return _calls;
     }
 
+    void ProcessRawSamples() override
+    {        
+    }
+
 private:
     std::string_view _runtimeId;
     int _nbSamples;

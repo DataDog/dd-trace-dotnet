@@ -53,6 +53,7 @@ class MockSampleProvider : public ISamplesProvider
 {
 public:
     MOCK_METHOD(std::list<Sample>, GetSamples, (), (override));
+    MOCK_METHOD(void, ProcessRawSamples, (), (override));
 };
 
 class MockMetricsSender : public IMetricsSender

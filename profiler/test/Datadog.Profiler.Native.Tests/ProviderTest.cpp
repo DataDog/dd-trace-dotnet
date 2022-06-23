@@ -99,7 +99,7 @@ TEST(WallTimeProviderTest, CheckNoMissingSample)
     provider.Add(RawWallTimeSample());
 
     // wait for the provider to collect raw samples
-    std::this_thread::sleep_for(200ms);
+    provider.ProcessRawSamples();
 
     auto samples = provider.GetSamples();
     ASSERT_EQ(3, samples.size());

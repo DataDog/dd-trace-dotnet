@@ -8,8 +8,11 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <chrono>
 
 #include "IService.h"
+
+using namespace std::chrono_literals;
 
 class Sample;
 class IConfiguration;
@@ -18,7 +21,6 @@ class IMetricsSender;
 class IProfileFactory;
 class ISamplesProvider;
 class IThreadsCpuManager;
-
 
 class SamplesAggregator : public IService
 {
@@ -34,12 +36,15 @@ public:
 
 private:
     void Work();
+    void ProcessRawSamples();
     void ProcessSamples();
     std::list<Sample> CollectSamples();
     void Export();
     void SendHeartBeatMetric(bool success);
 
 private:
+    inline static constexpr std::chrono::nanoseconds CollectingPeriod = 60ms;
+
     const char* _serviceName = "SamplesAggregator";
     static const std::chrono::seconds ProcessingInterval;
     static const std::string SuccessfulExportsMetricName;
@@ -50,6 +55,7 @@ private:
     IExporter* _exporter;
     IThreadsCpuManager* _pThreadsCpuManager;
     std::thread _worker;
+    std::thread _transformerThread;
     bool _mustStop;
     IMetricsSender* _metricsSender;
 };

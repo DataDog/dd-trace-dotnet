@@ -21,8 +21,8 @@ using namespace std::literals::chrono_literals;
 
 const std::chrono::seconds SamplesAggregator::ProcessingInterval = 1s;
 const WCHAR* WorkerThreadName = WStr("DD.Profiler.SamplesAggregator.WorkerThread");
+const WCHAR* RawSampleThreadName = WStr("DD.Profiler.SamplesAggregator.RawSampleThread");
 std::string const SamplesAggregator::SuccessfulExportsMetricName = "datadog.profiling.dotnet.operational.exports";
-
 
 SamplesAggregator::SamplesAggregator(IConfiguration* configuration,
                                      IThreadsCpuManager* pThreadsCpuManager,
@@ -37,7 +37,6 @@ SamplesAggregator::SamplesAggregator(IConfiguration* configuration,
 {
 }
 
-
 const char* SamplesAggregator::GetName()
 {
     return _serviceName;
@@ -48,6 +47,7 @@ bool SamplesAggregator::Start()
     Log::Info("Starting the samples aggregator");
     _mustStop = false;
     _worker = std::thread(&SamplesAggregator::Work, this);
+    _transformerThread = std::thread(&SamplesAggregator::ProcessRawSamples, this);
     OpSysTools::SetNativeThreadName(&_worker, WorkerThreadName);
     return true;
 }
@@ -61,11 +61,11 @@ bool SamplesAggregator::Stop()
 
     Log::Info("Stopping the samples aggregator");
     _mustStop = true;
+    _transformerThread.join();
     _worker.join();
 
     return true;
 }
-
 
 void SamplesAggregator::Register(ISamplesProvider* samplesProvider)
 {
@@ -106,6 +106,21 @@ void SamplesAggregator::ProcessSamples()
         }
     }
     Export();
+}
+
+void SamplesAggregator::ProcessRawSamples()
+{
+    _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), RawSampleThreadName);
+
+    while (!_mustStop)
+    {
+        for (auto const& samplesProvider : _samplesProviders)
+        {
+            samplesProvider->ProcessRawSamples();
+        }
+
+        std::this_thread::sleep_for(CollectingPeriod);
+    }
 }
 
 std::list<Sample> SamplesAggregator::CollectSamples()

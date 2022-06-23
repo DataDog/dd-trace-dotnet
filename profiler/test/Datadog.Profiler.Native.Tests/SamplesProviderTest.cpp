@@ -21,6 +21,10 @@ public:
     {
         Store(std::move(sample));
     }
+
+    void ProcessRawSamples() override
+    {        
+    }
 };
 
 Sample GetTestSample(std::string_view runtimeId, const std::string& framePrefix, const std::string& labelId, const std::string& labelValue)
