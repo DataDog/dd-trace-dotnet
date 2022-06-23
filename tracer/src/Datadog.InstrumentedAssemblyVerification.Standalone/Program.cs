@@ -41,6 +41,7 @@ namespace Datadog.InstrumentedAssemblyVerification.Standalone
                 {
                     Console.WriteLine(entry.Value);
                 }
+
                 return -1;
             }
         }
@@ -58,6 +59,7 @@ namespace Datadog.InstrumentedAssemblyVerification.Standalone
                 Console.ForegroundColor = ConsoleColor.Green;
                 Console.WriteLine("Finished without errors");
             }
+
             Console.ForegroundColor = currentConsoleColor;
         }
 
@@ -99,3 +101,4 @@ namespace Datadog.InstrumentedAssemblyVerification.Standalone
             Console.WriteLine("\t---------------------------------------------------------------\r\n");
         }
     }
+}
