@@ -81,7 +81,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// Gets or sets the object that represents the "this" object of the async kick-off method (i.e. original method)
         /// We can save it in some cases as TTarget but because we use it in serialization as boxed object anyway, we save it as object here
         /// </summary>
-        public object InvocationTarget { get; set; }
+        public object KickoffInvocationTarget { get; set; }
+
+        /// <summary>
+        /// Gets or sets the object that represents the "this" object of the async MoveNext method
+        /// We can save it in some cases as TTarget but because we use it in serialization as boxed object anyway, we save it as object here
+        /// </summary>
+        public object MoveNextInvocationTarget { get; set; }
 
         /// <summary>
         /// Gets or sets the type that represents the "this" object of the async kick-off method (i.e. original method)

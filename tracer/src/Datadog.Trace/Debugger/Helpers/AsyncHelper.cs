@@ -73,9 +73,9 @@ namespace Datadog.Trace.Debugger.Helpers
         /// <param name="instance">Instance object</param>
         /// <returns>List of locals</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static List<FieldNameValue> GetHoistedLocalsFromStateMachine<TTarget>(TTarget instance)
+        internal static FieldInfo[] GetHoistedLocalsFromStateMachine<TTarget>(TTarget instance)
         {
-            var foundFields = new List<FieldNameValue>();
+            var foundFields = new List<FieldInfo>();
             var allFields = instance.GetType().GetFields(AllFieldsBindingFlags);
             for (int i = 0; i < allFields.Length; i++)
             {
@@ -87,11 +87,11 @@ namespace Datadog.Trace.Debugger.Helpers
 
                 if (field.Name.Contains(StateMachineNameSuffix))
                 {
-                    foundFields.Add(new FieldNameValue(field.Name, field.GetValue(instance)));
+                    foundFields.Add(field);
                 }
             }
 
-            return foundFields;
+            return foundFields.ToArray();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

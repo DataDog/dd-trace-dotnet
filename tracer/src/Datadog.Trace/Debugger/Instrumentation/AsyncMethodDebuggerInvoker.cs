@@ -55,7 +55,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         public static AsyncMethodDebuggerState SetContext<TTarget>(TTarget instance)
         {
             var currentState = AsyncContext.Value;
-            var newState = new AsyncMethodDebuggerState { Parent = currentState, InvocationTarget = instance, InvocationTargetType = typeof(TTarget) };
+            var newState = new AsyncMethodDebuggerState { Parent = currentState, KickoffInvocationTarget = instance, InvocationTargetType = typeof(TTarget) };
             AsyncContext.Value = newState;
             return newState;
         }
@@ -108,6 +108,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             asyncState.StartTime = DateTimeOffset.UtcNow;
             asyncState.MethodMetadataIndex = methodMetadataIndex;
             asyncState.IsFirstEntry = false;
+            asyncState.MoveNextInvocationTarget = instance;
 
             BeginMethodStartMarker(ref asyncState);
 
@@ -126,7 +127,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             asyncState.SnapshotCreator.StartSnapshot();
             asyncState.SnapshotCreator.StartCaptures();
             asyncState.SnapshotCreator.StartEntry();
-            asyncState.SnapshotCreator.CaptureInstance(asyncState.InvocationTarget, asyncState.InvocationTargetType);
+            asyncState.SnapshotCreator.CaptureInstance(asyncState.KickoffInvocationTarget, asyncState.InvocationTargetType);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -279,10 +280,10 @@ namespace Datadog.Trace.Debugger.Instrumentation
             // For know we capturing here all locals the are hoisted (except known generated locals)
             // and we capturing in LogLocal the locals form localVarSig
             var kickOffMethodLocalsValues = asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals;
-            for (var index = 0; index < kickOffMethodLocalsValues.Count; index++)
+            for (var index = 0; index < kickOffMethodLocalsValues.Length; index++)
             {
                 var local = kickOffMethodLocalsValues[index];
-                asyncState.SnapshotCreator.CaptureLocal(local.Value, local.Name, index == 0 && !asyncState.HasLocalsOrReturnValue);
+                asyncState.SnapshotCreator.CaptureLocal(local.GetValue(asyncState.MoveNextInvocationTarget), local.Name, index == 0 && !asyncState.HasLocalsOrReturnValue);
                 asyncState.HasLocalsOrReturnValue = true;
                 asyncState.HasArguments = false;
             }
