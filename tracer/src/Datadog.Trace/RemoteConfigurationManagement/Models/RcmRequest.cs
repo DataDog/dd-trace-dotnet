@@ -38,7 +38,7 @@ internal class RcmRequest
                 Products = products,
                 State = new { },
                 Version = TracerConstants.AssemblyVersion,
-                TracerClient = new RcmTracerClient()
+                ClientTracer = new RcmTracerClient()
                 {
                     Language = TracerConstants.Language,
                     Env = environment,

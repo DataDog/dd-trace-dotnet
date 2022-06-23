@@ -378,7 +378,13 @@ public class ProbesTests : TestHelper
 
     private MockTracerAgent GetMockAgent()
     {
-        var agent = EnvironmentHelper.GetMockAgent();
+        var mockAgent = EnvironmentHelper.GetMockAgent();
+
+        if (mockAgent is not MockTracerAgent.TcpUdpAgent agent)
+        {
+            throw new NotSupportedException($"Expected the mock agent to be of type {typeof(MockTracerAgent.TcpUdpAgent)} but found {mockAgent.GetType()}.");
+        }
+
         SetEnvironmentVariable(ConfigurationKeys.AgentPort, agent.Port.ToString());
         agent.ShouldDeserializeTraces = false;
         return agent;

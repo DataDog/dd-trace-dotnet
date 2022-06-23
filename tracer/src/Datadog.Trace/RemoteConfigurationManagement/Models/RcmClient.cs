@@ -27,6 +27,6 @@ internal class RcmClient
     [JsonProperty("is_tracer")]
     public bool IsTracer { get; set; }
 
-    [JsonProperty("tracer_client")]
-    public RcmTracerClient TracerClient { get; set; }
+    [JsonProperty("client_tracer")]
+    public RcmTracerClient ClientTracer { get; set; }
 }
