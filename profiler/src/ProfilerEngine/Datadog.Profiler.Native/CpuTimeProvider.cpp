@@ -4,7 +4,6 @@
 #include "CpuTimeProvider.h"
 
 #include "IAppDomainStore.h"
-#include "IConfiguration.h"
 #include "IFrameStore.h"
 #include "IRuntimeIdStore.h"
 #include "RawCpuSample.h"
@@ -18,11 +17,4 @@ CpuTimeProvider::CpuTimeProvider(
     :
     CollectorBase<RawCpuSample>("CpuTimeProvider", pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore)
 {
-}
-
-
-void CpuTimeProvider::OnTransformRawSample(const RawCpuSample& rawSample, Sample& sample)
-{
-    // from milliseconds to nanoseconds
-    sample.AddValue(rawSample.Duration * 1000000, SampleValue::CpuTimeDuration);
 }

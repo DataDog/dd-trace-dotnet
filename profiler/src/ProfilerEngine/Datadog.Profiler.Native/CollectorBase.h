@@ -96,10 +96,6 @@ public:
         _collectedSamples.push_back(std::forward<TRawSample>(sample));
     }
 
-protected:
-    // set values and additional labels
-    virtual void OnTransformRawSample(const TRawSample& rawSample, Sample& sample) = 0;
-
 private:
     inline static const std::chrono::nanoseconds CollectingPeriod = 60ms;
 
@@ -168,7 +164,7 @@ private:
         SetStack(rawSample, sample);
 
         // allow inherited classes to add values and specific labels
-        OnTransformRawSample(rawSample, sample);
+        rawSample.OnTransform(sample);
 
         // save it in the output list
         Store(std::move(sample));
