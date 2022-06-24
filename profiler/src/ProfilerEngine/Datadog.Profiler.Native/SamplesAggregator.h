@@ -9,6 +9,7 @@
 #include <string>
 #include <thread>
 #include <chrono>
+#include <future>
 
 #include "IService.h"
 
@@ -58,5 +59,6 @@ private:
     std::thread _worker;
     std::thread _transformerThread;
     bool _mustStop;
+    std::promise<void> _exitWorkerPromise;
     IMetricsSender* _metricsSender;
 };

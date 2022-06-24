@@ -61,12 +61,21 @@ bool SamplesAggregator::Stop()
 
     Log::Info("Stopping the samples aggregator");
     _mustStop = true;
+    _exitWorkerPromise.set_value();
     _transformerThread.join();
     _worker.join();
 
     // Process leftover samples
-    ProcessRawSamples();
-    ProcessSamples();
+    try
+    {
+        ProcessRawSamples();
+        ProcessSamples();
+    }
+    catch (std::exception const& ex)
+    {
+        SendHeartBeatMetric(false);
+        Log::Error("An exception occured: ", ex.what());
+    }
 
     return true;
 }
@@ -80,14 +89,14 @@ void SamplesAggregator::MainWorker()
 {
     _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), WorkerThreadName);
 
-    while (!_mustStop)
+    const auto future = _exitWorkerPromise.get_future();
+
+    while (future.wait_for(ProcessingInterval) == std::future_status::timeout)
     {
         // TODO catch structured exception
         //      or make the library able to catch then using try/catch
         try
         {
-            std::this_thread::sleep_for(ProcessingInterval);
-
             ProcessSamples();
         }
         catch (std::exception const& ex)
