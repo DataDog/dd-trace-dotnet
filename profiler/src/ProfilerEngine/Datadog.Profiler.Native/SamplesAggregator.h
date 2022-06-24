@@ -35,7 +35,8 @@ public:
     void Register(ISamplesProvider* sampleProvider);
 
 private:
-    void Work();
+    void MainWorker();
+    void RawSamplesWorker();
     void ProcessRawSamples();
     void ProcessSamples();
     std::list<Sample> CollectSamples();

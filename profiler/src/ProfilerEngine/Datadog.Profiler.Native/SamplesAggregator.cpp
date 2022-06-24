@@ -46,8 +46,8 @@ bool SamplesAggregator::Start()
 {
     Log::Info("Starting the samples aggregator");
     _mustStop = false;
-    _worker = std::thread(&SamplesAggregator::Work, this);
-    _transformerThread = std::thread(&SamplesAggregator::ProcessRawSamples, this);
+    _worker = std::thread(&SamplesAggregator::MainWorker, this);
+    _transformerThread = std::thread(&SamplesAggregator::RawSamplesWorker, this);
     OpSysTools::SetNativeThreadName(&_worker, WorkerThreadName);
     return true;
 }
@@ -64,6 +64,10 @@ bool SamplesAggregator::Stop()
     _transformerThread.join();
     _worker.join();
 
+    // Process leftover samples
+    ProcessRawSamples();
+    ProcessSamples();
+
     return true;
 }
 
@@ -72,7 +76,7 @@ void SamplesAggregator::Register(ISamplesProvider* samplesProvider)
     _samplesProviders.push_front(samplesProvider);
 }
 
-void SamplesAggregator::Work()
+void SamplesAggregator::MainWorker()
 {
     _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), WorkerThreadName);
 
@@ -95,6 +99,17 @@ void SamplesAggregator::Work()
     // When the aggregator is stopped, a last .pprof is exported
 }
 
+void SamplesAggregator::RawSamplesWorker()
+{
+    _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), RawSampleThreadName);
+
+    while (!_mustStop)
+    {
+        ProcessRawSamples();
+        std::this_thread::sleep_for(CollectingPeriod);
+    }
+}
+
 void SamplesAggregator::ProcessSamples()
 {
     auto samples = CollectSamples();
@@ -110,16 +125,9 @@ void SamplesAggregator::ProcessSamples()
 
 void SamplesAggregator::ProcessRawSamples()
 {
-    _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), RawSampleThreadName);
-
-    while (!_mustStop)
+    for (auto const& samplesProvider : _samplesProviders)
     {
-        for (auto const& samplesProvider : _samplesProviders)
-        {
-            samplesProvider->ProcessRawSamples();
-        }
-
-        std::this_thread::sleep_for(CollectingPeriod);
+        samplesProvider->ProcessRawSamples();
     }
 }
 
