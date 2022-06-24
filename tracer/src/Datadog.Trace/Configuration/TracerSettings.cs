@@ -185,7 +185,7 @@ namespace Datadog.Trace.Configuration
             GrpcTags = InitializeHeaderTags(grpcTags, headerTagsNormalizationFixEnabled: true);
 
             PropagationHeaderMaximumLength = source?.GetInt32(ConfigurationKeys.TagPropagation.HeaderMaxLength) ??
-                                             Tagging.TagPropagation.DefaultMaximumPropagationHeaderLength;
+                                             Tagging.TagPropagation.DefaultMaximumOutgoingPropagationHeaderLength;
 
             ServiceNamePropagationEnabled = source?.GetBool(ConfigurationKeys.TagPropagation.ServiceNamePropagationEnabled) ??
                                             true;
