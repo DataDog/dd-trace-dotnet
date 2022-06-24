@@ -161,7 +161,10 @@ void StackSamplerLoop::MainLoopIteration(void)
 {
     // In each iteration, a few threads (up to MaxThreadsPerIterationForWallTime) are sampled
     // to compute wall time.
-    WalltimeProfilingIteration();
+    if (_pConfiguration->IsWallTimeProfilingEnabled())
+    {
+        WalltimeProfilingIteration();
+    }
 
     // When CPU profiling is enabled, most of the threads (up to MaxThreadsPerIterationForCpuTime)
     // are scanned and if they are currently running, they are sampled.
