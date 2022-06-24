@@ -73,6 +73,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
                     // The request object is populated later by the Marshaller,
                     // so we wait until the method end callback to read it
                     tags.HttpMethod = executionContext.RequestContext.Request.HttpMethod.ToUpperInvariant();
+                    tags.HttpUrl = executionContext.RequestContext.Request.ResourcePath switch
+                    {
+                        null => executionContext.RequestContext.Request.Endpoint.AbsoluteUri,
+                        string resourcePath when resourcePath.Length > 0 && resourcePath[0] == '/' => executionContext.RequestContext.Request.Endpoint.AbsoluteUri + resourcePath.Substring(1),
+                        _ => executionContext.RequestContext.Request.Endpoint.AbsoluteUri + executionContext.RequestContext.Request.ResourcePath,
+                    };
                 }
 
                 tags.RequestId = response.ResponseMetadata.RequestId;
