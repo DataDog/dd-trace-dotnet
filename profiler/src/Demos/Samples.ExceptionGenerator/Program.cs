@@ -44,25 +44,16 @@ namespace Samples.ExceptionGenerator
                         case Scenario.ExceptionsProfilerTest:
                             new ExceptionsProfilerTestScenario().Run();
 
-                            // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
-                            Console.WriteLine(" ########### Sleeping for 10 seconds");
-                            Thread.Sleep(10_000);
                             break;
 
                         case Scenario.ParallelExceptions:
                             new ParallelExceptionsScenario().Run();
 
-                            // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
-                            Console.WriteLine(" ########### Sleeping for 20 seconds");
-                            Thread.Sleep(20_000);
                             break;
 
                         case Scenario.Sampling:
                             new SamplingScenario().Run();
 
-                            // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
-                            Console.WriteLine(" ########### Sleeping for 20 seconds");
-                            Thread.Sleep(20_000);
                             break;
 
                         default:
