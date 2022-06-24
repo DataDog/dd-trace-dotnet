@@ -37,6 +37,11 @@ internal class TraceTagCollection
 
     public void SetTag(string name, string? value)
     {
+        if (name == null)
+        {
+            throw new ArgumentNullException(nameof(name));
+        }
+
         var isPropagated = name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal);
 
         lock (_listLock)

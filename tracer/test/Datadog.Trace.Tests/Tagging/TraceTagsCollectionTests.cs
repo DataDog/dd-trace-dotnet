@@ -13,66 +13,13 @@ namespace Datadog.Trace.Tests.Tagging;
 
 public class TraceTagsCollectionTests
 {
-    private static readonly KeyValuePair<string, string>[] EmptyTags = Array.Empty<KeyValuePair<string, string>>();
+    private const int MaxHeaderLength = 512;
 
-    public static TheoryData<string, KeyValuePair<string, string>[]> ParseData() => new()
-    {
-        {
-            null,
-            EmptyTags
-        },
-        {
-            string.Empty,
-            EmptyTags
-        },
-        {
-            // multiple valid tags
-            "_dd.p.key1=value1,_dd.p.key2=value2,_dd.p.key3=value3",
-            new KeyValuePair<string, string>[]
-            {
-                new("_dd.p.key1", "value1"),
-                new("_dd.p.key2", "value2"),
-                new("_dd.p.key3", "value3"),
-            }
-        },
-        {
-            // missing key prefix
-            "key1=value1",
-            EmptyTags
-        },
-        {
-            // no value
-            "_dd.p.key1=",
-            EmptyTags
-        },
-        {
-            // no key
-            "=value1",
-            EmptyTags
-        },
-        {
-            // no key or value
-            "=",
-            EmptyTags
-        },
-        {
-            // no separator
-            "_dd.p.key1",
-            EmptyTags
-        },
-        {
-            // key too short
-            "_dd.p.=value1",
-            EmptyTags
-        },
-    };
+    private static readonly KeyValuePair<string, string>[] EmptyTags = Array.Empty<KeyValuePair<string, string>>();
 
     public static TheoryData<KeyValuePair<string, string>[], string> SerializeData() => new()
     {
-        {
-            EmptyTags,
-            string.Empty
-        },
+        { EmptyTags, string.Empty },
         {
             new KeyValuePair<string, string>[]
             {
@@ -84,11 +31,7 @@ public class TraceTagsCollectionTests
         },
         {
             // missing prefix
-            new KeyValuePair<string, string>[]
-            {
-                new("key1", "value1")
-            },
-            string.Empty
+            new KeyValuePair<string, string>[] { new("key1", "value1") }, string.Empty
         },
         {
             // missing key
@@ -123,7 +66,7 @@ public class TraceTagsCollectionTests
     public void ToPropagationHeaderValue_Empty()
     {
         var tags = new TraceTagCollection();
-        var header = tags.ToPropagationHeader();
+        var header = tags.ToPropagationHeader(MaxHeaderLength);
         header.Should().Be(string.Empty);
     }
 
@@ -138,7 +81,7 @@ public class TraceTagsCollectionTests
             traceTags.SetTag(pair.Key, pair.Value);
         }
 
-        var headerValue = traceTags.ToPropagationHeader();
+        var headerValue = traceTags.ToPropagationHeader(MaxHeaderLength);
         headerValue.Should().Be(expectedHeader);
     }
 
@@ -149,7 +92,7 @@ public class TraceTagsCollectionTests
         tags.Count.Should().Be(0);
         tags.ToEnumerable().Should().BeEmpty();
 
-        var header = tags.ToPropagationHeader();
+        var header = tags.ToPropagationHeader(MaxHeaderLength);
         header.Should().BeEmpty();
     }
 
@@ -165,7 +108,7 @@ public class TraceTagsCollectionTests
         tags.Count.Should().Be(1);
 
         // ...and added to the header
-        var header = tags.ToPropagationHeader();
+        var header = tags.ToPropagationHeader(MaxHeaderLength);
         header.Should().Be("_dd.p.key1=value1");
 
         // non-distributed tag is set...
@@ -175,7 +118,7 @@ public class TraceTagsCollectionTests
         tags.Count.Should().Be(2);
 
         // ...but not added to the header
-        header = tags.ToPropagationHeader();
+        header = tags.ToPropagationHeader(MaxHeaderLength);
         header.Should().Be("_dd.p.key1=value1");
     }
 
@@ -192,7 +135,7 @@ public class TraceTagsCollectionTests
         var value1 = tags.GetTag("_dd.p.key1");
         value1.Should().Be("value1");
 
-        var header = tags.ToPropagationHeader();
+        var header = tags.ToPropagationHeader(MaxHeaderLength);
         header.Should().Be("_dd.p.key1=value1");
     }
 }

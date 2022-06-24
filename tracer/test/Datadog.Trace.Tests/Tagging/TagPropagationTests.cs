@@ -13,99 +13,93 @@ namespace Datadog.Trace.Tests.Tagging;
 
 public class TagPropagationTests
 {
-    private static readonly KeyValuePair<string, string>[] EmptyTags = Array.Empty<KeyValuePair<string, string>>();
+    private const int MaxParseLength = TagPropagation.IncomingPropagationHeaderMaxLength;
+    private const int MaxInjectLength = TagPropagation.OutgoingPropagationHeaderMaxLength;
 
-    public static TheoryData<string, KeyValuePair<string, string>[]> ParseData() => new()
+    [Fact]
+    public void ParseHeader()
     {
-        {
-            null,
-            EmptyTags
-        },
-        {
-            string.Empty,
-            EmptyTags
-        },
-        {
-            // multiple valid tags
-            "_dd.p.key1=value1,_dd.p.key2=value2,_dd.p.key3=value3",
-            new KeyValuePair<string, string>[]
-            {
-                new("_dd.p.key1", "value1"),
-                new("_dd.p.key2", "value2"),
-                new("_dd.p.key3", "value3"),
-            }
-        },
-        {
-            // missing key prefix
-            "key1=value1",
-            EmptyTags
-        },
-        {
-            // no value
-            "_dd.p.key1=",
-            EmptyTags
-        },
-        {
-            // no key
-            "=value1",
-            EmptyTags
-        },
-        {
-            // no key or value
-            "=",
-            EmptyTags
-        },
-        {
-            // no separator
-            "_dd.p.key1",
-            EmptyTags
-        },
-        {
-            // key too short
-            "_dd.p.=value1",
-            EmptyTags
-        },
-    };
+        const string header = "_dd.p.key1=value1,key2=value2,_dd.p.key3=value3";
 
-    [Theory]
-    [MemberData(nameof(ParseData))]
-    public void ParseFromPropagationHeader(string header, KeyValuePair<string, string>[] expectedPairs)
-    {
-        var parsed = TagPropagation.TryParseHeader(header, 512, out var tags);
+        var expectedPairs = new KeyValuePair<string, string>[]
+                            {
+                                new("_dd.p.key1", "value1"),
+                                // "key2" is not a propagated tag
+                                new("_dd.p.key3", "value3"),
+                            };
 
-        parsed.Should().BeTrue();
+        var tags = TagPropagation.ParseHeader(header, MaxParseLength);
+
         tags.ToEnumerable().Should().BeEquivalentTo(expectedPairs);
     }
 
     [Theory]
-    [InlineData(8, 128)]   // this produces "_dd.p.a=" which is too short and invalid
-    [InlineData(9, 128)]   // this produces the shortest possible header, "_dd.p.a=b"
-    [InlineData(128, 128)] // this produces the longest possible header
-    [InlineData(129, 128)] // this produces a header that is too long
-    public void ToPropagationHeaderValue_Length(int totalHeaderLength, int maxHeaderLength)
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("key1=value1,key2=value2")] // missing key prefix
+    [InlineData("_dd.p.key1=,_dd.p.key2=")] // no value
+    [InlineData("=value1,=value2")]         // no key
+    [InlineData("=")]                       // no key or value
+    [InlineData("_dd.p.key1,value")]        // no key/value separator
+    [InlineData("_dd.p.=value1")]           // key too short
+    public void ParseHeader_ShouldBeEmpty(string header)
     {
+        var tags = TagPropagation.ParseHeader(header, MaxParseLength);
+
+        tags.Count.Should().Be(0);
+
+        // no error tags added in these cases
+        tags.ToEnumerable().Should().BeEmpty();
+    }
+
+    // TODO: add test with invalid chars and check for tag
+
+    [Fact]
+    public void ParseHeader_TooLong()
+    {
+        const int maxLength = MaxParseLength;
+        var header = new string('a', maxLength + 1);
+
+        var expectedPairs = new KeyValuePair<string, string>[]
+                            {
+                                new(Tags.TagPropagation.Error, PropagationErrorTagValues.ExtractMaxSize)
+                            };
+
+        var tags = TagPropagation.ParseHeader(header, maxLength);
+
+        tags.ToEnumerable().Should().BeEquivalentTo(expectedPairs);
+    }
+
+    [Theory]
+    [InlineData(8)]                   // this produces "_dd.p.a=" which is too short and invalid
+    [InlineData(9)]                   // this produces the shortest possible header, "_dd.p.a=b"
+    [InlineData(MaxInjectLength)]     // this produces the longest possible header
+    [InlineData(MaxInjectLength + 1)] // this produces a header that is too long
+    public void ToPropagationHeaderValue_Length(int totalHeaderLength)
+    {
+        // single tag with "_dd.p.a=bbb..."
+        const string key = "_dd.p.a";
+        var value = new string('b', totalHeaderLength - key.Length - 1);
+
         var traceTags = new TraceTagCollection();
-
-        // single tag with "_dd.p.a={...}", which has 8 chars plus the value's length
-        traceTags.SetTag("_dd.p.a", new string('b', totalHeaderLength - 8));
-
-        var headerValue = traceTags.ToPropagationHeader();
+        traceTags.SetTag(key, value);
+        var headerValue = traceTags.ToPropagationHeader(MaxInjectLength);
 
         if (totalHeaderLength < TagPropagation.MinimumPropagationHeaderLength)
         {
-            // too short
-            headerValue.Should().BeNullOrEmpty();
+            // too short to parse: empty header but no error tags
+            headerValue.Should().BeEmpty();
             traceTags.GetTag(Tags.TagPropagation.Error).Should().BeNull();
         }
-        else if (totalHeaderLength > maxHeaderLength)
+        else if (totalHeaderLength > MaxInjectLength)
         {
-            // too long
-            headerValue.Should().BeNullOrEmpty();
-            traceTags.GetTag(Tags.TagPropagation.Error).Should().Be("max_size");
+            // too long to parse: empty header and an error tag
+            headerValue.Should().BeEmpty();
+            traceTags.GetTag(Tags.TagPropagation.Error).Should().Be(PropagationErrorTagValues.InjectMaxSize);
         }
         else
         {
-            // valid length
+            // valid length: non-empty header and no error tags
             headerValue.Should().NotBeNullOrEmpty();
             traceTags.GetTag(Tags.TagPropagation.Error).Should().BeNull();
         }
@@ -114,40 +108,40 @@ public class TagPropagationTests
     [Fact]
     public void HeaderIsCached()
     {
-        var header = "_dd.p.key1=value1";
+        const string header = "_dd.p.key1=value1";
 
         // should cache original header
-        var parsed = TagPropagation.TryParseHeader(header, 512, out var tags);
-        parsed.Should().BeTrue();
-        var cachedHeader = tags!.ToPropagationHeader();
+        var tags = TagPropagation.ParseHeader(header, MaxParseLength);
+        tags.Should().NotBeNull();
+        var cachedHeader = tags!.ToPropagationHeader(MaxInjectLength);
         cachedHeader.Should().BeSameAs(header);
 
         // set tag to same value, should not invalidate the cached header
         tags.SetTag("_dd.p.key1", "value1");
-        cachedHeader = tags.ToPropagationHeader();
+        cachedHeader = tags.ToPropagationHeader(MaxInjectLength);
         cachedHeader.Should().BeSameAs(header);
 
         // add valid non-distributed trace tag, should not invalidate the cached header
         tags.SetTag("key2", "value2");
-        cachedHeader = tags.ToPropagationHeader();
+        cachedHeader = tags.ToPropagationHeader(MaxInjectLength);
         cachedHeader.Should().BeSameAs(header);
 
         // add valid distributed trace tag, invalidates the cached header
         tags.SetTag("_dd.p.key3", "value3");
-        cachedHeader = tags.ToPropagationHeader();
+        cachedHeader = tags.ToPropagationHeader(MaxInjectLength);
         cachedHeader.Should().NotBe(header);
     }
 
     [Fact]
     public void HeaderIsNotCached()
     {
-        // missing prefix, tag is ignored
-        var header = "key1=value1";
+        // one tag is missing prefix so it is ignored
+        var header = "_dd.p.key1=value1,key2=value2";
 
         // should not cache original header
-        var parsed = TagPropagation.TryParseHeader(header, 512, out var tags);
-        parsed.Should().BeTrue();
-        var cachedHeader = tags!.ToPropagationHeader();
+        var tags = TagPropagation.ParseHeader(header, MaxParseLength);
+        tags.Should().NotBeNull();
+        var cachedHeader = tags!.ToPropagationHeader(MaxInjectLength);
         cachedHeader.Should().NotBeSameAs(header);
     }
 }
