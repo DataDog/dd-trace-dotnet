@@ -53,15 +53,15 @@ internal class TraceTagCollection
                         {
                             _tags.RemoveAt(i);
                         }
-                        else
+                        else if (!string.Equals(_tags[i].Value, value, StringComparison.Ordinal))
                         {
                             _tags[i] = new(name, value);
-                        }
 
-                        // clear the cached header if we make any changes to a distributed tag
-                        if (isPropagated)
-                        {
-                            _cachedPropagationHeader = null;
+                            // clear the cached header if we make any changes to a distributed tag
+                            if (isPropagated)
+                            {
+                                _cachedPropagationHeader = null;
+                            }
                         }
 
                         return;
