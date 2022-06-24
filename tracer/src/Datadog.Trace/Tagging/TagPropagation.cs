@@ -7,7 +7,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -51,36 +50,27 @@ internal static class TagPropagation
     /// Propagated tags require the an "_dd.p.*" prefix, so any other tags are ignored.
     /// </summary>
     /// <param name="propagationHeader">The header value to parse.</param>
-    /// <param name="maxHeaderLength">The maximum length allowed for incoming propagation header.</param>
-    /// <param name="tagCollection">When this methods returns, contains the tag collection parsed from the header.</param>
+    /// <param name="maxIncomingHeaderLength">The maximum length allowed for incoming propagation header.</param>
     /// <returns>
-    /// A list of valid tags parsed from the specified header value,
-    /// or null if <paramref name="propagationHeader"/> is <c>null</c> or empty.
+    /// A <see cref="TraceTagCollection"/> containing the valid tags parsed from the specified header value, if any.
     /// </returns>
-    public static bool TryParseHeader(
+    public static TraceTagCollection ParseHeader(
         string? propagationHeader,
-        int maxHeaderLength,
-        [NotNullWhen(returnValue: true)] out TraceTagCollection? tagCollection)
+        int maxIncomingHeaderLength)
     {
         if (string.IsNullOrEmpty(propagationHeader))
         {
-            tagCollection = null;
-            return false;
+            return new TraceTagCollection();
         }
 
         List<KeyValuePair<string, string>> traceTags;
 
-        if (propagationHeader!.Length > maxHeaderLength)
+        if (propagationHeader!.Length > maxIncomingHeaderLength)
         {
-            Log.Debug<int, int>("Incoming tag propagation header too long. Length {0}, maximum {1}.", propagationHeader.Length, maxHeaderLength);
+            Log.Debug<int, int>("Incoming tag propagation header is too long. Length: {0}, Maximum: {1}.", propagationHeader.Length, maxIncomingHeaderLength);
 
             traceTags = new List<KeyValuePair<string, string>>(1) { new(Tags.TagPropagation.Error, PropagationErrorTagValues.ExtractMaxSize) };
-
-            tagCollection = new TraceTagCollection(traceTags);
-
-            // NOTE: return true to indicate that tagCollection is not null and contains span tags
-            // (even though we failed to parse)
-            return true;
+            return new TraceTagCollection(traceTags);
         }
 
         var headerTags = propagationHeader.Split(TagPairSeparators, StringSplitOptions.RemoveEmptyEntries);
@@ -114,12 +104,10 @@ internal static class TagPropagation
                     }
                     else
                     {
+                        // we can't reuse the same string if we skip any key/value pair
                         cachedHeader = null;
-
-                        return false;
                     }
                 }
-
                 else
                 {
                     // we can't reuse the same string if we skip any key/value pair
@@ -133,8 +121,7 @@ internal static class TagPropagation
             }
         }
 
-        tagCollection = new TraceTagCollection(traceTags, cachedHeader);
-        return true;
+        return traceTags.Count > 0 ? new TraceTagCollection(traceTags, cachedHeader) : new TraceTagCollection();
     }
 
     /// <summary>
@@ -143,7 +130,7 @@ internal static class TagPropagation
     /// The returned string is cached and reused if no relevant tags are changed between calls.
     /// </summary>
     /// <returns>A string that can be used for horizontal propagation using the "x-datadog-tags" header.</returns>
-    public static string ToHeader(TraceTagCollection tags, int maxHeaderLength)
+    public static string ToHeader(TraceTagCollection tags, int maxOutgoingHeaderLength)
     {
         if (tags.Count == 0)
         {
@@ -158,12 +145,12 @@ internal static class TagPropagation
                 !string.IsNullOrEmpty(tag.Value) &&
                 tag.Key.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
             {
-                // validate tag: if any propagated tags contain invalid chars,
-                // set tag "_dd.propagation_error=encoding_error"
-
                 if (!IsValid(tag.Key, tag.Value))
                 {
-                    // if tag contains invalid chars, // set tag "_dd.propagation_error:encoding_error"...
+                    Log.Debug("Propagated tag is not valid. Key: \"{key}\", Value: \"{value}\"", tag.Key, tag.Value);
+
+                    // if tag contains invalid chars,
+                    // set tag "_dd.propagation_error:encoding_error"...
                     tags.SetTag(Tags.TagPropagation.Error, PropagationErrorTagValues.EncodingError);
 
                     // ... and don't set the header
@@ -180,8 +167,10 @@ internal static class TagPropagation
                   .Append(tag.Value);
             }
 
-            if (sb.Length > maxHeaderLength)
+            if (sb.Length > maxOutgoingHeaderLength)
             {
+                Log.Debug<int, int>("Outgoing tag propagation header is too long. Length: {0}, Maximum: {1}.", sb.Length, maxOutgoingHeaderLength);
+
                 // if combined tags get too long for propagation headers,
                 // set tag "_dd.propagation_error:inject_max_size"...
                 tags.SetTag(Tags.TagPropagation.Error, PropagationErrorTagValues.InjectMaxSize);
