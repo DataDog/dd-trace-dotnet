@@ -268,6 +268,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     Assert.Equal(SpanTypes.Redis, span.Type);
                     Assert.Equal(host, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.host"));
                     Assert.Equal(port, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.port"));
+                    Assert.Equal("StackExchangeRedis", span.Tags[Tags.InstrumentationName]);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
 
