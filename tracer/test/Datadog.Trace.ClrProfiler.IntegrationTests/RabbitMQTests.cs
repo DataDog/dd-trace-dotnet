@@ -10,7 +10,6 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.FSharp;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -65,11 +64,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in rabbitmqSpans)
                 {
-                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isRabbitMQ, span);
-                    Assert.True(result, message);
-
-                    var newResult = span.IsRabbitMQ();
-                    Assert.True(newResult.Success, newResult.ToString());
+                    var result = span.IsRabbitMQ();
+                    Assert.True(result.Success, result.ToString());
 
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
 

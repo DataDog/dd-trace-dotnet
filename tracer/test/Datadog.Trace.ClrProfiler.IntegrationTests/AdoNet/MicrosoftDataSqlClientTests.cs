@@ -7,7 +7,6 @@ using System;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.FSharp;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -71,11 +70,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             foreach (var span in spans)
             {
-                (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isSqlClient, span);
-                Assert.True(result, message);
-
-                var newResult = span.IsSqlClient();
-                Assert.True(newResult.Success, newResult.ToString());
+                var result = span.IsSqlClient();
+                Assert.True(result.Success, result.ToString());
 
                 Assert.Equal(expectedServiceName, span.Service);
                 Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");

@@ -3,13 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.FSharp;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -63,11 +61,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             foreach (var span in spans)
             {
-                (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isSqlClient, span);
-                Assert.True(result, message);
-
-                var newResult = span.IsSqlClient();
-                Assert.True(newResult.Success, newResult.ToString());
+                var result = span.IsSqlClient();
+                Assert.True(result.Success, result.ToString());
 
                 Assert.Equal(expectedServiceName, span.Service);
                 Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");

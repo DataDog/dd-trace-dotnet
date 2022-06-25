@@ -17,7 +17,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.FSharp;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -124,11 +123,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var aspnetWebApi2Spans = spans.Where(s => s.Name == "aspnet-webapi.request");
             foreach (var aspnetWebApi2Span in aspnetWebApi2Spans)
             {
-                (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAspNetWebApi2, aspnetWebApi2Span);
-                Assert.True(result, message);
-
-                var newResult = aspnetWebApi2Span.IsAspNetWebApi2();
-                Assert.True(newResult.Success, newResult.ToString());
+                var result = aspnetWebApi2Span.IsAspNetWebApi2();
+                Assert.True(result.Success, result.ToString());
             }
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);

@@ -16,7 +16,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.FSharp;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -168,11 +167,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var graphQLSpan in graphQLSpans)
                 {
-                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isGraphQL, graphQLSpan);
-                    Assert.True(result, message);
-
-                    var newResult = graphQLSpan.IsGraphQL();
-                    Assert.True(newResult.Success, newResult.ToString());
+                    var result = graphQLSpan.IsGraphQL();
+                    Assert.True(result.Success, result.ToString());
                 }
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();

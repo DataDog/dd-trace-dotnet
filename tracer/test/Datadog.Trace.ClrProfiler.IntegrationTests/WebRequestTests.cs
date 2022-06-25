@@ -3,13 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Globalization;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.FSharp;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -48,11 +46,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isWebRequest, span);
-                    Assert.True(result, message);
-
-                    var newResult = span.IsWebRequest();
-                    Assert.True(newResult.Success, newResult.ToString());
+                    var result = span.IsWebRequest();
+                    Assert.True(result.Success, result.ToString());
 
                     Assert.Equal(expectedServiceName, span.Service);
                     Assert.True(string.Equals(span.Tags[Tags.InstrumentationName], "WebRequest") || string.Equals(span.Tags[Tags.InstrumentationName], "HttpMessageHandler"));

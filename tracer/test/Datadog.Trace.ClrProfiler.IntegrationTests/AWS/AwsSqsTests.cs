@@ -9,7 +9,6 @@ using System.Linq;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.FSharp;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -132,19 +131,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
                 foreach (var span in spans)
                 {
-                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAwsSqs, span);
-                    Assert.True(result, message);
-
-                    var newResult = span.IsAwsSqs();
-                    Assert.True(newResult.Success, newResult.ToString());
+                    var result = span.IsAwsSqs();
+                    Assert.True(result.Success, result.ToString());
                 }
 
                 spans.OrderBy(s => s.Start).Should().BeEquivalentTo(_expectedSpans, options => options
-                                                                                              .WithStrictOrdering()
-                                                                                              .ExcludingMissingMembers()
-                                                                                              .ExcludingDefaultSpanProperties()
-                                                                                              .AssertMetricsMatchExcludingKeys("_dd.tracer_kr", "_sampling_priority_v1")
-                                                                                              .AssertTagsMatchAndSpecifiedTagsPresent("env", "aws.requestId", "aws.queue.url", "runtime-id"));
+                    .WithStrictOrdering()
+                    .ExcludingMissingMembers()
+                    .ExcludingDefaultSpanProperties()
+                    .AssertMetricsMatchExcludingKeys("_dd.tracer_kr", "_sampling_priority_v1")
+                    .AssertTagsMatchAndSpecifiedTagsPresent("env", "aws.requestId", "aws.queue.url", "runtime-id"));
                 telemetry.AssertIntegrationEnabled(IntegrationId.AwsSqs);
             }
         }

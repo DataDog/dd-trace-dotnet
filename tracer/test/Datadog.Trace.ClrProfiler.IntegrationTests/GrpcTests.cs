@@ -12,7 +12,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.FSharp;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -321,11 +320,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var grpcSpan in grpcSpans)
                 {
-                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isGrpc, grpcSpan);
-                    Assert.True(result, message);
-
-                    var newResult = grpcSpan.IsGrpc();
-                    Assert.True(newResult.Success, newResult.ToString());
+                    var result = grpcSpan.IsGrpc();
+                    Assert.True(result.Success, result.ToString());
                 }
 
                 await VerifyHelper.VerifySpans(spans, settings)

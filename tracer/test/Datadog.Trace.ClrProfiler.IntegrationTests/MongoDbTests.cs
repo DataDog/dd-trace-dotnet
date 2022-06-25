@@ -10,7 +10,6 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.FSharp;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using VerifyXunit;
@@ -82,11 +81,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in allMongoSpans)
                 {
-                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isMongoDB, span);
-                    Assert.True(result, message);
-
-                    var newResult = span.IsMongoDB();
-                    Assert.True(newResult.Success, newResult.ToString());
+                    var result = span.IsMongoDB();
+                    Assert.True(result.Success, result.ToString());
                 }
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.MongoDb);

@@ -5,13 +5,11 @@
 
 #if NET461
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.FSharp;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -90,11 +88,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isWcf, span);
-                    Assert.True(result, message);
-
-                    var newResult = span.IsWcf();
-                    Assert.True(newResult.Success, newResult.ToString());
+                    var result = span.IsWcf();
+                    Assert.True(result.Success, result.ToString());
                 }
 
                 // The custom binding doesn't trigger the integration

@@ -4,13 +4,11 @@
 // </copyright>
 
 #if NETFRAMEWORK
-using System;
 using System.Globalization;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.FSharp;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -45,11 +43,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isWebRequest, span);
-                    Assert.True(result, message);
-
-                    var newResult = span.IsWebRequest();
-                    Assert.True(newResult.Success, newResult.ToString());
+                    var result = span.IsWebRequest();
+                    Assert.True(result.Success, result.ToString());
 
                     Assert.Equal(expectedServiceName, span.Service);
                     Assert.Equal("WebRequest", span.Tags[Tags.InstrumentationName]);

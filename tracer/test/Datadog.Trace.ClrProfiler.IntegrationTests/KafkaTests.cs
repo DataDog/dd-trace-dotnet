@@ -3,14 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.FSharp;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -63,11 +61,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             foreach (var span in allSpans)
             {
-                (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isKafka, span);
-                Assert.True(result, message);
-
-                var newResult = span.IsKafka();
-                Assert.True(newResult.Success, newResult.ToString());
+                var result = span.IsKafka();
+                Assert.True(result.Success, result.ToString());
             }
 
             var allProducerSpans = allSpans.Where(x => x.Name == "kafka.produce").ToList();

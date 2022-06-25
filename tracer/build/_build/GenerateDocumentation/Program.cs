@@ -29,87 +29,7 @@ namespace GenerateDocumentation
             }
         }
 
-        public void GenerateDocumentationFSharp()
-        {
-            var contents = File.ReadAllText(_spanModelRulesFilePath);
-            if (contents == null)
-            {
-                return;
-            }
-
-            var sb = new StringBuilder();
-            sb.AppendLine("# Span Metadata");
-
-            var reader = new StringReader(contents);
-            var currentModel = new SpanModel();
-            while (true)
-            {
-                string line = reader.ReadLine();
-
-                if (line == null)
-                {
-                    if (currentModel.State == SpanModel.ModelState.Initialized
-                        || currentModel.State == SpanModel.ModelState.AtLeastOneRequirementAdded)
-                    {
-                        GenerateSectionMarkdown(sb, currentModel);
-                    }
-
-                    break;
-                }
-
-                int functionStartIndex;
-                int functionEndIndex;
-                
-                switch (currentModel.State)
-                {
-                    case SpanModel.ModelState.Missing:
-                        line = line.Replace("``", ""); // Strip escaped names
-                        functionStartIndex = line.IndexOf("let is");
-                        if (functionStartIndex > -1)
-                        {
-                            functionStartIndex += 6;
-                            functionEndIndex = line.IndexOf(":");
-                            currentModel.SectionName = line.Substring(functionStartIndex, functionEndIndex - functionStartIndex).TrimEnd();
-                            currentModel.State = SpanModel.ModelState.Initialized;
-                        }
-                        break;
-                    case SpanModel.ModelState.Initialized:
-                    case SpanModel.ModelState.AtLeastOneRequirementAdded:
-                        // Finish the section
-                        if (string.IsNullOrWhiteSpace(line))
-                        {
-                            GenerateSectionMarkdown(sb, currentModel);
-                            currentModel = new SpanModel();
-                        }
-                        // Add requirements
-                        else
-                        {
-                            functionStartIndex = line.IndexOf("&&&");
-                            if (functionStartIndex > -1)
-                            {
-                                functionStartIndex += 4;
-                                var newRequirement = SpanModel.Requirement.GenerateRequirementFSharp(line.Substring(functionStartIndex));
-                                currentModel.Requirements.Add(newRequirement);
-                            }
-                            else if (currentModel.State == SpanModel.ModelState.Initialized)
-                            {
-                                var newRequirement = SpanModel.Requirement.GenerateRequirementFSharp(line.Trim());
-                                currentModel.Requirements.Add(newRequirement);
-                            }
-
-                            currentModel.State = SpanModel.ModelState.AtLeastOneRequirementAdded;
-                        }
-
-                        break;
-                    default:
-                        break;
-                }
-            }
-
-            File.WriteAllText(_outputFilePath, sb.ToString());
-        }
-
-        public void GenerateDocumentationCSharp()
+        public void GenerateDocumentation()
         {
             var contents = File.ReadAllText(_spanModelRulesFilePath);
             if (contents == null)
@@ -197,7 +117,7 @@ namespace GenerateDocumentation
                             {
                                 functionStartIndex = line.IndexOf(".");
                                 functionStartIndex += 1;
-                                var newRequirement = SpanModel.Requirement.GenerateRequirementCSharp(line.Substring(functionStartIndex), currentModel.State);
+                                var newRequirement = SpanModel.Requirement.GenerateRequirement(line.Substring(functionStartIndex), currentModel.State);
                                 currentModel.Requirements.Add(newRequirement);
                             }
                         }
@@ -280,7 +200,6 @@ namespace GenerateDocumentation
             {
                 Missing,
                 Initialized,
-                AtLeastOneRequirementAdded,
                 ParsingProperties,
                 ParsingTags,
                 ParsingMetrics,
@@ -308,72 +227,8 @@ namespace GenerateDocumentation
 
                 public override string ToString()
                     => $"{Property} | {RequiredValue}";
-                
-                private static string Capitalize(string input)
-                {
-                    // This is a really bad implementation but whatever
-                    return input.Substring(0, 1).ToUpper() + input.Substring(1);
-                }
 
-                public static Requirement GenerateRequirementFSharp(string line)
-                {
-                    var parts = line.Replace(";", "")
-                                    .Replace("[|", "")
-                                    .Replace("|]", "")
-                                    .Split(" ", StringSplitOptions.RemoveEmptyEntries);
-                    if (parts is null || parts.Length == 0)
-                    {
-                        return Unknown;
-                    }
-
-                    for (int i = 0; i < parts.Length; i++)
-                    {
-                        parts[i] = parts[i].Replace("`", "").Trim('"');
-                    }
-
-                    return parts[0] switch
-                    {
-                        null => Unknown,
-                        "propertyMatches" => new Requirement
-                            {
-                                Property = $"{Capitalize(parts[1])}",
-                                RequiredValue = $"`{parts[2]}`",
-                            },
-                        "propertyMatchesOneOf" => new Requirement
-                            {
-                                Property = $"{parts[1]}",
-                                PropertyType = PropertyType.Tag,
-                                RequiredValue = string.Join("; ", parts.Skip(2).Select(s => $"`{s}`")),
-                            },
-                        "tagIsOptional" => new Requirement
-                            {
-                                Property = $"{parts[1]}",
-                                PropertyType = PropertyType.Tag,
-                                RequiredValue = "No",
-                            },
-                        "tagIsPresent" => new Requirement
-                            {
-                                Property = $"{parts[1]}",
-                                PropertyType = PropertyType.Tag,
-                                RequiredValue = "Yes",
-                            },
-                        "tagMatches" => new Requirement
-                            {
-                                Property = $"{parts[1]}",
-                                PropertyType = PropertyType.Tag,
-                                RequiredValue = $"`{parts[2]}`",
-                            },
-                        "tagMatchesOneOf" => new Requirement
-                            {
-                                Property = $"{parts[1]}",
-                                PropertyType = PropertyType.Tag,
-                                RequiredValue = string.Join("; ", parts.Skip(2).Select(s => $"`{s}`")),
-                            },
-                        _ => throw new Exception($"Requirement {parts[0]} not recognized"),
-                    };
-                }
-
-                public static Requirement GenerateRequirementCSharp(string line, ModelState state)
+                public static Requirement GenerateRequirement(string line, ModelState state)
                 {
                     var parts = line.Replace(";", "")
                                     .Replace(",", "")

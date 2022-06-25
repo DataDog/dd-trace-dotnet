@@ -15,7 +15,6 @@
     <ExcludeExpenseItDemoProject Remove="test/test-applications/regression/**/ExpenseItDemo*.csproj" />
     <ExcludeLegacyRedisProject Remove="test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
     <CsharpTestHelperProject Include="test\**\*.TestHelpers.csproj"/>
-    <CsharpTestHelperProject Include="test\**\*.TestHelpers.FSharp.fsproj"/>
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
     <VbSampleLibProject Include="test\test-applications\integrations\**\*.vbproj" />
@@ -36,7 +35,7 @@
 
   <!--  Used by CompileManagedTestHelpers-->
   <Target Name="BuildCsharpTestHelpers">
-    <MSBuild Targets="Build" Projects="@(CsharpTestHelperProject);@(FsharpTestHelperProject)">
+    <MSBuild Targets="Build" Projects="@(CsharpTestHelperProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>

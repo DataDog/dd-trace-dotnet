@@ -3,12 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.FSharp;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -71,11 +69,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAerospike, span);
-                    Assert.True(result, message);
-
-                    var newResult = span.IsAerospike();
-                    Assert.True(newResult.Success, newResult.ToString());
+                    var result = span.IsAerospike();
+                    Assert.True(result.Success, result.ToString());
                 }
 
                 spans.Select(span => span.Resource).Should().ContainInOrder(expectedSpans);

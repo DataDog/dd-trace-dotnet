@@ -6,12 +6,10 @@
 #if NETCOREAPP2_1
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
-using System;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.FSharp;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -57,21 +55,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             var aspnetCoreSpans = spans.Where(s => s.Name == "aspnet_core.request");
             foreach (var aspnetCoreSpan in aspnetCoreSpans)
             {
-                (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAspNetCore, aspnetCoreSpan);
-                Assert.True(result, message);
-
-                var newResult = aspnetCoreSpan.IsAspNetCore();
-                Assert.True(newResult.Success, newResult.ToString());
+                var result = aspnetCoreSpan.IsAspNetCore();
+                Assert.True(result.Success, result.ToString());
             }
 
             var aspnetCoreMvcSpans = spans.Where(s => s.Name == "aspnet_core_mvc.request");
             foreach (var aspnetCoreMvcSpan in aspnetCoreMvcSpans)
             {
-                (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAspNetCoreMvc, aspnetCoreMvcSpan);
-                Assert.True(result, message);
-
-                var newResult = aspnetCoreMvcSpan.IsAspNetCoreMvc();
-                Assert.True(newResult.Success, newResult.ToString());
+                var result = aspnetCoreMvcSpan.IsAspNetCoreMvc();
+                Assert.True(result.Success, result.ToString());
             }
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);

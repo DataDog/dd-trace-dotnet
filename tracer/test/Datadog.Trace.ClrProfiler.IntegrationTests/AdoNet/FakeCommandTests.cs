@@ -3,11 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.FSharp;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -49,11 +47,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             foreach (var span in spans)
             {
-                (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAdoNet, span);
-                Assert.True(result, message);
-
-                var newResult = span.IsAdoNet();
-                Assert.True(newResult.Success, newResult.ToString());
+                var result = span.IsAdoNet();
+                Assert.True(result.Success, result.ToString());
 
                 Assert.Equal(expectedOperationName, span.Name);
                 Assert.Equal(expectedServiceName, span.Service);

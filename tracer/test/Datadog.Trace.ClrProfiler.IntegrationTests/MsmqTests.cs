@@ -8,7 +8,6 @@ using System;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.FSharp;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -54,11 +53,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var msmqSpans = spans.Where(span => string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
             foreach (var span in msmqSpans)
             {
-                (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isMsmq, span);
-                Assert.True(result, message);
-
-                var newResult = span.IsMsmq();
-                Assert.True(newResult.Success, newResult.ToString());
+                var result = span.IsMsmq();
+                Assert.True(result.Success, result.ToString());
 
                 span.Service.Should().Be(ExpectedServiceName);
                 span.Tags.Should().Contain(new System.Collections.Generic.KeyValuePair<string, string>(Tags.InstrumentationName, "msmq"));

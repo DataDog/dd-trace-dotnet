@@ -6,13 +6,11 @@
 #if NET461
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
-using System;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.FSharp;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -128,21 +126,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var aspnetSpans = spans.Where(s => s.Name == "aspnet.request");
             foreach (var aspnetSpan in aspnetSpans)
             {
-                (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAspNet, aspnetSpan);
-                Assert.True(result, message);
-
-                var newResult = aspnetSpan.IsAspNet();
-                Assert.True(newResult.Success, newResult.ToString());
+                var result = aspnetSpan.IsAspNet();
+                Assert.True(result.Success, result.ToString());
             }
 
             var aspnetMvcSpans = spans.Where(s => s.Name == "aspnet-mvc.request");
             foreach (var aspnetMvcSpan in aspnetMvcSpans)
             {
-                (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isAspNetMvc, aspnetMvcSpan);
-                Assert.True(result, message);
-
-                var newResult = aspnetMvcSpan.IsAspNetMvc();
-                Assert.True(newResult.Success, newResult.ToString());
+                var result = aspnetMvcSpan.IsAspNetMvc();
+                Assert.True(result.Success, result.ToString());
             }
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);

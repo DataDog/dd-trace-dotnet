@@ -189,17 +189,11 @@ partial class Build
         .Description("Regenerate documentation from our code models")
         .Executes(() =>
         {
-            var rulesFilePath = TestsDirectory / "Datadog.Trace.TestHelpers.FSharp" / "TracingIntegrationRules.fs";
+            var rulesFilePath = TestsDirectory / "Datadog.Trace.TestHelpers" / "SpanMetadataRules.cs";
             var rulesOutput = RootDirectory / "docs" / "span_metadata.md";
 
             var documentationGenerator = new DocumentationGenerator(rulesFilePath, rulesOutput);
-            documentationGenerator.GenerateDocumentationFSharp();
-
-            var csharpRulesFilePath = TestsDirectory / "Datadog.Trace.TestHelpers" / "CSharpTracingIntegrationRules.cs";
-            var csharpRulesOutput = RootDirectory / "docs" / "csharp_span_metadata.md";
-
-            var csharpDocumentationGenerator = new DocumentationGenerator(csharpRulesFilePath, csharpRulesOutput);
-            csharpDocumentationGenerator.GenerateDocumentationCSharp();
+            documentationGenerator.GenerateDocumentation();
         });
 
     Target UpdateVendoredCode => _ => _

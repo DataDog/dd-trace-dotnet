@@ -10,7 +10,6 @@ using Datadog.Trace.ClrProfiler.IntegrationTests.TestCollections;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.TestHelpers.FSharp;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -264,11 +263,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    (bool result, string message) = SpanValidator.validateRule(TracingIntegrationRules.isStackExchangeRedis, span);
-                    Assert.True(result, message);
-
-                    var newResult = span.IsStackExchangeRedis();
-                    Assert.True(newResult.Success, newResult.ToString());
+                    var result = span.IsStackExchangeRedis();
+                    Assert.True(result.Success, result.ToString());
 
                     Assert.Equal("Samples.StackExchange.Redis-redis", span.Service);
                     Assert.Equal(host, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.host"));
