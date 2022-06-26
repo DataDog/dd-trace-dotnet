@@ -70,8 +70,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.MultipleLineProbes",
-      "name": "MethodToInstrument",
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.SmokeTests.MultipleLineProbes",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -144,8 +144,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.MultipleLineProbes",
-      "name": "MethodToInstrument",
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.SmokeTests.MultipleLineProbes",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -218,8 +218,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.MultipleLineProbes",
-      "name": "MethodToInstrument",
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.SmokeTests.MultipleLineProbes",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -292,8 +292,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.MultipleLineProbes",
-      "name": "MethodToInstrument",
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.SmokeTests.MultipleLineProbes",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -366,8 +366,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.MultipleLineProbes",
-      "name": "MethodToInstrument",
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.SmokeTests.MultipleLineProbes",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -440,8 +440,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.MultipleLineProbes",
-      "name": "MethodToInstrument",
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.SmokeTests.MultipleLineProbes",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"

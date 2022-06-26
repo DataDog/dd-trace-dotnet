@@ -74,8 +74,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.LineProbesWithRevertTest",
-      "name": "MethodToInstrument",
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.SmokeTests.LineProbesWithRevertTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -158,8 +158,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.LineProbesWithRevertTest",
-      "name": "MethodToInstrument",
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.SmokeTests.LineProbesWithRevertTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -242,8 +242,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.LineProbesWithRevertTest",
-      "name": "MethodToInstrument",
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.SmokeTests.LineProbesWithRevertTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -326,8 +326,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.LineProbesWithRevertTest",
-      "name": "MethodToInstrument",
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.SmokeTests.LineProbesWithRevertTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"

@@ -100,8 +100,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.SimpleTypeNameTest",
-      "name": "MethodToInstrument",
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.SmokeTests.SimpleTypeNameTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
