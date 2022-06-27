@@ -12,6 +12,7 @@ using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent
 {
@@ -34,13 +35,13 @@ namespace Datadog.Trace.Ci.Agent
 
         private readonly ICIAgentlessWriterSender _sender;
 
-        public CIAgentlessWriter(ICIAgentlessWriterSender sender)
+        public CIAgentlessWriter(ICIAgentlessWriterSender sender, IFormatterResolver formatterResolver = null)
         {
             _eventQueue = new BlockingCollection<IEvent>(MaxItemsInQueue);
             _flushTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             _flushDelayEvent = new AutoResetEvent(false);
 
-            _ciTestCycleBuffer = new CITestCyclePayload();
+            _ciTestCycleBuffer = new CITestCyclePayload(formatterResolver);
 
             _sender = sender;
 
