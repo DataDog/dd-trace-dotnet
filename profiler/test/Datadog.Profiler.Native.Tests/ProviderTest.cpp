@@ -98,9 +98,6 @@ TEST(WallTimeProviderTest, CheckNoMissingSample)
     provider.Add(RawWallTimeSample());
     provider.Add(RawWallTimeSample());
 
-    // wait for the provider to collect raw samples
-    provider.ProcessRawSamples();
-
     auto samples = provider.GetSamples();
     ASSERT_EQ(3, samples.size());
 

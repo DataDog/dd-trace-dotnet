@@ -86,13 +86,11 @@ public:
         _collectedSamples.push_back(std::forward<TRawSample>(sample));
     }
 
-    inline void ProcessRawSamples() override
+    inline std::list<Sample> GetSamples() override
     {
         std::list<TRawSample> input = FetchRawSamples();
-        if (input.size() != 0)
-        {
-            TransformRawSamples(input);
-        }
+                
+        return TransformRawSamples(input);
     }
 
 private:
@@ -105,15 +103,19 @@ private:
         return input;
     }
 
-    void TransformRawSamples(const std::list<TRawSample>& input)
+    std::list<Sample> TransformRawSamples(const std::list<TRawSample>& input)
     {
+        std::list<Sample> samples;
+
         for (auto const& rawSample : input)
         {
-            TransformRawSample(rawSample);
+            samples.push_back(TransformRawSample(rawSample));
         }
+
+        return samples;
     }
 
-    void TransformRawSample(const TRawSample& rawSample)
+    Sample TransformRawSample(const TRawSample& rawSample)
     {
         Sample sample(rawSample.Timestamp, _pRuntimeIdStore->GetId(rawSample.AppDomainId));
         if (rawSample.LocalRootSpanId != 0 && rawSample.SpanId != 0)
@@ -132,8 +134,7 @@ private:
         // allow inherited classes to add values and specific labels
         rawSample.OnTransform(sample);
 
-        // save it in the output list
-        Store(std::move(sample));
+        return sample;
     }
 
     void SetAppDomainDetails(const TRawSample& rawSample, Sample& sample)

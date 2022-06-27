@@ -12,5 +12,4 @@ class ISamplesProvider
 public:
     virtual ~ISamplesProvider() = default;
     virtual std::list<Sample> GetSamples() = 0;
-    virtual void ProcessRawSamples() = 0;
 };

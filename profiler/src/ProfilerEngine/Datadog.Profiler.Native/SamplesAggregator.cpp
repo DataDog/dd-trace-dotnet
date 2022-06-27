@@ -6,6 +6,7 @@
 #include "Configuration.h"
 #include "IExporter.h"
 #include "IMetricsSender.h"
+#include "ISamplesCollector.h"
 #include "ISamplesProvider.h"
 #include "IThreadsCpuManager.h"
 #include "Log.h"
@@ -19,19 +20,16 @@
 
 using namespace std::literals::chrono_literals;
 
-const std::chrono::seconds SamplesAggregator::ProcessingInterval = 1s;
-const WCHAR* WorkerThreadName = WStr("DD.Profiler.SamplesAggregator.WorkerThread");
-const WCHAR* RawSampleThreadName = WStr("DD.Profiler.SamplesAggregator.RawSampleThread");
-std::string const SamplesAggregator::SuccessfulExportsMetricName = "datadog.profiling.dotnet.operational.exports";
-
 SamplesAggregator::SamplesAggregator(IConfiguration* configuration,
                                      IThreadsCpuManager* pThreadsCpuManager,
                                      IExporter* exporter,
-                                     IMetricsSender* metricsSender) :
+                                     IMetricsSender* metricsSender,
+                                     ISamplesCollector* samplesCollector) :
     _uploadInterval{configuration->GetUploadInterval()},
     _nextExportTime{std::chrono::steady_clock::now() + _uploadInterval},
-    _pThreadsCpuManager{pThreadsCpuManager},
     _exporter{exporter},
+    _pSamplesCollector{samplesCollector},
+    _pThreadsCpuManager{pThreadsCpuManager},
     _mustStop{false},
     _metricsSender{metricsSender}
 {
@@ -46,8 +44,7 @@ bool SamplesAggregator::Start()
 {
     Log::Info("Starting the samples aggregator");
     _mustStop = false;
-    _worker = std::thread(&SamplesAggregator::MainWorker, this);
-    _transformerThread = std::thread(&SamplesAggregator::RawSamplesWorker, this);
+    _worker = std::thread(&SamplesAggregator::Work, this);
     OpSysTools::SetNativeThreadName(&_worker, WorkerThreadName);
     return true;
 }
@@ -62,13 +59,11 @@ bool SamplesAggregator::Stop()
     Log::Info("Stopping the samples aggregator");
     _mustStop = true;
     _exitWorkerPromise.set_value();
-    _transformerThread.join();
     _worker.join();
 
     // Process leftover samples
     try
     {
-        ProcessRawSamples();
         ProcessSamples();
     }
     catch (std::exception const& ex)
@@ -80,12 +75,7 @@ bool SamplesAggregator::Stop()
     return true;
 }
 
-void SamplesAggregator::Register(ISamplesProvider* samplesProvider)
-{
-    _samplesProviders.push_front(samplesProvider);
-}
-
-void SamplesAggregator::MainWorker()
+void SamplesAggregator::Work()
 {
     _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), WorkerThreadName);
 
@@ -108,20 +98,10 @@ void SamplesAggregator::MainWorker()
     // When the aggregator is stopped, a last .pprof is exported
 }
 
-void SamplesAggregator::RawSamplesWorker()
-{
-    _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), RawSampleThreadName);
-
-    while (!_mustStop)
-    {
-        ProcessRawSamples();
-        std::this_thread::sleep_for(CollectingPeriod);
-    }
-}
-
 void SamplesAggregator::ProcessSamples()
 {
-    auto samples = CollectSamples();
+    const auto samples = _pSamplesCollector->GetSamples();
+
     for (auto const& sample : samples)
     {
         if (!sample.GetCallstack().empty())
@@ -129,27 +109,8 @@ void SamplesAggregator::ProcessSamples()
             _exporter->Add(sample);
         }
     }
+
     Export();
-}
-
-void SamplesAggregator::ProcessRawSamples()
-{
-    for (auto const& samplesProvider : _samplesProviders)
-    {
-        samplesProvider->ProcessRawSamples();
-    }
-}
-
-std::list<Sample> SamplesAggregator::CollectSamples()
-{
-    auto result = std::list<Sample>{};
-
-    for (auto const& samplesProvider : _samplesProviders)
-    {
-        result.splice(result.cend(), samplesProvider->GetSamples());
-    }
-
-    return result;
 }
 
 void SamplesAggregator::Export()

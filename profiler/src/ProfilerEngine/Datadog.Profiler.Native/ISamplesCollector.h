@@ -2,20 +2,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-#include <mutex>
-#include <list>
-
 #include "ISamplesProvider.h"
 #include "Sample.h"
 
+#include <list>
 
-class ProviderBase : public ISamplesProvider
+class ISamplesCollector
 {
 public:
-    ProviderBase(const char* name);
-    std::list<Sample> GetSamples() override = 0;
+    virtual ~ISamplesCollector() = default;
 
-protected:
-    std::mutex _samplesLock;
-    std::string _name;
+    virtual std::list<Sample> GetSamples() = 0;
+    virtual void Register(ISamplesProvider* sampleProvider) = 0;
 };

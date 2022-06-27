@@ -23,6 +23,14 @@ std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter()
     return {std::move(exporter), *exporterPtr};
 }
 
+std::tuple<std::unique_ptr<ISamplesCollector>, MockSamplesCollector&> CreateSamplesCollector()
+{
+    std::unique_ptr<ISamplesCollector> collector = std::make_unique<MockSamplesCollector>();
+    auto collectorPtr = static_cast<MockSamplesCollector*>(collector.get());
+
+    return {std::move(collector), *collectorPtr};
+}
+
 std::vector<std::pair<std::string, std::string>> CreateCallstack(int depth)
 {
     std::vector<std::pair<std::string, std::string>> result;

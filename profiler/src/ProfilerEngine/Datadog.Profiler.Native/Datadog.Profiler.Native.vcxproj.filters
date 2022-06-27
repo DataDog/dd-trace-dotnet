@@ -206,6 +206,10 @@
     <ClInclude Include="AdaptiveSampler.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="ISamplesCollector.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="SamplesCollector.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -318,6 +322,9 @@
     </ClCompile>
     <ClCompile Include="Timer.Windows.cpp">
       <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="SamplesCollector.cpp">
+      <Filter>Profiler-Driver</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

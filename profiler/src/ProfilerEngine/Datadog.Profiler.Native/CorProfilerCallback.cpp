@@ -21,6 +21,7 @@
 #include "Configuration.h"
 #include "CpuTimeProvider.h"
 #include "EnvironmentVariables.h"
+#include "ExceptionsProvider.h"
 #include "FrameStore.h"
 #include "IMetricsSender.h"
 #include "IMetricsSenderFactory.h"
@@ -35,7 +36,6 @@
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
-#include "ExceptionsProvider.h"
 
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/loader.h"
@@ -136,8 +136,7 @@ bool CorProfilerCallback::InitializeServices()
             _pConfiguration.get(),
             _pThreadsCpuManager,
             _pAppDomainStore.get(),
-            pRuntimeIdStore
-            );
+            pRuntimeIdStore);
     }
 
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
@@ -155,22 +154,25 @@ bool CorProfilerCallback::InitializeServices()
     // The different elements of the libddprof pipeline are created and linked together
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
     _pExporter = std::make_unique<LibddprofExporter>(_pConfiguration.get(), _pApplicationStore);
-    _pSamplesAggregator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pThreadsCpuManager, _pExporter.get(), _metricsSender.get());
+
+    _pSamplesCollector = RegisterService<SamplesCollector>(_pThreadsCpuManager);
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
-        _pSamplesAggregator->Register(_pWallTimeProvider);
+        _pSamplesCollector->Register(_pWallTimeProvider);
     }
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        _pSamplesAggregator->Register(_pCpuTimeProvider);
+        _pSamplesCollector->Register(_pCpuTimeProvider);
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
-        _pSamplesAggregator->Register(_pExceptionsProvider);
+        _pSamplesCollector->Register(_pExceptionsProvider);
     }
+
+    _pSamplesAggregator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pThreadsCpuManager, _pExporter.get(), _metricsSender.get(), _pSamplesCollector);
 
     auto started = StartServices();
     if (!started)
@@ -659,6 +661,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
     // The aggregator must be stopped before the provider, since it will call them to get the last samples
     _pStackSamplerLoopManager->Stop();
 
+    _pSamplesCollector->Stop();
     _pSamplesAggregator->Stop();
 
     // Calling Stop on providers transforms the last raw samples
@@ -898,8 +901,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadNameChanged(ThreadID thread
     }
 
     auto threadName = (cchName == 0)
-                           ? shared::WSTRING()
-                           : shared::WSTRING(name, cchName);
+                          ? shared::WSTRING()
+                          : shared::WSTRING(name, cchName);
 
     Log::Debug("CorProfilerCallback::ThreadNameChanged(threadId=0x", std::hex, threadId, std::dec, ", name=\"", threadName, "\")");
 

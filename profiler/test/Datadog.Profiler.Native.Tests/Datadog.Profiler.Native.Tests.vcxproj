@@ -55,6 +55,7 @@
     <ClCompile Include="ProfilerMockedInterface.cpp" />
     <ClCompile Include="RuntimeIdStoreHelper.cpp" />
     <ClCompile Include="RuntimeIdTest.cpp" />
+    <ClCompile Include="SamplesCollectorTest.cpp" />
     <ClCompile Include="SamplesProviderTest.cpp" />
     <ClCompile Include="SamplesAggregatorTest.cpp" />
     <ClCompile Include="StackSnapshotResultReusableBufferTest.cpp" />
