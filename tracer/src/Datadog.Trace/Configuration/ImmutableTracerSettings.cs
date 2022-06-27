@@ -79,7 +79,6 @@ namespace Datadog.Trace.Configuration
             ExpandRouteTemplatesEnabled = settings.ExpandRouteTemplatesEnabled || !RouteTemplateResourceNamesEnabled;
 
             // tag propagation
-            ServiceNamePropagationEnabled = settings.ServiceNamePropagationEnabled;
             PropagationHeaderMaxLength = settings.PropagationHeaderMaximumLength;
         }
 
@@ -282,13 +281,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TagPropagation.HeaderMaxLength"/>
         public int PropagationHeaderMaxLength { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether to propagate
-        /// the service name to downstream or upstream services.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.TagPropagation.ServiceNamePropagationEnabled"/>
-        public bool ServiceNamePropagationEnabled { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

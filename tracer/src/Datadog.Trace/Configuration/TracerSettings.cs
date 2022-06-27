@@ -184,11 +184,11 @@ namespace Datadog.Trace.Configuration
             // Filter out tags with empty keys or empty values, and trim whitespaces
             GrpcTags = InitializeHeaderTags(grpcTags, headerTagsNormalizationFixEnabled: true);
 
-            PropagationHeaderMaximumLength = source?.GetInt32(ConfigurationKeys.TagPropagation.HeaderMaxLength) ??
-                                             Tagging.TagPropagation.DefaultMaximumOutgoingPropagationHeaderLength;
+            var propagationHeaderMaximumLength = source?.GetInt32(ConfigurationKeys.TagPropagation.HeaderMaxLength);
 
-            ServiceNamePropagationEnabled = source?.GetBool(ConfigurationKeys.TagPropagation.ServiceNamePropagationEnabled) ??
-                                            true;
+            PropagationHeaderMaximumLength = propagationHeaderMaximumLength is >= 0 and <= Tagging.TagPropagation.DefaultMaximumOutgoingPropagationHeaderLength ?
+                                                 (int)propagationHeaderMaximumLength :
+                                                 Tagging.TagPropagation.DefaultMaximumOutgoingPropagationHeaderLength;
 
             IsActivityListenerEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.ActivityListenerEnabled) ??
                                 // default value
@@ -360,13 +360,6 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TagPropagation.HeaderMaxLength"/>
         public int PropagationHeaderMaximumLength { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether to propagate
-        /// the service name to downstream or upstream services.
-        /// </summary>
-        /// <seealso cref="ConfigurationKeys.TagPropagation.ServiceNamePropagationEnabled"/>
-        public bool ServiceNamePropagationEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating the injection propagation style.

@@ -454,8 +454,6 @@ namespace Datadog.Trace.Configuration
         internal static class TagPropagation
         {
             public const string HeaderMaxLength = "DD_TRACE_X_DATADOG_TAGS_MAX_LENGTH";
-
-            public const string ServiceNamePropagationEnabled = "DD_TRACE_PROPAGATE_SERVICE";
         }
     }
 }
