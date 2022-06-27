@@ -2637,7 +2637,7 @@ stages:
               smoke-tests
           env:
             dockerTag: $(dockerTag)
-          displayName: docker-compose build nuget-smoke-tests
+          displayName: docker-compose build smoke-tests
           retryCountOnTaskFailure: 3
     
         - template: steps/run-snapshot-test.yml
