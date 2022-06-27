@@ -80,6 +80,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Assert.True(allSpans.Count > 0, "Expected there to be spans.");
 
+            var aspnetSpans = allSpans.Where(s => s.Name == "aspnet.request");
+            foreach (var aspnetSpan in aspnetSpans)
+            {
+                var result = aspnetSpan.IsAspNet();
+                Assert.True(result.Success, result.ToString());
+            }
+
+            var aspnetMvcSpans = allSpans.Where(s => s.Name == "aspnet-mvc.request");
+            foreach (var aspnetMvcSpan in aspnetMvcSpans)
+            {
+                var result = aspnetMvcSpan.IsAspNetMvc();
+                Assert.True(result.Success, result.ToString());
+            }
+
             var elasticSpans = allSpans
                              .Where(s => s.Type == "elasticsearch")
                              .ToList();

@@ -6,6 +6,7 @@
 #if NETCOREAPP3_1
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
@@ -73,6 +74,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
             // We actually sometimes expect 2, but waiting for 1 is good enough
             var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode, expectedSpanCount: 1);
+
+            var aspnetCoreSpans = spans.Where(s => s.Name == "aspnet_core.request");
+            foreach (var aspnetCoreSpan in aspnetCoreSpans)
+            {
+                var result = aspnetCoreSpan.IsAspNetCore();
+                Assert.True(result.Success, result.ToString());
+            }
+
+            var aspnetCoreMvcSpans = spans.Where(s => s.Name == "aspnet_core_mvc.request");
+            foreach (var aspnetCoreMvcSpan in aspnetCoreMvcSpans)
+            {
+                var result = aspnetCoreMvcSpan.IsAspNetCoreMvc();
+                Assert.True(result.Success, result.ToString());
+            }
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
 

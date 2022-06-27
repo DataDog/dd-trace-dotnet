@@ -263,9 +263,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal("redis.command", span.Name);
+                    var result = span.IsStackExchangeRedis();
+                    Assert.True(result.Success, result.ToString());
+
                     Assert.Equal("Samples.StackExchange.Redis-redis", span.Service);
-                    Assert.Equal(SpanTypes.Redis, span.Type);
                     Assert.Equal(host, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.host"));
                     Assert.Equal(port, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.port"));
                     Assert.Equal("StackExchangeRedis", span.Tags[Tags.InstrumentationName]);

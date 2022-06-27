@@ -64,10 +64,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  .ToList();
 
                 spans.Should()
-                     .OnlyContain(span => span.Name == "aerospike.command")
-                     .And.OnlyContain(span => span.Service == "Samples.Aerospike-aerospike")
-                     .And.OnlyContain(span => span.Tags[Tags.SpanKind] == SpanKinds.Client)
+                     .OnlyContain(span => span.Service == "Samples.Aerospike-aerospike")
                      .And.OnlyContain(span => ValidateSpanKey(span));
+
+                foreach (var span in spans)
+                {
+                    var result = span.IsAerospike();
+                    Assert.True(result.Success, result.ToString());
+                }
 
                 spans.Select(span => span.Resource).Should().ContainInOrder(expectedSpans);
                 telemetry.AssertIntegrationEnabled(IntegrationId.Aerospike);

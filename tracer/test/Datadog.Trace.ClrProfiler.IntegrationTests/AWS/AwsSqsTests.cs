@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Helpers;
@@ -127,6 +128,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             {
                 var spans = agent.WaitForSpans(_expectedSpans.Count, operationName: "sqs.request");
                 spans.Should().HaveCountGreaterOrEqualTo(_expectedSpans.Count);
+
+                foreach (var span in spans)
+                {
+                    var result = span.IsAwsSqs();
+                    Assert.True(result.Success, result.ToString());
+                }
 
                 spans.OrderBy(s => s.Start).Should().BeEquivalentTo(_expectedSpans, options => options
                     .WithStrictOrdering()

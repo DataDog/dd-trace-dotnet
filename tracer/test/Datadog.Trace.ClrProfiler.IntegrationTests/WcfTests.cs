@@ -86,6 +86,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await Verifier.Verify(spans, settings)
                               .UseMethodName("_");
 
+                foreach (var span in spans)
+                {
+                    var result = span.IsWcf();
+                    Assert.True(result.Success, result.ToString());
+                }
+
                 // The custom binding doesn't trigger the integration
                 telemetry.AssertIntegration(IntegrationId.Wcf, enabled: binding != "Custom", autoEnabled: true);
             }

@@ -133,9 +133,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal("elasticsearch.query", span.Name);
+                    var result = span.IsElasticsearchNet();
+                    Assert.True(result.Success, result.ToString());
+
                     Assert.Equal("Samples.Elasticsearch.V5-elasticsearch", span.Service);
-                    Assert.Equal("elasticsearch", span.Type);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
 

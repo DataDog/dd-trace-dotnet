@@ -44,12 +44,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal("redis.command", span.Name);
+                    var result = span.IsServiceStackRedis();
+                    Assert.True(result.Success, result.ToString());
+
                     Assert.Equal("Samples.ServiceStack.Redis-redis", span.Service);
-                    Assert.Equal(SpanTypes.Redis, span.Type);
-                    Assert.Equal(host, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.host"));
-                    Assert.Equal(port, DictionaryExtensions.GetValueOrDefault(span.Tags, "out.port"));
-                    Assert.Equal("ServiceStackRedis", span.Tags[Tags.InstrumentationName]);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }
 

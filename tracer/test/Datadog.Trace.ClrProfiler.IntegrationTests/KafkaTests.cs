@@ -59,6 +59,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Due to manual/autocommit behaviour
             allSpans.Should().HaveCountGreaterOrEqualTo(TotalExpectedSpanCount);
 
+            foreach (var span in allSpans)
+            {
+                var result = span.IsKafka();
+                Assert.True(result.Success, result.ToString());
+            }
+
             var allProducerSpans = allSpans.Where(x => x.Name == "kafka.produce").ToList();
             var successfulProducerSpans = allProducerSpans.Where(x => x.Error == 0).ToList();
             var errorProducerSpans = allProducerSpans.Where(x => x.Error > 0).ToList();
