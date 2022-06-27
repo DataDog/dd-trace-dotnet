@@ -37,7 +37,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             V1_2_0, // Supports GEO* commands
             V1_2_2, // Supports DDCUSTOM, ECHO, SLOWLOG, TIME
             V2_0_495, // First 2.0 version with many breaking changes
-            Latest, // Switches to UNLINK (instead of DEL)
+            V2_0_571, // Switches to UNLINK (instead of DEL)
+            Latest, // Uses different call stacks
             // ReSharper restore InconsistentNaming
         }
 
@@ -108,7 +109,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var version = new Version(packageVersionString);
             return version switch
             {
-                _ when version >= new Version(2, 0, 571) => PackageVersion.Latest,
+                _ when version >= new Version(2, 6, 45) => PackageVersion.Latest,
+                _ when version >= new Version(2, 0, 571) => PackageVersion.V2_0_571,
                 _ when version >= new Version(2, 0, 495) => PackageVersion.V2_0_495,
                 _ when version >= new Version(1, 2, 2) => PackageVersion.V1_2_2,
                 _ when version >= new Version(1, 2, 0) => PackageVersion.V1_2_0,
