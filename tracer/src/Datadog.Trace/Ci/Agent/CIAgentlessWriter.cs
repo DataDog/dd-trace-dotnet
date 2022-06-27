@@ -31,7 +31,9 @@ namespace Datadog.Trace.Ci.Agent
         private readonly Task _periodicFlush;
         private readonly AutoResetEvent _flushDelayEvent;
 
-        private readonly EventsPayload _ciTestCycleBuffer;
+        // TODO: Move this to a Buffer type to allow multiple concurrency
+        private readonly EventsPayload _ciTestCycleBufferA;
+        private readonly EventsPayload _ciTestCycleBufferB;
 
         private readonly ICIAgentlessWriterSender _sender;
 
@@ -41,12 +43,18 @@ namespace Datadog.Trace.Ci.Agent
             _flushTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             _flushDelayEvent = new AutoResetEvent(false);
 
-            _ciTestCycleBuffer = new CITestCyclePayload(formatterResolver);
+            _ciTestCycleBufferA = new CITestCyclePayload(formatterResolver);
+            _ciTestCycleBufferB = new CITestCyclePayload(formatterResolver);
 
             _sender = sender;
 
-            _periodicFlush = Task.Factory.StartNew(InternalFlushEventsAsync, this, TaskCreationOptions.LongRunning);
-            _periodicFlush.ContinueWith(t => Log.Error(t.Exception, "Error in sending ciapp events"), TaskContinuationOptions.OnlyOnFaulted);
+            var tskFlushA = Task.Factory.StartNew(InternalFlushEventsAsync, new object[] { this, _ciTestCycleBufferA }, TaskCreationOptions.LongRunning);
+            tskFlushA.ContinueWith(t => Log.Error(t.Exception, "Error in sending ciapp events"), TaskContinuationOptions.OnlyOnFaulted);
+
+            var tskFlushB = Task.Factory.StartNew(InternalFlushEventsAsync, new object[] { this, _ciTestCycleBufferB }, TaskCreationOptions.LongRunning);
+            tskFlushB.ContinueWith(t => Log.Error(t.Exception, "Error in sending ciapp events"), TaskContinuationOptions.OnlyOnFaulted);
+
+            _periodicFlush = Task.WhenAll(tskFlushA, tskFlushB);
 
             Log.Information("CIAgentlessWriter Initialized.");
         }
@@ -121,11 +129,12 @@ namespace Datadog.Trace.Ci.Agent
 
         private static async Task InternalFlushEventsAsync(object state)
         {
-            var writer = (CIAgentlessWriter)state;
+            var stateArray = (object[])state;
+            var writer = (CIAgentlessWriter)stateArray[0];
             var eventQueue = writer._eventQueue;
             var completionSource = writer._flushTaskCompletionSource;
             var flushDelayEvent = writer._flushDelayEvent;
-            var ciTestCycleBuffer = writer._ciTestCycleBuffer;
+            var ciTestCycleBuffer = (EventsPayload)stateArray[1];
 
             Log.Debug("CIAgentlessWriter:: InternalFlushEventsAsync/ Starting FlushEventsAsync loop");
 
