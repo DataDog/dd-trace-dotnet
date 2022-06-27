@@ -142,7 +142,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _testName = GetTestName();
         }
 
-        public static TheoryData<string, int> Data() => new()
+        public static TheoryData<string, int> Data => new()
         {
             { "/DataDog", 200 }, // Contains child actions
             { "/DataDog/DogHouse", 200 }, // Contains child actions
