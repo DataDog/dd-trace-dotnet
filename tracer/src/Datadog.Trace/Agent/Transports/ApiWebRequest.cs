@@ -11,7 +11,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Agent.Transports
 {
-    internal class ApiWebRequest : IApiRequest
+    internal class ApiWebRequest : IApiRequest, IMultipartApiRequest
     {
         private readonly HttpWebRequest _request;
 
@@ -32,6 +32,60 @@ namespace Datadog.Trace.Agent.Transports
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
                 await requestStream.WriteAsync(bytes.Array, bytes.Offset, bytes.Count).ConfigureAwait(false);
+            }
+
+            try
+            {
+                var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
+                return new ApiWebResponse(httpWebResponse);
+            }
+            catch (WebException exception)
+                when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
+            {
+                // If the exception is caused by an error status code, ignore it and let the caller handle the result
+                return new ApiWebResponse((HttpWebResponse)exception.Response);
+            }
+        }
+
+        public async Task<IApiResponse> PostAsync(params MultipartFormItem[] items)
+        {
+            var boundary = "---------------------------" + DateTime.Now.Ticks.ToString("x");
+
+            _request.Method = "POST";
+            _request.ContentType = "multipart/form-data; boundary=" + boundary;
+
+            using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
+            {
+                var boundaryBytes = Encoding.ASCII.GetBytes("\r\n--" + boundary + "\r\n");
+
+                foreach (var item in items)
+                {
+                    await requestStream.WriteAsync(boundaryBytes, 0, boundaryBytes.Length).ConfigureAwait(false);
+                    byte[] headerBytes;
+                    if (item.FileName is null)
+                    {
+                        headerBytes = Encoding.UTF8.GetBytes(
+                            $"Content-Disposition: form-data; name=\"{item.Name}\"\r\nContent-Type: {item.ContentType}\r\n\r\n");
+                    }
+                    else
+                    {
+                        headerBytes = Encoding.UTF8.GetBytes(
+                            $"Content-Disposition: form-data; name=\"{item.Name}\"; filename=\"{item.FileName}\"\r\nContent-Type: {item.ContentType}\r\n\r\n");
+                    }
+
+                    await requestStream.WriteAsync(headerBytes, 0, headerBytes.Length).ConfigureAwait(false);
+                    if (item.ContentInBytes is { } arraySegment)
+                    {
+                        await requestStream.WriteAsync(arraySegment.Array, arraySegment.Offset, arraySegment.Count).ConfigureAwait(false);
+                    }
+                    else if (item.ContentInStream is { } stream)
+                    {
+                        await stream.CopyToAsync(requestStream).ConfigureAwait(false);
+                    }
+                }
+
+                var trailer = Encoding.ASCII.GetBytes("\r\n--" + boundary + "--\r\n");
+                await requestStream.WriteAsync(trailer, 0, trailer.Length).ConfigureAwait(false);
             }
 
             try

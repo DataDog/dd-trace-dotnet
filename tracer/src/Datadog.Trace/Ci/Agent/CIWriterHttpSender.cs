@@ -32,99 +32,14 @@ namespace Datadog.Trace.Ci.Agent
         public async Task SendPayloadAsync(EventsPayload payload)
         {
             var numberOfTraces = payload.Count;
-            var tracesEndpoint = payload.Url;
-
-            // retry up to 5 times with exponential back-off
-            const int retryLimit = 5;
-            var retryCount = 1;
-            var sleepDuration = 100; // in milliseconds
-
             var payloadMimeType = MimeTypes.MsgPack;
             var payloadBytes = payload.ToArray();
 
             Log.Information($"Sending ({numberOfTraces} events) {payloadBytes.Length.ToString("N0")} bytes...");
-
-            while (true)
-            {
-                IApiRequest request;
-
-                try
-                {
-                    request = _apiRequestFactory.Create(tracesEndpoint);
-                    request.AddHeader(ApiKeyHeader, CIVisibility.Settings.ApiKey);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "An error occurred while generating http request to send events to {AgentEndpoint}", _apiRequestFactory.Info(tracesEndpoint));
-                    return;
-                }
-
-                bool success = false;
-                Exception exception = null;
-                bool isFinalTry = retryCount >= retryLimit;
-
-                try
-                {
-                    success = await SendPayloadAsync(new ArraySegment<byte>(payloadBytes), payloadMimeType, request, isFinalTry).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    exception = ex;
-
-                    if (_globalSettings.DebugEnabled)
-                    {
-                        if (ex.InnerException is InvalidOperationException ioe)
-                        {
-                            Log.Error<int, string>(ex, "An error occurred while sending {Count} events to {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(tracesEndpoint));
-                            return;
-                        }
-                    }
-                }
-
-                // Error handling block
-                if (!success)
-                {
-                    if (isFinalTry)
-                    {
-                        // stop retrying
-                        Log.Error<int, int, string>(exception, "An error occurred while sending {Count} events after {Retries} retries to {AgentEndpoint}", numberOfTraces, retryCount, _apiRequestFactory.Info(tracesEndpoint));
-                        return;
-                    }
-
-                    // Before retry delay
-                    bool isSocketException = false;
-                    Exception innerException = exception;
-
-                    while (innerException != null)
-                    {
-                        if (innerException is SocketException)
-                        {
-                            isSocketException = true;
-                            break;
-                        }
-
-                        innerException = innerException.InnerException;
-                    }
-
-                    if (isSocketException)
-                    {
-                        Log.Debug(exception, "Unable to communicate with {AgentEndpoint}", _apiRequestFactory.Info(tracesEndpoint));
-                    }
-
-                    // Execute retry delay
-                    await Task.Delay(sleepDuration).ConfigureAwait(false);
-                    retryCount++;
-                    sleepDuration *= 2;
-
-                    continue;
-                }
-
-                Log.Debug<int, string>("Successfully sent {Count} events to {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(tracesEndpoint));
-                return;
-            }
+            await SendPayloadAsync(payload.Url, new ArraySegment<byte>(payloadBytes), payloadMimeType).ConfigureAwait(false);
         }
 
-        private async Task<bool> SendPayloadAsync(ArraySegment<byte> payload, string mimeType, IApiRequest request, bool finalTry)
+        private static async Task<bool> SendPayloadAsync(ArraySegment<byte> payload, string mimeType, IApiRequest request, bool finalTry)
         {
             IApiResponse response = null;
 
@@ -166,6 +81,93 @@ namespace Datadog.Trace.Ci.Agent
             }
 
             return true;
+        }
+
+        private async Task SendPayloadAsync(Uri url, ArraySegment<byte> payload, string mimeType)
+        {
+            // retry up to 5 times with exponential back-off
+            const int retryLimit = 5;
+            var retryCount = 1;
+            var sleepDuration = 100; // in milliseconds
+
+            while (true)
+            {
+                IApiRequest request;
+
+                try
+                {
+                    request = _apiRequestFactory.Create(url);
+                    request.AddHeader(ApiKeyHeader, CIVisibility.Settings.ApiKey);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "An error occurred while generating http request to send events to {AgentEndpoint}", _apiRequestFactory.Info(url));
+                    return;
+                }
+
+                bool success = false;
+                Exception exception = null;
+                bool isFinalTry = retryCount >= retryLimit;
+
+                try
+                {
+                    success = await SendPayloadAsync(payload, mimeType, request, isFinalTry).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    exception = ex;
+
+                    if (_globalSettings.DebugEnabled)
+                    {
+                        if (ex.InnerException is InvalidOperationException ioe)
+                        {
+                            Log.Error<string>(ex, "An error occurred while sending events to {AgentEndpoint}", _apiRequestFactory.Info(url));
+                            return;
+                        }
+                    }
+                }
+
+                // Error handling block
+                if (!success)
+                {
+                    if (isFinalTry)
+                    {
+                        // stop retrying
+                        Log.Error<int, string>(exception, "An error occurred while sending events after {Retries} retries to {AgentEndpoint}", retryCount, _apiRequestFactory.Info(url));
+                        return;
+                    }
+
+                    // Before retry delay
+                    bool isSocketException = false;
+                    Exception innerException = exception;
+
+                    while (innerException != null)
+                    {
+                        if (innerException is SocketException)
+                        {
+                            isSocketException = true;
+                            break;
+                        }
+
+                        innerException = innerException.InnerException;
+                    }
+
+                    if (isSocketException)
+                    {
+                        Log.Debug(exception, "Unable to communicate with {AgentEndpoint}", _apiRequestFactory.Info(url));
+                    }
+
+                    // Execute retry delay
+                    await Task.Delay(sleepDuration).ConfigureAwait(false);
+                    retryCount++;
+                    sleepDuration *= 2;
+
+                    continue;
+                }
+
+                Log.Debug<string>("Successfully sent events to {AgentEndpoint}", _apiRequestFactory.Info(url));
+                return;
+            }
         }
     }
 }

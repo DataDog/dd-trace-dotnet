@@ -12,8 +12,6 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 {
     internal abstract class EventsPayload
     {
-        protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<EventsPayload>();
-
         private readonly EventsBuffer<IEvent> _events;
         private readonly IFormatterResolver _formatterResolver;
 
@@ -35,19 +33,10 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 
         public abstract bool CanProcessEvent(IEvent @event);
 
-        public bool TryProcessEvent(IEvent @event)
-        {
-            return _events.TryWrite(@event);
-        }
+        public bool TryProcessEvent(IEvent @event) => _events.TryWrite(@event);
 
-        public void Clear()
-        {
-            _events.Clear();
-        }
+        public void Clear() => _events.Clear();
 
-        public byte[] ToArray()
-        {
-            return MessagePackSerializer.Serialize(this, _formatterResolver);
-        }
+        public byte[] ToArray() => MessagePackSerializer.Serialize(this, _formatterResolver);
     }
 }

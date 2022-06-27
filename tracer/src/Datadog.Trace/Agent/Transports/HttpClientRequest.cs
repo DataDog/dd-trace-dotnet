@@ -16,7 +16,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent.Transports
 {
-    internal class HttpClientRequest : IApiRequest
+    internal class HttpClientRequest : IApiRequest, IMultipartApiRequest
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpClientRequest>();
 
@@ -75,6 +75,32 @@ namespace Datadog.Trace.Agent.Transports
 
                 return new HttpClientResponse(response);
             }
+        }
+
+        public async Task<IApiResponse> PostAsync(params MultipartFormItem[] items)
+        {
+            using var formDataContent = new MultipartFormDataContent();
+            _request.Content = formDataContent;
+
+            foreach (var item in items)
+            {
+                // Adds a form data item
+                if (item.ContentInBytes is { } arraySegment)
+                {
+                    var content = new ByteArrayContent(arraySegment.Array, arraySegment.Offset, arraySegment.Count);
+                    content.Headers.ContentType = new MediaTypeHeaderValue(item.ContentType);
+                    formDataContent.Add(content, item.Name, item.FileName);
+                }
+                else if (item.ContentInStream is { } stream)
+                {
+                    var content = new StreamContent(stream);
+                    content.Headers.ContentType = new MediaTypeHeaderValue(item.ContentType);
+                    formDataContent.Add(content, item.Name, item.FileName);
+                }
+            }
+
+            var response = await _client.SendAsync(_request).ConfigureAwait(false);
+            return new HttpClientResponse(response);
         }
     }
 }

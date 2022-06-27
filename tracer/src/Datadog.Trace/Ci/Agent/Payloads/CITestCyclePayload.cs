@@ -5,12 +5,14 @@
 
 using System;
 using Datadog.Trace.Ci.EventModel;
+using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.Payloads
 {
     internal class CITestCyclePayload : EventsPayload
     {
-        public CITestCyclePayload()
+        public CITestCyclePayload(IFormatterResolver formatterResolver = null)
+            : base(formatterResolver)
         {
             if (!string.IsNullOrWhiteSpace(CIVisibility.Settings.AgentlessUrl))
             {
