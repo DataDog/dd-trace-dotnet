@@ -27,36 +27,27 @@ namespace Datadog.Trace.Ci.Agent
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIAgentlessWriter>();
 
         private readonly BlockingCollection<IEvent> _eventQueue;
-        private readonly TaskCompletionSource<bool> _flushTaskCompletionSource;
-        private readonly Task _periodicFlush;
         private readonly AutoResetEvent _flushDelayEvent;
-
-        // TODO: Move this to a Buffer type to allow multiple concurrency
-        private readonly EventsPayload _ciTestCycleBufferA;
-        private readonly EventsPayload _ciTestCycleBufferB;
-
+        private readonly Buffers[] _buffersArray;
         private readonly ICIAgentlessWriterSender _sender;
 
         public CIAgentlessWriter(ICIAgentlessWriterSender sender, IFormatterResolver formatterResolver = null)
         {
             _eventQueue = new BlockingCollection<IEvent>(MaxItemsInQueue);
-            _flushTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             _flushDelayEvent = new AutoResetEvent(false);
-
-            _ciTestCycleBufferA = new CITestCyclePayload(formatterResolver);
-            _ciTestCycleBufferB = new CITestCyclePayload(formatterResolver);
-
             _sender = sender;
 
-            var tskFlushA = Task.Factory.StartNew(InternalFlushEventsAsync, new object[] { this, _ciTestCycleBufferA }, TaskCreationOptions.LongRunning);
-            tskFlushA.ContinueWith(t => Log.Error(t.Exception, "Error in sending ciapp events"), TaskContinuationOptions.OnlyOnFaulted);
+            var concurrencyLevel = Environment.ProcessorCount;
+            _buffersArray = new Buffers[concurrencyLevel];
+            for (var i = 0; i < _buffersArray.Length; i++)
+            {
+                _buffersArray[i] = new Buffers(new CITestCyclePayload(formatterResolver));
+                var tskFlush = Task.Factory.StartNew(InternalFlushEventsAsync, new object[] { this, _buffersArray[i] }, TaskCreationOptions.LongRunning);
+                tskFlush.ContinueWith(t => Log.Error(t.Exception, "Error in sending ciapp events"), TaskContinuationOptions.OnlyOnFaulted);
+                _buffersArray[i].SetFlushTask(tskFlush);
+            }
 
-            var tskFlushB = Task.Factory.StartNew(InternalFlushEventsAsync, new object[] { this, _ciTestCycleBufferB }, TaskCreationOptions.LongRunning);
-            tskFlushB.ContinueWith(t => Log.Error(t.Exception, "Error in sending ciapp events"), TaskContinuationOptions.OnlyOnFaulted);
-
-            _periodicFlush = Task.WhenAll(tskFlushA, tskFlushB);
-
-            Log.Information("CIAgentlessWriter Initialized.");
+            Log.Information<int>($"CIAgentlessWriter Initialized with concurrency level of: {concurrencyLevel}", concurrencyLevel);
         }
 
         public void WriteEvent(IEvent @event)
@@ -76,11 +67,14 @@ namespace Datadog.Trace.Ci.Agent
             }
         }
 
-        public Task FlushAndCloseAsync()
+        public async Task FlushAndCloseAsync()
         {
             _eventQueue.CompleteAdding();
             _flushDelayEvent.Set();
-            return _flushTaskCompletionSource.Task;
+            foreach (var buffers in _buffersArray)
+            {
+                await buffers.FlushTaskCompletionSource.Task.ConfigureAwait(false);
+            }
         }
 
         public Task FlushTracesAsync()
@@ -132,9 +126,10 @@ namespace Datadog.Trace.Ci.Agent
             var stateArray = (object[])state;
             var writer = (CIAgentlessWriter)stateArray[0];
             var eventQueue = writer._eventQueue;
-            var completionSource = writer._flushTaskCompletionSource;
             var flushDelayEvent = writer._flushDelayEvent;
-            var ciTestCycleBuffer = (EventsPayload)stateArray[1];
+            var buffers = (Buffers)stateArray[1];
+            var ciTestCycleBuffer = buffers.CiTestCycleBuffer;
+            var completionSource = buffers.FlushTaskCompletionSource;
 
             Log.Debug("CIAgentlessWriter:: InternalFlushEventsAsync/ Starting FlushEventsAsync loop");
 
@@ -222,6 +217,27 @@ namespace Datadog.Trace.Ci.Agent
             }
 
             public TaskCompletionSource<bool> CompletionSource { get; }
+        }
+
+        private class Buffers
+        {
+            public Buffers(EventsPayload ciTestCycleBuffer)
+            {
+                CiTestCycleBuffer = ciTestCycleBuffer;
+                FlushTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                FlushTask = null;
+            }
+
+            public EventsPayload CiTestCycleBuffer { get; }
+
+            public TaskCompletionSource<bool> FlushTaskCompletionSource { get; }
+
+            public Task FlushTask { get; private set; }
+
+            internal void SetFlushTask(Task flushTask)
+            {
+                FlushTask = flushTask;
+            }
         }
     }
 }

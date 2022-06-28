@@ -14,9 +14,10 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         public CITestCyclePayload(IFormatterResolver formatterResolver = null)
             : base(formatterResolver)
         {
-            if (!string.IsNullOrWhiteSpace(CIVisibility.Settings.AgentlessUrl))
+            var agentlessUrl = CIVisibility.Settings.AgentlessUrl;
+            if (!string.IsNullOrWhiteSpace(agentlessUrl))
             {
-                var builder = new UriBuilder(CIVisibility.Settings.AgentlessUrl);
+                var builder = new UriBuilder(agentlessUrl);
                 builder.Path = "api/v2/citestcycle";
                 Url = builder.Uri;
             }
