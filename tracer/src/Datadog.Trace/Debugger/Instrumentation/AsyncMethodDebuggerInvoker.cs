@@ -17,7 +17,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// AsyncMethodDebuggerInvoker is responsible for the managed side of async method instrumentation,
     /// taking care of creating the state, capturing values and handling exceptions
     /// </summary>
-    public static class AsyncMethodDebuggerInvoker
+    internal static class AsyncMethodDebuggerInvoker
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AsyncMethodDebuggerInvoker));
 

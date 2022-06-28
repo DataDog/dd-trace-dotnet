@@ -13,7 +13,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// Live debugger async execution state
     /// It must be a class type because we have a cycle reference to parent state
     /// </summary>
-    public class AsyncMethodDebuggerState
+    internal class AsyncMethodDebuggerState
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncMethodDebuggerState"/> class.
