@@ -39,7 +39,7 @@
       http.response.headers.server: Kestrel,
       http.route: {controller=home}/{action=index}/{id?},
       http.status_code: 200,
-      http.url: http://localhost:00000/?<redacted>&token=a0b21ce2-006f-4cc6-95d5-d7b550698482&key2=val2,
+      http.url: http://localhost:00000/?<redacted>&token=Guid_2&key2=val2,
       language: dotnet,
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,

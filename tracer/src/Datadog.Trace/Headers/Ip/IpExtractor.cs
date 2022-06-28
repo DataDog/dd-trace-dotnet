@@ -81,7 +81,7 @@ namespace Datadog.Trace.Headers.Ip
         internal static IpInfo ExtractAddressAndPort(string ip, bool https = false, int? defaultPort = null)
         {
             var port = defaultPort ?? DefaultPort(https);
-            if (ip.Contains('.'))
+            if (ip.Contains("."))
             {
                 var parts = ip.Split(':');
                 if (parts.Length == 2)

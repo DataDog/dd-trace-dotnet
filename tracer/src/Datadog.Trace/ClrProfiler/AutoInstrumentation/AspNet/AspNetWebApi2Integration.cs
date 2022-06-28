@@ -66,18 +66,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         Log.Error(ex, "Error extracting propagated HTTP headers.");
                     }
 
-                    if (request.Properties.TryGetValue("MS_OwinContext", out var owinContextObj))
+                    if (!tracer.Settings.IpHeaderDisabled)
                     {
-                        if (owinContextObj != null)
+                        if (request.Properties.TryGetValue("MS_OwinContext", out var owinContextObj))
                         {
-                            if (owinContextObj.TryDuckCast<IOwinContext>(out var owinContext))
+                            if (owinContextObj != null)
                             {
-                                Headers.Ip.RequestIpExtractor.AddIpToTags(
-                                    owinContext.Request.RemoteIpAddress,
-                                    owinContext.Request.IsSecure,
-                                    key => request.Headers.TryGetValues(key, out var values) ? values?.FirstOrDefault() : string.Empty,
-                                    tracer.Settings.IpHeader,
-                                    tags);
+                                if (owinContextObj.TryDuckCast<IOwinContext>(out var owinContext))
+                                {
+                                    Headers.Ip.RequestIpExtractor.AddIpToTags(
+                                        owinContext.Request.RemoteIpAddress,
+                                        owinContext.Request.IsSecure,
+                                        key => request.Headers.TryGetValues(key, out var values) ? values?.FirstOrDefault() : string.Empty,
+                                        tracer.Settings.IpHeader,
+                                        tags);
+                                }
                             }
                         }
                     }

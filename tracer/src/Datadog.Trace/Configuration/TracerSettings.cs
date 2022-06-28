@@ -98,16 +98,16 @@ namespace Datadog.Trace.Configuration
                                    .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
             var inputHeaderTags = source?.GetDictionary(ConfigurationKeys.HeaderTags, allowOptionalMappings: true) ??
-                         // default value (empty)
-                         new Dictionary<string, string>();
+                                  // default value (empty)
+                                  new Dictionary<string, string>();
 
             var headerTagsNormalizationFixEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled) ?? true;
             // Filter out tags with empty keys or empty values, and trim whitespaces
             HeaderTags = InitializeHeaderTags(inputHeaderTags, headerTagsNormalizationFixEnabled);
 
             var serviceNameMappings = source?.GetDictionary(ConfigurationKeys.ServiceNameMappings)
-                                      ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                                      ?.ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+                                            ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+                                            ?.ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
 
             ServiceNameMappings = new ServiceNames(serviceNameMappings);
 
@@ -138,34 +138,34 @@ namespace Datadog.Trace.Configuration
             }
 
             var httpServerErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpServerErrorStatusCodes) ??
-                                           // Default value
-                                           "500-599";
+                                             // Default value
+                                             "500-599";
 
             HttpServerErrorStatusCodes = ParseHttpCodesToArray(httpServerErrorStatusCodes);
 
             var httpClientErrorStatusCodes = source?.GetString(ConfigurationKeys.HttpClientErrorStatusCodes) ??
-                                        // Default value
-                                        "400-499";
+                                             // Default value
+                                             "400-499";
             HttpClientErrorStatusCodes = ParseHttpCodesToArray(httpClientErrorStatusCodes);
 
             TraceBufferSize = source?.GetInt32(ConfigurationKeys.BufferSize)
-                ?? 1024 * 1024 * 10; // 10MB
+                           ?? 1024 * 1024 * 10; // 10MB
 
             TraceBatchInterval = source?.GetInt32(ConfigurationKeys.SerializationBatchInterval)
-                        ?? 100;
+                              ?? 100;
 
             RouteTemplateResourceNamesEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled)
-                                                   ?? true;
+                                             ?? true;
 
             ExpandRouteTemplatesEnabled = source?.GetBool(ConfigurationKeys.ExpandRouteTemplatesEnabled)
-                                        // disabled by default if route template resource names enabled
-                                        ?? !RouteTemplateResourceNamesEnabled;
+                                          // disabled by default if route template resource names enabled
+                                       ?? !RouteTemplateResourceNamesEnabled;
 
             KafkaCreateConsumerScopeEnabled = source?.GetBool(ConfigurationKeys.KafkaCreateConsumerScopeEnabled)
                                            ?? true; // default
 
             DelayWcfInstrumentationEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
-                                            ?? false;
+                                          ?? false;
 
             ObfuscationQueryStringRegex = source?.GetString(ConfigurationKeys.ObfuscationQueryStringRegex) ?? Util.Http.QueryStringObfuscator.DefaultObfuscationQueryStringRegex;
 
@@ -182,8 +182,8 @@ namespace Datadog.Trace.Configuration
                            string.Empty;
 
             var grpcTags = source?.GetDictionary(ConfigurationKeys.GrpcTags, allowOptionalMappings: true) ??
-                                  // default value (empty)
-                                  new Dictionary<string, string>();
+                           // default value (empty)
+                           new Dictionary<string, string>();
 
             // Filter out tags with empty keys or empty values, and trim whitespaces
             GrpcTags = InitializeHeaderTags(grpcTags, headerTagsNormalizationFixEnabled: true);
@@ -195,10 +195,12 @@ namespace Datadog.Trace.Configuration
                                              Tagging.TagPropagation.OutgoingPropagationHeaderMaxLength;
 
             IsActivityListenerEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.ActivityListenerEnabled) ??
-                                // default value
-                                false;
+                                        // default value
+                                        false;
 
             IpHeader = source?.GetString(ConfigurationKeys.IpHeader) ?? source?.GetString(ConfigurationKeys.AppSec.CustomIpHeader);
+
+            IpHeaderDisabled = source?.GetBool(ConfigurationKeys.IpHeaderDisabled) ?? false;
 
             if (IsActivityListenerEnabled)
             {
@@ -313,6 +315,11 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
         /// </summary>
         public string IpHeader { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the ip header should not be collected. The default is false.
+        /// </summary>
+        public bool IpHeaderDisabled { get; set; }
 
         /// <summary>
         /// Gets or sets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>

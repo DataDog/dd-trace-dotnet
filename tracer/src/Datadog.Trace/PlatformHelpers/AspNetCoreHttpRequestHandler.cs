@@ -98,7 +98,7 @@ namespace Datadog.Trace.PlatformHelpers
         {
             string host = request.Host.Value;
             string httpMethod = request.Method?.ToUpperInvariant() ?? "UNKNOWN";
-            var url = request.GetUrlWithQueryString(tracer.Settings.EnableQueryStringReporting);
+            var url = request.GetUrlWithQueryString(tracer.Settings.EnableQueryStringReporting, tracer.Settings.ObfuscationQueryStringRegex);
             var userAgent = request.Headers[HttpHeaderNames.UserAgent];
             resourceName ??= GetDefaultResourceName(request);
 
@@ -121,7 +121,10 @@ namespace Datadog.Trace.PlatformHelpers
             var scope = tracer.StartActiveInternal(_requestInOperationName, propagatedContext, tags: tags);
             scope.Span.DecorateWebServerSpan(resourceName, httpMethod, host, url, userAgent, tags, tagsFromHeaders);
             var peerIp = new Headers.Ip.IpInfo(httpContext.Connection.RemoteIpAddress?.ToString(), httpContext.Connection.RemotePort);
-            Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, key => request.Headers.TryGetValue(key, out var value) ? value : string.Empty, tracer.Settings.IpHeader, tags);
+            if (!tracer.Settings.IpHeaderDisabled)
+            {
+                Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, key => request.Headers.TryGetValue(key, out var value) ? value : string.Empty, tracer.Settings.IpHeader, tags);
+            }
 
             tags.SetAnalyticsSampleRate(_integrationId, tracer.Settings, enabledWithGlobalSetting: true);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(_integrationId);

@@ -88,7 +88,7 @@ namespace Datadog.Trace.Util.Http
 
         internal static string GetUrl(this HttpRequest request) => HttpRequestUtils.GetUrl(request.Scheme, request.Host.Value, request.PathBase.ToUriComponent(), request.Path.ToUriComponent(), false);
 
-        internal static string GetUrlWithQueryString(this HttpRequest request, bool reportQueryString) => HttpRequestUtils.GetUrl(request.Scheme, request.Host.Value, request.PathBase.ToUriComponent(), request.Path.ToUriComponent(), reportQueryString, () => request.QueryString.Value);
+        internal static string GetUrlWithQueryString(this HttpRequest request, bool reportQueryString, string obfuscationQueryStringRegex) => HttpRequestUtils.GetUrl(request.Scheme, request.Host.Value, request.PathBase.ToUriComponent(), request.Path.ToUriComponent(), reportQueryString, () => request.QueryString.Value, obfuscationQueryStringRegex);
     }
 }
 #endif

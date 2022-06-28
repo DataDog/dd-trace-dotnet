@@ -11,7 +11,7 @@ namespace Datadog.Trace.Util.Http
     {
         private const string NoHostSpecified = "UNKNOWN_HOST";
 
-        internal static string GetUrl(string scheme, string host, string pathBase, string path, bool reportQueryString, Func<string> getQueryString = null)
+        internal static string GetUrl(string scheme, string host, string pathBase, string path, bool reportQueryString, Func<string> getQueryString = null, string pattern = null)
         {
             // HTTP 1.0 requests are not required to provide a Host to be valid
             // Since this is just for display, we can provide a string that is
@@ -21,7 +21,7 @@ namespace Datadog.Trace.Util.Http
             string queryString = null;
             if (reportQueryString)
             {
-                var queryStringObfuscator = QueryStringObfuscator.Instance();
+                var queryStringObfuscator = QueryStringObfuscator.Instance(pattern);
                 queryString = queryStringObfuscator.Obfuscate(getQueryString());
             }
 
