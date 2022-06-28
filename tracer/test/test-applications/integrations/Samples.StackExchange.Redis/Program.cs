@@ -48,7 +48,7 @@ namespace Samples.StackExchangeRedis
                     { "INCR", () => db.StringIncrement($"{prefix}INCR", 1.25) },
                     { "GET", () => db.StringGet($"{prefix}INCR") },
 
-#if (STACKEXCHANGEREDIS_1_2_2 && !DEFAULT_SAMPLES)
+#if (STACKEXCHANGEREDIS_1_2_2)
                     { "DDCUSTOM", () => db.Execute("DDCUSTOM", "COMMAND") },
                     { "ECHO", () => db.Execute("ECHO", "Hello World") },
                     { "SLOWLOG", () => db.Execute("SLOWLOG", "GET") },
@@ -93,11 +93,11 @@ namespace Samples.StackExchangeRedis
             {
                 { "DebugObject", () => db.DebugObject($"{prefix}DebugObject") },
 
-#if (STACKEXCHANGEREDIS_1_2_2 && !DEFAULT_SAMPLES)
+#if (STACKEXCHANGEREDIS_1_2_2)
                 { "Execute", () => db.Execute("DDCUSTOM", "COMMAND") },
 #endif
 
-#if (STACKEXCHANGEREDIS_1_2_0 && !DEFAULT_SAMPLES)
+#if (STACKEXCHANGEREDIS_1_2_0)
                 { "GeoAdd", () => db.GeoAdd($"{prefix}Geo", new GeoEntry(1.5, 2.5, "member")) },
                 { "GeoDistance", () => db.GeoDistance($"{prefix}Geo", "member1", "member2") },
                 { "GeoHash", () => db.GeoHash($"{prefix}Geo", "member") },
@@ -114,13 +114,13 @@ namespace Samples.StackExchangeRedis
                 { "HashIncrement", () => db.HashIncrement($"{prefix}Hash", "hashfield") },
                 { "HashKeys", () => db.HashKeys($"{prefix}Hash") },
                 { "HashLength", () => db.HashLength($"{prefix}Hash") },
-#if (STACKEXCHANGEREDIS_1_0_228 && !DEFAULT_SAMPLES)
+#if (STACKEXCHANGEREDIS_1_0_228)
                 { "HashScan", () => db.HashScan($"{prefix}Hash", "*", 5, CommandFlags.None) },
 #endif
                 { "HashSet", () => { db.HashSet($"{prefix}Hash", ApiSafeCreateHashSetEntryList(new KeyValuePair<RedisValue, RedisValue>[] { new KeyValuePair<RedisValue, RedisValue>("hashfield", "hashvalue") })); return null; } },
                 { "HashValues", () => db.HashValues($"{prefix}Hash") },
 
-#if (STACKEXCHANGEREDIS_1_0_242 && !DEFAULT_SAMPLES)
+#if (STACKEXCHANGEREDIS_1_0_242)
                 { "HyperLogLogAdd", () => db.HyperLogLogAdd($"{prefix}HyperLogLog", "value") },
                 { "HyperLogLogLength", () => db.HyperLogLogLength($"{prefix}HyperLogLog") },
                 { "HyperLogLogMerge", () => { db.HyperLogLogMerge($"{prefix}HyperLogLog2", new RedisKey[] { $"{prefix}HyperLogLog" }); return null; } },
@@ -130,12 +130,12 @@ namespace Samples.StackExchangeRedis
                 { "KeyDump", () => db.KeyDump($"{prefix}Key") },
                 { "KeyExists", () => db.KeyExists($"{prefix}Key") },
                 { "KeyExpire", () => db.KeyExpire($"{prefix}Key", ExpireTimeSpan) },
-#if (STACKEXCHANGEREDIS_1_0_297 && !DEFAULT_SAMPLES)
+#if (STACKEXCHANGEREDIS_1_0_297)
                 { "KeyMigrate", () => { db.KeyMigrate($"{prefix}Key", db.IdentifyEndpoint());  return null; } },
 #endif
                 { "KeyMove", () =>  db.KeyMove($"{prefix}Key", 1) },
                 { "KeyPersist", () => db.KeyPersist($"{prefix}Key") },
-#if (STACKEXCHANGEREDIS_1_0_219 && !DEFAULT_SAMPLES)
+#if (STACKEXCHANGEREDIS_1_0_219)
                 { "KeyRandom", () => db.KeyRandom() },
 #endif
                 { "KeyRename", () => db.KeyRename($"{prefix}Key", $"{prefix}Key2") },
@@ -163,7 +163,7 @@ namespace Samples.StackExchangeRedis
                 { "LockTake", () => db.LockTake($"{prefix}Lock", "value1", new TimeSpan(0, 0, 10)) },
 
                 { "Ping", () => db.Ping() },
-#if (STACKEXCHANGEREDIS_1_0_245 && !DEFAULT_SAMPLES)
+#if (STACKEXCHANGEREDIS_1_0_245)
                 { "Publish", () => db.Publish(ApiSafeCreateRedisChannel("value"), "message") },
 #endif
                 // { "ScriptEvaluate", () => db.ScriptEvaluate() }
@@ -181,7 +181,7 @@ namespace Samples.StackExchangeRedis
                 { "SetRemove", () => db.SetRemove($"{prefix}Set", "value1") },
                 { "SetScan", () => db.SetScan($"{prefix}Set", "*", 5) },
 
-#if (STACKEXCHANGEREDIS_1_0_206 && !DEFAULT_SAMPLES)
+#if (STACKEXCHANGEREDIS_1_0_206)
                 { "Sort", () => db.Sort($"{prefix}Key") },
                 { "SortAndStore", () => db.SortAndStore($"{prefix}Key2", $"{prefix}Key") },
                 { "SortedSetCombineAndStore", () => db.SortedSetCombineAndStore(SetOperation.Union, $"{prefix}SortedSet2", $"{prefix}SortedSet", $"{prefix}SortedSet2") },
@@ -199,12 +199,12 @@ namespace Samples.StackExchangeRedis
                 { "SortedSetRemove", () => db.SortedSetRemove($"{prefix}SortedSet", "element") },
                 { "SortedSetRemoveRangeByRank", () => db.SortedSetRemoveRangeByRank($"{prefix}SortedSet", 0, 1) },
                 { "SortedSetRemoveRangeByScore", () => db.SortedSetRemoveRangeByScore($"{prefix}SortedSet", 1, 2) },
-#if (STACKEXCHANGEREDIS_1_0_228 && !DEFAULT_SAMPLES)
+#if (STACKEXCHANGEREDIS_1_0_228)
                 { "SortedSetScan", () => db.SortedSetScan($"{prefix}SortedSet", "*", 5) },
 #endif
                 { "SortedSetScore", () => db.SortedSetScore($"{prefix}SortedSet", "element") },
 
-#if (STACKEXCHANGEREDIS_1_0_273 && !DEFAULT_SAMPLES)
+#if (STACKEXCHANGEREDIS_1_0_273)
                 { "SortedSetLengthByValue", () => db.SortedSetLengthByValue($"{prefix}SortedSet", "value1", "value2") },
                 { "SortedSetRangeByValue", () => db.SortedSetRangeByValue($"{prefix}SortedSet") },
                 { "SortedSetRemoveRangeByValue", () => db.SortedSetRemoveRangeByValue($"{prefix}SortedSet", 1, 2) },
@@ -234,11 +234,11 @@ namespace Samples.StackExchangeRedis
             {
                 { "DebugObjectAsync", () => db.DebugObjectAsync($"{prefix}DebugObjectAsync") },
 
-#if (STACKEXCHANGEREDIS_1_2_2 && !DEFAULT_SAMPLES)
+#if (STACKEXCHANGEREDIS_1_2_2)
                 { "ExecuteAsync", () => db.ExecuteAsync("DDCUSTOM", "COMMAND") },
 #endif
 
-#if (STACKEXCHANGEREDIS_1_2_0 && !DEFAULT_SAMPLES)
+#if (STACKEXCHANGEREDIS_1_2_0)
                 { "GeoAddAsync", () => db.GeoAddAsync($"{prefix}GeoAddAsync", new GeoEntry(1.5, 2.5, "member")) },
                 { "GeoDistanceAsync",  () => db.GeoDistanceAsync($"{prefix}GeoDistanceAsync", "member1", "member2") },
                 { "GeoHashAsync", () => db.GeoHashAsync($"{prefix}GeoHashAsync", "member") },
@@ -257,7 +257,7 @@ namespace Samples.StackExchangeRedis
                 { "HashSetAsync", () => db.HashSetAsync($"{prefix}HashSetAsync", ApiSafeCreateHashSetEntryList(new KeyValuePair<RedisValue, RedisValue>[] { new KeyValuePair<RedisValue, RedisValue>("x", "y") })) },
                 { "HashValuesAsync", () => db.HashValuesAsync($"{prefix}HashValuesAsync") },
 
-#if (STACKEXCHANGEREDIS_1_0_242 && !DEFAULT_SAMPLES)
+#if (STACKEXCHANGEREDIS_1_0_242)
                 { "HyperLogLogAddAsync", () => db.HyperLogLogAddAsync($"{prefix}HyperLogLogAddAsync", "value") },
                 { "HyperLogLogLengthAsync", () => db.HyperLogLogLengthAsync($"{prefix}HyperLogLogLengthAsync") },
                 { "HyperLogLogMergeAsync", () => db.HyperLogLogMergeAsync($"{prefix}HyperLogLogMergeAsync", new RedisKey[] { "key1", "key2" }) },
@@ -272,7 +272,7 @@ namespace Samples.StackExchangeRedis
                 // () => db.KeyMigrateAsync("key", ???)
                 { "KeyMoveAsync", () => db.KeyMoveAsync("key", 1) },
                 { "KeyPersistAsync", () => db.KeyPersistAsync("key") },
-#if (STACKEXCHANGEREDIS_1_0_219 && !DEFAULT_SAMPLES)
+#if (STACKEXCHANGEREDIS_1_0_219)
                 { "KeyRandomAsync", () => db.KeyRandomAsync() },
 #endif
                 { "KeyRenameAsync", () => db.KeyRenameAsync("key1", "key2") },
@@ -299,7 +299,7 @@ namespace Samples.StackExchangeRedis
                 { "LockReleaseAsync", () => db.LockReleaseAsync("listkey", "value7") },
                 { "LockTakeAsync", () => db.LockTakeAsync("listkey", "value8", new TimeSpan(0, 0, 10)) },
 
-#if (STACKEXCHANGEREDIS_1_0_245 && !DEFAULT_SAMPLES)
+#if (STACKEXCHANGEREDIS_1_0_245)
                 { "PublishAsync", () => db.PublishAsync(ApiSafeCreateRedisChannel("channel"), "somemessage") },
 #endif
                 // { "ScriptEvaluateAsync", () => db.ScriptEvaluateAsync(}
@@ -316,7 +316,7 @@ namespace Samples.StackExchangeRedis
                 { "SetRandomMembersAsync", () => db.SetRandomMembersAsync("setkey", 2) },
                 { "SetRemoveAsync", () => db.SetRemoveAsync("setkey", "value2") },
 
-#if (STACKEXCHANGEREDIS_1_0_206 && !DEFAULT_SAMPLES)
+#if (STACKEXCHANGEREDIS_1_0_206)
                 { "SortAndStoreAsync", () => db.SortAndStoreAsync("setkey2", "setkey") },
                 { "SortAsync", () => db.SortAsync("setkey") },
                 { "SortedSetCombineAndStoreAsync", () => db.SortedSetCombineAndStoreAsync(SetOperation.Union, "ssetkey1", "ssetkey2", "ssetkey3") },
@@ -336,7 +336,7 @@ namespace Samples.StackExchangeRedis
                 { "SortedSetRemoveRangeByScoreAsync", () => db.SortedSetRemoveRangeByScoreAsync("ssetkey", 0, 1) },
                 { "SortedSetScoreAsync", () => db.SortedSetScoreAsync("ssestkey", "value1") },
 
-#if (STACKEXCHANGEREDIS_1_0_273 && !DEFAULT_SAMPLES)
+#if (STACKEXCHANGEREDIS_1_0_273)
                 { "SortedSetLengthByValueAsync", () => db.SortedSetLengthByValueAsync("ssetkey", "value1", "value2") },
                 { "SortedSetRangeByValueAsync", () => db.SortedSetRangeByValueAsync("ssetkey") },
                 { "SortedSetRemoveRangeByValueAsync", () => db.SortedSetRemoveRangeByValueAsync("ssetkey", "value1", "value2") },
