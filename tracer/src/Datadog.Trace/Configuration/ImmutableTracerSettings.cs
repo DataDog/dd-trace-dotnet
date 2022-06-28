@@ -79,7 +79,7 @@ namespace Datadog.Trace.Configuration
             ExpandRouteTemplatesEnabled = settings.ExpandRouteTemplatesEnabled || !RouteTemplateResourceNamesEnabled;
 
             // tag propagation
-            PropagationHeaderMaxLength = settings.PropagationHeaderMaximumLength;
+            PropagationHeaderMaxLength = settings.PropagationHeaderMaxLength;
         }
 
         /// <summary>
@@ -276,10 +276,13 @@ namespace Datadog.Trace.Configuration
         internal bool IsActivityListenerEnabled { get; }
 
         /// <summary>
-        /// Gets the maximum length of the
-        /// propagation header's value. ("x-datadog-tags")
+        /// Gets the maximum length of an outgoing propagation header's value ("x-datadog-tags")
+        /// when injecting it into downstream service calls.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TagPropagation.HeaderMaxLength"/>
+        /// <remarks>
+        /// This value is not used when extracting an incoming propagation header from an upstream service.
+        /// </remarks>
         public int PropagationHeaderMaxLength { get; }
 
         /// <summary>

@@ -186,9 +186,9 @@ namespace Datadog.Trace.Configuration
 
             var propagationHeaderMaximumLength = source?.GetInt32(ConfigurationKeys.TagPropagation.HeaderMaxLength);
 
-            PropagationHeaderMaximumLength = propagationHeaderMaximumLength is >= 0 and <= Tagging.TagPropagation.DefaultMaximumOutgoingPropagationHeaderLength ?
-                                                 (int)propagationHeaderMaximumLength :
-                                                 Tagging.TagPropagation.DefaultMaximumOutgoingPropagationHeaderLength;
+            PropagationHeaderMaxLength = propagationHeaderMaximumLength is >= 0 and <= Tagging.TagPropagation.OutgoingPropagationHeaderMaxLength ?
+                                             (int)propagationHeaderMaximumLength :
+                                             Tagging.TagPropagation.OutgoingPropagationHeaderMaxLength;
 
             IsActivityListenerEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.ActivityListenerEnabled) ??
                                 // default value
@@ -355,11 +355,14 @@ namespace Datadog.Trace.Configuration
         public bool StartupDiagnosticLogEnabled { get; set; }
 
         /// <summary>
-        /// Gets or sets the maximum length of the
-        /// propagation header's value. ("x-datadog-tags")
+        /// Gets or sets the maximum length of an outgoing propagation header's value ("x-datadog-tags")
+        /// when injecting it into downstream service calls.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TagPropagation.HeaderMaxLength"/>
-        public int PropagationHeaderMaximumLength { get; set; }
+        /// <remarks>
+        /// This value is not used when extracting an incoming propagation header from an upstream service.
+        /// </remarks>
+        public int PropagationHeaderMaxLength { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating the injection propagation style.

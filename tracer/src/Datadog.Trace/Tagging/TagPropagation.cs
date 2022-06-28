@@ -18,13 +18,13 @@ internal static class TagPropagation
     /// Default value for the maximum length of an outgoing propagation header ("x-datadog-tags").
     /// This value is used when injecting headers and can be overriden with DD_TRACE_X_DATADOG_TAGS_MAX_LENGTH.
     /// </summary>
-    public const int DefaultMaximumOutgoingPropagationHeaderLength = 512;
+    public const int OutgoingPropagationHeaderMaxLength = 512;
 
     /// <summary>
     /// The maximum length of an incoming propagation header ("x-datadog-tags").
     /// This value is used when extracting headers and cannot be overriden via configuration.
     /// </summary>
-    public const int MaximumIncomingPropagationHeaderLength = 512;
+    public const int IncomingPropagationHeaderMaxLength = 512;
 
     // tags with this prefix are propagated horizontally
     // (i.e. from upstream services and to downstream services)

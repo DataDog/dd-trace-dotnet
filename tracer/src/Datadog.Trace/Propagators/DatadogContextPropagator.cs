@@ -43,7 +43,7 @@ namespace Datadog.Trace.Propagators
 #pragma warning restore SA1118 // Parameter should not span multiple lines
             }
 
-            var propagationHeaderMaxLength = context.TraceContext?.Tracer.Settings.PropagationHeaderMaxLength ?? TagPropagation.DefaultMaximumOutgoingPropagationHeaderLength;
+            var propagationHeaderMaxLength = context.TraceContext?.Tracer.Settings.PropagationHeaderMaxLength ?? TagPropagation.OutgoingPropagationHeaderMaxLength;
             var propagatedTraceTags = context.TraceContext?.Tags?.ToPropagationHeader(propagationHeaderMaxLength) ?? context.PropagatedTags;
 
             if (propagatedTraceTags != null)
