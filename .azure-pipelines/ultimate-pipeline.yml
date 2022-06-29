@@ -924,7 +924,7 @@ stages:
         path: $(System.DefaultWorkingDirectory)/$(relativeMsiOutputDirectory)
 
     - script: |
-        docker build -t dd-trace-dotnet/msi-installer-test --build-arg DOTNET_TRACER_MSI=.$(relativeMsiOutputDirectory)/*.msi -f ./tracer/build/_build/docker/msi.dockerfile ./
+        docker build -t dd-trace-dotnet/msi-installer-test --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi -f ./tracer/build/_build/docker/msi.dockerfile $(System.DefaultWorkingDirectory)
       displayName: docker build msi.dockerfile
       retryCountOnTaskFailure: 5
 
