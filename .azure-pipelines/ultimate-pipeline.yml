@@ -929,7 +929,7 @@ stages:
       retryCountOnTaskFailure: 5
 
     - script: |
-        docker run -d --name msi-installer-test dd-trace-dotnet/msi-installer-test-running
+        docker run -d --name msi-installer-test dd-trace-dotnet/msi-installer-test
         docker exec msi-installer-test msiexec /qn /i datadog-apm.msi
         docker stop msi-installer-test
         docker diff msi-installer-test > $(System.DefaultWorkingDirectory)/tracer/test/snapshots/msi.files.received.txt

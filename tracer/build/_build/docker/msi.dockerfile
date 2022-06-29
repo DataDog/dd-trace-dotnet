@@ -7,4 +7,6 @@ ADD $DOTNET_TRACER_MSI ./datadog-apm.msi
 # Install the MSI (will do this when already running)
 #RUN Start-Process -Wait msiexec -ArgumentList '/qn /i datadog-apm.msi'
 
+RUN ls .
+
 ENTRYPOINT ["cmd", "/c", "ping -t localhost > NUL"]
