@@ -164,17 +164,15 @@ namespace Datadog.Trace.Agent.MessagePack
             {
                 // write trace-level string tags
                 var traceTags = span.Context.TraceContext?.Tags;
+
                 if (traceTags != null)
                 {
-                    lock (traceTags)
-                    {
-                        count += traceTags.Count;
+                    count += traceTags.Count;
 
-                        // don't cast to IEnumerable so we can use the struct enumerator from List<T>
-                        foreach (var tag in traceTags)
-                        {
-                            WriteTag(ref bytes, ref offset, tag.Key, tag.Value, tagProcessors);
-                        }
+                    // don't cast to IEnumerable so we can use the struct enumerator from List<T>
+                    foreach (var tag in traceTags)
+                    {
+                        WriteTag(ref bytes, ref offset, tag.Key, tag.Value, tagProcessors);
                     }
                 }
             }
