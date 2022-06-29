@@ -145,15 +145,6 @@ private:
         return true;
     }
 
-    template <typename T>
-    T ReadFromBuffer(LPCBYTE eventData, ULONG cbEventData, ULONG* offset)
-    {
-        T data = *((T*)(eventData + *offset));
-        *offset += sizeof(T);
-        assert(*offset <= cbEventData);
-        return data;
-    }
-
 private:
     ICorProfilerInfo12* _pCorProfilerInfo = nullptr;
     ThreadSafeMap<EVENTPIPE_PROVIDER, std::string> _providerNameCache;

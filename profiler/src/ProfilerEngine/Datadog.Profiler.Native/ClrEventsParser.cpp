@@ -323,11 +323,6 @@ EventPipeMetadataInstance ClrEventsParser::GetMetadata(LPCBYTE pMetadata, ULONG 
     if (it == _metadataCache.end())
     {
         ULONG offset = 0;
-        //metadata.id = ReadFromBuffer<UINT32>(pMetadata, cbMetadata, &offset);
-        //metadata.name = ReadWideString(pMetadata, cbMetadata, &offset);
-        //metadata.keywords = ReadFromBuffer<INT64>(pMetadata, cbMetadata, &offset);
-        //metadata.version = ReadFromBuffer<UINT32>(pMetadata, cbMetadata, &offset);
-        //metadata.level = ReadFromBuffer<UINT32>(pMetadata, cbMetadata, &offset);
         Read(metadata.id, pMetadata, cbMetadata, offset);
         metadata.name = ReadWideString(pMetadata, cbMetadata, &offset);
         Read(metadata.keywords, pMetadata, cbMetadata, offset);
