@@ -14,7 +14,7 @@ namespace Samples.Computer01
     public class PiComputation
     {
         private CancellationTokenSource _cancellationTokenSource;
-        private List<Task> _activeTasks;
+        private List<Thread> _activeTasks;
 
         public void Start()
         {
@@ -24,23 +24,24 @@ namespace Samples.Computer01
             }
 
             _cancellationTokenSource = new CancellationTokenSource();
-            _activeTasks = new List<Task>
-            {
-                Task.Factory.StartNew(
-                    () =>
-                    {
-                        if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
-                        {
-                            Thread.CurrentThread.Name = "PiComputation-" + Thread.CurrentThread.ManagedThreadId;
-                        }
+            _activeTasks = new List<Thread>();
 
-                        while (!_cancellationTokenSource.IsCancellationRequested)
-                        {
-                            DoPiComputation();
-                        }
-                    },
-                    TaskCreationOptions.LongRunning),
-            };
+            var t = new Thread(() =>
+            {
+                if (string.IsNullOrEmpty(Thread.CurrentThread.Name))
+                {
+                    Thread.CurrentThread.Name = "PiComputation-" + Thread.CurrentThread.ManagedThreadId;
+                }
+
+                while (!_cancellationTokenSource.IsCancellationRequested)
+                {
+                    DoPiComputation();
+                }
+            });
+
+            t.Start();
+
+            _activeTasks.Add(t);
         }
 
         public void Stop()
@@ -52,7 +53,10 @@ namespace Samples.Computer01
 
             _cancellationTokenSource.Cancel();
 
-            Task.WhenAll(_activeTasks).Wait();
+            foreach (var thread in _activeTasks)
+            {
+                thread.Join();
+            }
 
             _cancellationTokenSource.Dispose();
             _cancellationTokenSource = null;
