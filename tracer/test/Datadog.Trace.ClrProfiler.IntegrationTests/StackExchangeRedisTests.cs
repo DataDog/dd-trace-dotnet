@@ -67,16 +67,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var port = host.Substring(host.IndexOf(':') + 1);
                 host = host.Substring(0, host.IndexOf(':'));
 
-                foreach (var span in spans.Where(s => s.Type == "redis"))
-                {
-                    span.Name.Should().Be("redis.command");
-                    span.Service.Should().Be("Samples.StackExchange.Redis-redis");
-                    span.Type.Should().Be(SpanTypes.Redis);
-                    span.Tags.Should().Contain(x => x.Key == "out.host" && x.Value == host);
-                    span.Tags.Should().Contain(x => x.Key == "out.port" && x.Value == port);
-                    span.Tags.Should().NotContainKey(Tags.Version, "External service span should not have service version tag.");
-                }
-
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.UseFileName($"{nameof(StackExchangeRedisTests)}.{calculatedVersion}");
                 settings.DisableRequireUniquePrefix();

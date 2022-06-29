@@ -19,26 +19,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         MethodName = "ExecuteSyncImpl",
         ReturnTypeName = "T",
         ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint", "!!0" },
-        MinimumVersion = "2.0.0",
+        MinimumVersion = "2.0.0", // 2.6.45, but dll uses 2.0.0
         MaximumVersion = "2.*.*",
-        IntegrationName = IntegrationName)]
+        IntegrationName = StackExchangeRedisHelper.IntegrationName)]
     [InstrumentMethod(
         AssemblyName = "StackExchange.Redis.StrongName",
         TypeName = "StackExchange.Redis.ConnectionMultiplexer",
         MethodName = "ExecuteSyncImpl",
         ReturnTypeName = "T",
         ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint", "!!0" },
-        MinimumVersion = "2.0.0",
+        MinimumVersion = "2.0.0", // 2.6.45, but dll uses 2.0.0
         MaximumVersion = "2.*.*",
-        IntegrationName = IntegrationName)]
+        IntegrationName = StackExchangeRedisHelper.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
     public class ConnectionMultiplexerExecuteSyncImplIntegration_2_6_45
     {
-        private const string IntegrationName = nameof(Configuration.IntegrationId.StackExchangeRedis);
-        private const IntegrationId IntegrationId = Configuration.IntegrationId.StackExchangeRedis;
-
         internal static CallTargetState OnMethodBegin<TTarget, TMessage, TProcessor, TServerEndPoint, TDefaultValue>(TTarget instance, TMessage message, TProcessor resultProcessor, TServerEndPoint serverEndPoint, TDefaultValue defaultValue)
             where TTarget : IConnectionMultiplexer
             where TMessage : IMessageData
@@ -46,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
             string rawCommand = message.CommandAndKey ?? "COMMAND";
             StackExchangeRedisHelper.HostAndPort hostAndPort = StackExchangeRedisHelper.GetHostAndPort(instance.Configuration);
 
-            Scope scope = RedisHelper.CreateScope(Tracer.Instance, IntegrationId, hostAndPort.Host, hostAndPort.Port, rawCommand);
+            Scope scope = RedisHelper.CreateScope(Tracer.Instance, StackExchangeRedisHelper.IntegrationId, hostAndPort.Host, hostAndPort.Port, rawCommand);
             if (scope is not null)
             {
                 return new CallTargetState(scope);
