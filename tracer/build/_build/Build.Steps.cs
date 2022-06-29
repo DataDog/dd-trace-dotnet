@@ -191,6 +191,7 @@ partial class Build
         .Executes(() =>
         {
             var buildDirectory = NativeProfilerProject.Directory / "build";
+            EnsureExistingDirectory(buildDirectory);
 
             CMake.Value(
                 arguments: $"-B {buildDirectory} -S {NativeProfilerProject.Directory} -DCMAKE_BUILD_TYPE=Release");
