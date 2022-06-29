@@ -169,6 +169,11 @@ add_library("Datadog.AutoInstrumentation.NativeLoader" SHARED
         dynamic_instance.cpp
         runtimeid_store.cpp
         exported_functions.cpp
+        instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_function_control.cpp
+        instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_info.cpp
+        instrumented_assembly_generator/instrumented_assembly_generator_metadata_interfaces.cpp
+        instrumented_assembly_generator/member_signature.cpp
+        instrumented_assembly_generator/method_signature.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp

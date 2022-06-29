@@ -216,6 +216,14 @@
     <ClInclude Include="dynamic_instance.h" />
     <ClInclude Include="dynamic_dispatcher.h" />
     <ClInclude Include="EnvironmentVariables.h" />
+    <ClInclude Include="instrumented_assembly_generator\instrumented_assembly_generator_consts.h" />
+    <ClInclude Include="instrumented_assembly_generator\instrumented_assembly_generator_cor_profiler_function_control.h" />
+    <ClInclude Include="instrumented_assembly_generator\instrumented_assembly_generator_cor_profiler_info.h" />
+    <ClInclude Include="instrumented_assembly_generator\instrumented_assembly_generator_helper.h" />
+    <ClInclude Include="instrumented_assembly_generator\instrumented_assembly_generator_metadata_interfaces.h" />
+    <ClInclude Include="instrumented_assembly_generator\member_signature.h" />
+    <ClInclude Include="instrumented_assembly_generator\method_info.h" />
+    <ClInclude Include="instrumented_assembly_generator\method_signature.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="exported_functions.h" />
     <ClInclude Include="runtimeid_store.h" />
@@ -233,6 +241,11 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="dynamic_instance.cpp" />
     <ClCompile Include="dynamic_dispatcher.cpp" />
+    <ClCompile Include="instrumented_assembly_generator\instrumented_assembly_generator_cor_profiler_function_control.cpp" />
+    <ClCompile Include="instrumented_assembly_generator\instrumented_assembly_generator_cor_profiler_info.cpp" />
+    <ClCompile Include="instrumented_assembly_generator\instrumented_assembly_generator_metadata_interfaces.cpp" />
+    <ClCompile Include="instrumented_assembly_generator\member_signature.cpp" />
+    <ClCompile Include="instrumented_assembly_generator\method_signature.cpp" />
     <ClCompile Include="exported_functions.cpp" />
     <ClCompile Include="runtimeid_store.cpp" />
   </ItemGroup>

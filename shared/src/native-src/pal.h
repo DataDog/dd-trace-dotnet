@@ -131,4 +131,29 @@ inline WSTRING GetCurrentModuleFileName()
     return EmptyWStr;
 }
 
+inline WSTRING GetProcessStartTime()
+{
+#if _WIN32
+    FILETIME creationTime, exitTime, kernetlTime, userTime;
+    if (GetProcessTimes(GetCurrentProcess(), &creationTime, &exitTime, &kernetlTime, &userTime))
+    {
+        SYSTEMTIME systemTime;
+        if (FileTimeToSystemTime(&creationTime, &systemTime))
+        {
+            std::ostringstream ossMessage;
+
+            ossMessage << std::setw(2) << std::setfill('0') << systemTime.wDay << "-" << std::setw(2)
+                       << std::setfill('0') << systemTime.wMonth << "-" << systemTime.wYear << "_" << std::setw(2)
+                       << std::setfill('0') << systemTime.wHour << "-" << std::setw(2) << std::setfill('0')
+                       << systemTime.wMinute << "-" << std::setw(2) << std::setfill('0') << systemTime.wSecond;
+
+            return ToWSTRING(ossMessage.str());
+        }
+    }
+    return EmptyWStr;
+#else
+    return EmptyWStr;
+#endif
+}
+
 } // namespace shared

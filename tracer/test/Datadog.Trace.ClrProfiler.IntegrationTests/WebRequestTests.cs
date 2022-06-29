@@ -27,8 +27,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void SubmitsTraces()
         {
+            SetInstrumentationVerification();
             var expectedSpanCount = 76;
 
             const string expectedOperationName = "http.request";
@@ -60,15 +62,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.Equal(firstSpan.TraceId.ToString(CultureInfo.InvariantCulture), traceId);
                 Assert.Equal(firstSpan.SpanId.ToString(CultureInfo.InvariantCulture), parentSpanId);
                 telemetry.AssertIntegrationEnabled(IntegrationId.WebRequest);
+                VerifyInstrumentation(processResult.Process);
             }
         }
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void TracingDisabled_DoesNotSubmitsTraces()
         {
             const string expectedOperationName = "http.request";
+            SetInstrumentationVerification();
 
             int httpPort = TcpPortProvider.GetOpenPort();
 
@@ -87,6 +92,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.Null(parentSpanId);
                 Assert.Equal("false", tracingEnabled);
                 telemetry.AssertIntegrationDisabled(IntegrationId.WebRequest);
+                VerifyInstrumentation(processResult.Process);
             }
         }
     }

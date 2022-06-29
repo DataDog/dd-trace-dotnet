@@ -454,6 +454,39 @@ namespace Datadog.Trace.TestHelpers
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Enabled, security ? "true" : "false");
         }
 
+        protected void SetInstrumentationVerification()
+        {
+            bool verificationEnabled = ShouldUseInstrumentationVerification();
+            SetEnvironmentVariable(InstrumentationVerification.InstrumentationVerificationEnabled, verificationEnabled ? "1" : "0");
+            SetEnvironmentVariable(InstrumentationVerification.UseNativeLoader, verificationEnabled ? "1" : "0");
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.LogDirectory, verificationEnabled ? EnvironmentHelper.LogDirectory : null);
+        }
+
+        protected void VerifyInstrumentation(Process process)
+        {
+            if (!ShouldUseInstrumentationVerification())
+            {
+                return;
+            }
+
+            var logDirectory = EnvironmentHelper.LogDirectory;
+            InstrumentationVerification.VerifyInstrumentation(process, logDirectory);
+        }
+
+        protected bool ShouldUseInstrumentationVerification()
+        {
+            if (!EnvironmentTools.IsWindows())
+            {
+                // Instrumentation Verification is currently only supported only on Windows
+                return false;
+            }
+
+            // verify instrumentation adds a lot of time to tests so we only run it on azure and if it a scheduled build.
+            // Return 'true' to verify instrumentation on local machine.
+            // return true;
+            return EnvironmentHelper.IsRunningInAzureDevOps() && EnvironmentHelper.IsScheduledBuild();
+        }
+
         protected void EnableDirectLogSubmission(int intakePort, string integrationName, string host = "integration_tests")
         {
             SetEnvironmentVariable(ConfigurationKeys.DirectLogSubmission.Host, host);

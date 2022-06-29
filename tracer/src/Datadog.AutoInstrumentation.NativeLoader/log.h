@@ -15,7 +15,7 @@ namespace ds = datadog::shared;
 
 class Log final
 {
-private:
+public:
     struct NativeLoaderLoggerPolicy
     {
         inline static const std::string file_name = "dotnet-native-loader";
@@ -30,8 +30,6 @@ private:
         };
     };
 
-
-public:
     inline static ds::Logger* const Instance = ds::LogManager::Get<Log::NativeLoaderLoggerPolicy>();
 
     static bool IsDebugEnabled()

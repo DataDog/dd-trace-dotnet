@@ -153,7 +153,7 @@ namespace Datadog.Trace.Logging
             return DefaultLogMessageRateLimit;
         }
 
-        private static string GetLogDirectory()
+        internal static string GetLogDirectory()
         {
             string logDirectory = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.LogDirectory);
             if (logDirectory == null)
