@@ -36,6 +36,7 @@
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
 #include "ExceptionsProvider.h"
+#include "ClrEventsParser.h"
 
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/loader.h"
@@ -267,7 +268,21 @@ void CorProfilerCallback::DisposeInternal(void)
 
         DisposeServices();
 
-        ICorProfilerInfo4* pCorProfilerInfo = _pCorProfilerInfo;
+        // don't forget to stop the CLR events session
+        auto* pInfo = _pCorProfilerInfoEvents;
+        if (pInfo != nullptr)
+        {
+            if (_session != 0)
+            {
+                pInfo->EventPipeStopSession(_session);
+                _session = 0;
+            }
+
+            pInfo->Release();
+            _pCorProfilerInfoEvents = nullptr;
+        }
+
+        ICorProfilerInfo5* pCorProfilerInfo = _pCorProfilerInfo;
         if (pCorProfilerInfo != nullptr)
         {
             pCorProfilerInfo->Release();
@@ -467,20 +482,18 @@ void CorProfilerCallback::InspectProcessorInfo(void)
 #endif
 }
 
-void CorProfilerCallback::InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo)
+void CorProfilerCallback::InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor)
 {
     USHORT clrInstanceId;
     COR_PRF_RUNTIME_TYPE runtimeType;
-    USHORT majorVersion;
-    USHORT minorVersion;
     USHORT buildNumber;
     USHORT qfeVersion;
 
     HRESULT hr = pCorProfilerInfo->GetRuntimeInformation(
         &clrInstanceId,
         &runtimeType,
-        &majorVersion,
-        &minorVersion,
+        &major,
+        &minor,
         &buildNumber,
         &qfeVersion,
         0,
@@ -499,8 +512,8 @@ void CorProfilerCallback::InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerI
                    : (runtimeType == COR_PRF_CORE_CLR)
                        ? "CORE_CLR"
                        : (std::string("unknown(") + std::to_string(runtimeType) + std::string(")"))),
-                  ", majorVersion: ", majorVersion,
-                  ", minorVersion: ", minorVersion,
+                  ", majorVersion: ", major,
+                  ", minorVersion: ", minor,
                   ", buildNumber: ", buildNumber,
                   ", qfeVersion: ", qfeVersion,
                   " }.");
@@ -566,10 +579,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         return E_FAIL;
     }
 
-    HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo4), (void**)&_pCorProfilerInfo);
+    HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo5), (void**)&_pCorProfilerInfo);
     if (hr == E_NOINTERFACE)
     {
-        Log::Error("This runtime does not support any ICorProfilerInfo4+ interface. .NET Framework 4.5 or later is required.");
+        Log::Error("This runtime does not support any ICorProfilerInfo5+ interface. .NET Framework 4.5 or later is required.");
         return E_FAIL;
     }
     else if (FAILED(hr))
@@ -579,7 +592,25 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     }
 
     // Log some more important environment info:
-    CorProfilerCallback::InspectRuntimeVersion(_pCorProfilerInfo);
+    USHORT major = 0;
+    USHORT minor = 0;
+    CorProfilerCallback::InspectRuntimeVersion(_pCorProfilerInfo, major, minor);
+
+    if (major >= 5)
+    {
+        HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&_pCorProfilerInfoEvents);
+        if (FAILED(hr))
+        {
+            Log::Error("Failed to get ICorProfilerInfo12: 0x", std::hex, hr, std::dec, ".");
+            _pCorProfilerInfoEvents = nullptr;
+
+            // we continue: the CLR events won't be received so no contention/memory profilers...
+        }
+        else
+        {
+            _pClrEventsParser = new ClrEventsParser(_pCorProfilerInfoEvents);
+        }
+    }
 
     // Init global state:
     OpSysTools::InitHighPrecisionTimer();
@@ -629,12 +660,58 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         eventMask |= COR_PRF_MONITOR_EXCEPTIONS;
     }
 
-    hr = _pCorProfilerInfo->SetEventMask(eventMask);
-    if (FAILED(hr))
+    if ((major >= 5) && (_pCorProfilerInfoEvents != nullptr))
     {
-        Log::Error("SetEventMask(0x", std::hex, eventMask, ") returned an unexpected result: 0x", std::hex, hr, std::dec, ".");
-        return E_FAIL;
+        // listen to CLR events via ICorProfilerCallback
+        DWORD highMask = COR_PRF_HIGH_MONITOR_EVENT_PIPE;
+        hr = _pCorProfilerInfo->SetEventMask2(eventMask, highMask);
+        if (FAILED(hr))
+        {
+            Log::Error("SetEventMask2(0x", std::hex, eventMask, ", ", std::hex, highMask,") returned an unexpected result: 0x", std::hex, hr, std::dec, ".");
+            return E_FAIL;
+        }
+
+        // Microsoft-Windows-DotNETRuntime is the provider for the runtime events.
+        // Listen to interesting events:
+        //  - AllocationTick_V4
+        //  - ContentionStop_V1
+        COR_PRF_EVENTPIPE_PROVIDER_CONFIG providers[] =
+        {
+            {
+                WStr("Microsoft-Windows-DotNETRuntime"),
+                0x01 | 0x4000,  // GC and Contention keywords
+                //4, // Informational verbosity level
+                5, // the documentation states that AllocationTick is Informational but... need Verbose  :^(
+                NULL
+            }
+        };
+
+        hr = _pCorProfilerInfoEvents->EventPipeStartSession(
+            sizeof(providers) / sizeof(providers[0]),
+            providers,
+            false,
+            &_session
+            );
+
+        if (FAILED(hr))
+        {
+            _session = 0;
+            printf("Failed to start event pipe session with hr=0x%x\n", hr);
+            return hr;
+        }
+
+        // TODO: add the corresponding CLR events listener service when available
     }
+    else
+    {
+        hr = _pCorProfilerInfo->SetEventMask(eventMask);
+        if (FAILED(hr))
+        {
+            Log::Error("SetEventMask(0x", std::hex, eventMask, ") returned an unexpected result: 0x", std::hex, hr, std::dec, ".");
+            return E_FAIL;
+        }
+    }
+
 
     // Initialization complete:
     _isInitialized.store(true);
@@ -1223,6 +1300,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::DynamicMethodUnloaded(FunctionID 
 {
     return S_OK;
 }
+
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE_PROVIDER provider,
                                                                        DWORD eventId,
                                                                        DWORD eventVersion,
@@ -1236,6 +1314,21 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE
                                                                        ULONG numStackFrames,
                                                                        UINT_PTR stackFrames[])
 {
+    _pClrEventsParser->ParseEvent(
+        provider,
+        eventId,
+        eventVersion,
+        cbMetadataBlob,
+        metadataBlob,
+        cbEventData,
+        eventData,
+        pActivityId,
+        pRelatedActivityId,
+        eventThread,
+        numStackFrames,
+        stackFrames
+        );
+
     return S_OK;
 }
 

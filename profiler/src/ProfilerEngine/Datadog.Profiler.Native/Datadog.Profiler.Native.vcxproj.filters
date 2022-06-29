@@ -206,6 +206,9 @@
     <ClInclude Include="AdaptiveSampler.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="ClrEventsParser.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -318,6 +321,9 @@
     </ClCompile>
     <ClCompile Include="Timer.Windows.cpp">
       <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="ClrEventsParser.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
