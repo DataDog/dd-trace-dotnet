@@ -68,7 +68,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             EnvironmentHelper.EnableWindowsNamedPipes();
-            RunTest();
+            // The server implementation of named pipes is flaky so have 3 attempts
+            var attemptsRemaining = 3;
+            while (true)
+            {
+                try
+                {
+                    attemptsRemaining--;
+                    RunTest();
+                    return;
+                }
+                catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
+                {
+                    Output.WriteLine($"Error executing test. {attemptsRemaining} attempts remaining. {ex}");
+                }
+            }
         }
 
         private void RunTest()

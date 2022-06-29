@@ -120,22 +120,41 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             EnvironmentHelper.EnableWindowsNamedPipes();
-            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
-            agent.Output = Output;
-
-            int httpPort = TcpPortProvider.GetOpenPort();
-            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
-            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            // The server implementation of named pipes is flaky so have 3 attempts
+            var attemptsRemaining = 3;
+            while (true)
             {
-                Assert.True(processResult.ExitCode == 0, $"Process exited with code {processResult.ExitCode}");
-
-                var spans = agent.WaitForSpans(ExpectedSpans);
-                await AssertExpectedSpans(spans);
+                try
+                {
+                    attemptsRemaining--;
+                    await RunTest();
+                    return;
+                }
+                catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
+                {
+                    Output.WriteLine($"Error executing test. {attemptsRemaining} attempts remaining. {ex}");
+                }
             }
 
-            var data = agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+            async Task RunTest()
+            {
+                using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+                agent.Output = Output;
 
-            AssertTelemetry(data);
+                int httpPort = TcpPortProvider.GetOpenPort();
+                Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+                using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+                {
+                    Assert.True(processResult.ExitCode == 0, $"Process exited with code {processResult.ExitCode}");
+
+                    var spans = agent.WaitForSpans(ExpectedSpans);
+                    await AssertExpectedSpans(spans);
+                }
+
+                var data = agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
+
+                AssertTelemetry(data);
+            }
         }
 
 #if NETCOREAPP3_1_OR_GREATER

@@ -41,8 +41,33 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TransportsWorkCorrectly(Enum transport)
         {
-            const int expectedSpanCount = 2;
             var transportType = (TracesTransportType)transport;
+            if (transportType != TracesTransportType.WindowsNamedPipe)
+            {
+                await RunTest(transportType);
+                return;
+            }
+
+            // The server implementation of named pipes is flaky so have 3 attempts
+            var attemptsRemaining = 3;
+            while (true)
+            {
+                try
+                {
+                    attemptsRemaining--;
+                    await RunTest(transportType);
+                    return;
+                }
+                catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
+                {
+                    Output.WriteLine($"Error executing test. {attemptsRemaining} attempts remaining. {ex}");
+                }
+            }
+        }
+
+        private async Task RunTest(TracesTransportType transportType)
+        {
+            const int expectedSpanCount = 2;
 
             if (transportType == TracesTransportType.WindowsNamedPipe && !EnvironmentTools.IsWindows())
             {
