@@ -27,7 +27,7 @@ namespace Datadog.Trace
         public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
         {
             Tracer = tracer;
-            Tags = tags;
+            Tags = tags ?? new TraceTagCollection();
         }
 
         public Span RootSpan { get; private set; }
