@@ -123,7 +123,6 @@
     <Content Include="Areas\Datadog\Views\_ViewStart.cshtml" />
     <Content Include="Areas\Datadog\Views\Shared\_Layout.cshtml" />
     <Content Include="Areas\Datadog\Views\DogHouse\Index.cshtml" />
-    <Content Include="libman.json" />
     <None Include="packages.config" />
     <Content Include="Views\_Layout.cshtml" />
     <Content Include="Views\_ViewStart.cshtml" />
