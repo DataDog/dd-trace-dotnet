@@ -13,19 +13,17 @@ namespace Samples.Computer01
 {
     public class PiComputation
     {
-        private const int SleepDurationMs = 0;
-
-        private ManualResetEvent _stopEvent;
+        private CancellationTokenSource _cancellationTokenSource;
         private List<Task> _activeTasks;
 
         public void Start()
         {
-            if (_stopEvent != null)
+            if (_cancellationTokenSource != null)
             {
                 throw new InvalidOperationException("Already running...");
             }
 
-            _stopEvent = new ManualResetEvent(false);
+            _cancellationTokenSource = new CancellationTokenSource();
             _activeTasks = new List<Task>
             {
                 Task.Factory.StartNew(
@@ -36,7 +34,7 @@ namespace Samples.Computer01
                             Thread.CurrentThread.Name = "PiComputation-" + Thread.CurrentThread.ManagedThreadId;
                         }
 
-                        while (!_stopEvent.WaitOne(SleepDurationMs))
+                        while (!_cancellationTokenSource.IsCancellationRequested)
                         {
                             DoPiComputation();
                         }
@@ -47,34 +45,34 @@ namespace Samples.Computer01
 
         public void Stop()
         {
-            if (_stopEvent == null)
+            if (_cancellationTokenSource == null)
             {
                 throw new InvalidOperationException("Not running...");
             }
 
-            _stopEvent.Set();
+            _cancellationTokenSource.Cancel();
 
             Task.WhenAll(_activeTasks).Wait();
 
-            _stopEvent.Dispose();
-            _stopEvent = null;
+            _cancellationTokenSource.Dispose();
+            _cancellationTokenSource = null;
             _activeTasks = null;
         }
 
         public void Run()
         {
-            _stopEvent = new ManualResetEvent(false);
+            _cancellationTokenSource = new CancellationTokenSource();
 
             DoPiComputation();
 
-            _stopEvent.Dispose();
-            _stopEvent = null;
+            _cancellationTokenSource.Dispose();
+            _cancellationTokenSource = null;
         }
 
         private void DoPiComputation()
         {
             // ~ 7 seconds on a P70 laptop
-            const int maxIteration = 20000000;
+
             ulong denominator = 1;
             int numerator = 1;
             double pi = 1;
@@ -85,8 +83,8 @@ namespace Samples.Computer01
 
             int currentIteration = 0;
             while (
-                (currentIteration < maxIteration) &&
-                !_stopEvent.WaitOne(SleepDurationMs))
+                sw.Elapsed.TotalSeconds < 7 &&
+                !_cancellationTokenSource.IsCancellationRequested)
             {
                 numerator = -numerator;
                 denominator += 2;
