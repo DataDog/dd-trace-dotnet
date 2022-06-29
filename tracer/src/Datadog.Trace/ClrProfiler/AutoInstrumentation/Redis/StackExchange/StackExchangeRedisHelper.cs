@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Linq;
+using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
 {
@@ -12,6 +13,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     /// </summary>
     internal static class StackExchangeRedisHelper
     {
+        internal const string IntegrationName = nameof(Configuration.IntegrationId.StackExchangeRedis);
+        internal const IntegrationId IntegrationId = Configuration.IntegrationId.StackExchangeRedis;
+
         /// <summary>
         /// Get the host and port from the config
         /// </summary>

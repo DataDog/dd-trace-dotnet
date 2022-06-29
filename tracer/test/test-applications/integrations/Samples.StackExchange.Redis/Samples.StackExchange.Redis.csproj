@@ -24,4 +24,8 @@
     <PackageReference Include="StackExchange.Redis" Version="$(ApiVersion)" />
   </ItemGroup>
 
+  <ItemGroup Condition="$(TargetFramework.StartsWith('net4'))">
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
 </Project>

@@ -1,4 +1,4 @@
-// <copyright file="ConnectionMultiplexerExecuteSyncImplIntegration.cs" company="Datadog">
+// <copyright file="ConnectionMultiplexerExecuteSyncImplIntegration_2_6_45.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,8 +18,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         TypeName = "StackExchange.Redis.ConnectionMultiplexer",
         MethodName = "ExecuteSyncImpl",
         ReturnTypeName = "T",
-        ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint" },
-        MinimumVersion = "1.0.0",
+        ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint", "!!0" },
+        MinimumVersion = "2.0.0", // 2.6.45, but dll uses 2.0.0
         MaximumVersion = "2.*.*",
         IntegrationName = StackExchangeRedisHelper.IntegrationName)]
     [InstrumentMethod(
@@ -27,27 +27,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         TypeName = "StackExchange.Redis.ConnectionMultiplexer",
         MethodName = "ExecuteSyncImpl",
         ReturnTypeName = "T",
-        ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint" },
-        MinimumVersion = "1.0.0",
+        ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint", "!!0" },
+        MinimumVersion = "2.0.0", // 2.6.45, but dll uses 2.0.0
         MaximumVersion = "2.*.*",
         IntegrationName = StackExchangeRedisHelper.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ConnectionMultiplexerExecuteSyncImplIntegration
+    // ReSharper disable once InconsistentNaming
+    public class ConnectionMultiplexerExecuteSyncImplIntegration_2_6_45
     {
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TMessage">Type of the message</typeparam>
-        /// <typeparam name="TProcessor">Type of the result processor</typeparam>
-        /// <typeparam name="TServerEndPoint">Type of the server end point</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="message">Message instance</param>
-        /// <param name="resultProcessor">Result processor instance</param>
-        /// <param name="serverEndPoint">Server endpoint instance</param>
-        /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TMessage, TProcessor, TServerEndPoint>(TTarget instance, TMessage message, TProcessor resultProcessor, TServerEndPoint serverEndPoint)
+        internal static CallTargetState OnMethodBegin<TTarget, TMessage, TProcessor, TServerEndPoint, TDefaultValue>(TTarget instance, TMessage message, TProcessor resultProcessor, TServerEndPoint serverEndPoint, TDefaultValue defaultValue)
             where TTarget : IConnectionMultiplexer
             where TMessage : IMessageData
         {
