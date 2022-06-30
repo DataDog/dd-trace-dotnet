@@ -21,8 +21,8 @@ using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Util;
-using MessagePack;
-using Xunit.Abstractions; // use nuget MessagePack to deserialize
+using MessagePack; // use nuget MessagePack to deserialize
+using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
 {
