@@ -232,6 +232,9 @@ partial class Build : NukeBuild
                 // nuget smoke tests
                 GenerateLinuxNuGetSmokeTestsMatrix();
                 GenerateLinuxNuGetSmokeTestsArm64Matrix();
+                
+                // msi smoke tests
+                GenerateWindowsMsiSmokeTestsMatrix();
 
                 void GenerateLinuxInstallerSmokeTestsMatrix()
                 {
@@ -530,6 +533,33 @@ partial class Build : NukeBuild
                                 runtimeImage = $"{dockerName}:{image.runtimeTag}"
                             });
                     }
+                }
+                
+                void GenerateWindowsMsiSmokeTestsMatrix()
+                {
+                    var dockerName = "mcr.microsoft.com/dotnet/aspnet";
+
+                    var runtimeImages = new (string publishFramework, string runtimeTag)[]
+                    {
+                        (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2019"),
+                        (publishFramework: TargetFramework.NET5_0, "5.0-windowsservercore-ltsc2019"),
+                    };
+                    
+                    var matrix = runtimeImages.Select(image =>
+                    {
+                        var dockerTag = $"windows_{image.runtimeTag.Replace('.', '_')}";
+                        return (dockerTag, new
+                                   {
+                                       dockerTag = dockerTag,
+                                       publishFramework = image.publishFramework,
+                                       runtimeImage = $"{dockerName}:{image.runtimeTag}"
+                                   });
+                    }).ToDictionary(x=>x.dockerTag, x => x.Item2);
+                    
+                    
+                    Logger.Info($"Installer smoke tests MSI matrix Windows");
+                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetVariable("msi_installer_windows_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
             }
         };

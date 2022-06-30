@@ -4,24 +4,41 @@ parameters:
 
   - name: 'snapshotPrefix'
     type: 'string'
+    
+  - name: isLinux
+    type: boolean
+    default: true
 
 steps:
-- script: |
-    docker-compose -p ddtrace_$(Build.BuildNumber) run --rm start-test-agent
+- ${{ if eq(parameters.isLinux, true) }}:
+  - bash: |
+      echo "##vso[task.setvariable variable=CURL_COMMAND]/usr/bin/curl"
+      echo "##vso[task.setvariable variable=TEST_AGENT_TARGET]test-agent"
+      echo "##vso[task.setvariable variable=START_TEST_AGENT_TARGET]start-test-agent"
+    displayName: set variables
+- ${{ else }}:
+  - bash: |
+      echo "##vso[task.setvariable variable=CURL_COMMAND]curl"
+      echo "##vso[task.setvariable variable=TEST_AGENT_TARGET]test-agent.windows"
+      echo "##vso[task.setvariable variable=START_TEST_AGENT_TARGET]start-test-agent.windows"
+    displayName: set variables
+
+- bash: |
+    docker-compose -p ddtrace_$(Build.BuildNumber) run --rm $(START_TEST_AGENT_TARGET)
   env:
     dockerTag: $(dockerTag)
-  displayName: docker-compose run start-test-agent
+  displayName: docker-compose run $(START_TEST_AGENT_TARGET)
   retryCountOnTaskFailure: 3
 
 - bash: |
-    token=$(cat /proc/sys/kernel/random/uuid)
+    token="$(System.JobId)"
     echo "##vso[task.setvariable variable=snapshot_token]$token"
     endpoint="/test/session/start?test_session_token=$token"
     echo "Starting snapshot session with $endpoint"
-    docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl --fail "http://localhost:8126$endpoint"
+    docker-compose -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --fail "http://localhost:8126$endpoint"
   displayName: start snapshot session
 
-- script: |
+- bash: |
     docker-compose -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) ${{ parameters.target }}
   env:
     dockerTag: $(dockerTag)
@@ -32,15 +49,15 @@ steps:
     token=$(token)
     endpoint="/test/session/traces?test_session_token=$token"
     echo "Dumping traces with $endpoint"
-    docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl -o /debug_snapshots/${{ parameters.snapshotPrefix }}_traces.json "http://localhost:8126$endpoint"
+    docker-compose -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) -o /debug_snapshots/${{ parameters.snapshotPrefix }}_traces.json "http://localhost:8126$endpoint"
     
     endpoint="/test/session/stats?test_session_token=$token"
     echo "Dumping stats with $endpoint"
-    docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl -o /debug_snapshots/${{ parameters.snapshotPrefix }}_stats.json "http://localhost:8126$endpoint"
+    docker-compose -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) -o /debug_snapshots/${{ parameters.snapshotPrefix }}_stats.json "http://localhost:8126$endpoint"
     
     endpoint="/test/session/requests?test_session_token=$token"
     echo "Dumping all requests with $endpoint"
-    docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl -o /debug_snapshots/${{ parameters.snapshotPrefix }}_requests.json "http://localhost:8126$endpoint"
+    docker-compose -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) -o /debug_snapshots/${{ parameters.snapshotPrefix }}_requests.json "http://localhost:8126$endpoint"
     
     if [ "$(publishFramework)" = "netcoreapp2.1" ]; then
       snapshotfile="${{ parameters.snapshotPrefix }}_snapshots_2_1"
@@ -51,14 +68,14 @@ steps:
     # Fail if the snapshots don't match
     endpoint="/test/session/snapshot?test_session_token=$token&file=/snapshots/$snapshotfile"
     echo "Verifying snapshot session with $endpoint"
-    docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl --fail "http://localhost:8126$endpoint"
+    docker-compose -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --fail "http://localhost:8126$endpoint"
   displayName: check snapshots
 
 - task: DockerCompose@0
-  displayName: dump docker-compose logs for test-agent
+  displayName: dump docker-compose logs for $(TEST_AGENT_TARGET)
   inputs:
     containerregistrytype: Container Registry
-    dockerComposeCommand: logs test-agent
+    dockerComposeCommand: logs $(TEST_AGENT_TARGET)
     projectName: ddtrace_$(Build.BuildNumber)
   condition: succeededOrFailed()
   continueOnError: true
