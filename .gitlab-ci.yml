@@ -3,6 +3,7 @@ stages:
   - build
   - publish
   - deploy
+  - deploy_aas
   
 variables:
   DATADOG_AGENT_WINBUILDIMAGES: v5996510-a9e6a7d
