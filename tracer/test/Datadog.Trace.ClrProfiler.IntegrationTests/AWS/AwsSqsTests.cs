@@ -41,12 +41,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var expectedCount = 28;
                 var frameworkName = "NetCore";
 #endif
-                var spans = agent.WaitForSpans(expectedCount, operationName: "sqs.request");
+                var spans = agent.WaitForSpans(expectedCount);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.UseFileName($"{nameof(AwsSqsTests)}.{frameworkName}");
                 settings.DisableRequireUniquePrefix();
 
+                // Note: http.request spans are expected for the following SQS API's that don't have explicit support
+                // - ListQueues
+                // - GetQueueUrl
+                // - PurgeQueue
                 await VerifyHelper.VerifySpans(spans, settings);
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.AwsSqs);
