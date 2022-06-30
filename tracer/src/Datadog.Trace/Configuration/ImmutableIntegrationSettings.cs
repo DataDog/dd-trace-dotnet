@@ -51,5 +51,16 @@ namespace Datadog.Trace.Configuration
         /// that determines the sampling rate for this integration.
         /// </summary>
         public double AnalyticsSampleRate { get; }
+
+        /// <summary>
+        /// Gets the <c>ImmutableIntegrationSettings</c>  as a string.
+        /// </summary>
+        /// <remarks>
+        /// To simplify viewing in the debugger.
+        /// </remarks>
+        /// <returns>
+        /// The object in a human readable format.
+        /// </returns>
+        public override string ToString() => $"{this.IntegrationName} - {(this.Enabled == true ? "Enabled" : "Disabled")} - Analytics: {(this.AnalyticsEnabled == true ? $"Sample Rate {this.AnalyticsSampleRate}" : "Disabled")}";
     }
 }
