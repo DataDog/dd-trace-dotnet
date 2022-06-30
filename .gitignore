@@ -143,6 +143,14 @@ _ReSharper*/
 *.[Rr]e[Ss]harper
 *.DotSettings.user
 
+# NCrunch is a .NET Unit test runner
+# NCrunch
+*.ncrunch*.user
+_NCrunch_*
+*.crunch.xml
+nCrunchTemp_*
+
+
 # JustCode is a .NET coding add-in
 .JustCode
 
