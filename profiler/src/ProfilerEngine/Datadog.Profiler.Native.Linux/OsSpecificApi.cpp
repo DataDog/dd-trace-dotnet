@@ -9,6 +9,7 @@
 #include <sys/syscall.h>
 #include "OsSpecificApi.h"
 
+#include "Log.h"
 #include "LinuxStackFramesCollector.h"
 #include "StackFramesCollectorBase.h"
 #include "shared/src/native-src/loader.h"
@@ -48,6 +49,7 @@ std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
 //    pthread_getcpuclockid(pthread_self(), &clockid);
 //    if (clock_gettime(clockid, &cpu_time)) { ... }
 //
+static bool firstError = true;
 
 bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
 {
@@ -75,6 +77,13 @@ bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
     bool success = sscanf(pEnd, " %c %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %d %d", &state, &userTime, &kernelTime) == 3;
     if (!success)
     {
+        // log the first error to be able to analyze unexpected string format
+        if (firstError)
+        {
+            firstError = false;
+            Log::Error("Unexpected /proc/self/task/", tid, "/stat: ", sline);
+        }
+
         return false;
     }
 
