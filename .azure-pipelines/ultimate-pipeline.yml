@@ -1984,7 +1984,7 @@ stages:
     #   "false": do NOT run this step
     #   else: run this stage if branch is master
 
-    - script: aws s3 cp s3_upload s3://datadog-reliability-env/dotnet/ --recursive
+    - script: aws --region us-east-1 s3 cp s3_upload s3://datadog-reliability-env/dotnet/ --recursive --debug
       displayName: Upload deb, MSI, index.txt to s3
       condition: >
         and(
