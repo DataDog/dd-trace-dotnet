@@ -397,7 +397,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void SetEnvironmentVariable(string key, string value)
         {
-            EnvironmentHelper.CustomEnvironmentVariables.Add(key, value);
+            EnvironmentHelper.CustomEnvironmentVariables[key] = value;
         }
 
         protected void ValidateSpans<T>(IEnumerable<MockSpan> spans, Func<MockSpan, T> mapper, IEnumerable<T> expected)
