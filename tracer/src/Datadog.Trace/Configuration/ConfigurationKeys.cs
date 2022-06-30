@@ -270,7 +270,7 @@ namespace Datadog.Trace.Configuration
         /// If this variable is set all other IP related headers should be ignored
         /// Default is value is null (do not override).
         /// </summary>
-        public const string IpHeader = "DD_IP_HEADER";
+        public const string IpHeader = "DD_TRACE_CLIENT_IP_HEADER";
 
         /// <summary>
         /// Configuration key to enable or disable the creation of a span context on exiting a successful Kafka
@@ -308,6 +308,12 @@ namespace Datadog.Trace.Configuration
         /// Default value is "" (disabled).
         /// </summary>
         public const string TraceMethods = "DD_TRACE_METHODS";
+
+        /// <summary>
+        /// Configuration key for specifying a custom regex to obfuscate query strings.
+        /// Default value is in TracerSettings
+        /// </summary>
+        public const string ObfuscationQueryStringRegex = "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP";
 
         /// <summary>
         /// String constants for CI Visibility configuration keys.

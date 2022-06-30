@@ -520,6 +520,7 @@ namespace Datadog.Trace.TestHelpers
 
             // disable tracing for this HttpClient request
             httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+            httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
             var testStart = DateTime.UtcNow;
             var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
             var content = await response.Content.ReadAsStringAsync();

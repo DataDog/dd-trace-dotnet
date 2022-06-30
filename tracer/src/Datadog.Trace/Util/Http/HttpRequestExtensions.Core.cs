@@ -14,12 +14,10 @@ namespace Datadog.Trace.Util.Http
 {
     internal static partial class HttpRequestExtensions
     {
-        private const string NoHostSpecified = "UNKNOWN_HOST";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HttpRequestExtensions));
 
         internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request)
         {
-            var url = GetUrl(request);
             var headersDic = new Dictionary<string, string[]>(request.Headers.Keys.Count);
             foreach (var k in request.Headers.Keys)
             {
@@ -82,7 +80,7 @@ namespace Datadog.Trace.Util.Http
                     AddressesConstants.RequestMethod, request.Method
                 },
                 {
-                    AddressesConstants.RequestUriRaw, url
+                    AddressesConstants.RequestUriRaw, request.GetUrl()
                 },
                 {
                     AddressesConstants.RequestQuery, queryStringDic
@@ -98,19 +96,12 @@ namespace Datadog.Trace.Util.Http
             return dict;
         }
 
-        internal static string GetUrl(this HttpRequest request)
-        {
-            if (request.Host.HasValue)
-            {
-                return $"{request.Scheme}://{request.Host.Value}{request.PathBase.ToUriComponent()}{request.Path.ToUriComponent()}{request.QueryString}";
-            }
+        internal static string GetUrl(this HttpRequest request) => HttpRequestUtils.GetUrl(request.Scheme, request.Host.Value, request.PathBase.ToUriComponent(), request.Path.ToUriComponent());
 
-            // HTTP 1.0 requests are not required to provide a Host to be valid
-            // Since this is just for display, we can provide a string that is
-            // not an actual Uri with only the fields that are specified.
-            // request.GetDisplayUrl(), used above, will throw an exception
-            // if request.Host is null.
-            return $"{request.Scheme}://{HttpRequestExtensions.NoHostSpecified}{request.PathBase.ToUriComponent()}{request.Path.ToUriComponent()}{request.QueryString}";
+        internal static string GetUrlWithQueryString(this HttpRequest request, QueryStringObfuscator obfuscator)
+        {
+            var queryString = obfuscator.Obfuscate(request.QueryString.Value);
+            return HttpRequestUtils.GetUrl(request.Scheme, request.Host.Value, request.PathBase.ToUriComponent(), request.Path.ToUriComponent(), queryString);
         }
     }
 }

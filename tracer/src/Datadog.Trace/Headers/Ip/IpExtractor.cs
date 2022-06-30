@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 
@@ -37,46 +36,42 @@ namespace Datadog.Trace.Headers.Ip
         /// <summary>
         /// Can be a list of single or comma separated values ips like [ "192.68.12.1", "172.53.22.11, 181.92.91.1, 193.92.91.1".. ]
         /// </summary>
-        /// <param name="headerValues">all the extracted values from ip related headers</param>
+        /// <param name="headerValue">the extracted values from releveant ip related header</param>
         /// <param name="https">is a secure connection</param>
         /// <returns>return ip and port, may be null</returns>
-        internal static IpInfo GetRealIpFromValues(IEnumerable<string> headerValues, bool https)
+        internal static IpInfo GetRealIpFromValue(string headerValue, bool https)
         {
             IpInfo privateIpInfo = null;
-            foreach (var header in headerValues)
+            IpInfo publicIpInfo = null;
+            var values = headerValue.Split(',');
+            foreach (var potentialIp in values)
             {
-                var values = header.Split(',');
-                foreach (var potentialIp in values)
+                var consideredPotentialIp = potentialIp.Trim();
+                if (string.IsNullOrEmpty(consideredPotentialIp))
                 {
-                    var consideredPotentialIp = potentialIp.Trim();
-                    if (string.IsNullOrEmpty(consideredPotentialIp))
+                    continue;
+                }
+
+                var addressAndPort = ExtractAddressAndPort(consideredPotentialIp, defaultPort: DefaultPort(https));
+                consideredPotentialIp = addressAndPort.IpAddress;
+
+                var success = IPAddress.TryParse(consideredPotentialIp, out var ipAddress);
+                if (success)
+                {
+                    if (ipAddress.IsIPv4MappedToIPv6)
                     {
-                        continue;
+                        ipAddress = ipAddress.MapToIPv4();
                     }
 
-                    var addressAndPort = ExtractAddressAndPort(consideredPotentialIp, defaultPort: DefaultPort(https));
-                    consideredPotentialIp = addressAndPort.IpAddress;
-
-                    var success = IPAddress.TryParse(consideredPotentialIp, out var ipAddress);
-                    if (success)
+                    // only set the oldest (so the first one)
+                    if (IsPrivateIp(ipAddress) && privateIpInfo == null)
                     {
-                        if (ipAddress.IsIPv4MappedToIPv6)
-                        {
-                            ipAddress = ipAddress.MapToIPv4();
-                        }
-
-                        if (IsPrivateIp(ipAddress))
-                        {
-                            // only set the oldest (so the first one)
-                            if (privateIpInfo == null)
-                            {
-                                privateIpInfo = addressAndPort;
-                            }
-                        }
-                        else
-                        {
-                            return new IpInfo(ipAddress.ToString(), addressAndPort.Port);
-                        }
+                        privateIpInfo = addressAndPort;
+                    }
+                    else
+                    {
+                        publicIpInfo = new IpInfo(ipAddress.ToString(), addressAndPort.Port);
+                        return publicIpInfo;
                     }
                 }
             }

@@ -52,9 +52,9 @@ namespace Datadog.Trace.AppSec.Waf
         /// <summary>
         /// Loads library and configure it with the ruleset file
         /// </summary>
-        /// <param name="obfuscationParameterKeyRegex">the regex that will be used to obfuscate possible senative data in keys that are highlighted WAF as potentially malicious,
+        /// <param name="obfuscationParameterKeyRegex">the regex that will be used to obfuscate possible sensitive data in keys that are highlighted WAF as potentially malicious,
         /// empty string means use default embedded in the WAF</param>
-        /// <param name="obfuscationParameterValueRegex">the regex that will be used to obfuscate possible senative data in values that are highlighted WAF as potentially malicious,
+        /// <param name="obfuscationParameterValueRegex">the regex that will be used to obfuscate possible sensitive data in values that are highlighted WAF as potentially malicious,
         /// empty string means use default embedded in the WAF</param>
         /// <param name="rulesFile">can be null, means use rules embedded in the manifest </param>
         /// <returns>the waf wrapper around waf native</returns>

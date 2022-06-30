@@ -8,14 +8,14 @@ using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.AppSec
 {
     internal class SecuritySettings
     {
         internal const string ObfuscationParameterKeyRegexDefault = @"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?)key)|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)|bearer|authorization";
-        internal const string ObfuscationParameterValueRegexDefault = @"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)(?:\s*=[^;]|""\s*:\s*""[^""]+"")|bearer\s+[a-z0-9\._\-]+|token:[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L][\w=-]+\.ey[I-L][\w=-]+(?:\.[\w.+\/=-]+)?|[\-]{5}BEGIN[a-z\s]+PRIVATE\sKEY[\-]{5}[^\-]+[\-]{5}END[a-z\s]+PRIVATE\sKEY|ssh-rsa\s*[a-z0-9\/\.+]{100,}";
-
+        internal const string ObfuscationParameterValueRegexDefault = QueryStringObfuscator.DefaultObfuscationQueryStringRegex;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecuritySettings>();
 
         public SecuritySettings(IConfigurationSource source)

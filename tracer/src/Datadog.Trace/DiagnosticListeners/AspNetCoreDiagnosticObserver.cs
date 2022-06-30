@@ -51,11 +51,9 @@ namespace Datadog.Trace.DiagnosticListeners
                    ?.GetType("Microsoft.AspNetCore.Http.Features.IEndpointFeature", throwOnError: false);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AspNetCoreDiagnosticObserver>();
-        private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new AspNetCoreHttpRequestHandler(Log, HttpRequestInOperationName, IntegrationId);
-
+        private readonly AspNetCoreHttpRequestHandler aspNetCoreRequestHandler;
         private readonly Tracer _tracer;
         private readonly Security _security;
-
         private string _hostingHttpRequestInStartEventKey;
         private string _mvcBeforeActionEventKey;
         private string _mvcAfterActionEventKey;
@@ -73,6 +71,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             _tracer = tracer;
             _security = security;
+            aspNetCoreRequestHandler = new(Log, HttpRequestInOperationName, IntegrationId, CurrentTracer.Settings.ObfuscationQueryStringRegex);
         }
 
         protected override string ListenerName => DiagnosticListenerName;
@@ -474,7 +473,7 @@ namespace Datadog.Trace.DiagnosticListeners
             span.ResourceName = resourceName;
         }
 
-        private static Span StartMvcCoreSpan(Tracer tracer, Span parentSpan, BeforeActionStruct typedArg, HttpContext httpContext, HttpRequest request)
+        private Span StartMvcCoreSpan(Tracer tracer, Span parentSpan, BeforeActionStruct typedArg, HttpContext httpContext, HttpRequest request)
         {
             // Create a child span for the MVC action
             var mvcSpanTags = new AspNetCoreMvcTags();
@@ -563,7 +562,7 @@ namespace Datadog.Trace.DiagnosticListeners
             // (and the parent is not using the placeholder resource name)
             span.ResourceName = resourceName
                              ?? (string.IsNullOrEmpty(parentSpan.ResourceName)
-                                     ? AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request)
+                                     ? aspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request)
                                      : parentSpan.ResourceName);
 
             mvcSpanTags.AspNetCoreAction = actionName;
@@ -610,7 +609,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     // Use an empty resource name here, as we will likely replace it as part of the request
                     // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
-                    span = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty).Span;
+                    span = aspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty).Span;
                 }
 
                 if (shouldSecure)
@@ -883,7 +882,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     if (string.IsNullOrEmpty(span.ResourceName))
                     {
-                        span.ResourceName = AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request);
+                        span.ResourceName = aspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request);
                     }
 
                     if (isMissingHttpStatusCode)
