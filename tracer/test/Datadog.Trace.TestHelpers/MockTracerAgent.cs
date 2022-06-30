@@ -903,7 +903,7 @@ namespace Datadog.Trace.TestHelpers
                 TracesUdsPath = config.Traces;
                 _udsTracesSocket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
                 _udsTracesSocket.Bind(_tracesEndpoint);
-                _udsTracesSocket.Listen(1);
+                _udsTracesSocket.Listen(1000);
                 _tracesListenerTask = Task.Run(HandleUdsTraces);
             }
 
