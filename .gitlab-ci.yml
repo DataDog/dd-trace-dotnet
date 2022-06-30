@@ -10,7 +10,9 @@ variables:
   DEPLOY_TO_REL_ENV:
     value: "false"
     description: "Set to true to override rules in the reliability-env pipeline (e.g. override 'only deploy master')"
-    
+  DEPLOY_TO_AAS:
+    value: "false"
+        
 build:
   only:
     - master
@@ -77,3 +79,15 @@ deploy_to_reliability_env:
     UPSTREAM_PACKAGE_JOB: build
     UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
     FORCE_TRIGGER: $DEPLOY_TO_REL_ENV
+
+deploy_to_aas:
+  stage: deploy_aas
+  rules:
+    - if: '$DEPLOY_TO_AAS == "true"'
+  script: 
+    - |
+      curl -X POST \
+      -H "Accept: application/vnd.github.v3+json" \
+      -H "Authorization: Bearer ${{ secrets.GH_TOKEN_PIERO }}" \
+      https://api.github.com/repos/DataDog/datadog-aas-extension/dispatches \
+      -d '{"event_type": "dd-trace-dotnet-nightly", "client_payload": {"sha":"${CI_COMMIT_SHA}" } }'
