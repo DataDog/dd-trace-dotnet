@@ -2725,6 +2725,71 @@ stages:
         baseImage: debian
         command: "CheckBuildLogsForErrors"
 
+- stage: msi_installer_smoke_tests
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [package_windows, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [windows]
+
+  - job: windows
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.msi_installer_windows_smoke_tests_matrix'] ]
+    variables:
+      smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
+    pool:
+      vmImage: windows-2019
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download MSI to temp directory
+      inputs:
+        artifact: windows-msi-$(targetPlatform)
+        patterns: '**/*-$(targetPlatform).msi'
+        path: $(Agent.TempDirectory)
+
+    - powershell: |
+        mkdir -p tracer/build_data/snapshots
+        mkdir -p tracer/build_data/logs
+        mkdir -p $(smokeTestAppDir)/artifacts
+        mv $(Agent.TempDirectory)/*.msi $(smokeTestAppDir)/artifacts/datadog-apm.msi
+      displayName: Create test data directories
+
+    - bash: |
+        docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg INSTALL_CMD="$(installCmd)" \
+          smoke-tests.windows
+      env:
+        dockerTag: $(dockerTag)
+      displayName: docker-compose build smoke-tests
+      retryCountOnTaskFailure: 3
+
+    - template: steps/run-snapshot-test.yml
+      parameters:
+        target: 'smoke-tests.windows'
+        snapshotPrefix: "smoke_test"
+        isLinux: false
+
+    - publish: tracer/build_data
+      artifact: msi-installer-smoke-test-logs_$(dockerTag)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - template: steps/install-latest-dotnet-sdk.yml
+    - script: tracer\build.cmd CheckBuildLogsForErrors
+      displayName: CheckBuildLogsForErrors
+
 - stage: trace_pipeline
   condition: eq(variables['isBenchmarksOnlyBuild'], 'False')
   dependsOn:
@@ -2749,6 +2814,7 @@ stages:
     - installer_smoke_tests_arm64
     - nuget_installer_smoke_tests
     - nuget_installer_smoke_tests_arm64
+    - msi_installer_smoke_tests
     - coverage
     - exploration_tests_windows
     - exploration_tests_linux
