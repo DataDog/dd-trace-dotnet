@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             };
 
             // CI visibility mode checks if there's a running agent
-            using var agent = EnableCiVisibilityMode ? new MockTracerAgent(TcpPortProvider.GetOpenPort()) : null;
+            using var agent = EnableCiVisibilityMode ? MockTracerAgent.Create(TcpPortProvider.GetOpenPort()) : null;
 
             var agentUrl = $"http://localhost:{agent?.Port ?? 1111}";
 
@@ -96,7 +96,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             };
 
             // CI visibility mode checks if there's a running agent
-            using var agent = EnableCiVisibilityMode ? new MockTracerAgent(TcpPortProvider.GetOpenPort()) : null;
+            using var agent = EnableCiVisibilityMode ? MockTracerAgent.Create(TcpPortProvider.GetOpenPort()) : null;
 
             var agentUrl = $"http://localhost:{agent?.Port ?? 1111}";
 
@@ -130,7 +130,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             };
 
             // CI visibility mode checks if there's a running agent
-            using var agent = EnableCiVisibilityMode ? new MockTracerAgent(TcpPortProvider.GetOpenPort()) : null;
+            using var agent = EnableCiVisibilityMode ? MockTracerAgent.Create(TcpPortProvider.GetOpenPort()) : null;
 
             var agentUrl = $"http://localhost:{agent?.Port ?? 1111}";
 

@@ -18,7 +18,7 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
         {
             int agentPort = TcpPortProvider.GetOpenPort();
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = MockTracerAgent.Create(agentPort))
             {
                 var settings = new TracerSettings
                 {
@@ -48,7 +48,7 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
         {
             int agentPort = TcpPortProvider.GetOpenPort();
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = MockTracerAgent.Create(agentPort))
             {
                 var settings = new TracerSettings
                 {
@@ -80,7 +80,7 @@ namespace Datadog.Trace.OpenTracing.IntegrationTests
         {
             int agentPort = TcpPortProvider.GetOpenPort();
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = MockTracerAgent.Create(agentPort))
             {
                 var settings = new TracerSettings
                 {
