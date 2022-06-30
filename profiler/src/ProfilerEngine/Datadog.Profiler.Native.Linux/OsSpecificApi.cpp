@@ -3,6 +3,9 @@
 
 // OsSpecificApi for LINUX
 
+#include <fstream>
+#include <string>
+
 #include <sys/syscall.h>
 #include "OsSpecificApi.h"
 
@@ -50,8 +53,14 @@ bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
 {
     char statPath[64];
     snprintf(statPath, sizeof(statPath), "/proc/self/task/%d/stat", tid);
-    FILE* file = fopen(statPath, "r");
-    if (file == nullptr)
+
+    // load the line to be able to parse it in memory
+    std::ifstream file;
+    file.open(statPath);
+    std::string sline;
+    std::getline(file, sline);
+    file.close();
+    if (sline.empty())
     {
         return false;
     }
@@ -60,10 +69,10 @@ bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
     char state = ' ';   // 3rd position  and 'R' for Running
     int userTime = 0;   // 14th position in clock ticks
     int kernelTime = 0; // 15th position in clock ticks
-    bool success =
-        fscanf(file, "%*s %*s %c %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %d %d",
-               &state, &userTime, &kernelTime) == 3;
-    fclose(file);
+
+    auto pos = sline.find_last_of(")");
+    const char* pEnd = sline.c_str() + pos + 1;
+    bool success = sscanf(pEnd, " %c %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %d %d", &state, &userTime, &kernelTime) == 3;
     if (!success)
     {
         return false;
