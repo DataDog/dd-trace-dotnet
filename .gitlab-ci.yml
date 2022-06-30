@@ -15,11 +15,6 @@ variables:
     value: "false"
         
 build:
-  only:
-    - master
-    - main
-    - /^hotfix.*$/
-    - /^release.*$/
   stage: build
   tags: ["runner:windows-docker", "windowsversion:1809"]
   script:
