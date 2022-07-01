@@ -39,23 +39,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public abstract class AspNetMvc5QueryStringTests : TestHelper, IClassFixture<IisFixture>
     {
-        private readonly bool _enableQueryStringReporting;
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
 
         protected AspNetMvc5QueryStringTests(IisFixture iisFixture, ITestOutputHelper output, bool enableQueryStringReporting)
             : base("AspNetMvc5", @"test\test-applications\aspnet", output)
         {
-            _enableQueryStringReporting = enableQueryStringReporting;
             SetServiceVersion("1.0.0");
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
             SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, "true");
-            SetEnvironmentVariable(ConfigurationKeys.EnableQueryStringReporting, _enableQueryStringReporting.ToString());
+            SetEnvironmentVariable(ConfigurationKeys.EnableQueryStringReporting, enableQueryStringReporting.ToString());
 
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
             _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
-            _testName = GetTestName();
+            _testName = nameof(AspNetMvc5QueryStringTests)
+                      + (enableQueryStringReporting ? ".WithQueryString" : ".WithoutQueryString");
         }
 
         public static TheoryData<string, int> Data => new() { { "/?authentic1=val1&token=a0b21ce2-006f-4cc6-95d5-d7b550698482&key2=val2", 200 }, };
@@ -80,10 +79,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                           .UseMethodName("_")
                           .UseTypeName(_testName);
         }
-
-        protected string GetTestName()
-            => nameof(AspNetMvc5QueryStringTests)
-             + (_enableQueryStringReporting ? ".WithQueryString" : ".WithoutQueryString");
     }
 }
 

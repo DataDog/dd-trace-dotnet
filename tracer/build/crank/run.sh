@@ -33,9 +33,13 @@ if [ "$1" = "windows" ]; then
     dd-trace --crank-import="baseline_windows.json"
     rm baseline_windows.json
 
+    crank --config Samples.AspNetCoreSimpleController.yml --scenario querystring --profile windows --json querystring_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=querystring --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="querystring_windows.json"
+    rm querystring_windows.json
+    
     crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget_ngen --profile windows --json calltarget_ngen_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget_ngen --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
-    dd-trace --crank-import="calltarget_ngen_windows.json"
-    rm calltarget_ngen_windows.json
+        dd-trace --crank-import="calltarget_ngen_windows.json"
+        rm calltarget_ngen_windows.json
 
     if [ "$2" = "True" ]; then
       echo "Running throughput tests with stats enabled"

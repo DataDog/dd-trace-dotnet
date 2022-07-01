@@ -32,6 +32,35 @@ scenarios:
         duration: 240
         serverPort: 5000
         path: /hello
+        
+  querystring:
+    application:
+      job: server
+      environmentVariables:
+        COR_ENABLE_PROFILING: 0
+        CORECLR_ENABLE_PROFILING: 0
+    load:
+      job: bombardier
+      variables:
+        warmup: 30
+        duration: 240
+        serverPort: 5000
+        path: /hello?authentic1=val1&token=a0b21ce2-006f-4cc6-95d5-d7b550698482&key2=val2
+        
+  querystring_noobfuscation:
+    application:
+      job: server
+      environmentVariables:
+        COR_ENABLE_PROFILING: 0
+        CORECLR_ENABLE_PROFILING: 0
+        DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP: ""
+    load:
+      job: bombardier
+      variables:
+        warmup: 30
+        duration: 240
+        serverPort: 5000
+        path: /hello?authentic1=val1&token=a0b21ce2-006f-4cc6-95d5-d7b550698482&key2=val2
 
   calltarget_ngen:
     application:
