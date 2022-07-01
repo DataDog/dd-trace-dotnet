@@ -36,6 +36,7 @@ public:
     MOCK_METHOD(std::string const&, GetServiceName, (), (const override));
     MOCK_METHOD(bool, IsFFLibddprofEnabled, (), (const override));
     MOCK_METHOD(bool, IsAgentless, (), (const override));
+    MOCK_METHOD(bool, IsWallTimeProfilingEnabled, (), (const override));
     MOCK_METHOD(bool, IsCpuProfilingEnabled, (), (const override));
     MOCK_METHOD(bool, IsExceptionProfilingEnabled, (), (const override));
     MOCK_METHOD(int, ExceptionSampleLimit, (), (const override));

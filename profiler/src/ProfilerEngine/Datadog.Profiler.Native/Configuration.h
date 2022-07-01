@@ -38,6 +38,7 @@ public:
     std::string const& GetApiKey() const override;
     std::string const& GetServiceName() const override;
     bool IsCpuProfilingEnabled() const override;
+    bool IsWallTimeProfilingEnabled() const override;
     bool IsExceptionProfilingEnabled() const override;
     int ExceptionSampleLimit() const override;
 
@@ -68,6 +69,7 @@ private:
 
     bool _isProfilingEnabled;
     bool _isCpuProfilingEnabled;
+    bool _isWallTimeProfilingEnabled;
     bool _isExceptionProfilingEnabled;
     bool _debugLogEnabled;
     fs::path _logDirectory;

@@ -35,6 +35,7 @@ Configuration::Configuration()
     _isOperationalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::OperationalMetricsEnabled, false);
     _isNativeFrameEnabled = GetEnvironmentValue(EnvironmentVariables::NativeFramesEnabled, false);
     _isCpuProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::CpuProfilingEnabled, false);
+    _isWallTimeProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WallTimeProfilingEnabled, true);
     _isExceptionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::ExceptionProfilingEnabled, false);
     _uploadPeriod = ExtractUploadInterval();
     _userTags = ExtractUserTags();
@@ -92,6 +93,11 @@ bool Configuration::IsNativeFramesEnabled() const
 bool Configuration::IsCpuProfilingEnabled() const
 {
     return _isCpuProfilingEnabled;
+}
+
+bool Configuration::IsWallTimeProfilingEnabled() const
+{
+    return _isWallTimeProfilingEnabled;
 }
 
 bool Configuration::IsExceptionProfilingEnabled() const
