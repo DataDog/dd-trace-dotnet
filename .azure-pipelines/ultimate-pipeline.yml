@@ -2768,7 +2768,7 @@ stages:
           --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-          --build-arg INSTALL_CMD="$(installCmd)" \
+          --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
           smoke-tests.windows
       env:
         dockerTag: $(dockerTag)

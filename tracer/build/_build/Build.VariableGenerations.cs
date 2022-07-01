@@ -546,17 +546,21 @@ partial class Build : NukeBuild
                         (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2019"),
                         (publishFramework: TargetFramework.NET5_0, "5.0-windowsservercore-ltsc2019"),
                     };
-                    
+
                     var matrix = (
                                      from platform in platforms
                                      from image in runtimeImages
                                      let dockerTag = $"{platform}_{image.runtimeTag.Replace('.', '_')}"
+                                     let channel32Bit = platform == MSBuildTargetPlatform.x86
+                                                                       ? (image.publishFramework == TargetFramework.NET6_0 ? "6.0" : "5.0")
+                                                                       : string.Empty
                                      select new
                                      {
                                          dockerTag = dockerTag,
                                          publishFramework = image.publishFramework,
                                          runtimeImage = $"{dockerName}:{image.runtimeTag}",
                                          targetPlatform = platform,
+                                         channel32Bit = channel32Bit,
                                      }).ToDictionary(x=>x.dockerTag, x => x);
 
                     Logger.Info($"Installer smoke tests MSI matrix Windows");
