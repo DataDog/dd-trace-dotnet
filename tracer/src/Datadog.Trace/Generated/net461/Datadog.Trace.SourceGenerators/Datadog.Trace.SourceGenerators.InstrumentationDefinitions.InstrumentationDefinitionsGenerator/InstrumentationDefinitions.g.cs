@@ -144,6 +144,9 @@ namespace Datadog.Trace.ClrProfiler
                new ("Grpc.Core", "Grpc.Core.Internal.ServerStreamingServerCallHandler`2", "HandleCall",  new[] { "System.Threading.Tasks.Task", "Grpc.Core.Internal.ServerRpcNew", "Grpc.Core.Internal.CompletionQueueSafeHandle" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server.ServerCallHandlerInstrumentation"),
                new ("Grpc.Core", "Grpc.Core.Internal.UnaryServerCallHandler`2", "HandleCall",  new[] { "System.Threading.Tasks.Task", "Grpc.Core.Internal.ServerRpcNew", "Grpc.Core.Internal.CompletionQueueSafeHandle" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server.ServerCallHandlerInstrumentation"),
 
+                // HotChocolate
+               new ("HotChocolate.Execution", "HotChocolate.Execution.Processing.WorkScheduler", "ExecuteAsync",  new[] { "System.Threading.Tasks.Task" }, 1, 0, 0, 65535, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegration"),
+
                 // HttpMessageHandler
                new ("System.Net.Http", "System.Net.Http.CurlHandler", "SendAsync",  new[] { "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>", "System.Net.Http.HttpRequestMessage", "System.Threading.CancellationToken" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHandler.CurlHandlerIntegration"),
                new ("System.Net.Http", "System.Net.Http.HttpClientHandler", "Send",  new[] { "System.Net.Http.HttpResponseMessage", "System.Net.Http.HttpRequestMessage", "System.Threading.CancellationToken" }, 5, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerSyncIntegration"),
@@ -550,6 +553,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server.ServerCallHandlerInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server.ServerCallHandlerInstrumentation"
                     => Datadog.Trace.Configuration.IntegrationId.Grpc,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.HotChocolate,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.CurlHandler.CurlHandlerIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerSyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient.HttpClientHandler.HttpClientHandlerIntegration"
