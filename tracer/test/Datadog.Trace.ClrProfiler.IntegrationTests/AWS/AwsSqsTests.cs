@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -43,8 +44,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 #endif
                 var spans = agent.WaitForSpans(expectedCount);
 
+                var host = Environment.GetEnvironmentVariable("AWS_SQS_HOST");
+
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.UseFileName($"{nameof(AwsSqsTests)}.{frameworkName}");
+                if (!string.IsNullOrWhiteSpace(host))
+                {
+                    settings.AddSimpleScrubber(host, "localhost:00000");
+                }
+
                 settings.DisableRequireUniquePrefix();
 
                 // Note: http.request spans are expected for the following SQS API's that don't have explicit support
