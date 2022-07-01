@@ -23,6 +23,7 @@ services:
     - "8126:8126"
     environment:
     - SNAPSHOT_CI=1
+    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id
 
   smoke-tests.windows:
     build:
