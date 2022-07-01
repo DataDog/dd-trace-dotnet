@@ -122,7 +122,7 @@ namespace Datadog.Trace.AspNet
                 string host = httpRequest.Headers.Get("Host");
                 var userAgent = httpRequest.Headers.Get(HttpHeaderNames.UserAgent);
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
-                string url = httpContext.Request.GetUrlWithQueryString(tracer.Settings.EnableQueryStringReporting);
+                string url = httpContext.Request.GetUrlWithQueryString(tracer.Settings.EnableQueryStringReporting, tracer.Settings.ObfuscationQueryStringRegex);
 
                 var tags = new WebTags();
                 scope = tracer.StartActiveInternal(_requestOperationName, propagatedContext, tags: tags);
