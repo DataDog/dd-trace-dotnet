@@ -314,7 +314,7 @@ std::string OpSysTools::GetHostname()
 
 std::string OpSysTools::GetProcessName()
 {
-#ifdef _WIN32
+#ifdef _WINDOWS
     const DWORD length = 260;
     char pathName[length]{};
 
@@ -332,4 +332,3 @@ std::string OpSysTools::GetProcessName()
     return name;
 #endif
 }
-

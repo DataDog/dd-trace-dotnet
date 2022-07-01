@@ -8,6 +8,7 @@
 
 #include <sys/syscall.h>
 #include "OsSpecificApi.h"
+#include "OpSysTools.h"
 
 #include "Log.h"
 #include "LinuxStackFramesCollector.h"
@@ -67,14 +68,10 @@ bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
         return false;
     }
 
-    // based on https://linux.die.net/man/5/proc
-    char state = ' ';   // 3rd position  and 'R' for Running
-    int userTime = 0;   // 14th position in clock ticks
-    int kernelTime = 0; // 15th position in clock ticks
-
-    auto pos = sline.find_last_of(")");
-    const char* pEnd = sline.c_str() + pos + 1;
-    bool success = sscanf(pEnd, " %c %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %d %d", &state, &userTime, &kernelTime) == 3;
+    char state = ' ';
+    int userTime = 0;
+    int kernelTime = 0;
+    bool success = OpSysTools::ParseThreadInfo(sline, state, userTime, kernelTime);
     if (!success)
     {
         // log the first error to be able to analyze unexpected string format
