@@ -6,6 +6,7 @@
 using System;
 using System.Text.RegularExpressions;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util.Http
@@ -41,16 +42,18 @@ namespace Datadog.Trace.Util.Http
             private readonly Regex _regex;
             private readonly IDatadogLogger _log = DatadogLogging.GetLoggerFor(typeof(Obfuscator));
             private readonly bool _disabled;
+            private readonly TimeSpan _timeout;
 
-            internal Obfuscator(string pattern = null)
+            internal Obfuscator(string pattern = null, TimeSpan? timespan = null)
             {
+                _timeout = timespan ?? TimeSpan.FromMilliseconds(100);
                 if (string.IsNullOrEmpty(pattern))
                 {
                     _disabled = true;
                 }
                 else
                 {
-                    _regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled, TimeSpan.FromMilliseconds(100));
+                    _regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
                 }
             }
 
@@ -61,21 +64,42 @@ namespace Datadog.Trace.Util.Http
                     return queryString;
                 }
 
+                var cancelationToken = new CancellationTokenSource();
                 try
                 {
-                    return _regex.Replace(queryString, ReplacementString);
-                }
-                catch (RegexMatchTimeoutException)
-                {
+                    var task = Task.Factory.StartNew(() => _regex.Replace(queryString, ReplacementString), cancelationToken.Token);
+                    var tasks = new[] { task, Task.Delay(_timeout, cancelationToken.Token) };
+                    Task.WaitAny(tasks);
+                    if (task.Status == TaskStatus.RanToCompletion)
+                    {
+                        return task.Result;
+                    }
+
                     Log();
+                }
+                catch (AggregateException e)
+                {
+                    Log(e);
+                }
+                finally
+                {
+                    cancelationToken.Cancel();
+                    cancelationToken.Dispose();
                 }
 
                 return string.Empty;
             }
 
-            internal virtual void Log()
+            internal virtual void Log(Exception e = null)
             {
-                _log.Error("Query string could not be redacted using regex {pattern}", _regex.ToString());
+                if (e != null)
+                {
+                    _log.Error(e, "Query string could not be redacted using regex {pattern}", _regex.ToString());
+                }
+                else
+                {
+                    _log.Error("Query string could not be redacted using regex {pattern}", _regex.ToString());
+                }
             }
         }
     }
