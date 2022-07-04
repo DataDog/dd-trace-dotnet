@@ -1,9 +1,12 @@
 #pragma once
+#include "../../../shared/src/native-src/com_ptr.h"
+
 #include <atomic>
 #include <corhlpr.h>
 #include <corprof.h>
 #include <unordered_map>
 #include <mutex>
+#include <memory>
 
 #include "string.h"
 #include "runtimeid_store.h"
@@ -25,6 +28,7 @@ namespace datadog::shared::nativeloader
         ICorProfilerCallback10* m_customProfiler;
         RuntimeIdStore m_runtimeIdStore;
         ICorProfilerInfo4* m_info;
+        std::shared_ptr<ICorProfilerInfo12> m_writeToDiskCorProfilerInfo;
 
         void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk);
         void InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo);

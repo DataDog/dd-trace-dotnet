@@ -116,7 +116,11 @@ bool CorProfilerCallback::InitializeServices()
     _pManagedThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
 
     auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
-    _pWallTimeProvider = RegisterService<WallTimeProvider>(_pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+
+    if (_pConfiguration->IsWallTimeProfilingEnabled())
+    {
+        _pWallTimeProvider = RegisterService<WallTimeProvider>(_pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+    }
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
@@ -152,7 +156,11 @@ bool CorProfilerCallback::InitializeServices()
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
     _pExporter = std::make_unique<LibddprofExporter>(_pConfiguration.get(), _pApplicationStore);
     _pSamplesAggregator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pThreadsCpuManager, _pExporter.get(), _metricsSender.get());
-    _pSamplesAggregator->Register(_pWallTimeProvider);
+
+    if (_pConfiguration->IsWallTimeProfilingEnabled())
+    {
+        _pSamplesAggregator->Register(_pWallTimeProvider);
+    }
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
@@ -653,7 +661,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
     _pStackSamplerLoopManager->Stop();
 
     // Calling Stop on providers transforms the last raw samples
-    _pWallTimeProvider->Stop();
+    if (_pWallTimeProvider != nullptr)
+    {
+        _pWallTimeProvider->Stop();
+    }
     if (_pCpuTimeProvider != nullptr)
     {
         _pCpuTimeProvider->Stop();

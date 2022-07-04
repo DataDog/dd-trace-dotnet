@@ -1984,7 +1984,7 @@ stages:
     #   "false": do NOT run this step
     #   else: run this stage if branch is master
 
-    - script: aws s3 cp s3_upload s3://datadog-reliability-env/dotnet/ --recursive
+    - script: aws --region us-east-1 s3 cp s3_upload s3://datadog-reliability-env/dotnet/ --recursive --debug
       displayName: Upload deb, MSI, index.txt to s3
       condition: >
         and(
@@ -2507,72 +2507,87 @@ stages:
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg INSTALL_CMD="$(installCmd)" \
           smoke-tests
-        docker-compose -p ddtrace_$(Build.BuildNumber) run --rm start-test-agent
       env:
         dockerTag: $(dockerTag)
-      displayName: docker-compose build smoke-tests and run start-test-agent
+      displayName: docker-compose build smoke-tests
       retryCountOnTaskFailure: 3
 
-    - script: |
-        token=$(cat /proc/sys/kernel/random/uuid)
-        echo "##vso[task.setvariable variable=snapshot_token]$token"
-        endpoint="/test/session/start?test_session_token=$token"
-        echo "Starting snapshot session with $endpoint"
-        docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl --fail "http://localhost:8126$endpoint"
-      displayName: start snapshot session
-      
-    - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) smoke-tests
-      env:
-        dockerTag: $(dockerTag)
-      displayName: docker-compose run smoke-tests
-
-    - script: |
-        token=$(token)
-        endpoint="/test/session/traces?test_session_token=$token"
-        echo "Dumping traces with $endpoint"
-        docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl -o /debug_snapshots/smoke_test_traces.json "http://localhost:8126$endpoint"
-
-        endpoint="/test/session/stats?test_session_token=$token"
-        echo "Dumping stats with $endpoint"
-        docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl -o /debug_snapshots/smoke_test_stats.json "http://localhost:8126$endpoint"
-
-        endpoint="/test/session/requests?test_session_token=$token"
-        echo "Dumping all requests with $endpoint"
-        docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl -o /debug_snapshots/smoke_test_requests.json "http://localhost:8126$endpoint"
-
-        if [ "$(publishFramework)" = "netcoreapp2.1" ]; then
-          snapshotfile="smoke_test_snapshots_2_1"
-        else
-          snapshotfile="smoke_test_snapshots"
-        fi
-
-        # Fail if the snapshots don't match
-        endpoint="/test/session/snapshot?test_session_token=$token&file=/snapshots/$snapshotfile"
-        echo "Verifying snapshot session with $endpoint"
-        docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl --fail "http://localhost:8126$endpoint"
-      displayName: check snapshots
-
-    - task: DockerCompose@0
-      displayName: dump docker-compose logs for test-agent
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: logs test-agent
-        projectName: ddtrace_$(Build.BuildNumber)
-      condition: succeededOrFailed()
-      continueOnError: true
-
-    - task: DockerCompose@0
-      displayName: docker-compose stop services
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: down
-        projectName: ddtrace_$(Build.BuildNumber)
-      condition: succeededOrFailed()
-      continueOnError: true
+    - template: steps/run-snapshot-test.yml
+      parameters:
+        target: 'smoke-tests'
+        snapshotPrefix: "smoke_test"
 
     - publish: tracer/build_data
       artifact: installer-smoke-test-logs_$(dockerTag)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: alpine
+        command: "CheckBuildLogsForErrors"
+
+- stage: nuget_installer_smoke_tests
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [dotnet_tool, package_windows, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [linux]
+
+  - job: linux
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.nuget_installer_linux_smoke_tests_matrix'] ]
+    variables:
+      smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
+    pool:
+      vmImage: ubuntu-18.04
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download distribution nuget
+      inputs:
+        artifact: distribution-nuget-package
+        path: $(smokeTestAppDir)/artifacts
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download Datadog.Trace package
+      inputs:
+        artifact: nuget-packages
+        path: $(smokeTestAppDir)/artifacts
+
+    - script: |
+        mkdir -p tracer/build_data/snapshots
+        mkdir -p tracer/build_data/logs
+      displayName: create test data directories
+
+    - script: |
+        docker-compose -p ddtrace_$(Build.BuildNumber) build \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
+          nuget-smoke-tests
+      env:
+        dockerTag: $(dockerTag)
+      displayName: docker-compose build nuget-smoke-tests 
+      retryCountOnTaskFailure: 3
+
+    - template: steps/run-snapshot-test.yml
+      parameters:
+        target: 'nuget-smoke-tests'
+        snapshotPrefix: "smoke_test"
+
+    - publish: tracer/build_data
+      artifact: nuget_installer-smoke-test-logs_$(dockerTag)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -2620,69 +2635,15 @@ stages:
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
               --build-arg INSTALL_CMD="$(installCmd)" \
               smoke-tests
-            docker-compose -p ddtrace_$(Build.BuildNumber) run --rm start-test-agent
           env:
             dockerTag: $(dockerTag)
-          displayName: docker-compose build smoke-tests and run start-test-agent
+          displayName: docker-compose build smoke-tests
           retryCountOnTaskFailure: 3
-
-        - script: |
-            token=$(cat /proc/sys/kernel/random/uuid)
-            echo "##vso[task.setvariable variable=snapshot_token]$token"
-            endpoint="/test/session/start?test_session_token=$token"
-            echo "Starting snapshot session with $endpoint"
-            docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl --fail "http://localhost:8126$endpoint"
-          displayName: start snapshot session
-          
-        - script: |
-            docker-compose -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) smoke-tests
-          env:
-            dockerTag: $(dockerTag)
-          displayName: docker-compose run smoke-tests
-
-        - script: |
-            token=$(token)
-            endpoint="/test/session/traces?test_session_token=$token"
-            echo "Dumping traces with $endpoint"
-            docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl -o /debug_snapshots/smoke_test_traces.json "http://localhost:8126$endpoint"
-
-            endpoint="/test/session/stats?test_session_token=$token"
-            echo "Dumping stats with $endpoint"
-            docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl -o /debug_snapshots/smoke_test_stats.json "http://localhost:8126$endpoint"
-
-            endpoint="/test/session/requests?test_session_token=$token"
-            echo "Dumping all requests with $endpoint"
-            docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl -o /debug_snapshots/smoke_test_requests.json "http://localhost:8126$endpoint"
-
-            if [ "$(publishFramework)" = "netcoreapp2.1" ]; then
-              snapshotfile="smoke_test_snapshots_2_1"
-            else
-              snapshotfile="smoke_test_snapshots"
-            fi
-
-            # Fail if the snapshots don't match
-            endpoint="/test/session/snapshot?test_session_token=$token&file=/snapshots/$snapshotfile"
-            echo "Verifying snapshot session with $endpoint"
-            docker-compose -p ddtrace_$(Build.BuildNumber) exec -T test-agent /usr/bin/curl --fail "http://localhost:8126$endpoint"
-          displayName: check snapshots
-
-        - task: DockerCompose@0
-          displayName: dump docker-compose logs for test-agent
-          inputs:
-            containerregistrytype: Container Registry
-            dockerComposeCommand: logs test-agent
-            projectName: ddtrace_$(Build.BuildNumber)
-          condition: succeededOrFailed()
-          continueOnError: true
-
-        - task: DockerCompose@0
-          displayName: docker-compose stop services
-          inputs:
-            containerregistrytype: Container Registry
-            dockerComposeCommand: down
-            projectName: ddtrace_$(Build.BuildNumber)
-          condition: succeededOrFailed()
-          continueOnError: true
+    
+        - template: steps/run-snapshot-test.yml
+          parameters:
+            target: 'smoke-tests'
+            snapshotPrefix: "smoke_test"
 
         - publish: tracer/build_data
           artifact: installer-smoke-test-logs_arm64_$(dockerTag)_$(System.JobAttempt)
@@ -2695,9 +2656,103 @@ stages:
             baseImage: debian
             command: "CheckBuildLogsForErrors"
 
+- stage: nuget_installer_smoke_tests_arm64
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [dotnet_tool, package_windows, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [linux]
+
+  - job: linux
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.nuget_installer_linux_smoke_tests_arm64_matrix'] ]
+    variables:
+      smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
+    pool:
+      name: aws-arm64-auto-scaling
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download distribution nuget
+      inputs:
+        artifact: distribution-nuget-package
+        path: $(smokeTestAppDir)/artifacts
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download Datadog.Trace package
+      inputs:
+        artifact: nuget-packages
+        path: $(smokeTestAppDir)/artifacts
+
+    - script: |
+        mkdir -p tracer/build_data/snapshots
+        mkdir -p tracer/build_data/logs
+      displayName: create test data directories
+
+    - script: |
+        docker-compose -p ddtrace_$(Build.BuildNumber) build \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
+          nuget-smoke-tests
+      env:
+        dockerTag: $(dockerTag)
+      displayName: docker-compose build nuget-smoke-tests
+      retryCountOnTaskFailure: 3
+
+    - template: steps/run-snapshot-test.yml
+      parameters:
+        target: 'nuget-smoke-tests'
+        snapshotPrefix: "smoke_test"
+
+    - publish: tracer/build_data
+      artifact: nuget_installer-smoke-test-logs_arm64_$(dockerTag)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: debian
+        command: "CheckBuildLogsForErrors"
+
 - stage: trace_pipeline
   condition: eq(variables['isBenchmarksOnlyBuild'], 'False')
-  dependsOn: [integration_tests_windows, integration_tests_windows_iis, msi_integration_tests_windows, integration_tests_linux, unit_tests_linux, unit_tests_macos, unit_tests_windows, unit_tests_arm64, master_commit_id, integration_tests_arm64, benchmarks, throughput, throughput_appsec, tool_artifacts_tests_windows, tool_artifacts_tests_linux, upload_to_s3, upload_to_azure, installer_smoke_tests, installer_smoke_tests_arm64, coverage, exploration_tests_windows, exploration_tests_linux, system_tests]
+  dependsOn:
+    - master_commit_id
+    - unit_tests_linux
+    - unit_tests_macos
+    - unit_tests_windows
+    - unit_tests_arm64
+    - integration_tests_windows
+    - integration_tests_windows_iis
+    - msi_integration_tests_windows
+    - integration_tests_linux
+    - integration_tests_arm64
+    - benchmarks
+    - throughput
+    - throughput_appsec
+    - tool_artifacts_tests_windows
+    - tool_artifacts_tests_linux
+    - upload_to_s3
+    - upload_to_azure
+    - installer_smoke_tests
+    - installer_smoke_tests_arm64
+    - nuget_installer_smoke_tests
+    - nuget_installer_smoke_tests_arm64
+    - coverage
+    - exploration_tests_windows
+    - exploration_tests_linux
+    - system_tests
   jobs:
   - job: build_and_run
     timeoutInMinutes: 60 #default value

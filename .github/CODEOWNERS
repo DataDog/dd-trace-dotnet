@@ -7,8 +7,8 @@
 /tracer/                                  @DataDog/apm-dotnet
 
 # CI
-/tracer/src/Datadog.Trace/Ci/             @DataDog/apm-dotnet @DataDog/ci-app-tracers
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/CI/   @DataDog/ci-app-tracers
+/tracer/src/Datadog.Trace/Ci/             @DataDog/apm-dotnet @DataDog/ci-app-libraries
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/CI/   @DataDog/ci-app-libraries
 
 # ASM
 /tracer/src/Datadog.Trace/AppSec/         @DataDog/apm-dotnet @DataDog/asm-dotnet

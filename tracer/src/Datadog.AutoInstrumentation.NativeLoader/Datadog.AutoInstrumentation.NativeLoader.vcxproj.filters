@@ -39,6 +39,27 @@
     <ClInclude Include="EnvironmentVariables.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="instrumented_assembly_generator\instrumented_assembly_generator_consts.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="instrumented_assembly_generator\instrumented_assembly_generator_cor_profiler_function_control.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="instrumented_assembly_generator\instrumented_assembly_generator_cor_profiler_info.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="instrumented_assembly_generator\instrumented_assembly_generator_helper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="instrumented_assembly_generator\instrumented_assembly_generator_metadata_interfaces.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="instrumented_assembly_generator\member_signature.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="instrumented_assembly_generator\method_signature.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
     <ClInclude Include="..\..\..\shared\src\native-src\miniutf.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -56,6 +77,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\shared\src\native-src\dynamic_com_library.h">
       <Filter>shared</Filter>
+    </ClInclude>
+    <ClInclude Include="instrumented_assembly_generator\method_info.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -78,6 +102,21 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\shared\src\native-src\util.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="instrumented_assembly_generator\instrumented_assembly_generator_cor_profiler_function_control.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="instrumented_assembly_generator\instrumented_assembly_generator_cor_profiler_info.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="instrumented_assembly_generator\instrumented_assembly_generator_metadata_interfaces.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="instrumented_assembly_generator\member_signature.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="instrumented_assembly_generator\method_signature.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\shared\src\native-lib\spdlog\src\spdlog.cpp">

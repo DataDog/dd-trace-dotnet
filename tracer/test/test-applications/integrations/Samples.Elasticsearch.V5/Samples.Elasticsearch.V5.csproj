@@ -14,7 +14,7 @@
   <ItemGroup>
     <PackageReference Include="Elasticsearch.Net" Version="$(ApiVersion)" />
     <PackageReference Include="NEST" Version="$(ApiVersion)" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
   </ItemGroup>
 
 </Project>

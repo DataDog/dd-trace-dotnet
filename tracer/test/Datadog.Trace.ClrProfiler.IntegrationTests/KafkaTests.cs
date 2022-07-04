@@ -130,7 +130,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 errorConsumerSpans
                    .Should()
                    .OnlyContain(x => x.Tags.ContainsKey(Tags.ErrorType))
-                   .And.OnlyContain(x => x.Tags[Tags.ErrorMsg] == "Broker: Unknown topic or partition")
+                   .And.OnlyContain(x => x.Tags[Tags.ErrorMsg].Contains("Broker: Unknown topic or partition"))
                    .And.OnlyContain(x => x.Tags[Tags.ErrorType] == "Confluent.Kafka.ConsumeException");
             }
 

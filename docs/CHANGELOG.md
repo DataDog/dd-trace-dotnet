@@ -4,6 +4,40 @@
 
 
 
+
+## [Release 2.11.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.11.0)
+
+## Summary
+
+- [Tracer Sampling] The tracing library no longer applies a default sampling rate of 100%. Instead, the library applies the sampling rates calculated in the Datadog Agent.
+- [Linux Packaging] Make the `createLogPath.sh` executable again (issue introduced in 2.10.0)
+
+## Changes
+
+### Tracer
+* Add support for computation of stats in the tracer (#2591)
+* [Tracer] Take into account the default sampling values sent by the agent (#2836)
+
+### CI App
+* [CIApp] MSBuild logger improvements (#2894)
+
+### Continuous Profiler
+* [Profiler] Add CPU scenario to profiler throughput tests (#2864)
+* [Profiler] Add iterator scenario in computer01 demo (#2889)
+* [Profiler] Do not print stack walker error messages everytime (#2902)
+* [Profiler] Don't sample if no CPU time was consumed nor in Ready state (#2903)
+
+### Miscellaneous
+* [Test Package Versions Bump] Updating package versions (#2877)
+
+### Build / Test
+* Replace use of semantic info with syntax-only check instead (#2892)
+* Rename `isScheduledBuild` to `isBenchmarksOnlyBuild` (#2893)
+* [Linux packaging] Make sure the createLogPath script is executable (#2911)
+
+
+[Changes since 2.10.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.10.0...v2.11.0)
+
 ## [Release 2.10.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.10.0)
 
 ## Summary

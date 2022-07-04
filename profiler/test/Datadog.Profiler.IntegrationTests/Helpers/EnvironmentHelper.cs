@@ -324,7 +324,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private bool IsCoreClr()
         {
             return _framework.StartsWith("netcore", StringComparison.Ordinal) ||
-                   _framework.StartsWith("net5", StringComparison.Ordinal);
+                   !_framework.StartsWith("net4", StringComparison.Ordinal);
         }
     }
 }

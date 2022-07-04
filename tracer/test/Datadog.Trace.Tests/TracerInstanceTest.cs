@@ -68,7 +68,7 @@ namespace Datadog.Trace.Tests
         {
             var agentPort = TcpPortProvider.GetOpenPort();
 
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = MockTracerAgent.Create(agentPort))
             {
                 var oldSettings = new TracerSettings
                 {

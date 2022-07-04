@@ -107,13 +107,13 @@ partial class Build
     {
         Solution.GetProject(Projects.TraceIntegrationTests),
         Solution.GetProject(Projects.OpenTracingIntegrationTests),
-        Solution.GetProject(Projects.ToolIntegrationTests)
     };
 
     Project[] ClrProfilerIntegrationTests => new[]
     {
         Solution.GetProject(Projects.ClrProfilerIntegrationTests),
         Solution.GetProject(Projects.AppSecIntegrationTests),
+        Solution.GetProject(Projects.ToolIntegrationTests)
     };
 
     readonly IEnumerable<TargetFramework> TargetFrameworks = new[]
@@ -191,6 +191,7 @@ partial class Build
         .Executes(() =>
         {
             var buildDirectory = NativeProfilerProject.Directory / "build";
+            EnsureExistingDirectory(buildDirectory);
 
             CMake.Value(
                 arguments: $"-B {buildDirectory} -S {NativeProfilerProject.Directory} -DCMAKE_BUILD_TYPE=Release");
@@ -401,9 +402,8 @@ partial class Build
            {
                var source = NativeProfilerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                             $"{NativeProfilerProject.Name}.pdb";
-               var dest = SymbolsDirectory / $"win-{architecture}";
-               Logger.Info($"Copying '{source}' to '{dest}'");
-               CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+               var dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
+               CopyFile(source, dest, FileExistsPolicy.Overwrite);
            }
        });
 
@@ -621,6 +621,7 @@ partial class Build
 
                 var fpm = Fpm.Value;
                 var gzip = GZip.Value;
+                var chmod = Chmod.Value;
                 var packageName = "datadog-dotnet-apm";
 
                 var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
@@ -637,6 +638,10 @@ partial class Build
                     var newName = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
                     RenameFile(sourceFile, newName);
                 }
+
+                // somehow the permissions are lost along the way, ensure they are correctly set here
+                var createLogPathScript = (IsArm64 ? TracerHomeDirectory : MonitoringHomeDirectory) / "createLogPath.sh";
+                chmod.Invoke("+x " + createLogPathScript);
 
                 ExtractDebugInfoAndStripSymbols();
 
@@ -688,8 +693,24 @@ partial class Build
             }
         });
 
+
+    Target CompileInstrumentationVerificationLibrary => _ => _
+        .Unlisted()
+        .DependsOn(Restore)
+        .After(CompileManagedSrc)
+        .Executes(() =>
+        {
+            DotNetMSBuild(x => x
+                .SetTargetPath(MsBuildProject)
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
+                .SetProperty("BuildProjectReferences", true)
+                .SetTargets("BuildInstrumentationVerificationLibrary"));
+        });
+                                                        
     Target CompileManagedTestHelpers => _ => _
         .Unlisted()
+        .DependsOn(CompileInstrumentationVerificationLibrary)
         .After(Restore)
         .After(CompileManagedSrc)
         .Executes(() =>
@@ -710,6 +731,7 @@ partial class Build
         .After(CompileManagedSrc)
         .After(BuildRunnerTool)
         .DependsOn(CopyLibDdwafForAppSecUnitTests)
+        .DependsOn(CompileManagedTestHelpers)
         .Executes(() =>
         {
             // Always AnyCPU

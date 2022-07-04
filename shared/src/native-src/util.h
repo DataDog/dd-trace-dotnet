@@ -100,6 +100,8 @@ namespace shared
 
     std::string GenerateRuntimeId();
 
+    bool WStringStartWithCaseInsensitive(const WSTRING& longer, const WSTRING& shorter);
+
     template <class Container>
     bool Contains(const Container& items, const typename Container::value_type& value)
     {

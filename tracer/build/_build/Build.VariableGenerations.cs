@@ -225,14 +225,19 @@ partial class Build : NukeBuild
 
             void GenerateSmokeTestsMatrices()
             {
-                GenerateSmokeTestsMatrix();
-                GenerateSmokeTestsArm64Matrix();
+                // installer smoke tests
+                GenerateLinuxInstallerSmokeTestsMatrix();
+                GenerateLinuxSmokeTestsArm64Matrix();
+                
+                // nuget smoke tests
+                GenerateLinuxNuGetSmokeTestsMatrix();
+                GenerateLinuxNuGetSmokeTestsArm64Matrix();
 
-                void GenerateSmokeTestsMatrix()
+                void GenerateLinuxInstallerSmokeTestsMatrix()
                 {
                     var matrix = new Dictionary<string, object>();
 
-                    AddToMatrix(
+                    AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "debian",
                         new (string publishFramework, string runtimeTag)[]
@@ -252,7 +257,7 @@ partial class Build : NukeBuild
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
-                    AddToMatrix(
+                    AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "fedora",
                         new (string publishFramework, string runtimeTag)[]
@@ -272,7 +277,7 @@ partial class Build : NukeBuild
                         dockerName: "andrewlock/dotnet-fedora"
                     );
 
-                    AddToMatrix(
+                    AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "alpine",
                         new (string publishFramework, string runtimeTag)[]
@@ -289,7 +294,7 @@ partial class Build : NukeBuild
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
-                    AddToMatrix(
+                    AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "centos",
                         new (string publishFramework, string runtimeTag)[]
@@ -304,7 +309,7 @@ partial class Build : NukeBuild
                         dockerName: "andrewlock/dotnet-centos"
                     );
 
-                    AddToMatrix(
+                    AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "rhel",
                         new (string publishFramework, string runtimeTag)[]
@@ -318,7 +323,7 @@ partial class Build : NukeBuild
                         dockerName: "andrewlock/dotnet-rhel"
                     );
 
-                    AddToMatrix(
+                    AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "centos-stream",
                         new (string publishFramework, string runtimeTag)[]
@@ -333,7 +338,7 @@ partial class Build : NukeBuild
                         dockerName: "andrewlock/dotnet-centos-stream"
                     );
 
-                    AddToMatrix(
+                    AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "opensuse",
                         new (string publishFramework, string runtimeTag)[]
@@ -353,11 +358,11 @@ partial class Build : NukeBuild
                     AzurePipelines.Instance.SetVariable("installer_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
-                void GenerateSmokeTestsArm64Matrix()
+                void GenerateLinuxSmokeTestsArm64Matrix()
                 {
                     var matrix = new Dictionary<string, object>();
 
-                    AddToMatrix(
+                    AddToLinuxSmokeTestsMatrix(
                         matrix,
                         "debian",
                         new (string publishFramework, string runtimeTag)[]
@@ -377,7 +382,7 @@ partial class Build : NukeBuild
                     AzurePipelines.Instance.SetVariable("installer_smoke_tests_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
-                void AddToMatrix(
+                void AddToLinuxSmokeTestsMatrix(
                     Dictionary<string, object> matrix,
                     string shortName,
                     (string publishFramework, string runtimeTag)[] images,
@@ -397,6 +402,131 @@ partial class Build : NukeBuild
                                 dockerTag = dockerTag,
                                 publishFramework = image.publishFramework,
                                 linuxArtifacts = linuxArtifacts,
+                                runtimeImage = $"{dockerName}:{image.runtimeTag}"
+                            });
+                    }
+                }
+                
+                void GenerateLinuxNuGetSmokeTestsMatrix()
+                {
+                    var matrix = new Dictionary<string, object>();
+
+                    AddToNuGetSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye-slim"),
+                            (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-stretch-slim"),
+                        },
+                        relativeProfilerPath: "datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    AddToNuGetSmokeTestsMatrix(
+                        matrix,
+                        "fedora",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET6_0, "34-6.0"),
+                            (publishFramework: TargetFramework.NET5_0, "33-5.0"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "35-3.1"),
+                            (publishFramework: TargetFramework.NETCOREAPP2_1, "29-2.1"),
+                        },
+                        relativeProfilerPath: "datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+                        dockerName: "andrewlock/dotnet-fedora"
+                    );
+
+                    AddToNuGetSmokeTestsMatrix(
+                        matrix,
+                        "alpine",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
+                            (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
+                        },
+                        relativeProfilerPath: "datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so",
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    AddToNuGetSmokeTestsMatrix(
+                        matrix,
+                        "centos",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET6_0, "7-6.0"),
+                            (publishFramework: TargetFramework.NET5_0, "7-5.0"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "7-3.1"),
+                            (publishFramework: TargetFramework.NETCOREAPP2_1, "7-2.1"),
+                        },
+                        relativeProfilerPath: "datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+                        dockerName: "andrewlock/dotnet-centos"
+                    );
+
+                    AddToNuGetSmokeTestsMatrix(
+                        matrix,
+                        "opensuse",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET6_0, "15-6.0"),
+                            (publishFramework: TargetFramework.NET5_0, "15-5.0"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "15-3.1"),
+                            (publishFramework: TargetFramework.NETCOREAPP2_1, "15-2.1"),
+                        },
+                        relativeProfilerPath: "datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+                        dockerName: "andrewlock/dotnet-opensuse"
+                    );
+
+                    Logger.Info($"Installer smoke tests matrix");
+                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetVariable("nuget_installer_linux_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                }
+
+                void GenerateLinuxNuGetSmokeTestsArm64Matrix()
+                {
+                    var matrix = new Dictionary<string, object>();
+
+                    AddToNuGetSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
+                        },
+                        relativeProfilerPath: "datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so",
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    Logger.Info($"Installer smoke tests nuget matrix ARM64");
+                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetVariable("nuget_installer_linux_smoke_tests_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                }
+
+                void AddToNuGetSmokeTestsMatrix(
+                    Dictionary<string, object> matrix,
+                    string shortName,
+                    (string publishFramework, string runtimeTag)[] images,
+                    string relativeProfilerPath,
+                    string dockerName
+                )
+                {
+                    foreach (var image in images)
+                    {
+                        var dockerTag = $"{shortName}_{image.runtimeTag.Replace('.', '_')}";
+                        matrix.Add(
+                            dockerTag,
+                            new
+                            {
+                                dockerTag = dockerTag,
+                                publishFramework = image.publishFramework,
+                                relativeProfilerPath = relativeProfilerPath,
                                 runtimeImage = $"{dockerName}:{image.runtimeTag}"
                             });
                     }

@@ -40,6 +40,12 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                     new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"),
                     new StackFrame("|lm:mscorlib |ns:System.Threading |ct:ThreadHelper |fn:ThreadStart"));
             }
+            else if (framework == "net6.0")
+            {
+                expectedStack = new StackTrace(
+                    new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |fn:ThrowExceptions"),
+                    new StackFrame("|lm:System.Private.CoreLib |ns:System.Threading |ct:Thread |fn:StartCallback"));
+            }
             else
             {
                 expectedStack = new StackTrace(
@@ -121,6 +127,8 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
 
             CheckExceptionProfiles(runner);
         }

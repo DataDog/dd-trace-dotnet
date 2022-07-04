@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [SkippableFact]
         public async Task DetectTransportHttp()
         {
-            using var agent = new MockTracerAgent(TcpPortProvider.GetOpenPort());
+            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
 
             var url = $"http://127.0.0.1:{agent.Port}/";
 
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             var url = $"unix://{tracesUdsPath}";
             var uri = new System.Uri(url);
 
-            using var agent = new MockTracerAgent(new UnixDomainSocketConfig(tracesUdsPath, null));
+            using var agent = MockTracerAgent.Create(new UnixDomainSocketConfig(tracesUdsPath, null));
             using var helper = await StartConsole(enableProfiler: false, ("DD_TRACE_AGENT_URL", url));
             using var console = ConsoleHelper.Redirect();
 
@@ -113,7 +113,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             using var console = ConsoleHelper.Redirect();
 
-            using var agent = new MockTracerAgent(TcpPortProvider.GetOpenPort());
+            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
 
             agent.RequestReceived += (_, e) => e.Value.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
@@ -131,10 +131,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            using var agent = new MockTracerAgent(TcpPortProvider.GetOpenPort())
-            {
-                Version = expectedVersion
-            };
+            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
+            agent.Version = expectedVersion;
 
             var result = await AgentConnectivityCheck.RunAsync(CreateSettings($"http://localhost:{agent.Port}/"));
 
@@ -153,10 +151,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             var tracesUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
 
-            using var agent = new MockTracerAgent(new UnixDomainSocketConfig(tracesUdsPath, null))
-            {
-                Version = expectedVersion
-            };
+            using var agent = MockTracerAgent.Create(new UnixDomainSocketConfig(tracesUdsPath, null));
+            agent.Version = expectedVersion;
 
             var settings = new ExporterSettings
             {
@@ -176,10 +172,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             using var console = ConsoleHelper.Redirect();
 
-            using var agent = new MockTracerAgent(TcpPortProvider.GetOpenPort())
-            {
-                Version = null
-            };
+            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
+            agent.Version = null;
 
             var result = await AgentConnectivityCheck.RunAsync(CreateSettings($"http://localhost:{agent.Port}/"));
 
