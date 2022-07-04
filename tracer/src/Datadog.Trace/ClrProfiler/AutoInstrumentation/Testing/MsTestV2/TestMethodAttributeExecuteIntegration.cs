@@ -117,9 +117,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                     }
 
                     var coverageSession = Ci.Coverage.CoverageReporter.Handler.EndSession();
-                    if (coverageSession is not null)
+                    if (coverageSession is Ci.Coverage.Models.CoveragePayload coveragePayload)
                     {
-                        scope.Span.SetTag("test.coverage", Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(coverageSession));
+                        coveragePayload.TraceId = scope.Span.TraceId;
+                        coveragePayload.SpanId = scope.Span.SpanId;
+                        Ci.CIVisibility.Manager?.WriteEvent(coveragePayload);
                     }
 
                     scope.Dispose();

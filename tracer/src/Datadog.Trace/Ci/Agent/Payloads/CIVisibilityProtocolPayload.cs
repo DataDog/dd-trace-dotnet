@@ -1,21 +1,20 @@
-// <copyright file="EventsPayload.cs" company="Datadog">
+// <copyright file="CIVisibilityProtocolPayload.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using Datadog.Trace.Ci.Agent.MessagePack;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.Payloads
 {
-    internal abstract class EventsPayload
+    internal abstract class CIVisibilityProtocolPayload
     {
         private readonly EventsBuffer<IEvent> _events;
         private readonly IFormatterResolver _formatterResolver;
 
-        public EventsPayload(IFormatterResolver formatterResolver = null)
+        public CIVisibilityProtocolPayload(IFormatterResolver formatterResolver = null)
         {
             _formatterResolver = formatterResolver ?? CIFormatterResolver.Instance;
 

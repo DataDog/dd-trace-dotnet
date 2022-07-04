@@ -9,7 +9,7 @@ using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.Payloads
 {
-    internal class CITestCyclePayload : EventsPayload
+    internal class CITestCyclePayload : CIVisibilityProtocolPayload
     {
         public CITestCyclePayload(IFormatterResolver formatterResolver = null)
             : base(formatterResolver)

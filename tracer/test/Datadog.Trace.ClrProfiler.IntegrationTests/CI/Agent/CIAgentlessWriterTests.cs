@@ -33,8 +33,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             var expectedBytes = expectedPayload.ToArray();
 
             byte[] finalPayload = null;
-            sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.EventsPayload>()))
-                .Returns<Ci.Agent.Payloads.EventsPayload>(payload =>
+            sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.CIVisibilityProtocolPayload>()))
+                .Returns<Ci.Agent.Payloads.CIVisibilityProtocolPayload>(payload =>
                 {
                     finalPayload = payload.ToArray();
                     return Task.CompletedTask;
@@ -56,8 +56,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             var agentlessWriter = new CIAgentlessWriter(sender.Object);
             var lstPayloads = new List<byte[]>();
 
-            sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.EventsPayload>()))
-                .Returns<Ci.Agent.Payloads.EventsPayload>(payload =>
+            sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.CIVisibilityProtocolPayload>()))
+                .Returns<Ci.Agent.Payloads.CIVisibilityProtocolPayload>(payload =>
                 {
                     lstPayloads.Add(payload.ToArray());
                     return flushTcs.Task;

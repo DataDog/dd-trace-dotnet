@@ -158,9 +158,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         internal static void FinishScope(Scope scope, Exception ex)
         {
             var coverageSession = Ci.Coverage.CoverageReporter.Handler.EndSession();
-            if (coverageSession is not null)
+            if (coverageSession is Ci.Coverage.Models.CoveragePayload coveragePayload)
             {
-                scope.Span.SetTag("test.coverage", Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(coverageSession));
+                coveragePayload.TraceId = scope.Span.TraceId;
+                coveragePayload.SpanId = scope.Span.SpanId;
+                CIVisibility.Manager?.WriteEvent(coveragePayload);
             }
 
             // unwrap the generic NUnitException
@@ -206,9 +208,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 span.SetTag(TestTags.SkipReason, skipReason ?? string.Empty);
 
                 var coverageSession = Ci.Coverage.CoverageReporter.Handler.EndSession();
-                if (coverageSession is not null)
+                if (coverageSession is Ci.Coverage.Models.CoveragePayload coveragePayload)
                 {
-                    scope.Span.SetTag("test.coverage", Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(coverageSession));
+                    coveragePayload.TraceId = span.TraceId;
+                    coveragePayload.SpanId = span.SpanId;
+                    CIVisibility.Manager?.WriteEvent(coveragePayload);
                 }
 
                 span.Finish(TimeSpan.Zero);

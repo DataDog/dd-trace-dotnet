@@ -116,9 +116,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
         internal static void FinishScope(Scope scope, IExceptionAggregator exceptionAggregator)
         {
             var coverageSession = Ci.Coverage.CoverageReporter.Handler.EndSession();
-            if (coverageSession is not null)
+            if (coverageSession is Ci.Coverage.Models.CoveragePayload coveragePayload)
             {
-                scope.Span.SetTag("test.coverage", Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(coverageSession));
+                coveragePayload.TraceId = scope.Span.TraceId;
+                coveragePayload.SpanId = scope.Span.SpanId;
+                Ci.CIVisibility.Manager?.WriteEvent(coveragePayload);
             }
 
             Exception exception = exceptionAggregator.ToException();

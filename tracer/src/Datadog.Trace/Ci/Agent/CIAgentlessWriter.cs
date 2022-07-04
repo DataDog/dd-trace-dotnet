@@ -37,11 +37,11 @@ namespace Datadog.Trace.Ci.Agent
             _flushDelayEvent = new AutoResetEvent(false);
             _sender = sender;
 
-            var concurrencyLevel = Environment.ProcessorCount;
+            var concurrencyLevel = Math.Min(Math.Max(Environment.ProcessorCount / 2, 1), 8);
             _buffersArray = new Buffers[concurrencyLevel];
             for (var i = 0; i < _buffersArray.Length; i++)
             {
-                _buffersArray[i] = new Buffers(new CITestCyclePayload(formatterResolver));
+                _buffersArray[i] = new Buffers(new CITestCyclePayload(formatterResolver), new CICodeCoveragePayload(formatterResolver));
                 var tskFlush = Task.Factory.StartNew(InternalFlushEventsAsync, new object[] { this, _buffersArray[i] }, TaskCreationOptions.LongRunning);
                 tskFlush.ContinueWith(t => Log.Error(t.Exception, "Error in sending ciapp events"), TaskContinuationOptions.OnlyOnFaulted);
                 _buffersArray[i].SetFlushTask(tskFlush);
@@ -127,8 +127,10 @@ namespace Datadog.Trace.Ci.Agent
             var writer = (CIAgentlessWriter)stateArray[0];
             var eventQueue = writer._eventQueue;
             var flushDelayEvent = writer._flushDelayEvent;
+            var sender = writer._sender;
             var buffers = (Buffers)stateArray[1];
             var ciTestCycleBuffer = buffers.CiTestCycleBuffer;
+            var ciCodeCoverageBuffer = buffers.CICodeCoverageBuffer;
             var completionSource = buffers.FlushTaskCompletionSource;
 
             Log.Debug("CIAgentlessWriter:: InternalFlushEventsAsync/ Starting FlushEventsAsync loop");
@@ -150,15 +152,27 @@ namespace Datadog.Trace.Ci.Agent
                             watermarkCompletion = watermarkEvent.CompletionSource;
                             break;
                         }
-                        else if (ciTestCycleBuffer.CanProcessEvent(item))
+
+                        if (ciTestCycleBuffer.CanProcessEvent(item))
                         {
                             // The CITestCycle endpoint can process this event, we try to add it to the buffer.
                             while (!ciTestCycleBuffer.TryProcessEvent(item) && ciTestCycleBuffer.HasEvents)
                             {
                                 // If the item cannot be added to the buffer but the buffer has events
                                 // we assume that is full and needs to be flushed.
-                                await writer.SendPayloadAsync(ciTestCycleBuffer).ConfigureAwait(false);
+                                await sender.SendPayloadAsync(ciTestCycleBuffer).ConfigureAwait(false);
                                 ciTestCycleBuffer.Clear();
+                            }
+                        }
+                        else if (ciCodeCoverageBuffer.CanProcessEvent(item))
+                        {
+                            // The CICodeCoverage track/endpoint can process this event, we try to add it to the buffer.
+                            while (!ciCodeCoverageBuffer.TryProcessEvent(item) && ciCodeCoverageBuffer.HasEvents)
+                            {
+                                // If the item cannot be added to the buffer but the buffer has events
+                                // we assume that is full and needs to be flushed.
+                                await sender.SendPayloadAsync(ciCodeCoverageBuffer).ConfigureAwait(false);
+                                ciCodeCoverageBuffer.Clear();
                             }
                         }
                     }
@@ -167,8 +181,15 @@ namespace Datadog.Trace.Ci.Agent
                     if (ciTestCycleBuffer.HasEvents)
                     {
                         // flush is required
-                        await writer.SendPayloadAsync(ciTestCycleBuffer).ConfigureAwait(false);
+                        await sender.SendPayloadAsync(ciTestCycleBuffer).ConfigureAwait(false);
                         ciTestCycleBuffer.Clear();
+                    }
+
+                    if (ciCodeCoverageBuffer.HasEvents)
+                    {
+                        // flush is required
+                        await sender.SendPayloadAsync(ciCodeCoverageBuffer).ConfigureAwait(false);
+                        ciCodeCoverageBuffer.Clear();
                     }
 
                     // If there's a flush watermark we marked as resolved.
@@ -204,11 +225,6 @@ namespace Datadog.Trace.Ci.Agent
             Log.Debug("CIAgentlessWriter:: InternalFlushEventsAsync/ Finishing FlushEventsAsync loop");
         }
 
-        private Task SendPayloadAsync(EventsPayload payload)
-        {
-            return _sender.SendPayloadAsync(payload);
-        }
-
         internal class WatermarkEvent : IEvent
         {
             public WatermarkEvent()
@@ -221,14 +237,17 @@ namespace Datadog.Trace.Ci.Agent
 
         private class Buffers
         {
-            public Buffers(EventsPayload ciTestCycleBuffer)
+            public Buffers(CIVisibilityProtocolPayload ciTestCycleBuffer, CICodeCoveragePayload ciCodeCoverageBuffer)
             {
                 CiTestCycleBuffer = ciTestCycleBuffer;
+                CICodeCoverageBuffer = ciCodeCoverageBuffer;
                 FlushTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 FlushTask = null;
             }
 
-            public EventsPayload CiTestCycleBuffer { get; }
+            public CIVisibilityProtocolPayload CiTestCycleBuffer { get; }
+
+            public CICodeCoveragePayload CICodeCoverageBuffer { get; }
 
             public TaskCompletionSource<bool> FlushTaskCompletionSource { get; }
 

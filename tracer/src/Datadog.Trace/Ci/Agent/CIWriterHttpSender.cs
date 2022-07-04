@@ -29,17 +29,33 @@ namespace Datadog.Trace.Ci.Agent
             Log.Information("CIWriterHttpSender Initialized.");
         }
 
-        public async Task SendPayloadAsync(EventsPayload payload)
+        public async Task SendPayloadAsync(CIVisibilityProtocolPayload payload)
         {
             var numberOfTraces = payload.Count;
             var payloadMimeType = MimeTypes.MsgPack;
             var payloadBytes = payload.ToArray();
 
-            Log.Information($"Sending ({numberOfTraces} events) {payloadBytes.Length.ToString("N0")} bytes...");
-            await SendPayloadAsync(payload.Url, new ArraySegment<byte>(payloadBytes), payloadMimeType).ConfigureAwait(false);
+            Log.Information<int, string>("Sending ({numberOfTraces} events) {bytesValue} bytes...", numberOfTraces, payloadBytes.Length.ToString("N0"));
+            await SendPayloadAsync(payload.Url, req => req.PostAsync(new ArraySegment<byte>(payloadBytes), payloadMimeType)).ConfigureAwait(false);
         }
 
-        private static async Task<bool> SendPayloadAsync(ArraySegment<byte> payload, string mimeType, IApiRequest request, bool finalTry)
+        public async Task SendPayloadAsync(CIVisibilityMultipartPayload payload)
+        {
+            Log.Information<int>("Sending {count} coverages...", payload.Count);
+            await SendPayloadAsync(
+                payload.Url,
+                req =>
+                {
+                    if (req is IMultipartApiRequest mReq)
+                    {
+                        return mReq.PostAsync(payload.ToArray());
+                    }
+
+                    return Task.FromResult<IApiResponse>(null);
+                }).ConfigureAwait(false);
+        }
+
+        private static async Task<bool> SendPayloadAsync(Func<IApiRequest, Task<IApiResponse>> senderFunc, IApiRequest request, bool finalTry)
         {
             IApiResponse response = null;
 
@@ -47,7 +63,7 @@ namespace Datadog.Trace.Ci.Agent
             {
                 try
                 {
-                    response = await request.PostAsync(payload, mimeType).ConfigureAwait(false);
+                    response = await senderFunc(request).ConfigureAwait(false);
                 }
                 catch
                 {
@@ -83,7 +99,7 @@ namespace Datadog.Trace.Ci.Agent
             return true;
         }
 
-        private async Task SendPayloadAsync(Uri url, ArraySegment<byte> payload, string mimeType)
+        private async Task SendPayloadAsync(Uri url, Func<IApiRequest, Task<IApiResponse>> senderFunc)
         {
             // retry up to 5 times with exponential back-off
             const int retryLimit = 5;
@@ -111,7 +127,7 @@ namespace Datadog.Trace.Ci.Agent
 
                 try
                 {
-                    success = await SendPayloadAsync(payload, mimeType, request, isFinalTry).ConfigureAwait(false);
+                    success = await SendPayloadAsync(senderFunc, request, isFinalTry).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

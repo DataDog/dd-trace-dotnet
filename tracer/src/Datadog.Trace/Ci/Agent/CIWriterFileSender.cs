@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.Logging;
@@ -23,7 +24,7 @@ namespace Datadog.Trace.Ci.Agent
             Log.Information("CIWriterFileSender Initialized.");
         }
 
-        public Task SendPayloadAsync(EventsPayload payload)
+        public Task SendPayloadAsync(CIVisibilityProtocolPayload payload)
         {
             var str = $"c:\\temp\\file-{Guid.NewGuid().ToString("n")}";
 
@@ -32,6 +33,36 @@ namespace Datadog.Trace.Ci.Agent
 
             var json = Vendors.MessagePack.MessagePackSerializer.ToJson(msgPackBytes);
             File.WriteAllText(str + ".json", json);
+
+            return Task.CompletedTask;
+        }
+
+        public Task SendPayloadAsync(CIVisibilityMultipartPayload payload)
+        {
+            var str = $"c:\\temp\\multipart-{Guid.NewGuid().ToString("n")}";
+            foreach (var item in payload.ToArray())
+            {
+                byte[] bytes = null;
+
+                if (item.ContentInStream is { } stream)
+                {
+                    using var ms = new MemoryStream();
+                    stream.CopyTo(ms);
+                    bytes = ms.ToArray();
+                }
+                else if (item.ContentInBytes is { } arraySegment)
+                {
+                    bytes = arraySegment.ToArray();
+                }
+
+                if (bytes is not null)
+                {
+                    File.WriteAllBytes(str + $"{item.Name}.mpack", bytes);
+
+                    var json = Vendors.MessagePack.MessagePackSerializer.ToJson(bytes);
+                    File.WriteAllText(str + $"{item.Name}.json", json);
+                }
+            }
 
             return Task.CompletedTask;
         }
