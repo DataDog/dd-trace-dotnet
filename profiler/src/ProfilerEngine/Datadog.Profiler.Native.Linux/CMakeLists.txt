@@ -14,11 +14,6 @@ message(STATUS "Run Clang Undefined-Behavior Sanitizer: " ${RUN_UBSAN})
 # Compiler options
 # ******************************************************
 
-if(ISLINUX)
-    SET (CMAKE_C_COMPILER   /usr/bin/clang)
-    SET (CMAKE_CXX_COMPILER /usr/bin/clang++)
-endif()
-
 # Sets compiler options
 add_compile_options(-std=c++17 -fPIC -fms-extensions)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
