@@ -26,6 +26,7 @@ public:
     inline static const shared::WSTRING Tags                        = WStr("DD_TAGS");
     inline static const shared::WSTRING NativeFramesEnabled         = WStr("DD_PROFILING_FRAMES_NATIVE_ENABLED");
     inline static const shared::WSTRING CpuProfilingEnabled         = WStr("DD_PROFILING_CPU_ENABLED");
+    inline static const shared::WSTRING WallTimeProfilingEnabled    = WStr("DD_PROFILING_WALLTIME_ENABLED");
     inline static const shared::WSTRING ExceptionProfilingEnabled   = WStr("DD_PROFILING_EXCEPTION_ENABLED");
     inline static const shared::WSTRING ExceptionSampleLimit        = WStr("DD_PROFILING_EXCEPTION_SAMPLE_LIMIT");
     inline static const shared::WSTRING ProfilesOutputDir           = WStr("DD_INTERNAL_PROFILING_OUTPUT_DIR");

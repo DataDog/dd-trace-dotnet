@@ -51,6 +51,7 @@
     <ClCompile Include="LibddprofExporterTest.cpp" />
     <ClCompile Include="LogTest.cpp" />
     <ClCompile Include="ManagedThreadListTest.cpp" />
+    <ClCompile Include="OpSysToolsTest.cpp" />
     <ClCompile Include="ProfilerMockedInterface.cpp" />
     <ClCompile Include="RuntimeIdStoreHelper.cpp" />
     <ClCompile Include="RuntimeIdTest.cpp" />

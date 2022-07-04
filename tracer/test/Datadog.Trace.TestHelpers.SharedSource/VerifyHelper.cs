@@ -62,55 +62,60 @@ namespace Datadog.Trace.TestHelpers
             settings.AddRegexScrubber(LoopBackRegex, "localhost:00000");
             settings.AddRegexScrubber(KeepRateRegex, "_dd.tracer_kr: 1.0");
             settings.AddRegexScrubber(ProcessIdRegex, "process_id: 0");
+            settings.ScrubInlineGuids();
             return settings;
         }
 
-        public static SettingsTask VerifySpans(IReadOnlyCollection<MockSpan> spans, VerifySettings settings)
+        public static SettingsTask VerifySpans(
+            IReadOnlyCollection<MockSpan> spans,
+            VerifySettings settings,
+            Func<IReadOnlyCollection<MockSpan>, IOrderedEnumerable<MockSpan>> orderSpans = null)
         {
             // Ensure a static ordering for the spans
-            var orderedSpans = spans
-                              .OrderBy(x => GetRootSpanName(x, spans))
-                              .ThenBy(x => GetSpanDepth(x, spans))
-                              .ThenBy(x => x.Start)
-                              .ThenBy(x => x.Duration);
+            var orderedSpans = orderSpans?.Invoke(spans) ??
+                               spans
+                                  .OrderBy(x => GetRootSpanName(x, spans))
+                                  .ThenBy(x => GetSpanDepth(x, spans))
+                                  .ThenBy(x => x.Start)
+                                  .ThenBy(x => x.Duration);
 
             return Verifier.Verify(orderedSpans, settings);
+        }
 
-            static string GetRootSpanName(MockSpan span, IReadOnlyCollection<MockSpan> allSpans)
+        public static string GetRootSpanName(MockSpan span, IReadOnlyCollection<MockSpan> allSpans)
+        {
+            while (span.ParentId is not null)
             {
-                while (span.ParentId is not null)
+                var parent = allSpans.FirstOrDefault(x => x.SpanId == span.ParentId.Value);
+                if (parent is null)
                 {
-                    var parent = allSpans.FirstOrDefault(x => x.SpanId == span.ParentId.Value);
-                    if (parent is null)
-                    {
-                        // no span with the given Parent Id, so treat this one as the root instead
-                        break;
-                    }
-
-                    span = parent;
+                    // no span with the given Parent Id, so treat this one as the root instead
+                    break;
                 }
 
-                return span.Resource;
+                span = parent;
             }
 
-            static int GetSpanDepth(MockSpan span, IReadOnlyCollection<MockSpan> allSpans)
-            {
-                var depth = 0;
-                while (span.ParentId is not null)
-                {
-                    var parent = allSpans.FirstOrDefault(x => x.SpanId == span.ParentId.Value);
-                    if (parent is null)
-                    {
-                        // no span with the given Parent Id, so treat this one as the root instead
-                        break;
-                    }
+            return span.Resource;
+        }
 
-                    span = parent;
-                    depth++;
+        public static int GetSpanDepth(MockSpan span, IReadOnlyCollection<MockSpan> allSpans)
+        {
+            var depth = 0;
+            while (span.ParentId is not null)
+            {
+                var parent = allSpans.FirstOrDefault(x => x.SpanId == span.ParentId.Value);
+                if (parent is null)
+                {
+                    // no span with the given Parent Id, so treat this one as the root instead
+                    break;
                 }
 
-                return depth;
+                span = parent;
+                depth++;
             }
+
+            return depth;
         }
 
         public static void AddRegexScrubber(this VerifySettings settings, Regex regex, string replacement)

@@ -2,12 +2,14 @@
 
   <ItemGroup>
     <PackageReference Include="Bogus" Version="34.0.1" />
-    <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
     <PackageReference Include="MessagePack" Version="1.9.11" />
     <PackageReference Include="PublicApiGenerator" Version="10.2.0" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Datadog.InstrumentedAssemblyGenerator\Datadog.InstrumentedAssemblyGenerator.csproj" />
+    <ProjectReference Include="..\..\src\Datadog.InstrumentedAssemblyVerification\Datadog.InstrumentedAssemblyVerification.csproj" />
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 

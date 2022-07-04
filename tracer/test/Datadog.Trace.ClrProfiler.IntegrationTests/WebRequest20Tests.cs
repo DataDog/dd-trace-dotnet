@@ -25,6 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void SubmitsTraces()
         {
             int expectedSpanCount = 45;
@@ -64,10 +65,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void TracingDisabled_DoesNotSubmitsTraces()
         {
             const string expectedOperationName = "http.request";
-
+            SetInstrumentationVerification();
             int httpPort = TcpPortProvider.GetOpenPort();
 
             using var telemetry = this.ConfigureTelemetry();
@@ -85,6 +87,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.Null(parentSpanId);
                 Assert.Equal("false", tracingEnabled);
                 telemetry.AssertIntegrationDisabled(IntegrationId.WebRequest);
+                VerifyInstrumentation(processResult.Process);
             }
         }
     }

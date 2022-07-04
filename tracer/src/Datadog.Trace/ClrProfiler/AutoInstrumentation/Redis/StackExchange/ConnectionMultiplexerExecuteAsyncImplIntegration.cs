@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", ClrNames.Object, "StackExchange.Redis.ServerEndPoint" },
         MinimumVersion = "1.0.0",
         MaximumVersion = "2.*.*",
-        IntegrationName = IntegrationName)]
+        IntegrationName = StackExchangeRedisHelper.IntegrationName)]
     [InstrumentMethod(
         AssemblyName = "StackExchange.Redis.StrongName",
         TypeName = "StackExchange.Redis.ConnectionMultiplexer",
@@ -30,14 +30,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", ClrNames.Object, "StackExchange.Redis.ServerEndPoint" },
         MinimumVersion = "1.0.0",
         MaximumVersion = "2.*.*",
-        IntegrationName = IntegrationName)]
+        IntegrationName = StackExchangeRedisHelper.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ConnectionMultiplexerExecuteAsyncImplIntegration
     {
-        private const string IntegrationName = nameof(Configuration.IntegrationId.StackExchangeRedis);
-        private const IntegrationId IntegrationId = Configuration.IntegrationId.StackExchangeRedis;
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -58,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
             string rawCommand = message.CommandAndKey ?? "COMMAND";
             StackExchangeRedisHelper.HostAndPort hostAndPort = StackExchangeRedisHelper.GetHostAndPort(instance.Configuration);
 
-            Scope scope = RedisHelper.CreateScope(Tracer.Instance, IntegrationId, hostAndPort.Host, hostAndPort.Port, rawCommand);
+            Scope scope = RedisHelper.CreateScope(Tracer.Instance, StackExchangeRedisHelper.IntegrationId, hostAndPort.Host, hostAndPort.Port, rawCommand);
             if (scope is not null)
             {
                 return new CallTargetState(scope);

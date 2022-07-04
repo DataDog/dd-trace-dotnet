@@ -1,0 +1,4940 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: redis.command,
+    Resource: APPEND,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: APPEND ssetkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_4,
+    Name: redis.command,
+    Resource: APPEND,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: APPEND StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_6,
+    Name: redis.command,
+    Resource: BITCOUNT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: BITCOUNT ssetkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_8,
+    Name: redis.command,
+    Resource: BITCOUNT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: BITCOUNT StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_9,
+    SpanId: Id_10,
+    Name: redis.command,
+    Resource: BITOP,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: BITOP,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_12,
+    Name: redis.command,
+    Resource: BITOP,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: BITOP,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_13,
+    SpanId: Id_14,
+    Name: redis.command,
+    Resource: BITPOS,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: BITPOS ssetkey1,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_15,
+    SpanId: Id_16,
+    Name: redis.command,
+    Resource: BITPOS,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: BITPOS StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_17,
+    SpanId: Id_18,
+    Name: redis.command,
+    Resource: DDCUSTOM,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Error: 1,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      error.msg: ERR unknown command `DDCUSTOM`, with args beginning with: `COMMAND`, ,
+      error.stack:
+StackExchange.Redis.RedisServerException: ERR unknown command `DDCUSTOM`, with args beginning with: `COMMAND`, 
+at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
+      error.type: StackExchange.Redis.RedisServerException,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: DDCUSTOM,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_19,
+    SpanId: Id_20,
+    Name: redis.command,
+    Resource: DDCUSTOM,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Error: 1,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      error.msg: ERR unknown command `DDCUSTOM`, with args beginning with: `COMMAND`, ,
+      error.stack:
+StackExchange.Redis.RedisServerException: ERR unknown command `DDCUSTOM`, with args beginning with: `COMMAND`, 
+at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
+      error.type: StackExchange.Redis.RedisServerException,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: DDCUSTOM,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_21,
+    SpanId: Id_22,
+    Name: redis.command,
+    Resource: DDCUSTOM,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Error: 1,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      error.msg: ERR unknown command `DDCUSTOM`, with args beginning with: `COMMAND`, ,
+      error.stack:
+StackExchange.Redis.RedisServerException: ERR unknown command `DDCUSTOM`, with args beginning with: `COMMAND`,
+,
+      error.type: StackExchange.Redis.RedisServerException,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: DDCUSTOM,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_23,
+    SpanId: Id_24,
+    Name: redis.command,
+    Resource: DEBUG,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Error: 1,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      error.msg: ERR no such key,
+      error.stack:
+StackExchange.Redis.RedisServerException: ERR no such key
+,
+      error.type: StackExchange.Redis.RedisServerException,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: DEBUG StackExchange.Redis.Batch.DebugObjectAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_25,
+    SpanId: Id_26,
+    Name: redis.command,
+    Resource: DEBUG,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Error: 1,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      error.msg: ERR no such key,
+      error.stack:
+StackExchange.Redis.RedisServerException: ERR no such key
+at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
+      error.type: StackExchange.Redis.RedisServerException,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: DEBUG StackExchange.Redis.Database.DebugObject,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_27,
+    SpanId: Id_28,
+    Name: redis.command,
+    Resource: DEL,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: DEL key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_29,
+    SpanId: Id_30,
+    Name: redis.command,
+    Resource: DEL,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: DEL StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_31,
+    SpanId: Id_32,
+    Name: redis.command,
+    Resource: DEL,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: DEL StackExchange.Redis.Database.Lock,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_33,
+    SpanId: Id_34,
+    Name: redis.command,
+    Resource: DUMP,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: DUMP key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_36,
+    Name: redis.command,
+    Resource: DUMP,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: DUMP StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_37,
+    SpanId: Id_38,
+    Name: redis.command,
+    Resource: ECHO,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ECHO,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_39,
+    SpanId: Id_40,
+    Name: redis.command,
+    Resource: EXEC,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: EXEC,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_41,
+    SpanId: Id_42,
+    Name: redis.command,
+    Resource: EXEC,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: EXEC,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_43,
+    SpanId: Id_44,
+    Name: redis.command,
+    Resource: EXISTS,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: EXISTS key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_45,
+    SpanId: Id_46,
+    Name: redis.command,
+    Resource: EXISTS,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: EXISTS StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_47,
+    SpanId: Id_48,
+    Name: redis.command,
+    Resource: EXPIRE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: EXPIRE StackExchange.Redis.Database.Lock,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_49,
+    SpanId: Id_50,
+    Name: redis.command,
+    Resource: FLUSHDB,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: FLUSHDB,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_51,
+    SpanId: Id_52,
+    Name: redis.command,
+    Resource: GEOADD,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GEOADD StackExchange.Redis.Batch.GeoAddAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_54,
+    Name: redis.command,
+    Resource: GEOADD,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GEOADD StackExchange.Redis.Database.Geo,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_55,
+    SpanId: Id_56,
+    Name: redis.command,
+    Resource: GEODIST,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GEODIST StackExchange.Redis.Batch.GeoDistanceAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_57,
+    SpanId: Id_58,
+    Name: redis.command,
+    Resource: GEODIST,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GEODIST StackExchange.Redis.Database.Geo,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_59,
+    SpanId: Id_60,
+    Name: redis.command,
+    Resource: GEOHASH,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GEOHASH StackExchange.Redis.Batch.GeoHashAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_61,
+    SpanId: Id_62,
+    Name: redis.command,
+    Resource: GEOHASH,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GEOHASH StackExchange.Redis.Database.Geo,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_63,
+    SpanId: Id_64,
+    Name: redis.command,
+    Resource: GEOPOS,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GEOPOS StackExchange.Redis.Batch.GeoPositionAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_65,
+    SpanId: Id_66,
+    Name: redis.command,
+    Resource: GEOPOS,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GEOPOS StackExchange.Redis.Database.Geo,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_67,
+    SpanId: Id_68,
+    Name: redis.command,
+    Resource: GEORADIUSBYMEMBER,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GEORADIUSBYMEMBER StackExchange.Redis.Batch.GeoRadiusAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_69,
+    SpanId: Id_70,
+    Name: redis.command,
+    Resource: GEORADIUSBYMEMBER,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GEORADIUSBYMEMBER StackExchange.Redis.Database.Geo,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_71,
+    SpanId: Id_72,
+    Name: redis.command,
+    Resource: GET,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GET key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_73,
+    SpanId: Id_74,
+    Name: redis.command,
+    Resource: GET,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Error: 1,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      error.msg: WRONGTYPE Operation against a key holding the wrong kind of value,
+      error.stack:
+StackExchange.Redis.RedisServerException: WRONGTYPE Operation against a key holding the wrong kind of value
+,
+      error.type: StackExchange.Redis.RedisServerException,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GET listkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_75,
+    SpanId: Id_76,
+    Name: redis.command,
+    Resource: GET,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GET StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_77,
+    SpanId: Id_78,
+    Name: redis.command,
+    Resource: GET,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GET StackExchange.Redis.Database.Lock,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_79,
+    SpanId: Id_80,
+    Name: redis.command,
+    Resource: GET,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GET StackExchange.Redis.INCR,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_81,
+    SpanId: Id_82,
+    Name: redis.command,
+    Resource: GETBIT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GETBIT key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_83,
+    SpanId: Id_84,
+    Name: redis.command,
+    Resource: GETBIT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GETBIT StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_85,
+    SpanId: Id_86,
+    Name: redis.command,
+    Resource: GETRANGE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GETRANGE key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_87,
+    SpanId: Id_88,
+    Name: redis.command,
+    Resource: GETRANGE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GETRANGE StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_89,
+    SpanId: Id_90,
+    Name: redis.command,
+    Resource: GETSET,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GETSET key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_91,
+    SpanId: Id_92,
+    Name: redis.command,
+    Resource: GETSET,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: GETSET StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_93,
+    SpanId: Id_94,
+    Name: redis.command,
+    Resource: HDEL,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HDEL StackExchange.Redis.Batch.HashDeleteAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_95,
+    SpanId: Id_96,
+    Name: redis.command,
+    Resource: HDEL,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HDEL StackExchange.Redis.Database.Hash,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_97,
+    SpanId: Id_98,
+    Name: redis.command,
+    Resource: HEXISTS,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HEXISTS StackExchange.Redis.Batch.HashExistsAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_99,
+    SpanId: Id_100,
+    Name: redis.command,
+    Resource: HEXISTS,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HEXISTS StackExchange.Redis.Database.Hash,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_101,
+    SpanId: Id_102,
+    Name: redis.command,
+    Resource: HGET,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HGET StackExchange.Redis.Database.Hash,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_103,
+    SpanId: Id_104,
+    Name: redis.command,
+    Resource: HGETALL,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HGETALL StackExchange.Redis.Batch.HashGetAllAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_105,
+    SpanId: Id_106,
+    Name: redis.command,
+    Resource: HGETALL,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HGETALL StackExchange.Redis.Database.Hash,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_107,
+    SpanId: Id_108,
+    Name: redis.command,
+    Resource: HINCRBY,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HINCRBY StackExchange.Redis.Database.Hash,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_109,
+    SpanId: Id_110,
+    Name: redis.command,
+    Resource: HINCRBYFLOAT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HINCRBYFLOAT StackExchange.Redis.Batch.HashDecrementAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_111,
+    SpanId: Id_112,
+    Name: redis.command,
+    Resource: HINCRBYFLOAT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HINCRBYFLOAT StackExchange.Redis.Batch.HashIncrementAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_113,
+    SpanId: Id_114,
+    Name: redis.command,
+    Resource: HINCRBYFLOAT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HINCRBYFLOAT StackExchange.Redis.Database.Hash,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_115,
+    SpanId: Id_116,
+    Name: redis.command,
+    Resource: HKEYS,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HKEYS StackExchange.Redis.Batch.HashKeysAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_117,
+    SpanId: Id_118,
+    Name: redis.command,
+    Resource: HKEYS,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HKEYS StackExchange.Redis.Database.Hash,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_119,
+    SpanId: Id_120,
+    Name: redis.command,
+    Resource: HLEN,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HLEN StackExchange.Redis.Batch.HashLengthAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_121,
+    SpanId: Id_122,
+    Name: redis.command,
+    Resource: HLEN,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HLEN StackExchange.Redis.Database.Hash,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_123,
+    SpanId: Id_124,
+    Name: redis.command,
+    Resource: HMSET,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HMSET StackExchange.Redis.Batch.HashSetAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_125,
+    SpanId: Id_126,
+    Name: redis.command,
+    Resource: HMSET,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HMSET StackExchange.Redis.Database.Hash,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_127,
+    SpanId: Id_128,
+    Name: redis.command,
+    Resource: HVALS,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HVALS StackExchange.Redis.Batch.HashValuesAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_129,
+    SpanId: Id_130,
+    Name: redis.command,
+    Resource: HVALS,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: HVALS StackExchange.Redis.Database.Hash,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_131,
+    SpanId: Id_132,
+    Name: redis.command,
+    Resource: INCR,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Error: 1,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      error.msg: ERR value is not an integer or out of range,
+      error.stack:
+StackExchange.Redis.RedisServerException: ERR value is not an integer or out of range
+,
+      error.type: StackExchange.Redis.RedisServerException,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: INCR key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_133,
+    SpanId: Id_134,
+    Name: redis.command,
+    Resource: INCR,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: INCR StackExchange.Redis.INCR,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_135,
+    SpanId: Id_136,
+    Name: redis.command,
+    Resource: INCRBYFLOAT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: INCRBYFLOAT key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_137,
+    SpanId: Id_138,
+    Name: redis.command,
+    Resource: INCRBYFLOAT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: INCRBYFLOAT StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_139,
+    SpanId: Id_140,
+    Name: redis.command,
+    Resource: INCRBYFLOAT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Error: 1,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      error.msg: ERR value is not a valid float,
+      error.stack:
+StackExchange.Redis.RedisServerException: ERR value is not a valid float
+at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
+      error.type: StackExchange.Redis.RedisServerException,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: INCRBYFLOAT StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_141,
+    SpanId: Id_142,
+    Name: redis.command,
+    Resource: INCRBYFLOAT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: INCRBYFLOAT StackExchange.Redis.INCR,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_143,
+    SpanId: Id_144,
+    Name: redis.command,
+    Resource: LINDEX,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LINDEX listkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_145,
+    SpanId: Id_146,
+    Name: redis.command,
+    Resource: LINDEX,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LINDEX StackExchange.Redis.Database.List,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_147,
+    SpanId: Id_148,
+    Name: redis.command,
+    Resource: LINSERT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LINSERT listkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_149,
+    SpanId: Id_150,
+    Name: redis.command,
+    Resource: LINSERT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LINSERT listkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_151,
+    SpanId: Id_152,
+    Name: redis.command,
+    Resource: LINSERT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LINSERT StackExchange.Redis.Database.List,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_153,
+    SpanId: Id_154,
+    Name: redis.command,
+    Resource: LINSERT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LINSERT StackExchange.Redis.Database.List,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_155,
+    SpanId: Id_156,
+    Name: redis.command,
+    Resource: LLEN,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LLEN listkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_157,
+    SpanId: Id_158,
+    Name: redis.command,
+    Resource: LLEN,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LLEN StackExchange.Redis.Database.List,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_159,
+    SpanId: Id_160,
+    Name: redis.command,
+    Resource: LPOP,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LPOP listkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_161,
+    SpanId: Id_162,
+    Name: redis.command,
+    Resource: LPOP,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LPOP StackExchange.Redis.Database.List,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_163,
+    SpanId: Id_164,
+    Name: redis.command,
+    Resource: LPUSH,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LPUSH listkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_165,
+    SpanId: Id_166,
+    Name: redis.command,
+    Resource: LPUSH,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LPUSH StackExchange.Redis.Database.List,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_167,
+    SpanId: Id_168,
+    Name: redis.command,
+    Resource: LRANGE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LRANGE listkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_169,
+    SpanId: Id_170,
+    Name: redis.command,
+    Resource: LRANGE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LRANGE StackExchange.Redis.Database.List,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_171,
+    SpanId: Id_172,
+    Name: redis.command,
+    Resource: LREM,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LREM listkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_173,
+    SpanId: Id_174,
+    Name: redis.command,
+    Resource: LREM,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LREM StackExchange.Redis.Database.List,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_175,
+    SpanId: Id_176,
+    Name: redis.command,
+    Resource: LSET,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LSET listkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_177,
+    SpanId: Id_178,
+    Name: redis.command,
+    Resource: LSET,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LSET StackExchange.Redis.Database.List,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_179,
+    SpanId: Id_180,
+    Name: redis.command,
+    Resource: LTRIM,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LTRIM listkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_181,
+    SpanId: Id_182,
+    Name: redis.command,
+    Resource: LTRIM,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: LTRIM StackExchange.Redis.Database.List,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_183,
+    SpanId: Id_184,
+    Name: redis.command,
+    Resource: MIGRATE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Error: 1,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      error.msg: Unexpected response to MIGRATE: SimpleString: NOKEY,
+      error.stack:
+StackExchange.Redis.RedisConnectionException: Unexpected response to MIGRATE: SimpleString: NOKEY
+at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
+      error.type: StackExchange.Redis.RedisConnectionException,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: MIGRATE StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_185,
+    SpanId: Id_186,
+    Name: redis.command,
+    Resource: MOVE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Error: 1,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      error.msg: ERR source and destination objects are the same,
+      error.stack:
+StackExchange.Redis.RedisServerException: ERR source and destination objects are the same
+,
+      error.type: StackExchange.Redis.RedisServerException,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: MOVE key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_187,
+    SpanId: Id_188,
+    Name: redis.command,
+    Resource: MOVE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Error: 1,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      error.msg: ERR source and destination objects are the same,
+      error.stack:
+StackExchange.Redis.RedisServerException: ERR source and destination objects are the same
+at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
+      error.type: StackExchange.Redis.RedisServerException,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: MOVE StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_189,
+    SpanId: Id_190,
+    Name: redis.command,
+    Resource: PERSIST,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PERSIST key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_191,
+    SpanId: Id_192,
+    Name: redis.command,
+    Resource: PERSIST,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PERSIST StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_193,
+    SpanId: Id_194,
+    Name: redis.command,
+    Resource: PEXPIRE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PEXPIRE key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_195,
+    SpanId: Id_196,
+    Name: redis.command,
+    Resource: PEXPIRE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PEXPIRE StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_197,
+    SpanId: Id_198,
+    Name: redis.command,
+    Resource: PFADD,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PFADD StackExchange.Redis.Batch.HyperLogLogAddAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_199,
+    SpanId: Id_200,
+    Name: redis.command,
+    Resource: PFADD,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PFADD StackExchange.Redis.Database.HyperLogLog,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_201,
+    SpanId: Id_202,
+    Name: redis.command,
+    Resource: PFCOUNT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PFCOUNT StackExchange.Redis.Batch.HyperLogLogLengthAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_203,
+    SpanId: Id_204,
+    Name: redis.command,
+    Resource: PFCOUNT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PFCOUNT StackExchange.Redis.Database.HyperLogLog,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_205,
+    SpanId: Id_206,
+    Name: redis.command,
+    Resource: PFMERGE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PFMERGE StackExchange.Redis.Batch.HyperLogLogMergeAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_207,
+    SpanId: Id_208,
+    Name: redis.command,
+    Resource: PFMERGE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PFMERGE StackExchange.Redis.Database.HyperLogLog2,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_209,
+    SpanId: Id_210,
+    Name: redis.command,
+    Resource: PING,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PING,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_211,
+    SpanId: Id_212,
+    Name: redis.command,
+    Resource: PING,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PING,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_213,
+    SpanId: Id_214,
+    Name: redis.command,
+    Resource: PING,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PING,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_215,
+    SpanId: Id_216,
+    Name: redis.command,
+    Resource: PING,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PING,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_217,
+    SpanId: Id_218,
+    Name: redis.command,
+    Resource: PTTL,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PTTL key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_219,
+    SpanId: Id_220,
+    Name: redis.command,
+    Resource: PTTL,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PTTL StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_221,
+    SpanId: Id_222,
+    Name: redis.command,
+    Resource: PTTL+GET,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PTTL+GET StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_223,
+    SpanId: Id_224,
+    Name: redis.command,
+    Resource: PUBLISH,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PUBLISH channel,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_225,
+    SpanId: Id_226,
+    Name: redis.command,
+    Resource: PUBLISH,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: PUBLISH value,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_227,
+    SpanId: Id_228,
+    Name: redis.command,
+    Resource: RANDOMKEY,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: RANDOMKEY,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_229,
+    SpanId: Id_230,
+    Name: redis.command,
+    Resource: RANDOMKEY,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: RANDOMKEY,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_231,
+    SpanId: Id_232,
+    Name: redis.command,
+    Resource: RENAME,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Error: 1,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      error.msg: ERR no such key,
+      error.stack:
+StackExchange.Redis.RedisServerException: ERR no such key
+,
+      error.type: StackExchange.Redis.RedisServerException,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: RENAME key1,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_233,
+    SpanId: Id_234,
+    Name: redis.command,
+    Resource: RENAME,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Error: 1,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      error.msg: ERR no such key,
+      error.stack:
+StackExchange.Redis.RedisServerException: ERR no such key
+at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
+      error.type: StackExchange.Redis.RedisServerException,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: RENAME StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_235,
+    SpanId: Id_236,
+    Name: redis.command,
+    Resource: RESTORE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Error: 1,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      error.msg: ERR DUMP payload version or checksum are wrong,
+      error.stack:
+StackExchange.Redis.RedisServerException: ERR DUMP payload version or checksum are wrong
+,
+      error.type: StackExchange.Redis.RedisServerException,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: RESTORE key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_237,
+    SpanId: Id_238,
+    Name: redis.command,
+    Resource: RESTORE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Error: 1,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      error.msg: ERR DUMP payload version or checksum are wrong,
+      error.stack:
+StackExchange.Redis.RedisServerException: ERR DUMP payload version or checksum are wrong
+at StackExchange.Redis.ConnectionMultiplexer.ExecuteSyncImpl[T](Message message, ResultProcessor`1 processor, ServerEndPoint server),
+      error.type: StackExchange.Redis.RedisServerException,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: RESTORE StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_239,
+    SpanId: Id_240,
+    Name: redis.command,
+    Resource: RPOP,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: RPOP listkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_241,
+    SpanId: Id_242,
+    Name: redis.command,
+    Resource: RPOP,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: RPOP StackExchange.Redis.Database.List,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_243,
+    SpanId: Id_244,
+    Name: redis.command,
+    Resource: RPOPLPUSH,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: RPOPLPUSH listkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_245,
+    SpanId: Id_246,
+    Name: redis.command,
+    Resource: RPOPLPUSH,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: RPOPLPUSH StackExchange.Redis.Database.List,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_247,
+    SpanId: Id_248,
+    Name: redis.command,
+    Resource: RPUSH,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: RPUSH listkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_249,
+    SpanId: Id_250,
+    Name: redis.command,
+    Resource: RPUSH,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: RPUSH StackExchange.Redis.Database.List,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_251,
+    SpanId: Id_252,
+    Name: redis.command,
+    Resource: SADD,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SADD setkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_253,
+    SpanId: Id_254,
+    Name: redis.command,
+    Resource: SADD,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SADD StackExchange.Redis.Database.Set,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_255,
+    SpanId: Id_256,
+    Name: redis.command,
+    Resource: SCARD,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SCARD setkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_257,
+    SpanId: Id_258,
+    Name: redis.command,
+    Resource: SCARD,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SCARD StackExchange.Redis.Database.Set,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_259,
+    SpanId: Id_260,
+    Name: redis.command,
+    Resource: SET,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SET key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_261,
+    SpanId: Id_262,
+    Name: redis.command,
+    Resource: SET,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SET listkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_263,
+    SpanId: Id_264,
+    Name: redis.command,
+    Resource: SET,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SET StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_265,
+    SpanId: Id_266,
+    Name: redis.command,
+    Resource: SET,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SET StackExchange.Redis.Database.Lock,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_267,
+    SpanId: Id_268,
+    Name: redis.command,
+    Resource: SET,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SET StackExchange.Redis.INCR,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_269,
+    SpanId: Id_270,
+    Name: redis.command,
+    Resource: SETBIT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SETBIT key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_271,
+    SpanId: Id_272,
+    Name: redis.command,
+    Resource: SETBIT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SETBIT StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_273,
+    SpanId: Id_274,
+    Name: redis.command,
+    Resource: SETRANGE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SETRANGE key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_275,
+    SpanId: Id_276,
+    Name: redis.command,
+    Resource: SETRANGE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SETRANGE StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_277,
+    SpanId: Id_278,
+    Name: redis.command,
+    Resource: SISMEMBER,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SISMEMBER setkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_279,
+    SpanId: Id_280,
+    Name: redis.command,
+    Resource: SISMEMBER,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SISMEMBER StackExchange.Redis.Database.Set,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_281,
+    SpanId: Id_282,
+    Name: redis.command,
+    Resource: SLOWLOG,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SLOWLOG,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_283,
+    SpanId: Id_284,
+    Name: redis.command,
+    Resource: SMEMBERS,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SMEMBERS setkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_285,
+    SpanId: Id_286,
+    Name: redis.command,
+    Resource: SMEMBERS,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SMEMBERS StackExchange.Redis.Database.Set,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_287,
+    SpanId: Id_288,
+    Name: redis.command,
+    Resource: SMOVE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SMOVE setkey1,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_289,
+    SpanId: Id_290,
+    Name: redis.command,
+    Resource: SMOVE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SMOVE StackExchange.Redis.Database.Set,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_291,
+    SpanId: Id_292,
+    Name: redis.command,
+    Resource: SORT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SORT setkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_293,
+    SpanId: Id_294,
+    Name: redis.command,
+    Resource: SORT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SORT setkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_295,
+    SpanId: Id_296,
+    Name: redis.command,
+    Resource: SORT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SORT StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_297,
+    SpanId: Id_298,
+    Name: redis.command,
+    Resource: SORT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SORT StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_299,
+    SpanId: Id_300,
+    Name: redis.command,
+    Resource: SPOP,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SPOP setkey1,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_301,
+    SpanId: Id_302,
+    Name: redis.command,
+    Resource: SPOP,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SPOP StackExchange.Redis.Database.Set,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_303,
+    SpanId: Id_304,
+    Name: redis.command,
+    Resource: SRANDMEMBER,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SRANDMEMBER setkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_305,
+    SpanId: Id_306,
+    Name: redis.command,
+    Resource: SRANDMEMBER,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SRANDMEMBER setkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_307,
+    SpanId: Id_308,
+    Name: redis.command,
+    Resource: SRANDMEMBER,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SRANDMEMBER StackExchange.Redis.Database.Set,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_309,
+    SpanId: Id_310,
+    Name: redis.command,
+    Resource: SRANDMEMBER,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SRANDMEMBER StackExchange.Redis.Database.Set,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_311,
+    SpanId: Id_312,
+    Name: redis.command,
+    Resource: SREM,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SREM setkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_313,
+    SpanId: Id_314,
+    Name: redis.command,
+    Resource: SREM,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SREM StackExchange.Redis.Database.Set,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_315,
+    SpanId: Id_316,
+    Name: redis.command,
+    Resource: STRLEN,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: STRLEN key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_317,
+    SpanId: Id_318,
+    Name: redis.command,
+    Resource: STRLEN,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: STRLEN StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_319,
+    SpanId: Id_320,
+    Name: redis.command,
+    Resource: SUNION,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SUNION setkey1,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_321,
+    SpanId: Id_322,
+    Name: redis.command,
+    Resource: SUNION,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SUNION StackExchange.Redis.Database.Set,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_323,
+    SpanId: Id_324,
+    Name: redis.command,
+    Resource: SUNIONSTORE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SUNIONSTORE setkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_325,
+    SpanId: Id_326,
+    Name: redis.command,
+    Resource: SUNIONSTORE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: SUNIONSTORE StackExchange.Redis.Database.Set,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_327,
+    SpanId: Id_328,
+    Name: redis.command,
+    Resource: TIME,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: TIME,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_329,
+    SpanId: Id_330,
+    Name: redis.command,
+    Resource: TYPE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: TYPE key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_331,
+    SpanId: Id_332,
+    Name: redis.command,
+    Resource: TYPE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: TYPE StackExchange.Redis.Database.Key,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_333,
+    SpanId: Id_334,
+    Name: redis.command,
+    Resource: ZADD,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZADD ssetkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_335,
+    SpanId: Id_336,
+    Name: redis.command,
+    Resource: ZADD,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZADD StackExchange.Redis.Database.SortedSet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_337,
+    SpanId: Id_338,
+    Name: redis.command,
+    Resource: ZCARD,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZCARD ssetkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_339,
+    SpanId: Id_340,
+    Name: redis.command,
+    Resource: ZCARD,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZCARD StackExchange.Redis.Database.SortedSet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_341,
+    SpanId: Id_342,
+    Name: redis.command,
+    Resource: ZINCRBY,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZINCRBY ssetkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_343,
+    SpanId: Id_344,
+    Name: redis.command,
+    Resource: ZINCRBY,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZINCRBY ssetkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_345,
+    SpanId: Id_346,
+    Name: redis.command,
+    Resource: ZINCRBY,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZINCRBY StackExchange.Redis.Database.SortedSet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_347,
+    SpanId: Id_348,
+    Name: redis.command,
+    Resource: ZINCRBY,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZINCRBY StackExchange.Redis.Database.SortedSet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_349,
+    SpanId: Id_350,
+    Name: redis.command,
+    Resource: ZLEXCOUNT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZLEXCOUNT ssetkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_351,
+    SpanId: Id_352,
+    Name: redis.command,
+    Resource: ZLEXCOUNT,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZLEXCOUNT StackExchange.Redis.Database.SortedSet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_353,
+    SpanId: Id_354,
+    Name: redis.command,
+    Resource: ZRANGE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZRANGE ssetkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_355,
+    SpanId: Id_356,
+    Name: redis.command,
+    Resource: ZRANGE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZRANGE ssetkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_357,
+    SpanId: Id_358,
+    Name: redis.command,
+    Resource: ZRANGE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZRANGE StackExchange.Redis.Database.SortedSet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_359,
+    SpanId: Id_360,
+    Name: redis.command,
+    Resource: ZRANGE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZRANGE StackExchange.Redis.Database.SortedSet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_361,
+    SpanId: Id_362,
+    Name: redis.command,
+    Resource: ZRANGEBYLEX,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZRANGEBYLEX ssetkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_363,
+    SpanId: Id_364,
+    Name: redis.command,
+    Resource: ZRANGEBYLEX,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZRANGEBYLEX StackExchange.Redis.Database.SortedSet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_365,
+    SpanId: Id_366,
+    Name: redis.command,
+    Resource: ZRANGEBYSCORE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZRANGEBYSCORE ssetkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_367,
+    SpanId: Id_368,
+    Name: redis.command,
+    Resource: ZRANGEBYSCORE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZRANGEBYSCORE ssetkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_369,
+    SpanId: Id_370,
+    Name: redis.command,
+    Resource: ZRANGEBYSCORE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZRANGEBYSCORE StackExchange.Redis.Database.SortedSet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_371,
+    SpanId: Id_372,
+    Name: redis.command,
+    Resource: ZRANGEBYSCORE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZRANGEBYSCORE StackExchange.Redis.Database.SortedSet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_373,
+    SpanId: Id_374,
+    Name: redis.command,
+    Resource: ZRANK,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZRANK ssetkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_375,
+    SpanId: Id_376,
+    Name: redis.command,
+    Resource: ZRANK,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZRANK StackExchange.Redis.Database.SortedSet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_377,
+    SpanId: Id_378,
+    Name: redis.command,
+    Resource: ZREM,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZREM ssetkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_379,
+    SpanId: Id_380,
+    Name: redis.command,
+    Resource: ZREM,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZREM StackExchange.Redis.Batch.GeoRemoveAsync,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_381,
+    SpanId: Id_382,
+    Name: redis.command,
+    Resource: ZREM,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZREM StackExchange.Redis.Database.Geo,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_383,
+    SpanId: Id_384,
+    Name: redis.command,
+    Resource: ZREM,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZREM StackExchange.Redis.Database.SortedSet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_385,
+    SpanId: Id_386,
+    Name: redis.command,
+    Resource: ZREMRANGEBYLEX,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZREMRANGEBYLEX ssetkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_387,
+    SpanId: Id_388,
+    Name: redis.command,
+    Resource: ZREMRANGEBYLEX,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZREMRANGEBYLEX StackExchange.Redis.Database.SortedSet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_389,
+    SpanId: Id_390,
+    Name: redis.command,
+    Resource: ZREMRANGEBYRANK,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZREMRANGEBYRANK ssetkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_391,
+    SpanId: Id_392,
+    Name: redis.command,
+    Resource: ZREMRANGEBYRANK,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZREMRANGEBYRANK StackExchange.Redis.Database.SortedSet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_393,
+    SpanId: Id_394,
+    Name: redis.command,
+    Resource: ZREMRANGEBYSCORE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZREMRANGEBYSCORE ssetkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_395,
+    SpanId: Id_396,
+    Name: redis.command,
+    Resource: ZREMRANGEBYSCORE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZREMRANGEBYSCORE StackExchange.Redis.Database.SortedSet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_397,
+    SpanId: Id_398,
+    Name: redis.command,
+    Resource: ZSCORE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZSCORE ssestkey,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_399,
+    SpanId: Id_400,
+    Name: redis.command,
+    Resource: ZSCORE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZSCORE StackExchange.Redis.Database.SortedSet,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_401,
+    SpanId: Id_402,
+    Name: redis.command,
+    Resource: ZUNIONSTORE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZUNIONSTORE ssetkey1,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_403,
+    SpanId: Id_404,
+    Name: redis.command,
+    Resource: ZUNIONSTORE,
+    Service: Samples.StackExchange.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: stackexchangeredis,
+      out.port: 6379,
+      redis.raw_command: ZUNIONSTORE StackExchange.Redis.Database.SortedSet2,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

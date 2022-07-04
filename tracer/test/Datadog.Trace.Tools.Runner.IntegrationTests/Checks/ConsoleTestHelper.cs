@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             if (enableProfiler)
             {
-                agent = new MockTracerAgent();
+                agent = MockTracerAgent.Create();
 
                 environmentHelper.SetEnvironmentVariables(
                     agent,

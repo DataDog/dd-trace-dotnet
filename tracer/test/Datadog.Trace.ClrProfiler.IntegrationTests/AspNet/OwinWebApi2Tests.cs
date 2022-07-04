@@ -142,7 +142,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/95.0.4638.69 Safari/537.36");
             }
 
-            public MockTracerAgent Agent { get; private set; }
+            public MockTracerAgent.TcpUdpAgent Agent { get; private set; }
 
             public int HttpPort { get; private set; }
 
@@ -160,7 +160,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         var initialAgentPort = TcpPortProvider.GetOpenPort();
                         HttpPort = TcpPortProvider.GetOpenPort();
 
-                        Agent = new MockTracerAgent(initialAgentPort);
+                        Agent = MockTracerAgent.Create(initialAgentPort);
                         Agent.SpanFilters.Add(IsNotServerLifeCheck);
                         output.WriteLine($"Starting OWIN sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
                         _process = helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);

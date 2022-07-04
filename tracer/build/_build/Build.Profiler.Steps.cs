@@ -1,8 +1,10 @@
+using System;
 using Nuke.Common;
 using Nuke.Common.Tools.DotNet;
 using Nuke.Common.IO;
 using System.Linq;
 using System.Collections.Generic;
+using System.IO;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.MSBuild;
 using static Nuke.Common.EnvironmentInfo;
@@ -184,8 +186,11 @@ partial class Build
             {
                 var source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.AutoInstrumentation.Profiler.Native.{architecture}.dll";
                 var dest = ProfilerHomeDirectory;
-                Logger.Info($"Copying file '{source}' to 'file {dest}'");
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+
+                source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.AutoInstrumentation.Profiler.Native.{architecture}.pdb";
+                dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
+                CopyFile(source, dest, FileExistsPolicy.Overwrite);
             }
         });
 

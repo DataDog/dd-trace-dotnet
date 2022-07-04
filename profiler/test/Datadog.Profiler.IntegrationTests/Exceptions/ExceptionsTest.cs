@@ -127,6 +127,8 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
 
             CheckExceptionProfiles(runner);
         }

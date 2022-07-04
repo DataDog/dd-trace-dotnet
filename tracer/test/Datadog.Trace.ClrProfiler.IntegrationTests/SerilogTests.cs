@@ -47,9 +47,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetTestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void InjectsLogsWhenEnabled(string packageVersion, bool enableLogShipping)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
+            SetInstrumentationVerification();
             using var logsIntake = new MockLogsIntake();
             if (enableLogShipping)
             {
@@ -60,13 +62,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedCorrelatedSpanCount = 1;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
                 var logFiles = GetLogFiles(packageVersion, logsInjectionEnabled: true);
                 ValidateLogCorrelation(spans, logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion);
+                VerifyInstrumentation(processResult.Process);
             }
         }
 
@@ -74,9 +77,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetTestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void DoesNotInjectLogsWhenDisabled(string packageVersion, bool enableLogShipping)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "false");
+            SetInstrumentationVerification();
             using var logsIntake = new MockLogsIntake();
             if (enableLogShipping)
             {
@@ -87,13 +92,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedCorrelatedSpanCount = 0;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
 
                 var logFiles = GetLogFiles(packageVersion, logsInjectionEnabled: false);
                 ValidateLogCorrelation(spans, logFiles, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion, disableLogCorrelation: true);
+                VerifyInstrumentation(processResult.Process);
             }
         }
 
@@ -101,16 +107,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(PackageVersions.Serilog), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void DirectlyShipsLogs(string packageVersion)
         {
             var hostName = "integration_serilog_tests";
             using var logsIntake = new MockLogsIntake();
 
+            SetInstrumentationVerification();
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.Serilog), hostName);
 
             var agentPort = TcpPortProvider.GetOpenPort();
-            using var agent = new MockTracerAgent(agentPort);
+            using var agent = MockTracerAgent.Create(agentPort);
             using var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
 
             Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
@@ -135,6 +143,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                .NotBeEmpty()
                .And.OnlyContain(x => !string.IsNullOrEmpty(x.TraceId))
                .And.OnlyContain(x => !string.IsNullOrEmpty(x.SpanId));
+            VerifyInstrumentation(processResult.Process);
         }
 
         private LogFileTest[] GetLogFiles(string packageVersion, bool logsInjectionEnabled)
@@ -156,7 +165,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                         ? UnTracedLogTypes.EnvServiceTracingPropertiesOnly
                                         : UnTracedLogTypes.None;
 
-            var jsonFile =  new LogFileTest()
+            var jsonFile = new LogFileTest()
             {
                 FileName = "log-jsonFile.log",
                 RegexFormat = @"""{0}"":{1}",

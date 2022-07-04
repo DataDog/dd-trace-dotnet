@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.VersionConflict
             var expectedCorrelatedSpanCount = 8;
 
             int agentPort = TcpPortProvider.GetOpenPort();
-            using (var agent = new MockTracerAgent(agentPort))
+            using (var agent = MockTracerAgent.Create(agentPort))
             using (RunSampleAndWaitForExit(agent))
             {
                 var spans = agent.WaitForSpans(1, 2500);
