@@ -661,7 +661,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
     _pStackSamplerLoopManager->Stop();
 
     // Calling Stop on providers transforms the last raw samples
-    _pWallTimeProvider->Stop();
+    if (_pWallTimeProvider != nullptr)
+    {
+        _pWallTimeProvider->Stop();
+    }
     if (_pCpuTimeProvider != nullptr)
     {
         _pCpuTimeProvider->Stop();
