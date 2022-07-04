@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Util.Http
 {
@@ -11,21 +12,16 @@ namespace Datadog.Trace.Util.Http
     {
         private const string NoHostSpecified = "UNKNOWN_HOST";
 
-        internal static string GetUrl(string scheme, string host, string pathBase, string path, bool reportQueryString, Func<string> getQueryString = null, string pattern = null)
+        internal static string GetUrl(string scheme, string host, string pathBase, string path, Func<string> getQueryString, ImmutableTracerSettings tracerSettings = null)
         {
-            // HTTP 1.0 requests are not required to provide a Host to be valid
-            // Since this is just for display, we can provide a string that is
-            // not an actual Uri with only the fields that are specified.
-            // request.GetDisplayUrl(), used above, will throw an exception
-            // if request.Host is null.
-            string queryString = null;
-            if (reportQueryString)
+            if (tracerSettings != null && tracerSettings.EnableQueryStringReporting)
             {
-                var queryStringObfuscator = QueryStringObfuscator.Instance(pattern);
-                queryString = queryStringObfuscator.Obfuscate(getQueryString());
+                var queryStringObfuscator = QueryStringObfuscator.Instance(tracerSettings.ObfuscationQueryStringRegexTimeout, tracerSettings.ObfuscationQueryStringRegex);
+                var queryString = queryStringObfuscator.Obfuscate(getQueryString());
+                return $"{scheme}://{(string.IsNullOrEmpty(host) ? NoHostSpecified : host)}{pathBase}{path}{queryString}";
             }
 
-            return $"{scheme}://{(string.IsNullOrEmpty(host) ? NoHostSpecified : host)}{pathBase}{path}{queryString}";
+            return $"{scheme}://{(string.IsNullOrEmpty(host) ? NoHostSpecified : host)}{pathBase}{path}";
         }
     }
 }

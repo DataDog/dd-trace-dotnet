@@ -171,6 +171,8 @@ namespace Datadog.Trace.Configuration
 
             EnableQueryStringReporting = source?.GetBool(ConfigurationKeys.EnableQueryStringReporting) ?? true;
 
+            ObfuscationQueryStringRegexTimeout = source?.GetDouble(ConfigurationKeys.ObfuscationQueryStringRegexTimeout) ?? 100;
+
             PropagationStyleInject = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleInject) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
 
             PropagationStyleExtract = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleExtract) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
@@ -376,6 +378,12 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether or not http.url should contain the query string, enabled by default
         /// </summary>
         internal bool EnableQueryStringReporting { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating a timeout in milliseconds to the execution of the query string obfuscation regex
+        /// Default value is 100ms
+        /// </summary>
+        internal double ObfuscationQueryStringRegexTimeout { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled

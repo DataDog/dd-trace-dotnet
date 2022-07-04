@@ -85,6 +85,7 @@ namespace Datadog.Trace.Configuration
             
             ObfuscationQueryStringRegex = settings.ObfuscationQueryStringRegex;
             EnableQueryStringReporting = settings.EnableQueryStringReporting;
+            ObfuscationQueryStringRegexTimeout = settings.ObfuscationQueryStringRegexTimeout;
         }
 
         /// <summary>
@@ -271,6 +272,12 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether or not http.url should contain the query string, enabled by default
         /// </summary>
         internal bool EnableQueryStringReporting { get; }
+
+        /// <summary>
+        /// Gets a value indicating a timeout in milliseconds to the execution of the query string obfuscation regex
+        /// Default value is 100ms
+        /// </summary>
+        internal double ObfuscationQueryStringRegexTimeout { get; }
 
         internal ImmutableDirectLogSubmissionSettings LogSubmissionSettings { get; }
 

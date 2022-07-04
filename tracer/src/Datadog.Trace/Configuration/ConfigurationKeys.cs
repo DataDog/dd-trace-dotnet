@@ -321,6 +321,12 @@ namespace Datadog.Trace.Configuration
         public const string ObfuscationQueryStringRegex = "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP";
 
         /// <summary>
+        /// Configuration key for specifying a timeout in milliseconds to the execution of the query string obfuscation regex
+        /// Default value is 100ms
+        /// </summary>
+        public const string ObfuscationQueryStringRegexTimeout = "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP_TIMEOUT";
+
+        /// <summary>
         /// Configuration key for enabling/disabling reporting query string
         /// Default value is true
         /// </summary>

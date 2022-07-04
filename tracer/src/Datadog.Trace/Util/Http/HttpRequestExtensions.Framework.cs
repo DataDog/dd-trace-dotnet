@@ -6,9 +6,11 @@
 #if NETFRAMEWORK
 
 using System.Collections.Generic;
+using System.Threading;
 using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util.Http
@@ -90,11 +92,11 @@ namespace Datadog.Trace.Util.Http
             return dict;
         }
 
-        internal static string GetUrlWithQueryString(this IHttpRequestMessage request, bool reportQueryString, string regexPattern) => HttpRequestUtils.GetUrl(request.RequestUri.Scheme, request.RequestUri.Host, string.Empty, request.RequestUri.AbsolutePath, reportQueryString, () => request.RequestUri.Query, regexPattern);
+        internal static string GetUrl(this IHttpRequestMessage request, ImmutableTracerSettings tracerSettings) => HttpRequestUtils.GetUrl(request.RequestUri.Scheme, request.RequestUri.Host, string.Empty, request.RequestUri.AbsolutePath, () => request.RequestUri.Query, tracerSettings);
 
-        internal static string GetUrlWithQueryString(this HttpRequestBase request, bool reportQueryString, string regexPattern) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, reportQueryString, () => request.Url.Query, regexPattern);
+        internal static string GetUrl(this HttpRequestBase request, ImmutableTracerSettings tracerSettings) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, () => request.Url.Query, tracerSettings);
 
-        internal static string GetUrlWithQueryString(this HttpRequest request, bool reportQueryString, string regexPattern) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, reportQueryString, () => request.Url.Query, regexPattern);
+        internal static string GetUrl(this HttpRequest request, ImmutableTracerSettings tracerSettings) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, () => request.Url.Query, tracerSettings);
     }
 }
 #endif

@@ -23,10 +23,10 @@ namespace Datadog.Trace.Util.Http
         private static object _globalInstanceLock = new();
         private readonly Obfuscator _obfuscator;
 
-        private QueryStringObfuscator(string pattern = null)
+        private QueryStringObfuscator(double timeout, string pattern = null)
         {
             pattern ??= Tracer.Instance.Settings.ObfuscationQueryStringRegex;
-            _obfuscator = new(pattern);
+            _obfuscator = new(TimeSpan.FromMilliseconds(timeout), pattern);
         }
 
         internal string Obfuscate(string queryString) => _obfuscator.Obfuscate(queryString);
@@ -34,7 +34,7 @@ namespace Datadog.Trace.Util.Http
         /// <summary>
         /// Gets or sets the global <see cref="QueryStringObfuscator"/> instance.
         /// </summary>
-        public static QueryStringObfuscator Instance(string pattern = null) => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock, () => new(pattern));
+        public static QueryStringObfuscator Instance(double timeout, string pattern = null) => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock, () => new(timeout, pattern));
 
         internal class Obfuscator
         {
@@ -44,9 +44,9 @@ namespace Datadog.Trace.Util.Http
             private readonly bool _disabled;
             private readonly TimeSpan _timeout;
 
-            internal Obfuscator(string pattern = null, TimeSpan? timespan = null)
+            internal Obfuscator(TimeSpan timeout, string pattern = null)
             {
-                _timeout = timespan ?? TimeSpan.FromMilliseconds(100);
+                _timeout = timeout;
                 if (string.IsNullOrEmpty(pattern))
                 {
                     _disabled = true;
