@@ -194,7 +194,7 @@ partial class Build
             EnsureExistingDirectory(buildDirectory);
 
             CMake.Value(
-                arguments: $"-B {buildDirectory} -S {NativeProfilerProject.Directory} -DCMAKE_BUILD_TYPE=Release");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {buildDirectory} -S {NativeProfilerProject.Directory} -DCMAKE_BUILD_TYPE=Release");
             CMake.Value(
                 arguments: $"--build {buildDirectory} --parallel");
         });
@@ -707,7 +707,7 @@ partial class Build
                 .SetProperty("BuildProjectReferences", true)
                 .SetTargets("BuildInstrumentationVerificationLibrary"));
         });
-                                                        
+
     Target CompileManagedTestHelpers => _ => _
         .Unlisted()
         .DependsOn(CompileInstrumentationVerificationLibrary)
