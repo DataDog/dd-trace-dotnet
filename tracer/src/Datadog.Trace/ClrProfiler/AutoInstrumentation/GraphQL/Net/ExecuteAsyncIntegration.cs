@@ -7,7 +7,7 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 {
     /// <summary>
     /// GraphQL.Execution.ExecutionStrategy calltarget instrumentation

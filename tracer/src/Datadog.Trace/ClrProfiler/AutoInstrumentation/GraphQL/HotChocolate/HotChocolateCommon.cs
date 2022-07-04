@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -25,8 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         private const string ServiceName = "hotchocolate";
         private const string ExecuteOperationName = "hotchocolate.execute";
 
-        internal const string ExecuteErrorType = "GraphQL.ExecutionError";
-        internal const string ValidationErrorType = "GraphQL.Validation.ValidationError";
+        internal const string ErrorType = "HotChocolate.Error";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HotChocolateCommon));
 
@@ -58,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         {
             Scope scope;
 
-            var tags = new GraphQLTags();
+            var tags = new HotChocolateTags();
             string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
             scope = tracer.StartActiveInternal(ExecuteOperationName, serviceName: serviceName, tags: tags);
 
@@ -139,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error creating GraphQL error message.");
+                Log.Error(ex, "Error creating HOtChocolate error message.");
                 return "errors: []";
             }
 

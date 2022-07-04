@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 }
                 else if (state.State is IWorkScheduler scheduler && scheduler.Context != null && scheduler.Context.Result != null)
                 {
-                    HotChocolateCommon.RecordExecutionErrorsIfPresent(scope.Span, GraphQLCommon.ExecuteErrorType, scheduler.Context.Result.Errors);
+                    HotChocolateCommon.RecordExecutionErrorsIfPresent(scope.Span, HotChocolateCommon.ErrorType, scheduler.Context.Result.Errors);
                 }
             }
             finally
