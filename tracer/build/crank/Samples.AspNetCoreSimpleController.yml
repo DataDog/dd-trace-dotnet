@@ -49,7 +49,7 @@ scenarios:
         serverPort: 5000
         path: /hello
 
-  calltarget_ngen_stats:
+  trace_stats:
     application:
       job: server
       environmentVariables:
