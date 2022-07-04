@@ -6,11 +6,6 @@ include(GoogleTest)
 # ******************************************************
 set(CMAKE_CXX_STANDARD 17)
 
-if(ISLINUX)
-    SET (CMAKE_C_COMPILER   /usr/bin/clang)
-    SET (CMAKE_CXX_COMPILER /usr/bin/clang++)
-endif()
-
 # Sets compiler options
 add_compile_options(-fPIC -fms-extensions)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)

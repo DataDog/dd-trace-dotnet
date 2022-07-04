@@ -57,19 +57,24 @@ endif()
 # Detect prerequisites
 # ******************************************************
 
-if (NOT EXISTS /usr/bin/clang)
+find_program(FOUND_CLANG clang)
+
+if (NOT FOUND_CLANG)
     message(FATAL_ERROR "CLANG is required to build the project")
 else()
     message(STATUS "CLANG was found")
 endif()
 
-if (NOT EXISTS /usr/bin/clang++)
+find_program(FOUND_CLANGPP clang++)
+if (NOT FOUND_CLANGPP)
     message(FATAL_ERROR "CLANG++ is required to build the project")
 else()
     message(STATUS "CLANG++ was found")
 endif()
 
-if (NOT EXISTS /usr/bin/git)
+find_program(FOUND_GIT "git")
+
+if (NOT FOUND_GIT)
     message(FATAL_ERROR "GIT is required to build the project")
 else()
     message(STATUS "GIT was found")
