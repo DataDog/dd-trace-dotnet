@@ -37,7 +37,7 @@ namespace Datadog.Trace.Ci.Agent
             _flushDelayEvent = new AutoResetEvent(false);
             _sender = sender;
 
-            var concurrencyLevel = 1; // Math.Min(Math.Max(Environment.ProcessorCount / 2, 1), 8);
+            var concurrencyLevel = Math.Min(Math.Max(Environment.ProcessorCount / 2, 1), 8);
             _buffersArray = new Buffers[concurrencyLevel];
             for (var i = 0; i < _buffersArray.Length; i++)
             {
@@ -178,18 +178,35 @@ namespace Datadog.Trace.Ci.Agent
                     }
 
                     // After removing all items from the queue, we check if buffers needs to flushed.
+                    Task tskFlush = null;
                     if (ciTestCycleBuffer.HasEvents)
                     {
                         // flush is required
-                        await sender.SendPayloadAsync(ciTestCycleBuffer).ConfigureAwait(false);
-                        ciTestCycleBuffer.Clear();
+                        async Task FlushTestCycleBuffer()
+                        {
+                            await sender.SendPayloadAsync(ciTestCycleBuffer).ConfigureAwait(false);
+                            ciTestCycleBuffer.Clear();
+                        }
+
+                        tskFlush = tskFlush is null ? FlushTestCycleBuffer() : Task.WhenAll(tskFlush, FlushTestCycleBuffer());
                     }
 
                     if (ciCodeCoverageBuffer.HasEvents)
                     {
                         // flush is required
-                        await sender.SendPayloadAsync(ciCodeCoverageBuffer).ConfigureAwait(false);
-                        ciCodeCoverageBuffer.Clear();
+                        async Task FlushCodeCoverageBuffer()
+                        {
+                            await sender.SendPayloadAsync(ciCodeCoverageBuffer).ConfigureAwait(false);
+                            ciCodeCoverageBuffer.Clear();
+                        }
+
+                        tskFlush = tskFlush is null ? FlushCodeCoverageBuffer() : Task.WhenAll(tskFlush, FlushCodeCoverageBuffer());
+                    }
+
+                    // Await the flush task
+                    if (tskFlush is not null)
+                    {
+                        await tskFlush.ConfigureAwait(false);
                     }
 
                     // If there's a flush watermark we marked as resolved.
