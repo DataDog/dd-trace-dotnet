@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Text;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Coverage.Models;
@@ -42,6 +43,16 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         {
             var index = Count + 1;
             return new MultipartFormItem($"coverage{index}", MimeTypes.MsgPack, $"filecoverage{index}.msgpack", eventInBytes);
+        }
+
+        protected override void OnBeforeToArray()
+        {
+            AddMultipartFormItem(
+                new MultipartFormItem(
+                    "event",
+                    MimeTypes.Json,
+                    "fileevent.json",
+                    new ArraySegment<byte>(Encoding.UTF8.GetBytes("{\"dummy\": true}"))));
         }
     }
 }

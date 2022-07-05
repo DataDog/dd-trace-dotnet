@@ -79,6 +79,8 @@ namespace Datadog.Trace.Agent.Transports
 
         public async Task<IApiResponse> PostAsync(params MultipartFormItem[] items)
         {
+            Log.Information<int>("Sending multipart form request with {Count} items.", items?.Length ?? 0);
+
             using var formDataContent = new MultipartFormDataContent();
             _request.Content = formDataContent;
 
@@ -90,12 +92,14 @@ namespace Datadog.Trace.Agent.Transports
                     var content = new ByteArrayContent(arraySegment.Array, arraySegment.Offset, arraySegment.Count);
                     content.Headers.ContentType = new MediaTypeHeaderValue(item.ContentType);
                     formDataContent.Add(content, item.Name, item.FileName);
+                    Log.Information("Adding to Multipart Byte Array | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
                 }
                 else if (item.ContentInStream is { } stream)
                 {
                     var content = new StreamContent(stream);
                     content.Headers.ContentType = new MediaTypeHeaderValue(item.ContentType);
                     formDataContent.Add(content, item.Name, item.FileName);
+                    Log.Information("Adding to Multipart Stream | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
                 }
             }
 

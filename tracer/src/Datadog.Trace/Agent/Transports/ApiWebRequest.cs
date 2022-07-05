@@ -13,6 +13,7 @@ namespace Datadog.Trace.Agent.Transports
 {
     internal class ApiWebRequest : IApiRequest, IMultipartApiRequest
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ApiWebRequest>();
         private readonly HttpWebRequest _request;
 
         public ApiWebRequest(HttpWebRequest request)
@@ -49,6 +50,8 @@ namespace Datadog.Trace.Agent.Transports
 
         public async Task<IApiResponse> PostAsync(params MultipartFormItem[] items)
         {
+            Log.Information<int>("Sending multipart form request with {Count} items.", items?.Length ?? 0);
+
             var boundary = "---------------------------" + DateTime.Now.Ticks.ToString("x");
 
             _request.Method = "POST";
@@ -76,10 +79,12 @@ namespace Datadog.Trace.Agent.Transports
                     await requestStream.WriteAsync(headerBytes, 0, headerBytes.Length).ConfigureAwait(false);
                     if (item.ContentInBytes is { } arraySegment)
                     {
+                        Log.Information("Adding to Multipart Byte Array | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
                         await requestStream.WriteAsync(arraySegment.Array, arraySegment.Offset, arraySegment.Count).ConfigureAwait(false);
                     }
                     else if (item.ContentInStream is { } stream)
                     {
+                        Log.Information("Adding to Multipart Stream | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
                         await stream.CopyToAsync(requestStream).ConfigureAwait(false);
                     }
                 }

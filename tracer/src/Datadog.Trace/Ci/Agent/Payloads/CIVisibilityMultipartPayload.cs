@@ -34,11 +34,23 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 
         protected abstract MultipartFormItem CreateMultipartFormItem(ArraySegment<byte> eventInBytes);
 
+        protected virtual void OnBeforeToArray()
+        {
+        }
+
+        protected void AddMultipartFormItem(MultipartFormItem item)
+        {
+            lock (_items)
+            {
+                _items.Add(item);
+            }
+        }
+
         public bool TryProcessEvent(IEvent @event)
         {
             lock (_items)
             {
-                if (_items.Count > _maxItems)
+                if (_items.Count >= _maxItems)
                 {
                     return false;
                 }
@@ -61,6 +73,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         {
             lock (_items)
             {
+                OnBeforeToArray();
                 return _items.ToArray();
             }
         }

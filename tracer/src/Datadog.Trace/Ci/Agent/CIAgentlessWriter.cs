@@ -37,7 +37,7 @@ namespace Datadog.Trace.Ci.Agent
             _flushDelayEvent = new AutoResetEvent(false);
             _sender = sender;
 
-            var concurrencyLevel = Math.Min(Math.Max(Environment.ProcessorCount / 2, 1), 8);
+            var concurrencyLevel = 1; // Math.Min(Math.Max(Environment.ProcessorCount / 2, 1), 8);
             _buffersArray = new Buffers[concurrencyLevel];
             for (var i = 0; i < _buffersArray.Length; i++)
             {
