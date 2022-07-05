@@ -4,26 +4,19 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 16.0.31727.386
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Profiler.Native.Linux", "profiler\src\ProfilerEngine\Datadog.Profiler.Native.Linux\Datadog.Profiler.Native.Linux.vcxproj", "{EE53BC26-BBF9-46C6-8212-4E6DAD9DF38A}"
-	ProjectSection(ProjectDependencies) = postProject
-		{1A01D611-F451-4400-9BF9-FD0F1719274F} = {1A01D611-F451-4400-9BF9-FD0F1719274F}
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demos", "Demos", "{D2476213-2D12-43A8-966C-BCFCE098FD63}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Computer01", "profiler\src\Demos\Samples.Computer01\Samples.Computer01.csproj", "{D0B50192-CE1D-43E2-AC4A-9B6037AAAB7D}"
 	ProjectSection(ProjectDependencies) = postProject
 		{0831386B-1A96-443F-B02B-C1D2B65FD845} = {0831386B-1A96-443F-B02B-C1D2B65FD845}
-		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489} = {B71B0E81-0A19-4BEC-94EA-FF456EEDC489}
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Native", "Native", "{882D9CEA-09AD-4C08-B737-9E6E04563AB6}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Profiler.Managed", "profiler\src\ProfilerEngine\Datadog.Profiler.Managed\Datadog.Profiler.Managed.csproj", "{B71B0E81-0A19-4BEC-94EA-FF456EEDC489}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Website-AspNetCore01", "profiler\src\Demos\Samples.Website-AspNetCore01\Samples.Website-AspNetCore01.csproj", "{4F880776-B87B-4EE9-8BE5-41130B881167}"
 	ProjectSection(ProjectDependencies) = postProject
 		{0831386B-1A96-443F-B02B-C1D2B65FD845} = {0831386B-1A96-443F-B02B-C1D2B65FD845}
-		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489} = {B71B0E81-0A19-4BEC-94EA-FF456EEDC489}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Shared.ManagedLibraryLoader", "shared\src\native-src\Shared.ManagedLibraryLoader.vcxitems", "{D6380925-F0A0-4DA2-B6AB-9FFAB35CD088}"
@@ -40,22 +33,20 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{3437D742-5FB
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ProfilerEngine", "ProfilerEngine", "{71C025DE-55AD-4109-BB66-C488CB6B94F4}"
 	ProjectSection(SolutionItems) = preProject
-		src\ProfilerEngine\Directory.Build.props = src\ProfilerEngine\Directory.Build.props
-		src\ProfilerEngine\Directory.Build.targets = src\ProfilerEngine\Directory.Build.targets
-		src\ProfilerEngine\ProductVersion.props = src\ProfilerEngine\ProductVersion.props
+		profiler\src\ProfilerEngine\Directory.Build.props = profiler\src\ProfilerEngine\Directory.Build.props
+		profiler\src\ProfilerEngine\Directory.Build.targets = profiler\src\ProfilerEngine\Directory.Build.targets
+		profiler\src\ProfilerEngine\ProductVersion.props = profiler\src\ProfilerEngine\ProductVersion.props
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DeployResources", "DeployResources", "{89569574-EB69-4FA0-B5DE-61EFD1AE8A23}"
 	ProjectSection(SolutionItems) = preProject
-		src\ProfilerEngine\DeployResources\Activate-Installed-DotNet-Monitoring.bat = src\ProfilerEngine\DeployResources\Activate-Installed-DotNet-Monitoring.bat
-		src\ProfilerEngine\DeployResources\DDProf-SetEnv.bat = src\ProfilerEngine\DeployResources\DDProf-SetEnv.bat
-		src\ProfilerEngine\DeployResources\DDProf-SetEnv.sh = src\ProfilerEngine\DeployResources\DDProf-SetEnv.sh
+		profiler\src\ProfilerEngine\DeployResources\DDProf-SetEnv.bat = profiler\src\ProfilerEngine\DeployResources\DDProf-SetEnv.bat
+		profiler\src\ProfilerEngine\DeployResources\DDProf-SetEnv.sh = profiler\src\ProfilerEngine\DeployResources\DDProf-SetEnv.sh
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.WindowsService01", "profiler\src\Demos\Samples.WindowsService01\Samples.WindowsService01.csproj", "{A2FCEEF7-975E-495C-AD0D-6A79176B3A44}"
 	ProjectSection(ProjectDependencies) = postProject
 		{0831386B-1A96-443F-B02B-C1D2B65FD845} = {0831386B-1A96-443F-B02B-C1D2B65FD845}
-		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489} = {B71B0E81-0A19-4BEC-94EA-FF456EEDC489}
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{5E111292-1382-45DA-9BB6-3558CD529F3B}"
@@ -69,7 +60,6 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ExceptionGenerator", "profiler\src\Demos\Samples.ExceptionGenerator\Samples.ExceptionGenerator.csproj", "{BCB0F6D4-40CB-49F5-A81E-FE510D4DA162}"
 	ProjectSection(ProjectDependencies) = postProject
 		{0831386B-1A96-443F-B02B-C1D2B65FD845} = {0831386B-1A96-443F-B02B-C1D2B65FD845}
-		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489} = {B71B0E81-0A19-4BEC-94EA-FF456EEDC489}
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Native", "Native", "{0606136D-9B0A-4BAF-A666-95EE64149E6D}"
@@ -77,8 +67,6 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Profiler.Native.Tests", "profiler\test\Datadog.Profiler.Native.Tests\Datadog.Profiler.Native.Tests.vcxproj", "{A1D8D09C-62E4-44A4-AACD-CA57BCE218D0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Managed", "Managed", "{D22CAFC0-1633-4D87-BBE9-10F8D8401382}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Profiler.Tests", "profiler\test\Datadog.Profiler.Tests\Datadog.Profiler.Tests.csproj", "{C62B60AA-9954-41A8-A065-3BB56F1AE02A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{13B8D121-5C5E-4998-8360-B4B214EDD23C}"
 	ProjectSection(SolutionItems) = preProject
@@ -98,11 +86,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{CEE19D49
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ProfilerEngine", "ProfilerEngine", "{767D6F82-B598-4637-B569-E3C4ABE8D470}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Managed", "Managed", "{293C8689-AE04-434E-AE09-593EC20D58ED}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SharedLibraries", "SharedLibraries", "{26D13B93-529A-4A73-824D-885CAF1DC0C0}"
-EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.AutoInstrumentation.ManagedLoader", "shared\src\managed-lib\ManagedLoader\Datadog.AutoInstrumentation.ManagedLoader.csproj", "{1A01D611-F451-4400-9BF9-FD0F1719274F}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Website-AspNet", "profiler\src\Demos\Website-AspNet\Website-AspNet.csproj", "{0DD0E5FD-0279-47FE-91C1-68E1839FA7FE}"
 EndProject
@@ -171,18 +155,6 @@ Global
 		{D0B50192-CE1D-43E2-AC4A-9B6037AAAB7D}.Release|x64.Build.0 = Release|x64
 		{D0B50192-CE1D-43E2-AC4A-9B6037AAAB7D}.Release|x86.ActiveCfg = Release|x86
 		{D0B50192-CE1D-43E2-AC4A-9B6037AAAB7D}.Release|x86.Build.0 = Release|x86
-		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489}.Debug|x64.Build.0 = Debug|Any CPU
-		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489}.Debug|x86.Build.0 = Debug|Any CPU
-		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489}.Release|x64.ActiveCfg = Release|Any CPU
-		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489}.Release|x64.Build.0 = Release|Any CPU
-		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489}.Release|x86.ActiveCfg = Release|Any CPU
-		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489}.Release|x86.Build.0 = Release|Any CPU
 		{4F880776-B87B-4EE9-8BE5-41130B881167}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{4F880776-B87B-4EE9-8BE5-41130B881167}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F880776-B87B-4EE9-8BE5-41130B881167}.Debug|x64.ActiveCfg = Debug|x64
@@ -229,18 +201,6 @@ Global
 		{A1D8D09C-62E4-44A4-AACD-CA57BCE218D0}.Release|x64.Build.0 = Release|x64
 		{A1D8D09C-62E4-44A4-AACD-CA57BCE218D0}.Release|x86.ActiveCfg = Release|Win32
 		{A1D8D09C-62E4-44A4-AACD-CA57BCE218D0}.Release|x86.Build.0 = Release|Win32
-		{C62B60AA-9954-41A8-A065-3BB56F1AE02A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C62B60AA-9954-41A8-A065-3BB56F1AE02A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C62B60AA-9954-41A8-A065-3BB56F1AE02A}.Debug|x64.ActiveCfg = Debug|x64
-		{C62B60AA-9954-41A8-A065-3BB56F1AE02A}.Debug|x64.Build.0 = Debug|x64
-		{C62B60AA-9954-41A8-A065-3BB56F1AE02A}.Debug|x86.ActiveCfg = Debug|x86
-		{C62B60AA-9954-41A8-A065-3BB56F1AE02A}.Debug|x86.Build.0 = Debug|x86
-		{C62B60AA-9954-41A8-A065-3BB56F1AE02A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C62B60AA-9954-41A8-A065-3BB56F1AE02A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C62B60AA-9954-41A8-A065-3BB56F1AE02A}.Release|x64.ActiveCfg = Release|x64
-		{C62B60AA-9954-41A8-A065-3BB56F1AE02A}.Release|x64.Build.0 = Release|x64
-		{C62B60AA-9954-41A8-A065-3BB56F1AE02A}.Release|x86.ActiveCfg = Release|x86
-		{C62B60AA-9954-41A8-A065-3BB56F1AE02A}.Release|x86.Build.0 = Release|x86
 		{5ADAED1E-F0DC-48D9-B376-6E189B68163E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{5ADAED1E-F0DC-48D9-B376-6E189B68163E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{5ADAED1E-F0DC-48D9-B376-6E189B68163E}.Debug|x64.ActiveCfg = Debug|x64
@@ -253,18 +213,6 @@ Global
 		{5ADAED1E-F0DC-48D9-B376-6E189B68163E}.Release|x64.Build.0 = Release|x64
 		{5ADAED1E-F0DC-48D9-B376-6E189B68163E}.Release|x86.ActiveCfg = Release|x86
 		{5ADAED1E-F0DC-48D9-B376-6E189B68163E}.Release|x86.Build.0 = Release|x86
-		{1A01D611-F451-4400-9BF9-FD0F1719274F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1A01D611-F451-4400-9BF9-FD0F1719274F}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1A01D611-F451-4400-9BF9-FD0F1719274F}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{1A01D611-F451-4400-9BF9-FD0F1719274F}.Debug|x64.Build.0 = Debug|Any CPU
-		{1A01D611-F451-4400-9BF9-FD0F1719274F}.Debug|x86.ActiveCfg = Debug|Any CPU
-		{1A01D611-F451-4400-9BF9-FD0F1719274F}.Debug|x86.Build.0 = Debug|Any CPU
-		{1A01D611-F451-4400-9BF9-FD0F1719274F}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1A01D611-F451-4400-9BF9-FD0F1719274F}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1A01D611-F451-4400-9BF9-FD0F1719274F}.Release|x64.ActiveCfg = Release|Any CPU
-		{1A01D611-F451-4400-9BF9-FD0F1719274F}.Release|x64.Build.0 = Release|Any CPU
-		{1A01D611-F451-4400-9BF9-FD0F1719274F}.Release|x86.ActiveCfg = Release|Any CPU
-		{1A01D611-F451-4400-9BF9-FD0F1719274F}.Release|x86.Build.0 = Release|Any CPU
 		{0DD0E5FD-0279-47FE-91C1-68E1839FA7FE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{0DD0E5FD-0279-47FE-91C1-68E1839FA7FE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0DD0E5FD-0279-47FE-91C1-68E1839FA7FE}.Debug|x64.ActiveCfg = Debug|x64
@@ -399,7 +347,6 @@ Global
 		{EE53BC26-BBF9-46C6-8212-4E6DAD9DF38A} = {882D9CEA-09AD-4C08-B737-9E6E04563AB6}
 		{D0B50192-CE1D-43E2-AC4A-9B6037AAAB7D} = {D2476213-2D12-43A8-966C-BCFCE098FD63}
 		{882D9CEA-09AD-4C08-B737-9E6E04563AB6} = {767D6F82-B598-4637-B569-E3C4ABE8D470}
-		{B71B0E81-0A19-4BEC-94EA-FF456EEDC489} = {293C8689-AE04-434E-AE09-593EC20D58ED}
 		{4F880776-B87B-4EE9-8BE5-41130B881167} = {D2476213-2D12-43A8-966C-BCFCE098FD63}
 		{D6380925-F0A0-4DA2-B6AB-9FFAB35CD088} = {882D9CEA-09AD-4C08-B737-9E6E04563AB6}
 		{3437D742-5FB6-4457-8291-1EBBADBEE1BC} = {D52BF7C6-3738-4280-B90B-F362213FFEEB}
@@ -412,12 +359,9 @@ Global
 		{0606136D-9B0A-4BAF-A666-95EE64149E6D} = {CEE19D49-18E1-42B6-A156-C84E862D9555}
 		{A1D8D09C-62E4-44A4-AACD-CA57BCE218D0} = {0606136D-9B0A-4BAF-A666-95EE64149E6D}
 		{D22CAFC0-1633-4D87-BBE9-10F8D8401382} = {CEE19D49-18E1-42B6-A156-C84E862D9555}
-		{C62B60AA-9954-41A8-A065-3BB56F1AE02A} = {D22CAFC0-1633-4D87-BBE9-10F8D8401382}
 		{13B8D121-5C5E-4998-8360-B4B214EDD23C} = {D52BF7C6-3738-4280-B90B-F362213FFEEB}
 		{5ADAED1E-F0DC-48D9-B376-6E189B68163E} = {D22CAFC0-1633-4D87-BBE9-10F8D8401382}
 		{6E32F61C-8640-40D2-85A3-7866EE43A1A2} = {5E111292-1382-45DA-9BB6-3558CD529F3B}
-		{293C8689-AE04-434E-AE09-593EC20D58ED} = {767D6F82-B598-4637-B569-E3C4ABE8D470}
-		{1A01D611-F451-4400-9BF9-FD0F1719274F} = {26D13B93-529A-4A73-824D-885CAF1DC0C0}
 		{0DD0E5FD-0279-47FE-91C1-68E1839FA7FE} = {D2476213-2D12-43A8-966C-BCFCE098FD63}
 		{DA41F8EF-0311-43F0-8C17-115E212EE8EC} = {D2476213-2D12-43A8-966C-BCFCE098FD63}
 		{601D561B-76CF-453B-855B-F26379782565} = {D2476213-2D12-43A8-966C-BCFCE098FD63}

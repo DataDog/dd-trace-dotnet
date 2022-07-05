@@ -45,11 +45,6 @@ extern "C" void __stdcall ThreadsCpuManager_Map(std::uint32_t threadId, const WC
     profiler->GetThreadsCpuManager()->Map(threadId, pName);
 }
 
-extern "C" BOOL __stdcall GetAssemblyAndSymbolsBytes(void** ppAssemblyArray, int* pAssemblySize, void** ppSymbolsArray, int* pSymbolsSize, WCHAR* moduleName)
-{
-    return shared::Loader::GetSingletonInstance()->GetAssemblyAndSymbolsBytes(ppAssemblyArray, pAssemblySize, ppSymbolsArray, pSymbolsSize, moduleName);
-}
-
 extern "C" void* __stdcall GetNativeProfilerIsReadyPtr()
 {
     if (!CorProfilerCallback::GetClrLifetime()->IsRunning())
