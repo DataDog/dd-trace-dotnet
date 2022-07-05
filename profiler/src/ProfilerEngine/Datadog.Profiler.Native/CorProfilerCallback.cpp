@@ -586,7 +586,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
-        eventMask |= COR_PRF_MONITOR_EXCEPTIONS;
+        eventMask |= COR_PRF_MONITOR_EXCEPTIONS | COR_PRF_MONITOR_MODULE_LOADS;
     }
 
     hr = _pCorProfilerInfo->SetEventMask(eventMask);
