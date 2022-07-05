@@ -354,6 +354,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("routetemplate_expansion_enabled");
                     writer.WriteValue(instanceSettings.ExpandRouteTemplatesEnabled);
 
+                    writer.WritePropertyName("obfuscation_querystring_regex_timout");
+                    writer.WriteValue(instanceSettings.ObfuscationQueryStringRegexTimeout);
+
                     writer.WritePropertyName("partialflush_enabled");
                     writer.WriteValue(instanceSettings.Exporter.PartialFlushEnabled);
 

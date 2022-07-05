@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             if (enableQueryStringReporting != null)
             {
                 SetEnvironmentVariable(ConfigurationKeys.EnableQueryStringReporting, enableQueryStringReporting.ToString());
-                SetEnvironmentVariable(ConfigurationKeys.ObfuscationQueryStringRegexTimeout, "500");
+                SetEnvironmentVariable(ConfigurationKeys.ObfuscationQueryStringRegexTimeout, "1000");
             }
 
             if (queryStringRegex != null)

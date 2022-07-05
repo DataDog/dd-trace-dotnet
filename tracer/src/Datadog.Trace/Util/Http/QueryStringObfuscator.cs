@@ -68,18 +68,26 @@ namespace Datadog.Trace.Util.Http
                 try
                 {
                     var task = Task.Factory.StartNew(() => _regex.Replace(queryString, ReplacementString), cancelationToken.Token);
-                    var tasks = new[] { task, Task.Delay(_timeout, cancelationToken.Token) };
+                    var timeoutTask = Task.Delay(_timeout, cancelationToken.Token);
+                    var tasks = new[] { task, timeoutTask };
                     Task.WaitAny(tasks);
                     if (task.Status == TaskStatus.RanToCompletion)
                     {
                         return task.Result;
                     }
 
-                    Log();
+                    if (timeoutTask.Status == TaskStatus.RanToCompletion)
+                    {
+                        Log($"The timeout task of {_timeout.Milliseconds} ms ran to completion before the regex's task which status is {task.Status}", task.Exception);
+                    }
+                    else
+                    {
+                        Log();
+                    }
                 }
                 catch (AggregateException e)
                 {
-                    Log(e);
+                    Log(exception: e);
                 }
                 finally
                 {
@@ -90,15 +98,16 @@ namespace Datadog.Trace.Util.Http
                 return string.Empty;
             }
 
-            internal virtual void Log(Exception e = null)
+            internal virtual void Log(string message = null, Exception exception = null)
             {
-                if (e != null)
+                var messageTemplate = string.Concat("Query string could not be redacted using regex {pattern}", message);
+                if (exception != null)
                 {
-                    _log.Error(e, "Query string could not be redacted using regex {pattern}", _regex.ToString());
+                    _log.Error(exception, messageTemplate, _regex.ToString());
                 }
                 else
                 {
-                    _log.Error("Query string could not be redacted using regex {pattern}", _regex.ToString());
+                    _log.Error(messageTemplate, _regex.ToString());
                 }
             }
         }

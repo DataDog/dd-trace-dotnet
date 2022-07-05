@@ -54,7 +54,6 @@ namespace Datadog.Trace.Security.IntegrationTests
     public abstract class AspNetWebApi : AspNetBase, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
-        private readonly bool _enableSecurity;
         private readonly string _testName;
 
         public AspNetWebApi(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableSecurity)
@@ -62,8 +61,9 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             SetSecurity(enableSecurity);
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.ObfuscationQueryStringRegexTimeout, "1000");
+
             _iisFixture = iisFixture;
-            _enableSecurity = enableSecurity;
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = "Security." + nameof(AspNetWebApi)
                      + (classicMode ? ".Classic" : ".Integrated")

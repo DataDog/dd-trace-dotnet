@@ -18,7 +18,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         public AspNetCoreBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath)
             : base(sampleName, outputHelper, shutdownPath ?? "/shutdown")
         {
-            SetEnvironmentVariable(ConfigurationKeys.ObfuscationQueryStringRegexTimeout, "500");
         }
 
         [SkippableTheory]

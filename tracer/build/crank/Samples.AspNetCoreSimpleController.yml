@@ -37,8 +37,8 @@ scenarios:
     application:
       job: server
       environmentVariables:
-        COR_ENABLE_PROFILING: 0
-        CORECLR_ENABLE_PROFILING: 0
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
     load:
       job: bombardier
       variables:
@@ -51,8 +51,8 @@ scenarios:
     application:
       job: server
       environmentVariables:
-        COR_ENABLE_PROFILING: 0
-        CORECLR_ENABLE_PROFILING: 0
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
         DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP: ""
     load:
       job: bombardier
