@@ -1726,6 +1726,14 @@ stages:
         tarCompression: 'gz'
         archiveFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-musl-x64/dd-trace-linux-musl-x64.tar.gz
 
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-arm64/dd-trace
+        includeRootFolder: false
+        archiveType: 'tar'
+        tarCompression: 'gz'
+        archiveFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-arm64/dd-trace-linux-arm64.tar.gz
+
     - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/bin/$(buildConfiguration)/packages
       displayName: Publish Distribution package
       artifact: distribution-nuget-package
@@ -2104,6 +2112,13 @@ stages:
           displayName: Download standalone dotnet tool linux-musl-x64
           inputs:
             artifact: runner-standalone-linux-musl-x64
+            patterns: "*.tar.gz"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download standalone dotnet tool linux-arm64
+          inputs:
+            artifact: runner-standalone-linux-arm64
             patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
 
