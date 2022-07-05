@@ -1,13 +1,16 @@
-﻿// <copyright file="ImmutableIntegrationSettings.cs" company="Datadog">
+// <copyright file="ImmutableIntegrationSettings.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
+using System.Diagnostics;
 
 namespace Datadog.Trace.Configuration
 {
     /// <summary>
     /// Contains integration-specific settings.
     /// </summary>
+    [DebuggerDisplay("{IntegrationName} - {(Enabled == true ? \"Enabled\" : \"Disabled\")} - Analytics: {(AnalyticsEnabled == true ? \"Sample Rate \" + AnalyticsSampleRate : \"Disabled\")}")]
     public class ImmutableIntegrationSettings
     {
         /// <summary>
@@ -51,16 +54,5 @@ namespace Datadog.Trace.Configuration
         /// that determines the sampling rate for this integration.
         /// </summary>
         public double AnalyticsSampleRate { get; }
-
-        /// <summary>
-        /// Gets the <c>ImmutableIntegrationSettings</c>  as a string.
-        /// </summary>
-        /// <remarks>
-        /// To simplify viewing in the debugger.
-        /// </remarks>
-        /// <returns>
-        /// The object in a human readable format.
-        /// </returns>
-        public override string ToString() => $"{this.IntegrationName} - {(this.Enabled == true ? "Enabled" : "Disabled")} - Analytics: {(this.AnalyticsEnabled == true ? $"Sample Rate {this.AnalyticsSampleRate}" : "Disabled")}";
     }
 }

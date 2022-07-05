@@ -24,8 +24,9 @@ namespace Datadog.Trace.Tests.Configuration
 
             var immutableSettings = new ImmutableIntegrationSettings(settings, isExplicitlyDisabled: true);
 
+            immutableSettings.IntegrationName.Should().Be("Kafka");
             immutableSettings.Enabled.Should().BeFalse();
-            immutableSettings.ToString().Should<string>().Be($"Kafka - Disabled - Analytics: Disabled");
+            immutableSettings.AnalyticsEnabled.Should().BeNull();
         }
 
         [Theory]
@@ -41,8 +42,9 @@ namespace Datadog.Trace.Tests.Configuration
 
             var immutableSettings = new ImmutableIntegrationSettings(settings, isExplicitlyDisabled: false);
 
+            immutableSettings.IntegrationName.Should().Be("Kafka");
             immutableSettings.Enabled.Should().Be(initiallyEnabled);
-            immutableSettings.ToString().Should<string>().Be($"Kafka - {(initiallyEnabled ? "Enabled" : "Disabled")} - Analytics: Disabled");
+            immutableSettings.AnalyticsEnabled.Should().BeNull();
         }
 
         [Theory]
@@ -59,9 +61,9 @@ namespace Datadog.Trace.Tests.Configuration
 
             var immutableSettings = new ImmutableIntegrationSettings(settings, isExplicitlyDisabled: false);
 
+            immutableSettings.IntegrationName.Should().Be("Kafka");
             immutableSettings.Enabled.Should().Be(true);
             immutableSettings.AnalyticsEnabled.Should().Be(initiallyEnabled);
-            immutableSettings.ToString().Should<string>().Be($"Kafka - Enabled - Analytics: {(initiallyEnabled ? $"Sample Rate 0" : "Disabled")}");
         }
     }
 }
