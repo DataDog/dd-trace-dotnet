@@ -44,17 +44,17 @@ namespace Datadog.Trace
         public const string UserAgent = "User-Agent";
 
         /// <summary>
-        /// Internal Datadog tags.
-        /// A collection of internal Datadog tags. Only trace-level tags with
-        /// the "_dd.p.*" prefix will be propagated using this header.
-        /// </summary>
-        public const string PropagatedTags = "x-datadog-tags";
-
-        /// <summary>
         /// Deprecated. Use <see cref="PropagatedTags"/> instead.
         /// </summary>
         [Obsolete("Use PropagatedTags.", error: false)]
         public const string DatadogTags = PropagatedTags;
+
+        /// <summary>
+        /// Internal Datadog tags.
+        /// A collection of internal Datadog tags. Only trace-level tags with
+        /// the "_dd.p.*" prefix will be propagated using this header.
+        /// </summary>
+        internal const string PropagatedTags = "x-datadog-tags";
 
         /// <summary>
         /// ID of a span.
