@@ -254,8 +254,8 @@ stages:
     dependsOn: []
     strategy:
       matrix:
-        debian:
-          baseImage: debian
+        centos7:
+          baseImage: centos7
         alpine:
           baseImage: alpine
     pool:
@@ -294,8 +294,8 @@ stages:
     dependsOn: []
     strategy:
       matrix:
-        debian:
-          baseImage: debian
+        centos7:
+          baseImage: centos7
         alpine:
           baseImage: alpine
     pool:
@@ -335,8 +335,8 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
-        debian:
-          baseImage: debian
+        centos7:
+          baseImage: centos7
         alpine:
           baseImage: alpine
     pool:
@@ -403,7 +403,7 @@ stages:
         build: true
         target: builder
         baseImage: debian
-        command: "Clean BuildTracerHome"
+        command: "Clean BuildTracerHome ZipMonitoringHome"
 
     - publish: $(tracerHome)
       displayName: Uploading linux tracer home artifact
@@ -682,8 +682,8 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
-        debian:
-          baseImage: debian
+        centos7:
+          baseImage: centos7
         alpine:
           baseImage: alpine
     pool:
@@ -720,8 +720,8 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
-        debian:
-          baseImage: debian
+        centos7:
+          baseImage: centos7
         alpine:
           baseImage: alpine
     pool:
@@ -781,7 +781,7 @@ stages:
         - template: steps/run-in-docker.yml
           parameters:
             build: true
-            baseImage: debian
+            baseImage: centos7
             command: "BuildAndRunManagedUnitTests"
 
         - publish: tracer/build_data
@@ -1224,8 +1224,8 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
-        debian:
-          baseImage: debian
+        centos7:
+          baseImage: centos7
         alpine:
           baseImage: alpine
 
@@ -1286,7 +1286,7 @@ stages:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
     TestAllPackageVersions: true
     IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
-    baseImage: debian
+    baseImage: centos7
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -1741,14 +1741,14 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux shell scripts
       inputs:
-        artifact: linux-tracer-home-debian
+        artifact: linux-tracer-home-centos7
         patterns: "*.sh"
         path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux tracer home
       inputs:
-        artifact: linux-tracer-home-debian
+        artifact: linux-tracer-home-centos7
         patterns: "**/*.so"
         path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/linux-x64
 
@@ -1933,8 +1933,8 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
-        debian:
-          baseImage: debian
+        centos7:
+          baseImage: centos7
           artifactSuffix: linux-x64
           poolImage: ubuntu-18.04
           poolName:
@@ -2026,7 +2026,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux-packages
       inputs:
-        artifact: linux-packages-debian
+        artifact: linux-packages-centos7
         patterns: '**/*amd64.deb'
         path: s3_upload
 
@@ -2132,9 +2132,9 @@ stages:
             path: $(Build.ArtifactStagingDirectory)
 
         - task: DownloadPipelineArtifact@2
-          displayName: Download linux Debian packages
+          displayName: Download linux CentOS7 packages
           inputs:
-            artifact: linux-packages-debian
+            artifact: linux-packages-centos7
             path: $(Build.ArtifactStagingDirectory)
 
         - task: DownloadPipelineArtifact@2
@@ -2151,9 +2151,9 @@ stages:
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
   
         - task: DownloadPipelineArtifact@2
-          displayName: Download linux Debian symbols
+          displayName: Download linux CentOS7 symbols
           inputs:
-            artifact: linux-symbols-debian
+            artifact: linux-symbols-centos7
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
   
         - task: DownloadPipelineArtifact@2
@@ -2294,7 +2294,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
-        artifact: linux-monitoring-home-debian
+        artifact: linux-monitoring-home-centos7
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
 
     - script: |
@@ -2384,7 +2384,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
-        artifact: linux-monitoring-home-debian
+        artifact: linux-monitoring-home-centos7
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
 
     - script: |
@@ -2539,7 +2539,7 @@ stages:
       - task: DownloadPipelineArtifact@2
         displayName: Download linux-packages
         inputs:
-          artifact: linux-packages-debian
+          artifact: linux-packages-centos7
           patterns: '**/*tar.gz'
           path: $(Build.ArtifactStagingDirectory)
 
@@ -2896,7 +2896,7 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         build: true
-        baseImage: debian
+        baseImage: centos7
         command: "CheckBuildLogsForErrors"
 
 - stage: dotnet_tool_smoke_tests_arm64
