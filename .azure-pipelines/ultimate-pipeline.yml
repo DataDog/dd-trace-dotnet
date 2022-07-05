@@ -2752,8 +2752,8 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download dotnet tool
       inputs:
-        artifact: runner-standalone-win-$(targetPlatform)
-        patterns: "dd-trace-win-$(targetPlatform).zip"
+        artifact: runner-standalone-win-x64
+        patterns: "dd-trace-win-x64.zip"
         path: $(Agent.TempDirectory)
 
     - powershell: |
