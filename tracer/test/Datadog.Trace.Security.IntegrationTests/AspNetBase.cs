@@ -17,6 +17,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
@@ -59,6 +60,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             {
                 ContractResolver = new OrderedContractResolver()
             };
+            SetEnvironmentVariable(ConfigurationKeys.ObfuscationQueryStringRegexTimeout, "500");
         }
 
         public Task<MockTracerAgent> RunOnSelfHosted(bool enableSecurity, string externalRulesFile = null, int? traceRateLimit = null)

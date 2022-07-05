@@ -15,7 +15,7 @@ namespace Datadog.Trace.Tests.Util.Http
     [Collection(nameof(QueryStringObfuscatorTests))]
     public class QueryStringObfuscatorTests
     {
-        private readonly TimeSpan _timeout = TimeSpan.FromMilliseconds(500);
+        private readonly TimeSpan _timeout = TimeSpan.FromSeconds(1);
 
         [Fact]
         public void DoesntObfuscateIfNoPattern()
