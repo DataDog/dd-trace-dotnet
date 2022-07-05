@@ -577,19 +577,20 @@ partial class Build : NukeBuild
                         dockerName: "andrewlock/dotnet-fedora"
                     );
 
-                    AddToDotNetToolSmokeTestsMatrix(
-                        matrix,
-                        "alpine",
-                        new (string publishFramework, string runtimeTag)[]
-                        {
-                            (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
-                            (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
-                            (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
-                        },
-                        platformSuffix: "linux-musl-x64",
-                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
-                    );
+                    // The dotnet tool doesn't currently support alpine
+                    // AddToDotNetToolSmokeTestsMatrix(
+                    //     matrix,
+                    //     "alpine",
+                    //     new (string publishFramework, string runtimeTag)[]
+                    //     {
+                    //         (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
+                    //         (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
+                    //         (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
+                    //         (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
+                    //     },
+                    //     platformSuffix: "linux-musl-x64",
+                    //     dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    // );
 
                     AddToDotNetToolSmokeTestsMatrix(
                         matrix,
