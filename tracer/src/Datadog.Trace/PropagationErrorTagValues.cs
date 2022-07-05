@@ -6,7 +6,7 @@
 namespace Datadog.Trace;
 
 /// <summary>
-/// Names used for trace-level tags.
+/// Error names used in `_dd.propagation_error` as trace-level tag.
 /// </summary>
 internal static class PropagationErrorTagValues
 {
