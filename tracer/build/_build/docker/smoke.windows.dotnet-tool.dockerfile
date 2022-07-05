@@ -32,6 +32,7 @@ RUN mkdir /logs; \
     cd /install; \
     Expand-Archive 'c:\install\dd-trace-win.zip' -DestinationPath 'c:\tool\';  \
     cd /app; \
+    echo (gcm dotnet).Path; \
     rm /install -r -fo
 
 # Set the additional env vars
