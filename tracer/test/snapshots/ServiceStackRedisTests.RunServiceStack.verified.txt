@@ -105,6 +105,30 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
     TraceId: Id_9,
     SpanId: Id_10,
     Name: redis.command,
+    Resource: INFO,
+    Service: Samples.ServiceStack.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: servicestackredis,
+      out.port: 6379,
+      redis.raw_command: INFO,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_12,
+    Name: redis.command,
     Resource: PING,
     Service: Samples.ServiceStack.Redis-redis,
     Type: redis,
@@ -126,8 +150,56 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
     }
   },
   {
-    TraceId: Id_11,
-    SpanId: Id_12,
+    TraceId: Id_13,
+    SpanId: Id_14,
+    Name: redis.command,
+    Resource: QUIT,
+    Service: Samples.ServiceStack.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: servicestackredis,
+      out.port: 6379,
+      redis.raw_command: QUIT,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_15,
+    SpanId: Id_16,
+    Name: redis.command,
+    Resource: ROLE,
+    Service: Samples.ServiceStack.Redis-redis,
+    Type: redis,
+    Tags: {
+      component: StackExchangeRedis,
+      env: integration_tests,
+      out.host: servicestackredis,
+      out.port: 6379,
+      redis.raw_command: ROLE,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_17,
+    SpanId: Id_18,
     Name: redis.command,
     Resource: SELECT,
     Service: Samples.ServiceStack.Redis-redis,
@@ -150,8 +222,8 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
     }
   },
   {
-    TraceId: Id_13,
-    SpanId: Id_14,
+    TraceId: Id_19,
+    SpanId: Id_20,
     Name: redis.command,
     Resource: SET,
     Service: Samples.ServiceStack.Redis-redis,
@@ -174,8 +246,8 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
     }
   },
   {
-    TraceId: Id_15,
-    SpanId: Id_16,
+    TraceId: Id_21,
+    SpanId: Id_22,
     Name: redis.command,
     Resource: SLOWLOG,
     Service: Samples.ServiceStack.Redis-redis,
@@ -198,8 +270,8 @@ at ServiceStack.Redis.RedisNativeClient.ReadComplexResponse(),
     }
   },
   {
-    TraceId: Id_17,
-    SpanId: Id_18,
+    TraceId: Id_23,
+    SpanId: Id_24,
     Name: redis.command,
     Resource: TIME,
     Service: Samples.ServiceStack.Redis-redis,

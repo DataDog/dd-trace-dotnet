@@ -42,12 +42,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var numberOfRuns = 2;
 #endif
 
-                var expectedSpansPerRun = 9;
-                var ignoredSpansPerRun = 3; // INFO + ROLE on connection open, QUIT on connection disposing
-
-                // note: ignore the INFO command because it's timing is unpredictable (on Linux?)
-                var spans = agent.WaitForSpans(numberOfRuns * (expectedSpansPerRun + ignoredSpansPerRun))
-                                 .Where(s => s.Type == "redis" && s.Resource != "INFO" && s.Resource != "ROLE" && s.Resource != "QUIT")
+                var expectedSpansPerRun = 12;
+                var spans = agent.WaitForSpans(numberOfRuns * expectedSpansPerRun)
                                  .OrderBy(s => s.Start)
                                  .ToList();
                 spans.Count.Should().Be(numberOfRuns * expectedSpansPerRun);
