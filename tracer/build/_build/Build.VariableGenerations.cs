@@ -238,6 +238,7 @@ partial class Build : NukeBuild
                 // dotnet tool smoke tests
                 GenerateWindowsDotnetToolSmokeTestsMatrix();
                 GenerateLinuxDotnetToolSmokeTestsMatrix();
+                GenerateLinuxDotnetToolSmokeTestsArm64Matrix();
 
                 // msi smoke tests
                 GenerateWindowsMsiSmokeTestsMatrix();
@@ -621,6 +622,29 @@ partial class Build : NukeBuild
                     Logger.Info($"Installer smoke tests dotnet-tool matrix Linux");
                     Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetVariable("dotnet_tool_installer_linux_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                }
+
+                void GenerateLinuxDotnetToolSmokeTestsArm64Matrix()
+                {
+                    var matrix = new Dictionary<string, object>();
+
+                    AddToDotNetToolSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
+                        },
+                        platformSuffix: "linux-arm64",
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    Logger.Info($"Installer smoke tests dotnet-tool matrix Arm64");
+                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetVariable("dotnet_tool_installer_smoke_tests_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
                 void AddToDotNetToolSmokeTestsMatrix(
