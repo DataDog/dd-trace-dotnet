@@ -53,7 +53,7 @@ namespace Datadog.Trace.Util.Http
                 }
                 else
                 {
-                    _regex = new Regex(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled);
+                    _regex = new(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled, _timeout);
                 }
             }
 
@@ -64,35 +64,14 @@ namespace Datadog.Trace.Util.Http
                     return queryString;
                 }
 
-                var cancelationToken = new CancellationTokenSource();
                 try
                 {
-                    queryString = queryString.Substring(0, Math.Min(queryString.Length, 2000));
-                    var task = Task.Run(() => _regex.Replace(queryString, ReplacementString));
-                    cancelationToken.CancelAfter(_timeout);
-                    Task.WaitAll(new Task[] { task }, cancelationToken.Token);
-                    if (task.Status == TaskStatus.RanToCompletion)
-                    {
-                        return task.Result;
-                    }
-
-                    Log();
+                    queryString = queryString.Substring(0, Math.Min(queryString.Length, 200));
+                    return _regex.Replace(queryString, ReplacementString);
                 }
-                catch (Exception e)
+                catch (RegexMatchTimeoutException e)
                 {
-                    if (e is OperationCanceledException)
-                    {
-                        Log($"The regex task timed out before {_timeout.TotalMilliseconds} ms and is canceled", e);
-                    }
-                    else
-                    {
-                        Log(exception: e);
-                    }
-                }
-                finally
-                {
-                    cancelationToken.Cancel();
-                    cancelationToken.Dispose();
+                    Log($"The regex task timed out before {_timeout.TotalMilliseconds} ms and is canceled", e);
                 }
 
                 return string.Empty;

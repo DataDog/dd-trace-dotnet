@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util.Http;
 using FluentAssertions;
@@ -48,11 +49,11 @@ namespace Datadog.Trace.Tests.Util.Http
         public void ObfuscateTimeout()
         {
             var querystringObfuscator = new Mock<QueryStringObfuscator.Obfuscator>(() => new QueryStringObfuscator.Obfuscator(_timeout, @"\[(.*?)\]((?:.\s*)*?)\[\/\1\]"));
-            querystringObfuscator.Setup(q => q.Log(It.IsAny<string>(), It.IsAny<OperationCanceledException>())).Verifiable();
+            querystringObfuscator.Setup(q => q.Log(It.IsAny<string>(), It.IsAny<RegexMatchTimeoutException>())).Verifiable();
             const string queryString = @"?[tag1]Test's Text Test Text Test Text Test Text.Test Text Test Text Test ""Text Test Text"" Test Text Test Text.Test Text ? Test Text Test Text Test Text Test Text Test Text Test Text.Test Text, Test Text Test Text Test Text Test Text Test Text Test Text Test Text.[/ ta.g1][tag2]Test's Text Test Text Test Text Test Text.Test Text Test Text Test ""Text Test Text"" Test Text Test Text.Test Text ? Test Text Test Text Test Text Test Text Test Text Test Text.Test Text, Test Text Test Text Test Text Test Text Test Text Test Text Test Text.[/ tag2]";
             var result = querystringObfuscator.Object.Obfuscate(queryString);
             result.Should().Be(string.Empty);
-            querystringObfuscator.Verify(o => o.Log(It.IsAny<string>(), It.IsAny<OperationCanceledException>()), Times.Once);
+            querystringObfuscator.Verify(o => o.Log(It.IsAny<string>(), It.IsAny<RegexMatchTimeoutException>()), Times.Once);
         }
     }
 }
