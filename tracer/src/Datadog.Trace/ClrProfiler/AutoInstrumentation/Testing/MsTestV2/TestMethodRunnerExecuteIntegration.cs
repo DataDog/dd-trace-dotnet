@@ -58,17 +58,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                         var scope = MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType());
                         scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
                         scope.Span.SetTag(TestTags.SkipReason, unitTestResult.ErrorMessage);
-
-                        var coverageSession = Ci.Coverage.CoverageReporter.Handler.EndSession();
-                        if (coverageSession is Ci.Coverage.Models.CoveragePayload coveragePayload)
-                        {
-                            coveragePayload.TraceId = scope.Span.TraceId;
-                            coveragePayload.SpanId = scope.Span.SpanId;
-                            Ci.CIVisibility.Manager?.WriteEvent(coveragePayload);
-                        }
-
                         scope.Span.Finish(TimeSpan.Zero);
                         scope.Dispose();
+                        Common.StopCoverage(scope.Span);
                     }
                 }
             }

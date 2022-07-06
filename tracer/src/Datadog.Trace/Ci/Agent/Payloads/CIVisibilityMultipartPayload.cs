@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Vendors.MessagePack;
@@ -16,10 +17,14 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         private readonly List<MultipartFormItem> _items;
         private readonly IFormatterResolver _formatterResolver;
         private readonly int _maxItems;
+        private readonly int _maxBytes;
+        private long _bytesCount;
 
-        public CIVisibilityMultipartPayload(int maxItems = 10, IFormatterResolver formatterResolver = null)
+        public CIVisibilityMultipartPayload(int maxItems = 10, int maxBytes = 45_000_000, IFormatterResolver formatterResolver = null)
         {
             _maxItems = 10;
+            _maxBytes = maxBytes;
+            _bytesCount = 0;
             _formatterResolver = formatterResolver ?? CIFormatterResolver.Instance;
             _items = new List<MultipartFormItem>(10);
         }
@@ -29,6 +34,8 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         public bool HasEvents => _items.Count > 0;
 
         public int Count => _items.Count;
+
+        public long BytesCount => _bytesCount;
 
         public abstract bool CanProcessEvent(IEvent @event);
 
@@ -55,8 +62,19 @@ namespace Datadog.Trace.Ci.Agent.Payloads
                     return false;
                 }
 
+                if (_bytesCount >= _maxBytes)
+                {
+                    return false;
+                }
+
                 var eventInBytes = MessagePackSerializer.Serialize(@event, _formatterResolver);
+                if (_bytesCount + eventInBytes.Length > _maxBytes)
+                {
+                    return false;
+                }
+
                 _items.Add(CreateMultipartFormItem(new ArraySegment<byte>(eventInBytes)));
+                _bytesCount += eventInBytes.Length;
                 return true;
             }
         }
@@ -66,6 +84,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             lock (_items)
             {
                 _items.Clear();
+                _bytesCount = 0;
             }
         }
 

@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Agent.Payloads;
@@ -135,6 +136,29 @@ namespace Datadog.Trace.Ci.Agent
 
             Log.Debug("CIAgentlessWriter:: InternalFlushEventsAsync/ Starting FlushEventsAsync loop");
 
+            var ciTestCycleBufferWatch = Stopwatch.StartNew();
+            var ciCodeCoverageBufferWatch = Stopwatch.StartNew();
+
+            async Task FlushCITestCycleBufferAsync()
+            {
+                if (ciTestCycleBuffer.HasEvents)
+                {
+                    await sender.SendPayloadAsync(ciTestCycleBuffer).ConfigureAwait(false);
+                    ciTestCycleBuffer.Clear();
+                    ciTestCycleBufferWatch.Restart();
+                }
+            }
+
+            async Task FlushCICodeCoverageBufferAsync()
+            {
+                if (ciCodeCoverageBuffer.HasEvents)
+                {
+                    await sender.SendPayloadAsync(ciCodeCoverageBuffer).ConfigureAwait(false);
+                    ciCodeCoverageBuffer.Clear();
+                    ciCodeCoverageBufferWatch.Restart();
+                }
+            }
+
             while (!eventQueue.IsCompleted)
             {
                 TaskCompletionSource<bool> watermarkCompletion = null;
@@ -142,8 +166,13 @@ namespace Datadog.Trace.Ci.Agent
                 try
                 {
                     // Retrieve events from the queue and add them to the respective buffer.
+                    ciTestCycleBufferWatch.Restart();
+                    ciCodeCoverageBufferWatch.Restart();
                     while (eventQueue.TryTake(out var item))
                     {
+                        // ***
+                        // Check if the item is a watermark
+                        // ***
                         if (item is WatermarkEvent watermarkEvent)
                         {
                             // Flush operation.
@@ -153,61 +182,53 @@ namespace Datadog.Trace.Ci.Agent
                             break;
                         }
 
+                        // ***
+                        // Force a flush by time (When there's always items in the queue)
+                        // ***
+                        if (ciTestCycleBufferWatch.ElapsedMilliseconds >= BatchInterval)
+                        {
+                            await FlushCITestCycleBufferAsync().ConfigureAwait(false);
+                        }
+
+                        if (ciCodeCoverageBufferWatch.ElapsedMilliseconds >= BatchInterval)
+                        {
+                            await FlushCICodeCoverageBufferAsync().ConfigureAwait(false);
+                        }
+
+                        // ***
+                        // Add the item to the right buffer, and flush the buffer in case is needed.
+                        // ***
                         if (ciTestCycleBuffer.CanProcessEvent(item))
                         {
                             // The CITestCycle endpoint can process this event, we try to add it to the buffer.
+                            // If the item cannot be added to the buffer but the buffer has events
+                            // we assume that is full and needs to be flushed.
                             while (!ciTestCycleBuffer.TryProcessEvent(item) && ciTestCycleBuffer.HasEvents)
                             {
-                                // If the item cannot be added to the buffer but the buffer has events
-                                // we assume that is full and needs to be flushed.
-                                await sender.SendPayloadAsync(ciTestCycleBuffer).ConfigureAwait(false);
-                                ciTestCycleBuffer.Clear();
+                                await FlushCITestCycleBufferAsync().ConfigureAwait(false);
                             }
+
+                            continue;
                         }
-                        else if (ciCodeCoverageBuffer.CanProcessEvent(item))
+
+                        if (ciCodeCoverageBuffer.CanProcessEvent(item))
                         {
                             // The CICodeCoverage track/endpoint can process this event, we try to add it to the buffer.
+                            // If the item cannot be added to the buffer but the buffer has events
+                            // we assume that is full and needs to be flushed.
                             while (!ciCodeCoverageBuffer.TryProcessEvent(item) && ciCodeCoverageBuffer.HasEvents)
                             {
-                                // If the item cannot be added to the buffer but the buffer has events
-                                // we assume that is full and needs to be flushed.
-                                await sender.SendPayloadAsync(ciCodeCoverageBuffer).ConfigureAwait(false);
-                                ciCodeCoverageBuffer.Clear();
+                                await FlushCICodeCoverageBufferAsync().ConfigureAwait(false);
                             }
+
+                            continue;
                         }
                     }
 
                     // After removing all items from the queue, we check if buffers needs to flushed.
-                    Task tskFlush = null;
-                    if (ciTestCycleBuffer.HasEvents)
-                    {
-                        // flush is required
-                        async Task FlushTestCycleBuffer()
-                        {
-                            await sender.SendPayloadAsync(ciTestCycleBuffer).ConfigureAwait(false);
-                            ciTestCycleBuffer.Clear();
-                        }
-
-                        tskFlush = tskFlush is null ? FlushTestCycleBuffer() : Task.WhenAll(tskFlush, FlushTestCycleBuffer());
-                    }
-
-                    if (ciCodeCoverageBuffer.HasEvents)
-                    {
-                        // flush is required
-                        async Task FlushCodeCoverageBuffer()
-                        {
-                            await sender.SendPayloadAsync(ciCodeCoverageBuffer).ConfigureAwait(false);
-                            ciCodeCoverageBuffer.Clear();
-                        }
-
-                        tskFlush = tskFlush is null ? FlushCodeCoverageBuffer() : Task.WhenAll(tskFlush, FlushCodeCoverageBuffer());
-                    }
-
-                    // Await the flush task
-                    if (tskFlush is not null)
-                    {
-                        await tskFlush.ConfigureAwait(false);
-                    }
+                    await Task.WhenAll(
+                        FlushCITestCycleBufferAsync(),
+                        FlushCICodeCoverageBufferAsync()).ConfigureAwait(false);
 
                     // If there's a flush watermark we marked as resolved.
                     watermarkCompletion?.TrySetResult(true);

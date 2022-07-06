@@ -116,15 +116,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                         scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
                     }
 
-                    var coverageSession = Ci.Coverage.CoverageReporter.Handler.EndSession();
-                    if (coverageSession is Ci.Coverage.Models.CoveragePayload coveragePayload)
-                    {
-                        coveragePayload.TraceId = scope.Span.TraceId;
-                        coveragePayload.SpanId = scope.Span.SpanId;
-                        Ci.CIVisibility.Manager?.WriteEvent(coveragePayload);
-                    }
-
                     scope.Dispose();
+                    Common.StopCoverage(scope.Span);
                 }
             }
 

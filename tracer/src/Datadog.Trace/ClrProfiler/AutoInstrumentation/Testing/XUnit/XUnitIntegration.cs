@@ -90,22 +90,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             Common.DecorateSpanWithSourceAndCodeOwners(span, runnerInstance.TestMethod);
 
             Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            Ci.Coverage.CoverageReporter.Handler.StartSession();
+            Common.StartCoverage();
 
             // Skip tests
             if (runnerInstance.SkipReason != null)
             {
                 span.SetTag(TestTags.Status, TestTags.StatusSkip);
                 span.SetTag(TestTags.SkipReason, runnerInstance.SkipReason);
-
-                var coverageSession = Ci.Coverage.CoverageReporter.Handler.EndSession();
-                if (coverageSession is not null)
-                {
-                    scope.Span.SetTag("test.coverage", Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(coverageSession));
-                }
-
                 span.Finish(TimeSpan.Zero);
                 scope.Dispose();
+                Common.StopCoverage(span);
                 return null;
             }
 
@@ -115,14 +109,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
         internal static void FinishScope(Scope scope, IExceptionAggregator exceptionAggregator)
         {
-            var coverageSession = Ci.Coverage.CoverageReporter.Handler.EndSession();
-            if (coverageSession is Ci.Coverage.Models.CoveragePayload coveragePayload)
-            {
-                coveragePayload.TraceId = scope.Span.TraceId;
-                coveragePayload.SpanId = scope.Span.SpanId;
-                Ci.CIVisibility.Manager?.WriteEvent(coveragePayload);
-            }
-
             Exception exception = exceptionAggregator.ToException();
 
             if (exception != null)
@@ -144,6 +130,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             }
 
             scope.Dispose();
+            Common.StopCoverage(scope.Span);
         }
     }
 }

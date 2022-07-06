@@ -143,7 +143,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             Common.DecorateSpanWithSourceAndCodeOwners(span, testMethod);
 
             Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            Ci.Coverage.CoverageReporter.Handler.StartSession();
+            Common.StartCoverage();
 
             if (skipReason != null)
             {
@@ -157,14 +157,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
         internal static void FinishScope(Scope scope, Exception ex)
         {
-            var coverageSession = Ci.Coverage.CoverageReporter.Handler.EndSession();
-            if (coverageSession is Ci.Coverage.Models.CoveragePayload coveragePayload)
-            {
-                coveragePayload.TraceId = scope.Span.TraceId;
-                coveragePayload.SpanId = scope.Span.SpanId;
-                CIVisibility.Manager?.WriteEvent(coveragePayload);
-            }
-
             // unwrap the generic NUnitException
             if (ex != null && ex.GetType().FullName == "NUnit.Framework.Internal.NUnitException")
             {
@@ -197,6 +189,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             scope.Dispose();
+            Common.StopCoverage(scope.Span);
         }
 
         internal static void FinishSkippedScope(Scope scope, string skipReason)
@@ -206,17 +199,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             {
                 span.SetTag(TestTags.Status, TestTags.StatusSkip);
                 span.SetTag(TestTags.SkipReason, skipReason ?? string.Empty);
-
-                var coverageSession = Ci.Coverage.CoverageReporter.Handler.EndSession();
-                if (coverageSession is Ci.Coverage.Models.CoveragePayload coveragePayload)
-                {
-                    coveragePayload.TraceId = span.TraceId;
-                    coveragePayload.SpanId = span.SpanId;
-                    CIVisibility.Manager?.WriteEvent(coveragePayload);
-                }
-
                 span.Finish(TimeSpan.Zero);
                 scope.Dispose();
+                Common.StopCoverage(span);
             }
         }
     }

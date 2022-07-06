@@ -74,5 +74,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
                 }
             }
         }
+
+        internal static void StartCoverage()
+        {
+            Ci.Coverage.CoverageReporter.Handler.StartSession();
+        }
+
+        internal static void StopCoverage(Span span)
+        {
+            if (Ci.Coverage.CoverageReporter.Handler.EndSession() is Ci.Coverage.Models.CoveragePayload coveragePayload)
+            {
+                if (span is not null)
+                {
+                    coveragePayload.TraceId = span.TraceId;
+                    coveragePayload.SpanId = span.SpanId;
+                }
+                else if (Tracer.Instance?.ActiveScope?.Span is { } activeSpan)
+                {
+                    coveragePayload.TraceId = activeSpan.TraceId;
+                    coveragePayload.SpanId = activeSpan.SpanId;
+                }
+
+                Ci.CIVisibility.Manager?.WriteEvent(coveragePayload);
+            }
+        }
     }
 }
