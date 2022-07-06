@@ -54,6 +54,8 @@ namespace Datadog.Trace.Agent
         private Task _frontBufferFlushTask;
         private Task _backBufferFlushTask;
 
+        private long _droppedSpans;
+
         static AgentWriter()
         {
             var data = Vendors.MessagePack.MessagePackSerializer.Serialize(Array.Empty<Span[]>());
@@ -304,6 +306,13 @@ namespace Datadog.Trace.Agent
                         _statsd.Increment(TracerMetricNames.Queue.DequeuedSpans, buffer.SpanCount);
                     }
 
+                    var droppedSpans = Interlocked.Exchange(ref _droppedSpans, 0);
+
+                    if (droppedSpans > 0)
+                    {
+                        Log.Warning("{count} traces were dropped since the last flush operation.", droppedSpans);
+                    }
+
                     if (buffer.TraceCount > 0)
                     {
                         Log.Debug<int, int>("Flushing {spans} spans across {traces} traces", buffer.SpanCount, buffer.TraceCount);
@@ -401,7 +410,7 @@ namespace Datadog.Trace.Agent
             }
 
             // All the buffers are full :( drop the trace
-            Log.Warning("Trace buffer is full. Dropping a trace.");
+            Interlocked.Increment(ref _droppedSpans);
             _traceKeepRateCalculator.IncrementDrops(1);
 
             if (_statsd != null)
