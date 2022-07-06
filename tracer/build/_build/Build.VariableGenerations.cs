@@ -9,6 +9,7 @@ using Newtonsoft.Json;
 using Nuke.Common;
 using Nuke.Common.CI.AzurePipelines;
 using Nuke.Common.Tools.Git;
+using Nuke.Common.Tools.MSBuild;
 using NukeExtensions;
 using YamlDotNet.Serialization.NamingConventions;
 
@@ -232,6 +233,9 @@ partial class Build : NukeBuild
                 // nuget smoke tests
                 GenerateLinuxNuGetSmokeTestsMatrix();
                 GenerateLinuxNuGetSmokeTestsArm64Matrix();
+                
+                // msi smoke tests
+                GenerateWindowsMsiSmokeTestsMatrix();
 
                 void GenerateLinuxInstallerSmokeTestsMatrix()
                 {
@@ -530,6 +534,38 @@ partial class Build : NukeBuild
                                 runtimeImage = $"{dockerName}:{image.runtimeTag}"
                             });
                     }
+                }
+                
+                void GenerateWindowsMsiSmokeTestsMatrix()
+                {
+                    var dockerName = "mcr.microsoft.com/dotnet/aspnet";
+
+                    var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
+                    var runtimeImages = new (string publishFramework, string runtimeTag)[]
+                    {
+                        (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2019"),
+                        (publishFramework: TargetFramework.NET5_0, "5.0-windowsservercore-ltsc2019"),
+                    };
+
+                    var matrix = (
+                                     from platform in platforms
+                                     from image in runtimeImages
+                                     let dockerTag = $"{platform}_{image.runtimeTag.Replace('.', '_')}"
+                                     let channel32Bit = platform == MSBuildTargetPlatform.x86
+                                                                       ? (image.publishFramework == TargetFramework.NET6_0 ? "6.0" : "5.0")
+                                                                       : string.Empty
+                                     select new
+                                     {
+                                         dockerTag = dockerTag,
+                                         publishFramework = image.publishFramework,
+                                         runtimeImage = $"{dockerName}:{image.runtimeTag}",
+                                         targetPlatform = platform,
+                                         channel32Bit = channel32Bit,
+                                     }).ToDictionary(x=>x.dockerTag, x => x);
+
+                    Logger.Info($"Installer smoke tests MSI matrix Windows");
+                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetVariable("msi_installer_windows_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
             }
         };
