@@ -1,0 +1,1654 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: async-methods,
+    Resource: async-methods,
+    Service: Samples.AWS.SQS,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: sqs.request,
+    Resource: SQS.CreateQueue,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: CreateQueue,
+      aws.queue.name: MyAsyncSQSQueue,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: sqs.request,
+    Resource: SQS.CreateQueue,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: CreateQueue,
+      aws.queue.name: MyAsyncSQSQueue2,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_5,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.SQS-http-client,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_6,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.SQS-http-client,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_7,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.SQS-http-client,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_8,
+    Name: http.request,
+    Resource: POST localhost:00000/?/MyAsyncSQSQueue,
+    Service: Samples.AWS.SQS-http-client,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_9,
+    Name: http.request,
+    Resource: POST localhost:00000/?/MyAsyncSQSQueue2,
+    Service: Samples.AWS.SQS-http-client,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_10,
+    Name: sqs.request,
+    Resource: SQS.SendMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: SendMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_11,
+    Name: sqs.request,
+    Resource: SQS.ReceiveMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ReceiveMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_12,
+    Name: sqs.request,
+    Resource: SQS.DeleteMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_13,
+    Name: sqs.request,
+    Resource: SQS.SendMessageBatch,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: SendMessageBatch,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_14,
+    Name: sqs.request,
+    Resource: SQS.ReceiveMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ReceiveMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_15,
+    Name: sqs.request,
+    Resource: SQS.DeleteMessageBatch,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteMessageBatch,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_16,
+    Name: sqs.request,
+    Resource: SQS.SendMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: SendMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_17,
+    Name: sqs.request,
+    Resource: SQS.ReceiveMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ReceiveMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_18,
+    Name: sqs.request,
+    Resource: SQS.DeleteMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_19,
+    Name: sqs.request,
+    Resource: SQS.SendMessageBatch,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: SendMessageBatch,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_20,
+    Name: sqs.request,
+    Resource: SQS.ReceiveMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ReceiveMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_21,
+    Name: sqs.request,
+    Resource: SQS.DeleteMessageBatch,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteMessageBatch,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_22,
+    Name: sqs.request,
+    Resource: SQS.SendMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: SendMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_23,
+    Name: sqs.request,
+    Resource: SQS.SendMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: SendMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_24,
+    Name: sqs.request,
+    Resource: SQS.ReceiveMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ReceiveMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_25,
+    Name: sqs.request,
+    Resource: SQS.DeleteMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_26,
+    Name: sqs.request,
+    Resource: SQS.ReceiveMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ReceiveMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_27,
+    Name: sqs.request,
+    Resource: SQS.DeleteMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_28,
+    Name: sqs.request,
+    Resource: SQS.SendMessageBatch,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: SendMessageBatch,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_29,
+    Name: sqs.request,
+    Resource: SQS.SendMessageBatch,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: SendMessageBatch,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_30,
+    Name: sqs.request,
+    Resource: SQS.ReceiveMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ReceiveMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_31,
+    Name: sqs.request,
+    Resource: SQS.DeleteMessageBatch,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteMessageBatch,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_32,
+    Name: sqs.request,
+    Resource: SQS.ReceiveMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ReceiveMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_33,
+    Name: sqs.request,
+    Resource: SQS.DeleteMessageBatch,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteMessageBatch,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_34,
+    Name: sqs.request,
+    Resource: SQS.DeleteQueue,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteQueue,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_35,
+    Name: sqs.request,
+    Resource: SQS.DeleteQueue,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteQueue,
+      aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_37,
+    Name: sync-methods,
+    Resource: sync-methods,
+    Service: Samples.AWS.SQS,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_38,
+    Name: sqs.request,
+    Resource: SQS.CreateQueue,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: CreateQueue,
+      aws.queue.name: MySyncSQSQueue,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_39,
+    Name: sqs.request,
+    Resource: SQS.CreateQueue,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: CreateQueue,
+      aws.queue.name: MySyncSQSQueue2,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_40,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.SQS-http-client,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_41,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.SQS-http-client,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_42,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.SQS-http-client,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_43,
+    Name: http.request,
+    Resource: POST localhost:00000/?/MySyncSQSQueue,
+    Service: Samples.AWS.SQS-http-client,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_44,
+    Name: http.request,
+    Resource: POST localhost:00000/?/MySyncSQSQueue2,
+    Service: Samples.AWS.SQS-http-client,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_45,
+    Name: sqs.request,
+    Resource: SQS.SendMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: SendMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_46,
+    Name: sqs.request,
+    Resource: SQS.ReceiveMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ReceiveMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_47,
+    Name: sqs.request,
+    Resource: SQS.DeleteMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_48,
+    Name: sqs.request,
+    Resource: SQS.SendMessageBatch,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: SendMessageBatch,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_49,
+    Name: sqs.request,
+    Resource: SQS.ReceiveMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ReceiveMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_50,
+    Name: sqs.request,
+    Resource: SQS.DeleteMessageBatch,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteMessageBatch,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_51,
+    Name: sqs.request,
+    Resource: SQS.SendMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: SendMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_52,
+    Name: sqs.request,
+    Resource: SQS.ReceiveMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ReceiveMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_53,
+    Name: sqs.request,
+    Resource: SQS.DeleteMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_54,
+    Name: sqs.request,
+    Resource: SQS.SendMessageBatch,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: SendMessageBatch,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_55,
+    Name: sqs.request,
+    Resource: SQS.ReceiveMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ReceiveMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_56,
+    Name: sqs.request,
+    Resource: SQS.DeleteMessageBatch,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteMessageBatch,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_57,
+    Name: sqs.request,
+    Resource: SQS.SendMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: SendMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_58,
+    Name: sqs.request,
+    Resource: SQS.SendMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: SendMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_59,
+    Name: sqs.request,
+    Resource: SQS.ReceiveMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ReceiveMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_60,
+    Name: sqs.request,
+    Resource: SQS.DeleteMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_61,
+    Name: sqs.request,
+    Resource: SQS.ReceiveMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ReceiveMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_62,
+    Name: sqs.request,
+    Resource: SQS.DeleteMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_63,
+    Name: sqs.request,
+    Resource: SQS.SendMessageBatch,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: SendMessageBatch,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_64,
+    Name: sqs.request,
+    Resource: SQS.SendMessageBatch,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: SendMessageBatch,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_65,
+    Name: sqs.request,
+    Resource: SQS.ReceiveMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ReceiveMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_66,
+    Name: sqs.request,
+    Resource: SQS.DeleteMessageBatch,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteMessageBatch,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_67,
+    Name: sqs.request,
+    Resource: SQS.ReceiveMessage,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: ReceiveMessage,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_68,
+    Name: sqs.request,
+    Resource: SQS.DeleteMessageBatch,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteMessageBatch,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_69,
+    Name: sqs.request,
+    Resource: SQS.DeleteQueue,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteQueue,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_36,
+    SpanId: Id_70,
+    Name: sqs.request,
+    Resource: SQS.DeleteQueue,
+    Service: Samples.AWS.SQS-aws-sqs,
+    Type: http,
+    ParentId: Id_37,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: DeleteQueue,
+      aws.queue.url: http://localhost:00000/000000000000/MySyncSQSQueue2,
+      aws.requestId: Guid_Empty,
+      aws.service: SQS,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  }
+]
