@@ -70,7 +70,7 @@ namespace Datadog.Trace.Util.Http
                 try
                 {
                     _log.Warning($"task will run with timeout {_timeout.Milliseconds} ms");
-                    var task = Task.Factory.StartNew(() => _regex.Replace(queryString, ReplacementString), cancelationToken.Token);
+                    var task = Task.Run(() => _regex.Replace(queryString, ReplacementString), cancelationToken.Token);
                     var timeoutTask = Task.Delay(_timeout, cancelationToken.Token);
                     var tasks = new[] { task, timeoutTask };
                     Task.WaitAny(tasks);
