@@ -13,7 +13,7 @@ namespace debugger
 /// </summary>
 class DebuggerRejitPreprocessor : public RejitPreprocessor<MethodProbeDefinition>
 {
-public:  
+public:
     using RejitPreprocessor::RejitPreprocessor;
 
     ULONG PreprocessLineProbes(const std::vector<ModuleID>& modules,
@@ -40,7 +40,19 @@ protected:
     CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo) const;
     void UpdateMethod(RejitHandlerModuleMethod* methodHandler, const MethodProbeDefinition& methodProbe) override;
     static void UpdateMethod(RejitHandlerModuleMethod* methodHandler, const ProbeDefinition_S& probe);
+    std::tuple<mdMethodDef, FunctionInfo> TransformKickOffToMoveNext(
+        const ComPtr<IMetaDataImport2>& metadataImport,
+        const ComPtr<IMetaDataEmit2>& metadataEmit,
+        RejitHandlerModule* moduleHandler,
+        mdTypeDef typeDef,
+        mdMethodDef methodDef,
+        const FunctionInfo& functionInfo) const;
     bool ShouldSkipModule(const ModuleInfo& moduleInfo, const MethodProbeDefinition& methodProbe) final;
+    void EnqueueNewMethod(const MethodProbeDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
+                          ComPtr<IMetaDataEmit2>& metadataEmit, const ModuleInfo& moduleInfo, mdTypeDef typeDef,
+                          std::vector<MethodIdentifier>& rejitRequests, unsigned methodDef,
+                          FunctionInfo functionInfo, RejitHandlerModule* moduleHandler) override;
+    static mdTypeRef GetIAsyncStateMachineToken(ModuleMetadata* moduleMetadata);
 };
 
 } // namespace debugger

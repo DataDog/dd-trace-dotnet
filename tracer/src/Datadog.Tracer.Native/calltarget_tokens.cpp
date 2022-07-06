@@ -23,115 +23,6 @@ static const shared::WSTRING managed_profiler_calltarget_returntype_getreturnval
  * PRIVATE
  **/
 
-HRESULT CallTargetTokens::EnsureCorLibTokens()
-{
-    ModuleMetadata* module_metadata = GetMetadata();
-    AssemblyProperty corAssemblyProperty = *module_metadata->corAssemblyProperty;
-
-    // *** Ensure corlib assembly ref
-    if (corLibAssemblyRef == mdAssemblyRefNil)
-    {
-        auto hr = module_metadata->assembly_emit->DefineAssemblyRef(
-            corAssemblyProperty.ppbPublicKey, corAssemblyProperty.pcbPublicKey, corAssemblyProperty.szName.data(),
-            &corAssemblyProperty.pMetaData, &corAssemblyProperty.pulHashAlgId, sizeof(corAssemblyProperty.pulHashAlgId),
-            corAssemblyProperty.assemblyFlags, &corLibAssemblyRef);
-        if (corLibAssemblyRef == mdAssemblyRefNil)
-        {
-            Logger::Warn("Wrapper corLibAssemblyRef could not be defined.");
-            return hr;
-        }
-    }
-
-    // *** Ensure System.Object type ref
-    if (objectTypeRef == mdTypeRefNil)
-    {
-        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, SystemObject, &objectTypeRef);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper objectTypeRef could not be defined.");
-            return hr;
-        }
-    }
-
-    // *** Ensure System.Exception type ref
-    if (exTypeRef == mdTypeRefNil)
-    {
-        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, SystemException, &exTypeRef);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper exTypeRef could not be defined.");
-            return hr;
-        }
-    }
-
-    // *** Ensure System.Type type ref
-    if (typeRef == mdTypeRefNil)
-    {
-        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, SystemTypeName, &typeRef);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper typeRef could not be defined.");
-            return hr;
-        }
-    }
-
-    // *** Ensure System.RuntimeTypeHandle type ref
-    if (runtimeTypeHandleRef == mdTypeRefNil)
-    {
-        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, RuntimeTypeHandleTypeName,
-                                                                      &runtimeTypeHandleRef);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper runtimeTypeHandleRef could not be defined.");
-            return hr;
-        }
-    }
-
-    // *** Ensure Type.GetTypeFromHandle token
-    if (getTypeFromHandleToken == mdTokenNil)
-    {
-        unsigned runtimeTypeHandle_buffer;
-        auto runtimeTypeHandle_size = CorSigCompressToken(runtimeTypeHandleRef, &runtimeTypeHandle_buffer);
-
-        unsigned type_buffer;
-        auto type_size = CorSigCompressToken(typeRef, &type_buffer);
-
-        COR_SIGNATURE signature[signatureBufferSize];
-        unsigned offset = 0;
-
-        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
-        signature[offset++] = 0x01;
-        signature[offset++] = ELEMENT_TYPE_CLASS;
-        memcpy(&signature[offset], &type_buffer, type_size);
-        offset += type_size;
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-        memcpy(&signature[offset], &runtimeTypeHandle_buffer, runtimeTypeHandle_size);
-        offset += runtimeTypeHandle_size;
-
-        auto hr = module_metadata->metadata_emit->DefineMemberRef(typeRef, GetTypeFromHandleMethodName, signature,
-                                                                  offset, &getTypeFromHandleToken);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper getTypeFromHandleToken could not be defined.");
-            return hr;
-        }
-    }
-
-    // *** Ensure System.RuntimeMethodHandle type ref
-    if (runtimeMethodHandleRef == mdTypeRefNil)
-    {
-        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, RuntimeMethodHandleTypeName,
-                                                                      &runtimeMethodHandleRef);
-        if (FAILED(hr))
-        {
-            Logger::Warn("Wrapper runtimeMethodHandleRef could not be defined.");
-            return hr;
-        }
-    }
-
-    return S_OK;
-}
-
 mdTypeRef CallTargetTokens::GetTargetStateTypeRef()
 {
     auto hr = EnsureBaseCalltargetTokens();
@@ -780,6 +671,115 @@ mdTypeRef CallTargetTokens::GetRuntimeMethodHandleTypeRef()
 mdAssemblyRef CallTargetTokens::GetCorLibAssemblyRef()
 {
     return corLibAssemblyRef;
+}
+
+HRESULT CallTargetTokens::EnsureCorLibTokens()
+{
+    ModuleMetadata* module_metadata = GetMetadata();
+    AssemblyProperty corAssemblyProperty = *module_metadata->corAssemblyProperty;
+
+    // *** Ensure corlib assembly ref
+    if (corLibAssemblyRef == mdAssemblyRefNil)
+    {
+        auto hr = module_metadata->assembly_emit->DefineAssemblyRef(
+            corAssemblyProperty.ppbPublicKey, corAssemblyProperty.pcbPublicKey, corAssemblyProperty.szName.data(),
+            &corAssemblyProperty.pMetaData, &corAssemblyProperty.pulHashAlgId, sizeof(corAssemblyProperty.pulHashAlgId),
+            corAssemblyProperty.assemblyFlags, &corLibAssemblyRef);
+        if (corLibAssemblyRef == mdAssemblyRefNil)
+        {
+            Logger::Warn("Wrapper corLibAssemblyRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure System.Object type ref
+    if (objectTypeRef == mdTypeRefNil)
+    {
+        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, SystemObject, &objectTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper objectTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure System.Exception type ref
+    if (exTypeRef == mdTypeRefNil)
+    {
+        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, SystemException, &exTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper exTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure System.Type type ref
+    if (typeRef == mdTypeRefNil)
+    {
+        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, SystemTypeName, &typeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper typeRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure System.RuntimeTypeHandle type ref
+    if (runtimeTypeHandleRef == mdTypeRefNil)
+    {
+        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, RuntimeTypeHandleTypeName,
+                                                                      &runtimeTypeHandleRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper runtimeTypeHandleRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure Type.GetTypeFromHandle token
+    if (getTypeFromHandleToken == mdTokenNil)
+    {
+        unsigned runtimeTypeHandle_buffer;
+        auto runtimeTypeHandle_size = CorSigCompressToken(runtimeTypeHandleRef, &runtimeTypeHandle_buffer);
+
+        unsigned type_buffer;
+        auto type_size = CorSigCompressToken(typeRef, &type_buffer);
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+        signature[offset++] = 0x01;
+        signature[offset++] = ELEMENT_TYPE_CLASS;
+        memcpy(&signature[offset], &type_buffer, type_size);
+        offset += type_size;
+        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        memcpy(&signature[offset], &runtimeTypeHandle_buffer, runtimeTypeHandle_size);
+        offset += runtimeTypeHandle_size;
+
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(typeRef, GetTypeFromHandleMethodName, signature,
+                                                                  offset, &getTypeFromHandleToken);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper getTypeFromHandleToken could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure System.RuntimeMethodHandle type ref
+    if (runtimeMethodHandleRef == mdTypeRefNil)
+    {
+        auto hr = module_metadata->metadata_emit->DefineTypeRefByName(corLibAssemblyRef, RuntimeMethodHandleTypeName,
+                                                                      &runtimeMethodHandleRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper runtimeMethodHandleRef could not be defined.");
+            return hr;
+        }
+    }
+
+    return S_OK;
 }
 
 HRESULT CallTargetTokens::ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, FunctionInfo* functionInfo,

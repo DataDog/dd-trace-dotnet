@@ -16,6 +16,32 @@ RejitPreprocessor<RejitRequestDefinition>::RejitPreprocessor(std::shared_ptr<Rej
 }
 
 template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::EnqueueNewMethod(const RejitRequestDefinition& definition, 
+    ComPtr<IMetaDataImport2>& metadataImport, 
+    ComPtr<IMetaDataEmit2>& metadataEmit, 
+    const ModuleInfo& moduleInfo, 
+    const mdTypeDef typeDef, 
+    std::vector<MethodIdentifier>& rejitRequests, 
+    unsigned methodDef,
+    FunctionInfo functionInfo, 
+    RejitHandlerModule* moduleHandler)
+{
+    RejitHandlerModuleMethodCreatorFunc creator = [=, request = definition, functionInfo = functionInfo](
+        const mdMethodDef method, RejitHandlerModule* module) {
+        return CreateMethod(method, module, functionInfo, request);
+    };
+
+    RejitHandlerModuleMethodUpdaterFunc updater = [=, request = definition](RejitHandlerModuleMethod* method) {
+        return UpdateMethod(method, request);
+    };
+
+    moduleHandler->CreateMethodIfNotExists(methodDef, creator, updater);
+
+    // Store module_id and methodDef to request the ReJIT after analyzing all integrations.
+    rejitRequests.emplace_back(MethodIdentifier(moduleInfo.id, methodDef));
+}
+
+template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const RejitRequestDefinition& definition,
                                           ComPtr<IMetaDataImport2>& metadataImport,
                                           ComPtr<IMetaDataEmit2>& metadataEmit,
@@ -145,19 +171,8 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             moduleHandler->SetModuleMetadata(moduleMetadata);
         }
 
-        RejitHandlerModuleMethodCreatorFunc creator = [=, request = definition, functionInfo = functionInfo](
-                                                          const mdMethodDef method, RejitHandlerModule* module) {
-            return CreateMethod(method, module, functionInfo, request);
-        };
-
-        RejitHandlerModuleMethodUpdaterFunc updater = [=, request = definition](RejitHandlerModuleMethod* method) {
-            return UpdateMethod(method, request);
-        };
-
-        moduleHandler->CreateMethodIfNotExists(methodDef, creator, updater);
-
-        // Store module_id and methodDef to request the ReJIT after analyzing all integrations.
-        rejitRequests.emplace_back(MethodIdentifier(moduleInfo.id, methodDef));
+        EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, methodDef,
+                         functionInfo, moduleHandler);
 
         Logger::Debug("    * Enqueue for ReJIT [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
                       ", AppDomainId=", moduleHandler->GetModuleMetadata()->app_domain_id,
