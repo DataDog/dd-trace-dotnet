@@ -305,9 +305,6 @@ namespace Datadog.Trace.Tools.Runner
                 WorkingDirectory = currentDirectory,
             };
 
-            AnsiConsole.WriteLine("Filename: " + filename);
-            AnsiConsole.WriteLine("WorkingDirectory: " + currentDirectory);
-
             IDictionary currentEnvVars = Environment.GetEnvironmentVariables();
             if (currentEnvVars != null)
             {

@@ -38,13 +38,16 @@ namespace Datadog.Trace.Ci.Agent
             _flushDelayEvent = new AutoResetEvent(false);
             _sender = sender;
 
+            // Concurrency Level is a number between 1 and 8 depending on the number of Logical Processor Count
             var concurrencyLevel = Math.Min(Math.Max(Environment.ProcessorCount / 2, 1), 8);
             _buffersArray = new Buffers[concurrencyLevel];
             for (var i = 0; i < _buffersArray.Length; i++)
             {
-                _buffersArray[i] = new Buffers(new CITestCyclePayload(formatterResolver), new CICodeCoveragePayload(formatterResolver));
+                _buffersArray[i] = new Buffers(
+                    new CITestCyclePayload(formatterResolver),
+                    new CICodeCoveragePayload(formatterResolver));
                 var tskFlush = Task.Factory.StartNew(InternalFlushEventsAsync, new object[] { this, _buffersArray[i] }, TaskCreationOptions.LongRunning);
-                tskFlush.ContinueWith(t => Log.Error(t.Exception, "Error in sending ciapp events"), TaskContinuationOptions.OnlyOnFaulted);
+                tskFlush.ContinueWith(t => Log.Error(t.Exception, "Error in sending ci visibility events"), TaskContinuationOptions.OnlyOnFaulted);
                 _buffersArray[i].SetFlushTask(tskFlush);
             }
 

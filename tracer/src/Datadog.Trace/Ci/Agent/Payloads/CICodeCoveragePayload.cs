@@ -15,7 +15,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
     internal class CICodeCoveragePayload : CIVisibilityMultipartPayload
     {
         public CICodeCoveragePayload(IFormatterResolver formatterResolver = null)
-            : base(10, 45_000_000, formatterResolver)
+            : base(10, 48_000_000, formatterResolver)
         {
             var agentlessUrl = CIVisibility.Settings.AgentlessUrl;
             if (!string.IsNullOrWhiteSpace(agentlessUrl))

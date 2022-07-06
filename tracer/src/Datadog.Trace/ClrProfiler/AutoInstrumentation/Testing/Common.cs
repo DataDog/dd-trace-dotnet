@@ -89,11 +89,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
                     coveragePayload.TraceId = span.TraceId;
                     coveragePayload.SpanId = span.SpanId;
                 }
-                else if (Tracer.Instance?.ActiveScope?.Span is { } activeSpan)
-                {
-                    coveragePayload.TraceId = activeSpan.TraceId;
-                    coveragePayload.SpanId = activeSpan.SpanId;
-                }
 
                 Ci.CIVisibility.Manager?.WriteEvent(coveragePayload);
             }

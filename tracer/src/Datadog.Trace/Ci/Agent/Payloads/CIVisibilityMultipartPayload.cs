@@ -20,7 +20,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         private readonly int _maxBytes;
         private long _bytesCount;
 
-        public CIVisibilityMultipartPayload(int maxItems = 10, int maxBytes = 45_000_000, IFormatterResolver formatterResolver = null)
+        public CIVisibilityMultipartPayload(int maxItems = 10, int maxBytes = 48_000_000, IFormatterResolver formatterResolver = null)
         {
             _maxItems = 10;
             _maxBytes = maxBytes;
