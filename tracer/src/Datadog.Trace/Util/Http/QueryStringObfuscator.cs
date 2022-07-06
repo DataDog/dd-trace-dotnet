@@ -18,6 +18,7 @@ namespace Datadog.Trace.Util.Http
         /// </summary>
         public const string DefaultObfuscationQueryStringRegex = @"((?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)(?:(?:\s|%20)*(?:=|%3D)[^&]+|(?:""|%22)(?:\s|%20)*(?::|%3A)(?:\s|%20)*(?:""|%22)(?:%2[^2]|%[^2]|[^""%])+(?:""|%22))|bearer(?:\s|%20)+[a-z0-9\._\-]|token(?::|%3A)[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L](?:[\w=-]|%3D)+\.ey[I-L](?:[\w=-]|%3D)+(?:\.(?:[\w.+\/=-]|%3D|%2F|%2B)+)?|[\-]{5}BEGIN(?:[a-z\s]|%20)+PRIVATE(?:\s|%20)KEY[\-]{5}[^\-]+[\-]{5}END(?:[a-z\s]|%20)+PRIVATE(?:\s|%20)KEY|ssh-rsa(?:\s|%20)*(?:[a-z0-9\/\.+]|%2F|%5C|%2B){100,})";
 
+        private static readonly IDatadogLogger _log = DatadogLogging.GetLoggerFor(typeof(QueryStringObfuscator));
         private static QueryStringObfuscator _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
@@ -25,6 +26,7 @@ namespace Datadog.Trace.Util.Http
 
         private QueryStringObfuscator(double timeout, string pattern = null)
         {
+            _log.Warning($"Instantiation QueryStringObfuscator with timeout double {timeout}");
             pattern ??= Tracer.Instance.Settings.ObfuscationQueryStringRegex;
             _obfuscator = new(TimeSpan.FromMilliseconds(timeout), pattern);
         }
@@ -40,12 +42,12 @@ namespace Datadog.Trace.Util.Http
         {
             private const string ReplacementString = "<redacted>";
             private readonly Regex _regex;
-            private readonly IDatadogLogger _log = DatadogLogging.GetLoggerFor(typeof(Obfuscator));
             private readonly bool _disabled;
             private readonly TimeSpan _timeout;
 
             internal Obfuscator(TimeSpan timeout, string pattern = null)
             {
+                _log.Warning($"Instantiation obfuscator with timeout {timeout}, {timeout.Milliseconds}");
                 _timeout = timeout;
                 if (string.IsNullOrEmpty(pattern))
                 {
@@ -67,6 +69,7 @@ namespace Datadog.Trace.Util.Http
                 var cancelationToken = new CancellationTokenSource();
                 try
                 {
+                    _log.Warning($"task will run with timeout {_timeout.Milliseconds} ms");
                     var task = Task.Factory.StartNew(() => _regex.Replace(queryString, ReplacementString), cancelationToken.Token);
                     var timeoutTask = Task.Delay(_timeout, cancelationToken.Token);
                     var tasks = new[] { task, timeoutTask };
