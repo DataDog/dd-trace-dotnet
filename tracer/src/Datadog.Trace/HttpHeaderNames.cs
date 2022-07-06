@@ -44,9 +44,9 @@ namespace Datadog.Trace
         public const string UserAgent = "User-Agent";
 
         /// <summary>
-        /// Deprecated. Use <see cref="PropagatedTags"/> instead.
+        /// Deprecated.
         /// </summary>
-        [Obsolete("Use PropagatedTags.", error: false)]
+        [Obsolete]
         public const string DatadogTags = PropagatedTags;
 
         /// <summary>

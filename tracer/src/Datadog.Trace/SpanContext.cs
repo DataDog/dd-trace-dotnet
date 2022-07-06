@@ -173,13 +173,9 @@ namespace Datadog.Trace
         internal string Origin { get; set; }
 
         /// <summary>
-        /// Gets or sets a collection of propagated internal Datadog tags,
+        /// Gets or sets the header value that contains the propagated trace tags,
         /// formatted as "key1=value1,key2=value2".
         /// </summary>
-        /// <remarks>
-        /// We're keeping this as the string representation to avoid having to parse.
-        /// For now, it's relatively easy to append new values when needed.
-        /// </remarks>
         internal string PropagatedTags { get; set; }
 
         /// <summary>
