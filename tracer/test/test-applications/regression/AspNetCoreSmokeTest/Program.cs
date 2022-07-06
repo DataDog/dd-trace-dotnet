@@ -3,6 +3,7 @@ using Microsoft.Extensions.Hosting;
 using System;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +20,12 @@ namespace AspNetCoreSmokeTest
                 Console.WriteLine("Error: Profiler is required and is not loaded.");
                 return 1;
             }
+            
+            Console.WriteLine("Process details: ");
+            Console.WriteLine($"Framework: {RuntimeInformation.FrameworkDescription}");
+            Console.WriteLine($"Process arch: {RuntimeInformation.ProcessArchitecture}");
+            Console.WriteLine($"OS arch: {RuntimeInformation.OSArchitecture}");
+            Console.WriteLine($"OS description: {RuntimeInformation.OSDescription}");
 
             await CreateHostBuilder(args).Build().RunAsync();
 
