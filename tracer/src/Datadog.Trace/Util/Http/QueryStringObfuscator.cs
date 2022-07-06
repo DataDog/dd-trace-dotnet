@@ -26,7 +26,6 @@ namespace Datadog.Trace.Util.Http
 
         private QueryStringObfuscator(double timeout, string pattern = null)
         {
-            _log.Warning($"Instantiation QueryStringObfuscator with timeout double {timeout}");
             pattern ??= Tracer.Instance.Settings.ObfuscationQueryStringRegex;
             _obfuscator = new(TimeSpan.FromMilliseconds(timeout), pattern);
         }
@@ -47,7 +46,6 @@ namespace Datadog.Trace.Util.Http
 
             internal Obfuscator(TimeSpan timeout, string pattern = null)
             {
-                _log.Warning($"Instantiation obfuscator with timeout {timeout}, {timeout.TotalMilliseconds}");
                 _timeout = timeout;
                 if (string.IsNullOrEmpty(pattern))
                 {
@@ -69,28 +67,27 @@ namespace Datadog.Trace.Util.Http
                 var cancelationToken = new CancellationTokenSource();
                 try
                 {
-                    _log.Warning($"task will run with timeout {_timeout.TotalMilliseconds} ms");
-                    var task = Task.Run(() => _regex.Replace(queryString, ReplacementString), cancelationToken.Token);
-                    var timeoutTask = Task.Delay(_timeout, cancelationToken.Token);
-                    var tasks = new[] { task, timeoutTask };
-                    Task.WaitAny(tasks);
+                    queryString = queryString.Substring(0, Math.Min(queryString.Length, 2000));
+                    var task = Task.Run(() => _regex.Replace(queryString, ReplacementString));
+                    cancelationToken.CancelAfter(_timeout);
+                    Task.WaitAll(new Task[] { task }, cancelationToken.Token);
                     if (task.Status == TaskStatus.RanToCompletion)
                     {
                         return task.Result;
                     }
 
-                    if (timeoutTask.Status == TaskStatus.RanToCompletion)
+                    Log();
+                }
+                catch (Exception e)
+                {
+                    if (e is OperationCanceledException)
                     {
-                        Log($"The timeout task of {_timeout.TotalMilliseconds} ms ran to completion before the regex's task which status is {task.Status}", task.Exception);
+                        Log($"The regex task timed out before {_timeout.TotalMilliseconds} ms and is canceled", e);
                     }
                     else
                     {
-                        Log();
+                        Log(exception: e);
                     }
-                }
-                catch (AggregateException e)
-                {
-                    Log(exception: e);
                 }
                 finally
                 {
