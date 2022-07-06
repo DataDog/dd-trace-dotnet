@@ -47,7 +47,7 @@ namespace Datadog.Trace.Util.Http
 
             internal Obfuscator(TimeSpan timeout, string pattern = null)
             {
-                _log.Warning($"Instantiation obfuscator with timeout {timeout}, {timeout.Milliseconds}");
+                _log.Warning($"Instantiation obfuscator with timeout {timeout}, {timeout.TotalMilliseconds}");
                 _timeout = timeout;
                 if (string.IsNullOrEmpty(pattern))
                 {
@@ -69,7 +69,7 @@ namespace Datadog.Trace.Util.Http
                 var cancelationToken = new CancellationTokenSource();
                 try
                 {
-                    _log.Warning($"task will run with timeout {_timeout.Milliseconds} ms");
+                    _log.Warning($"task will run with timeout {_timeout.TotalMilliseconds} ms");
                     var task = Task.Run(() => _regex.Replace(queryString, ReplacementString), cancelationToken.Token);
                     var timeoutTask = Task.Delay(_timeout, cancelationToken.Token);
                     var tasks = new[] { task, timeoutTask };
@@ -81,7 +81,7 @@ namespace Datadog.Trace.Util.Http
 
                     if (timeoutTask.Status == TaskStatus.RanToCompletion)
                     {
-                        Log($"The timeout task of {_timeout.Milliseconds} ms ran to completion before the regex's task which status is {task.Status}", task.Exception);
+                        Log($"The timeout task of {_timeout.TotalMilliseconds} ms ran to completion before the regex's task which status is {task.Status}", task.Exception);
                     }
                     else
                     {
