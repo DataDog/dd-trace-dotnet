@@ -42,14 +42,14 @@ namespace Datadog.Trace.Ci.Agent
         public async Task SendPayloadAsync(CIVisibilityMultipartPayload payload)
         {
             Log.Information<int>("Sending {count} coverages...", payload.Count);
-            var payLoadArray = payload.ToArray();
+            var payloadArray = payload.ToArray();
             await SendPayloadAsync(
                 payload.Url,
                 req =>
                 {
                     if (req is IMultipartApiRequest mReq)
                     {
-                        return mReq.PostAsync(payLoadArray);
+                        return mReq.PostAsync(payloadArray);
                     }
 
                     return Task.FromResult<IApiResponse>(null);
