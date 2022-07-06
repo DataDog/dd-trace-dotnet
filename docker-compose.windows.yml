@@ -1,0 +1,107 @@
+version: '3'
+services:
+  start-test-agent.windows:
+    build:
+      context: ./tracer/build/_build/docker/
+      dockerfile: wait-for-dependencies-windows.dockerfile
+    image: andrewlock/wait-for-dependencies-windows
+    depends_on:
+    - test-agent.windows
+    environment:
+    - TIMEOUT_LENGTH=120
+    command: test-agent.windows:8126
+
+  test-agent.windows:
+    build:
+      context: ./tracer/build/_build/docker/
+      dockerfile: test-agent.windows.dockerfile
+    image: dd-trace-dotnet/ddapm-test-agent-windows
+    volumes:
+    - ./tracer/build/smoke_test_snapshots:c:/snapshots
+    - ./tracer/build_data/snapshots:c:/debug_snapshots
+    ports:
+    - "8126:8126"
+    environment:
+    - SNAPSHOT_CI=1
+    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id
+
+  smoke-tests.windows:
+    build:
+      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
+      dockerfile: build/_build/docker/smoke.windows.dockerfile
+        # args:
+        # Note that the following build arguments must be provided
+        # - DOTNETSDK_VERSION=
+        # - RUNTIME_IMAGE=
+        # - PUBLISH_FRAMEWORK=
+        # - CHANNEL_32_BIT=
+    image: dd-trace-dotnet/${dockerTag:-not-set}-windows-tester
+    volumes:
+    - ./:c:/project
+    - ./tracer/build_data/logs:c:/logs
+    environment:
+    - dockerTag=${dockerTag:-unset}
+    - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
+    depends_on:
+    - test-agent.windows
+
+  tracer-home-smoke-tests.windows:
+    build:
+      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
+      dockerfile: build/_build/docker/smoke.windows.tracer-home.dockerfile
+        # args:
+        # Note that the following build arguments must be provided
+        # - DOTNETSDK_VERSION=
+        # - RUNTIME_IMAGE=
+        # - PUBLISH_FRAMEWORK=
+        # - CHANNEL_32_BIT=
+        # - RELATIVE_PROFILER_PATH=
+    image: dd-trace-dotnet/${dockerTag:-not-set}-windows-tracer-home-tester
+    volumes:
+    - ./:c:/project
+    - ./tracer/build_data/logs:c:/logs
+    environment:
+    - dockerTag=${dockerTag:-unset}
+    - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
+    depends_on:
+    - test-agent.windows
+
+  dotnet-tool-smoke-tests.windows:
+    build:
+      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
+      dockerfile: build/_build/docker/smoke.windows.dotnet-tool.dockerfile
+        # args:
+        # Note that the following build arguments must be provided
+        # - DOTNETSDK_VERSION=
+        # - RUNTIME_IMAGE=
+        # - PUBLISH_FRAMEWORK=
+        # - CHANNEL_32_BIT=
+    image: dd-trace-dotnet/${dockerTag:-not-set}-windows-dotnet-tool-tester
+    volumes:
+    - ./:c:/project
+    - ./tracer/build_data/logs:c:/logs
+    environment:
+    - dockerTag=${dockerTag:-unset}
+    - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
+    depends_on:
+    - test-agent.windows
+
+  nuget-smoke-tests.windows:
+    build:
+      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
+      dockerfile: build/_build/docker/smoke.windows.nuget.dockerfile
+        # args:
+        # Note that the following build arguments must be provided
+        # - DOTNETSDK_VERSION=
+        # - RUNTIME_IMAGE=
+        # - PUBLISH_FRAMEWORK=
+      # - RELATIVE_PROFILER_PATH=
+    image: dd-trace-dotnet/${dockerTag:-not-set}-windows-nuget-tester
+    volumes:
+    - ./:c:/project
+    - ./tracer/build_data/logs:c:/logs
+    environment:
+    - dockerTag=${dockerTag:-unset}
+    - DD_TRACE_AGENT_URL=http://test-agent.windows:8126
+    depends_on:
+    - test-agent.windows

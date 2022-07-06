@@ -71,7 +71,7 @@ namespace Datadog.Trace.Tools.Runner
             {
                 if (RuntimeInformation.OSArchitecture == Architecture.X64)
                 {
-                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, "linux-x64", "Datadog.Trace.ClrProfiler.Native.so"));
+                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, IsAlpine() ? "linux-musl-x64" : "linux-x64", "Datadog.Trace.ClrProfiler.Native.so"));
                 }
                 else if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
                 {
@@ -180,7 +180,7 @@ namespace Datadog.Trace.Tools.Runner
             {
                 if (RuntimeInformation.OSArchitecture == Architecture.X64)
                 {
-                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, "linux-x64", "Datadog.Trace.ClrProfiler.Native.so"));
+                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, IsAlpine() ? "linux-musl-x64" : "linux-x64", "Datadog.Trace.ClrProfiler.Native.so"));
                 }
                 else if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
                 {
@@ -446,6 +446,30 @@ namespace Datadog.Trace.Tools.Runner
         internal static void WriteSuccess(string message)
         {
             AnsiConsole.MarkupLine($"[green]{message.EscapeMarkup()}[/]");
+        }
+
+        private static bool IsAlpine()
+        {
+            try
+            {
+                if (File.Exists("/etc/os-release"))
+                {
+                    var strArray = File.ReadAllLines("/etc/os-release");
+                    foreach (var str in strArray)
+                    {
+                        if (str.StartsWith("ID=", StringComparison.Ordinal))
+                        {
+                            return str.Substring(3).Trim('"', '\'') == "alpine";
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // ignore error checking if the file doesn't exist or we can't read it
+            }
+
+            return false;
         }
     }
 }

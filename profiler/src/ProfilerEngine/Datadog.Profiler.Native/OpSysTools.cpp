@@ -280,7 +280,7 @@ void* OpSysTools::AlignedMAlloc(size_t alignment, size_t size)
 #ifdef _WINDOWS
     return _aligned_malloc(size, alignment);
 #else
-    return std::aligned_alloc(alignment, size);
+    return aligned_alloc(alignment, size);
 #endif
 }
 
@@ -314,7 +314,7 @@ std::string OpSysTools::GetHostname()
 
 std::string OpSysTools::GetProcessName()
 {
-#ifdef _WIN32
+#ifdef _WINDOWS
     const DWORD length = 260;
     char pathName[length]{};
 
@@ -332,4 +332,3 @@ std::string OpSysTools::GetProcessName()
     return name;
 #endif
 }
-

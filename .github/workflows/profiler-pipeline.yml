@@ -145,12 +145,6 @@ jobs:
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v2
 
-      - name: Build Managed Loader
-        run: dotnet build -c Release shared/src/managed-lib/ManagedLoader/Datadog.AutoInstrumentation.ManagedLoader.csproj
-
-      - name: Build Managed Profiler Engine
-        run: dotnet build -c Release profiler/src/ProfilerEngine/Datadog.Profiler.Managed/Datadog.Profiler.Managed.csproj
-
       - name: Build Native Profiler Engine
         run: |
           CXX=clang++ CC=clang cmake -S profiler -B __build -DRUN_ASAN=ON
@@ -201,12 +195,6 @@ jobs:
 
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v2
-
-      - name: Build Managed Loader
-        run: dotnet build -c Release shared/src/managed-lib/ManagedLoader/Datadog.AutoInstrumentation.ManagedLoader.csproj
-
-      - name: Build Managed Profiler Engine
-        run: dotnet build -c Release profiler/src/ProfilerEngine/Datadog.Profiler.Managed/Datadog.Profiler.Managed.csproj
 
       - name: Build Native Profiler Engine
         run: |
@@ -269,12 +257,6 @@ jobs:
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v2
 
-      - name: Build Managed Loader
-        run: dotnet build -c ${{matrix.configuration}} shared/src/managed-lib/ManagedLoader/Datadog.AutoInstrumentation.ManagedLoader.csproj
-
-      - name: Build Managed Profiler Engine
-        run: dotnet build -c ${{matrix.configuration}} profiler/src/ProfilerEngine/Datadog.Profiler.Managed/Datadog.Profiler.Managed.csproj
-
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
 
@@ -283,10 +265,6 @@ jobs:
 
       - name: Build Native profiler and tests (x86-${{matrix.configuration}})
         run: msbuild /property:Configuration=${{matrix.configuration}} /property:Platform=x86 /property:DeployToMonitoringHome=True profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj
-
-      - name: Run Managed Unit tests
-        shell: bash
-        run: ./.github/scripts/run-managed-unit-tests.sh profiler/test ${{matrix.configuration}}
 
       - name: Run Native Unit tests (x64-${{matrix.configuration}})
         shell: bash
@@ -531,12 +509,6 @@ jobs:
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v2
 
-      - name: Build Managed Loader
-        run: dotnet build -c ${{matrix.configuration}} shared/src/managed-lib/ManagedLoader/Datadog.AutoInstrumentation.ManagedLoader.csproj
-
-      - name: Build Managed Profiler Engine
-        run: dotnet build -c ${{matrix.configuration}} profiler/src/ProfilerEngine/Datadog.Profiler.Managed/Datadog.Profiler.Managed.csproj
-
       - name: Add MSBuild to PATH
         uses: microsoft/setup-msbuild@v1.0.2
 
@@ -616,9 +588,6 @@ jobs:
         run: |
           mkdir analyzers_results
           echo "CI_ANALYSIS_RESULTS_FOLDER=$(realpath .)/analyzers_results" >> $GITHUB_ENV
-
-      - name: Build Managed Loader
-        run: dotnet build -c Release shared/src/managed-lib/ManagedLoader/Datadog.AutoInstrumentation.ManagedLoader.csproj
 
       - name: Build profiler
         run: |
@@ -700,9 +669,6 @@ jobs:
           mkdir analyzers_results
           $cppcheck_results=$(Join-Path -Path $(Resolve-Path .) -ChildPath analyzers_results)
           echo "CI_ANALYSIS_RESULTS_FOLDER=$cppcheck_results" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-
-      - name: Build Managed Loader
-        run: dotnet build -c Release shared/src/managed-lib/ManagedLoader/Datadog.AutoInstrumentation.ManagedLoader.csproj
 
       - name: Run CppCheck
         run: msbuild -target:RunCppCheck -p:Configuration=Release -p:Platform=${{ matrix.platform }} profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Datadog.Profiler.Native.Windows.WithTests.proj

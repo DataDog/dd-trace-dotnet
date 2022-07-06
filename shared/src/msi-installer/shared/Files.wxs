@@ -20,12 +20,6 @@
         </File>
 
       </Component>
-      <Component Win64="yes">
-        <File Id="Datadog.AutoInstrumentation.NativeLoader.x64.pdb"
-              Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x64.pdb"
-              Checksum="yes">
-        </File>
-      </Component>
     </ComponentGroup>
 
     <!-- For the 64-bit installer, also install the 32-bit binaries -->
@@ -35,12 +29,6 @@
               Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x86.dll"
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
-        </File>
-      </Component>
-      <Component Win64="no">
-        <File Id="Datadog.AutoInstrumentation.NativeLoader.x86.pdb"
-              Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x86.pdb"
-              Checksum="yes">
         </File>
       </Component>
     </ComponentGroup>
@@ -54,12 +42,6 @@
               Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x86.dll"
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
-        </File>
-      </Component>
-      <Component Win64="no">
-        <File Id="Datadog.AutoInstrumentation.NativeLoader.x86.pdb"
-              Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x86.pdb"
-              Checksum="yes">
         </File>
       </Component>
     </ComponentGroup>

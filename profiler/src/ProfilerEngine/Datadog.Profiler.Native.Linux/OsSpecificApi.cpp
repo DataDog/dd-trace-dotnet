@@ -3,18 +3,19 @@
 
 // OsSpecificApi for LINUX
 
+#include <fstream>
+#include <string>
+
 #include <sys/syscall.h>
 #include "OsSpecificApi.h"
+#include "OpSysTools.h"
 
+#include "Log.h"
 #include "LinuxStackFramesCollector.h"
 #include "StackFramesCollectorBase.h"
 #include "shared/src/native-src/loader.h"
 
 namespace OsSpecificApi {
-void InitializeLoaderResourceMonikerIDs(shared::LoaderResourceMonikerIDs*)
-{
-}
-
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo)
 {
     return std::make_unique<LinuxStackFramesCollector>(const_cast<ICorProfilerInfo4* const>(pCorProfilerInfo));
@@ -45,27 +46,37 @@ std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
 //    pthread_getcpuclockid(pthread_self(), &clockid);
 //    if (clock_gettime(clockid, &cpu_time)) { ... }
 //
+static bool firstError = true;
 
 bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
 {
     char statPath[64];
     snprintf(statPath, sizeof(statPath), "/proc/self/task/%d/stat", tid);
-    FILE* file = fopen(statPath, "r");
-    if (file == nullptr)
+
+    // load the line to be able to parse it in memory
+    std::ifstream file;
+    file.open(statPath);
+    std::string sline;
+    std::getline(file, sline);
+    file.close();
+    if (sline.empty())
     {
         return false;
     }
 
-    // based on https://linux.die.net/man/5/proc
-    char state = ' ';   // 3rd position  and 'R' for Running
-    int userTime = 0;   // 14th position in clock ticks
-    int kernelTime = 0; // 15th position in clock ticks
-    bool success =
-        fscanf(file, "%*s %*s %c %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %d %d",
-               &state, &userTime, &kernelTime) == 3;
-    fclose(file);
+    char state = ' ';
+    int userTime = 0;
+    int kernelTime = 0;
+    bool success = OpSysTools::ParseThreadInfo(sline, state, userTime, kernelTime);
     if (!success)
     {
+        // log the first error to be able to analyze unexpected string format
+        if (firstError)
+        {
+            firstError = false;
+            Log::Error("Unexpected /proc/self/task/", tid, "/stat: ", sline);
+        }
+
         return false;
     }
 

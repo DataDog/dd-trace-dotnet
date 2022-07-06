@@ -47,7 +47,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             };
 
             // CI visibility mode checks if there's a running agent
-            using var agent = new MockTracerAgent(TcpPortProvider.GetOpenPort());
+            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
 
             var agentUrl = $"http://localhost:{agent.Port}";
 

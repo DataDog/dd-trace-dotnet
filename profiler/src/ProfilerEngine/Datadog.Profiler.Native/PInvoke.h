@@ -34,8 +34,6 @@
 
  */
 
-extern "C" BOOL __stdcall GetAssemblyAndSymbolsBytes(void** ppAssemblyArray, int* pAssemblySize, void** ppSymbolsArray, int* pSymbolsSize, WCHAR* moduleName);
-
 extern "C" void* __stdcall GetNativeProfilerIsReadyPtr();
 
 extern "C" void* __stdcall GetPointerToNativeTraceContext();

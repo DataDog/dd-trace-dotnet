@@ -708,3 +708,42 @@ services:
     - DD_TRACE_AGENT_URL=http://test-agent:8126
     depends_on:
     - test-agent
+
+  nuget-smoke-tests:
+    build:
+      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
+      dockerfile: build/_build/docker/smoke.nuget.dockerfile
+      # args:
+        # Note that the following build arguments must be provided
+        # - DOTNETSDK_VERSION=
+        # - RUNTIME_IMAGE=
+        # - PUBLISH_FRAMEWORK=
+        # - RELATIVE_PROFILER_PATH=
+    image: dd-trace-dotnet/${dockerTag:-not-set}-nuget-tester
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    environment:
+    - dockerTag=${dockerTag:-unset}
+    - DD_TRACE_AGENT_URL=http://test-agent:8126
+    depends_on:
+    - test-agent
+
+  dotnet-tool-smoke-tests:
+    build:
+      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
+      dockerfile: build/_build/docker/smoke.dotnet-tool.dockerfile
+        # args:
+        # Note that the following build arguments must be provided
+        # - DOTNETSDK_VERSION=
+        # - RUNTIME_IMAGE=
+        # - PUBLISH_FRAMEWORK=
+    image: dd-trace-dotnet/${dockerTag:-not-set}-dotnet-tool-tester
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    environment:
+    - dockerTag=${dockerTag:-unset}
+    - DD_TRACE_AGENT_URL=http://test-agent:8126
+    depends_on:
+    - test-agent

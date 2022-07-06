@@ -1,0 +1,7 @@
+﻿<Project>
+  <!-- 
+       Only here so that the default Directory.Build.props will not be used. 
+       This is neccessary because of a conflict between StrongNamer and our ThreadAbortAnalyzer, 
+       which causes the following issue: https://github.com/dsplaisted/strongnamer/issues/42 
+  -->
+</Project>

@@ -42,14 +42,13 @@ partial class Build
 
     Target CompileNativeLoaderLinux => _ => _
         .Unlisted()
-        .After(CompileProfilerManagedSrc)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
             var buildDirectory = NativeLoaderProject.Directory;
 
             CMake.Value(
-                arguments: $"-S .",
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -S .",
                 workingDirectory: buildDirectory);
             CMake.Value(
                 arguments: $"--build . --parallel",
@@ -58,7 +57,6 @@ partial class Build
 
     Target CompileNativeLoaderOsx => _ => _
         .Unlisted()
-        .After(CompileProfilerManagedSrc)
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {
@@ -85,27 +83,23 @@ partial class Build
                 var source = NativeProfilerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                              $"{NativeProfilerProject.Name}.dll";
                 var dest = TracerHomeDirectory / $"win-{architecture}";
-                Logger.Info($"Copying '{source}' to '{dest}'");
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
                 // Copy native loader assets
                 source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                              "loader.conf";
                 dest = MonitoringHomeDirectory;
-                Logger.Info($"Copying '{source}' to '{dest}'");
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
                 source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                              $"{NativeLoaderProject.Name}.dll";
                 var destFile = MonitoringHomeDirectory / $"{NativeLoaderProject.Name}.{architecture.ToString()}.dll";
-                Logger.Info($"Copying file '{source}' to 'file {destFile}'");
                 CopyFile(source, destFile, FileExistsPolicy.Overwrite);
 
                 source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                              $"{NativeLoaderProject.Name}.pdb";
-                destFile = MonitoringHomeDirectory / $"{NativeLoaderProject.Name}.{architecture.ToString()}.pdb";
-                Logger.Info($"Copying '{source}' to '{destFile}'");
-                CopyFile(source, destFile, FileExistsPolicy.Overwrite);
+                destFile = SymbolsDirectory / $"win-{architecture}";
+                CopyFileToDirectory(source, destFile, FileExistsPolicy.Overwrite);
             }
         });
 

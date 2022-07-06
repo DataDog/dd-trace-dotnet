@@ -21,8 +21,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void RunChecksProject()
         {
+            SetInstrumentationVerification();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (var processResult = RunSampleAndWaitForExit(agent))
             {
@@ -34,6 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 exitCode.Should().Be(0);
+                VerifyInstrumentation(processResult.Process);
             }
         }
     }

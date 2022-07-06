@@ -38,7 +38,6 @@
 #include "ExceptionsProvider.h"
 
 #include "shared/src/native-src/environment_variables.h"
-#include "shared/src/native-src/loader.h"
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
 
@@ -58,20 +57,6 @@ Error("unknown platform");
 #else
 #define PROFILER_LIBRARY_BINARY_FILE_NAME WStr("Datadog.AutoInstrumentation.Profiler.Native.x86" LIBRARY_FILE_EXTENSION)
 #endif
-
-const std::vector<shared::WSTRING> CorProfilerCallback::ManagedAssembliesToLoad_AppDomainDefault_ProcNonIIS = {
-    WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
-};
-
-// None for now:
-const std::vector<shared::WSTRING> CorProfilerCallback::ManagedAssembliesToLoad_AppDomainNonDefault_ProcNonIIS;
-
-const std::vector<shared::WSTRING> CorProfilerCallback::ManagedAssembliesToLoad_AppDomainDefault_ProcIIS = {
-    WStr("Datadog.AutoInstrumentation.Profiler.Managed"),
-};
-
-// None for now:
-const std::vector<shared::WSTRING> CorProfilerCallback::ManagedAssembliesToLoad_AppDomainNonDefault_ProcIIS;
 
 // Static helpers
 IClrLifetime* CorProfilerCallback::GetClrLifetime()
@@ -116,7 +101,11 @@ bool CorProfilerCallback::InitializeServices()
     _pManagedThreadList = RegisterService<ManagedThreadList>(_pCorProfilerInfo);
 
     auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
-    _pWallTimeProvider = RegisterService<WallTimeProvider>(_pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+
+    if (_pConfiguration->IsWallTimeProfilingEnabled())
+    {
+        _pWallTimeProvider = RegisterService<WallTimeProvider>(_pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+    }
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
@@ -152,7 +141,11 @@ bool CorProfilerCallback::InitializeServices()
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
     _pExporter = std::make_unique<LibddprofExporter>(_pConfiguration.get(), _pApplicationStore);
     _pSamplesAggregator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pThreadsCpuManager, _pExporter.get(), _metricsSender.get());
-    _pSamplesAggregator->Register(_pWallTimeProvider);
+
+    if (_pConfiguration->IsWallTimeProfilingEnabled())
+    {
+        _pSamplesAggregator->Register(_pWallTimeProvider);
+    }
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
@@ -203,9 +196,6 @@ bool CorProfilerCallback::DisposeServices()
 
     // Delete all services instances in reverse order of their creation
     // to avoid using a deleted service...
-
-    // keep loader as static singleton for now
-    shared::Loader::DeleteSingletonInstance();
 
     _services.clear();
 
@@ -591,42 +581,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         return E_FAIL;
     }
 
-    shared::LoaderResourceMonikerIDs loaderResourceMonikerIDs;
-    OsSpecificApi::InitializeLoaderResourceMonikerIDs(&loaderResourceMonikerIDs);
-
-    // Loader options
-    const auto loader_rewrite_module_entrypoint_enabled = shared::GetEnvironmentValue(shared::environment::loader_rewrite_module_entrypoint_enabled);
-    const auto loader_rewrite_module_initializer_enabled = shared::GetEnvironmentValue(shared::environment::loader_rewrite_module_initializer_enabled);
-    const auto loader_rewrite_mscorlib_enabled = shared::GetEnvironmentValue(shared::environment::loader_rewrite_mscorlib_enabled);
-    const auto loader_ngen_enabled = shared::GetEnvironmentValue(shared::environment::loader_ngen_enabled);
-
-    shared::LoaderOptions loaderOptions;
-    loaderOptions.IsNet46OrGreater = _isNet46OrGreater;
-    loaderOptions.RewriteModulesEntrypoint = loader_rewrite_module_entrypoint_enabled != WStr("0") && loader_rewrite_module_entrypoint_enabled != WStr("false");
-    loaderOptions.RewriteModulesInitializers = loader_rewrite_module_initializer_enabled != WStr("0") && loader_rewrite_module_initializer_enabled != WStr("false");
-    loaderOptions.RewriteMSCorLibMethods = loader_rewrite_mscorlib_enabled != WStr("0") && loader_rewrite_mscorlib_enabled != WStr("false");
-    loaderOptions.DisableNGENImagesSupport = loader_ngen_enabled == WStr("0") || loader_ngen_enabled == WStr("false");
-    loaderOptions.LogDebugIsEnabled = Log::IsDebugEnabled();
-    loaderOptions.LogDebugCallback = [](const std::string& str) { Log::Debug(str); };
-    loaderOptions.LogInfoCallback = [](const std::string& str) { Log::Info(str); };
-    loaderOptions.LogErrorCallback = [](const std::string& str) { Log::Error(str); };
-
-    shared::Loader::CreateNewSingletonInstance(_pCorProfilerInfo,
-                                               loaderOptions,
-                                               loaderResourceMonikerIDs,
-                                               PROFILER_LIBRARY_BINARY_FILE_NAME,
-                                               ManagedAssembliesToLoad_AppDomainDefault_ProcNonIIS,
-                                               ManagedAssembliesToLoad_AppDomainNonDefault_ProcNonIIS,
-                                               ManagedAssembliesToLoad_AppDomainDefault_ProcIIS,
-                                               ManagedAssembliesToLoad_AppDomainNonDefault_ProcIIS);
-
     // Configure which profiler callbacks we want to receive by setting the event mask:
-    DWORD eventMask =
-        shared::Loader::GetSingletonInstance()->GetLoaderProfilerEventMask() | COR_PRF_MONITOR_THREADS | COR_PRF_ENABLE_STACK_SNAPSHOT;
+    DWORD eventMask = COR_PRF_MONITOR_THREADS | COR_PRF_ENABLE_STACK_SNAPSHOT;
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
-        eventMask |= COR_PRF_MONITOR_EXCEPTIONS;
+        eventMask |= COR_PRF_MONITOR_EXCEPTIONS | COR_PRF_MONITOR_MODULE_LOADS;
     }
 
     hr = _pCorProfilerInfo->SetEventMask(eventMask);
@@ -653,7 +613,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
     _pStackSamplerLoopManager->Stop();
 
     // Calling Stop on providers transforms the last raw samples
-    _pWallTimeProvider->Stop();
+    if (_pWallTimeProvider != nullptr)
+    {
+        _pWallTimeProvider->Stop();
+    }
     if (_pCpuTimeProvider != nullptr)
     {
         _pCpuTimeProvider->Stop();

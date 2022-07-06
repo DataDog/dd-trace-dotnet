@@ -66,8 +66,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetTestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void InjectsLogsWhenEnabled(string packageVersion, bool enableLogShipping)
         {
+            SetInstrumentationVerification();
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             using var logsIntake = new MockLogsIntake();
             if (enableLogShipping)
@@ -79,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedCorrelatedSpanCount = 1;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
@@ -97,6 +99,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Regardless of package version, for .NET Core just assert against raw log lines
                 ValidateLogCorrelation(spans, _nlogPre205LogFileTests, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion);
 #endif
+                VerifyInstrumentation(processResult.Process);
             }
         }
 
@@ -104,9 +107,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetTestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void DoesNotInjectLogsWhenDisabled(string packageVersion, bool enableLogShipping)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "false");
+            SetInstrumentationVerification();
             using var logsIntake = new MockLogsIntake();
             if (enableLogShipping)
             {
@@ -117,7 +122,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedCorrelatedSpanCount = 0;
 
             using (var agent = EnvironmentHelper.GetMockAgent())
-            using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
+            using (var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var spans = agent.WaitForSpans(1, 2500);
                 Assert.True(spans.Count >= 1, $"Expecting at least 1 span, only received {spans.Count}");
@@ -135,6 +140,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Regardless of package version, for .NET Core just assert against raw log lines
                 ValidateLogCorrelation(spans, _nlogPre205LogFileTests, expectedCorrelatedTraceCount, expectedCorrelatedSpanCount, packageVersion, disableLogCorrelation: true);
 #endif
+                VerifyInstrumentation(processResult.Process);
             }
         }
 
@@ -142,16 +148,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(PackageVersions.log4net), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public void DirectlyShipsLogs(string packageVersion)
         {
             var hostName = "integration_log4net_tests";
             using var logsIntake = new MockLogsIntake();
 
+            SetInstrumentationVerification();
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.Log4Net), hostName);
 
             var agentPort = TcpPortProvider.GetOpenPort();
-            using var agent = new MockTracerAgent(agentPort);
+            using var agent = MockTracerAgent.Create(agentPort);
             using var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
 
             Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
@@ -179,6 +187,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                    .And.OnlyContain(x => !string.IsNullOrEmpty(x.TraceId))
                    .And.OnlyContain(x => !string.IsNullOrEmpty(x.SpanId));
             }
+
+            VerifyInstrumentation(processResult.Process);
         }
 
         private static bool PackageSupportsLogsInjection(string packageVersion)

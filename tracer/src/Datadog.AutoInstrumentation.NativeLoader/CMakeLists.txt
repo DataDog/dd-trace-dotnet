@@ -50,25 +50,22 @@ endif()
 # Detect prerequisites
 # ******************************************************
 
-if (NOT EXISTS /usr/bin/git)
+find_program(FOUND_GIT "git")
+if (NOT FOUND_GIT)
     message(FATAL_ERROR "GIT is required to build the project")
 else()
     message(STATUS "GIT was found")
 endif()
 
-if (NOT EXISTS /usr/bin/gcc)
-    message(FATAL_ERROR "GCC is required to build the project's dependencies")
-else()
-    message(STATUS "GCC was found")
-endif()
-
-if (NOT EXISTS /usr/bin/clang)
+find_program(FOUND_CLANG clang)
+if (NOT FOUND_CLANG)
     message(FATAL_ERROR "CLANG is required to build the project")
 else()
     message(STATUS "CLANG was found")
 endif()
 
-if (NOT EXISTS /usr/bin/clang++)
+find_program(FOUND_CLANGPP clang++)
+if (NOT FOUND_CLANGPP)
     message(FATAL_ERROR "CLANG++ is required to build the project")
 else()
     message(STATUS "CLANG++ was found")
@@ -113,12 +110,6 @@ set(fmt_INCLUDE_DIR ${source_dir}/include)
 # ******************************************************
 # Compiler options
 # ******************************************************
-
-# Sets the compiler
-if(ISLINUX)
-    SET (CMAKE_C_COMPILER   /usr/bin/clang)
-    SET (CMAKE_CXX_COMPILER /usr/bin/clang++)
-endif()
 
 # Sets compiler options
 add_compile_options(-std=c++17 -fPIC -fms-extensions)
@@ -169,6 +160,11 @@ add_library("Datadog.AutoInstrumentation.NativeLoader" SHARED
         dynamic_instance.cpp
         runtimeid_store.cpp
         exported_functions.cpp
+        instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_function_control.cpp
+        instrumented_assembly_generator/instrumented_assembly_generator_cor_profiler_info.cpp
+        instrumented_assembly_generator/instrumented_assembly_generator_metadata_interfaces.cpp
+        instrumented_assembly_generator/member_signature.cpp
+        instrumented_assembly_generator/method_signature.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp
