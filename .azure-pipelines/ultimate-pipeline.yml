@@ -1726,6 +1726,14 @@ stages:
         tarCompression: 'gz'
         archiveFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-musl-x64/dd-trace-linux-musl-x64.tar.gz
 
+    - task: ArchiveFiles@2
+      inputs:
+        rootFolderOrFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-arm64/dd-trace
+        includeRootFolder: false
+        archiveType: 'tar'
+        tarCompression: 'gz'
+        archiveFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-arm64/dd-trace-linux-arm64.tar.gz
+
     - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/bin/$(buildConfiguration)/packages
       displayName: Publish Distribution package
       artifact: distribution-nuget-package
@@ -2104,6 +2112,13 @@ stages:
           displayName: Download standalone dotnet tool linux-musl-x64
           inputs:
             artifact: runner-standalone-linux-musl-x64
+            patterns: "*.tar.gz"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download standalone dotnet tool linux-arm64
+          inputs:
+            artifact: runner-standalone-linux-arm64
             patterns: "*.tar.gz"
             path: $(Build.ArtifactStagingDirectory)
 
@@ -2599,6 +2614,72 @@ stages:
         baseImage: alpine
         command: "CheckBuildLogsForErrors"
 
+- stage: dotnet_tool_smoke_tests_linux
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [dotnet_tool, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [linux]
+
+  - job: linux
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_installer_linux_smoke_tests_matrix'] ]
+    variables:
+      smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
+    pool:
+      vmImage: ubuntu-18.04
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tool runner-standalone-$(platformSuffix)
+      inputs:
+        artifact: runner-standalone-$(platformSuffix)
+        patterns: "*.tar.gz"
+        path: $(Agent.TempDirectory)
+
+    - script: |
+        mkdir -p tracer/build_data/snapshots
+        mkdir -p tracer/build_data/logs
+        mkdir -p $(smokeTestAppDir)/artifacts
+        tar -xf $(Agent.TempDirectory)/dd-trace-$(platformSuffix).tar.gz -C $(smokeTestAppDir)/artifacts
+        chmod +x $(smokeTestAppDir)/artifacts/dd-trace
+      displayName: create test data directories and extract tool
+
+    - script: |
+        docker-compose -p ddtrace_$(Build.BuildNumber) build \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          dotnet-tool-smoke-tests
+      env:
+        dockerTag: $(dockerTag)
+      displayName: docker-compose build smoke-tests
+      retryCountOnTaskFailure: 3
+
+    - template: steps/run-snapshot-test.yml
+      parameters:
+        target: 'dotnet-tool-smoke-tests'
+        snapshotPrefix: "smoke_test"
+
+    - publish: tracer/build_data
+      artifact: dotnet-tool-smoke-test-logs_$(dockerTag)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: alpine
+        command: "CheckBuildLogsForErrors"
+        
 - stage: installer_smoke_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_arm64, generate_variables, master_commit_id]
@@ -2718,6 +2799,68 @@ stages:
 
     - publish: tracer/build_data
       artifact: nuget_installer-smoke-test-logs_arm64_$(dockerTag)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: debian
+        command: "CheckBuildLogsForErrors"
+
+- stage: dotnet_tool_smoke_tests_arm64
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [dotnet_tool, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [linux]
+
+  - job: linux
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_installer_smoke_tests_arm64_matrix'] ]
+    variables:
+      smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
+    pool:
+      name: aws-arm64-auto-scaling
+
+    steps:
+    - task: DownloadPipelineArtifact@2
+      displayName: Download dotnet tool
+      inputs:
+        artifact: runner-standalone-$(platformSuffix)
+        patterns: "*.tar.gz"
+        path: $(Agent.TempDirectory)
+
+    - script: |
+        mkdir -p tracer/build_data/snapshots
+        mkdir -p tracer/build_data/logs
+        mkdir -p $(smokeTestAppDir)/artifacts
+        tar -xf $(Agent.TempDirectory)/dd-trace-$(platformSuffix).tar.gz -C $(smokeTestAppDir)/artifacts
+        chmod +x $(smokeTestAppDir)/artifacts/dd-trace
+      displayName: create test data directories and extract tool
+
+    - script: |
+        docker-compose -p ddtrace_$(Build.BuildNumber) build \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          dotnet-tool-smoke-tests
+      env:
+        dockerTag: $(dockerTag)
+      displayName: docker-compose build smoke-tests
+      retryCountOnTaskFailure: 3
+
+    - template: steps/run-snapshot-test.yml
+      parameters:
+        target: 'dotnet-tool-smoke-tests'
+        snapshotPrefix: "smoke_test"
+
+    - publish: tracer/build_data
+      artifact: dotnet-tool-smoke-test-logs_arm64_$(dockerTag)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -3015,6 +3158,8 @@ stages:
     - nuget_installer_smoke_tests
     - nuget_installer_smoke_tests_arm64
     - nuget_installer_smoke_tests_windows
+    - dotnet_tool_smoke_tests_linux
+    - dotnet_tool_smoke_tests_arm64
     - dotnet_tool_smoke_tests_windows
     - msi_installer_smoke_tests
     - tracer_home_smoke_tests
