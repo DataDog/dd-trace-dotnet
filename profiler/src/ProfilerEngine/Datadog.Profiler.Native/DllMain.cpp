@@ -8,6 +8,7 @@
 #include "CorProfilerCallbackFactory.h"
 #include "EnvironmentVariables.h"
 #include "Log.h"
+#include "OpSysTools.h"
 
 HINSTANCE DllHandle;
 
@@ -42,7 +43,7 @@ extern "C" BOOL STDMETHODCALLTYPE DllMain(HINSTANCE hInstDll, DWORD reason, PVOI
     return TRUE;
 }
 
-bool CheckProfilingEnabledEnvironmentVariable(void)
+bool IsProfilingEnabled()
 {
     // If we are in this function, then the user has already configured profiling by setting CORECLR_ENABLE_PROFILING to 1
     // and by correctly pointing the CORECLR_PROFILER_XXX variables.
@@ -108,12 +109,18 @@ extern "C" HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID r
         return CLASS_E_CLASSNOTAVAILABLE;
     }
 
-    bool isProfilingEnabled = CheckProfilingEnabledEnvironmentVariable();
+    bool isProfilingEnabled = IsProfilingEnabled();
     if (!isProfilingEnabled)
     {
         Log::Info("DllGetClassObject(): Will not return an instance of CorProfilerCallbackFactory because Profiling has been"
                   " disabled via an environment variable.");
 
+        return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+    }
+
+    if (!OpSysTools::IsSafeToStartProfiler())
+    {
+        Log::Warn("DllGetClassObject(): It's not safe to start the profiler. See previous log messages for more info.");
         return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
     }
 

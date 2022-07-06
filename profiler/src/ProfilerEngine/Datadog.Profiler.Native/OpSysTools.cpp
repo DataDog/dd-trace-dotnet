@@ -349,11 +349,18 @@ bool OpSysTools::IsSafeToStartProfiler()
 
     if (instance == nullptr)
     {
+        Log::Warn("Library '", wrapperLibrary.string(), "' is not loaded.");
         return false;
     }
 
     // check if dl_iterate_phdr is the default symbol returned by the dynamic linker
     auto customFn = dlsym(instance, "dl_iterate_phdr");
-    return customFn == dlsym(RTLD_DEFAULT, "dl_iterate_phdr");
+    if (customFn == dlsym(RTLD_DEFAULT, "dl_iterate_phdr"))
+    {
+        return true;
+    }
+
+    Log::Warn("Library '", wrapperLibrary.string(), "' was not loaded using the LD_PRELOAD environment variable.");
+    return false;
 #endif
 }
