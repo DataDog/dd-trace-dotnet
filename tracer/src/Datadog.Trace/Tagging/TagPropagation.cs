@@ -151,6 +151,7 @@ internal static class TagPropagation
                     tags.SetTag(Tags.TagPropagation.Error, PropagationErrorTagValues.EncodingError);
 
                     // ... and don't set the header
+                    StringBuilderCache.Release(sb);
                     return string.Empty;
                 }
 
@@ -173,6 +174,7 @@ internal static class TagPropagation
                 tags.SetTag(Tags.TagPropagation.Error, PropagationErrorTagValues.InjectMaxSize);
 
                 // ... and don't set the header
+                StringBuilderCache.Release(sb);
                 return string.Empty;
             }
         }
