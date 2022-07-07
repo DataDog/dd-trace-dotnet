@@ -56,7 +56,7 @@ namespace Datadog.Trace.Ci
             {
                 if (!string.IsNullOrEmpty(_settings.ApiKey))
                 {
-                    return new CIAgentlessWriter(new CIWriterHttpSender(GetRequestFactory(settings)));
+                    return new CIVisibilityProtocolWriter(new CIWriterHttpSender(GetRequestFactory(settings)));
                 }
                 else
                 {
@@ -67,10 +67,13 @@ namespace Datadog.Trace.Ci
             else
             {
                 // With agent scenario:
+                // TODO: check if the agent supports EVP Proxy
+
+                return new CIVisibilityProtocolWriter(new CIWriterHttpSender(GetRequestFactory(settings)));
 
                 // Set the tracer buffer size to the max
-                var traceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
-                return new CIAgentWriter(settings, sampler, traceBufferSize);
+                // var traceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
+                // return new CIAgentWriter(settings, sampler, traceBufferSize);
             }
         }
 

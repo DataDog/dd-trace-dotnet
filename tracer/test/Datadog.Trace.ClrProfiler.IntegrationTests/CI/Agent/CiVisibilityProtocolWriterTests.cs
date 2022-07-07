@@ -1,4 +1,4 @@
-// <copyright file="CIAgentlessWriterTests.cs" company="Datadog">
+// <copyright file="CiVisibilityProtocolWriterTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,13 +18,13 @@ using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 {
-    public class CIAgentlessWriterTests
+    public class CiVisibilityProtocolWriterTests
     {
         [Fact]
         public async Task AgentlessTestEventTest()
         {
             var sender = new Mock<ICIAgentlessWriterSender>();
-            var agentlessWriter = new CIAgentlessWriter(sender.Object);
+            var agentlessWriter = new CIVisibilityProtocolWriter(sender.Object);
 
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             span.Type = SpanTypes.Test;
@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         public async Task AgentlessCodeCoverageEvent()
         {
             var sender = new Mock<ICIAgentlessWriterSender>();
-            var agentlessWriter = new CIAgentlessWriter(sender.Object);
+            var agentlessWriter = new CIVisibilityProtocolWriter(sender.Object);
             var coveragePayload = new CoveragePayload
             {
                 TraceId = 42,
@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             var flushTcs = new TaskCompletionSource<bool>();
 
             var sender = new Mock<ICIAgentlessWriterSender>();
-            var agentlessWriter = new CIAgentlessWriter(sender.Object, concurrency: 1);
+            var agentlessWriter = new CIVisibilityProtocolWriter(sender.Object, concurrency: 1);
             var lstPayloads = new List<byte[]>();
 
             sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.CIVisibilityProtocolPayload>()))

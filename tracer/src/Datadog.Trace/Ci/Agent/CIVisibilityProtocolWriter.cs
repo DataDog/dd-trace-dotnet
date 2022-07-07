@@ -1,4 +1,4 @@
-// <copyright file="CIAgentlessWriter.cs" company="Datadog">
+// <copyright file="CIVisibilityProtocolWriter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -20,18 +20,18 @@ namespace Datadog.Trace.Ci.Agent
     /// <summary>
     /// CI Visibility Agentless Writer
     /// </summary>
-    internal sealed class CIAgentlessWriter : IEventWriter
+    internal sealed class CIVisibilityProtocolWriter : IEventWriter
     {
         private const int BatchInterval = 1000;
         private const int MaxItemsInQueue = 2500;
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIAgentlessWriter>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIVisibilityProtocolWriter>();
 
         private readonly BlockingCollection<IEvent> _eventQueue;
         private readonly AutoResetEvent _flushDelayEvent;
         private readonly Buffers[] _buffersArray;
 
-        public CIAgentlessWriter(ICIAgentlessWriterSender sender, IFormatterResolver formatterResolver = null, int? concurrency = null)
+        public CIVisibilityProtocolWriter(ICIAgentlessWriterSender sender, IFormatterResolver formatterResolver = null, int? concurrency = null)
         {
             _eventQueue = new BlockingCollection<IEvent>(MaxItemsInQueue);
             _flushDelayEvent = new AutoResetEvent(false);
@@ -127,7 +127,7 @@ namespace Datadog.Trace.Ci.Agent
         private static async Task InternalFlushEventsAsync(object state)
         {
             var stateArray = (object[])state;
-            var writer = (CIAgentlessWriter)stateArray[0];
+            var writer = (CIVisibilityProtocolWriter)stateArray[0];
             var eventQueue = writer._eventQueue;
             var flushDelayEvent = writer._flushDelayEvent;
             var buffers = (Buffers)stateArray[1];

@@ -27,7 +27,7 @@ namespace Datadog.Trace.Ci
             {
                 new Trace.Processors.NormalizerTraceProcessor(),
                 new Trace.Processors.TruncatorTraceProcessor(),
-                new Processors.OriginTagTraceProcessor(settings.Exporter.PartialFlushEnabled, agentWriter is CIAgentlessWriter),
+                new Processors.OriginTagTraceProcessor(settings.Exporter.PartialFlushEnabled, CIVisibility.Settings.Agentless),
             })
         {
         }
