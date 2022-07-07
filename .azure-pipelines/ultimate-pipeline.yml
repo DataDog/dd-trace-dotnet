@@ -1281,7 +1281,7 @@ stages:
 
 - stage: integration_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_arm64_tracer, master_commit_id]
+  dependsOn: [package_arm64, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
     TestAllPackageVersions: true
