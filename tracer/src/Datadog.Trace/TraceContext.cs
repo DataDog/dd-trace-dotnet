@@ -170,6 +170,10 @@ namespace Datadog.Trace
 
         private void PropagateMetadata(ArraySegment<Span> spans)
         {
+            // When receiving chunks, the backend checks whether the aas.resource.id tag is present to decide which
+            // metric to emit (datadog.apm.host.instance or datadog.apm.azure_resource_instance one).
+            MarkAsAasSpan(spans[0]);
+
             // The agent looks for the sampling priority on the first span that has no parent
             // Finding those spans is not trivial, so instead we apply the priority to every span
 
@@ -191,17 +195,26 @@ namespace Datadog.Trace
         {
             if (AzureAppServices.Metadata.IsRelevant)
             {
+                MarkAsAasSpan(span);
+
                 span.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteName, AzureAppServices.Metadata.SiteName);
                 span.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteKind, AzureAppServices.Metadata.SiteKind);
                 span.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteType, AzureAppServices.Metadata.SiteType);
                 span.SetTag(Datadog.Trace.Tags.AzureAppServicesResourceGroup, AzureAppServices.Metadata.ResourceGroup);
                 span.SetTag(Datadog.Trace.Tags.AzureAppServicesSubscriptionId, AzureAppServices.Metadata.SubscriptionId);
-                span.SetTag(Datadog.Trace.Tags.AzureAppServicesResourceId, AzureAppServices.Metadata.ResourceId);
                 span.SetTag(Datadog.Trace.Tags.AzureAppServicesInstanceId, AzureAppServices.Metadata.InstanceId);
                 span.SetTag(Datadog.Trace.Tags.AzureAppServicesInstanceName, AzureAppServices.Metadata.InstanceName);
                 span.SetTag(Datadog.Trace.Tags.AzureAppServicesOperatingSystem, AzureAppServices.Metadata.OperatingSystem);
                 span.SetTag(Datadog.Trace.Tags.AzureAppServicesRuntime, AzureAppServices.Metadata.Runtime);
                 span.SetTag(Datadog.Trace.Tags.AzureAppServicesExtensionVersion, AzureAppServices.Metadata.SiteExtensionVersion);
+            }
+        }
+
+        private void MarkAsAasSpan(Span span)
+        {
+            if (AzureAppServices.Metadata.IsRelevant)
+            {
+                span.SetTag(Datadog.Trace.Tags.AzureAppServicesResourceId, AzureAppServices.Metadata.ResourceId);
             }
         }
     }
