@@ -485,10 +485,10 @@ stages:
       parameters:
         build: true
         target: builder
-        baseImage: $(baseImage)
+        baseImage: debian
         command: "BuildNativeLoader ZipMonitoringHome"
 
-    - publish: $(artifacts)/linux-x64
+    - publish: $(artifacts)/linux-arm64
       displayName: Upload arm64 packages
       artifact: linux-packages-arm64
 
