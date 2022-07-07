@@ -781,7 +781,7 @@ stages:
         - template: steps/run-in-docker.yml
           parameters:
             build: true
-            baseImage: centos7
+            baseImage: debian
             command: "BuildAndRunManagedUnitTests"
 
         - publish: tracer/build_data
@@ -1286,7 +1286,7 @@ stages:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
     TestAllPackageVersions: true
     IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
-    baseImage: centos7
+    baseImage: debian
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -2896,7 +2896,7 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         build: true
-        baseImage: centos7
+        baseImage: debian
         command: "CheckBuildLogsForErrors"
 
 - stage: dotnet_tool_smoke_tests_arm64
