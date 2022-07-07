@@ -73,6 +73,7 @@ internal static class TagPropagation
         var headerTags = propagationHeader.Split(TagPairSeparators, StringSplitOptions.RemoveEmptyEntries);
         traceTags = new List<KeyValuePair<string, string>>(headerTags.Length);
         string? cachedHeader = propagationHeader;
+        bool addedErrorTag = false;
 
         foreach (var headerTag in headerTags)
         {
@@ -81,8 +82,7 @@ internal static class TagPropagation
                 headerTag.StartsWith(PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase))
             {
                 // NOTE: the first equals sign is the separator between key/value, but the tag value can contain
-                // additional equals signs, so make sure we only split on the _first_ one. For example,
-                // the "_dd.p.upstream_services" tag will have base64-encoded strings which use '=' for padding.
+                // additional equals signs, so make sure we only split on the _first_ one.
                 var separatorIndex = headerTag.IndexOf(KeyValueSeparator);
 
                 // "_dd.p.a=b"
@@ -98,24 +98,21 @@ internal static class TagPropagation
                     if (IsValid(key, value))
                     {
                         traceTags.Add(new(key, value));
+                        continue;
                     }
-                    else
-                    {
-                        // we can't reuse the same string if we skip any key/value pair
-                        cachedHeader = null;
-                    }
-                }
-                else
-                {
-                    // we can't reuse the same string if we skip any key/value pair
-                    cachedHeader = null;
                 }
             }
-            else
+
+            if (!addedErrorTag)
             {
-                // we can't reuse the same string if we skip any key/value pair
-                cachedHeader = null;
+                // add "_dd.propagation_error:decoding_error" tag if any of the tags it not valid,
+                // but only add the error tag once
+                addedErrorTag = true;
+                traceTags.Add(new(Tags.TagPropagation.Error, PropagationErrorTagValues.DecodingError));
             }
+
+            // we can't reuse the same header string if we skip any key/value pair
+            cachedHeader = null;
         }
 
         return traceTags.Count > 0 ? new TraceTagCollection(traceTags, cachedHeader) : new TraceTagCollection();

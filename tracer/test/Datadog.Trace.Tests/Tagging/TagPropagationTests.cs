@@ -36,13 +36,7 @@ public class TagPropagationTests
     [Theory]
     [InlineData(null)]                      // null header
     [InlineData("")]                        // empty header
-    [InlineData("key1=value1,key2=value2")] // missing "_dd.p." prefix
-    [InlineData("_dd.p.key1=,_dd.p.key2=")] // no values
-    [InlineData("=value1,=value2")]         // no keys
-    [InlineData("=")]                       // no key or value
-    [InlineData("_dd.p.key1")]              // no key/value separator
-    [InlineData("_dd.p.key1,value")]        // no key/value separator
-    [InlineData("_dd.p.=value1")]           // key too short
+
     public void ParseHeader_ShouldBeEmpty(string header)
     {
         var tags = TagPropagation.ParseHeader(header);
@@ -53,7 +47,27 @@ public class TagPropagationTests
         tags.ToEnumerable().Should().BeEmpty();
     }
 
-    // TODO: add test with invalid chars and check for tag
+    [Theory]
+    [InlineData("key1=value1,key2=value2")] // missing "_dd.p." prefix
+    [InlineData("_dd.p.key1=,_dd.p.key2=")] // no values
+    [InlineData("=value1,=value2")]         // no keys
+    [InlineData("=")]                       // no key or value
+    [InlineData("_dd.p.key1")]              // no key/value separator
+    [InlineData("_dd.p.key1,value")]        // no key/value separator
+    [InlineData("_dd.p.=value1")]           // key too short
+    [InlineData("_dd.p.key 1=value1")]      // space in key
+    public void ParseHeader_InvalidChars(string header)
+    {
+        var expectedPairs = new KeyValuePair<string, string>[]
+                            {
+                                new(Tags.TagPropagation.Error, PropagationErrorTagValues.DecodingError)
+                            };
+
+        var tags = TagPropagation.ParseHeader(header);
+
+        // the error tag should be the only tag
+        tags.ToEnumerable().Should().BeEquivalentTo(expectedPairs);
+    }
 
     [Fact]
     public void ParseHeader_TooLong()
