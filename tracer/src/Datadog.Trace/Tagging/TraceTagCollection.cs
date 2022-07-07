@@ -37,7 +37,7 @@ internal class TraceTagCollection
 
     public void SetTag(string name, string? value)
     {
-        if (name == null)
+        if (name is null)
         {
             throw new ArgumentNullException(nameof(name));
         }
