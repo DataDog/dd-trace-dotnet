@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tagging
                 throw new ArgumentNullException(nameof(name));
             }
 
-            var isPropagated = name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal);
+            var isPropagated = name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase);
 
             lock (_listLock)
             {
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tagging
                 {
                     for (int i = 0; i < _tags.Count; i++)
                     {
-                        if (string.Equals(_tags[i].Key, name, StringComparison.Ordinal))
+                        if (string.Equals(_tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
                         {
                             if (value == null)
                             {
@@ -96,7 +96,7 @@ namespace Datadog.Trace.Tagging
                 {
                     for (int i = 0; i < _tags.Count; i++)
                     {
-                        if (string.Equals(_tags[i].Key, name, StringComparison.Ordinal))
+                        if (string.Equals(_tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
                         {
                             return _tags[i].Value;
                         }

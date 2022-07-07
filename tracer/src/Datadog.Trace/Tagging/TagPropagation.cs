@@ -78,7 +78,7 @@ internal static class TagPropagation
         {
             // the shortest tag has the "_dd.p." prefix, a 1-character key, and 1-character value (e.g. "_dd.p.a=b")
             if (headerTag.Length >= MinimumPropagationHeaderLength &&
-                headerTag.StartsWith(PropagatedTagPrefix, StringComparison.Ordinal))
+                headerTag.StartsWith(PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase))
             {
                 // NOTE: the first equals sign is the separator between key/value, but the tag value can contain
                 // additional equals signs, so make sure we only split on the _first_ one. For example,
