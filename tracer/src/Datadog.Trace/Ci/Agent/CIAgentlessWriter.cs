@@ -43,8 +43,8 @@ namespace Datadog.Trace.Ci.Agent
             {
                 _buffersArray[i] = new Buffers(
                     sender,
-                    new CITestCyclePayload(formatterResolver),
-                    new CICodeCoveragePayload(formatterResolver));
+                    new CITestCyclePayload(formatterResolver: formatterResolver),
+                    new CICodeCoveragePayload(formatterResolver: formatterResolver));
                 var tskFlush = Task.Factory.StartNew(InternalFlushEventsAsync, new object[] { this, _buffersArray[i] }, TaskCreationOptions.LongRunning);
                 tskFlush.ContinueWith(t => Log.Error(t.Exception, "Error in sending ci visibility events"), TaskContinuationOptions.OnlyOnFaulted);
                 _buffersArray[i].SetFlushTask(tskFlush);

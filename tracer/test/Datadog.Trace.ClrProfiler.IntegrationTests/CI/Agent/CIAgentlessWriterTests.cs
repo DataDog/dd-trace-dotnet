@@ -181,5 +181,46 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                 bufferSize *= 2;
             }
         }
+
+        [Fact]
+        public void CoverageBufferTest()
+        {
+            int bufferSize = 256;
+            int maxBufferSize = (int)(4.5 * 1024 * 1024);
+            var coveragePayload = new CoveragePayload
+            {
+                TraceId = 42,
+                SpanId = 84,
+                Files =
+                {
+                    new FileCoverage
+                    {
+                        FileName = "MyFile",
+                        Segments =
+                        {
+                            new uint[] { 1, 2, 3, 4 }
+                        }
+                    }
+                }
+            };
+
+            var coveragePayloadInBytes = MessagePackSerializer.Serialize<Ci.IEvent>(coveragePayload, Ci.Agent.MessagePack.CIFormatterResolver.Instance);
+
+            while (bufferSize < maxBufferSize)
+            {
+                var payloadBuffer = new Ci.Agent.Payloads.CICodeCoveragePayload(maxItems: int.MaxValue, maxBytes: bufferSize);
+                while (payloadBuffer.TryProcessEvent(coveragePayload))
+                {
+                    // .
+                }
+
+                // The number of items in the events should be the same as the num calculated
+                // without decimals (items that doesn't fit doesn't get added)
+                var numItemsTrunc = bufferSize / coveragePayloadInBytes.Length;
+                Assert.Equal(numItemsTrunc, payloadBuffer.Count);
+
+                bufferSize *= 2;
+            }
+        }
     }
 }

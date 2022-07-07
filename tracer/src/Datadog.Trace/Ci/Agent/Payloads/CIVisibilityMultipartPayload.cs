@@ -22,7 +22,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 
         public CIVisibilityMultipartPayload(int maxItems = 10, int maxBytes = 48_000_000, IFormatterResolver formatterResolver = null)
         {
-            _maxItems = 10;
+            _maxItems = maxItems;
             _maxBytes = maxBytes;
             _bytesCount = 0;
             _formatterResolver = formatterResolver ?? CIFormatterResolver.Instance;
