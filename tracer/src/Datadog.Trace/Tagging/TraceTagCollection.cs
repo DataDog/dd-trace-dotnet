@@ -9,134 +9,135 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.Tagging;
-
-internal class TraceTagCollection
+namespace Datadog.Trace.Tagging
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceTagCollection>();
-
-    // used when tag list is null because "new List<KeyValuePair<string, string>>.Enumerator" returns an invalid enumerator.
-    private static readonly List<KeyValuePair<string, string>>.Enumerator EmptyEnumerator = new List<KeyValuePair<string, string>>(0).GetEnumerator();
-
-    private readonly object _listLock = new();
-
-    private List<KeyValuePair<string, string>>? _tags;
-
-    private string? _cachedPropagationHeader;
-
-    public TraceTagCollection(List<KeyValuePair<string, string>>? tags = null, string? cachedPropagationHeader = null)
+    internal class TraceTagCollection
     {
-        _tags = tags;
-        _cachedPropagationHeader = cachedPropagationHeader;
-    }
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceTagCollection>();
 
-    /// <summary>
-    /// Gets the number of elements contained in the <see cref="TraceTagCollection"/>.
-    /// </summary>
-    public int Count => _tags?.Count ?? 0;
+        // used when tag list is null because "new List<KeyValuePair<string, string>>.Enumerator" returns an invalid enumerator.
+        private static readonly List<KeyValuePair<string, string>>.Enumerator EmptyEnumerator = new List<KeyValuePair<string, string>>(0).GetEnumerator();
 
-    public void SetTag(string name, string? value)
-    {
-        if (name is null)
+        private readonly object _listLock = new();
+
+        private List<KeyValuePair<string, string>>? _tags;
+
+        private string? _cachedPropagationHeader;
+
+        public TraceTagCollection(List<KeyValuePair<string, string>>? tags = null, string? cachedPropagationHeader = null)
         {
-            throw new ArgumentNullException(nameof(name));
+            _tags = tags;
+            _cachedPropagationHeader = cachedPropagationHeader;
         }
 
-        var isPropagated = name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal);
+        /// <summary>
+        /// Gets the number of elements contained in the <see cref="TraceTagCollection"/>.
+        /// </summary>
+        public int Count => _tags?.Count ?? 0;
 
-        lock (_listLock)
+        public void SetTag(string name, string? value)
         {
-            _tags ??= new List<KeyValuePair<string, string>>(1);
-
-            if (_tags.Count > 0)
+            if (name is null)
             {
-                for (int i = 0; i < _tags.Count; i++)
-                {
-                    if (string.Equals(_tags[i].Key, name, StringComparison.Ordinal))
-                    {
-                        if (value == null)
-                        {
-                            _tags.RemoveAt(i);
-                        }
-                        else if (!string.Equals(_tags[i].Value, value, StringComparison.Ordinal))
-                        {
-                            _tags[i] = new(name, value);
+                throw new ArgumentNullException(nameof(name));
+            }
 
-                            // clear the cached header if we make any changes to a distributed tag
-                            if (isPropagated)
+            var isPropagated = name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal);
+
+            lock (_listLock)
+            {
+                _tags ??= new List<KeyValuePair<string, string>>(1);
+
+                if (_tags.Count > 0)
+                {
+                    for (int i = 0; i < _tags.Count; i++)
+                    {
+                        if (string.Equals(_tags[i].Key, name, StringComparison.Ordinal))
+                        {
+                            if (value == null)
                             {
-                                _cachedPropagationHeader = null;
+                                _tags.RemoveAt(i);
                             }
+                            else if (!string.Equals(_tags[i].Value, value, StringComparison.Ordinal))
+                            {
+                                _tags[i] = new(name, value);
+
+                                // clear the cached header if we make any changes to a distributed tag
+                                if (isPropagated)
+                                {
+                                    _cachedPropagationHeader = null;
+                                }
+                            }
+
+                            return;
                         }
-
-                        return;
                     }
                 }
-            }
 
-            // tag not found, add new one
-            if (value != null)
-            {
-                _tags.Add(new(name, value));
-
-                // clear the cached header if we make any changes to a distributed tag
-                if (isPropagated)
+                // tag not found, add new one
+                if (value != null)
                 {
-                    _cachedPropagationHeader = null;
-                }
-            }
-        }
-    }
+                    _tags.Add(new(name, value));
 
-    public string? GetTag(string name)
-    {
-        if (_tags?.Count > 0)
-        {
-            lock (_listLock)
-            {
-                for (int i = 0; i < _tags.Count; i++)
-                {
-                    if (string.Equals(_tags[i].Key, name, StringComparison.Ordinal))
+                    // clear the cached header if we make any changes to a distributed tag
+                    if (isPropagated)
                     {
-                        return _tags[i].Value;
+                        _cachedPropagationHeader = null;
                     }
                 }
             }
         }
 
-        return null;
-    }
-
-    /// <summary>
-    /// Constructs a string that can be used for horizontal propagation using the "x-datadog-tags" header
-    /// in a "key1=value1,key2=value2" format. This header should only include tags with the "_dd.p.*" prefix.
-    /// The returned string is cached and reused if no relevant tags are changed between calls.
-    /// </summary>
-    /// <returns>A string that can be used for horizontal propagation using the "x-datadog-tags" header.</returns>
-    public string ToPropagationHeader(int maxLength)
-    {
-        if (_cachedPropagationHeader == null)
+        public string? GetTag(string name)
         {
-            lock (_listLock)
+            if (_tags?.Count > 0)
             {
-                _cachedPropagationHeader = TagPropagation.ToHeader(this, maxLength);
+                lock (_listLock)
+                {
+                    for (int i = 0; i < _tags.Count; i++)
+                    {
+                        if (string.Equals(_tags[i].Key, name, StringComparison.Ordinal))
+                        {
+                            return _tags[i].Value;
+                        }
+                    }
+                }
             }
+
+            return null;
         }
 
-        return _cachedPropagationHeader;
-    }
+        /// <summary>
+        /// Constructs a string that can be used for horizontal propagation using the "x-datadog-tags" header
+        /// in a "key1=value1,key2=value2" format. This header should only include tags with the "_dd.p.*" prefix.
+        /// The returned string is cached and reused if no relevant tags are changed between calls.
+        /// </summary>
+        /// <returns>A string that can be used for horizontal propagation using the "x-datadog-tags" header.</returns>
+        public string ToPropagationHeader(int maxLength)
+        {
+            if (_cachedPropagationHeader == null)
+            {
+                lock (_listLock)
+                {
+                    _cachedPropagationHeader = TagPropagation.ToHeader(this, maxLength);
+                }
+            }
 
-    public List<KeyValuePair<string, string>>.Enumerator GetEnumerator()
-    {
-        return _tags?.GetEnumerator() ?? EmptyEnumerator;
-    }
+            return _cachedPropagationHeader;
+        }
 
-    /// <summary>
-    /// Returns the trace tags an <see cref="IEnumerable{T}"/>.
-    /// Use for testing only as it will allocate the enumerator on the heap.
-    /// </summary>
-    internal IEnumerable<KeyValuePair<string, string>> ToEnumerable()
-    {
-        return _tags ?? (IEnumerable<KeyValuePair<string, string>>)Array.Empty<KeyValuePair<string, string>>();
+        public List<KeyValuePair<string, string>>.Enumerator GetEnumerator()
+        {
+            return _tags?.GetEnumerator() ?? EmptyEnumerator;
+        }
+
+        /// <summary>
+        /// Returns the trace tags an <see cref="IEnumerable{T}"/>.
+        /// Use for testing only as it will allocate the enumerator on the heap.
+        /// </summary>
+        internal IEnumerable<KeyValuePair<string, string>> ToEnumerable()
+        {
+            return _tags ?? (IEnumerable<KeyValuePair<string, string>>)Array.Empty<KeyValuePair<string, string>>();
+        }
     }
 }
