@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\packages\libddprof.0.2.0\build\native\libddprof.props" Condition="Exists('..\..\..\packages\libddprof.0.2.0\build\native\libddprof.props')" />
+  <Import Project="..\..\..\packages\libddprof.0.6.0\build\native\libddprof.props" Condition="Exists('..\..\..\packages\libddprof.0.6.0\build\native\libddprof.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -171,6 +171,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(PackagesDir)\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.4\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.4\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets'))" />
     <Error Condition="!Exists('..\..\..\packages\gmock.1.11.0\build\native\gmock.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\gmock.1.11.0\build\native\gmock.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\libddprof.0.2.0\build\native\libddprof.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\libddprof.0.2.0\build\native\libddprof.props'))" />
+    <Error Condition="!Exists('..\..\..\packages\libddprof.0.6.0\build\native\libddprof.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\libddprof.0.6.0\build\native\libddprof.props'))" />
   </Target>
 </Project>

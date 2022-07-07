@@ -36,26 +36,34 @@ private:
         SerializedProfile(struct ddprof_ffi_Profile* profile);
         ~SerializedProfile();
 
-        ddprof_ffi_Buffer GetBuffer() const;
+        ddprof_ffi_Vec_u8 GetBuffer() const;
         ddprof_ffi_Timespec GetStart() const;
         ddprof_ffi_Timespec GetEnd() const;
 
         bool IsValid() const;
 
     private:
-        struct ddprof_ffi_EncodedProfile* _encodedProfile;
+        ddprof_ffi_SerializeResult _encodedProfile;
     };
 
     class Tags
     {
     public:
+        Tags();
+        ~Tags() noexcept;
+
+        Tags(const Tags&) = delete;
+        Tags& operator=(const Tags&) = delete;
+
+        Tags(Tags&&) noexcept;
+        Tags& operator=(Tags&&) noexcept;
+
         void Add(std::string const& name, std::string const& value);
 
-        ddprof_ffi_Slice_tag GetFfiTags() const;
+        const ddprof_ffi_Vec_tag* GetFfiTags() const;
 
     private:
-        std::forward_list<std::pair<std::string, std::string>> _stringTags;
-        std::vector<ddprof_ffi_Tag> _ffiTags;
+        ddprof_ffi_Vec_tag _ffiTags;
     };
 
     class ProfileAutoReset
@@ -79,10 +87,10 @@ private:
     };
 
     static Tags CreateTags(IConfiguration* configuration);
-    static ddprof_ffi_ProfileExporterV3* CreateExporter(ddprof_ffi_Slice_tag tags, ddprof_ffi_EndpointV3 endpoint);
+    static ddprof_ffi_ProfileExporterV3* CreateExporter(const ddprof_ffi_Vec_tag* tags, ddprof_ffi_EndpointV3 endpoint);
     static ddprof_ffi_Profile* CreateProfile();
 
-    ddprof_ffi_Request* CreateRequest(SerializedProfile const& encodedProfile, ddprof_ffi_ProfileExporterV3* exporter) const;
+    ddprof_ffi_Request* CreateRequest(SerializedProfile const& encodedProfile, ddprof_ffi_ProfileExporterV3* exporter,  const Tags& additionalTags) const;
     ddprof_ffi_EndpointV3 CreateEndpoint(IConfiguration* configuration);
     ProfileInfo& GetInfo(std::string_view runtimeId);
 

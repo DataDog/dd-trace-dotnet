@@ -66,9 +66,9 @@ LibddprofExporter::~LibddprofExporter()
     _perAppInfo.clear();
 }
 
-ddprof_ffi_ProfileExporterV3* LibddprofExporter::CreateExporter(ddprof_ffi_Slice_tag tags, ddprof_ffi_EndpointV3 endpoint)
+ddprof_ffi_ProfileExporterV3* LibddprofExporter::CreateExporter(const ddprof_ffi_Vec_tag* tags, ddprof_ffi_EndpointV3 endpoint)
 {
-    auto result = ddprof_ffi_ProfileExporterV3_new(FfiHelper::StringToByteSlice(LanguageFamily), tags, endpoint);
+    auto result = ddprof_ffi_ProfileExporterV3_new(FfiHelper::StringToCharSlice(LanguageFamily), tags, endpoint);
     if (result.tag == DDPROF_FFI_NEW_PROFILE_EXPORTER_V3_RESULT_OK)
     {
         return result.ok;
@@ -76,7 +76,6 @@ ddprof_ffi_ProfileExporterV3* LibddprofExporter::CreateExporter(ddprof_ffi_Slice
     else
     {
         Log::Error("libddprof failed to create the exporter: ", result.err.ptr);
-        ddprof_ffi_Buffer_reset(&result.err);
         return nullptr;
     }
 }
@@ -134,7 +133,7 @@ ddprof_ffi_EndpointV3 LibddprofExporter::CreateEndpoint(IConfiguration* configur
         auto const& site = configuration->GetSite();
         auto const& apiKey = configuration->GetApiKey();
 
-        return ddprof_ffi_EndpointV3_agentless(FfiHelper::StringToByteSlice(site), FfiHelper::StringToByteSlice(apiKey));
+        return ddprof_ffi_EndpointV3_agentless(FfiHelper::StringToCharSlice(site), FfiHelper::StringToCharSlice(apiKey));
     }
 
     // handle "with agent" case
@@ -151,7 +150,7 @@ ddprof_ffi_EndpointV3 LibddprofExporter::CreateEndpoint(IConfiguration* configur
         _agentUrl = oss.str();
     }
 
-    return ddprof_ffi_EndpointV3_agent(FfiHelper::StringToByteSlice(_agentUrl));
+    return ddprof_ffi_EndpointV3_agent(FfiHelper::StringToCharSlice(_agentUrl));
 }
 
 LibddprofExporter::ProfileInfo& LibddprofExporter::GetInfo(std::string_view runtimeId)
@@ -258,15 +257,7 @@ bool LibddprofExporter::Export()
             ExportToDisk(applicationInfo.ServiceName, serializedProfile, idx++);
         }
 
-        Tags exporterTagsCopy = _exporterBaseTags;
-
-        exporterTagsCopy.Add("env", applicationInfo.Environment);
-        exporterTagsCopy.Add("version", applicationInfo.Version);
-        exporterTagsCopy.Add("service", applicationInfo.ServiceName);
-        exporterTagsCopy.Add("runtime-id", std::string(runtimeId));
-        exporterTagsCopy.Add("profile_seq", std::to_string(profileInfo.exportsCount));
-
-        auto* exporter = CreateExporter(exporterTagsCopy.GetFfiTags(), _endpoint);
+        auto* exporter = CreateExporter(_exporterBaseTags.GetFfiTags(), _endpoint);
 
         if (exporter == nullptr)
         {
@@ -279,7 +270,14 @@ bool LibddprofExporter::Export()
         // in the back end
         profileInfo.exportsCount++;
 
-        auto* request = CreateRequest(serializedProfile, exporter);
+        Tags additionalTags;
+        additionalTags.Add("env", applicationInfo.Environment);
+        additionalTags.Add("version", applicationInfo.Version);
+        additionalTags.Add("service", applicationInfo.ServiceName);
+        additionalTags.Add("runtime-id", std::string(runtimeId));
+        additionalTags.Add("profile_seq", std::to_string(profileInfo.exportsCount));
+
+        auto* request = CreateRequest(serializedProfile, exporter, additionalTags);
         if (request != nullptr)
         {
             exported &= Send(request, exporter);
@@ -343,34 +341,33 @@ void LibddprofExporter::ExportToDisk(const std::string& applicationName, Seriali
     }
 }
 
-ddprof_ffi_Request* LibddprofExporter::CreateRequest(SerializedProfile const& encodedProfile, ddprof_ffi_ProfileExporterV3* exporter) const
+ddprof_ffi_Request* LibddprofExporter::CreateRequest(SerializedProfile const& encodedProfile, ddprof_ffi_ProfileExporterV3* exporter, const Tags& additionalTags) const
 {
     auto start = encodedProfile.GetStart();
     auto end = encodedProfile.GetEnd();
     auto buffer = encodedProfile.GetBuffer();
 
-    ddprof_ffi_File file{FfiHelper::StringToByteSlice(RequestFileName), &buffer};
+    ddprof_ffi_File file{FfiHelper::StringToCharSlice(RequestFileName), ddprof_ffi_Vec_u8_as_slice(&buffer)};
 
     struct ddprof_ffi_Slice_file files
     {
         &file, 1
     };
 
-    return ddprof_ffi_ProfileExporterV3_build(exporter, start, end, files, RequestTimeOutMs);
+    return ddprof_ffi_ProfileExporterV3_build(exporter, start, end, files, additionalTags.GetFfiTags(), RequestTimeOutMs);
 }
 
 bool LibddprofExporter::Send(ddprof_ffi_Request* request, ddprof_ffi_ProfileExporterV3* exporter) const
 {
     assert(request != nullptr);
 
-    auto result = ddprof_ffi_ProfileExporterV3_send(exporter, request);
+    auto result = ddprof_ffi_ProfileExporterV3_send(exporter, request, nullptr);
 
     if (result.tag == DDPROF_FFI_SEND_RESULT_FAILURE)
     {
         // There is an overflow issue when using the error buffer from rust
         // Log::Error("libddprof error: Failed to send profile (", result.failure.ptr, ")");
         Log::Error("libddprof error: Failed to send profile.");
-        ddprof_ffi_Buffer_reset(&result.failure);
         return false;
     }
 
@@ -411,48 +408,78 @@ LibddprofExporter::SerializedProfile::SerializedProfile(ddprof_ffi_Profile* prof
 
 bool LibddprofExporter::SerializedProfile::IsValid() const
 {
-    return _encodedProfile != nullptr;
+    return _encodedProfile.tag == DDPROF_FFI_SERIALIZE_RESULT_OK;
 }
 
 LibddprofExporter::SerializedProfile::~SerializedProfile()
 {
-    ddprof_ffi_EncodedProfile_delete(_encodedProfile);
+    ddprof_ffi_SerializeResult_drop(_encodedProfile);
 }
 
-ddprof_ffi_Buffer LibddprofExporter::SerializedProfile::GetBuffer() const
+ddprof_ffi_Vec_u8 LibddprofExporter::SerializedProfile::GetBuffer() const
 {
-    return _encodedProfile->buffer;
+    return _encodedProfile.ok.buffer;
 }
 
 ddprof_ffi_Timespec LibddprofExporter::SerializedProfile::GetStart() const
 {
-    return _encodedProfile->start;
+    return _encodedProfile.ok.start;
 }
 
 ddprof_ffi_Timespec LibddprofExporter::SerializedProfile::GetEnd() const
 {
-    return _encodedProfile->end;
+    return _encodedProfile.ok.end;
 }
 
 //
 // LibddprofExporter::Tags class
 //
 
-void LibddprofExporter::Tags::Add(std::string const& labelName, std::string const& labelValue)
+LibddprofExporter::Tags::Tags() :
+    _ffiTags{ddprof_ffi_Vec_tag_new()}
 {
-    _stringTags.push_front({labelName, labelValue});
-
-    auto const& [name, value] = _stringTags.front();
-
-    auto ffiName = FfiHelper::StringToByteSlice(name);
-    auto ffiValue = FfiHelper::StringToByteSlice(value);
-
-    _ffiTags.push_back({ffiName, ffiValue});
 }
 
-ddprof_ffi_Slice_tag LibddprofExporter::Tags::GetFfiTags() const
+LibddprofExporter::Tags::~Tags() noexcept
 {
-    return {_ffiTags.data(), _ffiTags.size()};
+    ddprof_ffi_Vec_tag_drop(_ffiTags);
+}
+
+LibddprofExporter::Tags::Tags(Tags&& other) noexcept
+{
+    *this = std::move(other);
+}
+
+LibddprofExporter::Tags& LibddprofExporter::Tags::operator=(LibddprofExporter::Tags&& other) noexcept
+{
+    if (this == &other)
+    {
+        return *this;
+    }
+
+    _ffiTags.ptr = std::exchange(other._ffiTags.ptr, nullptr);
+    _ffiTags.capacity = std::exchange(other._ffiTags.capacity, 0);
+    _ffiTags.len = std::exchange(other._ffiTags.len, 0);
+    return *this;
+}
+
+void LibddprofExporter::Tags::Add(std::string const& labelName, std::string const& labelValue)
+{
+    auto ffiName = FfiHelper::StringToCharSlice(labelName);
+    auto ffiValue = FfiHelper::StringToCharSlice(labelValue);
+
+    auto pushResult = ddprof_ffi_Vec_tag_push(&_ffiTags, ffiName, ffiValue);
+    if (pushResult.tag == DDPROF_FFI_PUSH_TAG_RESULT_ERR)
+    {
+        auto err_details = pushResult.err;
+        Log::Debug(err_details.ptr);
+    }
+    ddprof_ffi_PushTagResult_drop(pushResult);
+}
+
+const ddprof_ffi_Vec_tag* LibddprofExporter::Tags::GetFfiTags() const
+{
+    return &_ffiTags;
 }
 
 //
@@ -468,7 +495,6 @@ LibddprofExporter::ProfileAutoReset::~ProfileAutoReset()
 {
     ddprof_ffi_Profile_reset(_profile);
 }
-
 
 //
 // LibddprofExporter::ProfileInfo class
