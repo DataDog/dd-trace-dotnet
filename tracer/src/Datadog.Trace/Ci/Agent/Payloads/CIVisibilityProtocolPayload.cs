@@ -9,7 +9,7 @@ using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.Payloads
 {
-    internal abstract class CIVisibilityProtocolPayload
+    internal abstract class CIVisibilityProtocolPayload : EvpPayload
     {
         private readonly EventsBuffer<IEvent> _events;
         private readonly IFormatterResolver _formatterResolver;
@@ -21,8 +21,6 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             // Because we don't know the size of the events array envelope we left 500kb for that.
             _events = new EventsBuffer<IEvent>(Ci.CIVisibility.Settings.MaximumAgentlessPayloadSize - (500 * 1024), _formatterResolver);
         }
-
-        public abstract Uri Url { get; }
 
         public bool HasEvents => _events.Count > 0;
 

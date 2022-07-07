@@ -12,7 +12,7 @@ using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.Payloads
 {
-    internal abstract class CIVisibilityMultipartPayload
+    internal abstract class CIVisibilityMultipartPayload : EvpPayload
     {
         private readonly List<MultipartFormItem> _items;
         private readonly IFormatterResolver _formatterResolver;
@@ -28,8 +28,6 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             _formatterResolver = formatterResolver ?? CIFormatterResolver.Instance;
             _items = new List<MultipartFormItem>(10);
         }
-
-        public abstract Uri Url { get; }
 
         public bool HasEvents => _items.Count > 0;
 

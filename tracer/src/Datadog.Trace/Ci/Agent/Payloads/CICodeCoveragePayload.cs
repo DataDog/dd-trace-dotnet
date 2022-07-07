@@ -17,22 +17,11 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         public CICodeCoveragePayload(int maxItems = 100, int maxBytes = 48_000_000, IFormatterResolver formatterResolver = null)
             : base(maxItems, maxBytes, formatterResolver)
         {
-            var agentlessUrl = CIVisibility.Settings.AgentlessUrl;
-            if (!string.IsNullOrWhiteSpace(agentlessUrl))
-            {
-                var builder = new UriBuilder(agentlessUrl);
-                builder.Path = "api/v2/citestcov";
-                Url = builder.Uri;
-            }
-            else
-            {
-                var builder = new UriBuilder("https://datadog.host.com/api/v2/citestcov");
-                builder.Host = "event-platform-intake." + CIVisibility.Settings.Site;
-                Url = builder.Uri;
-            }
         }
 
-        public override Uri Url { get; }
+        public override string EvpSubdomain => "event-platform-intake";
+
+        public override string EvpPath => "api/v2/citestcov";
 
         public override bool CanProcessEvent(IEvent @event)
         {

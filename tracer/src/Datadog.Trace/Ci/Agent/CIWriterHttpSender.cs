@@ -17,6 +17,7 @@ namespace Datadog.Trace.Ci.Agent
     internal sealed class CIWriterHttpSender : ICIAgentlessWriterSender
     {
         private const string ApiKeyHeader = "dd-api-key";
+        private const string EvpSubdomainHeader = "X-Datadog-EVP-Subdomain";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIWriterHttpSender>();
 
         private readonly IApiRequestFactory _apiRequestFactory;
@@ -34,9 +35,8 @@ namespace Datadog.Trace.Ci.Agent
             var numberOfTraces = payload.Count;
             var payloadMimeType = MimeTypes.MsgPack;
             var payloadBytes = payload.ToArray();
-
             Log.Information<int, string>("Sending ({numberOfTraces} events) {bytesValue} bytes...", numberOfTraces, payloadBytes.Length.ToString("N0"));
-            await SendPayloadAsync(payload.Url, req => req.PostAsync(new ArraySegment<byte>(payloadBytes), payloadMimeType)).ConfigureAwait(false);
+            await SendPayloadAsync(payload.Url, payload, req => req.PostAsync(new ArraySegment<byte>(payloadBytes), payloadMimeType)).ConfigureAwait(false);
         }
 
         public async Task SendPayloadAsync(CIVisibilityMultipartPayload payload)
@@ -45,6 +45,7 @@ namespace Datadog.Trace.Ci.Agent
             var payloadArray = payload.ToArray();
             await SendPayloadAsync(
                 payload.Url,
+                payload,
                 req =>
                 {
                     if (req is IMultipartApiRequest mReq)
@@ -100,7 +101,7 @@ namespace Datadog.Trace.Ci.Agent
             return true;
         }
 
-        private async Task SendPayloadAsync(Uri url, Func<IApiRequest, Task<IApiResponse>> senderFunc)
+        private async Task SendPayloadAsync(Uri url, EvpPayload evpPayload, Func<IApiRequest, Task<IApiResponse>> senderFunc)
         {
             // retry up to 5 times with exponential back-off
             const int retryLimit = 5;
@@ -115,6 +116,7 @@ namespace Datadog.Trace.Ci.Agent
                 {
                     request = _apiRequestFactory.Create(url);
                     request.AddHeader(ApiKeyHeader, CIVisibility.Settings.ApiKey);
+                    request.AddHeader(EvpSubdomainHeader, evpPayload.EvpSubdomain);
                 }
                 catch (Exception ex)
                 {
