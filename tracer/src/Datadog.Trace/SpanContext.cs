@@ -23,7 +23,7 @@ namespace Datadog.Trace
             Keys.Origin,
             Keys.RawTraceId,
             Keys.RawSpanId,
-            Keys.DatadogTags,
+            Keys.PropagatedTags,
             // For mismatch version support we need to keep supporting old keys.
             HttpHeaderNames.TraceId,
             HttpHeaderNames.ParentId,
@@ -297,7 +297,7 @@ namespace Datadog.Trace
                     value = RawSpanId;
                     return true;
 
-                case Keys.DatadogTags:
+                case Keys.PropagatedTags:
                     value = PropagatedTags;
                     return true;
 
@@ -317,7 +317,7 @@ namespace Datadog.Trace
             public const string Origin = $"{Prefix}Origin";
             public const string RawTraceId = $"{Prefix}RawTraceId";
             public const string RawSpanId = $"{Prefix}RawSpanId";
-            public const string DatadogTags = $"{Prefix}DatadogTags";
+            public const string PropagatedTags = $"{Prefix}PropagatedTags";
         }
     }
 }
