@@ -59,7 +59,7 @@ TEST(SamplesAggregatorTest, MustCollectSamples)
 
     std::string runtimeId = "MyRid";
 
-    uint32_t getSamplesCallCounter;
+    uint32_t getSamplesCallCounter = 0;
 
     EXPECT_CALL(mockCollector, GetSamples())
         .WillRepeatedly(InvokeWithoutArgs([&getSamplesCallCounter, runtimeId] {
@@ -101,7 +101,7 @@ TEST(SamplesAggregatorTest, MustExportAfterStop)
 
     std::string runtimeId = "MyRid";
 
-    uint32_t getSamplesCallCounter;
+    uint32_t getSamplesCallCounter = 0;
 
     EXPECT_CALL(mockCollector, GetSamples())
         .WillRepeatedly(InvokeWithoutArgs([&getSamplesCallCounter, runtimeId] {
