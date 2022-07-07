@@ -15,12 +15,12 @@ namespace Datadog.Trace.Ci.Processors
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<OriginTagTraceProcessor>();
 
         private readonly bool _isPartialFlushEnabled = false;
-        private readonly bool _isAgentlessEnabled = false;
+        private readonly bool _usesCiVisibilityProtocol = false;
 
-        public OriginTagTraceProcessor(bool isPartialFlushEnabled, bool isAgentlessEnabled)
+        public OriginTagTraceProcessor(bool isPartialFlushEnabled, bool usesCiVisibilityProtocol)
         {
             _isPartialFlushEnabled = isPartialFlushEnabled;
-            _isAgentlessEnabled = isAgentlessEnabled;
+            _usesCiVisibilityProtocol = usesCiVisibilityProtocol;
 
             Log.Information("OriginTraceProcessor initialized.");
         }
@@ -54,7 +54,7 @@ namespace Datadog.Trace.Ci.Processors
                 }
             }
 
-            if (!_isAgentlessEnabled)
+            if (!_usesCiVisibilityProtocol)
             {
                 for (var i = trace.Offset; i < trace.Count + trace.Offset; i++)
                 {
