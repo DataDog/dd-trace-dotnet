@@ -50,13 +50,10 @@ internal static class TagPropagation
     /// Propagated tags require the an "_dd.p.*" prefix, so any other tags are ignored.
     /// </summary>
     /// <param name="propagationHeader">The header value to parse.</param>
-    /// <param name="maxIncomingHeaderLength">The maximum length allowed for incoming propagation header.</param>
     /// <returns>
     /// A <see cref="TraceTagCollection"/> containing the valid tags parsed from the specified header value, if any.
     /// </returns>
-    public static TraceTagCollection ParseHeader(
-        string? propagationHeader,
-        int maxIncomingHeaderLength)
+    public static TraceTagCollection ParseHeader(string? propagationHeader)
     {
         if (string.IsNullOrEmpty(propagationHeader))
         {
@@ -65,9 +62,9 @@ internal static class TagPropagation
 
         List<KeyValuePair<string, string>> traceTags;
 
-        if (propagationHeader!.Length > maxIncomingHeaderLength)
+        if (propagationHeader!.Length > IncomingPropagationHeaderMaxLength)
         {
-            Log.Debug<int, int>("Incoming tag propagation header is too long. Length: {0}, Maximum: {1}.", propagationHeader.Length, maxIncomingHeaderLength);
+            Log.Debug<int, int>("Incoming tag propagation header is too long. Length: {0}, Maximum: {1}.", propagationHeader.Length, IncomingPropagationHeaderMaxLength);
 
             traceTags = new List<KeyValuePair<string, string>>(1) { new(Tags.TagPropagation.Error, PropagationErrorTagValues.ExtractMaxSize) };
             return new TraceTagCollection(traceTags);

@@ -28,7 +28,7 @@ public class TagPropagationTests
                                 new("_dd.p.key3", "value3"),
                             };
 
-        var tags = TagPropagation.ParseHeader(header, MaxParseLength);
+        var tags = TagPropagation.ParseHeader(header);
 
         tags.ToEnumerable().Should().BeEquivalentTo(expectedPairs);
     }
@@ -44,7 +44,7 @@ public class TagPropagationTests
     [InlineData("_dd.p.=value1")]           // key too short
     public void ParseHeader_ShouldBeEmpty(string header)
     {
-        var tags = TagPropagation.ParseHeader(header, MaxParseLength);
+        var tags = TagPropagation.ParseHeader(header);
 
         tags.Count.Should().Be(0);
 
@@ -65,7 +65,7 @@ public class TagPropagationTests
                                 new(Tags.TagPropagation.Error, PropagationErrorTagValues.ExtractMaxSize)
                             };
 
-        var tags = TagPropagation.ParseHeader(header, maxLength);
+        var tags = TagPropagation.ParseHeader(header);
 
         tags.ToEnumerable().Should().BeEquivalentTo(expectedPairs);
     }
@@ -111,7 +111,7 @@ public class TagPropagationTests
         const string header = "_dd.p.key1=value1";
 
         // should cache original header
-        var tags = TagPropagation.ParseHeader(header, MaxParseLength);
+        var tags = TagPropagation.ParseHeader(header);
         tags.Should().NotBeNull();
         var cachedHeader = tags!.ToPropagationHeader(MaxInjectLength);
         cachedHeader.Should().BeSameAs(header);
@@ -139,7 +139,7 @@ public class TagPropagationTests
         var header = "_dd.p.key1=value1,key2=value2";
 
         // should not cache original header
-        var tags = TagPropagation.ParseHeader(header, MaxParseLength);
+        var tags = TagPropagation.ParseHeader(header);
         tags.Should().NotBeNull();
         var cachedHeader = tags!.ToPropagationHeader(MaxInjectLength);
         cachedHeader.Should().NotBeSameAs(header);
