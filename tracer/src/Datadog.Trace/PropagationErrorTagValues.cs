@@ -17,4 +17,6 @@ internal static class PropagationErrorTagValues
     internal const string EncodingError = "encoding_error";
 
     internal const string DecodingError = "decoding_error";
+
+    internal const string PropagationDisabled = "disabled";
 }

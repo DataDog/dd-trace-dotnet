@@ -93,10 +93,8 @@ public class TagPropagationTests
     public void ToPropagationHeaderValue_TooShort()
     {
         // single tag with "_dd.p.a=", which is too short by 1
-        const string key = "_dd.p.a";
-
         var traceTags = new TraceTagCollection();
-        traceTags.SetTag(key, string.Empty);
+        traceTags.SetTag("_dd.p.a", string.Empty);
         var headerValue = traceTags.ToPropagationHeader(MaxInjectLength);
 
         // too short: empty header but no error tags
@@ -118,6 +116,18 @@ public class TagPropagationTests
         // too long: empty header and an error tag
         headerValue.Should().BeEmpty();
         traceTags.GetTag(Tags.TagPropagation.Error).Should().Be(PropagationErrorTagValues.InjectMaxSize);
+    }
+
+    [Fact]
+    public void ToPropagationHeaderValue_Disabled()
+    {
+        var traceTags = new TraceTagCollection();
+        traceTags.SetTag("_dd.p.a", "b");
+        var headerValue = traceTags.ToPropagationHeader(0);
+
+        // propagation disabled: empty header and an error tag
+        headerValue.Should().BeEmpty();
+        traceTags.GetTag(Tags.TagPropagation.Error).Should().Be(PropagationErrorTagValues.PropagationDisabled);
     }
 
     [Fact]

@@ -134,6 +134,16 @@ internal static class TagPropagation
             return string.Empty;
         }
 
+        if (maxOutgoingHeaderLength == 0)
+        {
+            // propagation is disabled,
+            // set tag "_dd.propagation_error:disabled"...
+            tags.SetTag(Tags.TagPropagation.Error, PropagationErrorTagValues.PropagationDisabled);
+
+            // ... and don't set the header
+            return string.Empty;
+        }
+
         var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 
         foreach (var tag in tags)
