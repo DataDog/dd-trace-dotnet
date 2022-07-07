@@ -7,7 +7,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Ci.Agent;
+using Datadog.Trace.Ci.Coverage.Models;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Vendors.MessagePack;
@@ -48,12 +50,63 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         }
 
         [Fact]
+        public async Task AgentlessCodeCoverageEvent()
+        {
+            var sender = new Mock<ICIAgentlessWriterSender>();
+            var agentlessWriter = new CIAgentlessWriter(sender.Object);
+            var coveragePayload = new CoveragePayload
+            {
+                TraceId = 42,
+                SpanId = 84,
+                Files =
+                {
+                    new FileCoverage
+                    {
+                        FileName = "MyFile",
+                        Segments =
+                        {
+                            new uint[] { 1, 2, 3, 4 }
+                        }
+                    }
+                }
+            };
+
+            var expectedPayload = new Ci.Agent.Payloads.CICodeCoveragePayload();
+            expectedPayload.TryProcessEvent(coveragePayload);
+            var expectedFormItems = expectedPayload.ToArray();
+
+            MultipartFormItem[] finalFormItems = null;
+            sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.CICodeCoveragePayload>()))
+                  .Returns<Ci.Agent.Payloads.CICodeCoveragePayload>(payload =>
+                   {
+                       finalFormItems = payload.ToArray();
+                       return Task.CompletedTask;
+                   });
+
+            agentlessWriter.WriteEvent(coveragePayload);
+            await agentlessWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
+
+            Assert.NotNull(finalFormItems);
+            Assert.Equal(expectedFormItems.Length, finalFormItems.Length);
+            for (var i = 0; i < expectedFormItems.Length; i++)
+            {
+                var finalItem = finalFormItems[i];
+                var expectedItem = expectedFormItems[i];
+
+                Assert.Equal(expectedItem.Name, finalItem.Name);
+                Assert.Equal(expectedItem.ContentType, finalItem.ContentType);
+                Assert.Equal(expectedItem.FileName, finalItem.FileName);
+                Assert.True(finalItem.ContentInBytes.Value.ToArray().SequenceEqual(expectedItem.ContentInBytes.Value.ToArray()));
+            }
+        }
+
+        [Fact]
         public async Task SlowSenderTest()
         {
             var flushTcs = new TaskCompletionSource<bool>();
 
             var sender = new Mock<ICIAgentlessWriterSender>();
-            var agentlessWriter = new CIAgentlessWriter(sender.Object);
+            var agentlessWriter = new CIAgentlessWriter(sender.Object, concurrency: 1);
             var lstPayloads = new List<byte[]>();
 
             sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.CIVisibilityProtocolPayload>()))

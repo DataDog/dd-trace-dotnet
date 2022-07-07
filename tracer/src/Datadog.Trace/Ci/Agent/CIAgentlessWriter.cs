@@ -31,13 +31,13 @@ namespace Datadog.Trace.Ci.Agent
         private readonly AutoResetEvent _flushDelayEvent;
         private readonly Buffers[] _buffersArray;
 
-        public CIAgentlessWriter(ICIAgentlessWriterSender sender, IFormatterResolver formatterResolver = null)
+        public CIAgentlessWriter(ICIAgentlessWriterSender sender, IFormatterResolver formatterResolver = null, int? concurrency = null)
         {
             _eventQueue = new BlockingCollection<IEvent>(MaxItemsInQueue);
             _flushDelayEvent = new AutoResetEvent(false);
 
             // Concurrency Level is a number between 1 and 8 depending on the number of Logical Processor Count
-            var concurrencyLevel = Math.Min(Math.Max(Environment.ProcessorCount / 2, 1), 8);
+            var concurrencyLevel = concurrency ?? Math.Min(Math.Max(Environment.ProcessorCount / 2, 1), 8);
             _buffersArray = new Buffers[concurrencyLevel];
             for (var i = 0; i < _buffersArray.Length; i++)
             {
