@@ -18,7 +18,7 @@ using Datadog.Trace.Vendors.MessagePack;
 namespace Datadog.Trace.Ci.Agent
 {
     /// <summary>
-    /// CI Visibility Agentless Writer
+    /// CI Visibility Protocol Writer
     /// </summary>
     internal sealed class CIVisibilityProtocolWriter : IEventWriter
     {
@@ -50,7 +50,7 @@ namespace Datadog.Trace.Ci.Agent
                 _buffersArray[i].SetFlushTask(tskFlush);
             }
 
-            Log.Information<int>($"CIAgentlessWriter Initialized with concurrency level of: {concurrencyLevel}", concurrencyLevel);
+            Log.Information<int>($"CIVisibilityProtocolWriter Initialized with concurrency level of: {concurrencyLevel}", concurrencyLevel);
         }
 
         public void WriteEvent(IEvent @event)
@@ -137,7 +137,7 @@ namespace Datadog.Trace.Ci.Agent
             var ciCodeCoverageBufferWatch = buffers.CiCodeCoverageBufferWatch;
             var completionSource = buffers.FlushTaskCompletionSource;
 
-            Log.Debug("CIAgentlessWriter:: InternalFlushEventsAsync/ Starting FlushEventsAsync loop");
+            Log.Debug("CIVisibilityProtocolWriter:: InternalFlushEventsAsync/ Starting FlushEventsAsync loop");
 
             while (!eventQueue.IsCompleted)
             {
@@ -238,7 +238,7 @@ namespace Datadog.Trace.Ci.Agent
             }
 
             completionSource?.TrySetResult(true);
-            Log.Debug("CIAgentlessWriter:: InternalFlushEventsAsync/ Finishing FlushEventsAsync loop");
+            Log.Debug("CIVisibilityProtocolWriter:: InternalFlushEventsAsync/ Finishing FlushEventsAsync loop");
         }
 
         internal class WatermarkEvent : IEvent

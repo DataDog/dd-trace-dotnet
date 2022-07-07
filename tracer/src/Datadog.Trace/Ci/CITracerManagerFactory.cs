@@ -5,6 +5,8 @@
 
 using System;
 using System.Net;
+using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Agent;
@@ -67,13 +69,39 @@ namespace Datadog.Trace.Ci
             else
             {
                 // With agent scenario:
-                // TODO: check if the agent supports EVP Proxy
+                Log.Information("Querying the agent for EVP Proxy support.");
+                var isEvpProxySupported = false;
+                var sContext = SynchronizationContext.Current;
+                try
+                {
+                    SynchronizationContext.SetSynchronizationContext(null);
+                    isEvpProxySupported = IsEvpProxySupportedByTheAgentAsync().GetAwaiter().GetResult();
+                }
+                finally
+                {
+                    SynchronizationContext.SetSynchronizationContext(sContext);
+                }
 
-                return new CIVisibilityProtocolWriter(new CIWriterHttpSender(GetRequestFactory(settings)));
+                if (isEvpProxySupported)
+                {
+                    Log.Information("EVP Proxy is supported, using CIVIsibilityProtocol through the agent.");
+                    return new CIVisibilityProtocolWriter(new CIWriterHttpSender(GetRequestFactory(settings)));
+                }
+                else
+                {
+                    Log.Information("EVP Proxy is not supported, falling back to the normal Agent Writer.");
+                    // Set the tracer buffer size to the max
+                    var traceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
+                    return new CIAgentWriter(settings, sampler, traceBufferSize);
+                }
+            }
 
-                // Set the tracer buffer size to the max
-                // var traceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
-                // return new CIAgentWriter(settings, sampler, traceBufferSize);
+            async Task<bool> IsEvpProxySupportedByTheAgentAsync()
+            {
+                var infoRequest = GetRequestFactory(settings).Create(new Uri(settings.Exporter.AgentUri, "/info"));
+                var infoResponse = await infoRequest.GetAsync().ConfigureAwait(false);
+                var responseContent = await infoResponse.ReadAsStringAsync().ConfigureAwait(false);
+                return responseContent?.IndexOf("\"/evp_proxy/v1/\"", StringComparison.OrdinalIgnoreCase) != -1;
             }
         }
 

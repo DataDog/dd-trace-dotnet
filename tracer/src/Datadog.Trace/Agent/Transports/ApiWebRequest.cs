@@ -48,6 +48,23 @@ namespace Datadog.Trace.Agent.Transports
             }
         }
 
+        public async Task<IApiResponse> GetAsync()
+        {
+            _request.Method = "GET";
+
+            try
+            {
+                var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
+                return new ApiWebResponse(httpWebResponse);
+            }
+            catch (WebException exception)
+                when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
+            {
+                // If the exception is caused by an error status code, ignore it and let the caller handle the result
+                return new ApiWebResponse((HttpWebResponse)exception.Response);
+            }
+        }
+
         public async Task<IApiResponse> PostAsync(params MultipartFormItem[] items)
         {
             Log.Debug<int>("Sending multipart form request with {Count} items.", items?.Length ?? 0);

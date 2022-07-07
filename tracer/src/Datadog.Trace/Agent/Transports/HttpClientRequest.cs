@@ -45,6 +45,7 @@ namespace Datadog.Trace.Agent.Transports
                     serializer.Serialize(writer, events);
                     content.Headers.ContentType = new MediaTypeHeaderValue(MimeTypes.Json);
                     _request.Content = content;
+                    _request.Method = HttpMethod.Post;
                     await writer.FlushAsync().ConfigureAwait(false);
                     memoryStream.Seek(0, SeekOrigin.Begin);
                     var response = new HttpClientResponse(await _client.SendAsync(_request).ConfigureAwait(false));
@@ -70,11 +71,19 @@ namespace Datadog.Trace.Agent.Transports
             {
                 content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
                 _request.Content = content;
+                _request.Method = HttpMethod.Post;
 
                 var response = await _client.SendAsync(_request).ConfigureAwait(false);
 
                 return new HttpClientResponse(response);
             }
+        }
+
+        public async Task<IApiResponse> GetAsync()
+        {
+            _request.Method = HttpMethod.Get;
+            var response = await _client.SendAsync(_request).ConfigureAwait(false);
+            return new HttpClientResponse(response);
         }
 
         public async Task<IApiResponse> PostAsync(params MultipartFormItem[] items)
@@ -83,6 +92,7 @@ namespace Datadog.Trace.Agent.Transports
 
             using var formDataContent = new MultipartFormDataContent();
             _request.Content = formDataContent;
+            _request.Method = HttpMethod.Post;
 
             foreach (var item in items)
             {
