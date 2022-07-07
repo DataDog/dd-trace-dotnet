@@ -61,6 +61,10 @@ namespace Datadog.Trace.Tests.Telemetry
         [InlineData("App_Code.hhzpytyv")]
         [InlineData("App_Theme_Standard.6wkna0wf")]
         [InlineData("App_WebReferences.dvkaf7ph")]
+        [InlineData("0018eae6-bd49-41a4-9bd2-6be3a6544a15")]
+        [InlineData("005ec706-91d7-4237-9466-bac51a64d90f")]
+        [InlineData("00821386-7d9a-499b-8e7f-53dbbefcaf3d")]
+        [InlineData("OK_IM_NO-GUID-BUUT-NOT_-THAT_FAR_OFF")]
         public void DoesNotHaveChangesWhenAssemblyNameIsIgnoredAssembly(string assemblyName)
         {
             var ignoredName = CreateAssemblyName(new Version(1, 0), name: assemblyName);
