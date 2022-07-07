@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
@@ -166,8 +167,10 @@ namespace Datadog.Trace.Tests
             spans.Value.Should().OnlyContain(s => s == rootSpan || s.GetMetric(Metrics.SamplingPriority) == null, "only the root span should have a priority");
         }
 
-        [Fact]
-        public void PartialFlushShouldPropagateSamplingPriority()
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
+        public void PartialFlushShouldPropagateMetadata(bool inAASContext)
         {
             const int partialFlushThreshold = 2;
 
@@ -189,7 +192,22 @@ namespace Datadog.Trace.Tests
             tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
                   .Callback<ArraySegment<Span>>(s => spans = s);
 
-            var traceContext = new TraceContext(tracer.Object);
+            AzureAppServices azureAppServicesContext;
+            var vars = Environment.GetEnvironmentVariables();
+
+            if (inAASContext)
+            {
+                vars.Add(AzureAppServices.AzureAppServicesContextKey, "true");
+                vars.Add(AzureAppServices.ResourceGroupKey, "ThisIsAResourceGroup");
+                vars.Add(Datadog.Trace.Configuration.ConfigurationKeys.ApiKey, "xxx");
+                azureAppServicesContext = new AzureAppServices(vars);
+            }
+            else
+            {
+                azureAppServicesContext = new AzureAppServices(vars);
+            }
+
+            var traceContext = new TraceContext(tracer.Object, azureAppServicesContext: azureAppServicesContext);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
 
             var rootSpan = CreateSpan();
@@ -208,6 +226,15 @@ namespace Datadog.Trace.Tests
             spans.Value.Should().NotBeNullOrEmpty("partial flush should have been triggered");
 
             spans.Value.Should().OnlyContain(s => (int)s.GetMetric(Metrics.SamplingPriority) == SamplingPriorityValues.UserKeep);
+
+            if (inAASContext)
+            {
+                spans.Value.Array[0].GetTag(Tags.AzureAppServicesResourceGroup).Should().NotBeNull();
+            }
+            else
+            {
+                spans.Value.Array[0].GetTag(Tags.AzureAppServicesResourceGroup).Should().BeNull();
+            }
         }
     }
 }

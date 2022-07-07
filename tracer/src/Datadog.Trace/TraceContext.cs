@@ -19,15 +19,17 @@ namespace Datadog.Trace
 
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
         private readonly long _timestamp = Stopwatch.GetTimestamp();
+        private readonly AzureAppServices _azureAppServicesContext;
         private ArrayBuilder<Span> _spans;
 
         private int _openSpans;
         private int? _samplingPriority;
 
-        public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
+        public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null, AzureAppServices azureAppServicesContext = null)
         {
             Tracer = tracer;
             Tags = tags;
+            _azureAppServicesContext = azureAppServicesContext ?? AzureAppServices.Metadata;
         }
 
         public Span RootSpan { get; private set; }
@@ -170,9 +172,9 @@ namespace Datadog.Trace
 
         private void PropagateMetadata(ArraySegment<Span> spans)
         {
-            // When receiving chunks, the backend checks whether the aas.resource.id tag is present to decide which
-            // metric to emit (datadog.apm.host.instance or datadog.apm.azure_resource_instance one).
-            MarkAsAasSpan(spans[0]);
+            // When receiving chunks, the backend checks whether the aas.resource.id tag is present on any span to decide
+            // which metric to emit (datadog.apm.host.instance or datadog.apm.azure_resource_instance one).
+            DecorateRootSpan(spans.Array[0]);
 
             // The agent looks for the sampling priority on the first span that has no parent
             // Finding those spans is not trivial, so instead we apply the priority to every span
@@ -193,28 +195,19 @@ namespace Datadog.Trace
 
         private void DecorateRootSpan(Span span)
         {
-            if (AzureAppServices.Metadata.IsRelevant)
+            if (_azureAppServicesContext.IsRelevant)
             {
-                MarkAsAasSpan(span);
-
-                span.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteName, AzureAppServices.Metadata.SiteName);
-                span.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteKind, AzureAppServices.Metadata.SiteKind);
-                span.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteType, AzureAppServices.Metadata.SiteType);
-                span.SetTag(Datadog.Trace.Tags.AzureAppServicesResourceGroup, AzureAppServices.Metadata.ResourceGroup);
-                span.SetTag(Datadog.Trace.Tags.AzureAppServicesSubscriptionId, AzureAppServices.Metadata.SubscriptionId);
-                span.SetTag(Datadog.Trace.Tags.AzureAppServicesInstanceId, AzureAppServices.Metadata.InstanceId);
-                span.SetTag(Datadog.Trace.Tags.AzureAppServicesInstanceName, AzureAppServices.Metadata.InstanceName);
-                span.SetTag(Datadog.Trace.Tags.AzureAppServicesOperatingSystem, AzureAppServices.Metadata.OperatingSystem);
-                span.SetTag(Datadog.Trace.Tags.AzureAppServicesRuntime, AzureAppServices.Metadata.Runtime);
-                span.SetTag(Datadog.Trace.Tags.AzureAppServicesExtensionVersion, AzureAppServices.Metadata.SiteExtensionVersion);
-            }
-        }
-
-        private void MarkAsAasSpan(Span span)
-        {
-            if (AzureAppServices.Metadata.IsRelevant)
-            {
-                span.SetTag(Datadog.Trace.Tags.AzureAppServicesResourceId, AzureAppServices.Metadata.ResourceId);
+                span.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteName, _azureAppServicesContext.SiteName);
+                span.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteKind, _azureAppServicesContext.SiteKind);
+                span.SetTag(Datadog.Trace.Tags.AzureAppServicesSiteType, _azureAppServicesContext.SiteType);
+                span.SetTag(Datadog.Trace.Tags.AzureAppServicesResourceGroup, _azureAppServicesContext.ResourceGroup);
+                span.SetTag(Datadog.Trace.Tags.AzureAppServicesSubscriptionId, _azureAppServicesContext.SubscriptionId);
+                span.SetTag(Datadog.Trace.Tags.AzureAppServicesResourceId, _azureAppServicesContext.ResourceId);
+                span.SetTag(Datadog.Trace.Tags.AzureAppServicesInstanceId, _azureAppServicesContext.InstanceId);
+                span.SetTag(Datadog.Trace.Tags.AzureAppServicesInstanceName, _azureAppServicesContext.InstanceName);
+                span.SetTag(Datadog.Trace.Tags.AzureAppServicesOperatingSystem, _azureAppServicesContext.OperatingSystem);
+                span.SetTag(Datadog.Trace.Tags.AzureAppServicesRuntime, _azureAppServicesContext.Runtime);
+                span.SetTag(Datadog.Trace.Tags.AzureAppServicesExtensionVersion, _azureAppServicesContext.SiteExtensionVersion);
             }
         }
     }
