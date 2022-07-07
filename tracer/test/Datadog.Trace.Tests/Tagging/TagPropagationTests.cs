@@ -24,7 +24,7 @@ public class TagPropagationTests
         var expectedPairs = new KeyValuePair<string, string>[]
                             {
                                 new("_dd.p.key1", "value1"),
-                                // "key2" is not a propagated tag
+                                new(Tags.TagPropagation.Error, PropagationErrorTagValues.DecodingError), // "key2" is not a propagated tag
                                 new("_dd.p.key3", "value3"),
                             };
 
@@ -142,6 +142,22 @@ public class TagPropagationTests
         // propagation disabled: empty header and an error tag
         headerValue.Should().BeEmpty();
         traceTags.GetTag(Tags.TagPropagation.Error).Should().Be(PropagationErrorTagValues.PropagationDisabled);
+    }
+
+    [Theory]
+    [InlineData("_dd.p.key 1", "value1")] // space in key
+    [InlineData("_dd.p.key,1", "value1")] // comma in key
+    [InlineData("_dd.p.key=1", "value1")] // equals in key
+    [InlineData("_dd.p.key1", "value,1")] // comma in value
+    public void ToPropagationHeaderValue_InvalidChars(string key, string value)
+    {
+        var traceTags = new TraceTagCollection();
+        traceTags.SetTag(key, value);
+        var headerValue = traceTags.ToPropagationHeader(MaxInjectLength);
+
+        // invalid chars: empty header and an error tag
+        headerValue.Should().BeEmpty();
+        traceTags.GetTag(Tags.TagPropagation.Error).Should().Be(PropagationErrorTagValues.EncodingError);
     }
 
     [Fact]
