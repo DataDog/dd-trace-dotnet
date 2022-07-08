@@ -143,5 +143,18 @@ namespace Datadog.Trace.Tagging
         {
             return _tags ?? (IEnumerable<KeyValuePair<string, string>>)Array.Empty<KeyValuePair<string, string>>();
         }
+
+        public KeyValuePair<string, string>[] ToArray()
+        {
+            if (_tags == null || _tags.Count == 0)
+            {
+                return Array.Empty<KeyValuePair<string, string>>();
+            }
+
+            lock (_listLock)
+            {
+                return _tags.ToArray();
+            }
+        }
     }
 }
