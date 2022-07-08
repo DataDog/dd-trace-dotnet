@@ -43,11 +43,7 @@ namespace Datadog.Trace.Telemetry
                || assemblyName.StartsWith("App_global.asax.", StringComparison.Ordinal)
                || assemblyName.StartsWith("App_Code.", StringComparison.Ordinal)
                || assemblyName.StartsWith("App_WebReferences.", StringComparison.Ordinal)))
-             || (assemblyName.Length == 36
-              && assemblyName[8] == '-'
-              && assemblyName[13] == '-'
-              && assemblyName[18] == '-'
-              && assemblyName[23] == '-'))
+             || IsGuid(assemblyName))
             {
                 return;
             }
@@ -103,6 +99,20 @@ namespace Datadog.Trace.Telemetry
                     >= '0' and <= '5' => true,
                     _ => false
                 };
+            }
+        }
+
+        private static bool IsGuid(string assemblyName)
+        {
+            switch (assemblyName.Length)
+            {
+                // Simple implementation to remove guids
+                case 36 when assemblyName[8] == '-' && assemblyName[13] == '-' && assemblyName[18] == '-' && assemblyName[23] == '-':
+                // and other weird use cases like ℛ*710fa04a-6428-4dd1-85a0-0419c142709b#5-0
+                case 42 or 43 when assemblyName[10] == '-' && assemblyName[15] == '-' && assemblyName[20] == '-' && assemblyName[25] == '-':
+                    return true;
+                default:
+                    return false;
             }
         }
 

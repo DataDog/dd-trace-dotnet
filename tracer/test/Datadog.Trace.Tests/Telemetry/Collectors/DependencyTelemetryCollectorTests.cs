@@ -64,6 +64,8 @@ namespace Datadog.Trace.Tests.Telemetry
         [InlineData("0018eae6-bd49-41a4-9bd2-6be3a6544a15")]
         [InlineData("005ec706-91d7-4237-9466-bac51a64d90f")]
         [InlineData("00821386-7d9a-499b-8e7f-53dbbefcaf3d")]
+        [InlineData("ℛ*00093a17-a657-432d-ad25-13cf53f44319#2-0")]
+        [InlineData("ℛ*71ccc5b6-6f30-4c09-9e23-4e7ac5a9ad31#13-0")]
         [InlineData("OK_IM_NO-GUID-BUUT-NOT_-THAT_FAR_OFF")]
         public void DoesNotHaveChangesWhenAssemblyNameIsIgnoredAssembly(string assemblyName)
         {
