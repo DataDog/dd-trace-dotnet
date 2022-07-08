@@ -30,7 +30,7 @@ public class TagPropagationTests
 
         var tags = TagPropagation.ParseHeader(header);
 
-        tags.ToEnumerable().Should().BeEquivalentTo(expectedPairs);
+        tags.ToArray().Should().BeEquivalentTo(expectedPairs);
     }
 
     [Theory]
@@ -44,7 +44,7 @@ public class TagPropagationTests
         tags.Count.Should().Be(0);
 
         // no error tags added in these cases
-        tags.ToEnumerable().Should().BeEmpty();
+        tags.ToArray().Should().BeEmpty();
     }
 
     [Theory]
@@ -66,7 +66,7 @@ public class TagPropagationTests
         var tags = TagPropagation.ParseHeader(header);
 
         // the error tag should be the only tag
-        tags.ToEnumerable().Should().BeEquivalentTo(expectedPairs);
+        tags.ToArray().Should().BeEquivalentTo(expectedPairs);
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public class TagPropagationTests
         var tags = TagPropagation.ParseHeader(header);
 
         // the error tag should be the only tag
-        tags.ToEnumerable().Should().BeEquivalentTo(expectedPairs);
+        tags.ToArray().Should().BeEquivalentTo(expectedPairs);
     }
 
     [Theory]

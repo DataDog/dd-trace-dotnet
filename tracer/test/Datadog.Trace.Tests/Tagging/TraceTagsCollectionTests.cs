@@ -90,7 +90,7 @@ public class TraceTagsCollectionTests
     {
         var tags = new TraceTagCollection();
         tags.Count.Should().Be(0);
-        tags.ToEnumerable().Should().BeEmpty();
+        tags.ToArray().Should().BeEmpty();
 
         var header = tags.ToPropagationHeader(MaxHeaderLength);
         header.Should().BeEmpty();
