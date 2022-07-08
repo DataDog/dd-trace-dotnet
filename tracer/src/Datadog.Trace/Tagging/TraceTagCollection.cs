@@ -7,14 +7,11 @@
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Tagging
 {
     internal class TraceTagCollection
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceTagCollection>();
-
         // used when tag list is null because "new List<KeyValuePair<string, string>>.Enumerator" returns an invalid enumerator.
         private static readonly List<KeyValuePair<string, string>>.Enumerator EmptyEnumerator = new List<KeyValuePair<string, string>>(0).GetEnumerator();
 
@@ -120,11 +117,6 @@ namespace Datadog.Trace.Tagging
         public string ToPropagationHeader(int maxLength)
         {
             return _cachedPropagationHeader ??= TagPropagation.ToHeader(this, maxLength);
-        }
-
-        public List<KeyValuePair<string, string>>.Enumerator GetEnumerator()
-        {
-            return _tags?.GetEnumerator() ?? EmptyEnumerator;
         }
 
         /// <summary>
