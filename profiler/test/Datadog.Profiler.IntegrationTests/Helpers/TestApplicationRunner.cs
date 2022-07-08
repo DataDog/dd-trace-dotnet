@@ -132,6 +132,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             SetEnvironmentVariables(process.StartInfo.EnvironmentVariables, agentPort);
 
+            process.StartInfo.EnvironmentVariables["COMPlus_DbgEnableMiniDump"] = "1";
+            process.StartInfo.EnvironmentVariables["COMPlus_DbgMiniDumpType"] = "4";
+            process.StartInfo.EnvironmentVariables["COMPlus_DbgMiniDumpName"] = Path.Combine(_testBaseOutputDir, "crash.dmp");
+
             process.StartInfo.FileName = executor;
             process.StartInfo.Arguments = arguments;
             process.StartInfo.UseShellExecute = false;
