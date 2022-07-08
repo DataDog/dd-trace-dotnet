@@ -135,8 +135,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 ("win", "X64")     => "Datadog.AutoInstrumentation.NativeLoader.x64.dll",
                 ("win", "X86")     => "Datadog.AutoInstrumentation.NativeLoader.x86.dll",
-                ("linux", "X64")   => "Datadog.Trace.ClrProfiler.Native.so",
-                ("linux", "Arm64") => "Datadog.Trace.ClrProfiler.Native.so",
+                ("linux", "X64" or "Arm64") => "Datadog.Trace.ClrProfiler.Native.so",
                 ("osx", _)         => "Datadog.AutoInstrumentation.NativeLoader.dylib",
                 _ => throw new PlatformNotSupportedException()
             };
