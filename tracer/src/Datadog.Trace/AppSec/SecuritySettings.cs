@@ -15,7 +15,6 @@ namespace Datadog.Trace.AppSec
     internal class SecuritySettings
     {
         internal const string ObfuscationParameterKeyRegexDefault = @"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?)key)|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)|bearer|authorization";
-        internal const string ObfuscationParameterValueRegexDefault = QueryStringObfuscator.DefaultObfuscationQueryStringRegex;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SecuritySettings>();
 
         public SecuritySettings(IConfigurationSource source)
@@ -54,7 +53,7 @@ namespace Datadog.Trace.AppSec
             ObfuscationParameterKeyRegex = string.IsNullOrWhiteSpace(obfuscationParameterKeyRegex) ? ObfuscationParameterKeyRegexDefault : obfuscationParameterKeyRegex;
 
             var obfuscationParameterValueRegex = source?.GetString(ConfigurationKeys.AppSec.ObfuscationParameterValueRegex);
-            ObfuscationParameterValueRegex = string.IsNullOrWhiteSpace(obfuscationParameterValueRegex) ? ObfuscationParameterValueRegexDefault : obfuscationParameterValueRegex;
+            ObfuscationParameterValueRegex = string.IsNullOrWhiteSpace(obfuscationParameterValueRegex) ? TracerSettings.DefaultObfuscationQueryStringRegex : obfuscationParameterValueRegex;
         }
 
         public bool Enabled { get; set; }

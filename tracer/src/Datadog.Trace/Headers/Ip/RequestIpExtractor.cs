@@ -13,7 +13,6 @@ namespace Datadog.Trace.Headers.Ip
     internal static class RequestIpExtractor
     {
         private static readonly IReadOnlyList<string> IpHeaders = new[] { "x-forwarded-for", "x-real-ip", "client-ip", "x-forwarded", "x-cluster-client-ip", "forwarded-for", "forwarded", "via", "true-client-ip" };
-        internal static readonly IReadOnlyList<string> MainHeaders = new[] { "user-agent", "referer" };
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RequestIpExtractor));
 
         internal static IpInfo ExtractIpAndPort(Func<string, string> getHeader, string customIpHeader, bool isSecureConnection, IpInfo peerIpFallback)
@@ -52,15 +51,15 @@ namespace Datadog.Trace.Headers.Ip
             return result ?? (!string.IsNullOrEmpty(potentialIp) ? IpExtractor.RealIpFromValue(potentialIp, isSecureConnection) : peerIpFallback);
         }
 
-        internal static void AddIpToTags(string peerIpAddress, bool isSecureConnection, Func<string, string> getHeader, string customIpHeader, WebTags tags)
+        internal static void AddIpToTags(string peerIpAddress, bool isSecureConnection, Func<string, string> getRequestHeaderFromKey, string customIpHeader, WebTags tags)
         {
             var peerIp = IpExtractor.ExtractAddressAndPort(peerIpAddress, https: isSecureConnection);
-            AddIpToTags(peerIp, isSecureConnection, getHeader, customIpHeader, tags);
+            AddIpToTags(peerIp, isSecureConnection, getRequestHeaderFromKey, customIpHeader, tags);
         }
 
-        internal static void AddIpToTags(IpInfo peerIp, bool isSecureConnection, Func<string, string> getHeader, string customIpHeader, WebTags tags)
+        internal static void AddIpToTags(IpInfo peerIp, bool isSecureConnection, Func<string, string> getRequestHeaderFromKey, string customIpHeader, WebTags tags)
         {
-            var ipInfo = ExtractIpAndPort(getHeader, customIpHeader, isSecureConnection, peerIp);
+            var ipInfo = ExtractIpAndPort(getRequestHeaderFromKey, customIpHeader, isSecureConnection, peerIp);
             tags.SetTag(Tags.NetworkClientIp, peerIp?.IpAddress);
             if (ipInfo != null)
             {

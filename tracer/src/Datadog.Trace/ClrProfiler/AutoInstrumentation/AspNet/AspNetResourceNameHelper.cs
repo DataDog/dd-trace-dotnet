@@ -51,18 +51,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             // route values provided, comparing the parameter sizes to the parameter values
             // (only action/controller/area unless expandRouteParameters = true,
             // but doesn't seem worth it
-            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-            var sbRoute = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            var stringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 
-            sb.Append(httpMethod)
-              .Append(' ');
-
-            if (addSlashPrefix)
-            {
-                sb.Append('/');
-            }
-
-            sbRoute.Append(routeTemplate.ToLowerInvariant());
+            stringBuilder.Append(routeTemplate.ToLowerInvariant());
 
             areaName = null;
             controllerName = null;
@@ -73,17 +64,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 if (string.Equals(kvp.Key, "action", StringComparison.OrdinalIgnoreCase) && kvp.Value is string action)
                 {
                     actionName = action.ToLowerInvariant();
-                    sbRoute.Replace("{action}", actionName);
+                    stringBuilder.Replace("{action}", actionName);
                 }
                 else if (string.Equals(kvp.Key, "controller", StringComparison.OrdinalIgnoreCase) && kvp.Value is string controller)
                 {
                     controllerName = controller.ToLowerInvariant();
-                    sbRoute.Replace("{controller}", controllerName);
+                    stringBuilder.Replace("{controller}", controllerName);
                 }
                 else if (string.Equals(kvp.Key, "area", StringComparison.OrdinalIgnoreCase) && kvp.Value is string area)
                 {
                     areaName = area.ToLowerInvariant();
-                    sbRoute.Replace("{area}", areaName);
+                    stringBuilder.Replace("{area}", areaName);
                 }
                 else if (expandRouteTemplates)
                 {
@@ -92,11 +83,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     {
                         // We're replacing the key with itself, so that we strip out all the additional parameters etc
                         // We should probably be doing that for the non-expanded approach too, but we historically haven't
-                        ReplaceValue(sbRoute, kvp.Key, kvp.Key, ReplaceType.ValueOnly);
+                        ReplaceValue(stringBuilder, kvp.Key, kvp.Key, ReplaceType.ValueOnly);
                     }
                     else
                     {
-                        ReplaceValue(sbRoute, kvp.Key, valueAsString, ReplaceType.ValueAndBraces);
+                        ReplaceValue(stringBuilder, kvp.Key, valueAsString, ReplaceType.ValueAndBraces);
                     }
                 }
             }
@@ -111,13 +102,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         continue;
                     }
 
-                    ReplaceValue(sbRoute, kvp.Key, null, replaceType: ReplaceType.ValueBracesAndLeadingSlash);
+                    ReplaceValue(stringBuilder, kvp.Key, null, replaceType: ReplaceType.ValueBracesAndLeadingSlash);
                 }
             }
 
-            route = StringBuilderCache.GetStringAndRelease(sbRoute);
-            sb.Append(route);
-            return StringBuilderCache.GetStringAndRelease(sb);
+            route = stringBuilder.ToString();
+            stringBuilder.Insert(0, $"{httpMethod} {(addSlashPrefix ? "/" : string.Empty)}");
+            return StringBuilderCache.GetStringAndRelease(stringBuilder);
         }
 
         private static void ReplaceValue(StringBuilder sb, string key, string? value, ReplaceType replaceType)
@@ -185,7 +176,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                     // first check if we're _not_ in the constraint part
                     if (endIndex < sbLength
-                        && sb[endIndex] is not '?' and not ':' and not '=' and not '}')
+                     && sb[endIndex] is not '?' and not ':' and not '=' and not '}')
                     {
                         // we haven't finished the parameter name
                         // e.g `{keyo` or `{*key1`

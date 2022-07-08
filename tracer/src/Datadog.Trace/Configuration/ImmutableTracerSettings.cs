@@ -180,12 +180,12 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
         /// </summary>
-        public string IpHeader { get; }
+        internal string IpHeader { get; }
 
         /// <summary>
         /// Gets a value indicating whether the ip header should not be collected. The default is false.
         /// </summary>
-        public bool IpHeaderDisabled { get; }
+        internal bool IpHeaderDisabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether internal metrics
