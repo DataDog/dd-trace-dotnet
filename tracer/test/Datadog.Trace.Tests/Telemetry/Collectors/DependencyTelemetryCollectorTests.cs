@@ -41,17 +41,18 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
         [Fact]
-        public void DoesNotHaveChangesWhenSameAssemblyAddedTwice()
+        public void DoesHaveChangesWhenSameAssemblyAddedTwice()
         {
             var assembly = typeof(DependencyTelemetryCollectorTests).Assembly;
             var collector = new DependencyTelemetryCollector();
             collector.AssemblyLoaded(assembly);
+            collector.HasChanges().Should().BeTrue();
 
             collector.GetData();
             collector.HasChanges().Should().BeFalse();
 
             collector.AssemblyLoaded(assembly);
-            collector.HasChanges().Should().BeFalse();
+            collector.HasChanges().Should().BeTrue();
         }
 
         [Theory]
@@ -119,10 +120,6 @@ namespace Datadog.Trace.Tests.Telemetry
             var assemblyV2 = CreateAssemblyName(new Version(2, 0));
             var collector = new DependencyTelemetryCollector();
             collector.AssemblyLoaded(assemblyV1);
-
-            collector.GetData();
-            collector.HasChanges().Should().BeFalse();
-
             collector.AssemblyLoaded(assemblyV2);
             collector.HasChanges().Should().BeTrue();
             var data = collector.GetData();

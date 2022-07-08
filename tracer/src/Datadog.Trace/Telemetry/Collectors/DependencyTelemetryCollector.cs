@@ -13,9 +13,7 @@ namespace Datadog.Trace.Telemetry
 {
     internal class DependencyTelemetryCollector
     {
-        private readonly ConcurrentDictionary<DependencyTelemetryData, bool> _assemblies = new();
-
-        private int _hasChangesFlag = 0;
+        private ConcurrentDictionary<DependencyTelemetryData, bool> _assemblies = new();
 
         /// <summary>
         /// Called when an assembly is loaded
@@ -49,15 +47,12 @@ namespace Datadog.Trace.Telemetry
             }
 
             var key = new DependencyTelemetryData(name: assemblyName) { Version = assembly.Version?.ToString() };
-            if (_assemblies.TryAdd(key, true))
-            {
-                SetHasChanges();
-            }
+            _assemblies.TryAdd(key, true);
         }
 
         public bool HasChanges()
         {
-            return _hasChangesFlag == 1;
+            return !_assemblies.IsEmpty;
         }
 
         /// <summary>
@@ -66,13 +61,14 @@ namespace Datadog.Trace.Telemetry
         /// <returns>Null if there are no changes, or the collector is not yet initialized</returns>
         public ICollection<DependencyTelemetryData> GetData()
         {
-            var hasChanges = Interlocked.CompareExchange(ref _hasChangesFlag, 0, 1) == 1;
-            if (!hasChanges)
+            var assemblies = Interlocked.Exchange(ref _assemblies, new ConcurrentDictionary<DependencyTelemetryData, bool>());
+
+            if (assemblies.IsEmpty)
             {
                 return null;
             }
 
-            return _assemblies.Keys;
+            return assemblies.Keys;
         }
 
         private static bool IsTempPathPattern(string assemblyName)
@@ -114,11 +110,6 @@ namespace Datadog.Trace.Telemetry
                 default:
                     return false;
             }
-        }
-
-        private void SetHasChanges()
-        {
-            Interlocked.Exchange(ref _hasChangesFlag, 1);
         }
     }
 }
