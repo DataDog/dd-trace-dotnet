@@ -46,23 +46,24 @@ namespace Datadog.Trace.Tagging
 
             lock (_listLock)
             {
-                _tags ??= new List<KeyValuePair<string, string>>(1);
-
-                if (_tags.Count > 0)
+                if (_tags?.Count > 0)
                 {
+                    // we have some tags already, try to find this one
                     for (int i = 0; i < _tags.Count; i++)
                     {
                         if (string.Equals(_tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
                         {
                             if (value == null)
                             {
+                                // tag already exists, setting it to null removes it
                                 _tags.RemoveAt(i);
                             }
                             else if (!string.Equals(_tags[i].Value, value, StringComparison.Ordinal))
                             {
+                                // tag already exists with different value, replace it
                                 _tags[i] = new(name, value);
 
-                                // clear the cached header if we make any changes to a distributed tag
+                                // clear the cached header
                                 if (isPropagated)
                                 {
                                     _cachedPropagationHeader = null;
@@ -77,9 +78,12 @@ namespace Datadog.Trace.Tagging
                 // tag not found, add new one
                 if (value != null)
                 {
+                    // delay creating the List<T> as long as possible
+                    _tags ??= new List<KeyValuePair<string, string>>(1);
+
                     _tags.Add(new(name, value));
 
-                    // clear the cached header if we make any changes to a distributed tag
+                    // clear the cached header
                     if (isPropagated)
                     {
                         _cachedPropagationHeader = null;
