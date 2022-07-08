@@ -17,18 +17,20 @@ namespace Datadog.Trace.Headers.Ip
 
         internal static IpInfo ExtractIpAndPort(Func<string, string> getHeader, string customIpHeader, bool isSecureConnection, IpInfo peerIpFallback)
         {
-            IpInfo result = null;
+            IpInfo extractedCustomIp = null;
             if (!string.IsNullOrEmpty(customIpHeader))
             {
                 var value = getHeader(customIpHeader);
                 if (!string.IsNullOrEmpty(value))
                 {
-                    result = IpExtractor.RealIpFromValue(value, isSecureConnection);
-                    if (result == null)
+                    extractedCustomIp = IpExtractor.RealIpFromValue(value, isSecureConnection);
+                    if (extractedCustomIp == null)
                     {
                         Log.Warning("A custom header for ip with value {value} was configured but no ip could be read", value);
                         return null;
                     }
+
+                    // dont return extractedCustomIp if not null, we want to check that no other ip headers are found, otherwise could be a sign of injection, i.e. RFC on ip extraction algorithm
                 }
             }
 
@@ -48,7 +50,7 @@ namespace Datadog.Trace.Headers.Ip
                 }
             }
 
-            return result ?? (!string.IsNullOrEmpty(potentialIp) ? IpExtractor.RealIpFromValue(potentialIp, isSecureConnection) : peerIpFallback);
+            return extractedCustomIp ?? (!string.IsNullOrEmpty(potentialIp) ? IpExtractor.RealIpFromValue(potentialIp, isSecureConnection) : peerIpFallback);
         }
 
         internal static void AddIpToTags(string peerIpAddress, bool isSecureConnection, Func<string, string> getRequestHeaderFromKey, string customIpHeader, WebTags tags)
