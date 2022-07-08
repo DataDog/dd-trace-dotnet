@@ -80,14 +80,14 @@ namespace Datadog.Trace.Ci
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Exception occurred when flushing spans.");
+                Log.Error(ex, "CIVisibility:: Exception occurred when flushing data (sync).");
             }
 
             static void InternalFlush()
             {
                 if (!InternalFlushAsync().Wait(30_000))
                 {
-                    Log.Error("Timeout occurred when flushing spans.");
+                    Log.Error("CIVisibility:: Timeout occurred when flushing data...");
                 }
             }
         }
@@ -128,24 +128,24 @@ namespace Datadog.Trace.Ci
                 // We have to ensure the flush of the buffer after we finish the tests of an assembly.
                 // For some reason, sometimes when all test are finished none of the callbacks to handling the tracer disposal is triggered.
                 // So the last spans in buffer aren't send to the agent.
-                Log.Debug("Integration flushing spans.");
-
                 if (_settings.Logs)
                 {
+                    Log.Debug("CIVisibility:: Flushing data with logs...");
                     await Task.WhenAll(
                         Tracer.Instance.FlushAsync(),
                         Tracer.Instance.TracerManager.DirectLogSubmission.Sink.FlushAsync()).ConfigureAwait(false);
                 }
                 else
                 {
+                    Log.Debug("CIVisibility:: Flushing data...");
                     await Tracer.Instance.FlushAsync().ConfigureAwait(false);
                 }
 
-                Log.Debug("Integration flushed.");
+                Log.Debug("CIVisibility:: Flushed.");
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Exception occurred when flushing spans.");
+                Log.Error(ex, "CIVisibility:: Exception occurred when flushing data.");
             }
         }
 

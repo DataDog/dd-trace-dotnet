@@ -80,26 +80,30 @@ namespace Datadog.Trace.Ci.Agent
             }
         }
 
-        public Task FlushTracesAsync()
+        public async Task FlushTracesAsync()
         {
-            var wme = new WatermarkEvent();
             if (_eventQueue.IsAddingCompleted)
             {
-                return Task.CompletedTask;
+                return;
             }
+
+            var wme = new WatermarkEvent();
 
             try
             {
+                Log.Debug("CIVisibilityProtocolWriter:: Queuing flush watermark event.");
                 _eventQueue.Add(wme);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error Writing event in a queue.");
-                return Task.FromException(ex);
+                throw;
             }
 
+            Log.Debug("CIVisibilityProtocolWriter:: Waiting for flush watermark to be resolved.");
             _flushDelayEvent.Set();
-            return wme.CompletionSource.Task;
+            await wme.CompletionSource.Task.ConfigureAwait(false);
+            Log.Debug("CIVisibilityProtocolWriter:: Flush done.");
         }
 
         public Task<bool> Ping()
@@ -158,6 +162,7 @@ namespace Datadog.Trace.Ci.Agent
                             // Flush operation.
                             // We get the completion source and exit this loop
                             // to flush buffers (in case there's any event)
+                            Log.Debug("CIVisibilityProtocolWriter:: Flush watermark found!");
                             watermarkCompletion = watermarkEvent.CompletionSource;
                             break;
                         }
@@ -209,7 +214,11 @@ namespace Datadog.Trace.Ci.Agent
                     await buffers.FlushAsync().ConfigureAwait(false);
 
                     // If there's a flush watermark we marked as resolved.
-                    watermarkCompletion?.TrySetResult(true);
+                    if (watermarkCompletion is not null)
+                    {
+                        Log.Debug("CIVisibilityProtocolWriter:: Flush watermark resolved.");
+                        watermarkCompletion.TrySetResult(true);
+                    }
                 }
                 catch (ThreadAbortException ex)
                 {
