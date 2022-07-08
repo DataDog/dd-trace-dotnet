@@ -8,11 +8,13 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.Transports
 {
-    internal class ApiWebRequest : IApiRequest
+    internal class ApiWebRequest : IApiRequest, IMultipartApiRequest
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ApiWebRequest>();
         private readonly HttpWebRequest _request;
 
         public ApiWebRequest(HttpWebRequest request)
@@ -32,6 +34,72 @@ namespace Datadog.Trace.Agent.Transports
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
                 await requestStream.WriteAsync(bytes.Array, bytes.Offset, bytes.Count).ConfigureAwait(false);
+            }
+
+            try
+            {
+                var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
+                return new ApiWebResponse(httpWebResponse);
+            }
+            catch (WebException exception)
+                when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
+            {
+                // If the exception is caused by an error status code, ignore it and let the caller handle the result
+                return new ApiWebResponse((HttpWebResponse)exception.Response);
+            }
+        }
+
+        public async Task<IApiResponse> PostAsync(params MultipartFormItem[] items)
+        {
+            if (items is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(items));
+            }
+
+            Log.Debug<int>("Sending multipart form request with {Count} items.", items.Length);
+
+            var boundary = "---------------------------" + DateTime.Now.Ticks.ToString("x");
+
+            _request.Method = "POST";
+            _request.ContentType = "multipart/form-data; boundary=" + boundary;
+
+            using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
+            {
+                // Write form request using the boundary
+
+                var boundaryBytes = Encoding.ASCII.GetBytes("\r\n--" + boundary + "\r\n");
+
+                // Write each MultipartFormItem
+                foreach (var item in items)
+                {
+                    await requestStream.WriteAsync(boundaryBytes, 0, boundaryBytes.Length).ConfigureAwait(false);
+                    byte[] headerBytes;
+                    if (item.FileName is null)
+                    {
+                        headerBytes = Encoding.UTF8.GetBytes(
+                            $"Content-Disposition: form-data; name=\"{item.Name}\"\r\nContent-Type: {item.ContentType}\r\n\r\n");
+                    }
+                    else
+                    {
+                        headerBytes = Encoding.UTF8.GetBytes(
+                            $"Content-Disposition: form-data; name=\"{item.Name}\"; filename=\"{item.FileName}\"\r\nContent-Type: {item.ContentType}\r\n\r\n");
+                    }
+
+                    await requestStream.WriteAsync(headerBytes, 0, headerBytes.Length).ConfigureAwait(false);
+                    if (item.ContentInBytes is { } arraySegment)
+                    {
+                        Log.Debug("Adding to Multipart Byte Array | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
+                        await requestStream.WriteAsync(arraySegment.Array, arraySegment.Offset, arraySegment.Count).ConfigureAwait(false);
+                    }
+                    else if (item.ContentInStream is { } stream)
+                    {
+                        Log.Debug("Adding to Multipart Stream | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
+                        await stream.CopyToAsync(requestStream).ConfigureAwait(false);
+                    }
+                }
+
+                var trailer = Encoding.ASCII.GetBytes("\r\n--" + boundary + "--\r\n");
+                await requestStream.WriteAsync(trailer, 0, trailer.Length).ConfigureAwait(false);
             }
 
             try

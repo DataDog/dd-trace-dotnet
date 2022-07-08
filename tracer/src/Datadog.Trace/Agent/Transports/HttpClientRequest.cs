@@ -12,11 +12,12 @@ using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Agent.Transports
 {
-    internal class HttpClientRequest : IApiRequest
+    internal class HttpClientRequest : IApiRequest, IMultipartApiRequest
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpClientRequest>();
 
@@ -75,6 +76,41 @@ namespace Datadog.Trace.Agent.Transports
 
                 return new HttpClientResponse(response);
             }
+        }
+
+        public async Task<IApiResponse> PostAsync(params MultipartFormItem[] items)
+        {
+            if (items is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(items));
+            }
+
+            Log.Debug<int>("Sending multipart form request with {Count} items.", items.Length);
+
+            using var formDataContent = new MultipartFormDataContent();
+            _request.Content = formDataContent;
+
+            foreach (var item in items)
+            {
+                // Adds a form data item
+                if (item.ContentInBytes is { } arraySegment)
+                {
+                    var content = new ByteArrayContent(arraySegment.Array, arraySegment.Offset, arraySegment.Count);
+                    content.Headers.ContentType = new MediaTypeHeaderValue(item.ContentType);
+                    formDataContent.Add(content, item.Name, item.FileName);
+                    Log.Debug("Adding to Multipart Byte Array | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
+                }
+                else if (item.ContentInStream is { } stream)
+                {
+                    var content = new StreamContent(stream);
+                    content.Headers.ContentType = new MediaTypeHeaderValue(item.ContentType);
+                    formDataContent.Add(content, item.Name, item.FileName);
+                    Log.Debug("Adding to Multipart Stream | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
+                }
+            }
+
+            var response = await _client.SendAsync(_request).ConfigureAwait(false);
+            return new HttpClientResponse(response);
         }
     }
 }
