@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Moq;
@@ -12,6 +13,8 @@ using Xunit;
 
 namespace Datadog.Trace.Tests
 {
+    [Collection(nameof(AzureAppServicesTestCollection))]
+    [AzureAppServicesRestorer]
     public class TraceContextTests
     {
         private readonly Mock<IDatadogTracer> _tracerMock = new Mock<IDatadogTracer>();
@@ -192,7 +195,6 @@ namespace Datadog.Trace.Tests
             tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
                   .Callback<ArraySegment<Span>>(s => spans = s);
 
-            AzureAppServices azureAppServicesContext;
             var vars = Environment.GetEnvironmentVariables();
 
             if (inAASContext)
@@ -200,14 +202,10 @@ namespace Datadog.Trace.Tests
                 vars.Add(AzureAppServices.AzureAppServicesContextKey, "true");
                 vars.Add(AzureAppServices.ResourceGroupKey, "ThisIsAResourceGroup");
                 vars.Add(Datadog.Trace.Configuration.ConfigurationKeys.ApiKey, "xxx");
-                azureAppServicesContext = new AzureAppServices(vars);
-            }
-            else
-            {
-                azureAppServicesContext = new AzureAppServices(vars);
+                AzureAppServices.Metadata = new AzureAppServices(vars);
             }
 
-            var traceContext = new TraceContext(tracer.Object, azureAppServicesContext: azureAppServicesContext);
+            var traceContext = new TraceContext(tracer.Object);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
 
             var rootSpan = CreateSpan();
