@@ -44,7 +44,7 @@ namespace Datadog.Trace.Propagators
             }
 
             var propagationHeaderMaxLength = context.TraceContext?.Tracer.Settings.PropagationHeaderMaxLength ?? TagPropagation.OutgoingPropagationHeaderMaxLength;
-            var propagatedTraceTags = context.TraceContext?.Tags?.ToPropagationHeader(propagationHeaderMaxLength) ?? context.PropagatedTags;
+            var propagatedTraceTags = context.TraceContext?.Tags.ToPropagationHeader(propagationHeaderMaxLength) ?? context.PropagatedTags;
 
             if (propagatedTraceTags != null)
             {
