@@ -11,28 +11,17 @@ ExternalProject_Add(libunwind
     BUILD_ALWAYS false
 )
 
-SET(LIBUNWIND_SOURCE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libunwind-prefix/src/libunwind)
 SET(LIBUNWIND_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/libunwind-prefix/src/libunwind-build)
 
-SET(LIBUNWIND_x86_64_PATH ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind-x86_64.a CACHE FILEPATH "location of libunwind-x64_64.a")
-SET(LIBUNWIND_PATH ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind.a CACHE FILEPATH "location of libunwind.a")
+add_library(libunwind-lib INTERFACE)
 
-SET(LIBUNWIND_LIBS
-    ${LIBUNWIND_x86_64_PATH}
-    ${LIBUNWIND_PATH})
-
-
-SET(LIBUNWIND_INCLUDES
+target_include_directories(libunwind-lib INTERFACE
+    ${CMAKE_CURRENT_BINARY_DIR}/libunwind-prefix/src/libunwind-build/include
     ${CMAKE_CURRENT_BINARY_DIR}/libunwind-prefix/src/libunwind/include
-    ${CMAKE_CURRENT_BINARY_DIR}/libunwind-prefix/src/libunwind-build/include)
+)
 
+target_link_libraries(libunwind-lib INTERFACE
+    ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind-${CMAKE_SYSTEM_PROCESSOR}.a
+    ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind.a)
 
-add_library(libunwind-lib STATIC IMPORTED)
-set_property(TARGET libunwind-lib PROPERTY
-             IMPORTED_LOCATION ${LIBUNWIND_PATH})
-add_dependencies(libunwind-lib libunwind-build)
-
-add_library(libunwind-x86_64-lib STATIC IMPORTED)
-set_property(TARGET libunwind-x86_64-lib PROPERTY
-             IMPORTED_LOCATION ${LIBUNWIND_x86_64_PATH})
-add_dependencies(libunwind-x86_64-lib libunwind-build)
+add_dependencies(libunwind-lib libunwind)

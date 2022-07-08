@@ -98,7 +98,6 @@ target_include_directories(${PROFILER_STATIC_LIB_NAME}
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/inc
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/spdlog/include
         PUBLIC ${FMT_INCLUDE}
-        PUBLIC ${LIBUNWIND_INCLUDES}
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}
         PUBLIC ${LIBDDPROF_INCLUDE_DIR}
 )
@@ -119,7 +118,6 @@ endif()
 
 target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     fmt-lib
-    libunwind-x86_64-lib
     libunwind-lib
     libddprof-lib
     -static-libgcc
@@ -129,7 +127,7 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -ldl
 )
 
-add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt libddprof libunwind)
+add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt libddprof libunwind-lib)
 
 # ******************************************************
 # Define shared target

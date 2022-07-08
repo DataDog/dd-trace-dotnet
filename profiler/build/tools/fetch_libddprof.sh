@@ -10,13 +10,13 @@ IFS=$'\n\t'
 
 usage() {
     echo "Usage :"
-    echo "$0 <github_release_version> <SHA256> <path>"
+    echo "$0 <github_release_version> <ARCH> <SHA256> <path>"
     echo ""
     echo "Example"
-    echo "  $0 v0.2.0 cba0f24074d44781d7252b912faff50d330957e84a8f40a172a8138e81001f27 ./vendor"
+    echo "  $0 v0.2.0 x86_64 cba0f24074d44781d7252b912faff50d330957e84a8f40a172a8138e81001f27 ./vendor"
 }
 
-if [ $# != 3 ] || [ $1 == "-h" ]; then
+if [ $# != 4 ] || [ $1 == "-h" ]; then
     usage
     exit 1
 fi
@@ -30,17 +30,18 @@ TOP_LVL_DIR=$PWD
 cd $CURRENTDIR
 
 VER_LIBDDPROF=$1
+ARCH_LIBDDPROF=$2
 if [ -z "${IsAlpine}" ]; then
-    TAR_LIBDDPROF=libddprof-x86_64-unknown-linux-gnu.tar.gz
+    TAR_LIBDDPROF=libddprof-${ARCH_LIBDDPROF}-unknown-linux-gnu.tar.gz
 else
-    TAR_LIBDDPROF=libddprof-x86_64-alpine-linux-musl.tar.gz
+    TAR_LIBDDPROF=libddprof-${ARCH_LIBDDPROF}-alpine-linux-musl.tar.gz
 fi
 
 URL_LIBDDPROF=https://github.com/DataDog/libddprof/releases/download/${VER_LIBDDPROF}/${TAR_LIBDDPROF}
 
-SHA256_LIBDDPROF=$2
-mkdir -p $3
-cd $3
+SHA256_LIBDDPROF=$3
+mkdir -p $4
+cd $4
 DOWNLOAD_PATH=$PWD
 TARGET_EXTRACT=${DOWNLOAD_PATH}/libddprof
 
