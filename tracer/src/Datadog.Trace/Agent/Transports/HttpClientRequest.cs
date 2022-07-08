@@ -96,16 +96,16 @@ namespace Datadog.Trace.Agent.Transports
                 if (item.ContentInBytes is { } arraySegment)
                 {
                     var content = new ByteArrayContent(arraySegment.Array, arraySegment.Offset, arraySegment.Count);
+                    Log.Debug("Adding to Multipart Byte Array | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
                     content.Headers.ContentType = new MediaTypeHeaderValue(item.ContentType);
                     formDataContent.Add(content, item.Name, item.FileName);
-                    Log.Debug("Adding to Multipart Byte Array | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
                 }
                 else if (item.ContentInStream is { } stream)
                 {
                     var content = new StreamContent(stream);
+                    Log.Debug("Adding to Multipart Stream | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
                     content.Headers.ContentType = new MediaTypeHeaderValue(item.ContentType);
                     formDataContent.Add(content, item.Name, item.FileName);
-                    Log.Debug("Adding to Multipart Stream | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
                 }
             }
 
