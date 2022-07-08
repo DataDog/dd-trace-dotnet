@@ -124,26 +124,22 @@ internal static class TagPropagation
     /// The returned string is cached and reused if no relevant tags are changed between calls.
     /// </summary>
     /// <returns>A string that can be used for horizontal propagation using the "x-datadog-tags" header.</returns>
-    public static string ToHeader(TraceTagCollection tags, int maxOutgoingHeaderLength)
+    public static string ToHeader(TraceTagCollection tagsCollection, int maxOutgoingHeaderLength)
     {
-        if (tags.Count == 0)
-        {
-            return string.Empty;
-        }
-
         if (maxOutgoingHeaderLength == 0)
         {
             // propagation is disabled,
             // set tag "_dd.propagation_error:disabled"...
-            tags.SetTag(Tags.TagPropagation.Error, PropagationErrorTagValues.PropagationDisabled);
+            tagsCollection.SetTag(Tags.TagPropagation.Error, PropagationErrorTagValues.PropagationDisabled);
 
             // ... and don't set the header
             return string.Empty;
         }
 
+        var tagsArray = tagsCollection.ToArray();
         var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 
-        foreach (var tag in tags)
+        foreach (var tag in tagsArray)
         {
             if (!string.IsNullOrEmpty(tag.Key) &&
                 !string.IsNullOrEmpty(tag.Value) &&
@@ -155,7 +151,7 @@ internal static class TagPropagation
 
                     // if tag contains invalid chars,
                     // set tag "_dd.propagation_error:encoding_error"...
-                    tags.SetTag(Tags.TagPropagation.Error, PropagationErrorTagValues.EncodingError);
+                    tagsCollection.SetTag(Tags.TagPropagation.Error, PropagationErrorTagValues.EncodingError);
 
                     // ... and don't set the header
                     StringBuilderCache.Release(sb);
@@ -178,7 +174,7 @@ internal static class TagPropagation
 
                 // if combined tags get too long for propagation headers,
                 // set tag "_dd.propagation_error:inject_max_size"...
-                tags.SetTag(Tags.TagPropagation.Error, PropagationErrorTagValues.InjectMaxSize);
+                tagsCollection.SetTag(Tags.TagPropagation.Error, PropagationErrorTagValues.InjectMaxSize);
 
                 // ... and don't set the header
                 StringBuilderCache.Release(sb);

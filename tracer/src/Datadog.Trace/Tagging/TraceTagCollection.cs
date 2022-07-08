@@ -119,15 +119,7 @@ namespace Datadog.Trace.Tagging
         /// <returns>A string that can be used for horizontal propagation using the "x-datadog-tags" header.</returns>
         public string ToPropagationHeader(int maxLength)
         {
-            if (_cachedPropagationHeader == null)
-            {
-                lock (_listLock)
-                {
-                    _cachedPropagationHeader = TagPropagation.ToHeader(this, maxLength);
-                }
-            }
-
-            return _cachedPropagationHeader;
+            return _cachedPropagationHeader ??= TagPropagation.ToHeader(this, maxLength);
         }
 
         public List<KeyValuePair<string, string>>.Enumerator GetEnumerator()
