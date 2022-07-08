@@ -1478,6 +1478,70 @@ stages:
             baseImage: $(baseImage)
             command: "CheckBuildLogsForErrors"
 
+- stage: profiler_integration_tests_arm64
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [package_arm64, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    baseImage: debian
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Test]
+
+  - job: Test
+    timeoutInMinutes: 60 #default value
+    workspace:
+      clean: all
+    pool:
+      name: aws-arm64-auto-scaling
+    variables:
+      IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - template: steps/restore-working-directory.yml
+      parameters:
+        artifact: build-linux-arm64-working-directory
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download arm64 monitoring home
+      inputs:
+        artifact: linux-monitoring-home-arm64
+        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+
+    # when we build samples separately, we could run this step and the docker-compose one below in //
+    # (currently the docker-compose step relies on serverless samples)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "BuildProfilerLinuxIntegrationTests"
+
+    - task: DockerCompose@0
+      displayName: docker-compose run --no-deps ProfilerIntegrationTests
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeFileArgs: |
+          baseImage=$(baseImage)
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e IncludeTestsRequiringDocker=false ProfilerIntegrationTests
+        projectName: ddtrace_$(Build.BuildNumber)
+
+    - publish: profiler/build_data
+      artifact: continuous-profiler-logs_integration_tests_linux_arm64_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: profiler/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
 - stage: exploration_tests_windows
   condition: >
     and(
