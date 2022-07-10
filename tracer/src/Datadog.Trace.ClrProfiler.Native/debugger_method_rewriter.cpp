@@ -224,8 +224,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
 
     auto _ = trace::Stats::Instance()->CallTargetRewriterCallbackMeasure();
 
-    std::vector<MethodProbeDefinition_S> methodProbes;
-    std::vector<LineProbeDefinition_S> lineProbes;
+    MethodProbeDefinitions methodProbes;
+    LineProbeDefinitions lineProbes;
 
     const auto& probes = debuggerMethodHandler->GetProbes();
 
@@ -313,7 +313,7 @@ HRESULT DebuggerMethodRewriter::CallLineProbe(
     ULONG lineProbeCallTargetStateIndex, 
     std::vector<EHClause>& lineProbesEHClauses, 
     const std::vector<ILInstr*>& branchTargets, 
-    const LineProbeDefinition_S& lineProbe)
+    const std::shared_ptr<LineProbeDefinition>& lineProbe)
 {
     const auto& lineProbeId = lineProbe->probeId;
     const auto& bytecodeOffset = lineProbe->bytecodeOffset;
@@ -438,7 +438,7 @@ HRESULT DebuggerMethodRewriter::CallLineProbe(
 
 HRESULT DebuggerMethodRewriter::ApplyLineProbes(
     const int instrumentedMethodIndex,
-    const std::vector<LineProbeDefinition_S>& lineProbes, 
+    const LineProbeDefinitions& lineProbes, 
     CorProfiler* corProfiler, 
     ModuleID module_id, 
     ModuleMetadata& module_metadata, 
@@ -761,8 +761,8 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
 
 HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                                         RejitHandlerModuleMethod* methodHandler,
-                                        std::vector<MethodProbeDefinition_S>& methodProbes,
-                                        std::vector<LineProbeDefinition_S>& lineProbes) const
+                                        MethodProbeDefinitions& methodProbes,
+                                        LineProbeDefinitions& lineProbes) const
 {
     auto corProfiler = trace::profiler;
 

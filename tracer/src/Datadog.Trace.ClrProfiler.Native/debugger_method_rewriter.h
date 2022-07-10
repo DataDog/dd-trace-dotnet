@@ -48,8 +48,8 @@ private:
                                  int numArgs, ILRewriter& rewriter, std::vector<TypeSignature>& methodLocals,
                                  int numLocals, ILRewriterWrapper& rewriterWrapper, ULONG lineProbeCallTargetStateIndex,
                                  std::vector<EHClause>& lineProbesEHClauses, const std::vector<ILInstr*>& branchTargets,
-                                 const LineProbeDefinition_S& lineProbe);
-    HRESULT ApplyLineProbes(int instrumentedMethodIndex, const std::vector<LineProbeDefinition_S>& lineProbes,
+                                 const std::shared_ptr<LineProbeDefinition>& lineProbe);
+    HRESULT ApplyLineProbes(int instrumentedMethodIndex, const LineProbeDefinitions& lineProbes,
                            CorProfiler* corProfiler, ModuleID module_id, ModuleMetadata& module_metadata,
                            FunctionInfo* caller, DebuggerTokens* debuggerTokens, mdToken function_token, bool isStatic,
                            std::vector<TypeSignature>& methodArguments, int numArgs, ILRewriter& rewriter,
@@ -66,8 +66,8 @@ private:
                              int instrumentedMethodIndex, ILInstr* const& beforeLineProbe, std::vector<EHClause>& newClauses) const;
 
     HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
-                                                        std::vector<MethodProbeDefinition_S>& methodProbes,
-                                                        std::vector<LineProbeDefinition_S>& lineProbes) const;
+                                                        MethodProbeDefinitions& methodProbes,
+                                                        LineProbeDefinitions& lineProbes) const;
     static std::vector<ILInstr*> GetBranchTargets(ILRewriter* pRewriter);
     static void AdjustBranchTargets(ILInstr* pFromInstr, ILInstr* pToInstr, const std::vector<ILInstr*>& branchTargets);
     static void AdjustExceptionHandlingClauses(ILInstr* pFromInstr, ILInstr* pToInstr, ILRewriter* pRewriter);

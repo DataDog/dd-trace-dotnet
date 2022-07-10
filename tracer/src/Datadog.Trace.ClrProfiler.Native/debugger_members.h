@@ -89,7 +89,7 @@ struct MethodProbeDefinition : public ProbeDefinition
     }
 };
 
-typedef std::shared_ptr<MethodProbeDefinition> MethodProbeDefinition_S;
+typedef std::vector<std::shared_ptr<MethodProbeDefinition>> MethodProbeDefinitions;
 
 struct LineProbeDefinition : public ProbeDefinition
 {
@@ -123,7 +123,7 @@ struct LineProbeDefinition : public ProbeDefinition
     }
 };
 
-typedef std::shared_ptr<LineProbeDefinition> LineProbeDefinition_S;
+typedef std::vector<std::shared_ptr<LineProbeDefinition>> LineProbeDefinitions;
 
 enum class ProbeStatus
 {

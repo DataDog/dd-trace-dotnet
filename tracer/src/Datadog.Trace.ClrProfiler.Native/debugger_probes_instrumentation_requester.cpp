@@ -348,7 +348,7 @@ void DebuggerProbesInstrumentationRequester::AddLineProbes(
 
         const auto corProfiler = trace::profiler;
 
-        std::vector<LineProbeDefinition_S> lineProbeDefinitions;
+        LineProbeDefinitions lineProbeDefinitions;
 
         for (int i = 0; i < lineProbesLength; i++)
         {
