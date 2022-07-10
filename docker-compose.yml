@@ -74,7 +74,7 @@ services:
     - "127.0.0.1:9324:9324"
 
   aerospike:
-    image: aerospike/aerospike-server:5.7.0.16
+    image: aerospike/aerospike-server
     ports:
     - "127.0.0.1:3000:3000"
 
