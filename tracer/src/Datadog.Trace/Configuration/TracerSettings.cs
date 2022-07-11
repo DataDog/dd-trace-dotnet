@@ -186,7 +186,7 @@ namespace Datadog.Trace.Configuration
 
             var propagationHeaderMaximumLength = source?.GetInt32(ConfigurationKeys.TagPropagation.HeaderMaxLength);
 
-            PropagationHeaderMaxLength = propagationHeaderMaximumLength is >= 0 and <= Tagging.TagPropagation.OutgoingPropagationHeaderMaxLength ?
+            TagPropagationHeaderMaxLength = propagationHeaderMaximumLength is >= 0 and <= Tagging.TagPropagation.OutgoingPropagationHeaderMaxLength ?
                                              (int)propagationHeaderMaximumLength :
                                              Tagging.TagPropagation.OutgoingPropagationHeaderMaxLength;
 
@@ -362,7 +362,7 @@ namespace Datadog.Trace.Configuration
         /// <remarks>
         /// This value is not used when extracting an incoming propagation header from an upstream service.
         /// </remarks>
-        public int PropagationHeaderMaxLength { get; set; }
+        internal int TagPropagationHeaderMaxLength { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating the injection propagation style.
