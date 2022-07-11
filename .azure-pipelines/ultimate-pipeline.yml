@@ -378,7 +378,7 @@ stages:
       displayName: Upload linux-x64 monitoring home
       artifact: linux-monitoring-home-$(baseImage)
 
-- stage: build_arm64
+- stage: build_arm64_tracer
   dependsOn: [master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -403,23 +403,102 @@ stages:
         build: true
         target: builder
         baseImage: debian
-        command: "Clean BuildTracerHome ZipMonitoringHome"
+        command: "Clean BuildTracerHome"
 
     - publish: $(tracerHome)
       displayName: Uploading linux tracer home artifact
       artifact: linux-tracer-home-arm64
 
-    - publish: $(artifacts)/linux-arm64
-      displayName: Upload linux-arm64 packages
-      artifact: linux-packages-arm64
-
-    - publish: $(symbols)
-      displayName: Upload linux-arm64 symbols
-      artifact: linux-symbols-arm64
-
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the build
       artifact: build-linux-arm64-working-directory
+
+- stage: build_arm64_profiler
+  dependsOn: [master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
+  - job: build
+    timeoutInMinutes: 60 #default value
+    dependsOn: []
+    pool:
+      name: aws-arm64-auto-scaling
+    workspace:
+      clean: all
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: debian
+        command: "Clean BuildProfilerHome"
+
+    - publish: $(System.DefaultWorkingDirectory)/profiler/_build
+      displayName: Uploading linux profiler output build folder
+      artifact: linux-profiler-binaries-arm64
+
+    - publish: $(profilerHome)
+      displayName: Uploading linux profiler home artifact
+      artifact: linux-profiler-home-arm64
+
+- stage: package_arm64
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [master_commit_id, build_arm64_tracer, build_arm64_profiler]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [package]
+
+  - job: package
+    dependsOn: []
+    timeoutInMinutes: 60 #default value
+    pool:
+      name: aws-arm64-auto-scaling
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tracer arm64 native binary
+      inputs:
+        artifact: linux-tracer-home-arm64
+        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download profiler arm64 native binary
+      inputs:
+        artifact: linux-profiler-home-arm64
+        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/continuousprofiler
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: debian
+        command: "BuildNativeLoader ZipMonitoringHome"
+
+    - publish: $(artifacts)/linux-arm64
+      displayName: Upload arm64 packages
+      artifact: linux-packages-arm64
+
+    - publish: $(symbols)
+      displayName: Upload arm64 symbols
+      artifact: linux-symbols-arm64
+
+    - publish: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+      displayName: Upload arm64 monitoring home
+      artifact: linux-monitoring-home-arm64
 
 - stage: build_macos
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
@@ -677,7 +756,7 @@ stages:
 
 - stage: unit_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_arm64, master_commit_id]
+  dependsOn: [build_arm64_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1202,7 +1281,7 @@ stages:
 
 - stage: integration_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_arm64, master_commit_id]
+  dependsOn: [package_arm64, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
     TestAllPackageVersions: true
@@ -1242,6 +1321,12 @@ stages:
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false"
 
+        - task: DownloadPipelineArtifact@2
+          displayName: Download arm64 monitoring home
+          inputs:
+            artifact: linux-monitoring-home-arm64
+            path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+
         - task: DockerCompose@0
           displayName: docker-compose run --no-deps IntegrationTests
           inputs:
@@ -1249,7 +1334,7 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
+            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
 
         - publish: tracer/build_data
@@ -1303,6 +1388,12 @@ stages:
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true"
 
+        - task: DownloadPipelineArtifact@2
+          displayName: Download arm64 monitoring home
+          inputs:
+            artifact: linux-monitoring-home-arm64
+            path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64
             docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies.ARM64
@@ -1319,7 +1410,7 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
+            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
 
         - task: DockerCompose@0
@@ -1620,7 +1711,7 @@ stages:
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: [build_windows_tracer, build_linux_tracer, build_arm64, build_macos, master_commit_id]
+  dependsOn: [build_windows_tracer, build_linux_tracer, build_arm64_tracer, build_macos, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1906,7 +1997,7 @@ stages:
 
 - stage: upload_to_s3
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [package_windows, package_linux, build_arm64, master_commit_id]
+  dependsOn: [package_windows, package_linux, package_arm64, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -2006,7 +2097,7 @@ stages:
 
 - stage: upload_to_azure
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables.isMainRepository, true))
-  dependsOn: [package_windows, package_linux, build_arm64, dotnet_tool, master_commit_id]
+  dependsOn: [package_windows, package_linux, package_arm64, dotnet_tool, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -2181,7 +2272,7 @@ stages:
 
 - stage: throughput
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [package_linux, build_arm64, build_windows_tracer, master_commit_id]
+  dependsOn: [package_linux, package_arm64, build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
     # By default all throughput tests happen on release or master branches only. Overridable by setting 'run_extended_throughput_tests' to true
@@ -2682,7 +2773,7 @@ stages:
         
 - stage: installer_smoke_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_arm64, generate_variables, master_commit_id]
+  dependsOn: [package_arm64, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
