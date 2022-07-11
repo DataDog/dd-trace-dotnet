@@ -77,7 +77,7 @@
       "version": "2"
     },
     "message": "InstanceMethodWithArguments.Method(lastName=Last): Last\r\n@return=Last",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -144,6 +144,6 @@
       "version": "2"
     },
     "message": "InstanceMethodWithArguments.Method(lastName=Last)",
-    "service": "Unknown"
+    "service": "Probes"
   }
 ]

@@ -12,7 +12,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
     /// </summary>
     internal interface IDiscoveryService
     {
-        string ProbeConfigurationEndpoint { get; }
+        string ConfigurationEndpoint { get; }
 
         string DebuggerEndpoint { get; }
 

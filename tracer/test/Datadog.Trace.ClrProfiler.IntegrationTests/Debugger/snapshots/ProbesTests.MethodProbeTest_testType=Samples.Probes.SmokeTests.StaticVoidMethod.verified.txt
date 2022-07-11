@@ -68,6 +68,6 @@
       "version": "2"
     },
     "message": "StaticVoidMethod.Method()",
-    "service": "Unknown"
+    "service": "Probes"
   }
 ]

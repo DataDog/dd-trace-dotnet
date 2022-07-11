@@ -699,6 +699,15 @@ namespace Datadog.Trace.TestHelpers
                             }
                             else if (ctx.Request.RawUrl.Contains("/debugger/v1/input"))
                             {
+                                var endpoints = $"{{\"endpoints\":{JsonConvert.SerializeObject(DiscoveryService.AllSupportedEndpoints)}}}";
+
+                                using var body = ctx.Request.InputStream;
+                                using var streamReader = new StreamReader(body);
+                                var batch = streamReader.ReadToEnd();
+                                ReceiveDebuggerBatch(batch);
+                            }
+                            else if (ctx.Request.RawUrl.Contains("/v0.7/config"))
+                            {
                                 using var body = ctx.Request.InputStream;
                                 using var streamReader = new StreamReader(body);
                                 var batch = streamReader.ReadToEnd();
