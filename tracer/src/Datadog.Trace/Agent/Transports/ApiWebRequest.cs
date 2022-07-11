@@ -14,8 +14,15 @@ namespace Datadog.Trace.Agent.Transports
 {
     internal class ApiWebRequest : IApiRequest, IMultipartApiRequest
     {
+        private const string Boundary = "---------------------------DatadogBoundary";
+        private const string BoundarySeparator = "\r\n--" + Boundary + "\r\n";
+        private const string BoundaryTrailer = "\r\n--" + Boundary + "--\r\n";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ApiWebRequest>();
         private readonly HttpWebRequest _request;
+
+        private byte[] _boundarySeparatorInBytes;
+        private byte[] _boundaryTrailerInBytes;
 
         public ApiWebRequest(HttpWebRequest request)
         {
@@ -58,33 +65,66 @@ namespace Datadog.Trace.Agent.Transports
 
             Log.Debug<int>("Sending multipart form request with {Count} items.", items.Length);
 
-            var boundary = "---------------------------" + DateTime.Now.Ticks.ToString("x");
-
             _request.Method = "POST";
-            _request.ContentType = "multipart/form-data; boundary=" + boundary;
+            _request.ContentType = "multipart/form-data; boundary=" + Boundary;
 
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
                 // Write form request using the boundary
-
-                var boundaryBytes = Encoding.ASCII.GetBytes("\r\n--" + boundary + "\r\n");
+                var boundaryBytes = _boundarySeparatorInBytes ??= Encoding.ASCII.GetBytes(BoundarySeparator);
+                var trailerBytes = _boundaryTrailerInBytes ??= Encoding.ASCII.GetBytes(BoundaryTrailer);
 
                 // Write each MultipartFormItem
                 foreach (var item in items)
                 {
-                    await requestStream.WriteAsync(boundaryBytes, 0, boundaryBytes.Length).ConfigureAwait(false);
-                    byte[] headerBytes;
-                    if (item.FileName is null)
+                    byte[] headerBytes = null;
+
+                    // Check name is not null (required)
+                    if (item.Name is null)
                     {
-                        headerBytes = Encoding.UTF8.GetBytes(
-                            $"Content-Disposition: form-data; name=\"{item.Name}\"\r\nContent-Type: {item.ContentType}\r\n\r\n");
+                        Log.Warning("Error encoding multipart form item name is null. Ignoring item");
+                        continue;
                     }
-                    else
+
+                    // Ignore the item if the name contains ' or "
+                    if (item.Name.Contains("\"") || item.Name.Contains("'"))
                     {
-                        headerBytes = Encoding.UTF8.GetBytes(
+                        Log.Warning("Error encoding multipart form item name: {Name}. Ignoring item.", item.Name);
+                        continue;
+                    }
+
+                    // Ignore the item if the string value cannot be encoded as ASCII
+                    if (Encoding.UTF8.GetByteCount(item.Name) != item.Name.Length)
+                    {
+                        Log.Warning("Error encoding multipart form item name: {Name}. Value is not an ASCII string, ignoring item.", item.Name);
+                        continue;
+                    }
+
+                    // Do the same checks for FileName if not null
+                    if (item.FileName is not null)
+                    {
+                        // Ignore the item if the name contains ' or "
+                        if (item.FileName.Contains("\"") || item.FileName.Contains("'"))
+                        {
+                            Log.Warning("Error encoding multipart form item filename: {FileName}. Ignoring item.", item.FileName);
+                            continue;
+                        }
+
+                        // Ignore the item if the string value cannot be encoded as ASCII
+                        if (Encoding.UTF8.GetByteCount(item.FileName) != item.FileName.Length)
+                        {
+                            Log.Warning("Error encoding multipart form item filename: {FileName}. Value is not an ASCII string, ignoring item.", item.FileName);
+                            continue;
+                        }
+
+                        headerBytes = Encoding.ASCII.GetBytes(
                             $"Content-Disposition: form-data; name=\"{item.Name}\"; filename=\"{item.FileName}\"\r\nContent-Type: {item.ContentType}\r\n\r\n");
                     }
 
+                    headerBytes ??= Encoding.ASCII.GetBytes(
+                        $"Content-Disposition: form-data; name=\"{item.Name}\"\r\nContent-Type: {item.ContentType}\r\n\r\n");
+
+                    await requestStream.WriteAsync(boundaryBytes, 0, boundaryBytes.Length).ConfigureAwait(false);
                     await requestStream.WriteAsync(headerBytes, 0, headerBytes.Length).ConfigureAwait(false);
                     if (item.ContentInBytes is { } arraySegment)
                     {
@@ -98,8 +138,7 @@ namespace Datadog.Trace.Agent.Transports
                     }
                 }
 
-                var trailer = Encoding.ASCII.GetBytes("\r\n--" + boundary + "--\r\n");
-                await requestStream.WriteAsync(trailer, 0, trailer.Length).ConfigureAwait(false);
+                await requestStream.WriteAsync(trailerBytes, 0, trailerBytes.Length).ConfigureAwait(false);
             }
 
             try
