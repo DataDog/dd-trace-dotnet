@@ -37,7 +37,7 @@ namespace Datadog.Trace.Headers.Ip
                     { "x-forwarded-for", "80.19.10.10:32" },
                     { "custom-header3", "81.202.236.243:82" }
                 },
-                "custom-header3", null, null, "80.19.14.16", 32
+                "custom-header3", "81.202.236.243", 82, "80.19.14.16", 32
             },
             new object[] { new Dictionary<string, string> { { "user-agent", "Mozilla firefox" }, { "referer", "https://example2.com/" }, { "hello-world", "irrelevant" }, { "custom-ip-header", "193.12.13.14:81" } }, "custom-ip-header", "193.12.13.14", 81, "80.19.14.16", 32 },
             new object[] { new Dictionary<string, string> { { "user-agent", "Mozilla firefox" }, { "referer", "https://example3.com/" }, { "header-custom-1", "93.12.13.14:81" }, { "x-forwarded-for", "192.168.1.2,81.202.236.243" } }, string.Empty, "81.202.236.243", 80, "80.19.14.16", 32 },

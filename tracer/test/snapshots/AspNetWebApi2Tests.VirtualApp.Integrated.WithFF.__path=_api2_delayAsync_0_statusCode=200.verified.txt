@@ -34,7 +34,7 @@
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.route: api2/{action}/{value},
+      http.route: /api2/delayasync/{value},
       http.status_code: 200,
       http.url: http://localhost/my-app/api2/delayAsync/0,
       http.useragent: testhelper,

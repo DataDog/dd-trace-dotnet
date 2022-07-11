@@ -20,7 +20,7 @@ at System.Web.Mvc.ActionDescriptor.ExtractParameterFromDictionary(ParameterInfo 
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.route: home/identifier,
+      http.route: /home/identifier,
       http.status_code: 500,
       http.url: http://localhost/Home/identifier,
       http.useragent: testhelper,

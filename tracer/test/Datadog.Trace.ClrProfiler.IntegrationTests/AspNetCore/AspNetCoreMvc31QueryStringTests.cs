@@ -55,8 +55,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             _testName = GetTestName(nameof(AspNetCoreMvc31QueryStringTests));
             if (enableQueryStringReporting != null)
             {
-                SetEnvironmentVariable(ConfigurationKeys.EnableQueryStringReporting, enableQueryStringReporting.ToString());
-                SetEnvironmentVariable(ConfigurationKeys.ObfuscationQueryStringRegexTimeout, "1000");
+                SetEnvironmentVariable(ConfigurationKeys.QueryStringReportingEnabled, enableQueryStringReporting.ToString());
             }
 
             if (queryStringRegex != null)

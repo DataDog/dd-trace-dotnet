@@ -92,11 +92,11 @@ namespace Datadog.Trace.Util.Http
             return dict;
         }
 
-        internal static string GetUrl(this IHttpRequestMessage request, ImmutableTracerSettings tracerSettings) => HttpRequestUtils.GetUrl(request.RequestUri.Scheme, request.RequestUri.Host, string.Empty, request.RequestUri.AbsolutePath, () => request.RequestUri.Query, tracerSettings);
+        internal static string GetUrl(this IHttpRequestMessage request, ImmutableTracerSettings tracerSettings) => HttpRequestUtils.GetUrl(request.RequestUri.Scheme, request.RequestUri.Host, string.Empty, request.RequestUri.AbsolutePath, request.RequestUri.Query, tracerSettings);
 
-        internal static string GetUrl(this HttpRequestBase request, ImmutableTracerSettings tracerSettings) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, () => request.Url.Query, tracerSettings);
+        internal static string GetUrl(this HttpRequestBase request, ImmutableTracerSettings tracerSettings) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, request.Url.Query, tracerSettings);
 
-        internal static string GetUrl(this HttpRequest request, ImmutableTracerSettings tracerSettings) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, () => request.Url.Query, tracerSettings);
+        internal static string GetUrl(this HttpRequest request, ImmutableTracerSettings tracerSettings) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, request.Url.Query, tracerSettings);
     }
 }
 #endif

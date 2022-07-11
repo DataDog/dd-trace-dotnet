@@ -270,11 +270,13 @@ namespace Datadog.Trace.Configuration
         /// If this variable is set all other IP related headers should be ignored
         /// Default is value is null (do not override).
         /// </summary>
+        /// <seealso cref="TracerSettings.IpHeader"/>
         public const string IpHeader = "DD_TRACE_CLIENT_IP_HEADER";
 
         /// <summary>
         /// Configuration key indicating if the header should not be collected. The default for DD_TRACE_CLIENT_IP_HEADER_DISABLED is false.
         /// </summary>
+        /// <seealso cref="TracerSettings.IpHeaderDisabled"/>
         public const string IpHeaderDisabled = "DD_TRACE_CLIENT_IP_HEADER_DISABLED";
 
         /// <summary>
@@ -318,19 +320,22 @@ namespace Datadog.Trace.Configuration
         /// Configuration key for specifying a custom regex to obfuscate query strings.
         /// Default value is in TracerSettings
         /// </summary>
+        /// <seealso cref="TracerSettings.ObfuscationQueryStringRegex"/>
         public const string ObfuscationQueryStringRegex = "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP";
 
         /// <summary>
         /// Configuration key for specifying a timeout in milliseconds to the execution of the query string obfuscation regex
-        /// Default value is 100ms
+        /// Default value is 200ms
         /// </summary>
+        /// <seealso cref="TracerSettings.ObfuscationQueryStringRegexTimeout"/>
         public const string ObfuscationQueryStringRegexTimeout = "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP_TIMEOUT";
 
         /// <summary>
         /// Configuration key for enabling/disabling reporting query string
         /// Default value is true
         /// </summary>
-        public const string EnableQueryStringReporting = "DD_HTTP_SERVER_TAG_QUERY_STRING";
+        /// <seealso cref="TracerSettings.QueryStringReportingEnabled"/>
+        public const string QueryStringReportingEnabled = "DD_HTTP_SERVER_TAG_QUERY_STRING";
 
         /// <summary>
         /// String constants for CI Visibility configuration keys.

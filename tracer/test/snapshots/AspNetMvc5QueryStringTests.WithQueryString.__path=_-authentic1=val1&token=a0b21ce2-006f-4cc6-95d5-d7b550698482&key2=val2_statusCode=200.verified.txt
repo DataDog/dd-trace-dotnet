@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -34,7 +34,7 @@
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.route: home/index,
+      http.route: /home/index,
       http.status_code: 200,
       http.url: http://localhost/?authentic1=val1&<redacted>&key2=val2,
       http.useragent: testhelper,

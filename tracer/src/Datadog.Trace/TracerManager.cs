@@ -354,8 +354,14 @@ namespace Datadog.Trace
                     writer.WritePropertyName("routetemplate_expansion_enabled");
                     writer.WriteValue(instanceSettings.ExpandRouteTemplatesEnabled);
 
+                    writer.WritePropertyName("querystring_reporting_enabled");
+                    writer.WriteValue(instanceSettings.QueryStringReportingEnabled);
+
                     writer.WritePropertyName("obfuscation_querystring_regex_timout");
                     writer.WriteValue(instanceSettings.ObfuscationQueryStringRegexTimeout);
+
+                    writer.WritePropertyName("obfuscation_querystring_regex");
+                    writer.WriteValue(instanceSettings.ObfuscationQueryStringRegex.Substring(0, Math.Min(instanceSettings.ObfuscationQueryStringRegex.Length, 200)));
 
                     writer.WritePropertyName("partialflush_enabled");
                     writer.WriteValue(instanceSettings.Exporter.PartialFlushEnabled);

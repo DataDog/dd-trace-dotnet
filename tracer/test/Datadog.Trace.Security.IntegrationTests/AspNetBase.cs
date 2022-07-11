@@ -318,7 +318,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} {arguments ?? string.Empty}" : arguments;
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_TRACE_RATE_LIMIT", traceRateLimit?.ToString());
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_WAF_TIMEOUT", 1_000_000.ToString());
-            SetEnvironmentVariable(ConfigurationKeys.ObfuscationQueryStringRegexTimeout, "1000");
 
             int? aspNetCorePort = default;
             _process = ProfilerHelper.StartProcessWithProfiler(

@@ -94,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     string areaName;
                     string controllerName;
                     string actionName;
-                    string resolvedRoute;
+                    string resolvedRoute = null;
                     if ((wasAttributeRouted || newResourceNamesEnabled) && string.IsNullOrEmpty(resourceName) && !string.IsNullOrEmpty(routeUrl))
                     {
                         resourceName = AspNetResourceNameHelper.CalculateResourceName(
@@ -114,7 +114,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         areaName = (routeValues?.GetValueOrDefault("area") as string)?.ToLowerInvariant();
                         controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
                         actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
-                        resolvedRoute = $"{areaName}/{controllerName}/{actionName}";
+                        resolvedRoute = routeUrl;
                     }
 
                     if (string.IsNullOrEmpty(resourceName) && httpContext.Request.Url != null)

@@ -130,8 +130,10 @@ namespace Datadog.Trace.Headers.Ip
             // fd00::/8 is in use and does not have to registered anywhere.
             if (firstWord.Length >= 4)
             {
-                var first2Letters = firstWord.Substring(0, 2);
-                return first2Letters == "fd" || first2Letters == "fc";
+                if (firstWord[0] == 'f')
+                {
+                    return firstWord[1] == 'd' || firstWord[1] == 'c';
+                }
             }
 
             return false;

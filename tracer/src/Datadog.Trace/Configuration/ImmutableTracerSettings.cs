@@ -82,9 +82,9 @@ namespace Datadog.Trace.Configuration
 
             // tag propagation
             TagPropagationHeaderMaxLength = settings.TagPropagationHeaderMaxLength;
-            
+            // query string related env variables
             ObfuscationQueryStringRegex = settings.ObfuscationQueryStringRegex;
-            EnableQueryStringReporting = settings.EnableQueryStringReporting;
+            QueryStringReportingEnabled = settings.QueryStringReportingEnabled;
             ObfuscationQueryStringRegexTimeout = settings.ObfuscationQueryStringRegexTimeout;
         }
 
@@ -266,16 +266,17 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating the regex to apply to obfuscate http query strings.
         /// </summary>
+        /// <seealso cref="ConfigurationKeys.ObfuscationQueryStringRegex"/>
         internal string ObfuscationQueryStringRegex { get; }
 
         /// <summary>
-        /// Gets a value indicating whether or not http.url should contain the query string, enabled by default
+        /// Gets a value indicating whether or not http.url should contain the query string, enabled by default with DD_HTTP_SERVER_TAG_QUERY_STRING
         /// </summary>
-        internal bool EnableQueryStringReporting { get; }
+        internal bool QueryStringReportingEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating a timeout in milliseconds to the execution of the query string obfuscation regex
-        /// Default value is 100ms
+        /// Default value is 200ms
         /// </summary>
         internal double ObfuscationQueryStringRegexTimeout { get; }
 

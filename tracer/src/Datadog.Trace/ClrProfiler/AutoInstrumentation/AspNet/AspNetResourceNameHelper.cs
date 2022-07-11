@@ -51,9 +51,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             // route values provided, comparing the parameter sizes to the parameter values
             // (only action/controller/area unless expandRouteParameters = true,
             // but doesn't seem worth it
-            var stringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 
-            stringBuilder.Append(routeTemplate.ToLowerInvariant());
+            sb.Append(httpMethod).Append(' ');
+
+            if (addSlashPrefix)
+            {
+                sb.Append('/');
+            }
+
+            sb.Append(routeTemplate.ToLowerInvariant());
 
             areaName = null;
             controllerName = null;
@@ -64,17 +71,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 if (string.Equals(kvp.Key, "action", StringComparison.OrdinalIgnoreCase) && kvp.Value is string action)
                 {
                     actionName = action.ToLowerInvariant();
-                    stringBuilder.Replace("{action}", actionName);
+                    sb.Replace("{action}", actionName);
                 }
                 else if (string.Equals(kvp.Key, "controller", StringComparison.OrdinalIgnoreCase) && kvp.Value is string controller)
                 {
                     controllerName = controller.ToLowerInvariant();
-                    stringBuilder.Replace("{controller}", controllerName);
+                    sb.Replace("{controller}", controllerName);
                 }
                 else if (string.Equals(kvp.Key, "area", StringComparison.OrdinalIgnoreCase) && kvp.Value is string area)
                 {
                     areaName = area.ToLowerInvariant();
-                    stringBuilder.Replace("{area}", areaName);
+                    sb.Replace("{area}", areaName);
                 }
                 else if (expandRouteTemplates)
                 {
@@ -83,11 +90,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     {
                         // We're replacing the key with itself, so that we strip out all the additional parameters etc
                         // We should probably be doing that for the non-expanded approach too, but we historically haven't
-                        ReplaceValue(stringBuilder, kvp.Key, kvp.Key, ReplaceType.ValueOnly);
+                        ReplaceValue(sb, kvp.Key, kvp.Key, ReplaceType.ValueOnly);
                     }
                     else
                     {
-                        ReplaceValue(stringBuilder, kvp.Key, valueAsString, ReplaceType.ValueAndBraces);
+                        ReplaceValue(sb, kvp.Key, valueAsString, ReplaceType.ValueAndBraces);
                     }
                 }
             }
@@ -102,13 +109,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         continue;
                     }
 
-                    ReplaceValue(stringBuilder, kvp.Key, null, replaceType: ReplaceType.ValueBracesAndLeadingSlash);
+                    ReplaceValue(sb, kvp.Key, null, replaceType: ReplaceType.ValueBracesAndLeadingSlash);
                 }
             }
 
-            route = stringBuilder.ToString();
-            stringBuilder.Insert(0, $"{httpMethod} {(addSlashPrefix ? "/" : string.Empty)}");
-            return StringBuilderCache.GetStringAndRelease(stringBuilder);
+            // keep prefix but remove space after GET
+            var prefixLength = httpMethod.Length + 1;
+            route = sb.ToString(prefixLength, sb.Length - prefixLength);
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         private static void ReplaceValue(StringBuilder sb, string key, string? value, ReplaceType replaceType)

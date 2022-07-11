@@ -23,7 +23,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Default obfuscation query string regex if none specified via env DD_OBFUSCATION_QUERY_STRING_REGEXP
         /// </summary>
-        public const string DefaultObfuscationQueryStringRegex = @"((?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)(?:(?:\s|%20)*(?:=|%3D)[^&]+|(?:""|%22)(?:\s|%20)*(?::|%3A)(?:\s|%20)*(?:""|%22)(?:%2[^2]|%[^2]|[^""%])+(?:""|%22))|bearer(?:\s|%20)+[a-z0-9\._\-]|token(?::|%3A)[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L](?:[\w=-]|%3D)+\.ey[I-L](?:[\w=-]|%3D)+(?:\.(?:[\w.+\/=-]|%3D|%2F|%2B)+)?|[\-]{5}BEGIN(?:[a-z\s]|%20)+PRIVATE(?:\s|%20)KEY[\-]{5}[^\-]+[\-]{5}END(?:[a-z\s]|%20)+PRIVATE(?:\s|%20)KEY|ssh-rsa(?:\s|%20)*(?:[a-z0-9\/\.+]|%2F|%5C|%2B){100,})";
+        internal const string DefaultObfuscationQueryStringRegex = @"((?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)(?:(?:\s|%20)*(?:=|%3D)[^&]+|(?:""|%22)(?:\s|%20)*(?::|%3A)(?:\s|%20)*(?:""|%22)(?:%2[^2]|%[^2]|[^""%])+(?:""|%22))|bearer(?:\s|%20)+[a-z0-9\._\-]|token(?::|%3A)[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L](?:[\w=-]|%3D)+\.ey[I-L](?:[\w=-]|%3D)+(?:\.(?:[\w.+\/=-]|%3D|%2F|%2B)+)?|[\-]{5}BEGIN(?:[a-z\s]|%20)+PRIVATE(?:\s|%20)KEY[\-]{5}[^\-]+[\-]{5}END(?:[a-z\s]|%20)+PRIVATE(?:\s|%20)KEY|ssh-rsa(?:\s|%20)*(?:[a-z0-9\/\.+]|%2F|%5C|%2B){100,})";
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
@@ -174,9 +174,9 @@ namespace Datadog.Trace.Configuration
 
             ObfuscationQueryStringRegex = source?.GetString(ConfigurationKeys.ObfuscationQueryStringRegex) ?? DefaultObfuscationQueryStringRegex;
 
-            EnableQueryStringReporting = source?.GetBool(ConfigurationKeys.EnableQueryStringReporting) ?? true;
+            QueryStringReportingEnabled = source?.GetBool(ConfigurationKeys.QueryStringReportingEnabled) ?? true;
 
-            ObfuscationQueryStringRegexTimeout = source?.GetDouble(ConfigurationKeys.ObfuscationQueryStringRegexTimeout) ?? 100;
+            ObfuscationQueryStringRegexTimeout = source?.GetDouble(ConfigurationKeys.ObfuscationQueryStringRegexTimeout) is { } x and > 0 ? x : 200;
 
             PropagationStyleInject = TrimSplitString(source?.GetString(ConfigurationKeys.PropagationStyleInject) ?? nameof(Propagators.ContextPropagators.Names.Datadog), ',').ToArray();
 
@@ -197,9 +197,7 @@ namespace Datadog.Trace.Configuration
 
             var propagationHeaderMaximumLength = source?.GetInt32(ConfigurationKeys.TagPropagation.HeaderMaxLength);
 
-            TagPropagationHeaderMaxLength = propagationHeaderMaximumLength is >= 0 and <= Tagging.TagPropagation.OutgoingPropagationHeaderMaxLength ?
-                                             (int)propagationHeaderMaximumLength :
-                                             Tagging.TagPropagation.OutgoingPropagationHeaderMaxLength;
+            TagPropagationHeaderMaxLength = propagationHeaderMaximumLength is >= 0 and <= Tagging.TagPropagation.OutgoingPropagationHeaderMaxLength ? (int)propagationHeaderMaximumLength : Tagging.TagPropagation.OutgoingPropagationHeaderMaxLength;
 
             IsActivityListenerEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.ActivityListenerEnabled) ??
                                         // default value
@@ -382,7 +380,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets a value indicating whether or not http.url should contain the query string, enabled by default
         /// </summary>
-        internal bool EnableQueryStringReporting { get; set; }
+        internal bool QueryStringReportingEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating a timeout in milliseconds to the execution of the query string obfuscation regex

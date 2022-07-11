@@ -4,6 +4,7 @@
 // </copyright>
 
 #if !NETFRAMEWORK
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec;
@@ -87,7 +88,17 @@ namespace Datadog.Trace.Util.Http
             return dict;
         }
 
-        internal static string GetUrl(this HttpRequest request, ImmutableTracerSettings settings = null) => HttpRequestUtils.GetUrl(request.Scheme, request.Host.Value, request.PathBase.ToUriComponent(), request.Path.ToUriComponent(), () => request.QueryString.Value, settings);
+        internal static string GetUrl(this HttpRequest request, ImmutableTracerSettings settings = null)
+        {
+            var queryString = request.QueryString.Value;
+            return HttpRequestUtils.GetUrl(
+                request.Scheme,
+                request.Host.Value,
+                request.PathBase.ToUriComponent(),
+                request.Path.ToUriComponent(),
+                queryString,
+                settings);
+        }
     }
 }
 #endif

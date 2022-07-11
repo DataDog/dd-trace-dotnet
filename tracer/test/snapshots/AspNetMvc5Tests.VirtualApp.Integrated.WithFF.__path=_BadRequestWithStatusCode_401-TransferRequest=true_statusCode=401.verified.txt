@@ -62,7 +62,7 @@ at Samples.AspNetMvc5.Controllers.HomeController.BadRequestWithStatusCode(Int32 
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.route: error/index,
+      http.route: /error/index,
       http.status_code: 401,
       http.url: http://localhost/my-app/BadRequestWithStatusCode/401?TransferRequest=true,
       http.useragent: testhelper,

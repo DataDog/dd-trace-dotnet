@@ -6,7 +6,8 @@
 using System;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Util.Http;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Util.Http.QueryStringObfuscation;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -16,21 +17,37 @@ namespace Datadog.Trace.Tests.Util.Http
     [Collection(nameof(QueryStringObfuscatorTests))]
     public class QueryStringObfuscatorTests
     {
-        private readonly TimeSpan _timeout = TimeSpan.FromSeconds(1);
+        private const double Timeout = 500;
 
-        [Fact]
-        public void DoesntObfuscateIfNoPattern()
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        public void DoesntObfuscateIfNoPattern(string pattern)
         {
-            var queryStringObfuscator = new QueryStringObfuscator.Obfuscator(_timeout);
+            var logger = new Mock<IDatadogLogger>();
+            var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, pattern, logger.Object);
             var originalQueryString = "key1=val1&token=a0b21ce2-006f-4cc6-95d5-d7b550698482&key2=val2";
             var result = queryStringObfuscator.Obfuscate(originalQueryString);
             result.Should().Be(originalQueryString);
         }
 
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData(" ")]
+        public void EdgeCases(string querystring)
+        {
+            var logger = new Mock<IDatadogLogger>();
+            var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettings.DefaultObfuscationQueryStringRegex, logger.Object);
+            var result = queryStringObfuscator.Obfuscate(querystring);
+            result.Should().Be(querystring);
+        }
+
         [Fact]
         public void ObfuscateWithDefaultPattern()
         {
-            var queryStringObfuscator = new QueryStringObfuscator.Obfuscator(_timeout, QueryStringObfuscator.DefaultObfuscationQueryStringRegex);
+            var logger = new Mock<IDatadogLogger>();
+            var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettings.DefaultObfuscationQueryStringRegex, logger.Object);
             var queryString = "key1=val1&token=a0b21ce2-006f-4cc6-95d5-d7b550698482&key2=val2";
             var result = queryStringObfuscator.Obfuscate(queryString);
             result.Should().Be("key1=val1&<redacted>&key2=val2");
@@ -39,7 +56,8 @@ namespace Datadog.Trace.Tests.Util.Http
         [Fact]
         public void ObfuscateWithCustomPattern()
         {
-            var queryStringObfuscator = new QueryStringObfuscator.Obfuscator(_timeout, @"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|authentic\d*)(?:\s*=[^&]+|""\s*:\s*""[^""]+"")|[a-z0-9\._\-]{100,}");
+            var logger = new Mock<IDatadogLogger>();
+            var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, @"(?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|authentic\d*)(?:\s*=[^&]+|""\s*:\s*""[^""]+"")|[a-z0-9\._\-]{100,}", logger.Object);
             var queryString = "?authentic1=val1&token=a0b21ce2-006f-4cc6-95d5-d7b550698482&key2=val2&authentic3=val2&authentic55=v";
             var result = queryStringObfuscator.Obfuscate(queryString);
             result.Should().Be("?<redacted>&token=a0b21ce2-006f-4cc6-95d5-d7b550698482&key2=val2&<redacted>&<redacted>");
@@ -48,12 +66,14 @@ namespace Datadog.Trace.Tests.Util.Http
         [Fact]
         public void ObfuscateTimeout()
         {
-            var querystringObfuscator = new Mock<QueryStringObfuscator.Obfuscator>(() => new QueryStringObfuscator.Obfuscator(_timeout, @"\[(.*?)\]((?:.\s*)*?)\[\/\1\]"));
-            querystringObfuscator.Setup(q => q.Log(It.IsAny<string>(), It.IsAny<RegexMatchTimeoutException>())).Verifiable();
+            var logger = new Mock<IDatadogLogger>();
+            var obfuscator = ObfuscatorFactory.GetObfuscator(100, @"\[(.*?)\]((?:.\s*)*?)\[\/\1\]", logger.Object);
+            var querystringObfuscator = new Mock<Obfuscator>(obfuscator);
+            logger.Setup(q => q.Error(It.IsAny<RegexMatchTimeoutException>(), It.IsAny<string>(), It.IsAny<double>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>())).Verifiable();
             const string queryString = @"?[tag1]Test's Text Test Text Test Text Test Text.Test Text Test Text Test ""Text Test Text"" Test Text Test Text.Test Text ? Test Text Test Text Test Text Test Text Test Text Test Text.Test Text, Test Text Test Text Test Text Test Text Test Text Test Text Test Text.[/ ta.g1][tag2]Test's Text Test Text Test Text Test Text.Test Text Test Text Test ""Text Test Text"" Test Text Test Text.Test Text ? Test Text Test Text Test Text Test Text Test Text Test Text.Test Text, Test Text Test Text Test Text Test Text Test Text Test Text Test Text.[/ tag2]";
-            var result = querystringObfuscator.Object.Obfuscate(queryString);
+            var result = obfuscator.Obfuscate(queryString);
             result.Should().Be(string.Empty);
-            querystringObfuscator.Verify(o => o.Log(It.IsAny<string>(), It.IsAny<RegexMatchTimeoutException>()), Times.Once);
+            logger.Verify(o => o.Error(It.IsAny<RegexMatchTimeoutException>(), It.IsAny<string>(), It.IsAny<double>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()), Times.Once);
         }
     }
 }

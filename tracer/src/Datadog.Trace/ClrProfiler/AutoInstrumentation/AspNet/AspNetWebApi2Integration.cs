@@ -72,15 +72,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         {
                             if (owinContextObj != null)
                             {
-                                if (owinContextObj.TryDuckCast<IOwinContext>(out var owinContext))
-                                {
-                                    Headers.Ip.RequestIpExtractor.AddIpToTags(
-                                        owinContext.Request.RemoteIpAddress,
-                                        owinContext.Request.IsSecure,
-                                        key => request.Headers.TryGetValues(key, out var values) ? values?.FirstOrDefault() : string.Empty,
-                                        tracer.Settings.IpHeader,
-                                        tags);
-                                }
+                                var owinContext = owinContextObj.DuckCast<OwinContextStruct>();
+                                Headers.Ip.RequestIpExtractor.AddIpToTags(
+                                    owinContext.Request.RemoteIpAddress,
+                                    owinContext.Request.IsSecure,
+                                    key => request.Headers.TryGetValues(key, out var values) ? values?.FirstOrDefault() : string.Empty,
+                                    tracer.Settings.IpHeader,
+                                    tags);
                             }
                         }
                     }
@@ -168,7 +166,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         area = (routeValues.GetValueOrDefault("area") as string)?.ToLowerInvariant();
                         controller = (routeValues.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
                         action = (routeValues.GetValueOrDefault("action") as string)?.ToLowerInvariant();
-                        resolvedRoute = $"{area}/{controller}/{action}";
                     }
                     catch
                     {
@@ -192,7 +189,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     tags.AspNetController = controller;
                     tags.AspNetArea = area;
                     tags.AspNetRoute = route;
-                    span.Context.TraceContext.RootSpan?.SetTag(Tags.HttpRoute, route);
+                    span.Context.TraceContext.RootSpan?.SetTag(Tags.HttpRoute, resolvedRoute);
                 }
 
                 if (newResourceNamesEnabled)

@@ -102,8 +102,6 @@ namespace Datadog.Trace.Configuration
         public System.Collections.Generic.IReadOnlyDictionary<string, string> GrpcTags { get; }
         public System.Collections.Generic.IReadOnlyDictionary<string, string> HeaderTags { get; }
         public Datadog.Trace.Configuration.ImmutableIntegrationSettingsCollection Integrations { get; }
-        public string IpHeader { get; }
-        public bool IpHeaderDisabled { get; }
         public bool KafkaCreateConsumerScopeEnabled { get; }
         public bool LogsInjectionEnabled { get; }
         public int MaxTracesSubmittedPerSecond { get; }
@@ -171,8 +169,6 @@ namespace Datadog.Trace.Configuration
         public System.Collections.Generic.IDictionary<string, string> GrpcTags { get; set; }
         public System.Collections.Generic.IDictionary<string, string> HeaderTags { get; set; }
         public Datadog.Trace.Configuration.IntegrationSettingsCollection Integrations { get; }
-        public string IpHeader { get; set; }
-        public bool IpHeaderDisabled { get; set; }
         public bool KafkaCreateConsumerScopeEnabled { get; set; }
         public bool LogsInjectionEnabled { get; set; }
         public int MaxTracesSubmittedPerSecond { get; set; }

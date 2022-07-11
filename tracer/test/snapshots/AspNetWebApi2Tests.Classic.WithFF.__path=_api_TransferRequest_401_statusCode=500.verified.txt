@@ -17,7 +17,7 @@ at Samples.AspNetMvc5.Controllers.ApiController.BadRequestWithStatusCodeAndTrans
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.route: api/TransferRequest/{statuscode},
+      http.route: /api/transferrequest/{statuscode},
       http.status_code: 500,
       http.url: http://localhost/api/TransferRequest/401,
       http.useragent: testhelper,

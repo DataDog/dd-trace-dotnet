@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Util.Http.QueryStringObfuscation;
 
 namespace Datadog.Trace.Util.Http
 {
@@ -12,12 +13,13 @@ namespace Datadog.Trace.Util.Http
     {
         private const string NoHostSpecified = "UNKNOWN_HOST";
 
-        internal static string GetUrl(string scheme, string host, string pathBase, string path, Func<string> getQueryString, ImmutableTracerSettings tracerSettings = null)
+        internal static string GetUrl(string scheme, string host, string pathBase, string path, string queryString, ImmutableTracerSettings tracerSettings = null)
         {
-            if (tracerSettings != null && tracerSettings.EnableQueryStringReporting)
+            if (tracerSettings is { QueryStringReportingEnabled: true })
             {
                 var queryStringObfuscator = QueryStringObfuscator.Instance(tracerSettings.ObfuscationQueryStringRegexTimeout, tracerSettings.ObfuscationQueryStringRegex);
-                var queryString = queryStringObfuscator.Obfuscate(getQueryString());
+                queryString = queryString.Substring(0, Math.Min(queryString.Length, 200));
+                queryString = queryStringObfuscator.Obfuscate(queryString);
                 return $"{scheme}://{(string.IsNullOrEmpty(host) ? NoHostSpecified : host)}{pathBase}{path}{queryString}";
             }
 

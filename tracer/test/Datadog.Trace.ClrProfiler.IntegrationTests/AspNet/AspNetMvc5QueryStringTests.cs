@@ -48,8 +48,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, "true");
             SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, "true");
-            SetEnvironmentVariable(ConfigurationKeys.EnableQueryStringReporting, enableQueryStringReporting.ToString());
-            SetEnvironmentVariable(ConfigurationKeys.ObfuscationQueryStringRegexTimeout, "1000");
+            SetEnvironmentVariable(ConfigurationKeys.QueryStringReportingEnabled, enableQueryStringReporting.ToString());
 
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
