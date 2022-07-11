@@ -105,7 +105,6 @@ namespace Datadog.Trace.Configuration
         public bool KafkaCreateConsumerScopeEnabled { get; }
         public bool LogsInjectionEnabled { get; }
         public int MaxTracesSubmittedPerSecond { get; }
-        public int PropagationHeaderMaxLength { get; }
         public string ServiceName { get; }
         public string ServiceVersion { get; }
         public bool StartupDiagnosticLogEnabled { get; }
@@ -173,7 +172,6 @@ namespace Datadog.Trace.Configuration
         public bool KafkaCreateConsumerScopeEnabled { get; set; }
         public bool LogsInjectionEnabled { get; set; }
         public int MaxTracesSubmittedPerSecond { get; set; }
-        public int PropagationHeaderMaxLength { get; set; }
         public string ServiceName { get; set; }
         public string ServiceVersion { get; set; }
         public bool StartupDiagnosticLogEnabled { get; set; }
@@ -200,7 +198,7 @@ namespace Datadog.Trace
     }
     public static class HttpHeaderNames
     {
-        [System.Obsolete("Use PropagatedTags.", false)]
+        [System.Obsolete]
         public const string DatadogTags = "x-datadog-tags";
         public const string Origin = "x-datadog-origin";
         public const string ParentId = "x-datadog-parent-id";
