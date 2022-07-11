@@ -1258,6 +1258,12 @@ partial class Build
                 {
                     return x.project?.Name switch
                     {
+                        "LogsInjection.Log4Net.VersionConflict.2x" => Framework != TargetFramework.NETCOREAPP2_1,
+                        "LogsInjection.NLog.VersionConflict.2x" => Framework != TargetFramework.NETCOREAPP2_1,
+                        "LogsInjection.NLog10.VersionConflict.2x" => Framework == TargetFramework.NET461,
+                        "LogsInjection.NLog20.VersionConflict.2x" => Framework == TargetFramework.NET461,
+                        "LogsInjection.Serilog.VersionConflict.2x" => Framework != TargetFramework.NETCOREAPP2_1,
+                        "LogsInjection.Serilog14.VersionConflict.2x" => Framework == TargetFramework.NET461,
                         "Samples.AspNetCoreMvc21" => Framework == TargetFramework.NETCOREAPP2_1,
                         "Samples.AspNetCoreMvc30" => Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.AspNetCoreMvc31" => Framework == TargetFramework.NETCOREAPP3_1,
@@ -1267,7 +1273,6 @@ partial class Build
                         "Samples.Security.AspNetCoreBare" => Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.GraphQL4" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
                         "Samples.AWS.Lambda" => Framework == TargetFramework.NETCOREAPP3_1,
-                        var name when name.StartsWith("LogsInjection") => false,
                         var name when projectsToSkip.Contains(name) => false,
                         var name when multiPackageProjects.Contains(name) => false,
                         "Samples.AspNetCoreRazorPages" => true,
