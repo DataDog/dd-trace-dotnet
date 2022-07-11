@@ -47,25 +47,43 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         public async Task<bool> DiscoverAsync()
         {
-            try
+            var sleepDuration = 500; // milliseconds
+            var sleepMaxDuration = 5000; // milliseconds
+
+            while (!_cancellationSource.IsCancellationRequested)
             {
-                var api = _apiRequestFactory.Create(new Uri($"{_agentUri}/info"));
-                using var response = await api.GetAsync().ConfigureAwait(false);
-                if (response.StatusCode != 200)
+                try
                 {
-                    Log.Error("Failed to discover services");
+                    var uri = _apiRequestFactory.GetEndpoint("info");
+                    var api = _apiRequestFactory.Create(uri);
+
+                    using var response = await api.GetAsync().ConfigureAwait(false);
+                    if (response.StatusCode == 200)
+                    {
+                        var content = await response.ReadAsStringAsync().ConfigureAwait(false);
+                        ProcessDiscoveryResponse(content);
+
+                        _cancellationSource = null;
+                        return true;
+                    }
+
+                    Log.Warning("Failed to discover services");
+                }
+                catch (Exception exception)
+                {
+                    Log.Warning(exception, "Failed to discover services");
+                }
+
+                try
+                {
+                    await Task.Delay(sleepDuration, _cancellationSource.Token).ConfigureAwait(false);
+                }
+                catch (TaskCanceledException)
+                {
                     return false;
                 }
 
-                var content = await response.ReadAsStringAsync().ConfigureAwait(false);
-                ProcessDiscoveryResponse(content);
-
-                return true;
-            }
-            catch (Exception exception)
-            {
-                Log.Error(exception, "Failed to discover services");
-                return false;
+                sleepDuration = Math.Min(sleepDuration * 2, sleepMaxDuration);
             }
         }
 

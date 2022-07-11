@@ -11,15 +11,17 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.TestHelpers;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Samples.Probes;
 using Samples.Probes.SmokeTests;
 using VerifyTests;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
+using Target = Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf.Target;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger;
 
@@ -30,12 +32,12 @@ public class ProbesTests : TestHelper, IDisposable
 {
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
     private const string ProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument probes definitions completed.";
-    private const string ProbesDefinitionFileName = "probes_definition.json";
+    private const string RemoteConfigurationFileName = "rcm_config.json";
 
     // We are not using a temp file here, but rather writing it directly to the debugger sample project,
     // so that if a test fails, we will be able to simply hit F5 to debug the same probe
     // configuration (launchsettings.json references the same file).
-    private readonly string probesDefinitionPath;
+    private readonly string _rcmPath;
 
     private readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };
     private readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber", "thread_name", "thread_id" };
@@ -44,7 +46,7 @@ public class ProbesTests : TestHelper, IDisposable
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
     {
         SetServiceVersion("1.0.0");
-        probesDefinitionPath = Path.Combine(EnvironmentHelper.GetSampleProjectDirectory(), ProbesDefinitionFileName);
+        _rcmPath = Path.Combine(EnvironmentHelper.GetSampleProjectDirectory(), RemoteConfigurationFileName);
     }
 
     public static IEnumerable<object[]> ProbeTests()
@@ -235,9 +237,9 @@ public class ProbesTests : TestHelper, IDisposable
     {
         try
         {
-            if (File.Exists(probesDefinitionPath))
+            if (File.Exists(_rcmPath))
             {
-                File.Delete(probesDefinitionPath);
+                File.Delete(_rcmPath);
             }
         }
         catch (Exception ex)
@@ -391,6 +393,57 @@ public class ProbesTests : TestHelper, IDisposable
     {
         var json = JsonConvert.SerializeObject(probeConfiguration, Formatting.Indented);
         File.WriteAllText(probesDefinitionPath, json);
+    }
+
+    private void SetRcmConfiguration(IEnumerable<(object Config, string Id)> configurations, string productName)
+    {
+        var targetFiles = new List<RcmFile>();
+        var targets = new Dictionary<string, Target>();
+        var clientConfigs = new List<string>();
+
+        foreach (var configuration in configurations)
+        {
+            var path = $"datadog/2/{productName}/{configuration.Id}/config";
+            var content = JsonConvert.SerializeObject(configuration.Config);
+
+            clientConfigs.Add(path);
+
+            targetFiles.Add(new RcmFile()
+            {
+                Path = path,
+                Raw = Encoding.UTF8.GetBytes(content)
+            });
+
+            targets.Add(path, new Target()
+            {
+                Hashes = new Dictionary<string, string> { { "guid", Guid.NewGuid().ToString() } }
+            });
+        }
+
+        var root = new TufRoot()
+        {
+            Signed = new Signed()
+            {
+                Targets = targets
+            }
+        };
+
+        var response = new GetRcmResponse()
+        {
+            ClientConfigs = clientConfigs,
+            TargetFiles = targetFiles,
+            Targets = root
+        };
+
+        var json = JsonConvert.SerializeObject(response);
+        if (EnvironmentHelper.CustomEnvironmentVariables.TryGetValue(ConfigurationKeys.Rcm.FilePath, out var rcmConfigPath))
+        {
+            File.WriteAllText(rcmConfigPath, json);
+        }
+        else
+        {
+            throw new InvalidOperationException("Path for remote configurations is not set.");
+        }
     }
 
     private MockTracerAgent GetMockAgent()
