@@ -10,17 +10,25 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.TestHelpers;
+using VerifyTests;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Tests
 {
     [Collection(nameof(WebRequestCollection))]
+    [UsesVerify]
     public class MultipartFormTests : TestHelper
     {
         public MultipartFormTests(ITestOutputHelper output)
             : base(string.Empty, output)
         {
+            VerifierSettings.DerivePathInfo(
+                (sourceFile, projectDirectory, type, method) =>
+                {
+                    return new(directory: Path.Combine(projectDirectory, "..", "snapshots"));
+                });
         }
 
         [Fact]
@@ -47,6 +55,7 @@ namespace Datadog.Trace.Tests
             });
 
             Assert.NotNull(requestBody);
+            await Verifier.Verify(requestBody);
         }
 #if NETCOREAPP3_1_OR_GREATER
 
@@ -74,6 +83,7 @@ namespace Datadog.Trace.Tests
             });
 
             Assert.NotNull(requestBody);
+            await Verifier.Verify(requestBody);
         }
 #endif
     }

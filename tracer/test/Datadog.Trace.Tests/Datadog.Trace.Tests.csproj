@@ -51,6 +51,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Verify.Xunit" Version="14.13.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="Telemetry\telemetry_data.json" />
     <EmbeddedResource Include="Telemetry\telemetry_data.json" />
   </ItemGroup>
