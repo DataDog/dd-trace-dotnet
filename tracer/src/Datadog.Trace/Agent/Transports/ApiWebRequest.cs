@@ -14,7 +14,7 @@ namespace Datadog.Trace.Agent.Transports
 {
     internal class ApiWebRequest : IApiRequest, IMultipartApiRequest
     {
-        private const string Boundary = "---------------------------DatadogBoundary";
+        private const string Boundary = "faa0a896-8bc8-48f3-b46d-016f2b15a884";
         private const string BoundarySeparator = "\r\n--" + Boundary + "\r\n";
         private const string BoundaryTrailer = "\r\n--" + Boundary + "--\r\n";
 
@@ -75,8 +75,9 @@ namespace Datadog.Trace.Agent.Transports
                 var trailerBytes = _boundaryTrailerInBytes ??= Encoding.ASCII.GetBytes(BoundaryTrailer);
 
                 // Write each MultipartFormItem
-                foreach (var item in items)
+                for (var i = 0; i < items.Length; i++)
                 {
+                    var item = items[i];
                     byte[] headerBytes = null;
 
                     // Check name is not null (required)
@@ -87,7 +88,7 @@ namespace Datadog.Trace.Agent.Transports
                     }
 
                     // Ignore the item if the name contains ' or "
-                    if (item.Name.Contains("\"") || item.Name.Contains("'"))
+                    if (item.Name.IndexOf("\"", StringComparison.Ordinal) != -1 || item.Name.IndexOf("'", StringComparison.Ordinal) != -1)
                     {
                         Log.Warning("Error encoding multipart form item name: {Name}. Ignoring item.", item.Name);
                         continue;
@@ -104,7 +105,7 @@ namespace Datadog.Trace.Agent.Transports
                     if (item.FileName is not null)
                     {
                         // Ignore the item if the name contains ' or "
-                        if (item.FileName.Contains("\"") || item.FileName.Contains("'"))
+                        if (item.FileName.IndexOf("\"", StringComparison.Ordinal) != -1 || item.FileName.IndexOf("'", StringComparison.Ordinal) != -1)
                         {
                             Log.Warning("Error encoding multipart form item filename: {FileName}. Ignoring item.", item.FileName);
                             continue;
@@ -118,13 +119,22 @@ namespace Datadog.Trace.Agent.Transports
                         }
 
                         headerBytes = Encoding.ASCII.GetBytes(
-                            $"Content-Disposition: form-data; name=\"{item.Name}\"; filename=\"{item.FileName}\"\r\nContent-Type: {item.ContentType}\r\n\r\n");
+                            $"Content-Type: {item.ContentType}\r\nContent-Disposition: form-data; name=\"{item.Name}\"; filename=\"{item.FileName}\"\r\n\r\n");
                     }
 
                     headerBytes ??= Encoding.ASCII.GetBytes(
-                        $"Content-Disposition: form-data; name=\"{item.Name}\"\r\nContent-Type: {item.ContentType}\r\n\r\n");
+                        $"Content-Type: {item.ContentType}\r\nContent-Disposition: form-data; name=\"{item.Name}\"\r\n\r\n");
 
-                    await requestStream.WriteAsync(boundaryBytes, 0, boundaryBytes.Length).ConfigureAwait(false);
+                    if (i == 0)
+                    {
+                        // If we are writing the first item, we skip the initial `\r\n` in the array
+                        await requestStream.WriteAsync(boundaryBytes, 2, boundaryBytes.Length - 2).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        await requestStream.WriteAsync(boundaryBytes, 0, boundaryBytes.Length).ConfigureAwait(false);
+                    }
+
                     await requestStream.WriteAsync(headerBytes, 0, headerBytes.Length).ConfigureAwait(false);
                     if (item.ContentInBytes is { } arraySegment)
                     {
