@@ -1018,6 +1018,12 @@ stages:
         dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=false IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
 
+    - script: |
+        echo Changing file permission:
+        sudo chmod -R 644 tracer/build_data/dumps/*
+      displayName: Setting file persmission for dumps
+      condition: succeededOrFailed()
+
     - publish: tracer/build_data
       artifact: integration_tests_linux_tracer_logs_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
       condition: succeededOrFailed()
