@@ -4,7 +4,7 @@ stages:
   - publish
   - deploy
   - deploy_aas
-  
+
 variables:
   DATADOG_AGENT_WINBUILDIMAGES: v5996510-a9e6a7d
   GIT_PROFILER_REF: master
@@ -13,7 +13,7 @@ variables:
     description: "Set to true to override rules in the reliability-env pipeline (e.g. override 'only deploy master')"
   DEPLOY_TO_AAS:
     value: "false"
-        
+
 build:
   stage: build
   tags: ["runner:windows-docker", "windowsversion:1809"]
@@ -39,7 +39,7 @@ publish:
     - /^release.*$/
   stage: publish
   tags: ["runner:windows-docker", "windowsversion:1809"]
-  dependencies: 
+  dependencies:
     - build
   script:
     - $result =  aws sts assume-role --role-arn "arn:aws:iam::486234852809:role/ci-datadog-windows-filter" --role-session-name AWSCLI-Session
@@ -78,12 +78,14 @@ deploy_to_reliability_env:
 
 deploy_to_aas:
   stage: deploy_aas
+  tags: ["runner:windows-docker", "windowsversion:1809"]
   rules:
     - if: '$DEPLOY_TO_AAS == "true"'
-  script: 
+  script:
     - |
+      export GH_TOKEN_PIERO=$(aws ssm get-parameter --region us-east-1 --name ci.dd-trace-dotnet.gh_token_piero --with-decryption --query "Parameter.Value" --out text)
       curl -X POST \
       -H "Accept: application/vnd.github.v3+json" \
-      -H "Authorization: Bearer ${{ secrets.GH_TOKEN_PIERO }}" \
+      -H "Authorization: Bearer ${{ GH_TOKEN_PIERO }}" \
       https://api.github.com/repos/DataDog/datadog-aas-extension/dispatches \
       -d '{"event_type": "dd-trace-dotnet-nightly", "client_payload": {"sha":"${CI_COMMIT_SHA}" } }'
