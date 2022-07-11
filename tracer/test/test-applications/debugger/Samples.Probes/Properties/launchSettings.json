@@ -9,9 +9,13 @@
         "COR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer\\win-$(Platform)\\Datadog.Trace.ClrProfiler.Native.dll",
         "COR_ENABLE_PROFILING": "1",
         "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
-        "DD_DEBUGGER_PROBE_FILE": "$(SolutionDir)tracer\\test\\test-applications\\debugger\\Samples.Probes\\probes_definition.json",
         "CORECLR_ENABLE_PROFILING": "1",
         "DD_INTERNAL_DEBUGGER_ENABLED": "1",
+        "DD_SERVICE": "debugger-demo-dotnet-omer",
+        "DD_API_KEY": "ff4c923c7419048b75b86a888a3d33b9",
+
+        //"DD_INTERNAL_RCM_FILE": "$(SolutionDir)tracer\\test\\test-applications\\debugger\\Samples.Probes\\rcm_config.json",
+        "DD_ENV": "desktop-eiqsf4r\\alexander.seleznyov-dev",
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer",
         "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
       },

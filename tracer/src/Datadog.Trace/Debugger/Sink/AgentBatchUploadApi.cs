@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
-using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -22,8 +21,8 @@ namespace Datadog.Trace.Debugger.Sink
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly IDiscoveryService _discoveryService;
         private readonly string _targetPath;
-        private string _environment;
-        private string _version;
+        private readonly string _environment;
+        private readonly string _version;
         private Uri _uri;
 
         private AgentBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, string targetPath, string environment, string version)

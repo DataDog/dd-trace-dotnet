@@ -12,57 +12,6 @@ namespace Datadog.Trace.Tests.Debugger
 {
     public class DebuggerSettingsTests
     {
-        [Fact]
-        public void WhenFilePathProvided_UseFileMode()
-        {
-            var expected = "c:/temp";
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.Debugger.ProbeFile, expected },
-            }));
-
-            tracerSettings.DebuggerSettings.ProbeMode.Should().Be(ProbeMode.File);
-            tracerSettings.DebuggerSettings.ProbeConfigurationsPath.Should().Be(expected);
-            tracerSettings.DebuggerSettings.SnapshotsPath.Should().Be("http://127.0.0.1:8126");
-        }
-
-        [Fact]
-        public void DefaultMode_AgentMode()
-        {
-            var tracerSettings = new TracerSettings();
-            tracerSettings.DebuggerSettings.ProbeMode.Should().Be(ProbeMode.Agent);
-        }
-
-        [Theory]
-        [InlineData(null)]
-        [InlineData("http://localhost:8126")]
-        public void WhenAgentModeEnabled_UseAgentMode(string agentUri)
-        {
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.AgentUri, agentUri },
-            }));
-
-            tracerSettings.DebuggerSettings.ProbeMode.Should().Be(ProbeMode.Agent);
-            tracerSettings.DebuggerSettings.ProbeConfigurationsPath.Should().Be("http://127.0.0.1:8126");
-            tracerSettings.DebuggerSettings.SnapshotsPath.Should().Be("http://127.0.0.1:8126");
-        }
-
-        [Theory]
-        [InlineData("-1")]
-        [InlineData("0")]
-        [InlineData("")]
-        [InlineData(null)]
-        public void InvalidPollInterval_DefaultUsed(string value)
-        {
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.Debugger.PollInterval, value },
-            }));
-
-            tracerSettings.DebuggerSettings.ProbeConfigurationsPollIntervalSeconds.Should().Be(1);
-        }
-
         [Theory]
         [InlineData("-1")]
         [InlineData("0")]
@@ -113,13 +62,11 @@ namespace Datadog.Trace.Tests.Debugger
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
             {
                 { ConfigurationKeys.Debugger.Enabled, "true" },
-                { ConfigurationKeys.Debugger.PollInterval, "10" },
                 { ConfigurationKeys.Debugger.MaxDepthToSerialize, "100" },
                 { ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000" },
             }));
 
             tracerSettings.DebuggerSettings.Enabled.Should().BeTrue();
-            tracerSettings.DebuggerSettings.ProbeConfigurationsPollIntervalSeconds.Should().Be(10);
             tracerSettings.DebuggerSettings.MaximumDepthOfMembersToCopy.Should().Be(100);
             tracerSettings.DebuggerSettings.MaxSerializationTimeInMilliseconds.Should().Be(1000);
         }

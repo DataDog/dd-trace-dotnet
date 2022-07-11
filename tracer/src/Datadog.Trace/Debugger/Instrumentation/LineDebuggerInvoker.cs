@@ -21,7 +21,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
     public static class LineDebuggerInvoker
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LineDebuggerInvoker));
-        private static readonly ImmutableDebuggerSettings Settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromDefaultSource());
 
         private static LineDebuggerState CreateInvalidatedLineDebuggerState()
         {
@@ -184,7 +183,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                      .EndSnapshot(duration)
                      .EndDebugger()
                      .AddLoggerInfo(methodName, type)
-                     .AddGeneralInfo(Settings.ServiceName, null, null) // todo
+                     .AddGeneralInfo(LiveDebugger.Instance.ServiceName, null, null) // todo
                      .AddMessage()
                     ;
 

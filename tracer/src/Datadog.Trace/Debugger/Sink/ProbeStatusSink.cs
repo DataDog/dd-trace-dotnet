@@ -16,15 +16,15 @@ namespace Datadog.Trace.Debugger.Sink
         private const int QueueLimit = 1000;
         private readonly ConcurrentDictionary<string, TimedMessage> _diagnostics;
 
-        private readonly string _service;
+        private readonly string _serviceName;
         private readonly int _batchSize;
         private readonly TimeSpan _interval;
 
         private BoundedConcurrentQueue<ProbeStatus> _queue;
 
-        private ProbeStatusSink(string service, int batchSize, TimeSpan interval)
+        private ProbeStatusSink(string serviceName, int batchSize, TimeSpan interval)
         {
-            _service = service;
+            _serviceName = serviceName;
             _batchSize = batchSize;
             _interval = interval;
 
@@ -32,9 +32,9 @@ namespace Datadog.Trace.Debugger.Sink
             _queue = new BoundedConcurrentQueue<ProbeStatus>(QueueLimit);
         }
 
-        public static ProbeStatusSink Create(ImmutableDebuggerSettings settings)
+        public static ProbeStatusSink Create(ImmutableDebuggerSettings settings, string serviceName)
         {
-            return new ProbeStatusSink(settings.ServiceName, settings.UploadBatchSize, TimeSpan.FromSeconds(settings.DiagnosticsIntervalSeconds));
+            return new ProbeStatusSink(serviceName, settings.UploadBatchSize, TimeSpan.FromSeconds(settings.DiagnosticsIntervalSeconds));
         }
 
         internal void AddReceived(string probeId)
@@ -68,7 +68,7 @@ namespace Datadog.Trace.Debugger.Sink
                 return;
             }
 
-            var next = new ProbeStatus(_service, probeId, status, exception, errorMessage);
+            var next = new ProbeStatus(_serviceName, probeId, status, exception, errorMessage);
             var timedMessage = new TimedMessage
             {
                 LastEmit = Clock.UtcNow,

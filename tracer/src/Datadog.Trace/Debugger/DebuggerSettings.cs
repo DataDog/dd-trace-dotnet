@@ -13,7 +13,6 @@ namespace Datadog.Trace.Debugger
     {
         private const int DefaultMaxDepthToSerialize = 1;
         private const int DefaultSerializationTimeThreshold = 150;
-        private const int DefaultConfigurationsPollIntervalSeconds = 1;
         private const int DefaultUploadBatchSize = 100;
         private const int DefaultDiagnosticsIntervalSeconds = 3600;
         private const int DefaultUploadFlushIntervalMilliseconds = 0;
@@ -35,25 +34,6 @@ namespace Datadog.Trace.Debugger
             var agentUri = exporterSettings.AgentUri.ToString().TrimEnd('/');
             AgentUri = exporterSettings.AgentUri;
             SnapshotsPath = configurationSource?.GetString(ConfigurationKeys.Debugger.SnapshotUrl)?.TrimEnd('/') ?? agentUri;
-
-            var probeFileLocation = configurationSource?.GetString(ConfigurationKeys.Debugger.ProbeFile);
-            var isFileModeMode = !string.IsNullOrWhiteSpace(probeFileLocation);
-            if (isFileModeMode)
-            {
-                ProbeMode = ProbeMode.File;
-                ProbeConfigurationsPath = probeFileLocation;
-            }
-            else
-            {
-                ProbeMode = ProbeMode.Agent;
-                ProbeConfigurationsPath = agentUri;
-            }
-
-            var pollInterval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.PollInterval);
-            ProbeConfigurationsPollIntervalSeconds =
-                pollInterval is null or <= 0
-                    ? DefaultConfigurationsPollIntervalSeconds
-                    : pollInterval.Value;
 
             ServiceVersion = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
             Environment = configurationSource?.GetString(ConfigurationKeys.Environment);
@@ -91,8 +71,6 @@ namespace Datadog.Trace.Debugger
                     : flushInterval.Value;
         }
 
-        public ProbeMode ProbeMode { get; }
-
         public string ApiKey { get; }
 
         public string RuntimeId { get; }
@@ -100,10 +78,6 @@ namespace Datadog.Trace.Debugger
         public string ServiceName { get; }
 
         public string ServiceVersion { get; }
-
-        public int ProbeConfigurationsPollIntervalSeconds { get; }
-
-        public string ProbeConfigurationsPath { get; }
 
         public string SnapshotsPath { get; }
 

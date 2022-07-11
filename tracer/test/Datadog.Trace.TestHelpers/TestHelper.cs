@@ -12,9 +12,14 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.NetworkInformation;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -659,6 +664,51 @@ namespace Datadog.Trace.TestHelpers
             // other tags
             Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
+        }
+
+        protected void SetRcmConfiguration(object configuration, string productName, string serviceName)
+        {
+            var id = serviceName.ToUUID();
+            var targetFiles = new List<RcmFile>()
+            {
+                new()
+                {
+                    Path = $"datadog/2/{productName}/{id}/config",
+                    Raw = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(configuration))
+                }
+            };
+
+            var targets = new TufRoot()
+            {
+                Signed = new Signed()
+                {
+                    Targets = targetFiles.ToDictionary(file => file.Path, _ => new Target())
+                }
+            };
+
+            var clientConfigs =
+                    targetFiles
+                       .Select(file => file.Path)
+                       .ToList()
+                ;
+
+            var response = new GetRcmResponse()
+            {
+                ClientConfigs = clientConfigs,
+                TargetFiles = targetFiles,
+                Targets = targets
+            };
+
+            var json = JsonConvert.SerializeObject(response);
+
+            // We are not using a temp file here, but rather writing it directly to the debugger sample project,
+            // so that if a test fails, we will be able to simply hit F5 to debug the same probe
+            // configuration (launchsettings.json references the same file).
+            var path = Path.Combine(EnvironmentHelper.GetSampleProjectDirectory(), "rcm_config.json");
+            File.WriteAllText(path, json);
+
+            SetEnvironmentVariable(ConfigurationKeys.ServiceName, serviceName);
+            SetEnvironmentVariable(ConfigurationKeys.Rcm.FilePath, path);
         }
 
         private bool IsServerSpan(MockSpan span) =>

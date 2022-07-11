@@ -548,6 +548,6 @@
       "version": "2"
     },
     "message": "HasLocalListOfObjects.Method(age=36, name=Greg): Hello Greg (36)!\r\n@return=Hello Greg (36)!, children=count: 2, p=Person, p2=Person, p3=Person",
-    "service": "Unknown"
+    "service": "Probes"
   }
 ]

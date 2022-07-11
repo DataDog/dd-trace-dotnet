@@ -8,7 +8,7 @@ using Datadog.Trace.Debugger.Helpers;
 
 namespace Datadog.Trace.Debugger.Configurations.Models
 {
-    internal abstract class ProbeDefinition : IJsonApiObject, IEquatable<ProbeDefinition>
+    internal abstract class ProbeDefinition : IEquatable<ProbeDefinition>
     {
         public string Language { get; set; }
 

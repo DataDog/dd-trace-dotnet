@@ -5,7 +5,6 @@
 
 using System;
 using System.Linq;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Sink.Models;
@@ -24,15 +23,10 @@ namespace Datadog.Trace.Tests.Debugger
         public ProbeStatusSinkTests()
         {
             _timeLord = new TimeLord();
-            var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
-            {
-                { ConfigurationKeys.ServiceName, nameof(ProbeStatusSinkTests) },
-            }));
-
             Clock.SetForCurrentThread(_timeLord);
 
-            _settings = ImmutableDebuggerSettings.Create(tracerSettings);
-            _sink = ProbeStatusSink.Create(_settings);
+            _settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromDefaultSource());
+            _sink = ProbeStatusSink.Create(_settings, nameof(ProbeStatusSinkTests));
         }
 
         [Fact]

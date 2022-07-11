@@ -10,9 +10,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.TestHelpers;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Samples.Probes;
 using Samples.Probes.SmokeTests;
@@ -30,7 +30,6 @@ public class ProbesTests : TestHelper
 {
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
     private const string ProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument probes definitions completed.";
-    private const string ProbesDefinitionFileName = "probes_definition.json";
     private readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };
     private readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber", "thread_name", "thread_id" };
 
@@ -68,7 +67,8 @@ public class ProbesTests : TestHelper
         using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
         using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
 
-        SetProbeConfiguration(DebuggerTestHelper.CreateProbeDefinition(probes.Select(p => p.Probe).ToArray()));
+        var probeConfiguration = DebuggerTestHelper.CreateProbeDefinition(probes.Select(p => p.Probe).ToArray());
+        SetRcmConfiguration(probeConfiguration, LiveDebugger.Product.Name, EnvironmentHelper.SampleName);
         await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
 
         await sample.RunCodeSample();
@@ -85,7 +85,8 @@ public class ProbesTests : TestHelper
             agent.ClearProbeStatuses();
 
             var emptyDefinition = DebuggerTestHelper.CreateProbeDefinition(Array.Empty<SnapshotProbe>());
-            SetProbeConfiguration(emptyDefinition);
+            SetRcmConfiguration(emptyDefinition, LiveDebugger.Product.Name, EnvironmentHelper.SampleName);
+
             await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
             Assert.True(await agent.WaitForNoSnapshots(6000), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
         }
@@ -110,7 +111,9 @@ public class ProbesTests : TestHelper
         using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
         using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
 
-        SetProbeConfiguration(DebuggerTestHelper.CreateProbeDefinition(probes.Select(p => p.Probe).ToArray()));
+        var probeConfiguration = DebuggerTestHelper.CreateProbeDefinition(probes.Select(p => p.Probe).ToArray());
+        SetRcmConfiguration(probeConfiguration, LiveDebugger.Product.Name, EnvironmentHelper.SampleName);
+
         await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
 
         await sample.RunCodeSample();
@@ -197,7 +200,8 @@ public class ProbesTests : TestHelper
         async Task RunPhase(SnapshotProbe[] snapshotProbes, ProbeAttributeBase[] probeData, bool isMultiPhase = false, int phaseNumber = 1)
         {
             var definition = DebuggerTestHelper.CreateProbeDefinition(snapshotProbes);
-            SetProbeConfiguration(definition);
+            SetRcmConfiguration(definition, LiveDebugger.Product.Name, EnvironmentHelper.SampleName);
+
             await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
 
             await sample.RunCodeSample();
@@ -356,24 +360,12 @@ public class ProbesTests : TestHelper
     private void SetDebuggerEnvironment()
     {
         var probeConfiguration = DebuggerTestHelper.CreateProbeDefinition(Array.Empty<SnapshotProbe>());
-        var path = SetProbeConfiguration(probeConfiguration);
 
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.ProbeFile, path);
+        SetRcmConfiguration(probeConfiguration, LiveDebugger.Product.Name, EnvironmentHelper.SampleName);
+        SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "500");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "3");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DiagnosticsInterval, "1");
-    }
-
-    private string SetProbeConfiguration(ProbeConfiguration probeConfiguration)
-    {
-        var json = JsonConvert.SerializeObject(probeConfiguration, Formatting.Indented);
-
-        // We are not using a temp file here, but rather writing it directly to the debugger sample project,
-        // so that if a test fails, we will be able to simply hit F5 to debug the same probe
-        // configuration (launchsettings.json references the same file).
-        var path = Path.Combine(EnvironmentHelper.GetSampleProjectDirectory(), ProbesDefinitionFileName);
-        File.WriteAllText(path, json);
-        return path;
     }
 
     private MockTracerAgent GetMockAgent()

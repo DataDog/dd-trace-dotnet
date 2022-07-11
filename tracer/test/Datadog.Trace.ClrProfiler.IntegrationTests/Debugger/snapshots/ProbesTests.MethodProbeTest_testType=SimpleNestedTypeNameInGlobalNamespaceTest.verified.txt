@@ -107,6 +107,6 @@
       "version": "2"
     },
     "message": "MethodToInstrument(callerName=Run)\r\narr=count: 3",
-    "service": "Unknown"
+    "service": "Probes"
   }
 ]
