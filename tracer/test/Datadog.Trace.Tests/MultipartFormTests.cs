@@ -57,6 +57,32 @@ namespace Datadog.Trace.Tests
             Assert.NotNull(requestBody);
             await Verifier.Verify(requestBody);
         }
+
+        [Fact]
+        public async Task ApiWebRequestValidationTest()
+        {
+            using var agent = (MockTracerAgent.TcpUdpAgent)EnvironmentHelper.GetMockAgent();
+            agent.ShouldDeserializeTraces = false;
+            string requestBody = null;
+            agent.RequestReceived += (sender, args) =>
+            {
+                var ctx = args.Value;
+                var rq = ctx.Request;
+                using var sreader = new StreamReader(rq.InputStream, Encoding.ASCII);
+                requestBody = sreader.ReadToEnd();
+            };
+
+            var url = new Uri($"http://localhost:{agent.Port}/");
+            var factory = new ApiWebRequestFactory(url, AgentHttpHeaderNames.DefaultHeaders);
+            var request = (IMultipartApiRequest)factory.Create(url);
+            await request.PostAsync(new MultipartFormItem[]
+            {
+                new("Name\" 1\"", MimeTypes.Json, "FileName 1.json", new ArraySegment<byte>(new byte[] { 42 })),
+                new("Name 2", MimeTypes.MsgPack, "FileName '2'.msgpack", new ArraySegment<byte>(new byte[] { 42 })),
+            });
+
+            Assert.Equal(string.Empty, requestBody);
+        }
 #if NETCOREAPP3_1_OR_GREATER
 
         [Fact]

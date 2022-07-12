@@ -56,6 +56,12 @@ namespace Datadog.Trace.Agent.Transports
             }
         }
 
+        /// <summary>
+        /// Send a Post request using multipart form data.
+        /// WARNING: Name and FileName of each MultipartFormItem instance must be ASCII encoding compatible.
+        /// </summary>
+        /// <param name="items">Multipart form data items</param>
+        /// <returns>Task with the response</returns>
         public async Task<IApiResponse> PostAsync(params MultipartFormItem[] items)
         {
             if (items is null)
@@ -75,6 +81,7 @@ namespace Datadog.Trace.Agent.Transports
                 var trailerBytes = _boundaryTrailerInBytes ??= Encoding.ASCII.GetBytes(BoundaryTrailer);
 
                 // Write each MultipartFormItem
+                var hasWritten = false;
                 for (var i = 0; i < items.Length; i++)
                 {
                     var item = items[i];
@@ -94,13 +101,6 @@ namespace Datadog.Trace.Agent.Transports
                         continue;
                     }
 
-                    // Ignore the item if the string value cannot be encoded as ASCII
-                    if (Encoding.UTF8.GetByteCount(item.Name) != item.Name.Length)
-                    {
-                        Log.Warning("Error encoding multipart form item name: {Name}. Value is not an ASCII string, ignoring item.", item.Name);
-                        continue;
-                    }
-
                     // Do the same checks for FileName if not null
                     if (item.FileName is not null)
                     {
@@ -108,13 +108,6 @@ namespace Datadog.Trace.Agent.Transports
                         if (item.FileName.IndexOf("\"", StringComparison.Ordinal) != -1 || item.FileName.IndexOf("'", StringComparison.Ordinal) != -1)
                         {
                             Log.Warning("Error encoding multipart form item filename: {FileName}. Ignoring item.", item.FileName);
-                            continue;
-                        }
-
-                        // Ignore the item if the string value cannot be encoded as ASCII
-                        if (Encoding.UTF8.GetByteCount(item.FileName) != item.FileName.Length)
-                        {
-                            Log.Warning("Error encoding multipart form item filename: {FileName}. Value is not an ASCII string, ignoring item.", item.FileName);
                             continue;
                         }
 
@@ -146,9 +139,14 @@ namespace Datadog.Trace.Agent.Transports
                         Log.Debug("Adding to Multipart Stream | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
                         await stream.CopyToAsync(requestStream).ConfigureAwait(false);
                     }
+
+                    hasWritten = true;
                 }
 
-                await requestStream.WriteAsync(trailerBytes, 0, trailerBytes.Length).ConfigureAwait(false);
+                if (hasWritten)
+                {
+                    await requestStream.WriteAsync(trailerBytes, 0, trailerBytes.Length).ConfigureAwait(false);
+                }
             }
 
             try
