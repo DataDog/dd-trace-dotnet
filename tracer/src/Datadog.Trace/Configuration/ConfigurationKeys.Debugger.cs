@@ -13,14 +13,14 @@ namespace Datadog.Trace.Configuration
         internal static class Debugger
         {
             /// <summary>
-            /// Configuration key for debugger poll interval.
+            /// Configuration key for debugger poll interval (in seconds).
             /// </summary>
             /// <seealso cref="DebuggerSettings.ProbeConfigurationsPollIntervalSeconds"/>
             public const string PollInterval = "DD_DEBUGGER_POLL_INTERVAL";
 
             /// <summary>
             /// Configuration key for the URL used to query our backend directly for the list of active probes.
-            /// This can only be used if DD-API-KEY is also available.
+            /// This can only be used if DD_API_KEY is also available.
             /// </summary>
             /// <seealso cref="DebuggerSettings.ProbeConfigurationsPath"/>
             public const string SnapshotUrl = "DD_DEBUGGER_SNAPSHOT_URL";
