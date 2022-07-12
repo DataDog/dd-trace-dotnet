@@ -96,7 +96,7 @@ namespace Datadog.Trace.Debugger
 
             Log.Information("Live Debugger initialization started");
 
-            Task.Run(async () => await InitializeAsync().ConfigureAwait(false));
+            Task.Run(() => InitializeAsync());
 
             AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
             AppDomain.CurrentDomain.DomainUnload += (sender, args) => _lineProbeResolver.OnDomainUnloaded();

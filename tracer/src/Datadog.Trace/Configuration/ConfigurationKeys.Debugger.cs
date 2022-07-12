@@ -41,7 +41,7 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Configuration key for enabling or disabling Live Debugger.
-            /// Default is value is false (disabled).
+            /// Default value is false (disabled).
             /// </summary>
             /// <seealso cref="DebuggerSettings.Enabled"/>
             public const string DebuggerEnabled = "DD_DEBUGGER_ENABLED";
@@ -68,14 +68,14 @@ namespace Datadog.Trace.Configuration
             public const string UploadBatchSize = "DD_DEBUGGER_UPLOAD_BATCH_SIZE";
 
             /// <summary>
-            /// Configuration key for the interval between sending probe statuses.
+            /// Configuration key for the interval (in seconds) between sending probe statuses.
             /// Default value is 3600.
             /// </summary>
             /// <seealso cref="DebuggerSettings.DiagnosticsIntervalSeconds"/>
             public const string DiagnosticsInterval = "DD_DEBUGGER_DIAGNOSTICS_INTERVAL";
 
             /// <summary>
-            /// Configuration key for the interval between flushing statuses.
+            /// Configuration key for the interval (in milliseconds) between flushing statuses.
             /// Default value is 0 (dynamic).
             /// </summary>
             /// <seealso cref="DebuggerSettings.UploadFlushIntervalMilliseconds"/>
