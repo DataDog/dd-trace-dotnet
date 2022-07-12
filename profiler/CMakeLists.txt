@@ -108,8 +108,8 @@ message(STATUS "FMT library " ${FMT_VERSION})
 find_package(Libunwind REQUIRED)
 message(STATUS "Libunwind library " ${LIBUNWIND_VERSION})
 
-find_package(Libddprof REQUIRED)
-message(STATUS "Libddprof library " ${LIBDDPROF_VERSION})
+find_package(Libdatadog REQUIRED)
+message(STATUS "Libdatadog library " ${LIBDATADOG_VERSION})
 
 add_subdirectory(src/ProfilerEngine/Datadog.Profiler.Native.Linux)
 add_subdirectory(src/ProfilerEngine/Datadog.Linux.ApiWrapper)

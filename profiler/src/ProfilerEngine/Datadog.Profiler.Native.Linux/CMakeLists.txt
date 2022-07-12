@@ -99,7 +99,7 @@ target_include_directories(${PROFILER_STATIC_LIB_NAME}
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/spdlog/include
         PUBLIC ${FMT_INCLUDE}
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}
-        PUBLIC ${LIBDDPROF_INCLUDE_DIR}
+        PUBLIC ${LIBDATADOG_INCLUDE_DIR}
 )
 
 # Define linker libraries
@@ -119,7 +119,7 @@ endif()
 target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     fmt-lib
     libunwind-lib
-    libddprof-lib
+    libdatadog-lib
     -static-libgcc
     -static-libstdc++
     -lstdc++fs
@@ -127,7 +127,7 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -ldl
 )
 
-add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt libddprof libunwind-lib)
+add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt libdatadog-lib libunwind-lib)
 
 # ******************************************************
 # Define shared target

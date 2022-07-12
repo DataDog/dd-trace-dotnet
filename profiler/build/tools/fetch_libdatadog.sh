@@ -29,21 +29,21 @@ cd $SCRIPTDIR/../
 TOP_LVL_DIR=$PWD
 cd $CURRENTDIR
 
-VER_LIBDDPROF=$1
-ARCH_LIBDDPROF=$2
+VER_LIBDATADOG=$1
+ARCH_LIBDATADOG=$2
 if [ -z "${IsAlpine}" ]; then
-    TAR_LIBDDPROF=libddprof-${ARCH_LIBDDPROF}-unknown-linux-gnu.tar.gz
+    TAR_LIBDATADOG=libdatadog-${ARCH_LIBDATADOG}-unknown-linux-gnu.tar.gz
 else
-    TAR_LIBDDPROF=libddprof-${ARCH_LIBDDPROF}-alpine-linux-musl.tar.gz
+    TAR_LIBDATADOG=libdatadog-${ARCH_LIBDATADOG}-alpine-linux-musl.tar.gz
 fi
 
-URL_LIBDDPROF=https://github.com/DataDog/libddprof/releases/download/${VER_LIBDDPROF}/${TAR_LIBDDPROF}
+URL_LIBDATADOG=https://github.com/DataDog/libdatadog/releases/download/${VER_LIBDATADOG}/${TAR_LIBDATADOG}
 
-SHA256_LIBDDPROF=$3
+SHA256_LIBDATADOG=$3
 mkdir -p $4
 cd $4
 DOWNLOAD_PATH=$PWD
-TARGET_EXTRACT=${DOWNLOAD_PATH}/libddprof
+TARGET_EXTRACT=${DOWNLOAD_PATH}/libdatadog
 
 if [ -e ${TARGET_EXTRACT} ]; then
     echo "Error, clean the directory : ${TARGET_EXTRACT}"
@@ -52,25 +52,25 @@ fi
 
 mkdir -p ${TARGET_EXTRACT}
 
-if [ ! -e  ${TAR_LIBDDPROF} ]; then
+if [ ! -e  ${TAR_LIBDATADOG} ]; then
     # Http works locally
-    echo "Download using curl... ${URL_LIBDDPROF}"
-    curl -L ${URL_LIBDDPROF} -o ${TAR_LIBDDPROF}
+    echo "Download using curl... ${URL_LIBDATADOG}"
+    curl -L ${URL_LIBDATADOG} -o ${TAR_LIBDATADOG}
 fi
 
-SHA_TAR=$(sha256sum ${DOWNLOAD_PATH}/${TAR_LIBDDPROF} | cut -d' ' -f1)
+SHA_TAR=$(sha256sum ${DOWNLOAD_PATH}/${TAR_LIBDATADOG} | cut -d' ' -f1)
 
-if [ $SHA_TAR != ${SHA256_LIBDDPROF} ];then
-    echo "Error validating libddprof"
-    echo "Got following SHA: ${SHA_TAR} (instead of ${SHA256_LIBDDPROF})"
-    echo "Please clear ${DOWNLOAD_PATH}/${TAR_LIBDDPROF} before restarting"
+if [ $SHA_TAR != ${SHA256_LIBDATADOG} ];then
+    echo "Error validating libdatadog"
+    echo "Got following SHA: ${SHA_TAR} (instead of ${SHA256_LIBDATADOG})"
+    echo "Please clear ${DOWNLOAD_PATH}/${TAR_LIBDATADOG} before restarting"
     exit 1
 fi
 
 tmp_dir=$(mktemp -d -t deliverables-XXXXXXXXXX)
 echo "Extract to $tmp_dir"
 cd $tmp_dir
-tar xvfz ${DOWNLOAD_PATH}/${TAR_LIBDDPROF}
+tar xvfz ${DOWNLOAD_PATH}/${TAR_LIBDATADOG}
 mv * ${TARGET_EXTRACT}
 rmdir $tmp_dir
 cd -
