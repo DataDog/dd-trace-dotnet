@@ -82,7 +82,7 @@ internal class DebuggerSettings
 
         var flushInterval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.UploadFlushInterval);
         UploadFlushIntervalMilliseconds =
-            flushInterval is null or <= 0
+            flushInterval is null or < 0
                 ? DefaultUploadFlushIntervalMilliseconds
                 : flushInterval.Value;
     }
