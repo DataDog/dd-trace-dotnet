@@ -32,12 +32,36 @@ internal static class FnvHash64
         V1A,
     }
 
+#if NETCOREAPP
+    /// <summary>
+    /// Generates the 64-bit FNV hash of <paramref name="data"/> using hash version <paramref name="version"/>
+    /// </summary>
+    /// <returns>The 64-bit FNV hash of the data, as a <c>ulong</c></returns>
+    public static ulong GenerateHash(string data, Version version)
+    {
+        // Use a relatively small size, unlikely to hit names this big
+        const int MaxStackLimit = 256;
+        var maxByteCount = Encoding.UTF8.GetMaxByteCount(data.Length);
+
+        if (maxByteCount > MaxStackLimit)
+        {
+            // To big, allocate on the heap
+            return GenerateHash(Encoding.UTF8.GetBytes(data), version);
+        }
+
+        Span<byte> bytes = stackalloc byte[MaxStackLimit];
+        var byteCount = Encoding.UTF8.GetBytes(data, bytes);
+
+        return GenerateHash(bytes.Slice(0, byteCount), version);
+    }
+#else
     /// <summary>
     /// Generates the 64-bit FNV hash of <paramref name="data"/> using hash version <paramref name="version"/>
     /// </summary>
     /// <returns>The 64-bit FNV hash of the data, as a <c>ulong</c></returns>
     public static ulong GenerateHash(string data, Version version)
         => GenerateHash(Encoding.UTF8.GetBytes(data), version);
+#endif
 
     /// <summary>
     /// Generates the 64-bit FNV hash of <paramref name="data"/> using hash version <paramref name="version"/>
