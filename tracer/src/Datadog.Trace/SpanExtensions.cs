@@ -55,7 +55,8 @@ namespace Datadog.Trace
                     Log.Warning<string, int>("{Id} is {IdLength} bytes long, which is longer than the configured max length of {MaxLength}", userDetails.Id, base64UserId.Length, propagationHeaderMaxLength);
                 }
 
-                localRootSpan.SetTag(TagPropagation.PropagatedTagPrefix + Tags.User.Id, base64UserId);
+                const string propagatedUserIdTag = TagPropagation.PropagatedTagPrefix + Tags.User.Id;
+                localRootSpan.SetTag(propagatedUserIdTag, base64UserId);
             }
             else
             {
