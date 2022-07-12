@@ -545,6 +545,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     ConfigureDebugLog();
 
+    if (!OpSysTools::IsSafeToStartProfiler())
+    {
+        Log::Warn("It's not safe to start the profiler. See previous log messages for more info.");
+        return E_FAIL;
+    }
+
     // Log some important environment info:
     CorProfilerCallback::InspectProcessorInfo();
     CorProfilerCallback::InspectRuntimeCompatibility(corProfilerInfoUnk);

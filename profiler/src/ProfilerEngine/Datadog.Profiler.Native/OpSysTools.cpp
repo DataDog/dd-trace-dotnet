@@ -338,29 +338,33 @@ bool OpSysTools::IsSafeToStartProfiler()
     // Today we do not have any specific check before starting the profiler on Windows.
     return true;
 #else
-    // Fo linux, we check that the wrapper library is loaded and the default `dl_iterate_phdr` is
+    // For linux, we check that the wrapper library is loaded and the default `dl_iterate_phdr` is
     // the one provided by our library.
 
     // We assume that the profiler library is in the same folder as the wrapper library
     auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
     auto wrapperLibrary = currentModulePath.parent_path() / "Datadog.Linux.ApiWrapper.x64.so";
+    auto wrapperLibraryPath = wrapperLibrary.string();
 
-    auto* instance = dlopen(wrapperLibrary.string().c_str(), RTLD_NOLOAD);
-
-    if (instance == nullptr)
+    if (!fs::exists(wrapperLibrary))
     {
-        Log::Warn("Library '", wrapperLibrary.string(), "' is not loaded.");
+        Log::Warn("Library '", wrapperLibraryPath, "' does not exist. The profiler is not correctly installed.");
         return false;
     }
 
-    // check if dl_iterate_phdr is the default symbol returned by the dynamic linker
-    auto customFn = dlsym(instance, "dl_iterate_phdr");
-    if (customFn == dlsym(RTLD_DEFAULT, "dl_iterate_phdr"))
+    auto value = shared::ToString(shared::GetEnvironmentValue(WStr("LD_PRELOAD")));
+    if (value.empty())
+    {
+        Log::Warn("LD_PRELOAD environment is empty. The library '", wrapperLibraryPath, "' is not loaded.");
+        return false;
+    }
+
+    if (value.find(wrapperLibraryPath) != std::string::npos)
     {
         return true;
     }
 
-    Log::Warn("Library '", wrapperLibrary.string(), "' was not loaded using the LD_PRELOAD environment variable.");
+    Log::Warn("Library '", wrapperLibraryPath, "' is not part of LD_PRELOAD environment variable value.");
     return false;
 #endif
 }
