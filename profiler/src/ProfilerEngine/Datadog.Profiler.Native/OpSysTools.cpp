@@ -346,25 +346,26 @@ bool OpSysTools::IsSafeToStartProfiler()
     auto wrapperLibrary = currentModulePath.parent_path() / "Datadog.Linux.ApiWrapper.x64.so";
     auto wrapperLibraryPath = wrapperLibrary.string();
 
-    if (!fs::exists(wrapperLibrary))
+    auto* instance = dlopen(wrapperLibraryPath.c_str(), RTLD_LAZY | RTLD_LOCAL);
+    if (instance == nullptr)
     {
-        Log::Warn("Library '", wrapperLibraryPath, "' does not exist. The profiler is not correctly installed.");
+        auto errorId = errno;
+        Log::Warn("Library '", wrapperLibraryPath, "' cannot be loaded (", strerror(errorId), "). This means that the profiler/tracer is not correctly installed.");
         return false;
     }
 
-    auto value = shared::ToString(shared::GetEnvironmentValue(WStr("LD_PRELOAD")));
-    if (value.empty())
-    {
-        Log::Warn("LD_PRELOAD environment is empty. The library '", wrapperLibraryPath, "' is not loaded.");
-        return false;
-    }
+    const auto* customFnName = "dl_iterate_phdr";
+    auto customFn = dlsym(instance, customFnName);
 
-    if (value.find(wrapperLibraryPath) != std::string::npos)
+    // make sure that the default symbol for the custom function
+    // is at the same address as the one found in our lib
+    if (customFn == dlsym(RTLD_DEFAULT, customFnName))
     {
         return true;
     }
 
-    Log::Warn("Library '", wrapperLibraryPath, "' is not part of LD_PRELOAD environment variable value.");
+    Log::Warn("Custom function '", customFnName, "' is not the default one. That indicates that the library ",
+              "'", wrapperLibraryPath, "' is not loaded using the LD_PRELOAD environment variable");
     return false;
 #endif
 }
