@@ -45,18 +45,7 @@ namespace Datadog.Trace
 
             if (userDetails.PropagateId)
             {
-                var base64UserId = Convert.ToBase64String(Encoding.UTF8.GetBytes(userDetails.Id));
-
-                var propagationHeaderMaxLength =
-                    traceContext?.Tracer.Settings.TagPropagationHeaderMaxLength ??
-                        TagPropagation.OutgoingPropagationHeaderMaxLength;
-                if (base64UserId.Length > propagationHeaderMaxLength)
-                {
-                    Log.Warning<string, int>("{Id} is {IdLength} bytes long, which is longer than the configured max length of {MaxLength}", userDetails.Id, base64UserId.Length, propagationHeaderMaxLength);
-                }
-
-                const string propagatedUserIdTag = TagPropagation.PropagatedTagPrefix + Tags.User.Id;
-                localRootSpan.SetTag(propagatedUserIdTag, base64UserId);
+                SetPropagatedId(span, userDetails, localRootSpan, traceContext);
             }
             else
             {
@@ -87,6 +76,30 @@ namespace Datadog.Trace
             {
                 localRootSpan.SetTag(Tags.User.Scope, userDetails.Scope);
             }
+        }
+
+        private static void SetPropagatedId(ISpan span, UserDetails userDetails, ISpan localRootSpan, TraceContext traceContext)
+        {
+                var propagationHeaderMaxLength =
+                    traceContext?.Tracer.Settings.TagPropagationHeaderMaxLength ??
+                        TagPropagation.OutgoingPropagationHeaderMaxLength;
+
+                if (userDetails.Id.Length > propagationHeaderMaxLength)
+                {
+                    Log.Warning<string, int>("{Id} is {IdLength} bytes long, which is longer than the configured max length of {MaxLength}", userDetails.Id, userDetails.Id.Length, propagationHeaderMaxLength);
+                    return;
+                }
+
+                var base64UserId = Convert.ToBase64String(Encoding.UTF8.GetBytes(userDetails.Id));
+
+                if (base64UserId.Length > propagationHeaderMaxLength)
+                {
+                    Log.Warning<string, int>("base64 encoded {Id} is {IdLength} bytes long, which is longer than the configured max length of {MaxLength}", base64UserId, base64UserId.Length, propagationHeaderMaxLength);
+                    return;
+                }
+
+                const string propagatedUserIdTag = TagPropagation.PropagatedTagPrefix + Tags.User.Id;
+                localRootSpan.SetTag(propagatedUserIdTag, base64UserId);
         }
     }
 }
