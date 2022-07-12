@@ -39,15 +39,7 @@ namespace Datadog.Trace.Agent.Transports
         public async Task<IApiResponse> GetAsync()
         {
             _request.Method = HttpMethod.Get;
-
-            var response = new HttpClientResponse(await _client.SendAsync(_request).ConfigureAwait(false));
-            if (response.StatusCode != 200 && response.StatusCode != 202)
-            {
-                var headers = string.Join(", ", _request.Headers.Select(h => $"{h.Key}: {string.Join(", ", h.Value)}"));
-                Log.Warning("{className} GET request returned error code {statusCode} while calling {uri}. Response: {response} Headers: {headers}", new object[] { nameof(HttpClientRequest), response.StatusCode, _uri, await response.ReadAsStringAsync().ConfigureAwait(false), headers });
-            }
-
-            return response;
+            return new HttpClientResponse(await _client.SendAsync(_request).ConfigureAwait(false));
         }
 
         public async Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)
