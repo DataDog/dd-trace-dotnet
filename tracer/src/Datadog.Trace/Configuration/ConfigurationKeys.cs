@@ -450,5 +450,17 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             public const string Uri = "DD_INSTRUMENTATION_TELEMETRY_URL";
         }
+
+        internal static class TagPropagation
+        {
+            /// <summary>
+            /// Configuration key for the maximum length of an outgoing propagation header's value ("x-datadog-tags")
+            /// when injecting it into downstream service calls.
+            /// </summary>
+            /// <remarks>
+            /// This value is not used when extracting an incoming propagation header from an upstream service.
+            /// </remarks>
+            public const string HeaderMaxLength = "DD_TRACE_X_DATADOG_TAGS_MAX_LENGTH";
+        }
     }
 }
