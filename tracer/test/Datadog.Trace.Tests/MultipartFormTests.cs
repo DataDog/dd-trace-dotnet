@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.TestHelpers;
-using VerifyTests;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -24,11 +23,7 @@ namespace Datadog.Trace.Tests
         public MultipartFormTests(ITestOutputHelper output)
             : base(string.Empty, output)
         {
-            VerifierSettings.DerivePathInfo(
-                (sourceFile, projectDirectory, type, method) =>
-                {
-                    return new(directory: Path.Combine(projectDirectory, "..", "snapshots"));
-                });
+            VerifyHelper.InitializeGlobalSettings();
         }
 
         [Fact]

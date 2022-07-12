@@ -51,6 +51,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Datadog.Trace.TestHelpers.SharedSource\VerifyHelper.cs" Link="Helpers\VerifyHelper.cs" />
     <PackageReference Include="Verify.Xunit" Version="14.13.1" />
   </ItemGroup>
 
