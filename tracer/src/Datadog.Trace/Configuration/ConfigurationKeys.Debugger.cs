@@ -23,13 +23,6 @@ namespace Datadog.Trace.Configuration
             /// This can only be used if DD-API-KEY is also available.
             /// </summary>
             /// <seealso cref="DebuggerSettings.ProbeConfigurationsPath"/>
-            public const string ProbeUrl = "DD_DEBUGGER_PROBE_URL";
-
-            /// <summary>
-            /// Configuration key for the URL used to query our backend directly for the list of active probes.
-            /// This can only be used if DD-API-KEY is also available.
-            /// </summary>
-            /// <seealso cref="DebuggerSettings.ProbeConfigurationsPath"/>
             public const string SnapshotUrl = "DD_DEBUGGER_SNAPSHOT_URL";
 
             /// <summary>
