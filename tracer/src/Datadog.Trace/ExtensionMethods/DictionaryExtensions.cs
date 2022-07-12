@@ -82,11 +82,5 @@ namespace Datadog.Trace.ExtensionMethods
         }
 
         public static bool IsNullOrEmpty<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary) => dictionary?.IsEmpty() ?? true;
-
-        public static void Deconstruct<T1, T2>(this KeyValuePair<T1, T2> tuple, out T1 key, out T2 value)
-        {
-            key = tuple.Key;
-            value = tuple.Value;
-        }
     }
 }

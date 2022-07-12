@@ -146,7 +146,7 @@ internal class LineProbeResolver : ILineProbeResolver
         if (probe.Where.Lines?.Length != 1 || !int.TryParse(probe.Where.Lines[0], out var lineNum))
         {
             var message = $"Failed to parse line number for Line Probe {probe.Id}. " +
-                                  $"The Lines collection contains {probe.Where.Lines.PrintContents()}.";
+                                  $"The Lines collection contains {PrintContents(probe.Where.Lines)}.";
             Log.Error(message);
 
             return new LineProbeResolveResult(LiveProbeResolveStatus.Error, message);
@@ -155,6 +155,12 @@ internal class LineProbeResolver : ILineProbeResolver
         var method = pdbReader.GetContainingMethodAndOffset(probe.Where.SourceFile, lineNum, column: 0, out var bytecodeOffset);
         location = new BoundLineProbeLocation(probe, assembly.ManifestModule.ModuleVersionId, method.Token, bytecodeOffset, lineNum);
         return new LineProbeResolveResult(LiveProbeResolveStatus.Bound);
+
+        string PrintContents<T>(T[] array)
+        {
+            const string separator = ", ";
+            return array == null ? "null" : $"[{string.Join(separator, array)}]";
+        }
     }
 
     public void OnDomainUnloaded()

@@ -50,7 +50,7 @@ public class LiveDebuggerTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task LiveDebuggerDisabled_DebuggerExplicitlyDisabled_NoDebuggerTypesCreated()
     {
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.DebuggerEnabled, "0");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "0");
         await RunTest();
     }
 

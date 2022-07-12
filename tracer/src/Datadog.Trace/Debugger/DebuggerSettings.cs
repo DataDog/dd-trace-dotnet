@@ -9,8 +9,6 @@ namespace Datadog.Trace.Debugger;
 
 internal class DebuggerSettings
 {
-    private const string DefaultProdSite = "datadoghq.com";
-    private const string DefaultStagingSite = "datad0g.com";
     private const int DefaultMaxDepthToSerialize = 1;
     private const int DefaultSerializationTimeThreshold = 150;
     private const int DefaultConfigurationsPollIntervalSeconds = 1;
@@ -56,7 +54,7 @@ internal class DebuggerSettings
         ServiceVersion = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
         Environment = configurationSource?.GetString(ConfigurationKeys.Environment);
 
-        Enabled = configurationSource?.GetBool(ConfigurationKeys.Debugger.DebuggerEnabled) ?? false;
+        Enabled = configurationSource?.GetBool(ConfigurationKeys.Debugger.Enabled) ?? false;
 
         var maxDepth = configurationSource?.GetInt32(ConfigurationKeys.Debugger.MaxDepthToSerialize);
         MaximumDepthOfMembersToCopy =
@@ -84,28 +82,28 @@ internal class DebuggerSettings
 
         var flushInterval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.UploadFlushInterval);
         UploadFlushIntervalMilliseconds =
-            flushInterval is null or <= 0
+            flushInterval is null or < 0
                 ? DefaultUploadFlushIntervalMilliseconds
                 : flushInterval.Value;
     }
 
-    public ProbeMode ProbeMode { get; set; }
+    public ProbeMode ProbeMode { get; }
 
-    public string ApiKey { get; set; }
+    public string ApiKey { get; }
 
-    public string RuntimeId { get; set; }
+    public string RuntimeId { get; }
 
-    public string ServiceName { get; set; }
+    public string ServiceName { get; }
 
-    public string ServiceVersion { get; set; }
+    public string ServiceVersion { get; }
 
-    public int ProbeConfigurationsPollIntervalSeconds { get; set; }
+    public int ProbeConfigurationsPollIntervalSeconds { get; }
 
-    public string ProbeConfigurationsPath { get; set; }
+    public string ProbeConfigurationsPath { get; }
 
-    public string SnapshotsPath { get; set; }
+    public string SnapshotsPath { get; }
 
-    public string Environment { get; set; }
+    public string Environment { get; }
 
     public bool Enabled { get; }
 

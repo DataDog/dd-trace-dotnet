@@ -8,12 +8,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Configuration
