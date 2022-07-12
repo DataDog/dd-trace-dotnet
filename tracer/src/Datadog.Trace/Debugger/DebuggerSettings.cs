@@ -87,23 +87,23 @@ internal class DebuggerSettings
                 : flushInterval.Value;
     }
 
-    public ProbeMode ProbeMode { get; set; }
+    public ProbeMode ProbeMode { get; }
 
-    public string ApiKey { get; set; }
+    public string ApiKey { get; }
 
-    public string RuntimeId { get; set; }
+    public string RuntimeId { get; }
 
-    public string ServiceName { get; set; }
+    public string ServiceName { get; }
 
-    public string ServiceVersion { get; set; }
+    public string ServiceVersion { get; }
 
-    public int ProbeConfigurationsPollIntervalSeconds { get; set; }
+    public int ProbeConfigurationsPollIntervalSeconds { get; }
 
-    public string ProbeConfigurationsPath { get; set; }
+    public string ProbeConfigurationsPath { get; }
 
-    public string SnapshotsPath { get; set; }
+    public string SnapshotsPath { get; }
 
-    public string Environment { get; set; }
+    public string Environment { get; }
 
     public bool Enabled { get; }
 
