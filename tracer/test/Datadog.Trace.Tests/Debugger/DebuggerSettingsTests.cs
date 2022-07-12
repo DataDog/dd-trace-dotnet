@@ -101,7 +101,7 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
             {
-                { ConfigurationKeys.Debugger.DebuggerEnabled, enabled },
+                { ConfigurationKeys.Debugger.Enabled, enabled },
             }));
 
             tracerSettings.DebuggerSettings.Enabled.Should().BeFalse();
@@ -112,7 +112,7 @@ namespace Datadog.Trace.Tests.Debugger
         {
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
             {
-                { ConfigurationKeys.Debugger.DebuggerEnabled, "true" },
+                { ConfigurationKeys.Debugger.Enabled, "true" },
                 { ConfigurationKeys.Debugger.PollInterval, "10" },
                 { ConfigurationKeys.Debugger.MaxDepthToSerialize, "100" },
                 { ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000" },

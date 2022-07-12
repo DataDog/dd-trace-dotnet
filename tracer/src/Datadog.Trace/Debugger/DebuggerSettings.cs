@@ -54,7 +54,7 @@ internal class DebuggerSettings
         ServiceVersion = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
         Environment = configurationSource?.GetString(ConfigurationKeys.Environment);
 
-        Enabled = configurationSource?.GetBool(ConfigurationKeys.Debugger.DebuggerEnabled) ?? false;
+        Enabled = configurationSource?.GetBool(ConfigurationKeys.Debugger.Enabled) ?? false;
 
         var maxDepth = configurationSource?.GetInt32(ConfigurationKeys.Debugger.MaxDepthToSerialize);
         MaximumDepthOfMembersToCopy =
