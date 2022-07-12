@@ -11,33 +11,6 @@ namespace Datadog.Trace.Debugger.Helpers;
 
 internal static class DictionaryExtensions
 {
-    public static string ToQueryString(this IDictionary<string, string> keyValues)
-    {
-        if (keyValues.Count == 0)
-        {
-            return string.Empty;
-        }
-
-        var sb = new StringBuilder();
-        sb.Append('?');
-
-        foreach (var keyValue in keyValues)
-        {
-            if (string.IsNullOrWhiteSpace(keyValue.Value))
-            {
-                continue;
-            }
-
-            sb.Append(keyValue.Key);
-            sb.Append('=');
-            sb.Append(keyValue.Value);
-            sb.Append('&');
-        }
-
-        sb.Remove(sb.Length - 1, 1);
-        return sb.Length > 0 ? sb.ToString() : string.Empty;
-    }
-
     public static string ToDDTagsQueryString(this IDictionary<string, string> keyValues)
     {
         if (keyValues.Count == 0)
