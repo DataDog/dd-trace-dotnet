@@ -493,5 +493,10 @@ namespace Datadog.Trace
             internal const string Role = "usr.role";
             internal const string Scope = "usr.scope";
         }
+
+        internal static class TagPropagation
+        {
+            internal const string Error = "_dd.propagation_error";
+        }
     }
 }

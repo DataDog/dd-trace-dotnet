@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+
 namespace Datadog.Trace
 {
     /// <summary>
@@ -42,11 +44,17 @@ namespace Datadog.Trace
         public const string UserAgent = "User-Agent";
 
         /// <summary>
-        /// Internal Datadog tags.
-        /// A collection of internal Datadog tags. Only tags with names that
-        /// begin with "_dd.p.*" will be propagated using this header.
+        /// Deprecated.
         /// </summary>
-        public const string DatadogTags = "x-datadog-tags";
+        [Obsolete]
+        public const string DatadogTags = PropagatedTags;
+
+        /// <summary>
+        /// Internal Datadog tags.
+        /// A collection of internal Datadog tags. Only trace-level tags with
+        /// the "_dd.p.*" prefix will be propagated using this header.
+        /// </summary>
+        internal const string PropagatedTags = "x-datadog-tags";
 
         /// <summary>
         /// ID of a span.
