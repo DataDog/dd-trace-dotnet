@@ -41,7 +41,7 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Configuration key for the max object depth to serialize for probe snapshots.
-            /// Default value is 3.
+            /// Default value is 1.
             /// </summary>
             /// <seealso cref="DebuggerSettings.MaximumDepthOfMembersToCopy"/>
             public const string MaxDepthToSerialize = "DD_DEBUGGER_MAX_DEPTH_TO_SERIALIZE";
