@@ -255,7 +255,7 @@ std::string OpSysTools::GetModuleName(void* nativeIP)
 
     char filename[260];
     // https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-getmodulefilenamea
-    auto charCount = GetModuleFileNameA((HMODULE)hModule, filename, sizeof(filename)/sizeof(filename[0]));
+    auto charCount = GetModuleFileNameA((HMODULE)hModule, filename, sizeof(filename) / sizeof(filename[0]));
     if (charCount > 0)
     {
         return filename;
@@ -273,7 +273,6 @@ std::string OpSysTools::GetModuleName(void* nativeIP)
     return "";
 #endif
 }
-
 
 void* OpSysTools::AlignedMAlloc(size_t alignment, size_t size)
 {
@@ -330,5 +329,31 @@ std::string OpSysTools::GetProcessName()
     std::string name;
     std::getline(comm, name);
     return name;
+#endif
+}
+
+bool OpSysTools::IsSafeToStartProfiler()
+{
+#ifdef _WINDOWS
+    // Today we do not have any specific check before starting the profiler on Windows.
+    return true;
+#else
+    // Fo linux, we check that the wrapper library is loaded and the default `dl_iterate_phdr` is
+    // the one provided by our library.
+
+    // We assume that the profiler library is in the same folder as the wrapper library
+    auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
+    auto wrapperLibrary = currentModulePath.parent_path() / "Datadog.Linux.ApiWrapper.x64.so";
+
+    auto* instance = dlopen(wrapperLibrary.string().c_str(), RTLD_NOLOAD);
+
+    if (instance == nullptr)
+    {
+        return false;
+    }
+
+    // check if dl_iterate_phdr is the default symbol returned by the dynamic linker
+    auto customFn = dlsym(instance, "dl_iterate_phdr");
+    return customFn == dlsym(RTLD_DEFAULT, "dl_iterate_phdr");
 #endif
 }
