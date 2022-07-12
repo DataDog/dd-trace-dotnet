@@ -44,7 +44,7 @@ namespace Datadog.Trace
         public string? Name { get; set; }
 
         /// <summary>
-        /// Gets or sets the unique identifier associated with the users
+        /// Gets or sets the unique identifier associated with the user.
         /// </summary>
         public string Id { get; set; }
 
