@@ -186,6 +186,27 @@ public class FnvHash64Tests
     }
 
     [Theory]
+    [MemberData(nameof(StringData))]
+    public void CalculatesStringHashCorrectlyWhenCombined(string data, string v1HashAsHex, string v1AHashAsHex)
+    {
+        var splitData = data.Split(new[] { '/' }, StringSplitOptions.None);
+
+        var v1 = FnvHash64.GenerateHash(splitData[0], FnvHash64.Version.V1);
+        var v1A = FnvHash64.GenerateHash(splitData[0], FnvHash64.Version.V1A);
+
+        for (var i = 1; i < splitData.Length; i++)
+        {
+            var segment = "/" + splitData[i];
+            v1 = FnvHash64.GenerateHash(segment, FnvHash64.Version.V1, initialHash: v1);
+            v1A = FnvHash64.GenerateHash(segment, FnvHash64.Version.V1A, initialHash: v1A);
+        }
+
+        using var a = new AssertionScope();
+        v1.ToString("x16").Should().Be(v1HashAsHex);
+        v1A.ToString("x16").Should().Be(v1AHashAsHex);
+    }
+
+    [Theory]
     [MemberData(nameof(BinaryData))]
     public void CalculatesBinaryHashCorrectly(byte[] data, string v1HashAsHex, string v1AHashAsHex)
     {
@@ -195,6 +216,34 @@ public class FnvHash64Tests
         using var a = new AssertionScope();
         v1.ToString("x16").Should().Be(v1HashAsHex);
         v1A.ToString("x16").Should().Be(v1AHashAsHex);
+    }
+
+    [Fact]
+    public void CalculatesBinaryHashCorrectlyWhenCombined()
+    {
+        var allData = new[]
+        {
+            new byte[] { 0x54, 0xc5 },
+            new byte[] { 0x54, 0xc5, 0x54 },
+            new byte[] { 0xc5 },
+            new byte[] { 0x54, 0xc5, 0x54, 0xc5 },
+            new byte[] { 0x54, 0xc5, 0x54, 0xc5, 0x54 },
+            new byte[] { 0xc5, 0x54 },
+            new byte[] { 0xc5, 0x54, 0xc5 },
+        };
+
+        var v1 = FnvHash64.GenerateHash(allData[0], FnvHash64.Version.V1);
+        var v1A = FnvHash64.GenerateHash(allData[0], FnvHash64.Version.V1A);
+
+        for (var i = 1; i < allData.Length; i++)
+        {
+            v1 = FnvHash64.GenerateHash(allData[i], FnvHash64.Version.V1, initialHash: v1);
+            v1A = FnvHash64.GenerateHash(allData[i], FnvHash64.Version.V1A, initialHash: v1A);
+        }
+
+        using var a = new AssertionScope();
+        v1.ToString("x16").Should().Be("82c6d3f3a0ccdf7d");
+        v1A.ToString("x16").Should().Be("0803564445050395");
     }
 
 #if NETCOREAPP3_1_OR_GREATER
