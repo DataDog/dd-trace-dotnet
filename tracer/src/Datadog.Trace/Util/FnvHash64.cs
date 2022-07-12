@@ -37,6 +37,8 @@ internal static class FnvHash64
     /// Generates the 64-bit FNV hash of <paramref name="data"/> using hash version <paramref name="version"/>
     /// </summary>
     /// <returns>The 64-bit FNV hash of the data, as a <c>ulong</c></returns>
+    // Skip locals init to avoid initializing the stackalloc buffer
+    [System.Runtime.CompilerServices.SkipLocalsInit]
     public static ulong GenerateHash(string data, Version version)
     {
         // Use a relatively small size, unlikely to hit names this big
