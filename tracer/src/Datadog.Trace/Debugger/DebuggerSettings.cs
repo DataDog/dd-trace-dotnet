@@ -9,8 +9,6 @@ namespace Datadog.Trace.Debugger;
 
 internal class DebuggerSettings
 {
-    private const string DefaultProdSite = "datadoghq.com";
-    private const string DefaultStagingSite = "datad0g.com";
     private const int DefaultMaxDepthToSerialize = 1;
     private const int DefaultSerializationTimeThreshold = 150;
     private const int DefaultConfigurationsPollIntervalSeconds = 1;
