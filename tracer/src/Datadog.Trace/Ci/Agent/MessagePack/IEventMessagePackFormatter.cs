@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Ci.Coverage.Models;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
@@ -27,6 +28,11 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             if (value is TestEvent testEvent)
             {
                 return formatterResolver.GetFormatter<TestEvent>().Serialize(ref bytes, offset, testEvent, formatterResolver);
+            }
+
+            if (value is CoveragePayload coverageEvent)
+            {
+                return formatterResolver.GetFormatter<CoveragePayload>().Serialize(ref bytes, offset, coverageEvent, formatterResolver);
             }
 
             return 0;

@@ -143,7 +143,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             Common.DecorateSpanWithSourceAndCodeOwners(span, testMethod);
 
             Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            Ci.Coverage.CoverageReporter.Handler.StartSession();
+            Common.StartCoverage();
 
             if (skipReason != null)
             {
@@ -157,12 +157,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
         internal static void FinishScope(Scope scope, Exception ex)
         {
-            var coverageSession = Ci.Coverage.CoverageReporter.Handler.EndSession();
-            if (coverageSession is not null)
-            {
-                scope.Span.SetTag("test.coverage", Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(coverageSession));
-            }
-
             // unwrap the generic NUnitException
             if (ex != null && ex.GetType().FullName == "NUnit.Framework.Internal.NUnitException")
             {
@@ -178,7 +172,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                     scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
                     scope.Span.SetTag(TestTags.Message, ex.Message);
                 }
-                else if (exTypeName == "NUnit.Framework.IgnoreException" || exTypeName == "NUnit.Framework.InconclusiveException")
+                else if (exTypeName is "NUnit.Framework.IgnoreException" or "NUnit.Framework.InconclusiveException")
                 {
                     scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
                     scope.Span.SetTag(TestTags.SkipReason, ex.Message);
@@ -195,6 +189,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             scope.Dispose();
+            Common.StopCoverage(scope.Span);
         }
 
         internal static void FinishSkippedScope(Scope scope, string skipReason)
@@ -204,15 +199,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             {
                 span.SetTag(TestTags.Status, TestTags.StatusSkip);
                 span.SetTag(TestTags.SkipReason, skipReason ?? string.Empty);
-
-                var coverageSession = Ci.Coverage.CoverageReporter.Handler.EndSession();
-                if (coverageSession is not null)
-                {
-                    scope.Span.SetTag("test.coverage", Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(coverageSession));
-                }
-
                 span.Finish(TimeSpan.Zero);
                 scope.Dispose();
+                Common.StopCoverage(span);
             }
         }
     }
