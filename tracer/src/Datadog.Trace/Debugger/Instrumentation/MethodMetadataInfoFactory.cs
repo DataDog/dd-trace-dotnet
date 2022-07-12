@@ -7,7 +7,7 @@ using System;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PDBs;
+using Datadog.Trace.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 
 namespace Datadog.Trace.Debugger.Instrumentation

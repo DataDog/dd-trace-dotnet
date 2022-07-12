@@ -13,7 +13,7 @@ using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PDBs;
+using Datadog.Trace.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 
 namespace Datadog.Trace.Debugger;
