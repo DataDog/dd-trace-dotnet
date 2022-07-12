@@ -35,71 +35,52 @@ namespace Datadog.Trace
                 ThrowHelper.ThrowArgumentException(nameof(userDetails) + ".Id must be set to a value other than null or the empty string", nameof(userDetails));
             }
 
-            var localRootSpan = span;
             TraceContext traceContext = null;
             if (span is Span spanClass)
             {
                 traceContext = spanClass.Context.TraceContext;
-                localRootSpan = traceContext?.RootSpan ?? span;
             }
+
+            Action<string, string> setTag =
+                traceContext != null
+                    ? (name, value) => traceContext.Tags.SetTag(name, value)
+                    : (name, value) => span.SetTag(name, value);
 
             if (userDetails.PropagateId)
             {
-                SetPropagatedId(span, userDetails, localRootSpan, traceContext);
+                var base64UserId = Convert.ToBase64String(Encoding.UTF8.GetBytes(userDetails.Id));
+                const string propagatedUserIdTag = TagPropagation.PropagatedTagPrefix + Tags.User.Id;
+                setTag(propagatedUserIdTag, base64UserId);
             }
             else
             {
-                localRootSpan.SetTag(Tags.User.Id, userDetails.Id);
+                setTag(Tags.User.Id, userDetails.Id);
             }
 
             if (userDetails.Email is not null)
             {
-                localRootSpan.SetTag(Tags.User.Email, userDetails.Email);
+                setTag(Tags.User.Email, userDetails.Email);
             }
 
             if (userDetails.Name is not null)
             {
-                localRootSpan.SetTag(Tags.User.Name, userDetails.Name);
+                setTag(Tags.User.Name, userDetails.Name);
             }
 
             if (userDetails.SessionId is not null)
             {
-                localRootSpan.SetTag(Tags.User.SessionId, userDetails.SessionId);
+                setTag(Tags.User.SessionId, userDetails.SessionId);
             }
 
             if (userDetails.Role is not null)
             {
-                localRootSpan.SetTag(Tags.User.Role, userDetails.Role);
+                setTag(Tags.User.Role, userDetails.Role);
             }
 
             if (userDetails.Scope is not null)
             {
-                localRootSpan.SetTag(Tags.User.Scope, userDetails.Scope);
+                setTag(Tags.User.Scope, userDetails.Scope);
             }
-        }
-
-        private static void SetPropagatedId(ISpan span, UserDetails userDetails, ISpan localRootSpan, TraceContext traceContext)
-        {
-                var propagationHeaderMaxLength =
-                    traceContext?.Tracer.Settings.TagPropagationHeaderMaxLength ??
-                        TagPropagation.OutgoingPropagationHeaderMaxLength;
-
-                if (userDetails.Id.Length > propagationHeaderMaxLength)
-                {
-                    Log.Warning<string, int>("{Id} is {IdLength} bytes long, which is longer than the configured max length of {MaxLength}", userDetails.Id, userDetails.Id.Length, propagationHeaderMaxLength);
-                    return;
-                }
-
-                var base64UserId = Convert.ToBase64String(Encoding.UTF8.GetBytes(userDetails.Id));
-
-                if (base64UserId.Length > propagationHeaderMaxLength)
-                {
-                    Log.Warning<string, int>("base64 encoded {Id} is {IdLength} bytes long, which is longer than the configured max length of {MaxLength}", base64UserId, base64UserId.Length, propagationHeaderMaxLength);
-                    return;
-                }
-
-                const string propagatedUserIdTag = TagPropagation.PropagatedTagPrefix + Tags.User.Id;
-                localRootSpan.SetTag(propagatedUserIdTag, base64UserId);
         }
     }
 }
