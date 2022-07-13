@@ -69,6 +69,8 @@ public:
         return result;
     }
 
+    static bool IsSafeToStartProfiler();
+
 private:
     static constexpr std::int64_t NanosecondsPerSecond = 1000000000;
 

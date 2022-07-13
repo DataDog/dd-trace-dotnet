@@ -47,13 +47,10 @@ jobs:
         with:
           command: "Clean BuildTracerHome BuildNativeLoader BuildProfilerHome ZipMonitoringHome --TracerHome /project/shared/bin/monitoring-home"
 
-      - name: Run Native Unit tests
-        shell: bash
-        run: |
-          sudo mkdir /var/log/datadog
-          sudo chmod 777 /var/log/datadog 
-          sudo chmod +x ./profiler/_build/bin/Datadog.Profiler.Native.Tests/Datadog.Profiler.Native.Tests
-          ./profiler/_build/bin/Datadog.Profiler.Native.Tests/Datadog.Profiler.Native.Tests --gtest_output=xml
+      - uses: ./.github/actions/run-in-docker
+        name: Run Native Unit tests
+        with:
+          command: "RunProfilerNativeUnitTestsLinux"
 
       - name: Publish artifact
         uses: actions/upload-artifact@v2
@@ -342,7 +339,7 @@ jobs:
         shell: cmd
         run: >
           cd profiler/test/Datadog.Profiler.IntegrationTests &&
-          dotnet test -c ${{matrix.configuration}} -p:Platform=${{matrix.platform}}  --logger "console;verbosity=detailed" --logger "trx" -- RunConfiguration.TreatNoTestsAsError=true
+          dotnet test -c ${{matrix.configuration}} -p:Platform=${{matrix.platform}} --filter "Category!=LinuxOnly" --logger "console;verbosity=detailed" --logger "trx" -- RunConfiguration.TreatNoTestsAsError=true
 
       - name: Generate tests report
         uses: dorny/test-reporter@v1

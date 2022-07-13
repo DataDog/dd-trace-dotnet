@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.Ci.Agent.Payloads;
+using Datadog.Trace.Ci.Coverage.Models;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
@@ -20,6 +21,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         private readonly IMessagePackFormatter<IEvent> _eventFormatter;
         private readonly IMessagePackFormatter<TestEvent> _testEventFormatter;
         private readonly IMessagePackFormatter<SpanEvent> _spanEventFormatter;
+        private readonly IMessagePackFormatter<CoveragePayload> _coveragePayloadFormatter;
 
         private CIFormatterResolver()
         {
@@ -28,6 +30,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             _eventFormatter = new IEventMessagePackFormatter();
             _testEventFormatter = new TestEventMessagePackFormatter();
             _spanEventFormatter = new SpanEventMessagePackFormatter();
+            _coveragePayloadFormatter = new CoveragePayloadMessagePackFormatter();
         }
 
         public IMessagePackFormatter<T> GetFormatter<T>()
@@ -55,6 +58,11 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             if (typeof(T) == typeof(SpanEvent))
             {
                 return (IMessagePackFormatter<T>)_spanEventFormatter;
+            }
+
+            if (typeof(T) == typeof(CoveragePayload))
+            {
+                return (IMessagePackFormatter<T>)_coveragePayloadFormatter;
             }
 
             return StandardResolver.Instance.GetFormatter<T>();

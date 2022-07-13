@@ -26,9 +26,6 @@ public:
     bool OnModuleLoaded(ModuleID moduleId);
     bool OnExceptionThrown(ObjectID exception);
 
-protected:
-    void OnTransformRawSample(const RawExceptionSample& rawSample, Sample& sample) override;
-
 private:
     bool LoadExceptionMetadata();
     bool GetExceptionType(ClassID classId, std::string& exceptionType);

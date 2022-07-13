@@ -528,7 +528,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void SetUserOnRootSpanDirectly()
+        public void SetUserOnRootSpanDirectly_ShouldSetOnTrace()
         {
             var scopeManager = new AsyncLocalScopeManager();
 
@@ -538,8 +538,8 @@ namespace Datadog.Trace.Tests
             };
             var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ISampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
-            var rootTestScope = tracer.StartActive("test.trace");
-            var childTestScope = tracer.StartActive("test.trace.child");
+            var rootTestScope = (Scope)tracer.StartActive("test.trace");
+            var childTestScope = (Scope)tracer.StartActive("test.trace.child");
             childTestScope.Dispose();
 
             var email = "test@adventure-works.com";
@@ -560,16 +560,17 @@ namespace Datadog.Trace.Tests
             };
             tracer.ActiveScope?.Span.SetUser(userDetails);
 
-            Assert.Equal(email, rootTestScope.Span.GetTag(Tags.User.Email));
-            Assert.Equal(name, rootTestScope.Span.GetTag(Tags.User.Name));
-            Assert.Equal(id, rootTestScope.Span.GetTag(Tags.User.Id));
-            Assert.Equal(sessionId, rootTestScope.Span.GetTag(Tags.User.SessionId));
-            Assert.Equal(role, rootTestScope.Span.GetTag(Tags.User.Role));
-            Assert.Equal(scope, rootTestScope.Span.GetTag(Tags.User.Scope));
+            var traceContext = rootTestScope.Span.Context.TraceContext;
+            Assert.Equal(email, traceContext.Tags.GetTag(Tags.User.Email));
+            Assert.Equal(name, traceContext.Tags.GetTag(Tags.User.Name));
+            Assert.Equal(id, traceContext.Tags.GetTag(Tags.User.Id));
+            Assert.Equal(sessionId, traceContext.Tags.GetTag(Tags.User.SessionId));
+            Assert.Equal(role, traceContext.Tags.GetTag(Tags.User.Role));
+            Assert.Equal(scope, traceContext.Tags.GetTag(Tags.User.Scope));
         }
 
         [Fact]
-        public void SetUserOnChildChildSpan_ShouldAttachToRoot()
+        public void SetUserOnChildChildSpan_ShouldSetOnTrace()
         {
             var scopeManager = new AsyncLocalScopeManager();
 
@@ -579,8 +580,8 @@ namespace Datadog.Trace.Tests
             };
             var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ISampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
-            var rootTestScope = tracer.StartActive("test.trace");
-            var childTestScope = tracer.StartActive("test.trace.child");
+            var rootTestScope = (Scope)tracer.StartActive("test.trace");
+            var childTestScope = (Scope)tracer.StartActive("test.trace.child");
 
             var email = "test@adventure-works.com";
             var name = "Jane Doh";
@@ -602,12 +603,13 @@ namespace Datadog.Trace.Tests
 
             childTestScope.Dispose();
 
-            Assert.Equal(email, rootTestScope.Span.GetTag(Tags.User.Email));
-            Assert.Equal(name, rootTestScope.Span.GetTag(Tags.User.Name));
-            Assert.Equal(id, rootTestScope.Span.GetTag(Tags.User.Id));
-            Assert.Equal(sessionId, rootTestScope.Span.GetTag(Tags.User.SessionId));
-            Assert.Equal(role, rootTestScope.Span.GetTag(Tags.User.Role));
-            Assert.Equal(scope, rootTestScope.Span.GetTag(Tags.User.Scope));
+            var traceContext = rootTestScope.Span.Context.TraceContext;
+            Assert.Equal(email, traceContext.Tags.GetTag(Tags.User.Email));
+            Assert.Equal(name, traceContext.Tags.GetTag(Tags.User.Name));
+            Assert.Equal(id, traceContext.Tags.GetTag(Tags.User.Id));
+            Assert.Equal(sessionId, traceContext.Tags.GetTag(Tags.User.SessionId));
+            Assert.Equal(role, traceContext.Tags.GetTag(Tags.User.Role));
+            Assert.Equal(scope, traceContext.Tags.GetTag(Tags.User.Scope));
         }
 
         [Fact]

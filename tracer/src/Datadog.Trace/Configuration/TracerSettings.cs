@@ -11,7 +11,6 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Configuration
@@ -185,6 +184,12 @@ namespace Datadog.Trace.Configuration
             // Filter out tags with empty keys or empty values, and trim whitespaces
             GrpcTags = InitializeHeaderTags(grpcTags, headerTagsNormalizationFixEnabled: true);
 
+            var propagationHeaderMaximumLength = source?.GetInt32(ConfigurationKeys.TagPropagation.HeaderMaxLength);
+
+            TagPropagationHeaderMaxLength = propagationHeaderMaximumLength is >= 0 and <= Tagging.TagPropagation.OutgoingPropagationHeaderMaxLength ?
+                                             (int)propagationHeaderMaximumLength :
+                                             Tagging.TagPropagation.OutgoingPropagationHeaderMaxLength;
+
             IsActivityListenerEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.ActivityListenerEnabled) ??
                                 // default value
                                 false;
@@ -348,6 +353,16 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
         /// </summary>
         public bool StartupDiagnosticLogEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets the maximum length of an outgoing propagation header's value ("x-datadog-tags")
+        /// when injecting it into downstream service calls.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.TagPropagation.HeaderMaxLength"/>
+        /// <remarks>
+        /// This value is not used when extracting an incoming propagation header from an upstream service.
+        /// </remarks>
+        internal int TagPropagationHeaderMaxLength { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating the injection propagation style.

@@ -45,12 +45,17 @@ namespace Datadog.Trace.Util
         public static string GetStringAndRelease(StringBuilder sb)
         {
             string result = sb.ToString();
+            Release(sb);
+
+            return result;
+        }
+
+        public static void Release(StringBuilder sb)
+        {
             if (sb.Capacity <= MaxBuilderSize)
             {
                 _cachedInstance = sb;
             }
-
-            return result;
         }
     }
 }

@@ -12,7 +12,13 @@
 #include <unordered_map>
 #include <iomanip>
 
+#ifdef ARM64
+#include <libunwind-aarch64.h>
+#elif AMD64
 #include <libunwind-x86_64.h>
+#else
+error("unsupported architecture")
+#endif
 
 #include "Log.h"
 #include "ManagedThreadInfo.h"

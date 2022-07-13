@@ -254,8 +254,8 @@ stages:
     dependsOn: []
     strategy:
       matrix:
-        debian:
-          baseImage: debian
+        centos7:
+          baseImage: centos7
         alpine:
           baseImage: alpine
     pool:
@@ -294,8 +294,8 @@ stages:
     dependsOn: []
     strategy:
       matrix:
-        debian:
-          baseImage: debian
+        centos7:
+          baseImage: centos7
         alpine:
           baseImage: alpine
     pool:
@@ -335,8 +335,8 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
-        debian:
-          baseImage: debian
+        centos7:
+          baseImage: centos7
         alpine:
           baseImage: alpine
     pool:
@@ -378,7 +378,7 @@ stages:
       displayName: Upload linux-x64 monitoring home
       artifact: linux-monitoring-home-$(baseImage)
 
-- stage: build_arm64
+- stage: build_arm64_tracer
   dependsOn: [master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -403,23 +403,102 @@ stages:
         build: true
         target: builder
         baseImage: debian
-        command: "Clean BuildTracerHome ZipMonitoringHome"
+        command: "Clean BuildTracerHome"
 
     - publish: $(tracerHome)
       displayName: Uploading linux tracer home artifact
       artifact: linux-tracer-home-arm64
 
-    - publish: $(artifacts)/linux-arm64
-      displayName: Upload linux-arm64 packages
-      artifact: linux-packages-arm64
-
-    - publish: $(symbols)
-      displayName: Upload linux-arm64 symbols
-      artifact: linux-symbols-arm64
-
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the build
       artifact: build-linux-arm64-working-directory
+
+- stage: build_arm64_profiler
+  dependsOn: [master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build]
+
+  - job: build
+    timeoutInMinutes: 60 #default value
+    dependsOn: []
+    pool:
+      name: aws-arm64-auto-scaling
+    workspace:
+      clean: all
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: debian
+        command: "Clean BuildProfilerHome"
+
+    - publish: $(System.DefaultWorkingDirectory)/profiler/_build
+      displayName: Uploading linux profiler output build folder
+      artifact: linux-profiler-binaries-arm64
+
+    - publish: $(profilerHome)
+      displayName: Uploading linux profiler home artifact
+      artifact: linux-profiler-home-arm64
+
+- stage: package_arm64
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [master_commit_id, build_arm64_tracer, build_arm64_profiler]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [package]
+
+  - job: package
+    dependsOn: []
+    timeoutInMinutes: 60 #default value
+    pool:
+      name: aws-arm64-auto-scaling
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tracer arm64 native binary
+      inputs:
+        artifact: linux-tracer-home-arm64
+        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download profiler arm64 native binary
+      inputs:
+        artifact: linux-profiler-home-arm64
+        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/continuousprofiler
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: debian
+        command: "BuildNativeLoader ZipMonitoringHome"
+
+    - publish: $(artifacts)/linux-arm64
+      displayName: Upload arm64 packages
+      artifact: linux-packages-arm64
+
+    - publish: $(symbols)
+      displayName: Upload arm64 symbols
+      artifact: linux-symbols-arm64
+
+    - publish: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+      displayName: Upload arm64 monitoring home
+      artifact: linux-monitoring-home-arm64
 
 - stage: build_macos
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
@@ -603,8 +682,8 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
-        debian:
-          baseImage: debian
+        centos7:
+          baseImage: centos7
         alpine:
           baseImage: alpine
     pool:
@@ -641,8 +720,8 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
-        debian:
-          baseImage: debian
+        centos7:
+          baseImage: centos7
         alpine:
           baseImage: alpine
     pool:
@@ -677,7 +756,7 @@ stages:
 
 - stage: unit_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_arm64, master_commit_id]
+  dependsOn: [build_arm64_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1145,8 +1224,8 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
-        debian:
-          baseImage: debian
+        centos7:
+          baseImage: centos7
         alpine:
           baseImage: alpine
 
@@ -1202,7 +1281,7 @@ stages:
 
 - stage: integration_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_arm64, master_commit_id]
+  dependsOn: [package_arm64, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
     TestAllPackageVersions: true
@@ -1242,6 +1321,12 @@ stages:
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false"
 
+        - task: DownloadPipelineArtifact@2
+          displayName: Download arm64 monitoring home
+          inputs:
+            artifact: linux-monitoring-home-arm64
+            path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+
         - task: DockerCompose@0
           displayName: docker-compose run --no-deps IntegrationTests
           inputs:
@@ -1249,7 +1334,7 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
+            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
 
         - publish: tracer/build_data
@@ -1303,6 +1388,12 @@ stages:
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true"
 
+        - task: DownloadPipelineArtifact@2
+          displayName: Download arm64 monitoring home
+          inputs:
+            artifact: linux-monitoring-home-arm64
+            path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64
             docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies.ARM64
@@ -1319,7 +1410,7 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
+            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
 
         - task: DockerCompose@0
@@ -1620,7 +1711,7 @@ stages:
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'))
-  dependsOn: [build_windows_tracer, build_linux_tracer, build_arm64, build_macos, master_commit_id]
+  dependsOn: [build_windows_tracer, build_linux_tracer, build_arm64_tracer, build_macos, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1650,14 +1741,14 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux shell scripts
       inputs:
-        artifact: linux-tracer-home-debian
+        artifact: linux-tracer-home-centos7
         patterns: "*.sh"
         path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux tracer home
       inputs:
-        artifact: linux-tracer-home-debian
+        artifact: linux-tracer-home-centos7
         patterns: "**/*.so"
         path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/linux-x64
 
@@ -1842,17 +1933,20 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
-        debian:
-          baseImage: debian
+        centos7:
+          name: centos7
+          baseImage: centos7
           artifactSuffix: linux-x64
           poolImage: ubuntu-18.04
           poolName:
         alpine:
+          name: alpine
           baseImage: alpine
           artifactSuffix: linux-musl-x64
           poolImage: ubuntu-18.04
           poolName:
         arm64:
+          name: arm64
           baseImage: debian
           artifactSuffix: linux-arm64
           poolImage:
@@ -1868,7 +1962,7 @@ stages:
         masterCommitId: $(masterCommitId)
     - template: steps/restore-working-directory.yml
       parameters:
-        artifact: build-linux-$(baseImage)-working-directory
+        artifact: build-linux-$(name)-working-directory
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tool runner
@@ -1906,7 +2000,7 @@ stages:
 
 - stage: upload_to_s3
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [package_windows, package_linux, build_arm64, master_commit_id]
+  dependsOn: [package_windows, package_linux, package_arm64, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -1935,7 +2029,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux-packages
       inputs:
-        artifact: linux-packages-debian
+        artifact: linux-packages-centos7
         patterns: '**/*amd64.deb'
         path: s3_upload
 
@@ -2006,7 +2100,7 @@ stages:
 
 - stage: upload_to_azure
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables.isMainRepository, true))
-  dependsOn: [package_windows, package_linux, build_arm64, dotnet_tool, master_commit_id]
+  dependsOn: [package_windows, package_linux, package_arm64, dotnet_tool, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -2041,9 +2135,9 @@ stages:
             path: $(Build.ArtifactStagingDirectory)
 
         - task: DownloadPipelineArtifact@2
-          displayName: Download linux Debian packages
+          displayName: Download linux CentOS7 packages
           inputs:
-            artifact: linux-packages-debian
+            artifact: linux-packages-centos7
             path: $(Build.ArtifactStagingDirectory)
 
         - task: DownloadPipelineArtifact@2
@@ -2060,9 +2154,9 @@ stages:
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
   
         - task: DownloadPipelineArtifact@2
-          displayName: Download linux Debian symbols
+          displayName: Download linux CentOS7 symbols
           inputs:
-            artifact: linux-symbols-debian
+            artifact: linux-symbols-centos7
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
   
         - task: DownloadPipelineArtifact@2
@@ -2181,7 +2275,7 @@ stages:
 
 - stage: throughput
   condition: and(succeeded(), ne(variables['isNgenTestBuild'], 'True'), eq(variables.isMainRepository, true))
-  dependsOn: [package_linux, build_arm64, build_windows_tracer, master_commit_id]
+  dependsOn: [package_linux, package_arm64, build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
     # By default all throughput tests happen on release or master branches only. Overridable by setting 'run_extended_throughput_tests' to true
@@ -2203,7 +2297,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
-        artifact: linux-monitoring-home-debian
+        artifact: linux-monitoring-home-centos7
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
 
     - script: |
@@ -2293,7 +2387,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
-        artifact: linux-monitoring-home-debian
+        artifact: linux-monitoring-home-centos7
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
 
     - script: |
@@ -2448,7 +2542,7 @@ stages:
       - task: DownloadPipelineArtifact@2
         displayName: Download linux-packages
         inputs:
-          artifact: linux-packages-debian
+          artifact: linux-packages-centos7
           patterns: '**/*tar.gz'
           path: $(Build.ArtifactStagingDirectory)
 
@@ -2494,7 +2588,7 @@ stages:
       jobs: [linux]
 
   - job: linux
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 10 # should take ~5 mins
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_smoke_tests_matrix'] ]
     variables:
@@ -2546,7 +2640,7 @@ stages:
         command: "CheckBuildLogsForErrors"
 
 - stage: nuget_installer_smoke_tests
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -2556,7 +2650,7 @@ stages:
       jobs: [linux]
 
   - job: linux
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 10 # should take ~5 mins
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.nuget_installer_linux_smoke_tests_matrix'] ]
     variables:
@@ -2615,7 +2709,7 @@ stages:
         command: "CheckBuildLogsForErrors"
 
 - stage: dotnet_tool_smoke_tests_linux
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -2625,7 +2719,7 @@ stages:
       jobs: [linux]
 
   - job: linux
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 10 # should take ~5 mins
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_installer_linux_smoke_tests_matrix'] ]
     variables:
@@ -2682,7 +2776,7 @@ stages:
         
 - stage: installer_smoke_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_arm64, generate_variables, master_commit_id]
+  dependsOn: [package_arm64, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
@@ -2691,7 +2785,7 @@ stages:
         jobs: [linux]
 
     - job: linux
-      timeoutInMinutes: 60 #default value
+      timeoutInMinutes: 30 # should take ~15 mins
       strategy:
         matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_smoke_tests_arm64_matrix'] ]
       variables:
@@ -2740,7 +2834,7 @@ stages:
             command: "CheckBuildLogsForErrors"
 
 - stage: nuget_installer_smoke_tests_arm64
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -2750,7 +2844,7 @@ stages:
       jobs: [linux]
 
   - job: linux
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 30 # should take ~15 mins
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.nuget_installer_linux_smoke_tests_arm64_matrix'] ]
     variables:
@@ -2809,7 +2903,7 @@ stages:
         command: "CheckBuildLogsForErrors"
 
 - stage: dotnet_tool_smoke_tests_arm64
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -2819,7 +2913,7 @@ stages:
       jobs: [linux]
 
   - job: linux
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 30 # should take ~15 mins
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_installer_smoke_tests_arm64_matrix'] ]
     variables:
@@ -2871,7 +2965,7 @@ stages:
         command: "CheckBuildLogsForErrors"
 
 - stage: nuget_installer_smoke_tests_windows
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -2881,7 +2975,7 @@ stages:
       jobs: [windows]
 
   - job: windows
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 30 # should take ~15 mins as large Windows docker files
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.nuget_installer_windows_smoke_tests_matrix'] ]
     variables:
@@ -2940,7 +3034,7 @@ stages:
       displayName: CheckBuildLogsForErrors
 
 - stage: dotnet_tool_smoke_tests_windows
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -2950,7 +3044,7 @@ stages:
       jobs: [windows]
 
   - job: windows
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 30 # should take ~15 mins as large Windows docker files
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_installer_windows_smoke_tests_matrix'] ]
     variables:
@@ -3005,7 +3099,7 @@ stages:
       displayName: CheckBuildLogsForErrors
 
 - stage: msi_installer_smoke_tests
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [package_windows, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -3015,7 +3109,7 @@ stages:
       jobs: [windows]
 
   - job: windows
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 30 # should take ~15 mins as large Windows docker files
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.msi_installer_windows_smoke_tests_matrix'] ]
     variables:
@@ -3080,7 +3174,7 @@ stages:
       jobs: [windows]
 
   - job: windows
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 30 # should take ~15 mins as large Windows docker files
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.tracer_home_installer_windows_smoke_tests_matrix'] ]
     variables:

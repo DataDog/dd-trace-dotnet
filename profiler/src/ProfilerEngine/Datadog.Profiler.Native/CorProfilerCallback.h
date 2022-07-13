@@ -18,6 +18,7 @@
 #include "IMetricsSender.h"
 #include "WallTimeProvider.h"
 #include "CpuTimeProvider.h"
+#include "SamplesCollector.h"
 #include "shared/src/native-src/string.h"
 
 #include <atomic>
@@ -197,6 +198,7 @@ private :
     WallTimeProvider* _pWallTimeProvider = nullptr;
     CpuTimeProvider* _pCpuTimeProvider = nullptr;
     SamplesAggregator* _pSamplesAggregator = nullptr;
+    SamplesCollector* _pSamplesCollector = nullptr;
 
     std::vector<std::unique_ptr<IService>> _services;
 

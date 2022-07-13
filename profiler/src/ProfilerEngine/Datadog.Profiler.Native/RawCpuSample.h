@@ -4,9 +4,15 @@
 #pragma once
 
 #include "RawSample.h"
+#include "Sample.h"
 
 class RawCpuSample : public RawSample
 {
 public:
+    inline void OnTransform(Sample& sample) const override
+    {
+        sample.AddValue(Duration * 1000000, SampleValue::CpuTimeDuration);
+    }
+
     std::uint64_t Duration;  // in milliseconds
 };
