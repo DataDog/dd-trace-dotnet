@@ -9,7 +9,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PDBs;
+using Datadog.Trace.Pdb;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 {

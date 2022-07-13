@@ -14,7 +14,7 @@ namespace Datadog.Trace.Debugger.PInvoke
     {
         public static void InstrumentProbes(NativeMethodProbeDefinition[] methodProbes, NativeLineProbeDefinition[] lineProbes, NativeRemoveProbeRequest[] revertProbes)
         {
-            if (Datadog.Trace.ClrProfiler.NativeMethods.IsWindows)
+            if (FrameworkDescription.Instance.IsWindows())
             {
                 Windows.InstrumentProbes(methodProbes, methodProbes.Length, lineProbes, lineProbes.Length, revertProbes, revertProbes.Length);
             }
@@ -32,9 +32,9 @@ namespace Datadog.Trace.Debugger.PInvoke
             }
 
             var probesStatuses = new NativeProbeStatus[probeIds.Length];
-            int probesLength = Datadog.Trace.ClrProfiler.NativeMethods.IsWindows ?
-                Windows.GetProbesStatuses(probeIds, probeIds.Length, probesStatuses) :
-                NonWindows.GetProbesStatuses(probeIds, probeIds.Length, probesStatuses);
+            int probesLength = FrameworkDescription.Instance.IsWindows() ?
+                                    Windows.GetProbesStatuses(probeIds, probeIds.Length, probesStatuses) :
+                                    NonWindows.GetProbesStatuses(probeIds, probeIds.Length, probesStatuses);
 
             if (probesLength == 0)
             {
