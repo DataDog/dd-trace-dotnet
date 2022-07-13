@@ -8,7 +8,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Debugger.Helpers
 {
-    internal struct DisposableEnumerable<T> : IDisposable
+    internal readonly struct DisposableEnumerable<T> : IDisposable
         where T : IDisposable
     {
         private readonly List<T> _items;
