@@ -1934,16 +1934,19 @@ stages:
     strategy:
       matrix:
         centos7:
+          name: centos7
           baseImage: centos7
           artifactSuffix: linux-x64
           poolImage: ubuntu-18.04
           poolName:
         alpine:
+          name: alpine
           baseImage: alpine
           artifactSuffix: linux-musl-x64
           poolImage: ubuntu-18.04
           poolName:
         arm64:
+          name: arm64
           baseImage: debian
           artifactSuffix: linux-arm64
           poolImage:
@@ -1959,7 +1962,7 @@ stages:
         masterCommitId: $(masterCommitId)
     - template: steps/restore-working-directory.yml
       parameters:
-        artifact: build-linux-$(baseImage)-working-directory
+        artifact: build-linux-$(name)-working-directory
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tool runner
