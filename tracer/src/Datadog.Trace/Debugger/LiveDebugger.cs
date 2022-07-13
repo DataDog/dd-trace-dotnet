@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -58,7 +57,7 @@ namespace Datadog.Trace.Debugger
                 return Create(settings, null, null, null, null, null);
             }
 
-            var apiFactory = DebuggerTransportStrategy.Get(new ExporterSettings().AgentUri);
+            var apiFactory = DebuggerTransportStrategy.Get(settings.AgentUri);
             IDiscoveryService discoveryService = DiscoveryService.Create(source, apiFactory);
 
             var probeConfigurationApi = ProbeConfigurationApiFactory.Create(settings, apiFactory, discoveryService);

@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 
@@ -10,7 +11,7 @@ namespace Datadog.Trace.Debugger;
 
 internal class ImmutableDebuggerSettings
 {
-    public ImmutableDebuggerSettings(bool enabled, ProbeMode probeMode, string apiKey, string runtimeId, string serviceName, string serviceVersion, int probeConfigurationsPollIntervalSeconds, string probeConfigurationsPath, string environment, int maxSerializationTimeInMilliseconds, int maximumDepthOfMembersToCopy, string snapshotsPath, int uploadBatchSize, int diagnosticsIntervalSeconds, int uploadFlushIntervalMilliseconds, TracesTransportType transportType)
+    public ImmutableDebuggerSettings(bool enabled, ProbeMode probeMode, string apiKey, string runtimeId, string serviceName, string serviceVersion, int probeConfigurationsPollIntervalSeconds, string probeConfigurationsPath, string environment, int maxSerializationTimeInMilliseconds, int maximumDepthOfMembersToCopy, string snapshotsPath, int uploadBatchSize, int diagnosticsIntervalSeconds, int uploadFlushIntervalMilliseconds, TracesTransportType transportType, Uri agentUri)
     {
         Enabled = enabled;
         ProbeMode = probeMode;
@@ -28,6 +29,7 @@ internal class ImmutableDebuggerSettings
         DiagnosticsIntervalSeconds = diagnosticsIntervalSeconds;
         UploadFlushIntervalMilliseconds = uploadFlushIntervalMilliseconds;
         TransportType = transportType;
+        AgentUri = agentUri;
     }
 
     public bool Enabled { get; }
@@ -62,6 +64,8 @@ internal class ImmutableDebuggerSettings
 
     public TracesTransportType TransportType { get; }
 
+    public Uri AgentUri { get; }
+
     public static ImmutableDebuggerSettings Create(TracerSettings tracerSettings) =>
         Create(tracerSettings.DebuggerSettings);
 
@@ -82,7 +86,8 @@ internal class ImmutableDebuggerSettings
             debuggerSettings.UploadBatchSize,
             debuggerSettings.DiagnosticsIntervalSeconds,
             debuggerSettings.UploadFlushIntervalMilliseconds,
-            debuggerSettings.TransportType);
+            debuggerSettings.TransportType,
+            debuggerSettings.AgentUri);
 
     public static ImmutableDebuggerSettings Create(
         bool enabled,
@@ -100,7 +105,8 @@ internal class ImmutableDebuggerSettings
         int uploadBatchSize,
         int diagnosticsIntervalSeconds,
         int uploadFlushIntervalMilliseconds,
-        TracesTransportType transportType) =>
+        TracesTransportType transportType,
+        Uri agentUri) =>
         new ImmutableDebuggerSettings(
             enabled,
             probeMode,
@@ -117,5 +123,6 @@ internal class ImmutableDebuggerSettings
             uploadBatchSize,
             diagnosticsIntervalSeconds,
             uploadFlushIntervalMilliseconds,
-            transportType);
+            transportType,
+            agentUri);
 }
