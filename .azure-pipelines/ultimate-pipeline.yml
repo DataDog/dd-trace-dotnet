@@ -2585,7 +2585,7 @@ stages:
       jobs: [linux]
 
   - job: linux
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 10 # should take ~5 mins
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_smoke_tests_matrix'] ]
     variables:
@@ -2637,7 +2637,7 @@ stages:
         command: "CheckBuildLogsForErrors"
 
 - stage: nuget_installer_smoke_tests
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -2647,7 +2647,7 @@ stages:
       jobs: [linux]
 
   - job: linux
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 10 # should take ~5 mins
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.nuget_installer_linux_smoke_tests_matrix'] ]
     variables:
@@ -2706,7 +2706,7 @@ stages:
         command: "CheckBuildLogsForErrors"
 
 - stage: dotnet_tool_smoke_tests_linux
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -2716,7 +2716,7 @@ stages:
       jobs: [linux]
 
   - job: linux
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 10 # should take ~5 mins
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_installer_linux_smoke_tests_matrix'] ]
     variables:
@@ -2782,7 +2782,7 @@ stages:
         jobs: [linux]
 
     - job: linux
-      timeoutInMinutes: 60 #default value
+      timeoutInMinutes: 30 # should take ~15 mins
       strategy:
         matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_smoke_tests_arm64_matrix'] ]
       variables:
@@ -2831,7 +2831,7 @@ stages:
             command: "CheckBuildLogsForErrors"
 
 - stage: nuget_installer_smoke_tests_arm64
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -2841,7 +2841,7 @@ stages:
       jobs: [linux]
 
   - job: linux
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 30 # should take ~15 mins
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.nuget_installer_linux_smoke_tests_arm64_matrix'] ]
     variables:
@@ -2900,7 +2900,7 @@ stages:
         command: "CheckBuildLogsForErrors"
 
 - stage: dotnet_tool_smoke_tests_arm64
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -2910,7 +2910,7 @@ stages:
       jobs: [linux]
 
   - job: linux
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 30 # should take ~15 mins
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_installer_smoke_tests_arm64_matrix'] ]
     variables:
@@ -2962,7 +2962,7 @@ stages:
         command: "CheckBuildLogsForErrors"
 
 - stage: nuget_installer_smoke_tests_windows
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -2972,7 +2972,7 @@ stages:
       jobs: [windows]
 
   - job: windows
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 30 # should take ~15 mins as large Windows docker files
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.nuget_installer_windows_smoke_tests_matrix'] ]
     variables:
@@ -3031,7 +3031,7 @@ stages:
       displayName: CheckBuildLogsForErrors
 
 - stage: dotnet_tool_smoke_tests_windows
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, package_windows, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -3041,7 +3041,7 @@ stages:
       jobs: [windows]
 
   - job: windows
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 30 # should take ~15 mins as large Windows docker files
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_installer_windows_smoke_tests_matrix'] ]
     variables:
@@ -3096,7 +3096,7 @@ stages:
       displayName: CheckBuildLogsForErrors
 
 - stage: msi_installer_smoke_tests
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [package_windows, generate_variables, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -3106,7 +3106,7 @@ stages:
       jobs: [windows]
 
   - job: windows
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 30 # should take ~15 mins as large Windows docker files
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.msi_installer_windows_smoke_tests_matrix'] ]
     variables:
@@ -3171,7 +3171,7 @@ stages:
       jobs: [windows]
 
   - job: windows
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 30 # should take ~15 mins as large Windows docker files
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.tracer_home_installer_windows_smoke_tests_matrix'] ]
     variables:

@@ -255,7 +255,7 @@ std::string OpSysTools::GetModuleName(void* nativeIP)
 
     char filename[260];
     // https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-getmodulefilenamea
-    auto charCount = GetModuleFileNameA((HMODULE)hModule, filename, sizeof(filename)/sizeof(filename[0]));
+    auto charCount = GetModuleFileNameA((HMODULE)hModule, filename, sizeof(filename) / sizeof(filename[0]));
     if (charCount > 0)
     {
         return filename;
@@ -273,7 +273,6 @@ std::string OpSysTools::GetModuleName(void* nativeIP)
     return "";
 #endif
 }
-
 
 void* OpSysTools::AlignedMAlloc(size_t alignment, size_t size)
 {
@@ -330,5 +329,43 @@ std::string OpSysTools::GetProcessName()
     std::string name;
     std::getline(comm, name);
     return name;
+#endif
+}
+
+bool OpSysTools::IsSafeToStartProfiler()
+{
+#ifdef _WINDOWS
+    // Today we do not have any specific check before starting the profiler on Windows.
+    return true;
+#else
+    // For linux, we check that the wrapper library is loaded and the default `dl_iterate_phdr` is
+    // the one provided by our library.
+
+    // We assume that the profiler library is in the same folder as the wrapper library
+    auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
+    auto wrapperLibrary = currentModulePath.parent_path() / "Datadog.Linux.ApiWrapper.x64.so";
+    auto wrapperLibraryPath = wrapperLibrary.string();
+
+    auto* instance = dlopen(wrapperLibraryPath.c_str(), RTLD_LAZY | RTLD_LOCAL);
+    if (instance == nullptr)
+    {
+        auto errorId = errno;
+        Log::Warn("Library '", wrapperLibraryPath, "' cannot be loaded (", strerror(errorId), "). This means that the profiler/tracer is not correctly installed.");
+        return false;
+    }
+
+    const auto* customFnName = "dl_iterate_phdr";
+    auto customFn = dlsym(instance, customFnName);
+
+    // make sure that the default symbol for the custom function
+    // is at the same address as the one found in our lib
+    if (customFn == dlsym(RTLD_DEFAULT, customFnName))
+    {
+        return true;
+    }
+
+    Log::Warn("Custom function '", customFnName, "' is not the default one. That indicates that the library ",
+              "'", wrapperLibraryPath, "' is not loaded using the LD_PRELOAD environment variable");
+    return false;
 #endif
 }
