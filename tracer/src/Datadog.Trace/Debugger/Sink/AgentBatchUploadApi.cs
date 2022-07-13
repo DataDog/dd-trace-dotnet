@@ -42,8 +42,8 @@ internal class AgentBatchUploadApi : IBatchUploadApi
 
     public async Task<bool> SendBatchAsync(ArraySegment<byte> snapshots)
     {
-        _uri ??= new Uri(
-            $"{_targetPath}/{_discoveryService.DebuggerEndpoint}{new Dictionary<string, string> { { "env", _environment }, { "version", _version }, { "agent_version", _discoveryService.AgentVersion }, { "debugger_version", TracerConstants.AssemblyVersion } }.ToDDTagsQueryString()}");
+        var tags = new Dictionary<string, string> { { "env", _environment }, { "version", _version }, { "agent_version", _discoveryService.AgentVersion }, { "debugger_version", TracerConstants.AssemblyVersion } };
+        _uri ??= new Uri($"{_targetPath}/{_discoveryService.DebuggerEndpoint}{ToDDTagsQueryString(tags)}");
 
         var request = _apiRequestFactory.Create(_uri);
         using var response = await request.PostAsync(snapshots, MimeTypes.Json).ConfigureAwait(false);
