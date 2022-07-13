@@ -23,7 +23,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             _output = output;
         }
 
-        [TestAppFact("Samples.BuggyBits", DisplayName = "WrapperLibrary")]
+        [TestAppFact("Samples.BuggyBits")]
         public void EnsureProfilerIsDeactivatedIfNoWrapperLibrary(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output);
@@ -42,7 +42,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             lines.Should().ContainMatch("*It's not safe to start the profiler. See previous log messages for more info.*");
         }
 
-        [TestAppFact("Samples.BuggyBits", DisplayName = "WrapperLibrary")]
+        [TestAppFact("Samples.BuggyBits")]
         public void EnsureProfilerIsDeactivatedIfWrongPathToWrapperLibrary(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output);
@@ -61,7 +61,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             lines.Should().ContainMatch("*It's not safe to start the profiler. See previous log messages for more info.*");
         }
 
-        [TestAppFact("Samples.BuggyBits", DisplayName = "WrapperLibrary")]
+        [TestAppFact("Samples.BuggyBits")]
         public void EnsureAppDoesNotCrashIfProfilerDeactivateAndTracerActivated(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true);
