@@ -198,18 +198,23 @@ namespace Datadog.Trace.Coverage.Collector
                         try
                         {
                             var json = JObject.Parse(File.ReadAllText(depsJsonPath));
-                            var libraries = (JObject)json["libraries"];
+
                             var propertyName = $"Datadog.Trace/{version}";
                             var isDirty = false;
 
-                            if (!libraries.ContainsKey(propertyName))
+                            if (json["libraries"] is JObject libraries)
                             {
-                                libraries.Add(propertyName, JObject.FromObject(new { type = "reference", serviceable = false, sha512 = string.Empty }));
-                                isDirty = true;
+                                if (!libraries.ContainsKey(propertyName))
+                                {
+                                    libraries.Add(propertyName, JObject.FromObject(new { type = "reference", serviceable = false, sha512 = string.Empty }));
+                                    isDirty = true;
+                                }
                             }
 
-                            var targets = (JObject)json["targets"];
-                            foreach (var targetProperty in targets.Properties())
+                            var targetProperties = json["targets"] is JObject targets
+                                                       ? targets.Properties()
+                                                       : Array.Empty<JProperty>();
+                            foreach (var targetProperty in targetProperties)
                             {
                                 var target = (JObject)targetProperty.Value;
                                 if (!target.ContainsKey(propertyName))
