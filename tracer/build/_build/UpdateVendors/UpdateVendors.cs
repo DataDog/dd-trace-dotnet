@@ -85,7 +85,7 @@ namespace UpdateVendors
 
             foreach (var file in files)
             {
-                if (ShouldDropFile(file))
+                if (ShouldDropFile(dependency, sourceLocation, file))
                 {
                     File.Delete(file);
                 }
@@ -105,16 +105,13 @@ namespace UpdateVendors
             Console.WriteLine($"Finished {libraryName} upgrade.");
         }
 
-        private static bool ShouldDropFile(string filePath)
+        private static bool ShouldDropFile(VendoredDependency dependency, string basePath, string filePath)
         {
-            var drops = new List<string>()
+            var normalizedFilePath = filePath.Replace('/', '\\');
+            foreach (var relativeFileToDrop in dependency.RelativePathsToExclude)
             {
-                // No active exclusions
-            };
-
-            foreach (var drop in drops)
-            {
-                if (filePath.Contains(drop, StringComparison.OrdinalIgnoreCase))
+                var absolutePath = Path.Combine(basePath, relativeFileToDrop).Replace('/', '\\');
+                if (normalizedFilePath.Equals(absolutePath, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }

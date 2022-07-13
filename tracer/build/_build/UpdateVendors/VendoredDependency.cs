@@ -84,13 +84,16 @@ namespace UpdateVendors
         public string[] PathToSrc { get; set; }
 
         public Action<string> Transform { get; set; }
+        
+        public string[] RelativePathsToExclude { get; set; }
 
         private static void Add(
             string libraryName,
             string version,
             string downloadUrl,
             string[] pathToSrc,
-            Action<string> transform)
+            Action<string> transform,
+            string[] relativePathsToExclude = null)
         {
             All.Add(new VendoredDependency()
             {
@@ -99,6 +102,7 @@ namespace UpdateVendors
                 DownloadUrl = downloadUrl,
                 PathToSrc = pathToSrc,
                 Transform = transform,
+                RelativePathsToExclude = relativePathsToExclude ?? Array.Empty<string>(),
             });
         }
 
