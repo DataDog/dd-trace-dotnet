@@ -77,6 +77,17 @@ namespace Datadog.Trace.Tests
             });
 
             Assert.Equal(string.Empty, requestBody);
+
+            requestBody = null;
+            request = (IMultipartApiRequest)factory.Create(url);
+            await request.PostAsync(new MultipartFormItem[]
+            {
+                new("Name\" 1\"", MimeTypes.Json, "FileName 1.json", new ArraySegment<byte>(new byte[] { 42 })),
+                new("Name 2", MimeTypes.MsgPack, "FileName2.msgpack", new ArraySegment<byte>(new byte[] { 42 })),
+            });
+
+            Assert.NotNull(requestBody);
+            await Verifier.Verify(requestBody);
         }
 #if NETCOREAPP3_1_OR_GREATER
 

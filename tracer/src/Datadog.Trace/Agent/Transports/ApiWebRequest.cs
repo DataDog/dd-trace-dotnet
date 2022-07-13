@@ -81,10 +81,9 @@ namespace Datadog.Trace.Agent.Transports
                 var trailerBytes = _boundaryTrailerInBytes ??= Encoding.ASCII.GetBytes(BoundaryTrailer);
 
                 // Write each MultipartFormItem
-                var hasWritten = false;
-                for (var i = 0; i < items.Length; i++)
+                var itemsWritten = 0;
+                foreach (var item in items)
                 {
-                    var item = items[i];
                     byte[] headerBytes = null;
 
                     // Check name is not null (required)
@@ -118,7 +117,7 @@ namespace Datadog.Trace.Agent.Transports
                     headerBytes ??= Encoding.ASCII.GetBytes(
                         $"Content-Type: {item.ContentType}\r\nContent-Disposition: form-data; name=\"{item.Name}\"\r\n\r\n");
 
-                    if (i == 0)
+                    if (itemsWritten == 0)
                     {
                         // If we are writing the first item, we skip the initial `\r\n` in the array
                         await requestStream.WriteAsync(boundaryBytes, 2, boundaryBytes.Length - 2).ConfigureAwait(false);
@@ -140,10 +139,10 @@ namespace Datadog.Trace.Agent.Transports
                         await stream.CopyToAsync(requestStream).ConfigureAwait(false);
                     }
 
-                    hasWritten = true;
+                    itemsWritten++;
                 }
 
-                if (hasWritten)
+                if (itemsWritten > 0)
                 {
                     await requestStream.WriteAsync(trailerBytes, 0, trailerBytes.Length).ConfigureAwait(false);
                 }
