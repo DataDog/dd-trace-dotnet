@@ -116,7 +116,7 @@ namespace UpdateVendors
             return content;
         }
 
-        private static void RewriteCsFileWithStandardTransform(string filePath, string originalNamespace, Func<string, string, string> extraTransform = null)
+        private static void RewriteCsFileWithStandardTransform(string filePath, string originalNamespace, params Func<string, string, string>[] extraTransform)
         {
             if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
             {
@@ -124,9 +124,12 @@ namespace UpdateVendors
                     filePath,
                     content =>
                     {
-                        if (extraTransform != null)
+                        foreach (var transform in extraTransform)
                         {
-                            content = extraTransform(filePath, content);
+                            if (transform != null)
+                            {
+                                content = transform(filePath, content);
+                            }
                         }
 
                         // Disable analyzer
