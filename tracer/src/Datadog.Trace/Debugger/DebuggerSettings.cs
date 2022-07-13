@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Debugger;
@@ -28,6 +29,7 @@ internal class DebuggerSettings
         ServiceName = configurationSource?.GetString(ConfigurationKeys.ServiceName);
 
         var exporterSettings = new ExporterSettings(configurationSource);
+        TransportType = exporterSettings.TracesTransport;
 
         var agentUri = exporterSettings.AgentUri.ToString().TrimEnd('/');
         SnapshotsPath = configurationSource?.GetString(ConfigurationKeys.Debugger.SnapshotUrl)?.TrimEnd('/') ?? agentUri;
@@ -116,6 +118,8 @@ internal class DebuggerSettings
     public int DiagnosticsIntervalSeconds { get; }
 
     public int UploadFlushIntervalMilliseconds { get; }
+
+    public TracesTransportType TransportType { get; }
 
     public static DebuggerSettings FromSource(IConfigurationSource source)
     {

@@ -3,13 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Debugger;
 
 internal class ImmutableDebuggerSettings
 {
-    public ImmutableDebuggerSettings(bool enabled, ProbeMode probeMode, string apiKey, string runtimeId, string serviceName, string serviceVersion, int probeConfigurationsPollIntervalSeconds, string probeConfigurationsPath, string environment, int maxSerializationTimeInMilliseconds, int maximumDepthOfMembersToCopy, string snapshotsPath, int uploadBatchSize, int diagnosticsIntervalSeconds, int uploadFlushIntervalMilliseconds)
+    public ImmutableDebuggerSettings(bool enabled, ProbeMode probeMode, string apiKey, string runtimeId, string serviceName, string serviceVersion, int probeConfigurationsPollIntervalSeconds, string probeConfigurationsPath, string environment, int maxSerializationTimeInMilliseconds, int maximumDepthOfMembersToCopy, string snapshotsPath, int uploadBatchSize, int diagnosticsIntervalSeconds, int uploadFlushIntervalMilliseconds, TracesTransportType transportType)
     {
         Enabled = enabled;
         ProbeMode = probeMode;
@@ -26,6 +27,7 @@ internal class ImmutableDebuggerSettings
         UploadBatchSize = uploadBatchSize;
         DiagnosticsIntervalSeconds = diagnosticsIntervalSeconds;
         UploadFlushIntervalMilliseconds = uploadFlushIntervalMilliseconds;
+        TransportType = transportType;
     }
 
     public bool Enabled { get; }
@@ -58,6 +60,8 @@ internal class ImmutableDebuggerSettings
 
     public int UploadFlushIntervalMilliseconds { get; }
 
+    public TracesTransportType TransportType { get; }
+
     public static ImmutableDebuggerSettings Create(TracerSettings tracerSettings) =>
         Create(tracerSettings.DebuggerSettings);
 
@@ -77,7 +81,8 @@ internal class ImmutableDebuggerSettings
             debuggerSettings.SnapshotsPath,
             debuggerSettings.UploadBatchSize,
             debuggerSettings.DiagnosticsIntervalSeconds,
-            debuggerSettings.UploadFlushIntervalMilliseconds);
+            debuggerSettings.UploadFlushIntervalMilliseconds,
+            debuggerSettings.TransportType);
 
     public static ImmutableDebuggerSettings Create(
         bool enabled,
@@ -94,7 +99,8 @@ internal class ImmutableDebuggerSettings
         string snapshotsPath,
         int uploadBatchSize,
         int diagnosticsIntervalSeconds,
-        int uploadFlushIntervalMilliseconds) =>
+        int uploadFlushIntervalMilliseconds,
+        TracesTransportType transportType) =>
         new ImmutableDebuggerSettings(
             enabled,
             probeMode,
@@ -110,5 +116,6 @@ internal class ImmutableDebuggerSettings
             snapshotsPath,
             uploadBatchSize,
             diagnosticsIntervalSeconds,
-            uploadFlushIntervalMilliseconds);
+            uploadFlushIntervalMilliseconds,
+            transportType);
 }
