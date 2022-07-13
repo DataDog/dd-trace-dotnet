@@ -148,6 +148,26 @@ namespace UpdateVendors
                                 builder.Replace($"Func<", $"System.Func<");
                                 builder.Replace($"Action<", $"System.Action<");
                             }
+
+                            var filename = Path.GetFileName(filePath);
+                            if (filename == "JsonSerializerInternalReader.cs")
+                            {
+                                builder.Replace("#pragma warning restore CS8600, CS8602, CS8603, CS8604", string.Empty);
+                            }
+
+                            builder.Replace("#if !(PORTABLE40 || PORTABLE || DOTNET || NETSTANDARD2_0)", "#if NETFRAMEWORK");
+
+                            if (filename == "JsonPropertyCollection.cs")
+                            {
+                                // eww
+                                builder.Replace(
+                                    @"        private bool TryGetValue(string key, [NotNullWhen(true)]out JsonProperty? item)",
+                                    @"#if NETCOREAPP
+        private new bool TryGetValue(string key, [NotNullWhen(true)]out JsonProperty? item)
+#else
+        private bool TryGetValue(string key, [NotNullWhen(true)]out JsonProperty? item)
+#endif");
+                            }
                         }
 
 
