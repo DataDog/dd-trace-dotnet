@@ -2,17 +2,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-
-#include "RawSample.h"
+#include "ISamplesProvider.h"
 #include "Sample.h"
 
-class RawCpuSample : public RawSample
+#include <list>
+
+class ISamplesCollector
 {
 public:
-    inline void OnTransform(Sample& sample) const override
-    {
-        sample.AddValue(Duration * 1000000, SampleValue::CpuTimeDuration);
-    }
+    virtual ~ISamplesCollector() = default;
 
-    std::uint64_t Duration;  // in milliseconds
+    virtual std::list<Sample> GetSamples() = 0;
+    virtual void Register(ISamplesProvider* sampleProvider) = 0;
 };

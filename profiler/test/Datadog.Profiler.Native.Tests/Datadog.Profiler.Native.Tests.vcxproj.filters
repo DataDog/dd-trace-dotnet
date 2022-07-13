@@ -98,6 +98,9 @@
     <ClCompile Include="OpSysToolsTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="SamplesCollectorTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">
