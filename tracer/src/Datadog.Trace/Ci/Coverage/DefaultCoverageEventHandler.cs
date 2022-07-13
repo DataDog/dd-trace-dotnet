@@ -20,11 +20,6 @@ namespace Datadog.Trace.Ci.Coverage
 
             var groupByFiles = coverageInstructions.GroupBy(i => i.FilePath).ToList();
             var coveragePayload = new CoveragePayload();
-            if (Tracer.Instance?.ActiveScope?.Span is { } span)
-            {
-                coveragePayload.TraceId = span.TraceId;
-                coveragePayload.SpanId = span.SpanId;
-            }
 
             foreach (var boundariesPerFile in groupByFiles)
             {
