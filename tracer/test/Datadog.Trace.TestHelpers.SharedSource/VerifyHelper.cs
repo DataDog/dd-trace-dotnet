@@ -37,15 +37,20 @@ namespace Datadog.Trace.TestHelpers
                   .Replace("?", "-");
         }
 
-        public static VerifySettings GetSpanVerifierSettings(params object[] parameters)
+        public static void InitializeGlobalSettings()
         {
-            var settings = new VerifySettings();
-
             VerifierSettings.DerivePathInfo(
                 (sourceFile, projectDirectory, type, method) =>
                 {
                     return new(directory: Path.Combine(projectDirectory, "..", "snapshots"));
                 });
+        }
+
+        public static VerifySettings GetSpanVerifierSettings(params object[] parameters)
+        {
+            var settings = new VerifySettings();
+
+            InitializeGlobalSettings();
 
             if (parameters.Length > 0)
             {
