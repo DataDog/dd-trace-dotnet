@@ -4,7 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
-using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Sink;
 
