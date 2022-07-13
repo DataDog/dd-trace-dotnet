@@ -11,6 +11,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Debugger.Sink;
 
@@ -55,5 +56,26 @@ internal class AgentBatchUploadApi : IBatchUploadApi
         }
 
         return true;
+    }
+
+    private string ToDDTagsQueryString(IDictionary<string, string> keyValues)
+    {
+        if (keyValues.Count == 0)
+        {
+            return string.Empty;
+        }
+
+        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+        sb.Append("?ddtags=");
+        foreach (var keyValue in keyValues)
+        {
+            sb.Append(keyValue.Key);
+            sb.Append(':');
+            sb.Append(keyValue.Value ?? "null");
+            sb.Append(',');
+        }
+
+        sb.Remove(sb.Length - 1, 1);
+        return StringBuilderCache.GetStringAndRelease(sb);
     }
 }
