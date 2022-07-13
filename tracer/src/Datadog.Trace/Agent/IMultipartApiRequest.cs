@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent
 {
-    internal interface IMultipartApiRequest : IApiRequest
+    internal interface IMultipartApiRequest
     {
         Task<IApiResponse> PostAsync(params MultipartFormItem[] items);
     }
