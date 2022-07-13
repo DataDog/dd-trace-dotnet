@@ -151,5 +151,4 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
     return IsRunning(sti.ThreadState);
 }
 
-
 } // namespace OsSpecificApi

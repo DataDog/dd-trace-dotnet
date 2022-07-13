@@ -339,7 +339,7 @@ jobs:
         shell: cmd
         run: >
           cd profiler/test/Datadog.Profiler.IntegrationTests &&
-          dotnet test -c ${{matrix.configuration}} -p:Platform=${{matrix.platform}}  --logger "console;verbosity=detailed" --logger "trx" -- RunConfiguration.TreatNoTestsAsError=true
+          dotnet test -c ${{matrix.configuration}} -p:Platform=${{matrix.platform}} --filter "Category!=LinuxOnly" --logger "console;verbosity=detailed" --logger "trx" -- RunConfiguration.TreatNoTestsAsError=true
 
       - name: Generate tests report
         uses: dorny/test-reporter@v1
