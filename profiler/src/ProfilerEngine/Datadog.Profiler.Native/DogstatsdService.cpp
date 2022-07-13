@@ -17,7 +17,7 @@
 /// - Add a conversion to DogFood::MetricType in the Convert function :
 ///     Add a new `if constexpr(...)` statement in Convert() for the new metric type
 
-DogstatsdService::DogstatsdService(const std::string& host, int port, const Tags& tags) :
+DogstatsdService::DogstatsdService(const std::string& host, int32_t port, const Tags& tags) :
     _commonTags{tags},
     _host{host},
     _port{port}

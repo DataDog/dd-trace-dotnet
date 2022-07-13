@@ -42,7 +42,7 @@ OpSysTools::SetThreadDescriptionDelegate_t OpSysTools::s_setThreadDescriptionDel
 OpSysTools::GetThreadDescriptionDelegate_t OpSysTools::s_getThreadDescriptionDelegate = nullptr;
 #endif
 
-int OpSysTools::GetProcId()
+int32_t OpSysTools::GetProcId()
 {
 #ifdef _WINDOWS
     return ::GetCurrentProcessId();
@@ -51,7 +51,7 @@ int OpSysTools::GetProcId()
 #endif
 }
 
-int OpSysTools::GetThreadId()
+int32_t OpSysTools::GetThreadId()
 {
 #ifdef _WINDOWS
     return ::GetCurrentThreadId();
@@ -97,7 +97,7 @@ std::int64_t OpSysTools::GetHighPrecisionNanosecondsFallback(void)
 {
     std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
 
-    long long totalNanosecs = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
+    int64_t totalNanosecs = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
     return static_cast<std::int64_t>(totalNanosecs);
 }
 
@@ -320,7 +320,7 @@ std::string OpSysTools::GetProcessName()
     const DWORD len = GetModuleFileNameA(nullptr, pathName, length);
     return fs::path(pathName).filename().string();
 #elif MACOS
-    const int length = 260;
+    const int32_t length = 260;
     char* buffer = new char[length];
     proc_name(getpid(), buffer, length);
     return std::string(buffer);

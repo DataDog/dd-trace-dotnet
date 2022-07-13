@@ -68,14 +68,14 @@ private:
     ICorProfilerInfo4* const _pCorProfilerInfo;
 
 private:
-    static bool TrySetHandlerForSignal(int signal, struct sigaction& action);
-    static void CollectStackSampleSignalHandler(int signal);
+    static bool TrySetHandlerForSignal(int32_t signal, struct sigaction& action);
+    static void CollectStackSampleSignalHandler(int32_t signal);
 
-    static char const* ErrorCodeToString(int errorCode);
+    static char const* ErrorCodeToString(int32_t errorCode);
     static std::mutex s_stackWalkInProgressMutex;
     static std::mutex s_signalHandlerInitLock;
     static bool s_isSignalHandlerSetup;
-    static int s_signalToSend;
+    static int32_t s_signalToSend;
 
     static LinuxStackFramesCollector* s_pInstanceCurrentlyStackWalking;
 

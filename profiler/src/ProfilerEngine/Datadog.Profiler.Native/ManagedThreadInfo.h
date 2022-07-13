@@ -13,8 +13,8 @@
 #include "shared/src/native-src/string.h"
 
 
-static constexpr int MinFieldAlignRequirement = 8;
-static constexpr int FieldAlignRequirement = (MinFieldAlignRequirement >= alignof(std::uint64_t)) ? MinFieldAlignRequirement : alignof(std::uint64_t);
+static constexpr int32_t MinFieldAlignRequirement = 8;
+static constexpr int32_t FieldAlignRequirement = (MinFieldAlignRequirement >= alignof(std::uint64_t)) ? MinFieldAlignRequirement : alignof(std::uint64_t);
 
 struct alignas(FieldAlignRequirement) TraceContextTrackingInfo
 {
