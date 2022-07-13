@@ -403,7 +403,7 @@ stages:
         build: true
         target: builder
         baseImage: debian
-        command: "Clean BuildTracerHome ZipMonitoringHome"
+        command: "Clean BuildTracerHome"
 
     - publish: $(tracerHome)
       displayName: Uploading linux tracer home artifact
