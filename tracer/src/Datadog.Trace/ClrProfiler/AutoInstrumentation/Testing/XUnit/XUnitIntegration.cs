@@ -109,28 +109,33 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
         internal static void FinishScope(Scope scope, IExceptionAggregator exceptionAggregator)
         {
-            Exception exception = exceptionAggregator.ToException();
-
-            if (exception != null)
+            try
             {
-                if (exception.GetType().Name == "SkipException")
+                Exception exception = exceptionAggregator.ToException();
+
+                if (exception != null)
                 {
-                    scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
-                    scope.Span.SetTag(TestTags.SkipReason, exception.Message);
+                    if (exception.GetType().Name == "SkipException")
+                    {
+                        scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
+                        scope.Span.SetTag(TestTags.SkipReason, exception.Message);
+                    }
+                    else
+                    {
+                        scope.Span.SetException(exception);
+                        scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                    }
                 }
                 else
                 {
-                    scope.Span.SetException(exception);
-                    scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                    scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
                 }
             }
-            else
+            finally
             {
-                scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+                scope.Dispose();
+                Common.StopCoverage(scope.Span);
             }
-
-            scope.Dispose();
-            Common.StopCoverage(scope.Span);
         }
     }
 }

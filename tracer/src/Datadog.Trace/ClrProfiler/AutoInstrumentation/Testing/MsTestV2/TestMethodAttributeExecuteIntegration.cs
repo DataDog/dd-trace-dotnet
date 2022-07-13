@@ -64,60 +64,65 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                 Scope scope = state.Scope;
                 if (scope != null)
                 {
-                    Array returnValueArray = returnValue as Array;
-                    if (returnValueArray.Length == 1)
+                    try
                     {
-                        object testResultObject = returnValueArray.GetValue(0);
-
-                        if (testResultObject != null &&
-                            testResultObject.TryDuckCast<TestResultStruct>(out var testResult))
+                        Array returnValueArray = returnValue as Array;
+                        if (returnValueArray.Length == 1)
                         {
-                            string errorMessage = null;
-                            string errorStackTrace = null;
+                            object testResultObject = returnValueArray.GetValue(0);
 
-                            if (testResult.TestFailureException != null)
+                            if (testResultObject != null &&
+                                testResultObject.TryDuckCast<TestResultStruct>(out var testResult))
                             {
-                                Exception testException = testResult.TestFailureException.InnerException ?? testResult.TestFailureException;
-                                string testExceptionName = testException.GetType().Name;
-                                if (testExceptionName != "UnitTestAssertException" && testExceptionName != "AssertInconclusiveException")
+                                string errorMessage = null;
+                                string errorStackTrace = null;
+
+                                if (testResult.TestFailureException != null)
                                 {
-                                    scope.Span.SetException(testException);
+                                    Exception testException = testResult.TestFailureException.InnerException ?? testResult.TestFailureException;
+                                    string testExceptionName = testException.GetType().Name;
+                                    if (testExceptionName != "UnitTestAssertException" && testExceptionName != "AssertInconclusiveException")
+                                    {
+                                        scope.Span.SetException(testException);
+                                    }
+
+                                    errorMessage = testException.Message;
+                                    errorStackTrace = testException.ToString();
                                 }
 
-                                errorMessage = testException.Message;
-                                errorStackTrace = testException.ToString();
-                            }
-
-                            switch (testResult.Outcome)
-                            {
-                                case UnitTestOutcome.Error:
-                                case UnitTestOutcome.Failed:
-                                case UnitTestOutcome.Timeout:
-                                    scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
-                                    scope.Span.Error = true;
-                                    scope.Span.SetTag(Tags.ErrorMsg, errorMessage);
-                                    scope.Span.SetTag(Tags.ErrorStack, errorStackTrace);
-                                    break;
-                                case UnitTestOutcome.Inconclusive:
-                                case UnitTestOutcome.NotRunnable:
-                                    scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
-                                    scope.Span.SetTag(TestTags.SkipReason, errorMessage);
-                                    break;
-                                case UnitTestOutcome.Passed:
-                                    scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
-                                    break;
+                                switch (testResult.Outcome)
+                                {
+                                    case UnitTestOutcome.Error:
+                                    case UnitTestOutcome.Failed:
+                                    case UnitTestOutcome.Timeout:
+                                        scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                                        scope.Span.Error = true;
+                                        scope.Span.SetTag(Tags.ErrorMsg, errorMessage);
+                                        scope.Span.SetTag(Tags.ErrorStack, errorStackTrace);
+                                        break;
+                                    case UnitTestOutcome.Inconclusive:
+                                    case UnitTestOutcome.NotRunnable:
+                                        scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
+                                        scope.Span.SetTag(TestTags.SkipReason, errorMessage);
+                                        break;
+                                    case UnitTestOutcome.Passed:
+                                        scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+                                        break;
+                                }
                             }
                         }
-                    }
 
-                    if (exception != null)
+                        if (exception != null)
+                        {
+                            scope.Span.SetException(exception);
+                            scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                        }
+                    }
+                    finally
                     {
-                        scope.Span.SetException(exception);
-                        scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                        scope.Dispose();
+                        Common.StopCoverage(scope.Span);
                     }
-
-                    scope.Dispose();
-                    Common.StopCoverage(scope.Span);
                 }
             }
 

@@ -157,39 +157,44 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
         internal static void FinishScope(Scope scope, Exception ex)
         {
-            // unwrap the generic NUnitException
-            if (ex != null && ex.GetType().FullName == "NUnit.Framework.Internal.NUnitException")
+            try
             {
-                ex = ex.InnerException;
-            }
-
-            if (ex != null)
-            {
-                string exTypeName = ex.GetType().FullName;
-
-                if (exTypeName == "NUnit.Framework.SuccessException")
+                // unwrap the generic NUnitException
+                if (ex != null && ex.GetType().FullName == "NUnit.Framework.Internal.NUnitException")
                 {
-                    scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
-                    scope.Span.SetTag(TestTags.Message, ex.Message);
+                    ex = ex.InnerException;
                 }
-                else if (exTypeName is "NUnit.Framework.IgnoreException" or "NUnit.Framework.InconclusiveException")
+
+                if (ex != null)
                 {
-                    scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
-                    scope.Span.SetTag(TestTags.SkipReason, ex.Message);
+                    string exTypeName = ex.GetType().FullName;
+
+                    if (exTypeName == "NUnit.Framework.SuccessException")
+                    {
+                        scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+                        scope.Span.SetTag(TestTags.Message, ex.Message);
+                    }
+                    else if (exTypeName is "NUnit.Framework.IgnoreException" or "NUnit.Framework.InconclusiveException")
+                    {
+                        scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
+                        scope.Span.SetTag(TestTags.SkipReason, ex.Message);
+                    }
+                    else
+                    {
+                        scope.Span.SetException(ex);
+                        scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                    }
                 }
                 else
                 {
-                    scope.Span.SetException(ex);
-                    scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                    scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
                 }
             }
-            else
+            finally
             {
-                scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+                scope.Dispose();
+                Common.StopCoverage(scope.Span);
             }
-
-            scope.Dispose();
-            Common.StopCoverage(scope.Span);
         }
 
         internal static void FinishSkippedScope(Scope scope, string skipReason)
@@ -197,11 +202,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             var span = scope?.Span;
             if (span != null)
             {
-                span.SetTag(TestTags.Status, TestTags.StatusSkip);
-                span.SetTag(TestTags.SkipReason, skipReason ?? string.Empty);
-                span.Finish(TimeSpan.Zero);
-                scope.Dispose();
-                Common.StopCoverage(span);
+                try
+                {
+                    span.SetTag(TestTags.Status, TestTags.StatusSkip);
+                    span.SetTag(TestTags.SkipReason, skipReason ?? string.Empty);
+                    span.Finish(TimeSpan.Zero);
+                }
+                finally
+                {
+                    scope.Dispose();
+                    Common.StopCoverage(span);
+                }
             }
         }
     }
