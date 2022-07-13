@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         internal const string ExecuteAsyncMethodName = "ExecuteAsync";
         internal const string ReturnTypeName = "System.Threading.Tasks.Task";
         internal const string HotChocolateAssembly = "HotChocolate.Execution";
-        internal const string Major1 = "1";
+        internal const string Major12 = "12";
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.HotChocolate);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.HotChocolate;
@@ -39,9 +39,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             Scope scope = null;
             try
             {
-                string source = executionContext.Context.Document?.ToString();
-                string operationName = executionContext.Context.Id;
-                var operationType = executionContext.Context.Type.ToString();
+                var operation = executionContext.Context.Operation;
+                string source = operation.Document?.ToString();
+                string operationName = operation.Id;
+                var operationType = operation.Type.ToString();
                 scope = CreateScopeFromExecuteAsync(tracer, operationName, source, operationType);
             }
             catch (Exception ex)

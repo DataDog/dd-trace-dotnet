@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
     /// <summary>
@@ -10,9 +12,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// </summary>
     internal interface IWorkScheduler
     {
+        // TODO :  [Duck(ExplicitInterfaceTypeName = "IQueryPlanState", Name = "Context")]
+
         /// <summary>
         /// Gets the executing operation context
         /// </summary>
+        [DuckField(Name = "_operationContext")]
         IOperationContext Context { get; }
     }
 }

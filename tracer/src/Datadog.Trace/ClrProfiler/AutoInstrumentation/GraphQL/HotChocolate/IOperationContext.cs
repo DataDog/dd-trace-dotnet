@@ -11,19 +11,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     internal interface IOperationContext
     {
         ///// <summary>
-        ///// Gets the operation Id
+        ///// Gets the context operation
         ///// </summary>
-        string Id { get; }
-
-        ///// <summary>
-        ///// Gets the operation type (Query, Mutation, Subscription)
-        ///// </summary>
-        OperationTypeProxy Type { get; }
-
-        ///// <summary>
-        ///// Gets the operation Document
-        ///// </summary>
-        object Document { get; }
+        IPreparedOperation Operation { get; }
 
         ///// <summary>
         ///// Gets the operation Result

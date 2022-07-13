@@ -16,11 +16,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         IntegrationName = HotChocolateCommon.IntegrationName,
         MethodName = HotChocolateCommon.ExecuteAsyncMethodName,
         ReturnTypeName = HotChocolateCommon.ReturnTypeName,
-        ParameterTypeNames = new string[] { },
+        ParameterTypeNames = new string[0],
         AssemblyName = HotChocolateCommon.HotChocolateAssembly,
         TypeName = "HotChocolate.Execution.Processing.WorkScheduler",
-        MinimumVersion = HotChocolateCommon.Major1,
-        MaximumVersion = "*")]
+        MinimumVersion = HotChocolateCommon.Major12,
+        MaximumVersion = "12.*.*")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ExecuteAsyncIntegration
@@ -41,15 +41,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         /// OnAsyncMethodEnd callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <typeparam name="TExecutionResult">Type of the execution result value</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="executionResult">ExecutionResult instance</param>
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
-        internal static void OnAsyncMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
+        internal static TExecutionResult OnAsyncMethodEnd<TTarget, TExecutionResult>(TTarget instance, TExecutionResult executionResult, Exception exception, in CallTargetState state)
+            where TTarget : IWorkScheduler
         {
             Scope scope = state.Scope;
             if (state.Scope is null)
             {
-                return;
+                return executionResult;
             }
 
             try
@@ -67,6 +70,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             {
                 scope.Dispose();
             }
+
+            return executionResult;
         }
     }
 }
