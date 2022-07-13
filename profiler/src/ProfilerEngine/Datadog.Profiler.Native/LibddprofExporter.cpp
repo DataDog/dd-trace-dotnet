@@ -98,7 +98,7 @@ struct ddprof_ffi_Profile* LibddprofExporter::CreateProfile()
     period.type_ = period_value_type;
     period.value = 1;
 
-    return ddprof_ffi_Profile_new(sample_types, &period);
+    return ddprof_ffi_Profile_new(sample_types, &period, nullptr);
 }
 
 LibddprofExporter::Tags LibddprofExporter::CreateTags(IConfiguration* configuration)
@@ -363,7 +363,7 @@ bool LibddprofExporter::Send(ddprof_ffi_Request* request, ddprof_ffi_ProfileExpo
 
     auto result = ddprof_ffi_ProfileExporterV3_send(exporter, request, nullptr);
 
-    if (result.tag == DDPROF_FFI_SEND_RESULT_FAILURE)
+    if (result.tag == DDPROF_FFI_SEND_RESULT_ERR)
     {
         // There is an overflow issue when using the error buffer from rust
         // Log::Error("libddprof error: Failed to send profile (", result.failure.ptr, ")");
@@ -402,7 +402,7 @@ fs::path LibddprofExporter::CreatePprofOutputPath(IConfiguration* configuration)
 // LibddprofExporter::SerializedProfile class
 //
 LibddprofExporter::SerializedProfile::SerializedProfile(ddprof_ffi_Profile* profile) :
-    _encodedProfile{ddprof_ffi_Profile_serialize(profile)}
+    _encodedProfile{ddprof_ffi_Profile_serialize(profile, nullptr, nullptr)}
 {
 }
 
@@ -493,7 +493,7 @@ LibddprofExporter::ProfileAutoReset::ProfileAutoReset(struct ddprof_ffi_Profile*
 
 LibddprofExporter::ProfileAutoReset::~ProfileAutoReset()
 {
-    ddprof_ffi_Profile_reset(_profile);
+    ddprof_ffi_Profile_reset(_profile, nullptr);
 }
 
 //
