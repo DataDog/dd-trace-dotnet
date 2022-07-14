@@ -259,12 +259,11 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
         Logger::Info("There are no method probes and lines probes for methodDef", methodHandler->GetMethodDef());
         return S_OK;
     }
-
-    Logger::Info("Applying ", methodProbes.size(), " method probes and ", lineProbes.size(),
-                 " line probes on methodDef: ", methodHandler->GetMethodDef());
-    
-    if (!methodProbes.empty() || !lineProbes.empty())
+    else
     {
+        Logger::Info("Applying ", methodProbes.size(), " method probes and ", lineProbes.size(),
+                     " line probes on methodDef: ", methodHandler->GetMethodDef());
+
         const auto hr = Rewrite(moduleHandler, methodHandler, methodProbes, lineProbes);
 
         if (FAILED(hr))
