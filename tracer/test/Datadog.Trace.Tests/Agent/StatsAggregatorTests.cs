@@ -20,16 +20,6 @@ namespace Datadog.Trace.Tests.Agent
 {
     public class StatsAggregatorTests
     {
-        public static IEnumerable<object[]> GetCreateDistinctSpansDelegates()
-        {
-            yield return new object[] { (Delegate)SetDistinctResourceNames };
-            yield return new object[] { (Delegate)SetDistinctServiceNames };
-            yield return new object[] { (Delegate)SetDistinctOperationNames };
-            yield return new object[] { (Delegate)SetDistinctTypes };
-            yield return new object[] { (Delegate)SetDistinctHttpStatusCodes };
-            yield return new object[] { (Delegate)SetDistinctSyntheticValues };
-        }
-
         [Fact]
         public async Task CallFlushAutomatically()
         {
@@ -173,105 +163,85 @@ namespace Datadog.Trace.Tests.Agent
             }
         }
 
-        [Theory]
-        [MemberData(nameof(GetCreateDistinctSpansDelegates))]
-        public async Task CreatesDistinctBuckets(Action<ISpan, ISpan> createDistinctSpans)
+        [Fact]
+        public async Task CreatesDistinctBuckets()
         {
             const int millisecondsToNanoseconds = 1_000_000;
+            const long durationMs = 100;
+            const long duration = durationMs * millisecondsToNanoseconds;
 
-            // All spans should be recorded except childSpan
-            const long firstDuration = 100 * millisecondsToNanoseconds;
-            const long secondDuration = 200 * millisecondsToNanoseconds;
+            ulong id = 0;
+            var start = DateTimeOffset.UtcNow;
 
             var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Timeout.InfiniteTimeSpan);
 
             try
             {
-                var start = DateTimeOffset.UtcNow;
+                // Baseline
+                var baselineSpan = CreateSpan(id++, start, durationMs);
 
-                var firstSpan = new Span(new SpanContext(1, 1, serviceName: "service"), start);
-                firstSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+                // Unique Name (Operation)
+                var operationSpan = CreateSpan(id++, start, durationMs, operationName: "unique-name");
 
-                var secondSpan = new Span(new SpanContext(2, 2, serviceName: "service"), start);
-                secondSpan.SetDuration(TimeSpan.FromMilliseconds(200));
+                // Unique Resource
+                var resourceSpan = CreateSpan(id++, start, durationMs, resourceName: "unique-resource");
 
-                createDistinctSpans(firstSpan, secondSpan);
+                // Unique Service
+                var serviceSpan = CreateSpan(id++, start, durationMs, serviceName: "unique-service");
 
-                aggregator.Add(firstSpan, secondSpan);
+                // Unique Type
+                var typeSpan = CreateSpan(id++, start, durationMs, type: "unique-type");
+
+                // Unique Synthetics
+                var syntheticsSpan = CreateSpan(id++, start, durationMs, origin: "synthetics");
+
+                // Unique HTTP Status Code
+                var httpSpan = CreateSpan(id++, start, durationMs, httpStatusCode: "400");
+
+                var spans = new Span[] { baselineSpan, operationSpan, resourceSpan, serviceSpan, typeSpan, syntheticsSpan, httpSpan };
+                aggregator.Add(spans);
 
                 var buffer = aggregator.CurrentBuffer;
+                buffer.Buckets.Should().HaveCount(7);
 
-                var firstKey = StatsAggregator.BuildKey(firstSpan);
-                var secondKey = StatsAggregator.BuildKey(secondSpan);
+                foreach (var span in spans)
+                {
+                    var key = StatsAggregator.BuildKey(span);
+                    buffer.Buckets.Should().ContainKey(key);
 
-                buffer.Buckets.Should().HaveCount(2);
-                buffer.Buckets.Should().ContainKey(firstKey);
-                buffer.Buckets.Should().ContainKey(secondKey);
-
-                var firstBucket = buffer.Buckets[firstKey];
-                firstBucket.Duration.Should().Be(firstDuration);
-                firstBucket.Hits.Should().Be(1);
-                firstBucket.Errors.Should().Be(0);
-                firstBucket.TopLevelHits.Should().Be(1);
-                firstBucket.ErrorSummary.GetCount().Should().Be(0);
-                firstBucket.ErrorSummary.GetSum().Should().Be(0);
-                firstBucket.OkSummary.GetCount().Should().Be(1.0);
-                firstBucket.OkSummary.GetSum().Should().BeApproximately(
-                    firstDuration, firstDuration * firstBucket.OkSummary.IndexMapping.RelativeAccuracy);
-
-                var secondBucket = buffer.Buckets[secondKey];
-                secondBucket.Duration.Should().Be(secondDuration);
-                secondBucket.Hits.Should().Be(1);
-                secondBucket.Errors.Should().Be(0);
-                secondBucket.TopLevelHits.Should().Be(1);
-                secondBucket.ErrorSummary.GetCount().Should().Be(0);
-                secondBucket.ErrorSummary.GetSum().Should().Be(0);
-                secondBucket.OkSummary.GetCount().Should().Be(1.0);
-                secondBucket.OkSummary.GetSum().Should().BeApproximately(
-                    secondDuration, secondDuration * secondBucket.OkSummary.IndexMapping.RelativeAccuracy);
+                    var bucket = buffer.Buckets[key];
+                    bucket.Duration.Should().Be(duration);
+                    bucket.Hits.Should().Be(1);
+                    bucket.Errors.Should().Be(0);
+                    bucket.TopLevelHits.Should().Be(1);
+                    bucket.ErrorSummary.GetCount().Should().Be(0);
+                    bucket.ErrorSummary.GetSum().Should().Be(0);
+                    bucket.OkSummary.GetCount().Should().Be(1.0);
+                    bucket.OkSummary.GetSum().Should().BeApproximately(
+                        duration, duration * bucket.OkSummary.IndexMapping.RelativeAccuracy);
+                }
             }
             finally
             {
                 await aggregator.DisposeAsync();
             }
+
+            Span CreateSpan(ulong id, DateTimeOffset start, long durationMs, string operationName = "name", string resourceName = "resource", string serviceName = "service", string type = "http", string httpStatusCode = "200", string origin = "rum")
+            {
+                var span = new Span(new SpanContext(id, id), start);
+                span.SetDuration(TimeSpan.FromMilliseconds(durationMs));
+
+                span.ResourceName = resourceName;
+                span.ServiceName = serviceName;
+                span.OperationName = operationName;
+                span.Type = type;
+                span.SetTag(Tags.HttpStatusCode, httpStatusCode);
+                span.Context.Origin = origin;
+
+                return span;
+            }
         }
 
         private static ImmutableTracerSettings GetSettings() => new TracerSettings().Build();
-
-        private static void SetDistinctResourceNames(ISpan s1, ISpan s2)
-        {
-            s1.ResourceName = "first";
-            s2.ResourceName = "second";
-        }
-
-        private static void SetDistinctServiceNames(ISpan s1, ISpan s2)
-        {
-            s1.ServiceName = "first";
-            s2.ServiceName = "second";
-        }
-
-        private static void SetDistinctOperationNames(ISpan s1, ISpan s2)
-        {
-            s1.OperationName = "first";
-            s2.OperationName = "second";
-        }
-
-        private static void SetDistinctTypes(ISpan s1, ISpan s2)
-        {
-            s1.Type = "first";
-            s2.Type = "second";
-        }
-
-        private static void SetDistinctHttpStatusCodes(ISpan s1, ISpan s2)
-        {
-            s1.SetTag(Tags.HttpStatusCode, "200");
-            s2.SetTag(Tags.HttpStatusCode, "201");
-        }
-
-        private static void SetDistinctSyntheticValues(ISpan s1, ISpan s2)
-        {
-            ((SpanContext)s1.Context).Origin = "synthetics";
-            ((SpanContext)s2.Context).Origin = "not-synthetics";
-        }
     }
 }
