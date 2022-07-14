@@ -32,11 +32,11 @@ namespace Datadog.Trace.Agent.Transports
             _headers.Add(name, value);
         }
 
-        public async Task<IApiResponse> GetAsync() => (await SendAsync(WebRequestMethods.Http.Get).ConfigureAwait(false)).Item1;
+        public async Task<IApiResponse> GetAsync() => (await SendAsync(WebRequestMethods.Http.Get, null, null).ConfigureAwait(false)).Item1;
 
-        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType) => (await SendAsync(WebRequestMethods.Http.Post, contentType, bytes).ConfigureAwait(false)).Item1;
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType) => (await SendAsync(WebRequestMethods.Http.Post, contentType, new BufferContent(bytes)).ConfigureAwait(false)).Item1;
 
-        private async Task<Tuple<IApiResponse, HttpRequest>> SendAsync(string verb, string contentType = null, ArraySegment<byte>? segment = null)
+        private async Task<Tuple<IApiResponse, HttpRequest>> SendAsync(string verb, string contentType, IHttpContent content)
         {
             using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())
             {
@@ -44,8 +44,6 @@ namespace Datadog.Trace.Agent.Transports
                 {
                     _headers.Add("Content-Type", contentType);
                 }
-
-                var content = segment.HasValue ? new BufferContent(segment.Value) : null;
 
                 var request = new HttpRequest(verb, _uri.Host, _uri.PathAndQuery, _headers, content);
                 // send request, get response
