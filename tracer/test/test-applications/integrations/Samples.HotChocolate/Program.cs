@@ -1,28 +1,46 @@
-using Samples.HotChocolate;
+using System.IO;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
-var builder = WebApplication.CreateBuilder(args);
+using System;
+using System.Linq;
+using System.Collections.Generic;
+using System.Collections;
+using Microsoft.AspNetCore.Builder;
 
-builder.Services
-    .AddGraphQLServer()
-    .AddQueryType<Query>();
-
-
-var app = builder.Build();
-
-app.MapGraphQL();
-
-app.Map("/shutdown", builder =>
+namespace Samples.HotChocolate
 {
-    builder.Run(async context =>
+    public class Program
     {
-        await context.Response.WriteAsync("Shutting down");
+        public static void Main(string[] args)
+        {
+            var directory = Directory.GetCurrentDirectory();
 
-#pragma warning disable CS0618 // Type or member is obsolete
-        _ = Task.Run(() => builder.ApplicationServices.GetService<Microsoft.Extensions.Hosting.IApplicationLifetime>().StopApplication());
-#pragma warning restore CS0618 // Type or member is obsolete
-    });
-});
+            var host = new WebHostBuilder()
+                .UseKestrel(serverOptions =>
+                    // Explicitly set AllowSynchronousIO to true since the default changes
+                    // between AspNetCore 2.0 and 3.0
+                    serverOptions.AllowSynchronousIO = true
+                )
+                .UseContentRoot(directory)
+                .UseIISIntegration()
+                .UseStartup<Startup>()
+                .Build();
 
-app.MapGet("/", () => "Hello World!");
+            var logger = host.Services.GetRequiredService<ILogger<Program>>();
 
-app.Run();
+            logger.LogInformation($"Instrumentation.ProfilerAttached = {SampleHelpers.IsProfilerAttached()}");
+
+            var envVars = SampleHelpers.GetDatadogEnvironmentVariables();
+
+            foreach (var kvp in envVars)
+            {
+                logger.LogInformation($"{kvp.Key} = {kvp.Value}");
+            }
+
+            host.Run();
+        }
+    }
+}
+
