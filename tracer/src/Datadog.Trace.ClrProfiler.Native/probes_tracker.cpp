@@ -8,7 +8,7 @@
      {
          const auto iter = _probeMetadataMap.find(probeId);
 
-         if (iter != std::end(_probeMetadataMap))
+         if (iter != _probeMetadataMap.end())
          {
              probeMetadata = iter->second;
              return true;
