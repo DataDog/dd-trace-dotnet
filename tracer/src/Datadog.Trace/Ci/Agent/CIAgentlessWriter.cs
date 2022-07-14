@@ -18,6 +18,42 @@ namespace Datadog.Trace.Ci.Agent
     /// <summary>
     /// CI Visibility Agentless Writer
     /// </summary>
+    /*
+     *  Current Architecture of the writer:
+     * 
+     *         ┌────────────────────────────────────────────────────────────────┐
+     *         │                                                                │
+     *         │ CIAgentlessWriter         ┌────────────────────────────────┐   │
+     *         │                           │ Buffers                        │   │
+     *         │                         ┌─┤                                │   │
+     *         │                         │ │ ┌────────────────────────────┐ │   │
+     *         │                         │ │ │ CITestCyclePayload  Buffer │ │   │
+     *         │                         │ │ │                            │ │   │
+     *         │                         │ │ │         SpanEvent          │ │   │  CITestCyclePayload Url
+     *         │                         │ │ │         TestEvent          ├─┼───┼────────────────────────────►
+     *         │   ┌───────────────┐     │ │ ├────────────────────────────┤ │   │
+     *         │   │               │     │ │ │ Items: inf     Bytes: 4MB  │ │   │
+     *         │   │  Event Queue  │     │ │ └────────────────────────────┘ │   │
+     * IEvent  │   │               │     │ │                                │   │
+     *  ───────┼──►│               ├─────┤►│ ┌────────────────────────────┐ │   │
+     *         │   │   Max: 2500   │     │ │ │ CICodeCoveragePayload Buf. │ │   │
+     *         │   │               │     │ │ │                            │ │   │
+     *         │   └───────────────┘     │ │ │      CoveragePayload       │ │   │  CICodeCoveragePayload Url
+     *         │                         │ │ │                            ├─┼───┼────────────────────────────►
+     *         │                         │ │ ├────────────────────────────┤ │   │
+     *         │                         │ │ │ Items: 100     Bytes: 50MB │ │   │
+     *         │                         │ │ └────────────────────────────┘ │   │
+     *         │                         │ │                                │   │
+     *         │                         │ │ Flush each sec or limit reach  │   │
+     *         │                         │ └──────────────────────────────┬─┘   │
+     *         │                         │                                │     │
+     *         │                         └────────────────────────────────┘     │
+     *         │                                   1 .. N Consumers             │
+     *         │                                                                │
+     *         │                                      Max N = 8                 │
+     *         │                                                                │
+     *         └────────────────────────────────────────────────────────────────┘
+     */
     internal sealed class CIAgentlessWriter : IEventWriter
     {
         private const int BatchInterval = 1000;
