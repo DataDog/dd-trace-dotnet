@@ -990,7 +990,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 
         if (debugger_instrumentation_requester != nullptr)
         {
-            auto probes = debugger_instrumentation_requester->GetProbes();
+            const auto& probes = debugger_instrumentation_requester->GetProbes();
             if (!probes.empty())
             {
                 const auto numReJITs = debugger_instrumentation_requester->RequestRejitForLoadedModule(module_id);
