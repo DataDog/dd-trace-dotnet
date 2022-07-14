@@ -1,4 +1,4 @@
-// <copyright file="EventsPayload.cs" company="Datadog">
+// <copyright file="CIVisibilityProtocolPayload.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,14 +10,12 @@ using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.Payloads
 {
-    internal abstract class EventsPayload
+    internal abstract class CIVisibilityProtocolPayload
     {
-        protected static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<EventsPayload>();
-
         private readonly EventsBuffer<IEvent> _events;
         private readonly IFormatterResolver _formatterResolver;
 
-        public EventsPayload(IFormatterResolver formatterResolver = null)
+        public CIVisibilityProtocolPayload(IFormatterResolver formatterResolver = null)
         {
             _formatterResolver = formatterResolver ?? CIFormatterResolver.Instance;
 
@@ -35,19 +33,10 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 
         public abstract bool CanProcessEvent(IEvent @event);
 
-        public bool TryProcessEvent(IEvent @event)
-        {
-            return _events.TryWrite(@event);
-        }
+        public bool TryProcessEvent(IEvent @event) => _events.TryWrite(@event);
 
-        public void Clear()
-        {
-            _events.Clear();
-        }
+        public void Clear() => _events.Clear();
 
-        public byte[] ToArray()
-        {
-            return MessagePackSerializer.Serialize(this, _formatterResolver);
-        }
+        public byte[] ToArray() => MessagePackSerializer.Serialize(this, _formatterResolver);
     }
 }

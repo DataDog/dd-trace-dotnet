@@ -11,6 +11,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Agent
 {
@@ -29,20 +30,75 @@ namespace Datadog.Trace.Ci.Agent
             Log.Information("CIWriterHttpSender Initialized.");
         }
 
-        public async Task SendPayloadAsync(EventsPayload payload)
+        public async Task SendPayloadAsync(CIVisibilityProtocolPayload payload)
         {
-            var numberOfTraces = payload.Count;
-            var tracesEndpoint = payload.Url;
+            var payloadArray = payload.ToArray();
+            Log.Information<int, string>("Sending ({numberOfTraces} events) {bytesValue} bytes...", payload.Count, payloadArray.Length.ToString("N0"));
+            await SendPayloadAsync(
+                payload.Url,
+                static (request, payloadBytes) => request.PostAsync(new ArraySegment<byte>(payloadBytes), MimeTypes.MsgPack),
+                payloadArray).ConfigureAwait(false);
+        }
 
+        public async Task SendPayloadAsync(MultipartPayload payload)
+        {
+            Log.Information<int>("Sending {count} multipart items...", payload.Count);
+            await SendPayloadAsync(
+                payload.Url,
+                static (request, payloadArray) =>
+                {
+                    if (request is IMultipartApiRequest multipartRequest)
+                    {
+                        return multipartRequest.PostAsync(payloadArray);
+                    }
+
+                    ThrowHelper.ThrowInvalidOperationException("Sender doesn't support IMultipartApiRequest.");
+                    return Task.FromResult<IApiResponse>(null);
+                },
+                payload.ToArray()).ConfigureAwait(false);
+        }
+
+        private static async Task<bool> SendPayloadAsync<T>(Func<IApiRequest, T, Task<IApiResponse>> senderFunc, IApiRequest request, T state, bool finalTry)
+        {
+            IApiResponse response = null;
+
+            try
+            {
+                response = await senderFunc(request, state).ConfigureAwait(false);
+
+                // Attempt a retry if the status code is not SUCCESS
+                if (response.StatusCode is < 200 or >= 300)
+                {
+                    if (finalTry)
+                    {
+                        try
+                        {
+                            var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                            Log.Error<int, string>("Failed to submit events with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error<int>(ex, "Unable to read response for failed request with status code {StatusCode}", response.StatusCode);
+                        }
+                    }
+
+                    return false;
+                }
+            }
+            finally
+            {
+                response?.Dispose();
+            }
+
+            return true;
+        }
+
+        private async Task SendPayloadAsync<T>(Uri url, Func<IApiRequest, T, Task<IApiResponse>> senderFunc, T state)
+        {
             // retry up to 5 times with exponential back-off
             const int retryLimit = 5;
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
-
-            var payloadMimeType = MimeTypes.MsgPack;
-            var payloadBytes = payload.ToArray();
-
-            Log.Information($"Sending ({numberOfTraces} events) {payloadBytes.Length.ToString("N0")} bytes...");
 
             while (true)
             {
@@ -50,22 +106,22 @@ namespace Datadog.Trace.Ci.Agent
 
                 try
                 {
-                    request = _apiRequestFactory.Create(tracesEndpoint);
+                    request = _apiRequestFactory.Create(url);
                     request.AddHeader(ApiKeyHeader, CIVisibility.Settings.ApiKey);
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, "An error occurred while generating http request to send events to {AgentEndpoint}", _apiRequestFactory.Info(tracesEndpoint));
+                    Log.Error(ex, "An error occurred while generating http request to send events to {AgentEndpoint}", _apiRequestFactory.Info(url));
                     return;
                 }
 
-                bool success = false;
+                var success = false;
+                var isFinalTry = retryCount >= retryLimit;
                 Exception exception = null;
-                bool isFinalTry = retryCount >= retryLimit;
 
                 try
                 {
-                    success = await SendPayloadAsync(new ArraySegment<byte>(payloadBytes), payloadMimeType, request, isFinalTry).ConfigureAwait(false);
+                    success = await SendPayloadAsync(senderFunc, request, state, isFinalTry).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -75,7 +131,7 @@ namespace Datadog.Trace.Ci.Agent
                     {
                         if (ex.InnerException is InvalidOperationException ioe)
                         {
-                            Log.Error<int, string>(ex, "An error occurred while sending {Count} events to {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(tracesEndpoint));
+                            Log.Error<string>(ex, "An error occurred while sending events to {AgentEndpoint}", _apiRequestFactory.Info(url));
                             return;
                         }
                     }
@@ -87,7 +143,7 @@ namespace Datadog.Trace.Ci.Agent
                     if (isFinalTry)
                     {
                         // stop retrying
-                        Log.Error<int, int, string>(exception, "An error occurred while sending {Count} events after {Retries} retries to {AgentEndpoint}", numberOfTraces, retryCount, _apiRequestFactory.Info(tracesEndpoint));
+                        Log.Error<int, string>(exception, "An error occurred while sending events after {Retries} retries to {AgentEndpoint}", retryCount, _apiRequestFactory.Info(url));
                         return;
                     }
 
@@ -108,7 +164,7 @@ namespace Datadog.Trace.Ci.Agent
 
                     if (isSocketException)
                     {
-                        Log.Debug(exception, "Unable to communicate with {AgentEndpoint}", _apiRequestFactory.Info(tracesEndpoint));
+                        Log.Debug(exception, "Unable to communicate with {AgentEndpoint}", _apiRequestFactory.Info(url));
                     }
 
                     // Execute retry delay
@@ -119,53 +175,9 @@ namespace Datadog.Trace.Ci.Agent
                     continue;
                 }
 
-                Log.Debug<int, string>("Successfully sent {Count} events to {AgentEndpoint}", numberOfTraces, _apiRequestFactory.Info(tracesEndpoint));
+                Log.Debug<string>("Successfully sent events to {AgentEndpoint}", _apiRequestFactory.Info(url));
                 return;
             }
-        }
-
-        private async Task<bool> SendPayloadAsync(ArraySegment<byte> payload, string mimeType, IApiRequest request, bool finalTry)
-        {
-            IApiResponse response = null;
-
-            try
-            {
-                try
-                {
-                    response = await request.PostAsync(payload, mimeType).ConfigureAwait(false);
-                }
-                catch
-                {
-                    // count only network/infrastructure errors, not valid responses with error status codes
-                    // (which are handled below)
-                    throw;
-                }
-
-                // Attempt a retry if the status code is not SUCCESS
-                if (response.StatusCode < 200 || response.StatusCode >= 300)
-                {
-                    if (finalTry)
-                    {
-                        try
-                        {
-                            string responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-                            Log.Error<int, string>("Failed to submit events with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error<int>(ex, "Unable to read response for failed request with status code {StatusCode}", response.StatusCode);
-                        }
-                    }
-
-                    return false;
-                }
-            }
-            finally
-            {
-                response?.Dispose();
-            }
-
-            return true;
         }
     }
 }
