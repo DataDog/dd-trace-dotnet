@@ -77,7 +77,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             }
         }
 
-        public void Clear()
+        public virtual void Clear()
         {
             lock (_items)
             {
@@ -86,7 +86,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             }
         }
 
-        public virtual MultipartFormItem[] ToArray()
+        public MultipartFormItem[] ToArray()
         {
             lock (_items)
             {

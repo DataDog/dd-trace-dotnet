@@ -20,7 +20,7 @@ namespace Datadog.Trace.Ci.Agent
     /// </summary>
     /*
      *  Current Architecture of the writer:
-     * 
+     *
      *         ┌────────────────────────────────────────────────────────────────┐
      *         │                                                                │
      *         │ CIAgentlessWriter         ┌────────────────────────────────┐   │
@@ -32,7 +32,7 @@ namespace Datadog.Trace.Ci.Agent
      *         │                         │ │ │         SpanEvent          │ │   │  CITestCyclePayload Url
      *         │                         │ │ │         TestEvent          ├─┼───┼────────────────────────────►
      *         │   ┌───────────────┐     │ │ ├────────────────────────────┤ │   │
-     *         │   │               │     │ │ │ Items: inf     Bytes: 4MB  │ │   │
+     *         │   │               │     │ │ │ Items: inf     Bytes: 5MB  │ │   │
      *         │   │  Event Queue  │     │ │ └────────────────────────────┘ │   │
      * IEvent  │   │               │     │ │                                │   │
      *  ───────┼──►│               ├─────┤►│ ┌────────────────────────────┐ │   │

@@ -30,6 +30,16 @@ namespace Datadog.Trace.Ci.Agent.Payloads
                 builder.Host = "event-platform-intake." + CIVisibility.Settings.Site;
                 Url = builder.Uri;
             }
+
+            // This is a current limitation in the backend side
+            // an "event" item must be included in each payload.
+            // So here we are adding a dummy one.
+            AddMultipartFormItem(
+                new MultipartFormItem(
+                    "event",
+                    MimeTypes.Json,
+                    "fileevent.json",
+                    new ArraySegment<byte>(Encoding.UTF8.GetBytes("{\"dummy\": true}"))));
         }
 
         public override Uri Url { get; }
@@ -45,8 +55,10 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             return new MultipartFormItem($"coverage{index}", MimeTypes.MsgPack, $"filecoverage{index}.msgpack", eventInBytes);
         }
 
-        public override MultipartFormItem[] ToArray()
+        public override void Clear()
         {
+            base.Clear();
+
             // This is a current limitation in the backend side
             // an "event" item must be included in each payload.
             // So here we are adding a dummy one.
@@ -56,8 +68,6 @@ namespace Datadog.Trace.Ci.Agent.Payloads
                     MimeTypes.Json,
                     "fileevent.json",
                     new ArraySegment<byte>(Encoding.UTF8.GetBytes("{\"dummy\": true}"))));
-
-            return base.ToArray();
         }
     }
 }
