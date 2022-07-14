@@ -109,6 +109,9 @@ namespace Datadog.Trace.Tests.Agent
             const long expectedOkDuration = (100 + 300 + 500) * millisecondsToNanoseconds;
             const long expectedErrorDuration = 200 * millisecondsToNanoseconds;
 
+            const long expectedHttpClientTotalDuration = 700 * millisecondsToNanoseconds;
+            const long expectedHttpClientOkDuration = 700 * millisecondsToNanoseconds;
+
             var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Timeout.InfiniteTimeSpan);
 
             try
@@ -138,24 +141,44 @@ namespace Datadog.Trace.Tests.Agent
                 snapshotSpan.SetMetric(Tags.PartialSnapshot, 1.0);
                 snapshotSpan.SetDuration(TimeSpan.FromMilliseconds(600));
 
-                aggregator.Add(simpleSpan, errorSpan, parentSpan, childSpan, measuredChildSpan, snapshotSpan);
+                // Create a new child span that is a service entry span, which means it will have stats computed for it
+                var httpClientServiceSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service-http-client"), start);
+                httpClientServiceSpan.SetDuration(TimeSpan.FromMilliseconds(700));
+
+                aggregator.Add(simpleSpan, errorSpan, parentSpan, childSpan, measuredChildSpan, snapshotSpan, childServiceEntrySpan);
 
                 var buffer = aggregator.CurrentBuffer;
 
-                buffer.Buckets.Should().HaveCount(1);
+                buffer.Buckets.Should().HaveCount(2);
 
-                var bucket = buffer.Buckets.Values.Single();
+                var serviceKey = StatsAggregator.BuildKey(simpleSpan);
+                buffer.Buckets.Should().ContainKey(serviceKey);
+                var serviceBucket = buffer.Buckets[serviceKey];
 
-                bucket.Duration.Should().Be(expectedTotalDuration);
-                bucket.Hits.Should().Be(4);
-                bucket.Errors.Should().Be(1);
-                bucket.TopLevelHits.Should().Be(3);
-                bucket.ErrorSummary.GetCount().Should().Be(1.0);
-                bucket.ErrorSummary.GetSum().Should().BeApproximately(
-                    expectedErrorDuration, expectedErrorDuration * bucket.ErrorSummary.IndexMapping.RelativeAccuracy);
-                bucket.OkSummary.GetCount().Should().Be(3.0);
-                bucket.OkSummary.GetSum().Should().BeApproximately(
-                    expectedOkDuration, expectedOkDuration * bucket.OkSummary.IndexMapping.RelativeAccuracy);
+                serviceBucket.Duration.Should().Be(expectedTotalDuration);
+                serviceBucket.Hits.Should().Be(4);
+                serviceBucket.Errors.Should().Be(1);
+                serviceBucket.TopLevelHits.Should().Be(3);
+                serviceBucket.ErrorSummary.GetCount().Should().Be(1.0);
+                serviceBucket.ErrorSummary.GetSum().Should().BeApproximately(
+                    expectedErrorDuration, expectedErrorDuration * serviceBucket.ErrorSummary.IndexMapping.RelativeAccuracy);
+                serviceBucket.OkSummary.GetCount().Should().Be(3.0);
+                serviceBucket.OkSummary.GetSum().Should().BeApproximately(
+                    expectedOkDuration, expectedOkDuration * serviceBucket.OkSummary.IndexMapping.RelativeAccuracy);
+
+                var httpClientServiceKey = StatsAggregator.BuildKey(httpClientServiceSpan);
+                buffer.Buckets.Should().ContainKey(httpClientServiceKey);
+                var httpClientServiceBucket = buffer.Buckets[httpClientServiceKey];
+
+                httpClientServiceBucket.Duration.Should().Be(expectedHttpClientTotalDuration);
+                httpClientServiceBucket.Hits.Should().Be(1);
+                httpClientServiceBucket.Errors.Should().Be(0);
+                httpClientServiceBucket.TopLevelHits.Should().Be(1);
+                httpClientServiceBucket.ErrorSummary.GetCount().Should().Be(0);
+                httpClientServiceBucket.ErrorSummary.GetSum().Should().Be(0);
+                httpClientServiceBucket.OkSummary.GetCount().Should().Be(1.0);
+                httpClientServiceBucket.OkSummary.GetSum().Should().BeApproximately(
+                    expectedHttpClientOkDuration, expectedHttpClientOkDuration * httpClientServiceBucket.OkSummary.IndexMapping.RelativeAccuracy);
             }
             finally
             {
