@@ -6,7 +6,7 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Datadog.Trace.PDBs;
+using Datadog.Trace.Pdb;
 using FluentAssertions;
 using Xunit;
 
