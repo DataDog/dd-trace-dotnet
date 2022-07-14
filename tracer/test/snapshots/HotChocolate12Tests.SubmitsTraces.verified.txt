@@ -54,5 +54,34 @@
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_5,
+    Name: hotchocolate.execute,
+    Resource: Query operation,
+    Service: Samples.HotChocolate-hotchocolate,
+    Type: graphql,
+    ParentId: Id_4,
+    Tags: {
+      component: HotChocolate,
+      env: integration_tests,
+      hotchocolate.operation.type: Query,
+      hotchocolate.source:
+{
+  book {
+    title
+    author {
+      name
+    }
+  }
+},
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
   }
 ]

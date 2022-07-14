@@ -12,12 +12,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// </summary>
     internal interface IWorkScheduler
     {
-        // TODO :  [Duck(ExplicitInterfaceTypeName = "IQueryPlanState", Name = "Context")]
-
         /// <summary>
         /// Gets the executing operation context
         /// </summary>
-        [DuckField(Name = "_operationContext")]
+        [Duck(Name = "HotChocolate.Execution.Processing.Plan.IQueryPlanState.Context")]
         IOperationContext Context { get; }
     }
 }

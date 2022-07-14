@@ -13,10 +13,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     internal interface IResultHelper
     {
         /// <summary>
-        /// Gets the executing operation context
+        /// Gets the executing operation errors
         /// </summary>
-        IOperationContext Context { get; }
-
-        IReadOnlyList<IError> Errors { get; }
+        IErrors Errors { get; }
     }
 }

@@ -41,9 +41,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             {
                 var operation = executionContext.Context.Operation;
                 string source = operation.Document?.ToString();
-                string operationName = operation.Id;
                 var operationType = operation.Type.ToString();
-                scope = CreateScopeFromExecuteAsync(tracer, operationName, source, operationType);
+                scope = CreateScopeFromExecuteAsync(tracer, source, operationType);
             }
             catch (Exception ex)
             {
@@ -53,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             return scope;
         }
 
-        private static Scope CreateScopeFromExecuteAsync(Tracer tracer, string operationName, string source, string operationType)
+        private static Scope CreateScopeFromExecuteAsync(Tracer tracer, string source, string operationType)
         {
             Scope scope;
 
@@ -63,10 +62,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
             var span = scope.Span;
             span.Type = SpanTypes.GraphQL;
-            span.ResourceName = $"{operationType} {operationName ?? "operation"}";
+            span.ResourceName = $"{operationType} operation";
 
             tags.Source = source;
-            tags.OperationName = operationName;
             tags.OperationType = operationType;
 
             tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
@@ -74,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             return scope;
         }
 
-        internal static void RecordExecutionErrorsIfPresent(Span span, string errorType, IReadOnlyList<IError> executionErrors)
+        internal static void RecordExecutionErrorsIfPresent(Span span, string errorType, IErrors executionErrors)
         {
             var errorCount = executionErrors?.Count ?? 0;
 
@@ -88,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             }
         }
 
-        private static string ConstructErrorMessage(IReadOnlyList<IError> executionErrors)
+        private static string ConstructErrorMessage(IErrors executionErrors)
         {
             if (executionErrors == null)
             {
