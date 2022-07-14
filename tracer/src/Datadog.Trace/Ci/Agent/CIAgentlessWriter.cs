@@ -34,7 +34,8 @@ namespace Datadog.Trace.Ci.Agent
             _eventQueue = new BlockingCollection<IEvent>(MaxItemsInQueue);
             _flushDelayEvent = new AutoResetEvent(false);
 
-            // Concurrency Level is a number between 1 and 8 depending on the number of Logical Processor Count
+            // Concurrency Level is a simple algorithm where we select a number between 1 and 8 depending on the number of Logical Processor Count
+            // To scale the number of senders with a hard limit.
             var concurrencyLevel = concurrency ?? Math.Min(Math.Max(Environment.ProcessorCount / 2, 1), 8);
             _buffersArray = new Buffers[concurrencyLevel];
             for (var i = 0; i < _buffersArray.Length; i++)
