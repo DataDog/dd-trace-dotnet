@@ -100,16 +100,16 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
-        public async Task OnlyCollectsTopLevelSpansAndMeasuredSpans()
+        public async Task CollectsTopLevelSpans()
         {
             const int millisecondsToNanoseconds = 1_000_000;
 
             // All spans should be recorded except childSpan and snapshotSpan
-            const long expectedTotalDuration = (100 + 200 + 400) * millisecondsToNanoseconds;
-            const long expectedOkDuration = (100 + 200 + 400) * millisecondsToNanoseconds;
+            const long expectedTotalDuration = (100 + 200) * millisecondsToNanoseconds;
+            const long expectedOkDuration = (100 + 200) * millisecondsToNanoseconds;
 
-            const long expectedHttpClientTotalDuration = 600 * millisecondsToNanoseconds;
-            const long expectedHttpClientOkDuration = 600 * millisecondsToNanoseconds;
+            const long expectedHttpClientTotalDuration = 400 * millisecondsToNanoseconds;
+            const long expectedHttpClientOkDuration = 400 * millisecondsToNanoseconds;
 
             var start = DateTimeOffset.UtcNow;
 
@@ -123,24 +123,16 @@ namespace Datadog.Trace.Tests.Agent
                 var parentSpan = new Span(new SpanContext(2, 2, serviceName: "service"), start);
                 parentSpan.SetDuration(TimeSpan.FromMilliseconds(200));
 
-                // childSpan shouldn't be recorded, because it's not top-level and doesn't have the Measured tag
-                var childSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
-                childSpan.SetDuration(TimeSpan.FromMilliseconds(300));
-
-                var measuredChildSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
-                measuredChildSpan.SetTag(Tags.Measured, "1");
-                measuredChildSpan.SetDuration(TimeSpan.FromMilliseconds(400));
-
                 // snapshotSpan shouldn't be recorded, because it has the PartialSnapshot metric (even though it is top-level)
                 var snapshotSpan = new Span(new SpanContext(5, 5, serviceName: "service"), start);
                 snapshotSpan.SetMetric(Tags.PartialSnapshot, 1.0);
-                snapshotSpan.SetDuration(TimeSpan.FromMilliseconds(500));
+                snapshotSpan.SetDuration(TimeSpan.FromMilliseconds(300));
 
                 // Create a new child span that is a service entry span, which means it will have stats computed for it
                 var httpClientServiceSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service-http-client"), start);
-                httpClientServiceSpan.SetDuration(TimeSpan.FromMilliseconds(600));
+                httpClientServiceSpan.SetDuration(TimeSpan.FromMilliseconds(400));
 
-                aggregator.Add(simpleSpan, parentSpan, childSpan, measuredChildSpan, snapshotSpan, httpClientServiceSpan);
+                aggregator.Add(simpleSpan, parentSpan, snapshotSpan, httpClientServiceSpan);
 
                 var buffer = aggregator.CurrentBuffer;
 
@@ -151,12 +143,12 @@ namespace Datadog.Trace.Tests.Agent
                 var serviceBucket = buffer.Buckets[serviceKey];
 
                 serviceBucket.Duration.Should().Be(expectedTotalDuration);
-                serviceBucket.Hits.Should().Be(3);
+                serviceBucket.Hits.Should().Be(2);
                 serviceBucket.Errors.Should().Be(0);
                 serviceBucket.TopLevelHits.Should().Be(2);
                 serviceBucket.ErrorSummary.GetCount().Should().Be(0);
                 serviceBucket.ErrorSummary.GetSum().Should().Be(0);
-                serviceBucket.OkSummary.GetCount().Should().Be(3.0);
+                serviceBucket.OkSummary.GetCount().Should().Be(2.0);
                 serviceBucket.OkSummary.GetSum().Should().BeApproximately(
                     expectedOkDuration, expectedOkDuration * serviceBucket.OkSummary.IndexMapping.RelativeAccuracy);
 
@@ -223,6 +215,66 @@ namespace Datadog.Trace.Tests.Agent
                 bucket.OkSummary.GetCount().Should().Be(2.0);
                 bucket.OkSummary.GetSum().Should().BeApproximately(
                     expectedOkDuration, expectedOkDuration * bucket.OkSummary.IndexMapping.RelativeAccuracy);
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+        }
+
+        [Fact]
+        public async Task CollectsMeasuredSpans()
+        {
+            const int millisecondsToNanoseconds = 1_000_000;
+
+            // All spans should be recorded except childSpan and snapshotSpan
+            const long expectedTotalDuration = 100 * millisecondsToNanoseconds;
+            const long expectedOkDuration = 100 * millisecondsToNanoseconds;
+
+            var start = DateTimeOffset.UtcNow;
+
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Timeout.InfiniteTimeSpan);
+
+            try
+            {
+                var parentSpan = new Span(new SpanContext(1, 1, serviceName: "service"), start);
+                parentSpan.OperationName = "web.request";
+                parentSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                // childSpan shouldn't be recorded, because it's not top-level and doesn't have the Measured tag
+                var childSpan = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
+                childSpan.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                var measuredChildSpan1 = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
+                measuredChildSpan1.OperationName = "child.op1";
+                measuredChildSpan1.SetTag(Tags.Measured, "1");
+                measuredChildSpan1.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                var measuredChildSpan2 = new Span(new SpanContext(parentSpan.Context, new TraceContext(Mock.Of<IDatadogTracer>()), "service"), start);
+                measuredChildSpan2.OperationName = "child.op2";
+                measuredChildSpan2.SetTag(Tags.Measured, "1");
+                measuredChildSpan2.SetDuration(TimeSpan.FromMilliseconds(100));
+
+                aggregator.Add(parentSpan, childSpan, measuredChildSpan1, measuredChildSpan2);
+
+                var buffer = aggregator.CurrentBuffer;
+
+                buffer.Buckets.Should().HaveCount(3);
+
+                foreach (var bucket in buffer.Buckets.Values)
+                {
+                    var topLevelHits = bucket.Key.OperationName == "web.request" ? 1 : 0;
+
+                    bucket.Duration.Should().Be(expectedTotalDuration);
+                    bucket.Hits.Should().Be(1);
+                    bucket.Errors.Should().Be(0);
+                    bucket.TopLevelHits.Should().Be(topLevelHits);
+                    bucket.ErrorSummary.GetCount().Should().Be(0);
+                    bucket.ErrorSummary.GetSum().Should().Be(0);
+                    bucket.OkSummary.GetCount().Should().Be(1.0);
+                    bucket.OkSummary.GetSum().Should().BeApproximately(
+                        expectedOkDuration, expectedOkDuration * bucket.OkSummary.IndexMapping.RelativeAccuracy);
+                }
             }
             finally
             {
