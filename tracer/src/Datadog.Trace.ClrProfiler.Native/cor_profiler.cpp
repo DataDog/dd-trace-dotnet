@@ -1133,15 +1133,15 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         return S_OK;
     }
 
-    const auto& module_info = GetModuleInfo(this->info_, module_id);
-
     // we have to check if the Id is in the module_ids_ vector.
     // In case is True we create a local ModuleMetadata to inject the loader.
     if (!shared::Contains(module_ids_, module_id))
     {
-        debugger_instrumentation_requester->PerformInstrumentAllIfNeeded(module_info, module_id, function_token);
+        debugger_instrumentation_requester->PerformInstrumentAllIfNeeded(module_id, function_token);
         return S_OK;
     }
+
+    const auto& module_info = GetModuleInfo(this->info_, module_id);
 
     bool has_loader_injected_in_appdomain =
         first_jit_compilation_app_domains.find(module_info.assembly.app_domain_id) !=
@@ -1151,7 +1151,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     {
         // Loader was already injected in a calltarget scenario, we don't need to do anything else here
 
-        debugger_instrumentation_requester->PerformInstrumentAllIfNeeded(module_info, module_id, function_token);
+        debugger_instrumentation_requester->PerformInstrumentAllIfNeeded(module_id, function_token);
 
         return S_OK;
     }
