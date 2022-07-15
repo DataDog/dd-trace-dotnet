@@ -270,7 +270,11 @@
     "SpecificVersions": [
       "3.6.*",
       "3.*.*"
-    ]
+    ],
+    "VersionConditions": [{
+      "MinVersion": "3.29.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
+    }]
   },
   {
     "IntegrationName": "Serilog",
