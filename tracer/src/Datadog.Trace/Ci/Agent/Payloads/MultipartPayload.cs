@@ -77,7 +77,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             }
         }
 
-        public virtual void Clear()
+        public virtual void Reset()
         {
             lock (_items)
             {

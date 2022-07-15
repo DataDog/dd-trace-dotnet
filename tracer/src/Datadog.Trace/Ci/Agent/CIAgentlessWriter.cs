@@ -327,7 +327,7 @@ namespace Datadog.Trace.Ci.Agent
                 if (CiTestCycleBuffer.HasEvents)
                 {
                     await _sender.SendPayloadAsync(CiTestCycleBuffer).ConfigureAwait(false);
-                    CiTestCycleBuffer.Clear();
+                    CiTestCycleBuffer.Reset();
                     CiTestCycleBufferWatch.Restart();
                 }
             }
@@ -343,7 +343,7 @@ namespace Datadog.Trace.Ci.Agent
                 if (CiCodeCoverageBuffer.HasEvents)
                 {
                     await _sender.SendPayloadAsync(CiCodeCoverageBuffer).ConfigureAwait(false);
-                    CiCodeCoverageBuffer.Clear();
+                    CiCodeCoverageBuffer.Reset();
                     CiCodeCoverageBufferWatch.Restart();
                 }
             }

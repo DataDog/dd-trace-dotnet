@@ -26,20 +26,15 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             }
             else
             {
-                var builder = new UriBuilder("https://datadog.host.com/api/v2/citestcov");
-                builder.Host = "event-platform-intake." + CIVisibility.Settings.Site;
-                Url = builder.Uri;
+                Url = new UriBuilder(
+                    scheme: "https",
+                    host: "event-platform-intake." + CIVisibility.Settings.Site,
+                    port: 443,
+                    pathValue: "api/v2/citestcov").Uri;
             }
 
-            // This is a current limitation in the backend side
-            // an "event" item must be included in each payload.
-            // So here we are adding a dummy one.
-            AddMultipartFormItem(
-                new MultipartFormItem(
-                    "event",
-                    MimeTypes.Json,
-                    "fileevent.json",
-                    new ArraySegment<byte>(Encoding.UTF8.GetBytes("{\"dummy\": true}"))));
+            // We call reset here to add the dummy event
+            Reset();
         }
 
         public override Uri Url { get; }
@@ -65,9 +60,9 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             return new MultipartFormItem($"coverage{index}", MimeTypes.MsgPack, $"filecoverage{index}.msgpack", eventInBytes);
         }
 
-        public override void Clear()
+        public override void Reset()
         {
-            base.Clear();
+            base.Reset();
 
             // This is a current limitation in the backend side
             // an "event" item must be included in each payload.

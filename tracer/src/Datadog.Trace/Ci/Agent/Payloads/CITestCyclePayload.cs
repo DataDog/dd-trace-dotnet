@@ -23,9 +23,11 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             }
             else
             {
-                var builder = new UriBuilder("https://datadog.host.com/api/v2/citestcycle");
-                builder.Host = "citestcycle-intake." + CIVisibility.Settings.Site;
-                Url = builder.Uri;
+                Url = new UriBuilder(
+                    scheme: "https",
+                    host: "citestcycle-intake." + CIVisibility.Settings.Site,
+                    port: 443,
+                    pathValue: "api/v2/citestcycle").Uri;
             }
         }
 

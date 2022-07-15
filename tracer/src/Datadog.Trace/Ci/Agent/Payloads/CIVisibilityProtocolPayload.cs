@@ -35,7 +35,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 
         public bool TryProcessEvent(IEvent @event) => _events.TryWrite(@event);
 
-        public void Clear() => _events.Clear();
+        public void Reset() => _events.Clear();
 
         public byte[] ToArray() => MessagePackSerializer.Serialize(this, _formatterResolver);
     }

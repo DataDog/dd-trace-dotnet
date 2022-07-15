@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -11,7 +13,6 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Agent
 {
@@ -33,7 +34,7 @@ namespace Datadog.Trace.Ci.Agent
         public async Task SendPayloadAsync(CIVisibilityProtocolPayload payload)
         {
             var payloadArray = payload.ToArray();
-            Log.Information<int, string>("Sending ({numberOfTraces} events) {bytesValue} bytes...", payload.Count, payloadArray.Length.ToString("N0"));
+            Log.Debug<int, string>("Sending ({numberOfTraces} events) {bytesValue} bytes...", payload.Count, payloadArray.Length.ToString("N0"));
             await SendPayloadAsync(
                 payload.Url,
                 static (request, payloadBytes) => request.PostAsync(new ArraySegment<byte>(payloadBytes), MimeTypes.MsgPack),
@@ -42,7 +43,7 @@ namespace Datadog.Trace.Ci.Agent
 
         public async Task SendPayloadAsync(MultipartPayload payload)
         {
-            Log.Information<int>("Sending {count} multipart items...", payload.Count);
+            Log.Debug<int>("Sending {count} multipart items...", payload.Count);
             await SendPayloadAsync(
                 payload.Url,
                 static (request, payloadArray) =>
@@ -52,7 +53,7 @@ namespace Datadog.Trace.Ci.Agent
                         return multipartRequest.PostAsync(payloadArray);
                     }
 
-                    ThrowHelper.ThrowInvalidOperationException("Sender doesn't support IMultipartApiRequest.");
+                    MultipartApiRequestNotSupported.Throw();
                     return Task.FromResult<IApiResponse>(null);
                 },
                 payload.ToArray()).ConfigureAwait(false);
@@ -123,6 +124,11 @@ namespace Datadog.Trace.Ci.Agent
                 {
                     success = await SendPayloadAsync(senderFunc, request, state, isFinalTry).ConfigureAwait(false);
                 }
+                catch (MultipartApiRequestNotSupported mReqEx)
+                {
+                    Log.Error(mReqEx, "Error trying to send a multipart request to: {url}", url.ToString());
+                    return;
+                }
                 catch (Exception ex)
                 {
                     exception = ex;
@@ -178,6 +184,18 @@ namespace Datadog.Trace.Ci.Agent
                 Log.Debug<string>("Successfully sent events to {AgentEndpoint}", _apiRequestFactory.Info(url));
                 return;
             }
+        }
+
+        internal class MultipartApiRequestNotSupported : NotSupportedException
+        {
+            public MultipartApiRequestNotSupported()
+                : base("Sender doesn't support IMultipartApiRequest.")
+            {
+            }
+
+            [DebuggerHidden]
+            [DoesNotReturn]
+            public static void Throw() => throw new MultipartApiRequestNotSupported();
         }
     }
 }
