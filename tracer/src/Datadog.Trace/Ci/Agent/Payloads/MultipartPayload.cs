@@ -33,7 +33,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 
         public abstract Uri Url { get; }
 
-        public bool HasEvents => _items.Count > 0;
+        public virtual bool HasEvents => _items.Count > 0;
 
         public int Count => _items.Count;
 

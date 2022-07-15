@@ -44,6 +44,16 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 
         public override Uri Url { get; }
 
+        public override bool HasEvents
+        {
+            get
+            {
+                // The List will always have at least 1 item due the backend limitation.
+                // By comparing > 1 will avoid sending an empty payload each second.
+                return Count > 1;
+            }
+        }
+
         public override bool CanProcessEvent(IEvent @event)
         {
             return @event is CoveragePayload;
