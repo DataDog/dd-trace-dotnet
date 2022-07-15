@@ -104,7 +104,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             const int millisecondsToNanoseconds = 1_000_000;
 
-            // All spans should be recorded except childSpan and snapshotSpan
+            // All spans should be recorded except snapshotSpan
             const long expectedTotalDuration = (100 + 200) * millisecondsToNanoseconds;
             const long expectedOkDuration = (100 + 200) * millisecondsToNanoseconds;
 
@@ -177,7 +177,6 @@ namespace Datadog.Trace.Tests.Agent
         {
             const int millisecondsToNanoseconds = 1_000_000;
 
-            // All spans should be recorded except childSpan and snapshotSpan
             const long expectedTotalDuration = (100 + 200 + 400) * millisecondsToNanoseconds;
             const long expectedOkDuration = (100 + 200) * millisecondsToNanoseconds;
             const long expectedErrorDuration = 400 * millisecondsToNanoseconds;
@@ -227,7 +226,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             const int millisecondsToNanoseconds = 1_000_000;
 
-            // All spans should be recorded except childSpan and snapshotSpan
+            // All spans should be recorded except childSpan
             const long expectedTotalDuration = 100 * millisecondsToNanoseconds;
             const long expectedOkDuration = 100 * millisecondsToNanoseconds;
 
@@ -279,6 +278,57 @@ namespace Datadog.Trace.Tests.Agent
             finally
             {
                 await aggregator.DisposeAsync();
+            }
+        }
+
+        [Fact]
+        public async Task RelativeErrorIsAccurate()
+        {
+            var start = DateTimeOffset.UtcNow;
+
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Timeout.InfiniteTimeSpan);
+
+            try
+            {
+                int sampleCount = 100;
+                var durations = new double[sampleCount];
+                for (int i = 0; i < sampleCount; i++)
+                {
+                    var span = new Span(new SpanContext((ulong)i, (ulong)i, serviceName: "service"), start);
+                    var duration = TimeSpan.FromMilliseconds(i * 100);
+
+                    span.SetDuration(duration);
+                    durations[i] = ConvertTimestamp(duration.ToNanoseconds());
+                    aggregator.Add(span);
+                }
+
+                var buffer = aggregator.CurrentBuffer;
+                buffer.Buckets.Should().HaveCount(1);
+                var bucket = buffer.Buckets.Values.Single();
+
+                // Sort the durations so we can grab the actual sample that corresponds with a quantile
+                Array.Sort(durations);
+                double[] quantiles = new double[] { 0.5, 0.75, 0.95, 0.99, 1 };
+
+                foreach (var quantile in quantiles)
+                {
+                    var actualQuantileValue = durations[GetQuantileIndex(quantile, sampleCount)];
+                    var ddSketchQuantileValue = bucket.OkSummary.GetValueAtQuantile(quantile);
+                    ddSketchQuantileValue.Should().BeApproximately(actualQuantileValue, actualQuantileValue * bucket.OkSummary.IndexMapping.RelativeAccuracy, "We expect quantiles to be accurate at quantile {0}", quantile);
+                }
+            }
+            finally
+            {
+                await aggregator.DisposeAsync();
+            }
+
+            // Accepted values of quantile are 0 <= q <= 1
+            // If q = 0, returns 0
+            // If q = 1, returns arrayLength - 1
+            static int GetQuantileIndex(double quantile, int arrayLength)
+            {
+                var numberOfElementsLessThanOrEqualTo = (int)Math.Floor(1 + (quantile * (arrayLength - 1)));
+                return numberOfElementsLessThanOrEqualTo - 1;
             }
         }
 
@@ -362,5 +412,22 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         private static ImmutableTracerSettings GetSettings() => new TracerSettings().Build();
+
+        // Re-implement timestamp conversion to independently verify the operation
+        private static double ConvertTimestamp(long ns)
+        {
+            // 10 bits precision (any value will be +/- 1/1024)
+            const long roundMask = 1 << 10;
+
+            int shift = 0;
+
+            while (ns > roundMask)
+            {
+                ns >>= 1;
+                shift++;
+            }
+
+            return ns << shift;
+        }
     }
 }

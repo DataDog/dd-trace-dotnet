@@ -137,7 +137,9 @@ namespace Datadog.Trace.Agent
         }
 
         /// <summary>
-        /// Converts a nanosec timestamp into a float nanosecond timestamp truncated to a fixed precision
+        /// Converts a nanosec timestamp into a float nanosecond timestamp truncated to a fixed precision.
+        /// Span timestamps must have maximum precision, but we can reduce precision of timestamps for
+        /// aggregated stats points to achieve more efficient data representation.
         /// </summary>
         /// <param name="ns">Timestamp to convert</param>
         /// <returns>Timestamp with truncated precision</returns>
