@@ -90,7 +90,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
                     coveragePayload.SpanId = span.SpanId;
                 }
 
-                span.SetTag("test.coverage", Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(coveragePayload));
                 Ci.CIVisibility.Manager?.WriteEvent(coveragePayload);
             }
         }

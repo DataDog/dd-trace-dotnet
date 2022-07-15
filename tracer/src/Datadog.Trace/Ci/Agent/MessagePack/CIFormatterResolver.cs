@@ -17,7 +17,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         public static readonly IFormatterResolver Instance = new CIFormatterResolver();
 
         private readonly IMessagePackFormatter<Span> _spanFormatter;
-        private readonly IMessagePackFormatter<EventsPayload> _eventsPayloadFormatter;
+        private readonly IMessagePackFormatter<CIVisibilityProtocolPayload> _eventsPayloadFormatter;
         private readonly IMessagePackFormatter<IEvent> _eventFormatter;
         private readonly IMessagePackFormatter<TestEvent> _testEventFormatter;
         private readonly IMessagePackFormatter<SpanEvent> _spanEventFormatter;
@@ -40,7 +40,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 return (IMessagePackFormatter<T>)_spanFormatter;
             }
 
-            if (typeof(T) == typeof(EventsPayload))
+            if (typeof(T) == typeof(CIVisibilityProtocolPayload))
             {
                 return (IMessagePackFormatter<T>)_eventsPayloadFormatter;
             }
