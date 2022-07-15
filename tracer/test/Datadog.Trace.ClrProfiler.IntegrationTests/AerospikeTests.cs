@@ -3,8 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
-using System.Linq;
+using System;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -43,6 +42,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 spans.Count.Should().Be(expectedSpanCount);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
+
+                // older versions of Aerospike use QueryRecord instead of QueryPartition
+                // Normalize to QueryPartition for simplicity
+                if (string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) < new Version(5, 0, 0))
+                {
+                    settings.AddSimpleScrubber("QueryRecord", "QueryPartition");
+                }
+
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .DisableRequireUniquePrefix()
                                   .UseFileName(nameof(AerospikeTests));

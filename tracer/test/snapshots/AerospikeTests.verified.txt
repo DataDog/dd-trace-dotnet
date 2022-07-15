@@ -191,7 +191,7 @@
     TraceId: Id_17,
     SpanId: Id_18,
     Name: aerospike.command,
-    Resource: QueryRecord,
+    Resource: QueryPartition,
     Service: Samples.Aerospike-aerospike,
     Type: aerospike,
     Tags: {
