@@ -56,7 +56,7 @@ namespace Datadog.Trace.Ci
             {
                 if (!string.IsNullOrEmpty(_settings.ApiKey))
                 {
-                    return new CIAgentlessWriter(new CIWriterHttpSender(GetRequestFactory(settings)));
+                    return new CIAgentlessWriter(new CIWriterHttpSender(CIVisibility.GetRequestFactory(settings)));
                 }
                 else
                 {
@@ -72,49 +72,6 @@ namespace Datadog.Trace.Ci
                 var traceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
                 return new CIAgentWriter(settings, sampler, traceBufferSize);
             }
-        }
-
-        private IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings)
-        {
-            IApiRequestFactory factory = null;
-            TimeSpan agentlessTimeout = TimeSpan.FromSeconds(15);
-
-#if NETCOREAPP
-            Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
-            factory = new HttpClientRequestFactory(settings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: agentlessTimeout);
-#else
-            Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-            factory = new ApiWebRequestFactory(settings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: agentlessTimeout);
-#endif
-
-            if (!string.IsNullOrWhiteSpace(_settings.ProxyHttps))
-            {
-                var proxyHttpsUriBuilder = new UriBuilder(_settings.ProxyHttps);
-
-                var userName = proxyHttpsUriBuilder.UserName;
-                var password = proxyHttpsUriBuilder.Password;
-
-                proxyHttpsUriBuilder.UserName = string.Empty;
-                proxyHttpsUriBuilder.Password = string.Empty;
-
-                if (proxyHttpsUriBuilder.Scheme == "https")
-                {
-                    // HTTPS proxy is not supported by .NET BCL
-                    Log.Error($"HTTPS proxy is not supported. ({proxyHttpsUriBuilder})");
-                    return factory;
-                }
-
-                NetworkCredential credential = null;
-                if (!string.IsNullOrWhiteSpace(userName))
-                {
-                    credential = new NetworkCredential(userName, password);
-                }
-
-                Log.Information("Setting proxy to: {ProxyHttps}", proxyHttpsUriBuilder.Uri.ToString());
-                factory.SetProxy(new WebProxy(proxyHttpsUriBuilder.Uri, true, _settings.ProxyNoProxy, credential), credential);
-            }
-
-            return factory;
         }
     }
 }

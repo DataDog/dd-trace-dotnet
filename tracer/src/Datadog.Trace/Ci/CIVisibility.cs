@@ -4,14 +4,17 @@
 // </copyright>
 
 using System;
-using System.Diagnostics;
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PDBs;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci
 {
@@ -50,6 +53,7 @@ namespace Datadog.Trace.Ci
             }
 
             Log.Information("Initializing CI Visibility");
+            Log.Information("Environment.CommandLine: {cmd}", Environment.CommandLine);
 
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
@@ -63,9 +67,28 @@ namespace Datadog.Trace.Ci
                 tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
             }
 
+            // Update and upload git tree metadata.
+            Log.Information("Update and uploading git tree metadata.");
+            var itrClient = new ITRClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
+            var tskItrUpdate = UploadGitMetadataAsync();
+            LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
+
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
             TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings));
+
+            static async Task UploadGitMetadataAsync()
+            {
+                try
+                {
+                    var itrClient = new ITRClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
+                    await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "ITR: Error uploading repository git metadata.");
+                }
+            }
         }
 
         internal static void FlushSpans()
@@ -121,6 +144,49 @@ namespace Datadog.Trace.Ci
             return string.Empty;
         }
 
+        internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings)
+        {
+            IApiRequestFactory factory = null;
+            TimeSpan agentlessTimeout = TimeSpan.FromSeconds(15);
+
+#if NETCOREAPP
+            Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
+            factory = new HttpClientRequestFactory(settings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: agentlessTimeout);
+#else
+            Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
+            factory = new ApiWebRequestFactory(settings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: agentlessTimeout);
+#endif
+
+            if (!string.IsNullOrWhiteSpace(_settings.ProxyHttps))
+            {
+                var proxyHttpsUriBuilder = new UriBuilder(_settings.ProxyHttps);
+
+                var userName = proxyHttpsUriBuilder.UserName;
+                var password = proxyHttpsUriBuilder.Password;
+
+                proxyHttpsUriBuilder.UserName = string.Empty;
+                proxyHttpsUriBuilder.Password = string.Empty;
+
+                if (proxyHttpsUriBuilder.Scheme == "https")
+                {
+                    // HTTPS proxy is not supported by .NET BCL
+                    Log.Error($"HTTPS proxy is not supported. ({proxyHttpsUriBuilder})");
+                    return factory;
+                }
+
+                NetworkCredential credential = null;
+                if (!string.IsNullOrWhiteSpace(userName))
+                {
+                    credential = new NetworkCredential(userName, password);
+                }
+
+                Log.Information("Setting proxy to: {ProxyHttps}", proxyHttpsUriBuilder.Uri.ToString());
+                factory.SetProxy(new WebProxy(proxyHttpsUriBuilder.Uri, true, _settings.ProxyNoProxy, credential), credential);
+            }
+
+            return factory;
+        }
+
         private static async Task InternalFlushAsync()
         {
             try
@@ -157,8 +223,18 @@ namespace Datadog.Trace.Ci
 
         private static bool InternalEnabled()
         {
+            var processName = ProcessHelpers.GetCurrentProcessName();
+
+            // By configuration
             if (_settings.Enabled)
             {
+                // When is enabled by configuration we only enable it to the testhost child process if the process name is dotnet.
+                if (processName?.Equals("dotnet", StringComparison.OrdinalIgnoreCase) == true && Environment.CommandLine.IndexOf("testhost.dll", StringComparison.OrdinalIgnoreCase) == -1)
+                {
+                    Log.Information("CI Visibility disabled because the commandline doesn't contains testhost.dll when the process name is dotnet: {cmdline}", Environment.CommandLine);
+                    return false;
+                }
+
                 Log.Information("CI Visibility Enabled by Configuration");
                 return true;
             }
@@ -166,32 +242,29 @@ namespace Datadog.Trace.Ci
             // Try to autodetect based in the domain name.
             string domainName = AppDomain.CurrentDomain.FriendlyName;
             if (domainName != null &&
-                (domainName.StartsWith("testhost") == true ||
-                 domainName.StartsWith("vstest") == true ||
-                 domainName.StartsWith("xunit") == true ||
-                 domainName.StartsWith("nunit") == true ||
-                 domainName.StartsWith("MSBuild") == true))
+                (domainName.StartsWith("testhost", StringComparison.Ordinal) ||
+                 domainName.StartsWith("vstest", StringComparison.Ordinal) ||
+                 domainName.StartsWith("xunit", StringComparison.Ordinal) ||
+                 domainName.StartsWith("nunit", StringComparison.Ordinal) ||
+                 domainName.StartsWith("MSBuild", StringComparison.Ordinal)))
             {
                 Log.Information("CI Visibility Enabled by Domain name whitelist");
-
-                try
-                {
-                    // Set the configuration key to propagate the configuration to child processes.
-                    Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
-                }
-                catch
-                {
-                    // .
-                }
-
+                PropagateCiVisibilityEnvironmentVariable();
                 return true;
             }
 
             // Try to autodetect based in the process name.
-            if (Process.GetCurrentProcess()?.ProcessName?.StartsWith("testhost.") == true)
+            if (processName?.StartsWith("testhost.") == true)
             {
                 Log.Information("CI Visibility Enabled by Process name whitelist");
+                PropagateCiVisibilityEnvironmentVariable();
+                return true;
+            }
 
+            return false;
+
+            static void PropagateCiVisibilityEnvironmentVariable()
+            {
                 try
                 {
                     // Set the configuration key to propagate the configuration to child processes.
@@ -201,11 +274,7 @@ namespace Datadog.Trace.Ci
                 {
                     // .
                 }
-
-                return true;
             }
-
-            return false;
         }
     }
 }
