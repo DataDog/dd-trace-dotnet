@@ -696,8 +696,7 @@ partial class Build
 
     Target CompileInstrumentationVerificationLibrary => _ => _
         .Unlisted()
-        .DependsOn(Restore)
-        .After(CompileManagedSrc)
+        .After(Restore, CompileManagedSrc)
         .Executes(() =>
         {
             DotNetMSBuild(x => x
