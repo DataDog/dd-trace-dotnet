@@ -3,17 +3,20 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
-using System.Linq;
+using System;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using FluentAssertions.Execution;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
+    [UsesVerify]
     public class AerospikeTests : TestHelper
     {
         public AerospikeTests(ITestOutputHelper output)
@@ -26,72 +29,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(PackageVersions.Aerospike), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitTraces(string packageVersion)
+        public async Task SubmitTraces(string packageVersion)
         {
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var expectedSpans = new List<string>
+                const int expectedSpanCount = 10 + 9; // Sync + async
+                var spans = agent.WaitForSpans(expectedSpanCount);
+
+                using var s = new AssertionScope();
+                spans.Count.Should().Be(expectedSpanCount);
+
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+
+                // older versions of Aerospike use QueryRecord instead of QueryPartition
+                // Normalize to QueryPartition for simplicity
+                if (string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) < new Version(5, 0, 0))
                 {
-                    // Synchronous
-                    "Write",
-                    "Write",
-                    "Write",
-                    "Write",
-                    "Read",
-                    "Exists",
-                    "BatchGetArray",
-                    "BatchExistsArray",
-                    "QueryRecord",
-                    "Delete",
+                    settings.AddSimpleScrubber("QueryRecord", "QueryPartition");
+                }
 
-                    // Asynchronous
-                    "Write",
-                    "Write",
-                    "Write",
-                    "Write",
-                    "Read",
-                    "Exists",
-                    "BatchGetArray",
-                    "BatchExistsArray",
-                    "Delete",
-                };
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .DisableRequireUniquePrefix()
+                                  .UseFileName(nameof(AerospikeTests));
 
-                var spans = agent.WaitForSpans(expectedSpans.Count)
-                                 .Where(s => s.Type == "aerospike")
-                                 .OrderBy(s => s.Start)
-                                 .ToList();
-
-                spans.Should()
-                     .OnlyContain(span => span.Name == "aerospike.command")
-                     .And.OnlyContain(span => span.Service == "Samples.Aerospike-aerospike")
-                     .And.OnlyContain(span => span.Tags[Tags.SpanKind] == SpanKinds.Client)
-                     .And.OnlyContain(span => ValidateSpanKey(span));
-
-                spans.Select(span => span.Resource).Should().ContainInOrder(expectedSpans);
                 telemetry.AssertIntegrationEnabled(IntegrationId.Aerospike);
-            }
-        }
-
-        private static bool ValidateSpanKey(MockSpan span)
-        {
-            if (span.Resource.Contains("Batch"))
-            {
-                return span.Tags[Tags.AerospikeKey] == "test:myset1:mykey1;test:myset2:mykey2;test:myset3:mykey3";
-            }
-            else if (span.Resource.Contains("Record"))
-            {
-                return span.Tags[Tags.AerospikeKey] == "test:myset1"
-                    && span.Tags[Tags.AerospikeNamespace] == "test"
-                    && span.Tags[Tags.AerospikeSetName] == "myset1";
-            }
-            else
-            {
-                return span.Tags[Tags.AerospikeKey] == "test:myset1:mykey1"
-                    && span.Tags[Tags.AerospikeNamespace] == "test"
-                    && span.Tags[Tags.AerospikeSetName] == "myset1"
-                    && span.Tags[Tags.AerospikeUserKey] == "mykey1";
             }
         }
     }
