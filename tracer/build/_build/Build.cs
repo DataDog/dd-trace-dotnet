@@ -61,7 +61,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "2.12.0";
+    readonly string Version = "2.13.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -165,7 +165,6 @@ partial class Build : NukeBuild
     Target BuildProfilerHome => _ => _
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
         .After(Clean)
-        .DependsOn(CompileProfilerManagedSrc)
         .DependsOn(CompileProfilerNativeSrc)
         .DependsOn(PublishProfiler);
 

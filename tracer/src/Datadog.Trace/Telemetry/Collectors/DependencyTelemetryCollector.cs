@@ -42,7 +42,12 @@ namespace Datadog.Trace.Telemetry
                || assemblyName.StartsWith("App_GlobalResources.", StringComparison.Ordinal)
                || assemblyName.StartsWith("App_global.asax.", StringComparison.Ordinal)
                || assemblyName.StartsWith("App_Code.", StringComparison.Ordinal)
-               || assemblyName.StartsWith("App_WebReferences.", StringComparison.Ordinal))))
+               || assemblyName.StartsWith("App_WebReferences.", StringComparison.Ordinal)))
+             || (assemblyName.Length == 36
+              && assemblyName[8] == '-'
+              && assemblyName[13] == '-'
+              && assemblyName[18] == '-'
+              && assemblyName[23] == '-'))
             {
                 return;
             }

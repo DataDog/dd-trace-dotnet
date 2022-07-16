@@ -1,7 +1,7 @@
 parameters:
   - name: 'baseImage'
     type: 'string'
-    default: debian
+    default: centos7
 
   - name: 'target'
     type: 'string'

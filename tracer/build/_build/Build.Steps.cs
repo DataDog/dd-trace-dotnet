@@ -194,7 +194,7 @@ partial class Build
             EnsureExistingDirectory(buildDirectory);
 
             CMake.Value(
-                arguments: $"-B {buildDirectory} -S {NativeProfilerProject.Directory} -DCMAKE_BUILD_TYPE=Release");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {buildDirectory} -S {NativeProfilerProject.Directory} -DCMAKE_BUILD_TYPE=Release");
             CMake.Value(
                 arguments: $"--build {buildDirectory} --parallel");
         });
@@ -627,20 +627,17 @@ partial class Build
                 var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
                 EnsureCleanDirectory(workingDirectory);
 
-                if (!IsArm64)
-                {
-                    var tracerNativeFile = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
-                    var newTracerNativeFile = MonitoringHomeDirectory / "tracer" / "Datadog.Tracer.Native.so";
-                    MoveFile(tracerNativeFile, newTracerNativeFile);
+                var tracerNativeFile = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
+                var newTracerNativeFile = MonitoringHomeDirectory / "tracer" / "Datadog.Tracer.Native.so";
+                MoveFile(tracerNativeFile, newTracerNativeFile);
 
-                    // For backward compatibility, we need to rename Datadog.AutoInstrumentation.NativeLoader.so into Datadog.Trace.ClrProfiler.Native.so
-                    var sourceFile = MonitoringHomeDirectory / "Datadog.AutoInstrumentation.NativeLoader.so";
-                    var newName = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
-                    RenameFile(sourceFile, newName);
-                }
+                // For backward compatibility, we need to rename Datadog.AutoInstrumentation.NativeLoader.so into Datadog.Trace.ClrProfiler.Native.so
+                var sourceFile = MonitoringHomeDirectory / "Datadog.AutoInstrumentation.NativeLoader.so";
+                var newName = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
+                RenameFile(sourceFile, newName);
 
                 // somehow the permissions are lost along the way, ensure they are correctly set here
-                var createLogPathScript = (IsArm64 ? TracerHomeDirectory : MonitoringHomeDirectory) / "createLogPath.sh";
+                var createLogPathScript = MonitoringHomeDirectory / "createLogPath.sh";
                 chmod.Invoke("+x " + createLogPathScript);
 
                 ExtractDebugInfoAndStripSymbols();
@@ -655,7 +652,7 @@ partial class Build
                         $"-n {packageName}",
                         $"-v {Version}",
                         packageType == "tar" ? "" : "--prefix /opt/datadog",
-                        $"--chdir {(IsArm64 ? TracerHomeDirectory : MonitoringHomeDirectory)}",
+                        $"--chdir {MonitoringHomeDirectory}",
                         "createLogPath.sh",
                         "netstandard2.0/",
                         "netcoreapp3.1/",
@@ -664,13 +661,9 @@ partial class Build
                     };
 
                     args.Add("libddwaf.so");
-
-                    if (!IsArm64)
-                    {
-                        args.Add("tracer/");
-                        args.Add("continuousprofiler/");
-                        args.Add("loader.conf");
-                    }
+                    args.Add("tracer/");
+                    args.Add("continuousprofiler/");
+                    args.Add("loader.conf");
 
                     var arguments = string.Join(" ", args);
                     fpm(arguments, workingDirectory: workingDirectory);
@@ -696,8 +689,7 @@ partial class Build
 
     Target CompileInstrumentationVerificationLibrary => _ => _
         .Unlisted()
-        .DependsOn(Restore)
-        .After(CompileManagedSrc)
+        .After(Restore, CompileManagedSrc)
         .Executes(() =>
         {
             DotNetMSBuild(x => x
@@ -707,7 +699,7 @@ partial class Build
                 .SetProperty("BuildProjectReferences", true)
                 .SetTargets("BuildInstrumentationVerificationLibrary"));
         });
-                                                        
+
     Target CompileManagedTestHelpers => _ => _
         .Unlisted()
         .DependsOn(CompileInstrumentationVerificationLibrary)

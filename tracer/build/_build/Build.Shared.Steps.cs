@@ -42,14 +42,13 @@ partial class Build
 
     Target CompileNativeLoaderLinux => _ => _
         .Unlisted()
-        .After(CompileProfilerManagedSrc)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
             var buildDirectory = NativeLoaderProject.Directory;
 
             CMake.Value(
-                arguments: $"-S .",
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -S .",
                 workingDirectory: buildDirectory);
             CMake.Value(
                 arguments: $"--build . --parallel",
@@ -58,7 +57,6 @@ partial class Build
 
     Target CompileNativeLoaderOsx => _ => _
         .Unlisted()
-        .After(CompileProfilerManagedSrc)
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {

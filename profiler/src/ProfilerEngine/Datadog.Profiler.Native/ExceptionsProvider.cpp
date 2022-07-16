@@ -204,13 +204,6 @@ bool ExceptionsProvider::GetExceptionType(ClassID classId, std::string& exceptio
     return true;
 }
 
-void ExceptionsProvider::OnTransformRawSample(const RawExceptionSample& rawSample, Sample& sample)
-{
-    sample.AddValue(1, SampleValue::ExceptionCount);
-    sample.AddLabel(Label(Sample::ExceptionMessageLabel, rawSample.ExceptionMessage));
-    sample.AddLabel(Label(Sample::ExceptionTypeLabel, rawSample.ExceptionType));
-}
-
 bool ExceptionsProvider::LoadExceptionMetadata()
 {
     // This is the first observed exception, lazy-load the exception metadata

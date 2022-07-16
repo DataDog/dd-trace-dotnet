@@ -154,18 +154,15 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             offset = tagWriter.Offset;
             count += tagWriter.Count;
 
-            if (span.IsRootSpan && span.Context.TraceContext?.Tags is { } traceTags)
+            if (span.IsRootSpan && span.Context.TraceContext != null)
             {
                 // write trace-level string tags
-                lock (traceTags)
-                {
-                    count += traceTags.Count;
+                var traceTags = span.Context.TraceContext.Tags.ToArray();
+                count += traceTags.Length;
 
-                    // don't cast to IEnumerable so we can use the struct enumerator from List<T>
-                    foreach (var tag in traceTags)
-                    {
-                        WriteTag(ref bytes, ref offset, tag.Key, tag.Value, tagProcessors);
-                    }
+                foreach (var tag in traceTags)
+                {
+                    WriteTag(ref bytes, ref offset, tag.Key, tag.Value, tagProcessors);
                 }
             }
 

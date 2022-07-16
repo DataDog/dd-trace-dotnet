@@ -10,24 +10,3 @@ ProviderBase::ProviderBase(const char* name)
     _name {name}
 {
 }
-
-void ProviderBase::Store(Sample&& sample)
-{
-    std::lock_guard<std::mutex> lock(_samplesLock);
-
-    _samples.push_back(std::move(sample));
-}
-
-
-std::list<Sample> ProviderBase::GetSamples()
-{
-    std::lock_guard<std::mutex> lock(_samplesLock);
-
-    auto samplesToReturn = std::move(_samples);  // _samples is empty now
-
-#if _DEBUG
-    Log::Info("Provider '", _name, "' --> ", samplesToReturn.size(), " samples.");
-#endif
-
-    return samplesToReturn;
-}

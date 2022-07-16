@@ -20,6 +20,7 @@ namespace Datadog.Trace.Tests
         private const ulong SpanId = 2;
         private const int SamplingPriority = SamplingPriorityValues.UserReject;
         private const string Origin = "origin";
+        private const string PropagatedTags = "key1=value1;key2=value2";
 
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
 
@@ -29,6 +30,7 @@ namespace Datadog.Trace.Tests
             new(HttpHeaderNames.ParentId, SpanId.ToString(InvariantCulture)),
             new(HttpHeaderNames.SamplingPriority, SamplingPriority.ToString(InvariantCulture)),
             new(HttpHeaderNames.Origin, Origin),
+            new(HttpHeaderNames.PropagatedTags, PropagatedTags),
         };
 
         public static TheoryData<string> GetInvalidIds() => new()
@@ -43,7 +45,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void Inject_IHeadersCollection()
         {
-            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
+            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin) { PropagatedTags = PropagatedTags };
             var headers = new Mock<IHeadersCollection>();
 
             SpanContextPropagator.Instance.Inject(context, headers.Object);
@@ -54,7 +56,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void Inject_CarrierAndDelegate()
         {
-            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
+            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin) { PropagatedTags = PropagatedTags };
 
             // using IHeadersCollection for convenience, but carrier could be any type
             var headers = new Mock<IHeadersCollection>();
@@ -67,7 +69,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void Inject_TraceIdSpanIdOnly()
         {
-            var context = new SpanContext(TraceId, SpanId, samplingPriority: null, serviceName: null, origin: null);
+            var context = new SpanContext(TraceId, SpanId, samplingPriority: null, serviceName: null, origin: null) { PropagatedTags = null };
             var headers = new Mock<IHeadersCollection>();
 
             SpanContextPropagator.Instance.Inject(context, headers.Object);
@@ -109,6 +111,7 @@ namespace Datadog.Trace.Tests
                            SpanId = SpanId,
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
+                           PropagatedTags = PropagatedTags,
                        });
         }
 
@@ -129,6 +132,7 @@ namespace Datadog.Trace.Tests
                            SpanId = SpanId,
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
+                           PropagatedTags = PropagatedTags,
                        });
         }
 
@@ -148,6 +152,7 @@ namespace Datadog.Trace.Tests
                            SpanId = SpanId,
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
+                           PropagatedTags = PropagatedTags,
                        });
         }
 
@@ -175,7 +180,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void SpanContextRoundTrip()
         {
-            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
+            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin) { PropagatedTags = PropagatedTags };
             var result = SpanContextPropagator.Instance.Extract(context);
 
             result.Should().NotBeSameAs(context);
@@ -185,7 +190,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void Identity()
         {
-            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin);
+            var context = new SpanContext(TraceId, SpanId, SamplingPriority, serviceName: null, Origin) { PropagatedTags = PropagatedTags };
             var headers = new NameValueHeadersCollection(new NameValueCollection());
 
             SpanContextPropagator.Instance.Inject(context, headers);
@@ -229,6 +234,7 @@ namespace Datadog.Trace.Tests
                            TraceId = TraceId,
                            Origin = Origin,
                            SamplingPriority = SamplingPriority,
+                           PropagatedTags = PropagatedTags,
                        });
         }
 
@@ -259,6 +265,7 @@ namespace Datadog.Trace.Tests
                            SpanId = SpanId,
                            Origin = Origin,
                            SamplingPriority = expectedSamplingPriority,
+                           PropagatedTags = PropagatedTags,
                        });
         }
 
@@ -338,6 +345,8 @@ namespace Datadog.Trace.Tests
         public string Origin { get; set; }
 
         public int? SamplingPriority { get; set; }
+
+        public string PropagatedTags { get; set; }
 
         public ISpanContext Parent { get; set; }
 

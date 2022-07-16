@@ -46,8 +46,6 @@
             <NativeLinuxX86DeployFilesSrcDir>$(BaseOutputPath)\$(Configuration)-x86\profiler\src\ProfilerEngine\Datadog.Profiler.Native.Linux</NativeLinuxX86DeployFilesSrcDir>
             <NativeLinuxX64DeployFilesSrcDir>$(BaseOutputPath)\$(Configuration)-x64\profiler\src\ProfilerEngine\Datadog.Profiler.Native.Linux</NativeLinuxX64DeployFilesSrcDir>
 
-            <ManagedDeployFilesSrcDir>$(BaseOutputPath)\$(Configuration)-AnyCPU\profiler\src\ProfilerEngine\Datadog.Profiler.Managed</ManagedDeployFilesSrcDir>
-
         </PropertyGroup>
 
         <ItemGroup>
@@ -59,16 +57,11 @@
             <NativeX64DeployFiles Include="$(NativeWindowsX64DeployFilesSrcDir)\*.pdb" />
             <NativeX64DeployFiles Include="$(NativeLinuxX64DeployFilesSrcDir)\*.so" />
 
-            <ManagedDeployFiles Include="$(ManagedDeployFilesSrcDir)\**\*.dll" />
-            <ManagedDeployFiles Include="$(ManagedDeployFilesSrcDir)\**\*.pdb" />
-
-            <AdditionalDeployFiles Include="$(MSBuildThisFileDirectory)\DeployResources\Activate-Installed-DotNet-Monitoring.bat"/>
             <AdditionalDeployFiles Include="$(MSBuildThisFileDirectory)\DeployResources\DDProf-SetEnv.bat"/>
             <AdditionalDeployFiles Include="$(MSBuildThisFileDirectory)\DeployResources\DDProf-SetEnv.sh"/>
 
             <AllDeployFiles Include="@(NativeX86DeployFiles)" />
             <AllDeployFiles Include="@(NativeX64DeployFiles)" />
-            <AllDeployFiles Include="@(ManagedDeployFiles)" />
             <AllDeployFiles Include="@(AdditionalDeployFiles)" />
 
         </ItemGroup>
@@ -79,11 +72,9 @@
         <Message Text="[PrepareDeployDirectory] NativeWindowsX64DeployFilesSrcDir: '$(NativeWindowsX64DeployFilesSrcDir)'" Importance="high" />
         <Message Text="[PrepareDeployDirectory] NativeLinuxX86DeployFilesSrcDir: '$(NativeLinuxX86DeployFilesSrcDir)'" Importance="high" />
         <Message Text="[PrepareDeployDirectory] NativeLinuxX64DeployFilesSrcDir: '$(NativeLinuxX64DeployFilesSrcDir)'" Importance="high" />
-        <Message Text="[PrepareDeployDirectory] ManagedDeployFilesSrcDir:   '$(ManagedDeployFilesSrcDir)'" Importance="high" />
 
         <Message Text="[PrepareDeployDirectory] NativeX86DeployFiles:       '%(NativeX86DeployFiles.Identity)'" Importance="high" />
         <Message Text="[PrepareDeployDirectory] NativeX64DeployFiles:       '%(NativeX64DeployFiles.Identity)'" Importance="high" />
-        <Message Text="[PrepareDeployDirectory] ManagedDeployFiles:         '%(ManagedDeployFiles.Identity)'" Importance="high" />
 
         <Message Text="[PrepareDeployDirectory] AllDeployFiles:             '%(AllDeployFiles.Identity)'" Importance="high" />
         -->

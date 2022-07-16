@@ -57,19 +57,24 @@ endif()
 # Detect prerequisites
 # ******************************************************
 
-if (NOT EXISTS /usr/bin/clang)
+find_program(FOUND_CLANG clang)
+
+if (NOT FOUND_CLANG)
     message(FATAL_ERROR "CLANG is required to build the project")
 else()
     message(STATUS "CLANG was found")
 endif()
 
-if (NOT EXISTS /usr/bin/clang++)
+find_program(FOUND_CLANGPP clang++)
+if (NOT FOUND_CLANGPP)
     message(FATAL_ERROR "CLANG++ is required to build the project")
 else()
     message(STATUS "CLANG++ was found")
 endif()
 
-if (NOT EXISTS /usr/bin/git)
+find_program(FOUND_GIT "git")
+
+if (NOT FOUND_GIT)
     message(FATAL_ERROR "GIT is required to build the project")
 else()
     message(STATUS "GIT was found")
@@ -103,8 +108,8 @@ message(STATUS "FMT library " ${FMT_VERSION})
 find_package(Libunwind REQUIRED)
 message(STATUS "Libunwind library " ${LIBUNWIND_VERSION})
 
-find_package(Libddprof REQUIRED)
-message(STATUS "Libddprof library " ${LIBDDPROF_VERSION})
+find_package(Libdatadog REQUIRED)
+message(STATUS "Libdatadog library " ${LIBDATADOG_VERSION})
 
 add_subdirectory(src/ProfilerEngine/Datadog.Profiler.Native.Linux)
 add_subdirectory(src/ProfilerEngine/Datadog.Linux.ApiWrapper)

@@ -8,6 +8,7 @@ echo "BUILD_SOURCEVERSION=$BUILD_SOURCEVERSION"
 echo "SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI=$SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
 echo "BUILD_REPOSITORY_URI=$BUILD_REPOSITORY_URI"
 echo "DD_CIVISIBILITY_AGENTLESS_ENABLED=$DD_CIVISIBILITY_AGENTLESS_ENABLED"
+echo "Will run extended throughput tests: $2"
 
 repo="$SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
 commit_sha="$SYSTEM_PULLREQUEST_SOURCECOMMITID"
@@ -36,6 +37,13 @@ if [ "$1" = "windows" ]; then
     dd-trace --crank-import="calltarget_ngen_windows.json"
     rm calltarget_ngen_windows.json
 
+    if [ "$2" = "True" ]; then
+      echo "Running throughput tests with stats enabled"
+      crank --config Samples.AspNetCoreSimpleController.yml --scenario trace_stats --profile windows --json trace_stats_windows.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=trace_stats --property profile=windows --property arch=x64 --variable commit_hash=$commit_sha
+      dd-trace --crank-import="trace_stats_windows.json"
+      rm trace_stats_windows.json
+    fi
+
 elif [ "$1" = "linux" ]; then
     echo "Running Linux  x64 throughput tests"
 
@@ -47,6 +55,13 @@ elif [ "$1" = "linux" ]; then
     dd-trace --crank-import="calltarget_ngen_linux.json"
     rm calltarget_ngen_linux.json
 
+    if [ "$2" = "True" ]; then
+      echo "Running throughput tests with stats enabled"
+      crank --config Samples.AspNetCoreSimpleController.yml --scenario trace_stats --profile linux --json trace_stats_linux.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=trace_stats --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+      dd-trace --crank-import="trace_stats_linux.json"
+      rm trace_stats_linux.json
+    fi
+
 elif [ "$1" = "linux_arm64" ]; then
     echo "Running Linux arm64 throughput tests"
 
@@ -57,6 +72,13 @@ elif [ "$1" = "linux_arm64" ]; then
     crank --config Samples.AspNetCoreSimpleController.yml --scenario calltarget_ngen --profile linux_arm64 --json calltarget_ngen_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=calltarget_ngen --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="calltarget_ngen_linux_arm64.json"
     rm calltarget_ngen_linux_arm64.json
+
+    if [ "$2" = "True" ]; then
+      echo "Running throughput tests with stats enabled"
+      crank --config Samples.AspNetCoreSimpleController.yml --scenario trace_stats --profile linux_arm64 --json trace_stats_linux_arm64.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=trace_stats --property profile=linux_arm64 --property arch=arm64 --variable commit_hash=$commit_sha
+      dd-trace --crank-import="trace_stats_linux_arm64.json"
+      rm trace_stats_linux_arm64.json
+    fi
 
 else
     echo "Unknown argument $1"
