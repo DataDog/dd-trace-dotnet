@@ -14,7 +14,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     internal class HotChocolateCommon
     {
         internal const string ExecuteAsyncMethodName = "ExecuteAsync";
-        internal const string ReturnTypeName = "System.Threading.Tasks.Task";
         internal const string HotChocolateAssembly = "HotChocolate.Execution";
         internal const string Major12 = "12";
 
@@ -28,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HotChocolateCommon));
 
-        internal static Scope CreateScopeFromExecuteAsync(Tracer tracer, IWorkScheduler executionContext)
+        internal static Scope CreateScopeFromExecuteAsync(Tracer tracer, IQueryRequest request)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -39,10 +38,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             Scope scope = null;
             try
             {
-                var operation = executionContext.Context.Operation;
-                var operationName = operation.Name?.GetName();
-                string source = operation.Document?.ToString();
-                var operationType = operation.Type.ToString();
+                var operationName = request.OperationName;
+                var source = request.Query?.GetQuery();
+                var operationType = "Unknown";
                 scope = CreateScopeFromExecuteAsync(tracer, (string)operationName, source, operationType);
             }
             catch (Exception ex)
@@ -64,8 +62,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             var span = scope.Span;
             span.Type = SpanTypes.GraphQL;
             span.ResourceName = $"{operationType} {operationName ?? "operation"}";
-
             tags.Source = source;
+            tags.OperationName = operationName;
             tags.OperationType = operationType;
 
             tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
@@ -73,8 +71,41 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             return scope;
         }
 
-        internal static void RecordExecutionErrorsIfPresent(Span span, string errorType, IErrors executionErrors)
+        internal static Scope UpdateScopeFromExecuteAsync(Tracer tracer, IWorkScheduler executionContext)
         {
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            {
+                // integration disabled, don't create a scope, skip this trace
+                return null;
+            }
+
+            var scope = tracer.InternalActiveScope;
+            var span = scope?.Span;
+            if (span == null || span.OperationName != ExecuteOperationName)
+            {
+                // not in a Hotchocolate execution span
+                return null;
+            }
+
+            try
+            {
+                var operation = executionContext.Context.Operation;
+                var operationType = operation.Type.ToString();
+                var operationName = span.GetTag(Trace.Tags.HotChocolateOperationName);
+                span.ResourceName = $"{operationType} {operationName ?? "operation"}";
+                span.SetTag(Trace.Tags.HotChocolateOperationType, operationType);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating or populating scope.");
+            }
+
+            return scope;
+        }
+
+        internal static void RecordExecutionErrorsIfPresent(Span span, string errorType, System.Collections.IEnumerable errors)
+        {
+            var executionErrors = GetList(errors);
             var errorCount = executionErrors?.Count ?? 0;
 
             if (errorCount > 0)
@@ -87,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             }
         }
 
-        private static string ConstructErrorMessage(IErrors executionErrors)
+        private static string ConstructErrorMessage(List<IError> executionErrors)
         {
             if (executionErrors == null)
             {
@@ -142,6 +173,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             }
 
             return Util.StringBuilderCache.GetStringAndRelease(builder);
+        }
+
+        internal static List<IError> GetList(System.Collections.IEnumerable errors)
+        {
+            if (errors == null) { return null; }
+            List<IError> res = new List<IError>();
+            foreach (var error in errors)
+            {
+                if (error.TryDuckCast<IError>(out var err))
+                {
+                    res.Add(err);
+                }
+            }
+
+            return res;
         }
     }
 }

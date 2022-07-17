@@ -155,8 +155,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedGraphQlValidateSpanCount = 0;
             var expectedGraphQlExecuteSpanCount = 0;
 
+            // SUCCESS: query using GET
+            SubmitGraphqlRequest(url: "/graphql?query=" + WebUtility.UrlEncode("query{book{title author{name}}}"), httpMethod: "GET", graphQlRequestBody: null);
+
             // SUCCESS: query using POST (default)
             SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""{book{title author{name}}}""}");
+
+            // SUCCESS: mutation
+            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: "{\"query\":\"mutation m{addBook(book:{title:\\\"New Book\\\"}){book{title}}}\"}");
 
             return expectedGraphQlExecuteSpanCount + expectedGraphQlValidateSpanCount;
 
