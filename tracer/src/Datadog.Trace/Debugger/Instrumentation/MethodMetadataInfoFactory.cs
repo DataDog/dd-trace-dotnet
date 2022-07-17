@@ -41,7 +41,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             try
             {
-                var pdbReader = DatadogPdbReader.CreatePdbReader(method.Module.Assembly);
+                using var pdbReader = DatadogPdbReader.CreatePdbReader(method.Module.Assembly);
                 if (pdbReader == null)
                 {
                     return null; // PDB file could not be loaded
