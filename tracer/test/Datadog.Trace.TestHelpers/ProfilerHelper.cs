@@ -5,7 +5,6 @@
 
 using System;
 using System.Diagnostics;
-using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -29,14 +28,6 @@ namespace Datadog.Trace.TestHelpers
 
             // clear all relevant environment variables to start with a clean slate
             EnvironmentHelper.ClearProfilerEnvironmentVariables();
-
-            var isAlpine = !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine"));
-
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !isAlpine)
-            {
-                arguments = $"{executable} {arguments}";
-                executable = "catchsegv";
-            }
 
             var startInfo = new ProcessStartInfo(executable, $"{arguments ?? string.Empty}");
 
