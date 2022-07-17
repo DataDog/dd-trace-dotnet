@@ -164,6 +164,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // SUCCESS: mutation
             SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: "{\"query\":\"mutation m{addBook(book:{title:\\\"New Book\\\"}){book{title}}}\"}");
 
+            // FAILURE: query fails 'validate' step
+            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""{boook{title author{name}}}""}");
+
+            // FAILURE: query fails 'execute' step
+            SubmitGraphqlRequest(url: "/graphql", httpMethod: "POST", graphQlRequestBody: @"{""query"":""subscription NotImplementedSub{throwNotImplementedException{name}}""}");
+
             return expectedGraphQlExecuteSpanCount + expectedGraphQlValidateSpanCount;
 
             void SubmitGraphqlRequest(
