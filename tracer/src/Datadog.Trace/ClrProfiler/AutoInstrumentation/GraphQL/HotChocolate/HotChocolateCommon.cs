@@ -40,9 +40,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             try
             {
                 var operation = executionContext.Context.Operation;
+                var operationName = operation.Name?.GetName();
                 string source = operation.Document?.ToString();
                 var operationType = operation.Type.ToString();
-                scope = CreateScopeFromExecuteAsync(tracer, source, operationType);
+                scope = CreateScopeFromExecuteAsync(tracer, (string)operationName, source, operationType);
             }
             catch (Exception ex)
             {
@@ -52,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             return scope;
         }
 
-        private static Scope CreateScopeFromExecuteAsync(Tracer tracer, string source, string operationType)
+        private static Scope CreateScopeFromExecuteAsync(Tracer tracer, string operationName, string source, string operationType)
         {
             Scope scope;
 
@@ -62,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
             var span = scope.Span;
             span.Type = SpanTypes.GraphQL;
-            span.ResourceName = $"{operationType} operation";
+            span.ResourceName = $"{operationType} {operationName ?? "operation"}";
 
             tags.Source = source;
             tags.OperationType = operationType;

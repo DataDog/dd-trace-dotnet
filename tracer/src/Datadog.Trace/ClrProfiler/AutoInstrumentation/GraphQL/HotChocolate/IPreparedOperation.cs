@@ -11,6 +11,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     internal interface IPreparedOperation
     {
         ///// <summary>
+        ///// Gets the operation name
+        ///// </summary>
+        INameString Name { get; }
+
+        ///// <summary>
         ///// Gets the operation type (Query, Mutation, Subscription)
         ///// </summary>
         OperationTypeProxy Type { get; }
