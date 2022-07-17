@@ -1,5 +1,7 @@
 #include "debugger_tokens.h"
 
+#include <utility>
+
 #include "dd_profiler_constants.h"
 #include "il_rewriter_wrapper.h"
 #include "logger.h"
@@ -13,33 +15,11 @@ namespace debugger
 const int signatureBufferSize = 500;
 
 /**
- * CALLTARGET CONSTANTS
- **/
-
-static const WSTRING managed_profiler_debugger_beginmethod_startmarker_name = WStr("BeginMethod_StartMarker");
-static const WSTRING managed_profiler_debugger_beginmethod_endmarker_name = WStr("BeginMethod_EndMarker");
-static const WSTRING managed_profiler_debugger_endmethod_startmarker_name = WStr("EndMethod_StartMarker");
-static const WSTRING managed_profiler_debugger_endmethod_endmarker_name = WStr("EndMethod_EndMarker");
-static const WSTRING managed_profiler_debugger_logexception_name = WStr("LogException");
-static const WSTRING managed_profiler_debugger_logarg_name = WStr("LogArg");
-static const WSTRING managed_profiler_debugger_loglocal_name = WStr("LogLocal");
-static const WSTRING managed_profiler_debugger_method_type = WStr("Datadog.Trace.Debugger.Instrumentation.MethodDebuggerInvoker");
-static const WSTRING managed_profiler_debugger_methodstatetype = WStr("Datadog.Trace.Debugger.Instrumentation.MethodDebuggerState");
-static const WSTRING managed_profiler_debugger_returntype = WStr("Datadog.Trace.Debugger.Instrumentation.DebuggerReturn");
-static const WSTRING managed_profiler_debugger_returntype_generics = WStr("Datadog.Trace.Debugger.Instrumentation.DebuggerReturn`1");
-
-// Line Probe Methods & Types
-static const WSTRING managed_profiler_debugger_line_type = WStr("Datadog.Trace.Debugger.Instrumentation.LineDebuggerInvoker");
-static const WSTRING managed_profiler_debugger_linestatetype = WStr("Datadog.Trace.Debugger.Instrumentation.LineDebuggerState");
-static const WSTRING managed_profiler_debugger_beginline_name = WStr("BeginLine");
-static const WSTRING managed_profiler_debugger_endline_name = WStr("EndLine");
-
-/**
  * PRIVATE
  **/
 
 HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeSignature& argOrLocal,
-                                           ILInstr** instruction, bool isArg, bool isMethodProbe)
+                                           ILInstr** instruction, bool isArg, ProbeType probeType)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -50,20 +30,15 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
     ModuleMetadata* module_metadata = GetMetadata();
 
     mdMemberRef logArgOrLocalRef;
-    mdTypeRef stateTypeRef;
-    mdTypeRef methodOrLineTypeRef;
+    auto [invokerTypeRef, stateTypeRef] = GetDebuggerInvokerAndState(probeType);
 
-    if (isMethodProbe)
+    if (isArg)
     {
-        logArgOrLocalRef = isArg ? methodLogArgRef : methodLogLocalRef;
-        stateTypeRef = callTargetStateTypeRef; // MethodDebuggerState
-        methodOrLineTypeRef = callTargetTypeRef; // MethodDebuggerInvoker
+        logArgOrLocalRef = GetLogArgMemberRef(probeType);
     }
     else
     {
-        logArgOrLocalRef = isArg ? lineLogArgRef : lineLogLocalRef;
-        stateTypeRef = lineDebuggerStateTypeRef; // LineDebuggerState
-        methodOrLineTypeRef = lineInvokerTypeRef; // LineDebuggerInvoker
+        logArgOrLocalRef = GetLogLocalMemberRef(probeType);
     }
     
     if (logArgOrLocalRef == mdMemberRefNil)
@@ -94,11 +69,11 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
 
         // DebuggerState
         signature[offset++] = ELEMENT_TYPE_BYREF;
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        signature[offset++] = probeType == AsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
 
-        auto hr = module_metadata->metadata_emit->DefineMemberRef(methodOrLineTypeRef, targetMemberName, signature,
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(invokerTypeRef, targetMemberName, signature,
                                                                   signatureLength, &logArgOrLocalRef);
         if (FAILED(hr))
         {
@@ -107,27 +82,13 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
         }
 
         // Set the appropriate field
-        if (isMethodProbe)
+        if (isArg)
         {
-            if (isArg)
-            {
-                methodLogArgRef = logArgOrLocalRef;
-            }
-            else
-            {
-                methodLogLocalRef = logArgOrLocalRef;
-            }
+            SetLogArgMemberRef(probeType, logArgOrLocalRef);
         }
         else
         {
-            if (isArg)
-            {
-                lineLogArgRef = logArgOrLocalRef;
-            }
-            else
-            {
-                lineLogLocalRef = logArgOrLocalRef;
-            }
+            SetLogLocalMemberRef(probeType, logArgOrLocalRef);
         }
     }
 
@@ -214,6 +175,30 @@ HRESULT DebuggerTokens::EnsureBaseCalltargetTokens()
         }
     }
 
+    // *** Ensure AsyncMethodDebuggerInvoker type ref
+    if (asyncMethodDebuggerInvokerTypeRef == mdTypeRefNil)
+    {
+        hr = module_metadata->metadata_emit->DefineTypeRefByName(
+            profilerAssemblyRef, managed_profiler_debugger_async_method_invoker_type.data(), &asyncMethodDebuggerInvokerTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper asyncMethodDebuggerInvokerTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
+    // *** Ensure AsyncMethodDebuggerState type ref
+    if (asyncMethodDebuggerStateTypeRef == mdTypeRefNil)
+    {
+        hr = module_metadata->metadata_emit->DefineTypeRefByName(
+            profilerAssemblyRef, managed_profiler_debugger_async_method_state_type.data(), &asyncMethodDebuggerStateTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper asyncMethodDebuggerStateTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
     return S_OK;
 }
 
@@ -243,14 +228,14 @@ const WSTRING& DebuggerTokens::GetCallTargetReturnGenericType()
 
 int DebuggerTokens::GetAdditionalLocalsCount()
 {
-    return 1;
+    return 2;
 }
 
 void DebuggerTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize)
 {
     // Gets the calltarget state of line probe type buffer and size
     unsigned callTargetStateTypeRefBuffer;
-    auto callTargetStateTypeRefSize = CorSigCompressToken(lineDebuggerStateTypeRef, &callTargetStateTypeRefBuffer);
+    const auto callTargetStateTypeRefSize = CorSigCompressToken(lineDebuggerStateTypeRef, &callTargetStateTypeRefBuffer);
 
     // Enlarge the *new* signature size
     signatureSize += (1 + callTargetStateTypeRefSize);
@@ -259,6 +244,18 @@ void DebuggerTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], 
     signatureBuffer[signatureOffset++] = ELEMENT_TYPE_VALUETYPE;
     memcpy(&signatureBuffer[signatureOffset], &callTargetStateTypeRefBuffer, callTargetStateTypeRefSize);
     signatureOffset += callTargetStateTypeRefSize;
+
+    // Gets the calltarget state of async method probe type buffer and size
+    unsigned asyncMethodStateTypeRefBuffer;
+    const auto asyncMethodStateTypeRefSize = CorSigCompressToken(asyncMethodDebuggerStateTypeRef, &asyncMethodStateTypeRefBuffer);
+
+    // Enlarge the *new* signature size
+    signatureSize += (1 + asyncMethodStateTypeRefSize);
+
+    // CallTarget state of async method probe
+    signatureBuffer[signatureOffset++] = ELEMENT_TYPE_CLASS;
+    memcpy(&signatureBuffer[signatureOffset], &asyncMethodStateTypeRefBuffer, asyncMethodStateTypeRefSize);
+    signatureOffset += asyncMethodStateTypeRefSize;
 }
 
 /**
@@ -271,7 +268,7 @@ DebuggerTokens::DebuggerTokens(ModuleMetadata* module_metadata_ptr) :
 }
 
 HRESULT DebuggerTokens::WriteBeginMethod_StartMarker(void* rewriterWrapperPtr, const TypeInfo* currentType,
-                                                     ILInstr** instruction)
+                                                     ILInstr** instruction, ProbeType probeType)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -282,55 +279,17 @@ HRESULT DebuggerTokens::WriteBeginMethod_StartMarker(void* rewriterWrapperPtr, c
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
     ModuleMetadata* module_metadata = GetMetadata();
 
-    if (beginMethodStartMarkerRef == mdMemberRefNil)
+    mdMemberRef beginMethodRef = GetBeginMethodStartMarker(probeType);
+
+    if (beginMethodRef == mdMemberRefNil)
     {
-        unsigned callTargetStateBuffer;
-        auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
-
-        unsigned runtimeMethodHandleBuffer;
-        auto runtimeMethodHandleSize = CorSigCompressToken(runtimeMethodHandleRef, &runtimeMethodHandleBuffer);
-
-        unsigned runtimeTypeHandleBuffer;
-        auto runtimeTypeHandleSize = CorSigCompressToken(runtimeTypeHandleRef, &runtimeTypeHandleBuffer);
-
-        unsigned long signatureLength = 10 + callTargetStateSize + runtimeMethodHandleSize + runtimeTypeHandleSize;
-
-        COR_SIGNATURE signature[signatureBufferSize];
-        unsigned offset = 0;
-
-        signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-        signature[offset++] = 0x01; // generic arguments count
-        signature[offset++] = 0x05; // arguments count
-
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-        memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
-        offset += callTargetStateSize;
-
-        signature[offset++] = ELEMENT_TYPE_STRING;
-
-        signature[offset++] = ELEMENT_TYPE_MVAR;
-        signature[offset++] = 0x00;
-
-        // RuntimeMethodHandle
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-        memcpy(&signature[offset], &runtimeMethodHandleBuffer, runtimeMethodHandleSize);
-        offset += runtimeMethodHandleSize;
-
-        // RuntimeTypeHandle
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-        memcpy(&signature[offset], &runtimeTypeHandleBuffer, runtimeTypeHandleSize);
-        offset += runtimeTypeHandleSize;
-
-        signature[offset++] = ELEMENT_TYPE_I4; // methodMetadataIndex
-
-        auto hr = module_metadata->metadata_emit->DefineMemberRef(
-            callTargetTypeRef, managed_profiler_debugger_beginmethod_startmarker_name.data(), signature,
-            signatureLength, &beginMethodStartMarkerRef);
+        hr = CreateBeginMethodStartMarkerRefSignature(probeType, beginMethodRef);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper beginMethod could not be defined.");
             return hr;
         }
+        SetBeginMethodStartMarker(probeType, beginMethodRef);
     }
 
     mdMethodSpec beginMethodSpec = mdMethodSpecNil;
@@ -360,7 +319,7 @@ HRESULT DebuggerTokens::WriteBeginMethod_StartMarker(void* rewriterWrapperPtr, c
     memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
     offset += currentTypeSize;
 
-    hr = module_metadata->metadata_emit->DefineMethodSpec(beginMethodStartMarkerRef, signature, signatureLength,
+    hr = module_metadata->metadata_emit->DefineMethodSpec(beginMethodRef, signature, signatureLength,
                                                           &beginMethodSpec);
     if (FAILED(hr))
     {
@@ -372,64 +331,89 @@ HRESULT DebuggerTokens::WriteBeginMethod_StartMarker(void* rewriterWrapperPtr, c
     return S_OK;
 }
 
+HRESULT DebuggerTokens::CreateBeginMethodStartMarkerRefSignature(ProbeType probeType, mdMemberRef& beginMethodRef)
+{
+    auto [invokerTypeRef, stateTypeRef] = GetDebuggerInvokerAndState(probeType);
+    unsigned callTargetStateBuffer;
+    auto callTargetStateSize = CorSigCompressToken(stateTypeRef, &callTargetStateBuffer);
+
+    unsigned runtimeMethodHandleBuffer;
+    auto runtimeMethodHandleSize = CorSigCompressToken(runtimeMethodHandleRef, &runtimeMethodHandleBuffer);
+
+    unsigned runtimeTypeHandleBuffer;
+    auto runtimeTypeHandleSize = CorSigCompressToken(runtimeTypeHandleRef, &runtimeTypeHandleBuffer);
+
+    unsigned long signatureLength = (probeType == AsyncMethod ? 12 : 10) + callTargetStateSize + runtimeMethodHandleSize + runtimeTypeHandleSize;
+
+    COR_SIGNATURE signature[signatureBufferSize];
+    unsigned offset = 0;
+
+    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
+    signature[offset++] = 0x01; // generic arguments count
+    signature[offset++] = probeType == AsyncMethod ? 0x06 : 0x05; // arguments count
+
+    signature[offset++] = probeType == AsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
+    memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
+    offset += callTargetStateSize;
+
+    signature[offset++] = ELEMENT_TYPE_STRING;
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x00;
+
+    // RuntimeMethodHandle
+    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+    memcpy(&signature[offset], &runtimeMethodHandleBuffer, runtimeMethodHandleSize);
+    offset += runtimeMethodHandleSize;
+
+    // RuntimeTypeHandle
+    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+    memcpy(&signature[offset], &runtimeTypeHandleBuffer, runtimeTypeHandleSize);
+    offset += runtimeTypeHandleSize;
+
+    signature[offset++] = ELEMENT_TYPE_I4; // methodMetadataIndex
+
+    WSTRING methodName;
+    if (probeType == AsyncMethod)
+    {
+        methodName = managed_profiler_debugger_begin_async_method_name;
+        signature[offset++] = ELEMENT_TYPE_BYREF;
+        signature[offset++] = ELEMENT_TYPE_BOOLEAN; // isFirstEntry
+    }
+    else
+    {
+        methodName = managed_profiler_debugger_beginmethod_startmarker_name;
+    }
+
+    return GetMetadata()->metadata_emit->DefineMemberRef(
+        invokerTypeRef, methodName.data(), signature,
+        signatureLength, &beginMethodRef);
+}
+
 // endmethod with void return
 HRESULT DebuggerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, const TypeInfo* currentType,
-                                                    ILInstr** instruction)
+                                                    ILInstr** instruction,  ProbeType probeType)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
     {
         return hr;
     }
+
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
-    ModuleMetadata* module_metadata = GetMetadata();
+    const ModuleMetadata* module_metadata = GetMetadata();
 
-    if (endVoidMemberRef == mdMemberRefNil)
+    mdMemberRef endMethodMemberRef = GetEndMethodStartMarker(probeType, true);
+
+    if (endMethodMemberRef == mdMemberRefNil)
     {
-        unsigned callTargetReturnVoidBuffer;
-        auto callTargetReturnVoidSize = CorSigCompressToken(callTargetReturnVoidTypeRef, &callTargetReturnVoidBuffer);
-
-        unsigned exTypeRefBuffer;
-        auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
-
-        unsigned callTargetStateBuffer;
-        auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
-
-        auto signatureLength = 8 + callTargetReturnVoidSize + exTypeRefSize + callTargetStateSize;
-        signatureLength++; // ByRef
-
-        COR_SIGNATURE signature[signatureBufferSize];
-        unsigned offset = 0;
-
-        signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-        signature[offset++] = 0x01;
-        signature[offset++] = 0x03;
-
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-        memcpy(&signature[offset], &callTargetReturnVoidBuffer, callTargetReturnVoidSize);
-        offset += callTargetReturnVoidSize;
-
-        signature[offset++] = ELEMENT_TYPE_MVAR;
-        signature[offset++] = 0x00;
-
-        signature[offset++] = ELEMENT_TYPE_CLASS;
-        memcpy(&signature[offset], &exTypeRefBuffer, exTypeRefSize);
-        offset += exTypeRefSize;
-
-        signature[offset++] = ELEMENT_TYPE_BYREF;
-
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-        memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
-        offset += callTargetStateSize;
-
-        auto hr = module_metadata->metadata_emit->DefineMemberRef(
-            callTargetTypeRef, managed_profiler_debugger_endmethod_startmarker_name.data(), signature, signatureLength,
-            &endVoidMemberRef);
+        hr = CreateEndMethodStartMarkerRefSignature(probeType, endMethodMemberRef, callTargetReturnVoidTypeRef, true);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper endVoidMemberRef could not be defined.");
             return hr;
         }
+        SetEndMethodStartMarker(probeType, true, endMethodMemberRef);
     }
 
     mdMethodSpec endVoidMethodSpec = mdMethodSpecNil;
@@ -458,7 +442,7 @@ HRESULT DebuggerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, co
     memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
     offset += currentTypeSize;
 
-    hr = module_metadata->metadata_emit->DefineMethodSpec(endVoidMemberRef, signature, signatureLength,
+    hr = module_metadata->metadata_emit->DefineMethodSpec(endMethodMemberRef, signature, signatureLength,
                                                           &endVoidMethodSpec);
     if (FAILED(hr))
     {
@@ -472,7 +456,7 @@ HRESULT DebuggerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, co
 
 // endmethod with return type
 HRESULT DebuggerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, const TypeInfo* currentType,
-                                                TypeSignature* returnArgument, ILInstr** instruction)
+                                                TypeSignature* returnArgument, ILInstr** instruction, ProbeType probeType)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -481,62 +465,22 @@ HRESULT DebuggerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, const 
     }
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
     ModuleMetadata* module_metadata = GetMetadata();
-    GetTargetReturnValueTypeRef(returnArgument);
 
-    // *** Define base MethodMemberRef for the type
+    mdMemberRef endMethodMemberRef = GetEndMethodStartMarker(probeType, false);
 
-    mdMemberRef endMethodMemberRef = mdMemberRefNil;
-
-    unsigned callTargetReturnTypeRefBuffer;
-    auto callTargetReturnTypeRefSize = CorSigCompressToken(callTargetReturnTypeRef, &callTargetReturnTypeRefBuffer);
-
-    unsigned exTypeRefBuffer;
-    auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
-
-    unsigned callTargetStateBuffer;
-    auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
-
-    auto signatureLength = 14 + callTargetReturnTypeRefSize + exTypeRefSize + callTargetStateSize;
-    signatureLength++; // ByRef
-
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-    signature[offset++] = 0x02;
-    signature[offset++] = 0x04;
-
-    signature[offset++] = ELEMENT_TYPE_GENERICINST;
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &callTargetReturnTypeRefBuffer, callTargetReturnTypeRefSize);
-    offset += callTargetReturnTypeRefSize;
-    signature[offset++] = 0x01;
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x01;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x00;
-
-    signature[offset++] = ELEMENT_TYPE_MVAR;
-    signature[offset++] = 0x01;
-
-    signature[offset++] = ELEMENT_TYPE_CLASS;
-    memcpy(&signature[offset], &exTypeRefBuffer, exTypeRefSize);
-    offset += exTypeRefSize;
-
-    signature[offset++] = ELEMENT_TYPE_BYREF;
-    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
-    offset += callTargetStateSize;
-
-    hr = module_metadata->metadata_emit->DefineMemberRef(callTargetTypeRef,
-                                                         managed_profiler_debugger_endmethod_startmarker_name.data(),
-                                                         signature, signatureLength, &endMethodMemberRef);
-    if (FAILED(hr))
+    if (endMethodMemberRef == mdMemberRefNil)
     {
-        Logger::Warn("Wrapper endMethodMemberRef could not be defined.");
-        return hr;
+        hr = CreateEndMethodStartMarkerRefSignature(probeType, endMethodMemberRef, callTargetReturnTypeRef, false);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper endVoidMemberRef could not be defined.");
+            return hr;
+        }
+        SetEndMethodStartMarker(probeType, false, endMethodMemberRef);
     }
+
+    //todo: for what?
+    // GetTargetReturnValueTypeRef(returnArgument);
 
     // *** Define Method Spec
 
@@ -551,7 +495,10 @@ HRESULT DebuggerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, const 
     PCCOR_SIGNATURE returnSignatureBuffer;
     auto returnSignatureLength = returnArgument->GetSignature(returnSignatureBuffer);
 
-    signatureLength = 3 + currentTypeSize + returnSignatureLength;
+    COR_SIGNATURE signature[signatureBufferSize];
+    unsigned offset = 0;
+
+    const auto signatureLength = 3 + currentTypeSize + returnSignatureLength;
     offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
@@ -583,8 +530,76 @@ HRESULT DebuggerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, const 
     return S_OK;
 }
 
+HRESULT DebuggerTokens::CreateEndMethodStartMarkerRefSignature(ProbeType probeType, mdMemberRef& endMethodRef, mdTypeRef returnTypeRef, bool isVoid)
+{
+    auto [invokerTypeRef, stateTypeRef] = GetDebuggerInvokerAndState(probeType);
+
+    unsigned returnTypeBuffer;
+    const auto returnTypeSize = CorSigCompressToken(returnTypeRef, &returnTypeBuffer);
+
+    unsigned exTypeRefBuffer;
+    const auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
+
+    unsigned callTargetStateBuffer;
+    const auto callTargetStateSize = CorSigCompressToken(stateTypeRef, &callTargetStateBuffer);
+
+    auto signatureLength = (isVoid ? 8 : 14) + returnTypeSize + exTypeRefSize + callTargetStateSize;
+    signatureLength++; // ByRef
+
+    COR_SIGNATURE signature[signatureBufferSize];
+    unsigned offset = 0;
+
+    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
+
+    if (isVoid)
+    {
+        signature[offset++] = 0x01;
+        signature[offset++] = 0x03;
+    }
+    else
+    {
+        signature[offset++] = 0x02;
+        signature[offset++] = 0x04;
+        signature[offset++] = ELEMENT_TYPE_GENERICINST;
+    }
+
+    signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+    memcpy(&signature[offset], &returnTypeBuffer, returnTypeSize);
+    offset += returnTypeSize;
+
+    if (!isVoid)
+    {
+        signature[offset++] = 0x01;
+        signature[offset++] = ELEMENT_TYPE_MVAR;
+        signature[offset++] = 0x01;
+    }
+
+    signature[offset++] = ELEMENT_TYPE_MVAR;
+    signature[offset++] = 0x00;
+
+    if (!isVoid)
+    {
+        signature[offset++] = ELEMENT_TYPE_MVAR;
+        signature[offset++] = 0x01;
+    }
+
+    signature[offset++] = ELEMENT_TYPE_CLASS;
+    memcpy(&signature[offset], &exTypeRefBuffer, exTypeRefSize);
+    offset += exTypeRefSize;
+
+    signature[offset++] = ELEMENT_TYPE_BYREF;
+
+    signature[offset++] = probeType == AsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
+    memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
+    offset += callTargetStateSize;
+
+   return GetMetadata()->metadata_emit->DefineMemberRef(
+        invokerTypeRef, managed_profiler_debugger_endmethod_startmarker_name.data(), signature, signatureLength,
+        &endMethodRef);
+}
+
 // write log exception
-HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeInfo* currentType, bool isMethodProbe)
+HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeInfo* currentType, ProbeType probeType)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -594,9 +609,9 @@ HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeIn
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
     ModuleMetadata* module_metadata = GetMetadata();
 
-    mdTypeRef stateTypeRef = isMethodProbe ? callTargetStateTypeRef : lineDebuggerStateTypeRef; // MethodDebuggerState / LineDebuggerState
-    mdTypeRef methodOrLineTypeRef = isMethodProbe ? callTargetTypeRef : lineInvokerTypeRef; // MethodDebuggerInvoker / LineDebuggerInvoker
-    mdMemberRef logExceptionRef = isMethodProbe ? methodLogExceptionRef : lineLogExceptionRef; // MethodDebuggerInvoker.LogException / LineDebuggerInvoker.LogException
+    mdTypeRef stateTypeRef = GetDebuggerState(probeType);
+    mdTypeRef methodOrLineTypeRef = GetDebuggerInvoker(probeType);
+    mdMemberRef logExceptionRef = GetLogExceptionMemberRef(probeType);
 
     if (logExceptionRef == mdMemberRefNil)
     {
@@ -621,7 +636,7 @@ HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeIn
 
         // DebuggerState
         signature[offset++] = ELEMENT_TYPE_BYREF;
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        signature[offset++] = probeType == AsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
 
@@ -634,14 +649,7 @@ HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeIn
             return hr;
         }
 
-        if (isMethodProbe)
-        {
-            methodLogExceptionRef = logExceptionRef;
-        }
-        else
-        {
-            lineLogExceptionRef = logExceptionRef;
-        }
+        SetLogExceptionMemberRef(probeType, logExceptionRef);
     }
 
     mdMethodSpec logExceptionMethodSpec = mdMethodSpecNil;
@@ -681,18 +689,18 @@ HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeIn
     return S_OK;
 }
 
-HRESULT DebuggerTokens::WriteLogArg(void* rewriterWrapperPtr, const TypeSignature& argument, ILInstr** instruction, bool isMethodProbe)
+HRESULT DebuggerTokens::WriteLogArg(void* rewriterWrapperPtr, const TypeSignature& argument, ILInstr** instruction, ProbeType probeType)
 {
-    return WriteLogArgOrLocal(rewriterWrapperPtr, argument, instruction, true /* isArg */, isMethodProbe);
+    return WriteLogArgOrLocal(rewriterWrapperPtr, argument, instruction, true /* isArg */, probeType);
 }
 
-HRESULT DebuggerTokens::WriteLogLocal(void* rewriterWrapperPtr, const TypeSignature& local, ILInstr** instruction, bool isMethodProbe)
+HRESULT DebuggerTokens::WriteLogLocal(void* rewriterWrapperPtr, const TypeSignature& local, ILInstr** instruction, ProbeType probeType)
 {
-    return WriteLogArgOrLocal(rewriterWrapperPtr, local, instruction, false /* isArg */, isMethodProbe);
+    return WriteLogArgOrLocal(rewriterWrapperPtr, local, instruction, false /* isArg */, probeType);
 }
 
 HRESULT DebuggerTokens::WriteBeginOrEndMethod_EndMarker(void* rewriterWrapperPtr, bool isBeginMethod,
-                                                        ILInstr** instruction)
+                                                        ILInstr** instruction, ProbeType probeType)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -700,17 +708,15 @@ HRESULT DebuggerTokens::WriteBeginOrEndMethod_EndMarker(void* rewriterWrapperPtr
         return hr;
     }
 
+    auto [invokerTypeRef, stateTypeRef] = GetDebuggerInvokerAndState(probeType);
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
     ModuleMetadata* module_metadata = GetMetadata();
+    auto [beginOrEndEndMarker, beginOrEndMethodName ] = GetBeginOrEndMethodEndMarker(probeType, isBeginMethod);
 
-    mdMemberRef beginOrEndMethodRef = isBeginMethod ? beginMethodEndMarkerRef : endMethodEndMarkerRef;
-    const auto beginOrEndMethodName = isBeginMethod ? managed_profiler_debugger_beginmethod_endmarker_name.data()
-                                                    : managed_profiler_debugger_endmethod_endmarker_name.data();
-
-    if (beginOrEndMethodRef == mdMemberRefNil)
+    if (beginOrEndEndMarker == mdMemberRefNil)
     {
         unsigned callTargetStateBuffer;
-        auto callTargetStateSize = CorSigCompressToken(callTargetStateTypeRef, &callTargetStateBuffer);
+        const auto callTargetStateSize = CorSigCompressToken(stateTypeRef, &callTargetStateBuffer);
 
         unsigned long signatureLength = 4 + callTargetStateSize;
 
@@ -725,40 +731,33 @@ HRESULT DebuggerTokens::WriteBeginOrEndMethod_EndMarker(void* rewriterWrapperPtr
 
         // DebuggerState
         signature[offset++] = ELEMENT_TYPE_BYREF;
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
+        signature[offset++] = probeType == AsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
 
-        auto hr = module_metadata->metadata_emit->DefineMemberRef(callTargetTypeRef, beginOrEndMethodName, signature,
-                                                                  signatureLength, &beginOrEndMethodRef);
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(invokerTypeRef, beginOrEndMethodName.c_str(), signature,
+                                                                  signatureLength, &beginOrEndEndMarker);
         if (FAILED(hr))
         {
             Logger::Warn("Wrapper beginMethod could not be defined.");
             return hr;
         }
 
-        if (isBeginMethod)
-        {
-            beginMethodEndMarkerRef = beginOrEndMethodRef;
-        }
-        else
-        {
-            endMethodEndMarkerRef = beginOrEndMethodRef;
-        }
+        SetBeginOrEndMethodEndMarker(probeType, isBeginMethod, beginOrEndEndMarker);
     }
 
-    *instruction = rewriterWrapper->CallMember(beginOrEndMethodRef, false);
+    *instruction = rewriterWrapper->CallMember(beginOrEndEndMarker, false);
     return S_OK;
 }
 
-HRESULT DebuggerTokens::WriteBeginMethod_EndMarker(void* rewriterWrapperPtr, ILInstr** instruction)
+HRESULT DebuggerTokens::WriteBeginMethod_EndMarker(void* rewriterWrapperPtr, ILInstr** instruction, ProbeType probeType)
 {
-    return WriteBeginOrEndMethod_EndMarker(rewriterWrapperPtr, true /* isBeginMethod */, instruction);
+    return WriteBeginOrEndMethod_EndMarker(rewriterWrapperPtr, true /* isBeginMethod */, instruction, probeType);
 }
 
-HRESULT DebuggerTokens::WriteEndMethod_EndMarker(void* rewriterWrapperPtr, ILInstr** instruction)
+HRESULT DebuggerTokens::WriteEndMethod_EndMarker(void* rewriterWrapperPtr, ILInstr** instruction, ProbeType probeType)
 {
-    return WriteBeginOrEndMethod_EndMarker(rewriterWrapperPtr, false /* isBeginMethod */, instruction);
+    return WriteBeginOrEndMethod_EndMarker(rewriterWrapperPtr, false /* isBeginMethod */, instruction, probeType);
 }
 
 HRESULT DebuggerTokens::WriteBeginLine(void* rewriterWrapperPtr, const TypeInfo* currentType,
@@ -1013,7 +1012,7 @@ HRESULT DebuggerTokens::ModifyLocalSigForLineProbe(ILRewriter* reWriter, ULONG* 
     return hr;
 }
 
-HRESULT DebuggerTokens::GetDebuggerLocals(void* rewriterWrapperPtr, ULONG* callTargetStateIndex, mdToken* callTargetStateToken)
+HRESULT DebuggerTokens::GetDebuggerLocals(void* rewriterWrapperPtr, ULONG* callTargetStateIndex, mdToken* callTargetStateToken, ULONG* asyncMethodStateIndex)
 {
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
     const auto reWriter = rewriterWrapper->GetILRewriter();
@@ -1039,8 +1038,26 @@ HRESULT DebuggerTokens::GetDebuggerLocals(void* rewriterWrapperPtr, ULONG* callT
     const auto debuggerAdditionalLocalsCount = GetAdditionalLocalsCount();
     *callTargetStateToken = lineDebuggerStateTypeRef;
     *callTargetStateIndex = localsLen - /* Accounting for MethodDebuggerState */ 1 - debuggerAdditionalLocalsCount;
-
+    *asyncMethodStateIndex = localsLen - debuggerAdditionalLocalsCount; // last local
     return S_OK;
 }
 
+mdFieldDef DebuggerTokens::GetIsFirstEntryToMoveNextFieldToken(const mdToken type)
+{
+    const ModuleMetadata* module_metadata = GetMetadata();
+    mdFieldDef token;
+    ULONG cTokens;
+    HCORENUM henum = nullptr;
+    const HRESULT hr = module_metadata->metadata_import->EnumFieldsWithName (
+        &henum, type, 
+        managed_profiler_debugger_is_first_entry_field_name.c_str(),
+        &token, 1, &cTokens);
+    module_metadata->metadata_import->CloseEnum(henum);
+    if (SUCCEEDED(hr))
+    {
+        return token;
+    }
+    
+    return mdFieldDefNil;
+}
 } // namespace debugger

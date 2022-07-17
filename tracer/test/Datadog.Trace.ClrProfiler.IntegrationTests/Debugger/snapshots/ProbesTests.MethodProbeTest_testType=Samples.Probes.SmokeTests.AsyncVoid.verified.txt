@@ -1,0 +1,111 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "fields": null
+          },
+          "return": {
+            "fields": null,
+            "locals": {
+              "e": {
+                "fields": null,
+                "type": "AccessViolationException",
+                "value": "null"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "MoveNext",
+            "type": "Samples.Probes.SmokeTests.AsyncVoid+<VoidTaskMethod>d__1"
+          }
+        },
+        "stack": [],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MoveNext",
+      "name": "Samples.Probes.SmokeTests.AsyncVoid+<VoidTaskMethod>d__1",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "AsyncVoid+<VoidTaskMethod>d__1.MoveNext()\r\ne=null",
+    "service": "Unknown"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "caller": {
+                "fields": null,
+                "type": "String",
+                "value": "VoidTaskMethod"
+              }
+            },
+            "fields": null
+          },
+          "return": {
+            "arguments": {
+              "caller": {
+                "fields": null,
+                "type": "String",
+                "value": "VoidTaskMethod"
+              }
+            },
+            "fields": null
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "MoveNext",
+            "type": "Samples.Probes.SmokeTests.AsyncVoid+<VoidMethod>d__2"
+          }
+        },
+        "stack": [
+          {
+            "function": "Samples.Probes.SmokeTests.AsyncVoid.VoidMethod",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "AsyncVoid.cs",
+            "function": "Samples.Probes.SmokeTests.AsyncVoid+<>c__DisplayClass1_0.<VoidTaskMethod>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MoveNext",
+      "name": "Samples.Probes.SmokeTests.AsyncVoid+<VoidMethod>d__2",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "AsyncVoid+<VoidMethod>d__2.MoveNext(caller=VoidTaskMethod)",
+    "service": "Unknown"
+  }
+]

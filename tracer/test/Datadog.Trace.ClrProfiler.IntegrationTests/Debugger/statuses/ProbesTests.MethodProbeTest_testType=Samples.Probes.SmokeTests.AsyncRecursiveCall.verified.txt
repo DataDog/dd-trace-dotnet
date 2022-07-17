@@ -1,0 +1,14 @@
+﻿[
+  {
+    "ddsource": "dd_debugger",
+    "debugger": {
+      "diagnostics": {
+        "Exception": null,
+        "probeId": "8286d046-9740-a3e4-95cf-ff46699c73c4",
+        "status": "INSTALLED"
+      }
+    },
+    "message": "Installed probe 8286d046-9740-a3e4-95cf-ff46699c73c4.",
+    "service": null
+  }
+]

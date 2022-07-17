@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.Debugger.Helpers;
 
@@ -20,7 +19,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
         }
 
-        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, FieldInfo[] asyncMethodHoistedLocals, Type type, MethodBase method)
+        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, AsyncHelper.FieldInfoNameSanitized[] asyncMethodHoistedLocals, Type type, MethodBase method)
         {
             ParameterNames = parameterNames;
             LocalVariableNames = localVariableNames;
@@ -41,7 +40,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// Gets the names and the values of the async method's local variable from the hoist object - i.e. the state machine.
         /// May contains fields that they not locals in the kick off method, ATM we skip only the `builder`, `state` and `this` fields
         /// </summary>
-        public FieldInfo[] AsyncMethodHoistedLocals { get; }
+        public AsyncHelper.FieldInfoNameSanitized[] AsyncMethodHoistedLocals { get; }
 
         /// <summary>
         /// Gets the declaring type of the instrumented method

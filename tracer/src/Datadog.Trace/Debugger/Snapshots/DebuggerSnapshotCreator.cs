@@ -6,7 +6,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Reflection;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.Util;
@@ -140,16 +139,18 @@ namespace Datadog.Trace.Debugger.Snapshots
             DebuggerSnapshotSerializer.SerializeObjectFields(instance, type, _jsonWriter);
         }
 
-        internal void CaptureArgument<TArg>(TArg argument, string name, bool isFirstArgument, bool shouldEndLocals)
+        internal void CaptureArgument<TArg>(TArg argument, string name, bool isFirstArgument, bool shouldEndLocals, Type argType = null)
         {
             StartLocalsOrArgs(isFirstArgument, shouldEndLocals, "arguments");
-            DebuggerSnapshotSerializer.Serialize(argument, typeof(TArg), name, _jsonWriter);
+            // in case TArg is object and we have the concrete type, use it
+            DebuggerSnapshotSerializer.Serialize(argument, argType ?? typeof(TArg), name, _jsonWriter);
         }
 
-        internal void CaptureLocal<TLocal>(TLocal local, string name, bool isFirstLocal)
+        internal void CaptureLocal<TLocal>(TLocal local, string name, bool isFirstLocal, Type localType = null)
         {
             StartLocalsOrArgs(isFirstLocal, false, "locals");
-            DebuggerSnapshotSerializer.Serialize(local, typeof(TLocal), name, _jsonWriter);
+            // in case TLocal is object and we have the concrete type, use it
+            DebuggerSnapshotSerializer.Serialize(local, localType ?? typeof(TLocal), name, _jsonWriter);
         }
 
         internal void CaptureException(Exception ex)

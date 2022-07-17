@@ -7,29 +7,30 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
+using Datadog.Trace.Debugger.Instrumentation;
 
 namespace Datadog.Trace.Debugger.Helpers
 {
     internal static class AsyncHelper
     {
-        private const string StateMachineNamePrefix = "Gen"; // <
-        private const string StateMachineNameSuffix = "End"; // >
-        private const string StateMachineFieldsPrefix = "GenEnd"; // "<>";
-        private const string BuilderFieldName = StateMachineFieldsPrefix + "t__builder"; // "<>t__builder";
-        private const string StateFieldName = StateMachineFieldsPrefix + "1__state"; // "<>t__builder";
+        private const string StateMachineNamePrefix = "<";
+        private const string StateMachineNameSuffix = ">";
+        private const string StateMachineFieldsPrefix = "<>";
+        private const string BuilderFieldName = StateMachineFieldsPrefix + "t__builder";
+        private const string StateFieldName = StateMachineFieldsPrefix + "1__state";
         private const string StateMachineThisFieldName = StateMachineFieldsPrefix + "4__this";
+        private const string StateMachineLiveDebuggerAddedField = "<>dd_liveDebugger_isReEntryToMoveNext";
         private const BindingFlags AllFieldsBindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static FieldNameValue[] GetHoistedArgumentsFromStateMachine<TTarget>(TTarget instance, ParameterInfo[] originalMethodParameters)
+        internal static FieldNameValueType[] GetHoistedArgumentsFromStateMachine<TTarget>(TTarget instance, ParameterInfo[] originalMethodParameters)
         {
             if (originalMethodParameters is null || originalMethodParameters.Length == 0)
             {
-                return null;
+                return Array.Empty<FieldNameValueType>();
             }
 
-            var foundFields = new FieldNameValue[originalMethodParameters.Length];
+            var foundFields = new FieldNameValueType[originalMethodParameters.Length];
             var allFields = instance.GetType().GetFields(AllFieldsBindingFlags);
 
             int found = 0;
@@ -48,11 +49,11 @@ namespace Datadog.Trace.Debugger.Helpers
                     continue;
                 }
 
-                for (int j = 0; j < originalMethodParameters.Length; j++)
+                for (var j = 0; j < originalMethodParameters.Length; j++)
                 {
                     if (field.Name == originalMethodParameters[j].Name)
                     {
-                        foundFields[j] = new FieldNameValue(field.Name, field.GetValue(instance));
+                        foundFields[j] = new FieldNameValueType(field.Name, field.GetValue(instance), field.FieldType);
                         found++;
                         break;
                     }
@@ -71,27 +72,92 @@ namespace Datadog.Trace.Debugger.Helpers
         /// </summary>
         /// <typeparam name="TTarget">Instance type</typeparam>
         /// <param name="instance">Instance object</param>
+        /// <param name="asyncKickoffInfo">The async kickoff info</param>
         /// <returns>List of locals</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static FieldInfo[] GetHoistedLocalsFromStateMachine<TTarget>(TTarget instance)
+        internal static FieldInfoNameSanitized[] GetHoistedLocalsFromStateMachine<TTarget>(TTarget instance, AsyncKickoffMethodInfo asyncKickoffInfo)
         {
-            var foundFields = new List<FieldInfo>();
+            var foundFields = new List<FieldInfoNameSanitized>();
             var allFields = instance.GetType().GetFields(AllFieldsBindingFlags);
-            for (int i = 0; i < allFields.Length; i++)
+            var kickoffParameters = asyncKickoffInfo.KickoffMethod.GetParameters();
+            for (var i = 0; i < allFields.Length; i++)
             {
                 var field = allFields[i];
-                if (field.Name is BuilderFieldName or StateFieldName or StateMachineThisFieldName)
+                if (IsStateMachineField(field))
                 {
                     continue;
                 }
 
-                if (field.Name.Contains(StateMachineNameSuffix))
+                bool foundInArguments = false;
+                for (int j = 0; j < kickoffParameters.Length; j++)
                 {
-                    foundFields.Add(field);
+                    if (kickoffParameters[j].Name == field.Name)
+                    {
+                        foundInArguments = true;
+                        break;
+                    }
+                }
+
+                if (foundInArguments == false)
+                {
+                    var indexOfStateMachineSuffix = field.Name.IndexOf(StateMachineNameSuffix, StringComparison.Ordinal);
+                    if (indexOfStateMachineSuffix > 0)
+                    {
+                        foundFields.Add(new FieldInfoNameSanitized(field, SanitizeAsyncHoistedLocalName(field.Name, indexOfStateMachineSuffix)));
+                    }
+                    else
+                    {
+                        foundFields.Add(new FieldInfoNameSanitized(field, field.Name));
+                    }
                 }
             }
 
             return foundFields.ToArray();
+        }
+
+        private static string SanitizeAsyncHoistedLocalName(string fieldName, int indexOfStateMachineSuffix)
+        {
+#if NETCOREAPP3_0_OR_GREATER
+            return fieldName.AsSpan()[1..indexOfStateMachineSuffix].ToString();
+#else
+            return fieldName.Substring(1, indexOfStateMachineSuffix - 1);
+#endif
+        }
+
+        private static bool IsStateMachineField(FieldInfo field)
+        {
+            if (field.Name.StartsWith(StateMachineFieldsPrefix))
+            {
+                AsyncMethodDebuggerInvoker.Log.Information($"Ignoring local (state machine field):  {field.FieldType.Name} {field.DeclaringType?.Name}.{field.Name}");
+                return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsKnownStateMachineField(FieldInfo field)
+        {
+            // builder (various object types), state (int) and "this"
+            if (field.Name is BuilderFieldName or StateFieldName or StateMachineThisFieldName or StateMachineLiveDebuggerAddedField)
+            {
+                return true;
+            }
+
+            // awaiter etc. (e.g. <>u__1)
+            if (field.Name.StartsWith(StateMachineFieldsPrefix))
+            {
+                if (field.FieldType.Name is "TaskAwaiter" or "TaskAwaiter`1" or "ValueTaskAwaiter" or "ValueTaskAwaiter`1")
+                {
+                    return true;
+                }
+                else
+                {
+                    AsyncMethodDebuggerInvoker.Log.Information($"Ignoring local {field.FieldType.Name} {field.DeclaringType?.Name}.{field.Name}");
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -105,7 +171,6 @@ namespace Datadog.Trace.Debugger.Helpers
                 var currentMethod = allMethods[i];
                 if (currentMethod.GetCustomAttribute<AsyncStateMachineAttribute>()?.StateMachineType == stateMachineType)
                 {
-                    // theoretically we can heave more than one found, we can iterate to the end to verify it
                     foundMethod = currentMethod;
                     break;
                 }
@@ -114,6 +179,53 @@ namespace Datadog.Trace.Debugger.Helpers
             return foundMethod;
         }
 
-        internal readonly record struct FieldNameValue(string Name, object Value);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static object GetAsyncKickoffThisObject<TTarget>(TTarget stateMachine)
+        {
+            var thisField = stateMachine.GetType().GetField(StateMachineThisFieldName, BindingFlags.Instance | BindingFlags.Public);
+            return thisField?.GetValue(stateMachine);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static AsyncKickoffMethodInfo GetAsyncKickoffMethodInfo<TTarget>(TTarget stateMachine)
+        {
+            var parent = GetAsyncKickoffThisObject(stateMachine);
+            var kickoffMethod = GetAsyncKickoffMethod(stateMachine.GetType());
+            var kickoffParentType = parent?.GetType() ?? kickoffMethod.DeclaringType;
+            return new AsyncKickoffMethodInfo(parent, kickoffParentType, kickoffMethod);
+        }
+
+        internal readonly ref struct AsyncKickoffMethodInfo
+        {
+            public AsyncKickoffMethodInfo(object kickoffParentObject, Type kickoffParentType, MethodBase kickoffMethod)
+            {
+                KickoffParentObject = kickoffParentObject;
+                KickoffParentType = kickoffParentType;
+                KickoffMethod = kickoffMethod;
+            }
+
+            public object KickoffParentObject { get; }
+
+            public Type KickoffParentType { get; }
+
+            public MethodBase KickoffMethod { get; }
+        }
+
+        // can't use ref struct here because GetHoistedArgumentsFromStateMachine returns FieldNameValue[]
+        internal readonly record struct FieldNameValueType(string Name, object Value, Type Type)
+        {
+            public object Value { get; } = Value;
+
+            public string Name { get; } = Name;
+
+            public Type Type { get; } = Type;
+        }
+
+        internal readonly record struct FieldInfoNameSanitized(FieldInfo Field, string SanitizedName)
+        {
+            public FieldInfo Field { get; } = Field;
+
+            public string SanitizedName { get; } = SanitizedName;
+        }
     }
 }

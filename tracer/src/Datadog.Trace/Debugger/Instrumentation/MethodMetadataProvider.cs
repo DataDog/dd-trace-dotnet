@@ -6,6 +6,7 @@
 using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Instrumentation
@@ -81,8 +82,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="index">The index of the method inside <see cref="_items"/></param>
         /// <param name="methodHandle">The handle of the executing method</param>
         /// <param name="typeHandle">The handle of the type</param>
+        /// <param name="asyncKickOffInfo">The info for the async kickoff method</param>
         /// <returns>true if succeeded (either existed before or just created), false if fails to create</returns>
-        public static bool TryCreateIfNotExists<TTarget>(TTarget targetObject, int index, in RuntimeMethodHandle methodHandle, in RuntimeTypeHandle typeHandle)
+        public static bool TryCreateIfNotExists<TTarget>(TTarget targetObject, int index, in RuntimeMethodHandle methodHandle, in RuntimeTypeHandle typeHandle, AsyncHelper.AsyncKickoffMethodInfo asyncKickOffInfo = default)
         {
             // Check if there's a MetadataMethodInfo associated with the given index
             if (index < _items.Length)
@@ -128,7 +130,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 }
                 else
                 {
-                    methodMetadataInfo = MethodMetadataInfoFactory.Create(method, targetObject, type);
+                    methodMetadataInfo = MethodMetadataInfoFactory.Create(method, targetObject, type, asyncKickOffInfo);
                 }
 
                 _items[index] = methodMetadataInfo;

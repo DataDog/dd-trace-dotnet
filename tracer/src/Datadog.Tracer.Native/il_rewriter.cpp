@@ -740,3 +740,42 @@ bool ILRewriter::IsBranchTarget(ILInstr* pInstr)
 {
     return s_OpCodeFlags[pInstr->m_opcode] & OPCODEFLAGS_BranchTarget;
 }
+
+bool ILRewriter::IsLoadLocalDirectInstruction(unsigned opcode)
+{
+    switch (opcode)
+    {
+        case CEE_LDLOC:
+        case CEE_LDLOC_0:
+        case CEE_LDLOC_1:
+        case CEE_LDLOC_2:
+        case CEE_LDLOC_3:
+        case CEE_LDLOC_S:
+        return true;
+        default:return false;
+    }
+}
+
+bool ILRewriter::IsLoadConstantInstruction(unsigned opcode)
+{
+    switch (opcode)
+    {
+        case CEE_LDC_I4:
+        case CEE_LDC_I4_0:
+        case CEE_LDC_I4_1:
+        case CEE_LDC_I4_2:
+        case CEE_LDC_I4_3:
+        case CEE_LDC_I4_4:
+        case CEE_LDC_I4_5:
+        case CEE_LDC_I4_6:
+        case CEE_LDC_I4_7:
+        case CEE_LDC_I4_8:
+        case CEE_LDC_I4_M1:
+        case CEE_LDC_I4_S:
+        case CEE_LDC_I8:
+        case CEE_LDC_R4:
+        case CEE_LDC_R8:
+        return true;
+        default:return false;
+    }
+}

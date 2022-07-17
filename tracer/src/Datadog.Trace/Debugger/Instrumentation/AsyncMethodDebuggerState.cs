@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Snapshots;
 
@@ -13,7 +14,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// Live debugger async execution state
     /// It must be a class type because we have a cycle reference to parent state
     /// </summary>
-    internal class AsyncMethodDebuggerState
+    public class AsyncMethodDebuggerState
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="AsyncMethodDebuggerState"/> class.
@@ -22,7 +23,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
         {
             HasLocalsOrReturnValue = false;
             HasArguments = false;
-            IsFirstEntry = true;
             SnapshotCreator = new DebuggerSnapshotCreator();
         }
 
@@ -31,11 +31,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// or halt for any reason (e.g an exception was caused by our instrumentation, rate limiter threshold reached).
         /// </summary>
         internal bool IsActive { get; set; } = true;
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the current async method run is in the first entry - i.e. in kick off method - or in the state machine run
-        /// </summary>
-        internal bool IsFirstEntry { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether the current state of the async method captured locals or return value
@@ -92,7 +87,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Gets or sets the type that represents the "this" object of the async kick-off method (i.e. original method)
         /// </summary>
-        public Type InvocationTargetType { get; set; }
+        public Type KickoffInvocationTargetType { get; set; }
+
+        /// <summary>
+        /// Gets or sets the type that represents the kickoff method of the state machine MoveNext (i.e. original method)
+        /// </summary>
+        public MethodBase KickoffMethod { get; set; }
 
         /// <summary>
         /// Gets or sets the MethodMetadataIndex

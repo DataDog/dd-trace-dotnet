@@ -38,7 +38,15 @@ namespace Datadog.InstrumentedAssemblyGenerator
                     }
                     else if (message.Contains("Error calculating max stack value."))
                     {
-                        ErrorsBuilder.AppendLine(message.Substring(0, message.IndexOf("Error calculating", StringComparison.OrdinalIgnoreCase) - 2));
+                        try
+                        {
+                            // try to get the method name if it existing in the message
+                            ErrorsBuilder.AppendLine(message.Substring(0, message.IndexOf("Error calculating", StringComparison.OrdinalIgnoreCase) - 2));
+                        }
+                        catch (Exception)
+                        {
+                            ErrorsBuilder.AppendLine(message);
+                        }
                     }
 
                     break;

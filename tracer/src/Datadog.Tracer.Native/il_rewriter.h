@@ -142,6 +142,10 @@ public:
     unsigned GetMaxStackValue();
 
     static bool IsBranchTarget(ILInstr* pInstr);
+
+    static bool IsLoadLocalDirectInstruction(unsigned opcode);
+
+    static bool IsLoadConstantInstruction(unsigned opcode);
 };
 
 #endif // DD_CLR_PROFILER_IL_REWRITER_H_

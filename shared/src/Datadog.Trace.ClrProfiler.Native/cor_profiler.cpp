@@ -109,7 +109,6 @@ namespace datadog::shared::nativeloader
     {
         Log::Debug("CorProfiler::Initialize");
         InspectRuntimeCompatibility(pICorProfilerInfoUnk);
-        // std::this_thread::sleep_for(std::chrono::milliseconds(20000));
 
         //
         // Get and set profiler pointers

@@ -1,6 +1,7 @@
 #include "debugger_rejit_preprocessor.h"
 
 #include "debugger_constants.h"
+#include "debugger_method_rewriter.h"
 #include "debugger_rejit_handler_module_method.h"
 #include "logger.h"
 #include "probes_tracker.h"
@@ -329,52 +330,19 @@ std::tuple<mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::TransformKickOf
             continue;
         }
 
-        HCORENUM interfaceImplsEnum = nullptr;
-        ULONG actualImpls;
-        mdInterfaceImpl impls;
-
         // check if the nested type implement the IAsyncStateMachine interface
-        if (SUCCEEDED(metadataImport->EnumInterfaceImpls(&interfaceImplsEnum, nestedAsyncClassOrStruct,
-            &impls, 1, &actualImpls)))
+        auto hr = DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine(metadataImport, nestedAsyncClassOrStruct);
+
+        if (hr == S_OK)
         {
-            if (actualImpls != 1)
+            // only one MoveNext exist in the state machine so no need to include signature
+            COR_SIGNATURE* moveNextSig{};
+            if (FAILED(metadataImport->FindMethod(nestedAsyncClassOrStruct, WStr("MoveNext"), moveNextSig,
+                0, &moveNextMethod)))
             {
-                // our compiler generated nested type should implement exactly one interface
-                break;
-            }
-
-            mdToken classToken, interfaceToken;
-            // get the interface token
-            if (FAILED(metadataImport->GetInterfaceImplProps(impls, &classToken, &interfaceToken)))
-            {
-                Logger::Warn("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: failed to get interface props");
-                break;
-            }
-
-            WCHAR type_name[kNameMaxSize]{};
-            DWORD type_name_len = 0;
-            mdAssembly assemblyToken;
-            if (FAILED(metadataImport->GetTypeRefProps(interfaceToken, &assemblyToken, type_name, kNameMaxSize, &type_name_len)))
-            {
-                Logger::Warn("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: failed to get type ref props");
-                break;
-            }
-
-            // if the interface is the IAsyncStateMachine
-            if (classToken == nestedAsyncClassOrStruct && type_name == debugger_iasync_state_machine_name)
-            {
-                // only one MoveNext exist in the state machine so no need to include signature
-                COR_SIGNATURE* moveNextSig{};
-                if (FAILED(metadataImport->FindMethod(nestedAsyncClassOrStruct, WStr("MoveNext"), moveNextSig,
-                                                     0, &moveNextMethod)))
-                {
-                    Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: failed to find the MoveNext method");
-                }
-                break;
+                Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: failed to find the MoveNext method");
             }
         }
-
-        metadataImport->CloseEnum(interfaceImplsEnum);
 
         if (moveNextMethod != mdMethodDefNil)
         {
@@ -389,10 +357,10 @@ std::tuple<mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::TransformKickOf
     }
 
     // this is an async method and we found the generated nested state machine type,
-    // define a new field in the state machine object to indicate if we are in the first entry to moveNext method
+    // define a new field in the state machine object to indicate if we are in the first entry to MoveNext method
     BYTE field_signature[] = {IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_BOOLEAN};
     mdFieldDef isFirstEntry = mdFieldDefNil;
-    auto hr = metadataEmit->DefineField(nestedAsyncClassOrStruct, WStr("<>dd_liveDebugger_isFirstEntryToMoveNext"), fdPrivate, field_signature,
+    auto hr = metadataEmit->DefineField(nestedAsyncClassOrStruct, managed_profiler_debugger_is_first_entry_field_name.c_str(), fdPrivate, field_signature,
                                         sizeof(field_signature), 0, nullptr, 0, &isFirstEntry);
     if (FAILED(hr))
     {
