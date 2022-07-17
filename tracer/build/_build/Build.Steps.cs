@@ -1430,10 +1430,9 @@ partial class Build
                         .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                         .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                         .When(IncludeTestsRequiringDocker is not null, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker.Value ? "true" : "false"))
-                        .When(CodeCoverage, ConfigureCodeCoverage)
-                        .CombineWith(ParallelIntegrationTests, (s, project) => s
-                            .EnableTrxLogOutput(GetResultsDirectory(project))
-                            .SetProjectFile(project)),
+                       .CombineWith(ParallelIntegrationTests, (s, project) => s
+                                                                             .EnableTrxLogOutput(GetResultsDirectory(project))
+                                                                             .SetProjectFile(project)),
                     degreeOfParallelism: 2);
 
                 // Run this one separately so we can tail output
@@ -1450,10 +1449,9 @@ partial class Build
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
                     .When(IncludeTestsRequiringDocker is not null, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker.Value ? "true" : "false"))
-                    .When(CodeCoverage, ConfigureCodeCoverage)
-                    .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
-                        .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .SetProjectFile(project))
+                   .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
+                                                                            .EnableTrxLogOutput(GetResultsDirectory(project))
+                                                                            .SetProjectFile(project))
                 );
             }
             finally
