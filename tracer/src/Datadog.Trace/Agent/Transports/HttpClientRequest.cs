@@ -39,15 +39,11 @@ namespace Datadog.Trace.Agent.Transports
         public async Task<IApiResponse> GetAsync()
         {
             _request.Method = HttpMethod.Get;
-            _request.Content = null;
-
             return new HttpClientResponse(await _client.SendAsync(_request).ConfigureAwait(false));
         }
 
         public async Task<IApiResponse> PostAsJsonAsync(IEvent events, JsonSerializer serializer)
         {
-            _request.Method = HttpMethod.Post;
-
             var memoryStream = new MemoryStream();
             var sw = new StreamWriter(memoryStream, leaveOpen: true);
             using (var content = new StreamContent(memoryStream))
@@ -77,8 +73,6 @@ namespace Datadog.Trace.Agent.Transports
 
         public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
         {
-            _request.Method = HttpMethod.Post;
-
             // re-create HttpContent on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
             using (var content = new ByteArrayContent(bytes.Array, bytes.Offset, bytes.Count))
             {
