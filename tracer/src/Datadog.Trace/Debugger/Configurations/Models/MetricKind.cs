@@ -3,11 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.Debugger.Configurations.Models;
-
-internal enum MetricKind
+namespace Datadog.Trace.Debugger.Configurations.Models
 {
-    COUNT,
-    GAUGE,
-    HISTOGRAM
+    internal enum MetricKind
+    {
+        COUNT,
+        GAUGE,
+        HISTOGRAM
+    }
 }

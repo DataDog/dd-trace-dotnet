@@ -7,75 +7,76 @@ using System.Collections.Generic;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 
 #pragma warning disable SA1300
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable;
-
-internal sealed partial class PortablePdbReader
+namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable
 {
-    internal SymbolMethod GetContainingMethod(string documentUrl, int line, int column, out int? bytecodeOffset)
+    internal sealed partial class PortablePdbReader
     {
-        foreach (var methodRid in GetMethodRIDsContainedInDocument(documentUrl))
+        internal SymbolMethod GetContainingMethod(string documentUrl, int line, int column, out int? bytecodeOffset)
         {
-            var method = ((ModuleDefMD)module).ResolveMethod(methodRid);
-            var symbolMethod = GetMethod(method, version: 1);
-            foreach (var sp in symbolMethod.SequencePoints)
+            foreach (var methodRid in GetMethodRIDsContainedInDocument(documentUrl))
             {
-                if (sp.Line <= line &&
-                    sp.EndLine >= line &&
-                    sp.Column >= column &&
-                    sp.EndColumn >= column)
+                var method = ((ModuleDefMD)module).ResolveMethod(methodRid);
+                var symbolMethod = GetMethod(method, version: 1);
+                foreach (var sp in symbolMethod.SequencePoints)
                 {
-                    bytecodeOffset = sp.Offset;
-                    return symbolMethod;
+                    if (sp.Line <= line &&
+                        sp.EndLine >= line &&
+                        sp.Column >= column &&
+                        sp.EndColumn >= column)
+                    {
+                        bytecodeOffset = sp.Offset;
+                        return symbolMethod;
+                    }
+                }
+            }
+
+            bytecodeOffset = null;
+            return null;
+        }
+
+        private IEnumerable<uint> GetMethodRIDsContainedInDocument(string documentUrl)
+        {
+            var requestedDocumentRid = GetDocumentRid(documentUrl);
+
+            for (uint methodRid = 1; methodRid <= pdbMetadata.TablesStream.MethodDebugInformationTable.Rows; methodRid++)
+            {
+                if (!pdbMetadata.TablesStream.TryReadMethodDebugInformationRow(methodRid, out var row))
+                {
+                    continue;
+                }
+
+                if (row.SequencePoints == 0)
+                {
+                    continue;
+                }
+
+                if (row.Document == requestedDocumentRid)
+                {
+                    yield return methodRid;
                 }
             }
         }
 
-        bytecodeOffset = null;
-        return null;
-    }
-
-    private IEnumerable<uint> GetMethodRIDsContainedInDocument(string documentUrl)
-    {
-        var requestedDocumentRid = GetDocumentRid(documentUrl);
-
-        for (uint methodRid = 1; methodRid <= pdbMetadata.TablesStream.MethodDebugInformationTable.Rows; methodRid++)
+        private int GetDocumentRid(string documentUrl)
         {
-            if (!pdbMetadata.TablesStream.TryReadMethodDebugInformationRow(methodRid, out var row))
+            var docTbl = pdbMetadata.TablesStream.DocumentTable;
+            var docs = new SymbolDocument[docTbl.Rows];
+            var nameReader = new DocumentNameReader(pdbMetadata.BlobStream);
+            for (var i = 1; i <= docs.Length; i++)
             {
-                continue;
+                if (!pdbMetadata.TablesStream.TryReadDocumentRow((uint)i, out var row))
+                {
+                    continue;
+                }
+
+                var url = nameReader.ReadDocumentName(row.Name);
+                if (url == documentUrl)
+                {
+                    return i;
+                }
             }
 
-            if (row.SequencePoints == 0)
-            {
-                continue;
-            }
-
-            if (row.Document == requestedDocumentRid)
-            {
-                yield return methodRid;
-            }
+            return -1;
         }
-    }
-
-    private int GetDocumentRid(string documentUrl)
-    {
-        var docTbl = pdbMetadata.TablesStream.DocumentTable;
-        var docs = new SymbolDocument[docTbl.Rows];
-        var nameReader = new DocumentNameReader(pdbMetadata.BlobStream);
-        for (var i = 1; i <= docs.Length; i++)
-        {
-            if (!pdbMetadata.TablesStream.TryReadDocumentRow((uint)i, out var row))
-            {
-                continue;
-            }
-
-            var url = nameReader.ReadDocumentName(row.Name);
-            if (url == documentUrl)
-            {
-                return i;
-            }
-        }
-
-        return -1;
     }
 }

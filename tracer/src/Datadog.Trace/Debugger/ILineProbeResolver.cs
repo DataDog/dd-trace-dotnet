@@ -6,15 +6,16 @@
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Models;
 
-namespace Datadog.Trace.Debugger;
-
-/// <summary>
-/// Matches a source file path with the assembly and pdb files that correlate to it,
-/// and resolves the line probe's line number to a byte code offset.
-/// </summary>
-internal interface ILineProbeResolver
+namespace Datadog.Trace.Debugger
 {
-    void OnDomainUnloaded();
+    /// <summary>
+    /// Matches a source file path with the assembly and pdb files that correlate to it,
+    /// and resolves the line probe's line number to a byte code offset.
+    /// </summary>
+    internal interface ILineProbeResolver
+    {
+        void OnDomainUnloaded();
 
-    LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out BoundLineProbeLocation location);
+        LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out BoundLineProbeLocation location);
+    }
 }

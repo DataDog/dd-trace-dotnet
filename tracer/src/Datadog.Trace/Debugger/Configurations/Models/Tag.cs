@@ -5,30 +5,31 @@
 
 using System;
 
-namespace Datadog.Trace.Debugger.Configurations.Models;
-
-internal record Tag
+namespace Datadog.Trace.Debugger.Configurations.Models
 {
-    public string Key { get; set; }
-
-    public string Value { get; set; }
-
-    public override string ToString()
+    internal record Tag
     {
-        return $"{Key}:{Value}";
-    }
+        public string Key { get; set; }
 
-    public static Tag FromString(string str)
-    {
-        var index = str?.IndexOf(':');
-        if (index is null or -1)
+        public string Value { get; set; }
+
+        public override string ToString()
         {
-            return null;
+            return $"{Key}:{Value}";
         }
 
-        var key = str.Substring(0, index.Value + 1);
-        var value = str.Substring(index.Value + 1);
+        public static Tag FromString(string str)
+        {
+            var index = str?.IndexOf(':');
+            if (index is null or -1)
+            {
+                return null;
+            }
 
-        return new Tag() { Key = key, Value = value };
+            var key = str.Substring(0, index.Value + 1);
+            var value = str.Substring(index.Value + 1);
+
+            return new Tag() { Key = key, Value = value };
+        }
     }
 }

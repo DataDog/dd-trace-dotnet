@@ -8,22 +8,23 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 
-namespace Datadog.Trace.Debugger.Snapshots;
-
-internal class OldStyleTupleSnapshotSerializerFieldsAndPropsSelector : SnapshotSerializerFieldsAndPropsSelector
+namespace Datadog.Trace.Debugger.Snapshots
 {
-    internal override bool IsApplicable(Type type)
+    internal class OldStyleTupleSnapshotSerializerFieldsAndPropsSelector : SnapshotSerializerFieldsAndPropsSelector
     {
-        return type.Name.StartsWith("Tuple`") && type.Namespace == "System";
-    }
+        internal override bool IsApplicable(Type type)
+        {
+            return type.Name.StartsWith("Tuple`") && type.Namespace == "System";
+        }
 
-    internal override IEnumerable<MemberInfo> GetFieldsAndProps(
-        Type type,
-        object source,
-        int maximumDepthOfHierarchyToCopy,
-        int maximumNumberOfFieldsToCopy,
-        CancellationTokenSource cts)
-    {
-        return type.GetProperties();
+        internal override IEnumerable<MemberInfo> GetFieldsAndProps(
+            Type type,
+            object source,
+            int maximumDepthOfHierarchyToCopy,
+            int maximumNumberOfFieldsToCopy,
+            CancellationTokenSource cts)
+        {
+            return type.GetProperties();
+        }
     }
 }

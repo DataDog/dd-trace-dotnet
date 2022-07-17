@@ -5,10 +5,11 @@
 
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Models;
-
-internal class RcmResponse
+namespace Datadog.Trace.RemoteConfigurationManagement.Models
 {
-    [JsonProperty("target_files")]
-    public RcmTargetFile[] TargetFiles { get; set; }
+    internal class RcmResponse
+    {
+        [JsonProperty("target_files")]
+        public RcmTargetFile[] TargetFiles { get; set; }
+    }
 }

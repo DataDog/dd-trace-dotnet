@@ -8,35 +8,36 @@ using System.Linq;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 
 #pragma warning disable SA1300
-namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed;
-
-internal partial class PdbReader
+namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed
 {
-    internal SymbolMethod GetContainingMethod(string documentUrl, int line, int column, out int? bytecodeOffset)
+    internal partial class PdbReader
     {
-        var candidateSequencePoints = new List<ResolvedSequencePoint>();
-        foreach (var function in functions.Values)
+        internal SymbolMethod GetContainingMethod(string documentUrl, int line, int column, out int? bytecodeOffset)
         {
-            var methodIsInDocument = function.SequencePoints.Any(s => s.Document.URL == documentUrl);
-
-            if (methodIsInDocument)
+            var candidateSequencePoints = new List<ResolvedSequencePoint>();
+            foreach (var function in functions.Values)
             {
-                var method = GetMethod(((ModuleDefMD)module).ResolveMethod(MDToken.ToRID(function.token)), version: 1);
-                foreach (var sp in method.SequencePoints)
+                var methodIsInDocument = function.SequencePoints.Any(s => s.Document.URL == documentUrl);
+
+                if (methodIsInDocument)
                 {
-                    if (sp.Line <= line && sp.EndLine >= line &&
-                        sp.Column >= column && sp.EndColumn >= column)
+                    var method = GetMethod(((ModuleDefMD)module).ResolveMethod(MDToken.ToRID(function.token)), version: 1);
+                    foreach (var sp in method.SequencePoints)
                     {
-                        candidateSequencePoints.Add(new ResolvedSequencePoint(method, sp));
+                        if (sp.Line <= line && sp.EndLine >= line &&
+                            sp.Column >= column && sp.EndColumn >= column)
+                        {
+                            candidateSequencePoints.Add(new ResolvedSequencePoint(method, sp));
+                        }
                     }
                 }
             }
+
+            var matchingSequencePoint = candidateSequencePoints.FirstOrDefault();
+            bytecodeOffset = matchingSequencePoint.SequencePoint.Offset;
+            return matchingSequencePoint.Method; // TODO - find shortest sequence point
         }
 
-        var matchingSequencePoint = candidateSequencePoints.FirstOrDefault();
-        bytecodeOffset = matchingSequencePoint.SequencePoint.Offset;
-        return matchingSequencePoint.Method; // TODO - find shortest sequence point
+        private record ResolvedSequencePoint(SymbolMethod Method, SymbolSequencePoint SequencePoint);
     }
-
-    private record ResolvedSequencePoint(SymbolMethod Method, SymbolSequencePoint SequencePoint);
 }

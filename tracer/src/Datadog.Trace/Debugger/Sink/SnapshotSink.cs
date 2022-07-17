@@ -6,50 +6,51 @@
 using System.Collections.Generic;
 using Datadog.Trace.Util;
 
-namespace Datadog.Trace.Debugger.Sink;
-
-internal class SnapshotSink
+namespace Datadog.Trace.Debugger.Sink
 {
-    private const int DefaultQueueLimit = 1000;
-
-    private readonly BoundedConcurrentQueue<string> _queue;
-    private readonly int _batchSize;
-
-    private SnapshotSink(int batchSize)
+    internal class SnapshotSink
     {
-        _batchSize = batchSize;
-        _queue = new BoundedConcurrentQueue<string>(DefaultQueueLimit);
-    }
+        private const int DefaultQueueLimit = 1000;
 
-    public static SnapshotSink Create(ImmutableDebuggerSettings settings)
-    {
-        return new SnapshotSink(settings.UploadBatchSize);
-    }
+        private readonly BoundedConcurrentQueue<string> _queue;
+        private readonly int _batchSize;
 
-    public void Add(string snapshot)
-    {
-        _queue.TryEnqueue(snapshot);
-    }
-
-    public List<string> GetSnapshots()
-    {
-        var snapshots = new List<string>();
-        var counter = 0;
-        while (!_queue.IsEmpty && counter < _batchSize)
+        private SnapshotSink(int batchSize)
         {
-            if (_queue.TryDequeue(out var snapshot))
-            {
-                snapshots.Add(snapshot);
-            }
-
-            counter++;
+            _batchSize = batchSize;
+            _queue = new BoundedConcurrentQueue<string>(DefaultQueueLimit);
         }
 
-        return snapshots;
-    }
+        public static SnapshotSink Create(ImmutableDebuggerSettings settings)
+        {
+            return new SnapshotSink(settings.UploadBatchSize);
+        }
 
-    public int RemainingCapacity()
-    {
-        return DefaultQueueLimit - _queue.Count;
+        public void Add(string snapshot)
+        {
+            _queue.TryEnqueue(snapshot);
+        }
+
+        public List<string> GetSnapshots()
+        {
+            var snapshots = new List<string>();
+            var counter = 0;
+            while (!_queue.IsEmpty && counter < _batchSize)
+            {
+                if (_queue.TryDequeue(out var snapshot))
+                {
+                    snapshots.Add(snapshot);
+                }
+
+                counter++;
+            }
+
+            return snapshots;
+        }
+
+        public int RemainingCapacity()
+        {
+            return DefaultQueueLimit - _queue.Count;
+        }
     }
 }

@@ -7,131 +7,132 @@ using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 
-namespace Datadog.Trace.Debugger;
-
-internal class DebuggerSettings
+namespace Datadog.Trace.Debugger
 {
-    private const int DefaultMaxDepthToSerialize = 1;
-    private const int DefaultSerializationTimeThreshold = 150;
-    private const int DefaultConfigurationsPollIntervalSeconds = 1;
-    private const int DefaultUploadBatchSize = 100;
-    private const int DefaultDiagnosticsIntervalSeconds = 3600;
-    private const int DefaultUploadFlushIntervalMilliseconds = 0;
-
-    public DebuggerSettings()
-        : this(configurationSource: null)
+    internal class DebuggerSettings
     {
-    }
+        private const int DefaultMaxDepthToSerialize = 1;
+        private const int DefaultSerializationTimeThreshold = 150;
+        private const int DefaultConfigurationsPollIntervalSeconds = 1;
+        private const int DefaultUploadBatchSize = 100;
+        private const int DefaultDiagnosticsIntervalSeconds = 3600;
+        private const int DefaultUploadFlushIntervalMilliseconds = 0;
 
-    public DebuggerSettings(IConfigurationSource configurationSource)
-    {
-        ApiKey = configurationSource?.GetString(ConfigurationKeys.ApiKey);
-        RuntimeId = Util.RuntimeId.Get();
-        ServiceName = configurationSource?.GetString(ConfigurationKeys.ServiceName);
-
-        var exporterSettings = new ExporterSettings(configurationSource);
-        TransportType = exporterSettings.TracesTransport;
-
-        var agentUri = exporterSettings.AgentUri.ToString().TrimEnd('/');
-        AgentUri = exporterSettings.AgentUri;
-        SnapshotsPath = configurationSource?.GetString(ConfigurationKeys.Debugger.SnapshotUrl)?.TrimEnd('/') ?? agentUri;
-
-        var probeFileLocation = configurationSource?.GetString(ConfigurationKeys.Debugger.ProbeFile);
-        var isFileModeMode = !string.IsNullOrWhiteSpace(probeFileLocation);
-        if (isFileModeMode)
+        public DebuggerSettings()
+            : this(configurationSource: null)
         {
-            ProbeMode = ProbeMode.File;
-            ProbeConfigurationsPath = probeFileLocation;
-        }
-        else
-        {
-            ProbeMode = ProbeMode.Agent;
-            ProbeConfigurationsPath = agentUri;
         }
 
-        var pollInterval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.PollInterval);
-        ProbeConfigurationsPollIntervalSeconds =
-            pollInterval is null or <= 0
-                ? DefaultConfigurationsPollIntervalSeconds
-                : pollInterval.Value;
+        public DebuggerSettings(IConfigurationSource configurationSource)
+        {
+            ApiKey = configurationSource?.GetString(ConfigurationKeys.ApiKey);
+            RuntimeId = Util.RuntimeId.Get();
+            ServiceName = configurationSource?.GetString(ConfigurationKeys.ServiceName);
 
-        ServiceVersion = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
-        Environment = configurationSource?.GetString(ConfigurationKeys.Environment);
+            var exporterSettings = new ExporterSettings(configurationSource);
+            TransportType = exporterSettings.TracesTransport;
 
-        Enabled = configurationSource?.GetBool(ConfigurationKeys.Debugger.Enabled) ?? false;
+            var agentUri = exporterSettings.AgentUri.ToString().TrimEnd('/');
+            AgentUri = exporterSettings.AgentUri;
+            SnapshotsPath = configurationSource?.GetString(ConfigurationKeys.Debugger.SnapshotUrl)?.TrimEnd('/') ?? agentUri;
 
-        var maxDepth = configurationSource?.GetInt32(ConfigurationKeys.Debugger.MaxDepthToSerialize);
-        MaximumDepthOfMembersToCopy =
-            maxDepth is null or <= 0
-                ? DefaultMaxDepthToSerialize
-                : maxDepth.Value;
+            var probeFileLocation = configurationSource?.GetString(ConfigurationKeys.Debugger.ProbeFile);
+            var isFileModeMode = !string.IsNullOrWhiteSpace(probeFileLocation);
+            if (isFileModeMode)
+            {
+                ProbeMode = ProbeMode.File;
+                ProbeConfigurationsPath = probeFileLocation;
+            }
+            else
+            {
+                ProbeMode = ProbeMode.Agent;
+                ProbeConfigurationsPath = agentUri;
+            }
 
-        var serializationTimeThreshold = configurationSource?.GetInt32(ConfigurationKeys.Debugger.MaxTimeToSerialize);
-        MaxSerializationTimeInMilliseconds =
-            serializationTimeThreshold is null or <= 0
-                ? DefaultSerializationTimeThreshold
-                : serializationTimeThreshold.Value;
+            var pollInterval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.PollInterval);
+            ProbeConfigurationsPollIntervalSeconds =
+                pollInterval is null or <= 0
+                    ? DefaultConfigurationsPollIntervalSeconds
+                    : pollInterval.Value;
 
-        var batchSize = configurationSource?.GetInt32(ConfigurationKeys.Debugger.UploadBatchSize);
-        UploadBatchSize =
-            batchSize is null or <= 0
-                ? DefaultUploadBatchSize
-                : batchSize.Value;
+            ServiceVersion = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
+            Environment = configurationSource?.GetString(ConfigurationKeys.Environment);
 
-        var interval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.DiagnosticsInterval);
-        DiagnosticsIntervalSeconds =
-            interval is null or <= 0
-                ? DefaultDiagnosticsIntervalSeconds
-                : interval.Value;
+            Enabled = configurationSource?.GetBool(ConfigurationKeys.Debugger.Enabled) ?? false;
 
-        var flushInterval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.UploadFlushInterval);
-        UploadFlushIntervalMilliseconds =
-            flushInterval is null or < 0
-                ? DefaultUploadFlushIntervalMilliseconds
-                : flushInterval.Value;
-    }
+            var maxDepth = configurationSource?.GetInt32(ConfigurationKeys.Debugger.MaxDepthToSerialize);
+            MaximumDepthOfMembersToCopy =
+                maxDepth is null or <= 0
+                    ? DefaultMaxDepthToSerialize
+                    : maxDepth.Value;
 
-    public ProbeMode ProbeMode { get; }
+            var serializationTimeThreshold = configurationSource?.GetInt32(ConfigurationKeys.Debugger.MaxTimeToSerialize);
+            MaxSerializationTimeInMilliseconds =
+                serializationTimeThreshold is null or <= 0
+                    ? DefaultSerializationTimeThreshold
+                    : serializationTimeThreshold.Value;
 
-    public string ApiKey { get; }
+            var batchSize = configurationSource?.GetInt32(ConfigurationKeys.Debugger.UploadBatchSize);
+            UploadBatchSize =
+                batchSize is null or <= 0
+                    ? DefaultUploadBatchSize
+                    : batchSize.Value;
 
-    public string RuntimeId { get; }
+            var interval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.DiagnosticsInterval);
+            DiagnosticsIntervalSeconds =
+                interval is null or <= 0
+                    ? DefaultDiagnosticsIntervalSeconds
+                    : interval.Value;
 
-    public string ServiceName { get; }
+            var flushInterval = configurationSource?.GetInt32(ConfigurationKeys.Debugger.UploadFlushInterval);
+            UploadFlushIntervalMilliseconds =
+                flushInterval is null or < 0
+                    ? DefaultUploadFlushIntervalMilliseconds
+                    : flushInterval.Value;
+        }
 
-    public string ServiceVersion { get; }
+        public ProbeMode ProbeMode { get; }
 
-    public int ProbeConfigurationsPollIntervalSeconds { get; }
+        public string ApiKey { get; }
 
-    public string ProbeConfigurationsPath { get; }
+        public string RuntimeId { get; }
 
-    public string SnapshotsPath { get; }
+        public string ServiceName { get; }
 
-    public string Environment { get; }
+        public string ServiceVersion { get; }
 
-    public bool Enabled { get; }
+        public int ProbeConfigurationsPollIntervalSeconds { get; }
 
-    public int MaxSerializationTimeInMilliseconds { get; }
+        public string ProbeConfigurationsPath { get; }
 
-    public int MaximumDepthOfMembersToCopy { get; }
+        public string SnapshotsPath { get; }
 
-    public int UploadBatchSize { get; }
+        public string Environment { get; }
 
-    public int DiagnosticsIntervalSeconds { get; }
+        public bool Enabled { get; }
 
-    public int UploadFlushIntervalMilliseconds { get; }
+        public int MaxSerializationTimeInMilliseconds { get; }
 
-    public TracesTransportType TransportType { get; }
+        public int MaximumDepthOfMembersToCopy { get; }
 
-    public Uri AgentUri { get; }
+        public int UploadBatchSize { get; }
 
-    public static DebuggerSettings FromSource(IConfigurationSource source)
-    {
-        return new DebuggerSettings(source);
-    }
+        public int DiagnosticsIntervalSeconds { get; }
 
-    public static DebuggerSettings FromDefaultSource()
-    {
-        return FromSource(GlobalSettings.CreateDefaultConfigurationSource());
+        public int UploadFlushIntervalMilliseconds { get; }
+
+        public TracesTransportType TransportType { get; }
+
+        public Uri AgentUri { get; }
+
+        public static DebuggerSettings FromSource(IConfigurationSource source)
+        {
+            return new DebuggerSettings(source);
+        }
+
+        public static DebuggerSettings FromDefaultSource()
+        {
+            return FromSource(GlobalSettings.CreateDefaultConfigurationSource());
+        }
     }
 }

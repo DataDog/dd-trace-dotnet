@@ -7,19 +7,20 @@ using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 
-namespace Datadog.Trace.Debugger.Configurations;
-
-internal static class ProbeConfigurationApiFactory
+namespace Datadog.Trace.Debugger.Configurations
 {
-    public static IProbeConfigurationApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
+    internal static class ProbeConfigurationApiFactory
     {
-        IProbeConfigurationApi api = settings.ProbeMode switch
+        public static IProbeConfigurationApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
         {
-            ProbeMode.File => FileProbeConfigurationApi.Create(settings),
-            ProbeMode.Agent => RcmProbeConfigurationApi.Create(settings, apiRequestFactory, discoveryService),
-            _ => throw new ArgumentOutOfRangeException()
-        };
+            IProbeConfigurationApi api = settings.ProbeMode switch
+            {
+                ProbeMode.File => FileProbeConfigurationApi.Create(settings),
+                ProbeMode.Agent => RcmProbeConfigurationApi.Create(settings, apiRequestFactory, discoveryService),
+                _ => throw new ArgumentOutOfRangeException()
+            };
 
-        return api;
+            return api;
+        }
     }
 }

@@ -7,26 +7,27 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.Debugger.Configurations.Models;
-
-internal class ProbeConfiguration : IJsonApiObject
+namespace Datadog.Trace.Debugger.Configurations.Models
 {
-    public string Id { get; set; }
-
-    public SnapshotProbe[] SnapshotProbes { get; set; } = Array.Empty<SnapshotProbe>();
-
-    public MetricProbe[] MetricProbes { get; set; } = Array.Empty<MetricProbe>();
-
-    public FilterList AllowList { get; set; }
-
-    public FilterList DenyList { get; set; }
-
-    public Sampling? Sampling { get; set; }
-
-    public OpsConfiguration OpsConfiguration { get; set; }
-
-    public IEnumerable<ProbeDefinition> GetProbeDefinitions()
+    internal class ProbeConfiguration : IJsonApiObject
     {
-        return SnapshotProbes.Cast<ProbeDefinition>().Concat(MetricProbes);
+        public string Id { get; set; }
+
+        public SnapshotProbe[] SnapshotProbes { get; set; } = Array.Empty<SnapshotProbe>();
+
+        public MetricProbe[] MetricProbes { get; set; } = Array.Empty<MetricProbe>();
+
+        public FilterList AllowList { get; set; }
+
+        public FilterList DenyList { get; set; }
+
+        public Sampling? Sampling { get; set; }
+
+        public OpsConfiguration OpsConfiguration { get; set; }
+
+        public IEnumerable<ProbeDefinition> GetProbeDefinitions()
+        {
+            return SnapshotProbes.Cast<ProbeDefinition>().Concat(MetricProbes);
+        }
     }
 }

@@ -6,22 +6,23 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.Debugger.Helpers;
-
-internal static class EnumerableExtensions
+namespace Datadog.Trace.Debugger.Helpers
 {
-    public static bool NullableSequentialEquals<T>(this IEnumerable<T> @this, IEnumerable<T> other)
+    internal static class EnumerableExtensions
     {
-        if (ReferenceEquals(null, @this))
+        public static bool NullableSequentialEquals<T>(this IEnumerable<T> @this, IEnumerable<T> other)
         {
-            return ReferenceEquals(null, other);
-        }
+            if (ReferenceEquals(null, @this))
+            {
+                return ReferenceEquals(null, other);
+            }
 
-        if (ReferenceEquals(null, other))
-        {
-            return false;
-        }
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
 
-        return @this.SequenceEqual(other);
+            return @this.SequenceEqual(other);
+        }
     }
 }

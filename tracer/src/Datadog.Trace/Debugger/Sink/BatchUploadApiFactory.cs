@@ -6,12 +6,13 @@
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 
-namespace Datadog.Trace.Debugger.Sink;
-
-internal static class BatchUploadApiFactory
+namespace Datadog.Trace.Debugger.Sink
 {
-    public static IBatchUploadApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
+    internal static class BatchUploadApiFactory
     {
-        return AgentBatchUploadApi.Create(settings, apiRequestFactory, discoveryService);
+        public static IBatchUploadApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
+        {
+            return AgentBatchUploadApi.Create(settings, apiRequestFactory, discoveryService);
+        }
     }
 }

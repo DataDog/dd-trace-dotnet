@@ -3,9 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.Debugger.Configurations.Models;
-
-internal record MetricValue
+namespace Datadog.Trace.Debugger.Configurations.Models
 {
-    public string Expr { get; set; }
+    internal record MetricValue
+    {
+        public string Expr { get; set; }
+    }
 }

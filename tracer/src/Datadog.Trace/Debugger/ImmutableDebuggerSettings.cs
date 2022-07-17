@@ -7,122 +7,123 @@ using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 
-namespace Datadog.Trace.Debugger;
-
-internal class ImmutableDebuggerSettings
+namespace Datadog.Trace.Debugger
 {
-    public ImmutableDebuggerSettings(bool enabled, ProbeMode probeMode, string apiKey, string runtimeId, string serviceName, string serviceVersion, int probeConfigurationsPollIntervalSeconds, string probeConfigurationsPath, string environment, int maxSerializationTimeInMilliseconds, int maximumDepthOfMembersToCopy, string snapshotsPath, int uploadBatchSize, int diagnosticsIntervalSeconds, int uploadFlushIntervalMilliseconds, TracesTransportType transportType, Uri agentUri)
+    internal class ImmutableDebuggerSettings
     {
-        Enabled = enabled;
-        ProbeMode = probeMode;
-        ApiKey = apiKey;
-        RuntimeId = runtimeId;
-        ServiceName = serviceName;
-        ServiceVersion = serviceVersion;
-        ProbeConfigurationsPollIntervalSeconds = probeConfigurationsPollIntervalSeconds;
-        ProbeConfigurationsPath = probeConfigurationsPath;
-        Environment = environment;
-        MaxSerializationTimeInMilliseconds = maxSerializationTimeInMilliseconds;
-        MaximumDepthOfMembersOfMembersToCopy = maximumDepthOfMembersToCopy;
-        SnapshotsPath = snapshotsPath;
-        UploadBatchSize = uploadBatchSize;
-        DiagnosticsIntervalSeconds = diagnosticsIntervalSeconds;
-        UploadFlushIntervalMilliseconds = uploadFlushIntervalMilliseconds;
-        TransportType = transportType;
-        AgentUri = agentUri;
+        public ImmutableDebuggerSettings(bool enabled, ProbeMode probeMode, string apiKey, string runtimeId, string serviceName, string serviceVersion, int probeConfigurationsPollIntervalSeconds, string probeConfigurationsPath, string environment, int maxSerializationTimeInMilliseconds, int maximumDepthOfMembersToCopy, string snapshotsPath, int uploadBatchSize, int diagnosticsIntervalSeconds, int uploadFlushIntervalMilliseconds, TracesTransportType transportType, Uri agentUri)
+        {
+            Enabled = enabled;
+            ProbeMode = probeMode;
+            ApiKey = apiKey;
+            RuntimeId = runtimeId;
+            ServiceName = serviceName;
+            ServiceVersion = serviceVersion;
+            ProbeConfigurationsPollIntervalSeconds = probeConfigurationsPollIntervalSeconds;
+            ProbeConfigurationsPath = probeConfigurationsPath;
+            Environment = environment;
+            MaxSerializationTimeInMilliseconds = maxSerializationTimeInMilliseconds;
+            MaximumDepthOfMembersOfMembersToCopy = maximumDepthOfMembersToCopy;
+            SnapshotsPath = snapshotsPath;
+            UploadBatchSize = uploadBatchSize;
+            DiagnosticsIntervalSeconds = diagnosticsIntervalSeconds;
+            UploadFlushIntervalMilliseconds = uploadFlushIntervalMilliseconds;
+            TransportType = transportType;
+            AgentUri = agentUri;
+        }
+
+        public bool Enabled { get; }
+
+        public ProbeMode ProbeMode { get; }
+
+        public string ApiKey { get; }
+
+        public string RuntimeId { get; }
+
+        public string ServiceName { get; }
+
+        public string ServiceVersion { get; }
+
+        public string ProbeConfigurationsPath { get; }
+
+        public string SnapshotsPath { get; set; }
+
+        public int ProbeConfigurationsPollIntervalSeconds { get; }
+
+        public string Environment { get; }
+
+        public int MaxSerializationTimeInMilliseconds { get; }
+
+        public int MaximumDepthOfMembersOfMembersToCopy { get; }
+
+        public int UploadBatchSize { get; }
+
+        public int DiagnosticsIntervalSeconds { get; }
+
+        public int UploadFlushIntervalMilliseconds { get; }
+
+        public TracesTransportType TransportType { get; }
+
+        public Uri AgentUri { get; }
+
+        public static ImmutableDebuggerSettings Create(TracerSettings tracerSettings) =>
+            Create(tracerSettings.DebuggerSettings);
+
+        public static ImmutableDebuggerSettings Create(DebuggerSettings debuggerSettings) =>
+            Create(
+                debuggerSettings.Enabled,
+                debuggerSettings.ProbeMode,
+                debuggerSettings.ApiKey,
+                debuggerSettings.RuntimeId,
+                debuggerSettings.ServiceName,
+                debuggerSettings.ServiceVersion,
+                debuggerSettings.ProbeConfigurationsPollIntervalSeconds,
+                debuggerSettings.ProbeConfigurationsPath,
+                debuggerSettings.Environment,
+                debuggerSettings.MaxSerializationTimeInMilliseconds,
+                debuggerSettings.MaximumDepthOfMembersToCopy,
+                debuggerSettings.SnapshotsPath,
+                debuggerSettings.UploadBatchSize,
+                debuggerSettings.DiagnosticsIntervalSeconds,
+                debuggerSettings.UploadFlushIntervalMilliseconds,
+                debuggerSettings.TransportType,
+                debuggerSettings.AgentUri);
+
+        public static ImmutableDebuggerSettings Create(
+            bool enabled,
+            ProbeMode probeMode,
+            string apiKey,
+            string runtimeId,
+            string serviceName,
+            string serviceVersion,
+            int probeConfigurationsPollIntervalSeconds,
+            string probeConfigurationsPath,
+            string environment,
+            int maxSerializationTimeInMilliseconds,
+            int maximumDepthOfMembersOfMembersToCopy,
+            string snapshotsPath,
+            int uploadBatchSize,
+            int diagnosticsIntervalSeconds,
+            int uploadFlushIntervalMilliseconds,
+            TracesTransportType transportType,
+            Uri agentUri) =>
+            new ImmutableDebuggerSettings(
+                enabled,
+                probeMode,
+                apiKey,
+                runtimeId,
+                serviceName,
+                serviceVersion,
+                probeConfigurationsPollIntervalSeconds,
+                probeConfigurationsPath,
+                environment,
+                maxSerializationTimeInMilliseconds,
+                maximumDepthOfMembersOfMembersToCopy,
+                snapshotsPath,
+                uploadBatchSize,
+                diagnosticsIntervalSeconds,
+                uploadFlushIntervalMilliseconds,
+                transportType,
+                agentUri);
     }
-
-    public bool Enabled { get; }
-
-    public ProbeMode ProbeMode { get; }
-
-    public string ApiKey { get; }
-
-    public string RuntimeId { get; }
-
-    public string ServiceName { get; }
-
-    public string ServiceVersion { get; }
-
-    public string ProbeConfigurationsPath { get; }
-
-    public string SnapshotsPath { get; set; }
-
-    public int ProbeConfigurationsPollIntervalSeconds { get; }
-
-    public string Environment { get; }
-
-    public int MaxSerializationTimeInMilliseconds { get; }
-
-    public int MaximumDepthOfMembersOfMembersToCopy { get; }
-
-    public int UploadBatchSize { get; }
-
-    public int DiagnosticsIntervalSeconds { get; }
-
-    public int UploadFlushIntervalMilliseconds { get; }
-
-    public TracesTransportType TransportType { get; }
-
-    public Uri AgentUri { get; }
-
-    public static ImmutableDebuggerSettings Create(TracerSettings tracerSettings) =>
-        Create(tracerSettings.DebuggerSettings);
-
-    public static ImmutableDebuggerSettings Create(DebuggerSettings debuggerSettings) =>
-        Create(
-            debuggerSettings.Enabled,
-            debuggerSettings.ProbeMode,
-            debuggerSettings.ApiKey,
-            debuggerSettings.RuntimeId,
-            debuggerSettings.ServiceName,
-            debuggerSettings.ServiceVersion,
-            debuggerSettings.ProbeConfigurationsPollIntervalSeconds,
-            debuggerSettings.ProbeConfigurationsPath,
-            debuggerSettings.Environment,
-            debuggerSettings.MaxSerializationTimeInMilliseconds,
-            debuggerSettings.MaximumDepthOfMembersToCopy,
-            debuggerSettings.SnapshotsPath,
-            debuggerSettings.UploadBatchSize,
-            debuggerSettings.DiagnosticsIntervalSeconds,
-            debuggerSettings.UploadFlushIntervalMilliseconds,
-            debuggerSettings.TransportType,
-            debuggerSettings.AgentUri);
-
-    public static ImmutableDebuggerSettings Create(
-        bool enabled,
-        ProbeMode probeMode,
-        string apiKey,
-        string runtimeId,
-        string serviceName,
-        string serviceVersion,
-        int probeConfigurationsPollIntervalSeconds,
-        string probeConfigurationsPath,
-        string environment,
-        int maxSerializationTimeInMilliseconds,
-        int maximumDepthOfMembersOfMembersToCopy,
-        string snapshotsPath,
-        int uploadBatchSize,
-        int diagnosticsIntervalSeconds,
-        int uploadFlushIntervalMilliseconds,
-        TracesTransportType transportType,
-        Uri agentUri) =>
-        new ImmutableDebuggerSettings(
-            enabled,
-            probeMode,
-            apiKey,
-            runtimeId,
-            serviceName,
-            serviceVersion,
-            probeConfigurationsPollIntervalSeconds,
-            probeConfigurationsPath,
-            environment,
-            maxSerializationTimeInMilliseconds,
-            maximumDepthOfMembersOfMembersToCopy,
-            snapshotsPath,
-            uploadBatchSize,
-            diagnosticsIntervalSeconds,
-            uploadFlushIntervalMilliseconds,
-            transportType,
-            agentUri);
 }

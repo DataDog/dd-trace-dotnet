@@ -3,17 +3,18 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.Debugger;
-
-internal enum ProbeMode
+namespace Datadog.Trace.Debugger
 {
-    /// <summary>
-    /// Read the probe configuration from datadog-agent via Remote Configuration Management.
-    /// </summary>
-    Agent,
+    internal enum ProbeMode
+    {
+        /// <summary>
+        /// Read the probe configuration from datadog-agent via Remote Configuration Management.
+        /// </summary>
+        Agent,
 
-    /// <summary>
-    /// Read the probe configuration from a local file on disk. Useful for local development and testing scenarios.
-    /// </summary>
-    File
+        /// <summary>
+        /// Read the probe configuration from a local file on disk. Useful for local development and testing scenarios.
+        /// </summary>
+        File
+    }
 }

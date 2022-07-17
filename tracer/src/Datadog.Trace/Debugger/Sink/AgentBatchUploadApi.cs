@@ -13,69 +13,70 @@ using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
-namespace Datadog.Trace.Debugger.Sink;
-
-internal class AgentBatchUploadApi : IBatchUploadApi
+namespace Datadog.Trace.Debugger.Sink
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentBatchUploadApi>();
-
-    private readonly IApiRequestFactory _apiRequestFactory;
-    private readonly IDiscoveryService _discoveryService;
-    private readonly string _targetPath;
-    private string _environment;
-    private string _version;
-    private Uri _uri;
-
-    private AgentBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, string targetPath, string environment, string version)
+    internal class AgentBatchUploadApi : IBatchUploadApi
     {
-        _version = version;
-        _environment = environment;
-        _apiRequestFactory = apiRequestFactory;
-        _discoveryService = discoveryService;
-        _targetPath = targetPath;
-    }
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentBatchUploadApi>();
 
-    public static AgentBatchUploadApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
-    {
-        return new AgentBatchUploadApi(apiRequestFactory, discoveryService, settings.SnapshotsPath, settings.Environment, settings.ServiceVersion);
-    }
+        private readonly IApiRequestFactory _apiRequestFactory;
+        private readonly IDiscoveryService _discoveryService;
+        private readonly string _targetPath;
+        private string _environment;
+        private string _version;
+        private Uri _uri;
 
-    public async Task<bool> SendBatchAsync(ArraySegment<byte> snapshots)
-    {
-        var tags = new Dictionary<string, string> { { "env", _environment }, { "version", _version }, { "agent_version", _discoveryService.AgentVersion }, { "debugger_version", TracerConstants.AssemblyVersion } };
-        _uri ??= new Uri($"{_targetPath}/{_discoveryService.DebuggerEndpoint}{ToDDTagsQueryString(tags)}");
-
-        var request = _apiRequestFactory.Create(_uri);
-        using var response = await request.PostAsync(snapshots, MimeTypes.Json).ConfigureAwait(false);
-
-        if (response.StatusCode is not (>= 200 and <= 299))
+        private AgentBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, string targetPath, string environment, string version)
         {
-            var content = await response.ReadAsStringAsync().ConfigureAwait(false);
-            Log.Warning<int, string>("Failed to upload snapshot with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, content);
-            return false;
+            _version = version;
+            _environment = environment;
+            _apiRequestFactory = apiRequestFactory;
+            _discoveryService = discoveryService;
+            _targetPath = targetPath;
         }
 
-        return true;
-    }
-
-    private string ToDDTagsQueryString(IDictionary<string, string> keyValues)
-    {
-        if (keyValues.Count == 0)
+        public static AgentBatchUploadApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
         {
-            return string.Empty;
+            return new AgentBatchUploadApi(apiRequestFactory, discoveryService, settings.SnapshotsPath, settings.Environment, settings.ServiceVersion);
         }
 
-        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-        sb.Append("?ddtags=");
-        foreach (var keyValue in keyValues)
+        public async Task<bool> SendBatchAsync(ArraySegment<byte> snapshots)
         {
-            sb.Append(keyValue.Key);
-            sb.Append(':');
-            sb.Append(keyValue.Value ?? "null");
-            sb.Append(',');
+            var tags = new Dictionary<string, string> { { "env", _environment }, { "version", _version }, { "agent_version", _discoveryService.AgentVersion }, { "debugger_version", TracerConstants.AssemblyVersion } };
+            _uri ??= new Uri($"{_targetPath}/{_discoveryService.DebuggerEndpoint}{ToDDTagsQueryString(tags)}");
+
+            var request = _apiRequestFactory.Create(_uri);
+            using var response = await request.PostAsync(snapshots, MimeTypes.Json).ConfigureAwait(false);
+
+            if (response.StatusCode is not (>= 200 and <= 299))
+            {
+                var content = await response.ReadAsStringAsync().ConfigureAwait(false);
+                Log.Warning<int, string>("Failed to upload snapshot with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, content);
+                return false;
+            }
+
+            return true;
         }
 
-        sb.Remove(sb.Length - 1, 1);
-        return StringBuilderCache.GetStringAndRelease(sb);
+        private string ToDDTagsQueryString(IDictionary<string, string> keyValues)
+        {
+            if (keyValues.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            sb.Append("?ddtags=");
+            foreach (var keyValue in keyValues)
+            {
+                sb.Append(keyValue.Key);
+                sb.Append(':');
+                sb.Append(keyValue.Value ?? "null");
+                sb.Append(',');
+            }
+
+            sb.Remove(sb.Length - 1, 1);
+            return StringBuilderCache.GetStringAndRelease(sb);
+        }
     }
 }

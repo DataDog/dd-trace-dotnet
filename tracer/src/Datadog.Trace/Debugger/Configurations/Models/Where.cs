@@ -7,57 +7,58 @@ using System;
 using System.Linq;
 using Datadog.Trace.Debugger.Helpers;
 
-namespace Datadog.Trace.Debugger.Configurations.Models;
-
-internal class Where : IEquatable<Where>
+namespace Datadog.Trace.Debugger.Configurations.Models
 {
-    public string TypeName { get; set; }
-
-    public string MethodName { get; set; }
-
-    public string SourceFile { get; set; }
-
-    public string Signature { get; set; }
-
-    public string[] Lines { get; set; }
-
-    public bool Equals(Where other)
+    internal class Where : IEquatable<Where>
     {
-        if (ReferenceEquals(null, other))
+        public string TypeName { get; set; }
+
+        public string MethodName { get; set; }
+
+        public string SourceFile { get; set; }
+
+        public string Signature { get; set; }
+
+        public string[] Lines { get; set; }
+
+        public bool Equals(Where other)
         {
-            return false;
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            return TypeName == other.TypeName && MethodName == other.MethodName && SourceFile == other.SourceFile && Signature == other.Signature && Lines.NullableSequentialEquals(other.Lines);
         }
 
-        if (ReferenceEquals(this, other))
+        public override bool Equals(object obj)
         {
-            return true;
+            if (ReferenceEquals(null, obj))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            if (obj.GetType() != this.GetType())
+            {
+                return false;
+            }
+
+            return Equals((Where)obj);
         }
 
-        return TypeName == other.TypeName && MethodName == other.MethodName && SourceFile == other.SourceFile && Signature == other.Signature && Lines.NullableSequentialEquals(other.Lines);
-    }
-
-    public override bool Equals(object obj)
-    {
-        if (ReferenceEquals(null, obj))
+        public override int GetHashCode()
         {
-            return false;
+            return HashCode.Combine(TypeName, MethodName, SourceFile, Signature, Lines);
         }
-
-        if (ReferenceEquals(this, obj))
-        {
-            return true;
-        }
-
-        if (obj.GetType() != this.GetType())
-        {
-            return false;
-        }
-
-        return Equals((Where)obj);
-    }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(TypeName, MethodName, SourceFile, Signature, Lines);
     }
 }

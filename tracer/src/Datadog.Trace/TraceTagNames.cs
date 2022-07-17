@@ -3,15 +3,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace;
-
-/// <summary>
-/// Names used for trace-level tags.
-/// </summary>
-internal static class TraceTagNames
+namespace Datadog.Trace
 {
-    internal static class Propagation
+    /// <summary>
+    /// Names used for trace-level tags.
+    /// </summary>
+    internal static class TraceTagNames
     {
-        internal const string PropagationHeadersError = "_dd.propagation_error";
+        internal static class Propagation
+        {
+            internal const string PropagationHeadersError = "_dd.propagation_error";
+        }
     }
 }
