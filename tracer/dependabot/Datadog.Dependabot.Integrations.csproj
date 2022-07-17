@@ -18,8 +18,8 @@
 
     <!-- Integration: AerospikeClient -->
     <!-- Assembly: AerospikeClient -->
-    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/5.1.1 -->
-    <PackageReference Include="Aerospike.Client" Version="5.1.1" />
+    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/5.2.0 -->
+    <PackageReference Include="Aerospike.Client" Version="5.2.0" />
 
     <!-- Integration: System.Web.Mvc -->
     <!-- Assembly: System.Web.Mvc -->
@@ -28,23 +28,23 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.12.5 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.12.5" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.12.9 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.12.9" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2.74 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.74" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2.78 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.78" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.28.0 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.28.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.29.0 -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.29.0" />
 
     <!-- Integration: Couchbase.NetClient -->
     <!-- Assembly: Couchbase.NetClient -->
-    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.3.2 -->
-    <PackageReference Include="CouchbaseNetClient" Version="3.3.2" />
+    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.3.3 -->
+    <PackageReference Include="CouchbaseNetClient" Version="3.3.3" />
 
     <!-- Integration: Elasticsearch.Net -->
     <!-- Assembly: Elasticsearch.Net -->
@@ -65,6 +65,11 @@
     <!-- Assembly: Grpc.Core -->
     <!-- Latest package https://www.nuget.org/packages/Grpc/2.46.3 -->
     <PackageReference Include="Grpc" Version="2.46.3" />
+
+    <!-- Integration: HotChocolate.Execution -->
+    <!-- Assembly: HotChocolate.Execution -->
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/12.12.1 -->
+    <PackageReference Include="HotChocolate.AspNetCore" Version="12.12.1" />
 
     <!-- Integration: System.Net.Http -->
     <!-- Assembly: System.Net.Http -->
@@ -123,8 +128,8 @@
 
     <!-- Integration: MySqlConnector -->
     <!-- Assembly: MySqlConnector -->
-    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.1.10 -->
-    <PackageReference Include="MySqlConnector" Version="2.1.10" />
+    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.1.11 -->
+    <PackageReference Include="MySqlConnector" Version="2.1.11" />
 
     <!-- Integration: NLog -->
     <!-- Assembly: NLog -->
@@ -178,8 +183,8 @@
 
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!-- Assembly: Microsoft.Data.Sqlite -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/6.0.6 -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.6" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/6.0.7 -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.7" />
 
     <!-- Integration: System.Data.SQLite -->
     <!-- Assembly: System.Data.SQLite -->
