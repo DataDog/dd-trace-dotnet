@@ -17,7 +17,9 @@ add_compile_options(-std=c11 -fPIC)
 # ******************************************************
 
 SET(API_WRAPPER_BASENAME Datadog.Linux.ApiWrapper)
-SET(API_WRAPPER_SHARED_LIB_NAME ${API_WRAPPER_BASENAME}.${ARCH_POSTFIX})
+# We keep the x64 even for arm64, to avoid breaking change.
+# this will be reviewed later.
+SET(API_WRAPPER_SHARED_LIB_NAME ${API_WRAPPER_BASENAME}.x64)
 
 # Deployment directory
 SET(DEPLOY_DIR ${OUTPUT_BUILD_DIR}/DDProf-Deploy)

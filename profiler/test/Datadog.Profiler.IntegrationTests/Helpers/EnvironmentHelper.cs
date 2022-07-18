@@ -73,6 +73,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public static string GetPlatform()
         {
+            if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
+            {
+                return "arm64";
+            }
+
             return Environment.Is64BitProcess ? "x64" : "x86";
         }
 
