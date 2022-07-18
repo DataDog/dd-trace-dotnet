@@ -31,9 +31,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             out string? areaName,
             out string? controllerName,
             out string? actionName,
-            out string? route,
             bool expandRouteTemplates) =>
-            CalculateResourceName(httpMethod, routeTemplate, routeValues, defaults, out areaName, out controllerName, out actionName, out route, addSlashPrefix: routeTemplate[0] != '/', expandRouteTemplates);
+            CalculateResourceName(httpMethod, routeTemplate, routeValues, defaults, out areaName, out controllerName, out actionName, addSlashPrefix: routeTemplate[0] != '/', expandRouteTemplates);
 
         public static string CalculateResourceName(
             string httpMethod,
@@ -43,7 +42,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             out string? areaName,
             out string? controllerName,
             out string? actionName,
-            out string? route,
             bool addSlashPrefix,
             bool expandRouteTemplates)
         {
@@ -53,7 +51,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
             // but doesn't seem worth it
             var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 
-            sb.Append(httpMethod).Append(' ');
+            sb.Append(httpMethod)
+              .Append(' ');
 
             if (addSlashPrefix)
             {
@@ -113,9 +112,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 }
             }
 
-            // keep prefix but remove space after GET
-            var prefixLength = httpMethod.Length + 1;
-            route = sb.ToString(prefixLength, sb.Length - prefixLength);
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
@@ -184,7 +180,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
                     // first check if we're _not_ in the constraint part
                     if (endIndex < sbLength
-                     && sb[endIndex] is not '?' and not ':' and not '=' and not '}')
+                        && sb[endIndex] is not '?' and not ':' and not '=' and not '}')
                     {
                         // we haven't finished the parameter name
                         // e.g `{keyo` or `{*key1`

@@ -73,14 +73,12 @@ namespace Datadog.Trace.Tests.AspNet
                 out var areaName,
                 out var controllerName,
                 out var actionName,
-                out var resolvedRoute,
                 expandRouteTemplates);
 
             using var a = new AssertionScope();
             areaName.Should().BeNull();
             controllerName.Should().Be("home");
             actionName.Should().Be("index");
-            resolvedRoute.Should().Be(expected);
             resource.Should().Be($"{method} {expected}");
         }
 
@@ -113,14 +111,12 @@ namespace Datadog.Trace.Tests.AspNet
                 out var areaName,
                 out var controllerName,
                 out var actionName,
-                out var resolvedRoute,
                 expandRouteTemplates);
 
             using var a = new AssertionScope();
             areaName.Should().BeNull();
             controllerName.Should().Be("home");
             actionName.Should().Be("index");
-            resolvedRoute.Should().Be(expected);
             resource.Should().Be($"{method} {expected}");
         }
 
@@ -152,7 +148,6 @@ namespace Datadog.Trace.Tests.AspNet
                 out var areaName,
                 out var controllerName,
                 out var actionName,
-                out var resolvedRoute,
                 expandRouteTemplates);
 
             using var a = new AssertionScope();

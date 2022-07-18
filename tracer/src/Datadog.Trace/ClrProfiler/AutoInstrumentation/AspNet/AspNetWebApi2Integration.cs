@@ -132,7 +132,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 string controller = string.Empty;
                 string action = string.Empty;
                 string area = string.Empty;
-                string resolvedRoute = string.Empty;
                 if (route is not null && routeValues is not null)
                 {
                     resourceName = AspNetResourceNameHelper.CalculateResourceName(
@@ -143,7 +142,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         out area,
                         out controller,
                         out action,
-                        out resolvedRoute,
                         addSlashPrefix: newResourceNamesEnabled,
                         expandRouteTemplates: newResourceNamesEnabled && Tracer.Instance.Settings.ExpandRouteTemplatesEnabled);
                 }
@@ -189,7 +187,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     tags.AspNetController = controller;
                     tags.AspNetArea = area;
                     tags.AspNetRoute = route;
-                    span.Context.TraceContext.RootSpan?.SetTag(Tags.HttpRoute, resolvedRoute);
+                    span.Context.TraceContext.RootSpan?.SetTag(Tags.HttpRoute, route);
                 }
 
                 if (newResourceNamesEnabled)

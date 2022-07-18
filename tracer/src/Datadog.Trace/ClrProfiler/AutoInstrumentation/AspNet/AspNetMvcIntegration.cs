@@ -94,7 +94,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     string areaName;
                     string controllerName;
                     string actionName;
-                    string resolvedRoute = null;
                     if ((wasAttributeRouted || newResourceNamesEnabled) && string.IsNullOrEmpty(resourceName) && !string.IsNullOrEmpty(routeUrl))
                     {
                         resourceName = AspNetResourceNameHelper.CalculateResourceName(
@@ -105,7 +104,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                             out areaName,
                             out controllerName,
                             out actionName,
-                            out resolvedRoute,
                             expandRouteTemplates: newResourceNamesEnabled && tracer.Settings.ExpandRouteTemplatesEnabled);
                     }
                     else
@@ -114,7 +112,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         areaName = (routeValues?.GetValueOrDefault("area") as string)?.ToLowerInvariant();
                         controllerName = (routeValues?.GetValueOrDefault("controller") as string)?.ToLowerInvariant();
                         actionName = (routeValues?.GetValueOrDefault("action") as string)?.ToLowerInvariant();
-                        resolvedRoute = routeUrl;
                     }
 
                     if (string.IsNullOrEmpty(resourceName) && httpContext.Request.Url != null)
@@ -163,7 +160,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     tags.AspNetArea = areaName;
                     tags.AspNetController = controllerName;
                     tags.AspNetAction = actionName;
-                    span.Context.TraceContext?.RootSpan.Tags.SetTag(Tags.HttpRoute, resolvedRoute);
+                    span.Context.TraceContext?.RootSpan.Tags.SetTag(Tags.HttpRoute, routeUrl);
 
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
 
