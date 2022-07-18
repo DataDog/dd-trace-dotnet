@@ -21,159 +21,33 @@ namespace Datadog.Trace.IntegrationTests
         [Fact]
         public async Task SendStats()
         {
-            var waitEvent = new AutoResetEvent(false);
-
-            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
-
-            agent.StatsDeserialized += (_, _) => waitEvent.Set();
-
-            var settings = new TracerSettings
-            {
-                StatsComputationEnabled = true,
-                ServiceVersion = "V",
-                Environment = "Test",
-                Exporter = new ExporterSettings
-                {
-                    AgentUri = new Uri($"http://localhost:{agent.Port}"),
-                }
-            };
-
-            var immutableSettings = settings.Build();
-
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
-
-            Span span1;
-
-            using (var scope = tracer.StartActiveInternal("operationName"))
-            {
-                span1 = scope.Span;
-                span1.ResourceName = "resourceName";
-                span1.SetHttpStatusCode(200, isServer: false, immutableSettings);
-                span1.Type = "span1";
-            }
-
-            await tracer.FlushAsync();
-            waitEvent.WaitOne(TimeSpan.FromMinutes(1)).Should().Be(true, "timeout while waiting for stats");
-
-            Span span2;
-
-            using (var scope = tracer.StartActiveInternal("operationName"))
-            {
-                span2 = scope.Span;
-                span2.ResourceName = "resourceName";
-                span2.SetHttpStatusCode(500, isServer: true, immutableSettings);
-                span2.Type = "span2";
-            }
-
-            await tracer.FlushAsync();
-            waitEvent.WaitOne(TimeSpan.FromMinutes(1)).Should().Be(true, "timeout while waiting for stats");
-
-            var payload = agent.WaitForStats(2);
-
-            payload.Should().HaveCount(2);
-
-            void AssertStats(MockClientStatsPayload stats, Span span, bool isError)
-            {
-                stats.Env.Should().Be(settings.Environment);
-                stats.Hostname.Should().Be(HostMetadata.Instance.Hostname);
-                stats.Version.Should().Be(settings.ServiceVersion);
-                stats.TracerVersion.Should().Be(TracerConstants.AssemblyVersion);
-                stats.AgentAggregation.Should().Be(null);
-                stats.Lang.Should().Be(TracerConstants.Language);
-                stats.RuntimeId.Should().Be(Tracer.RuntimeId);
-                stats.Stats.Should().HaveCount(1);
-
-                var bucket = stats.Stats[0];
-                bucket.AgentTimeShift.Should().Be(0);
-                bucket.Duration.Should().Be(TimeSpan.FromSeconds(10).ToNanoseconds());
-                bucket.Start.Should().NotBe(0);
-
-                bucket.Stats.Should().HaveCount(1);
-
-                var group = bucket.Stats[0];
-
-                group.DbType.Should().BeNull();
-                group.Duration.Should().Be(span.Duration.ToNanoseconds());
-                group.Errors.Should().Be(isError ? 1 : 0);
-                group.ErrorSummary.Should().NotBeEmpty();
-                group.Hits.Should().Be(1);
-                group.HttpStatusCode.Should().Be(int.Parse(span.GetTag(Tags.HttpStatusCode)));
-                group.Name.Should().Be(span.OperationName);
-                group.OkSummary.Should().NotBeEmpty();
-                group.Synthetics.Should().Be(false);
-                group.TopLevelHits.Should().Be(1);
-                group.Type.Should().Be(span.Type);
-            }
-
-            var stats1 = payload[0];
-            stats1.Sequence.Should().Be(1);
-            AssertStats(stats1, span1, isError: false);
-
-            var stats2 = payload[1];
-            stats2.Sequence.Should().Be(2);
-            AssertStats(stats2, span2, isError: true);
+            await SendStatsHelper(statsComputationEnabled: true);
         }
 
         [Fact(Skip = "DiscoveryService is not yet hooked up to Tracer initialization.")]
         public async Task IsDisabledWhenIncompatibleAgentDetected()
         {
-            var waitEvent = new AutoResetEvent(false);
-
-            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort(), statsEndpointEnabled: false);
-
-            var statsReceived = false;
-            agent.StatsDeserialized += (_, _) =>
-            {
-                waitEvent.Set();
-                statsReceived = true;
-            };
-
-            var settings = new TracerSettings
-            {
-                StatsComputationEnabled = true,
-                ServiceVersion = "V",
-                Environment = "Test",
-                Exporter = new ExporterSettings
-                {
-                    AgentUri = new Uri($"http://localhost:{agent.Port}"),
-                }
-            };
-
-            var immutableSettings = settings.Build();
-
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
-
-            using (var scope = tracer.StartActiveInternal("operationName"))
-            {
-                var span = scope.Span;
-                span.ResourceName = "resourceName";
-                span.SetHttpStatusCode(200, isServer: false, immutableSettings);
-                span.Type = "span1";
-            }
-
-            await tracer.FlushAsync();
-            waitEvent.WaitOne(TimeSpan.FromSeconds(20)).Should().Be(false, "No stats should be received");
-
-            using (var scope = tracer.StartActiveInternal("operationName"))
-            {
-                var span = scope.Span;
-                span.ResourceName = "resourceName";
-                span.SetHttpStatusCode(500, isServer: true, immutableSettings);
-                span.Type = "span2";
-            }
-
-            await tracer.FlushAsync();
-            waitEvent.WaitOne(TimeSpan.FromSeconds(20)).Should().Be(false, "No stats should be received");
-
-            statsReceived.Should().BeFalse();
+            await SendStatsHelper(statsComputationEnabled: true, statsEndpointEnabled: false);
         }
 
         [Fact]
         public async Task IsDisabledThroughConfiguration()
         {
+            await SendStatsHelper(statsComputationEnabled: false);
+        }
+
+        [Fact(Skip = "P0 traces can be dropped when stats computation is enabled, but the feature has not been implemented yet")]
+        public async Task SendsStatsAndDropsSpansWhenSampleRateIsZero()
+        {
+            await SendStatsHelper(statsComputationEnabled: true, globalSamplingRate: 0.0);
+        }
+
+        private async Task SendStatsHelper(bool statsComputationEnabled, double? globalSamplingRate = null, bool statsEndpointEnabled = true)
+        {
+            bool expectStats = statsComputationEnabled && statsEndpointEnabled;
             var waitEvent = new AutoResetEvent(false);
 
-            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
+            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort(), statsEndpointEnabled: statsEndpointEnabled);
 
             var statsReceived = false;
             agent.StatsDeserialized += (_, _) =>
@@ -184,57 +58,8 @@ namespace Datadog.Trace.IntegrationTests
 
             var settings = new TracerSettings
             {
-                StatsComputationEnabled = false,
-                ServiceVersion = "V",
-                Environment = "Test",
-                Exporter = new ExporterSettings
-                {
-                    AgentUri = new Uri($"http://localhost:{agent.Port}"),
-                }
-            };
-
-            var immutableSettings = settings.Build();
-
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
-
-            using (var scope = tracer.StartActiveInternal("operationName"))
-            {
-                var span = scope.Span;
-                span.ResourceName = "resourceName";
-                span.SetHttpStatusCode(200, isServer: false, immutableSettings);
-                span.Type = "span1";
-            }
-
-            await tracer.FlushAsync();
-            waitEvent.WaitOne(TimeSpan.FromSeconds(20)).Should().Be(false, "No stats should be received");
-
-            using (var scope = tracer.StartActiveInternal("operationName"))
-            {
-                var span = scope.Span;
-                span.ResourceName = "resourceName";
-                span.SetHttpStatusCode(500, isServer: true, immutableSettings);
-                span.Type = "span2";
-            }
-
-            await tracer.FlushAsync();
-            waitEvent.WaitOne(TimeSpan.FromSeconds(20)).Should().Be(false, "No stats should be received");
-
-            statsReceived.Should().BeFalse();
-        }
-
-        [Fact(Skip = "P0 traces can be dropped when stats computation is enabled, but the feature has not been implemented yet")]
-        public async Task SendsStatsAndDropsSpansWhenSampleRateIsZero()
-        {
-            var waitEvent = new AutoResetEvent(false);
-
-            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
-
-            agent.StatsDeserialized += (_, _) => waitEvent.Set();
-
-            var settings = new TracerSettings
-            {
-                GlobalSamplingRate = 0.0,
-                StatsComputationEnabled = true,
+                GlobalSamplingRate = globalSamplingRate,
+                StatsComputationEnabled = statsComputationEnabled,
                 ServiceVersion = "V",
                 Environment = "Test",
                 Exporter = new ExporterSettings
@@ -258,7 +83,14 @@ namespace Datadog.Trace.IntegrationTests
             }
 
             await tracer.FlushAsync();
-            waitEvent.WaitOne(TimeSpan.FromMinutes(1)).Should().Be(true, "timeout while waiting for stats");
+            if (expectStats)
+            {
+                waitEvent.WaitOne(TimeSpan.FromMinutes(1)).Should().Be(true, "timeout while waiting for stats");
+            }
+            else
+            {
+                waitEvent.WaitOne(TimeSpan.FromSeconds(10)).Should().Be(false, "No stats should be received");
+            }
 
             Span span2;
 
@@ -271,15 +103,27 @@ namespace Datadog.Trace.IntegrationTests
             }
 
             await tracer.FlushAsync();
-            waitEvent.WaitOne(TimeSpan.FromMinutes(1)).Should().Be(true, "timeout while waiting for stats");
+            if (expectStats)
+            {
+                waitEvent.WaitOne(TimeSpan.FromMinutes(1)).Should().Be(true, "timeout while waiting for stats");
 
-            var payload = agent.WaitForStats(2);
+                var payload = agent.WaitForStats(2);
+                payload.Should().HaveCount(2);
+                statsReceived.Should().BeTrue();
 
-            payload.Should().HaveCount(2);
+                var stats1 = payload[0];
+                stats1.Sequence.Should().Be(1);
+                AssertStats(stats1, span1, isError: false);
 
-            // Wait for two spans expecting a timeout
-            var spans = agent.WaitForSpans(2);
-            spans.Should().HaveCount(0, "when stats computation is enabled, the sample rate of 0 should prevent traces from being sent to the agent");
+                var stats2 = payload[1];
+                stats2.Sequence.Should().Be(2);
+                AssertStats(stats2, span2, isError: true);
+            }
+            else
+            {
+                waitEvent.WaitOne(TimeSpan.FromSeconds(10)).Should().Be(false, "No stats should be received");
+                statsReceived.Should().BeFalse();
+            }
 
             void AssertStats(MockClientStatsPayload stats, Span span, bool isError)
             {
@@ -313,14 +157,6 @@ namespace Datadog.Trace.IntegrationTests
                 group.TopLevelHits.Should().Be(1);
                 group.Type.Should().Be(span.Type);
             }
-
-            var stats1 = payload[0];
-            stats1.Sequence.Should().Be(1);
-            AssertStats(stats1, span1, isError: false);
-
-            var stats2 = payload[1];
-            stats2.Sequence.Should().Be(2);
-            AssertStats(stats2, span2, isError: true);
         }
     }
 }
