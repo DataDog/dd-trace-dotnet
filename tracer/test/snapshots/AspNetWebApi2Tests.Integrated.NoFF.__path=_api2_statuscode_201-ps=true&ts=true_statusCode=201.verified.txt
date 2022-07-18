@@ -34,7 +34,7 @@
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.route: api2/statuscode/{value},
+      http.route: api2/{action}/{value},
       http.status_code: 201,
       http.url: http://localhost/api2/statuscode/201?ps=true&ts=true,
       http.useragent: testhelper,

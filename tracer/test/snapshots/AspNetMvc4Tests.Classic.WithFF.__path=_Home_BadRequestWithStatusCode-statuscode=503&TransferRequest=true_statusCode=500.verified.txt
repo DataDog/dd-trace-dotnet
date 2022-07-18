@@ -17,7 +17,7 @@ at Samples.AspNetMvc4.Controllers.HomeController.BadRequestWithStatusCode(Int32 
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.route: /home/badrequestwithstatuscode,
+      http.route: {controller}/{action}/{id},
       http.status_code: 500,
       http.url: http://localhost/Home/BadRequestWithStatusCode?statuscode=503&TransferRequest=true,
       http.useragent: testhelper,

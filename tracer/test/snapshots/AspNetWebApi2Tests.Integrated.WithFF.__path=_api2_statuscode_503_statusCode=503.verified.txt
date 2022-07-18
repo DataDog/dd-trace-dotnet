@@ -38,7 +38,7 @@
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.route: /api2/statuscode/{value},
+      http.route: api2/{action}/{value},
       http.status_code: 503,
       http.url: http://localhost/api2/statuscode/503,
       http.useragent: testhelper,

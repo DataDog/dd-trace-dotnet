@@ -32,7 +32,7 @@
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.route: /api/transient-failure/{value},
+      http.route: api/transient-failure/{value},
       http.status_code: 200,
       http.url: http://localhost/api/transient-failure/true,
       http.useragent: testhelper,

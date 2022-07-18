@@ -31,7 +31,7 @@ at Samples.AspNetMvc5.Controllers.ConventionsController.TransientFailure(String 
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.route: /api2/transientfailure/false,
+      http.route: api2/{action}/{value},
       http.status_code: 500,
       http.url: http://localhost/api2/transientfailure/false,
       http.useragent: testhelper,
