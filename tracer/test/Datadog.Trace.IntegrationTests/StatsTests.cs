@@ -31,6 +31,12 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [Fact]
+        public async Task SendsStatsOnlyAfterSpansAreFinished_TS008()
+        {
+            await SendStatsHelper(statsComputationEnabled: true, finishSpansOnClose: false);
+        }
+
+        [Fact]
         public async Task IsDisabledThroughConfiguration_TS010()
         {
             await SendStatsHelper(statsComputationEnabled: false);
@@ -42,9 +48,9 @@ namespace Datadog.Trace.IntegrationTests
             await SendStatsHelper(statsComputationEnabled: true, expectStats: false, statsEndpointEnabled: false);
         }
 
-        private async Task SendStatsHelper(bool statsComputationEnabled, double? globalSamplingRate = null, bool statsEndpointEnabled = true, bool expectStats = true)
+        private async Task SendStatsHelper(bool statsComputationEnabled, double? globalSamplingRate = null, bool statsEndpointEnabled = true, bool expectStats = true, bool finishSpansOnClose = true)
         {
-            expectStats &= statsComputationEnabled && statsEndpointEnabled;
+            expectStats &= statsComputationEnabled && statsEndpointEnabled && finishSpansOnClose;
             var waitEvent = new AutoResetEvent(false);
 
             using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort(), statsEndpointEnabled: statsEndpointEnabled);
@@ -74,7 +80,7 @@ namespace Datadog.Trace.IntegrationTests
 
             Span span1;
 
-            using (var scope = tracer.StartActiveInternal("operationName"))
+            using (var scope = tracer.StartActiveInternal("operationName", finishOnClose: finishSpansOnClose))
             {
                 span1 = scope.Span;
                 span1.ResourceName = "resourceName";
@@ -94,7 +100,7 @@ namespace Datadog.Trace.IntegrationTests
 
             Span span2;
 
-            using (var scope = tracer.StartActiveInternal("operationName"))
+            using (var scope = tracer.StartActiveInternal("operationName", finishOnClose: finishSpansOnClose))
             {
                 span2 = scope.Span;
                 span2.ResourceName = "resourceName";
