@@ -114,6 +114,60 @@ namespace Datadog.Trace.IntegrationTests
             AssertStats(stats2, span2, isError: true);
         }
 
+        [Fact(Skip = "DiscoveryService is not yet hooked up to Tracer initialization.")]
+        public async Task IsDisabledWhenIncompatibleAgentDetected()
+        {
+            var waitEvent = new AutoResetEvent(false);
+
+            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort(), statsEndpointEnabled: false);
+
+            var statsReceived = false;
+            agent.StatsDeserialized += (_, _) =>
+            {
+                waitEvent.Set();
+                statsReceived = true;
+            };
+
+            var settings = new TracerSettings
+            {
+                StatsComputationEnabled = true,
+                ServiceVersion = "V",
+                Environment = "Test",
+                Exporter = new ExporterSettings
+                {
+                    AgentUri = new Uri($"http://localhost:{agent.Port}"),
+                }
+            };
+
+            var immutableSettings = settings.Build();
+
+            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+
+            using (var scope = tracer.StartActiveInternal("operationName"))
+            {
+                var span = scope.Span;
+                span.ResourceName = "resourceName";
+                span.SetHttpStatusCode(200, isServer: false, immutableSettings);
+                span.Type = "span1";
+            }
+
+            await tracer.FlushAsync();
+            waitEvent.WaitOne(TimeSpan.FromSeconds(20)).Should().Be(false, "No stats should be received");
+
+            using (var scope = tracer.StartActiveInternal("operationName"))
+            {
+                var span = scope.Span;
+                span.ResourceName = "resourceName";
+                span.SetHttpStatusCode(500, isServer: true, immutableSettings);
+                span.Type = "span2";
+            }
+
+            await tracer.FlushAsync();
+            waitEvent.WaitOne(TimeSpan.FromSeconds(20)).Should().Be(false, "No stats should be received");
+
+            statsReceived.Should().BeFalse();
+        }
+
         [Fact]
         public async Task IsDisabledThroughConfiguration()
         {

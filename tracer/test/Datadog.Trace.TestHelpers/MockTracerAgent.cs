@@ -33,10 +33,11 @@ namespace Datadog.Trace.TestHelpers
     {
         private readonly CancellationTokenSource _cancellationTokenSource = new();
 
-        protected MockTracerAgent(bool telemetryEnabled, TestTransports transport)
+        protected MockTracerAgent(bool telemetryEnabled, TestTransports transport, bool statsEndpointEnabled)
         {
             TelemetryEnabled = telemetryEnabled;
             TransportType = transport;
+            StatsEndpointEnabled = statsEndpointEnabled;
         }
 
         public event EventHandler<EventArgs<HttpListenerContext>> RequestReceived;
@@ -54,6 +55,8 @@ namespace Datadog.Trace.TestHelpers
         public string Version { get; set; }
 
         public bool TelemetryEnabled { get; }
+
+        public bool StatsEndpointEnabled { get; }
 
         /// <summary>
         /// Gets the filters used to filter out spans we don't want to look at for a test.
@@ -88,8 +91,8 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         public bool ShouldDeserializeTraces { get; set; } = true;
 
-        public static TcpUdpAgent Create(int port = 8126, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null, bool useTelemetry = false)
-            => new TcpUdpAgent(port, retries, useStatsd, doNotBindPorts, requestedStatsDPort, useTelemetry);
+        public static TcpUdpAgent Create(int port = 8126, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null, bool useTelemetry = false, bool statsEndpointEnabled = true)
+            => new TcpUdpAgent(port, retries, useStatsd, doNotBindPorts, requestedStatsDPort, useTelemetry, statsEndpointEnabled);
 
 #if NETCOREAPP3_1_OR_GREATER
         public static UdsAgent Create(UnixDomainSocketConfig config) => new UdsAgent(config);
@@ -550,8 +553,8 @@ namespace Datadog.Trace.TestHelpers
             private readonly Task _tracesListenerTask;
             private readonly Task _statsdTask;
 
-            public TcpUdpAgent(int port, int retries, bool useStatsd, bool doNotBindPorts, int? requestedStatsDPort, bool useTelemetry)
-                : base(useTelemetry, TestTransports.Tcp)
+            public TcpUdpAgent(int port, int retries, bool useStatsd, bool doNotBindPorts, int? requestedStatsDPort, bool useTelemetry, bool statsEndpointEnabled)
+                : base(useTelemetry, TestTransports.Tcp, statsEndpointEnabled)
             {
                 if (doNotBindPorts)
                 {
@@ -694,8 +697,17 @@ namespace Datadog.Trace.TestHelpers
 
                             if (ctx.Request.RawUrl.EndsWith("/info"))
                             {
-                                var endpoints = $"{{\"endpoints\":{JsonConvert.SerializeObject(DiscoveryService.AllSupportedEndpoints)}}}";
-                                buffer = Encoding.UTF8.GetBytes(endpoints);
+                                if (StatsEndpointEnabled)
+                                {
+                                    var endpointsArray = DiscoveryService.AllSupportedEndpoints.Concat("/v0.6/stats").ToArray();
+                                    var content = $"{{\"endpoints\":{JsonConvert.SerializeObject(endpointsArray)}, \"client_drop_p0s\":true}}";
+                                    buffer = Encoding.UTF8.GetBytes(content);
+                                }
+                                else
+                                {
+                                    var endpoints = $"{{\"endpoints\":{JsonConvert.SerializeObject(DiscoveryService.AllSupportedEndpoints)}}}";
+                                    buffer = Encoding.UTF8.GetBytes(endpoints);
+                                }
                             }
                             else if (ctx.Request.RawUrl.Contains("/debugger/v1/input"))
                             {
@@ -796,7 +808,7 @@ namespace Datadog.Trace.TestHelpers
             private readonly Task _tracesListenerTask;
 
             public NamedPipeAgent(WindowsPipesConfig config)
-                : base(config.UseTelemetry, TestTransports.WindowsNamedPipe)
+                : base(config.UseTelemetry, TestTransports.WindowsNamedPipe, config.StatsEndpointEnabled)
             {
                 ListenerInfo = $"Traces at {config.Traces}";
 
@@ -1001,7 +1013,7 @@ namespace Datadog.Trace.TestHelpers
             private readonly Task _statsdTask;
 
             public UdsAgent(UnixDomainSocketConfig config)
-                : base(config.UseTelemetry, TestTransports.Uds)
+                : base(config.UseTelemetry, TestTransports.Uds, config.StatsEndpointEnabled)
             {
                 ListenerInfo = $"Traces at {config.Traces}";
 
