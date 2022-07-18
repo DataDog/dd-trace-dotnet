@@ -24,22 +24,22 @@ namespace Datadog.Trace.IntegrationTests
             await SendStatsHelper(statsComputationEnabled: true);
         }
 
-        [Fact(Skip = "DiscoveryService is not yet hooked up to Tracer initialization.")]
-        public async Task IsDisabledWhenIncompatibleAgentDetected()
+        [Fact(Skip = "P0 traces can be dropped when stats computation is enabled, but the feature has not been implemented yet")]
+        public async Task SendsStatsAndDropsSpansWhenSampleRateIsZero_TS007()
         {
-            await SendStatsHelper(statsComputationEnabled: true, statsEndpointEnabled: false);
+            await SendStatsHelper(statsComputationEnabled: true, globalSamplingRate: 0.0);
         }
 
         [Fact]
-        public async Task IsDisabledThroughConfiguration()
+        public async Task IsDisabledThroughConfiguration_TS010()
         {
             await SendStatsHelper(statsComputationEnabled: false);
         }
 
-        [Fact(Skip = "P0 traces can be dropped when stats computation is enabled, but the feature has not been implemented yet")]
-        public async Task SendsStatsAndDropsSpansWhenSampleRateIsZero()
+        [Fact(Skip = "DiscoveryService is not yet hooked up to Tracer initialization.")]
+        public async Task IsDisabledWhenIncompatibleAgentDetected_TS011()
         {
-            await SendStatsHelper(statsComputationEnabled: true, globalSamplingRate: 0.0);
+            await SendStatsHelper(statsComputationEnabled: true, statsEndpointEnabled: false);
         }
 
         private async Task SendStatsHelper(bool statsComputationEnabled, double? globalSamplingRate = null, bool statsEndpointEnabled = true)
