@@ -328,7 +328,7 @@ jobs:
           path: shared/bin/monitoring-home
 
       - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="${{matrix.configuration}}"
 
       - name: Build sample applications
         run: dotnet build -c ${{matrix.configuration}} profiler/src/Demos/Datadog.Demos.sln -p:Platform=${{matrix.platform}}
@@ -537,7 +537,7 @@ jobs:
         run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader --build-configuration ${{matrix.configuration}} --target-platform ${{matrix.platform}}
 
       - name: Restore sample applications
-        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="${{matrix.configuration}}"
 
       - name: Build sample applications
         run: dotnet build -c ${{matrix.configuration}} profiler/src/Demos/Datadog.Demos.sln -p:Platform=${{matrix.platform}}
