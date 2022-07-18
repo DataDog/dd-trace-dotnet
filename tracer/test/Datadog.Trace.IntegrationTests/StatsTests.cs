@@ -113,5 +113,59 @@ namespace Datadog.Trace.IntegrationTests
             stats2.Sequence.Should().Be(2);
             AssertStats(stats2, span2, isError: true);
         }
+
+        [Fact]
+        public async Task IsDisabledThroughConfiguration()
+        {
+            var waitEvent = new AutoResetEvent(false);
+
+            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
+
+            var statsReceived = false;
+            agent.StatsDeserialized += (_, _) =>
+            {
+                waitEvent.Set();
+                statsReceived = true;
+            };
+
+            var settings = new TracerSettings
+            {
+                StatsComputationEnabled = false,
+                ServiceVersion = "V",
+                Environment = "Test",
+                Exporter = new ExporterSettings
+                {
+                    AgentUri = new Uri($"http://localhost:{agent.Port}"),
+                }
+            };
+
+            var immutableSettings = settings.Build();
+
+            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+
+            using (var scope = tracer.StartActiveInternal("operationName"))
+            {
+                var span = scope.Span;
+                span.ResourceName = "resourceName";
+                span.SetHttpStatusCode(200, isServer: false, immutableSettings);
+                span.Type = "span1";
+            }
+
+            await tracer.FlushAsync();
+            waitEvent.WaitOne(TimeSpan.FromSeconds(20)).Should().Be(false, "No stats should be received");
+
+            using (var scope = tracer.StartActiveInternal("operationName"))
+            {
+                var span = scope.Span;
+                span.ResourceName = "resourceName";
+                span.SetHttpStatusCode(500, isServer: true, immutableSettings);
+                span.Type = "span2";
+            }
+
+            await tracer.FlushAsync();
+            waitEvent.WaitOne(TimeSpan.FromSeconds(20)).Should().Be(false, "No stats should be received");
+
+            statsReceived.Should().BeFalse();
+        }
     }
 }
