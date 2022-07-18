@@ -10,7 +10,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
     /// <summary>
-    /// GraphQL.Execution.ExecutionStrategy calltarget instrumentation
+    /// HotChocolate.Execution.Processing.WorkScheduler calltarget instrumentation
     /// </summary>
     [InstrumentMethodAttribute(
         IntegrationName = HotChocolateCommon.IntegrationName,
@@ -34,22 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
             where TTarget : IWorkScheduler
         {
-            return new CallTargetState(scope: HotChocolateCommon.UpdateScopeFromExecuteAsync(Tracer.Instance, instance), state: instance);
-        }
-
-        /// <summary>
-        /// OnAsyncMethodEnd callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TExecutionResult">Type of the execution result value</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="executionResult">ExecutionResult instance</param>
-        /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-        /// <param name="state">Calltarget state value</param>
-        internal static TExecutionResult OnAsyncMethodEnd<TTarget, TExecutionResult>(TTarget instance, TExecutionResult executionResult, Exception exception, in CallTargetState state)
-            where TTarget : IWorkScheduler
-        {
-            return executionResult;
+            return new CallTargetState(scope: HotChocolateCommon.UpdateScopeFromExecuteAsync(Tracer.Instance, instance));
         }
     }
 }

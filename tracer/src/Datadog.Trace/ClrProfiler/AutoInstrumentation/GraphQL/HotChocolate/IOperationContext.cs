@@ -3,21 +3,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
     /// <summary>
     /// HotChocolate.Execution.Processing.IOperationContext interface for ducktyping
     /// </summary>
-    internal interface IOperationContext
+    [DuckCopy]
+    internal struct IOperationContext
     {
         ///// <summary>
         ///// Gets the context operation
         ///// </summary>
-        IPreparedOperation Operation { get; }
-
-        ///// <summary>
-        ///// Gets the operation Result
-        ///// </summary>
-        IResultHelper Result { get; }
+        public IPreparedOperation Operation { get; }
     }
 }

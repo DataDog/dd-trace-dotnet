@@ -39,8 +39,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             try
             {
                 var operationName = request.OperationName;
-                var source = request.Query?.GetQuery();
-                var operationType = "Unknown";
+                var source = request.Query?.ToString();
+                var operationType = "Undefined";
                 scope = CreateScopeFromExecuteAsync(tracer, (string)operationName, source, operationType);
             }
             catch (Exception ex)
@@ -168,7 +168,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error creating HOtChocolate error message.");
+                Log.Error(ex, "Error creating HotChocolate error message.");
                 return "errors: []";
             }
 

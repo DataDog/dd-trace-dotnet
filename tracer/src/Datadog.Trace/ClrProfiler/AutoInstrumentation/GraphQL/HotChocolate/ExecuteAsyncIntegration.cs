@@ -12,7 +12,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
     /// <summary>
-    /// GraphQL.Execution.ExecutionStrategy calltarget instrumentation
+    /// HotChocolate.Execution.RequestExecutor calltarget instrumentation
     /// </summary>
     [InstrumentMethodAttribute(
         IntegrationName = HotChocolateCommon.IntegrationName,
@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         internal static CallTargetState OnMethodBegin<TTarget, TQueyRequest>(TTarget instance, TQueyRequest request, CancellationToken token)
             where TQueyRequest : IQueryRequest
         {
-            return new CallTargetState(scope: HotChocolateCommon.CreateScopeFromExecuteAsync(Tracer.Instance, request), state: instance);
+            return new CallTargetState(scope: HotChocolateCommon.CreateScopeFromExecuteAsync(Tracer.Instance, request));
         }
 
         /// <summary>

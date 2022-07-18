@@ -13,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         ///// <summary>
         ///// Gets the query
         ///// </summary>
-        public IQuery Query { get; }
+        public object Query { get; }
 
         ///// <summary>
         ///// Gets the operation name

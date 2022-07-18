@@ -3,26 +3,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
     /// <summary>
     /// HotChocolate.Execution.Processing.IPreparedOperation interface for ducktyping
     /// </summary>
-    internal interface IPreparedOperation
+    [DuckCopy]
+    internal struct IPreparedOperation
     {
-        ///// <summary>
-        ///// Gets the operation name
-        ///// </summary>
-        INameString Name { get; }
-
         ///// <summary>
         ///// Gets the operation type (Query, Mutation, Subscription)
         ///// </summary>
-        OperationTypeProxy Type { get; }
-
-        ///// <summary>
-        ///// Gets the operation Document
-        ///// </summary>
-        object Document { get; }
+        public OperationTypeProxy Type { get; }
     }
 }
