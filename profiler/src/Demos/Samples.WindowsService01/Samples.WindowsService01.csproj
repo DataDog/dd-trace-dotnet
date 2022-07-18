@@ -1,14 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <PropertyGroup>
-    <SharedSrcBaseDir>$([System.IO.Path]::GetFullPath( $(EnlistmentRoot)\shared\src\managed-src\ ))</SharedSrcBaseDir>
-    <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
-  </PropertyGroup>
-  <PropertyGroup>
-    <SharedDemoSrcBaseDir>$([System.IO.Path]::GetFullPath( $(EnlistmentRoot)\profiler\src\Demos\Shared ))</SharedDemoSrcBaseDir>
-    <SharedDemoSrcBaseLabel>Shared-Demo-Src</SharedDemoSrcBaseLabel>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>bin\x64\Debug\</OutputPath>
@@ -45,10 +37,6 @@
     <LangVersion>7.3</LangVersion>
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
-  <!-- Datadog.Logging.Emission.props is required for emitting logs: -->
-  <Import Project="$(SharedSrcBaseDir)\Datadog.Logging\Datadog.Logging.Emission.props" Condition="$(LogEmissionPropsIncluded) == ''" />
-  <!-- Datadog.Logging.Composition.props is required for composing logs and chosing a log sink: -->
-  <Import Project="$(SharedSrcBaseDir)\Datadog.Logging\Datadog.Logging.Composition.props" Condition="$(LogCompositionPropsIncluded) == ''" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
@@ -108,8 +96,6 @@
     <Compile Include="DemoService1.Designer.cs">
       <DependentUpon>DemoService1.cs</DependentUpon>
     </Compile>
-    <Compile Include="Log.cs" />
-    <Compile Include="LogConfigurator.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="ProjectInstaller.cs">
       <SubType>Component</SubType>
@@ -117,17 +103,6 @@
     <Compile Include="ProjectInstaller.Designer.cs">
       <DependentUpon>ProjectInstaller.cs</DependentUpon>
     </Compile>
-    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Validate.cs" />
-    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\RuntimeEnvironmentInfo.cs" />
-    <IncludedSharedCompileItem Include="$(SharedSrcBaseDir)\Datadog.Util\internal\CurrentProcess.cs" />
-    <ExcludedSharedCompileItems Link="ExcludedSharedCompileItems\%(RecursiveDir)\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(IncludedSharedCompileItem)" />
-    <Compile Link="$(SharedSrcBaseLabel)\%(RecursiveDir)\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\**\*.cs" Exclude="@(ExcludedSharedCompileItems)" />
-    <!-- This ensures that ExcludedSharedCompileItems is not rendered in the Solution Explorer for Classic Projects:                -->
-    <ExcludedSharedCompileItems Remove="$(SharedSrcBaseDir)\**\*" />
-    <IncludedSharedCompileItem Remove="$(SharedSrcBaseDir)\**\*" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Link="$(SharedDemoSrcBaseLabel)\Datadog.TestUtil\%(Filename)%(Extension)" Include="$(SharedDemoSrcBaseDir)\Datadog.TestUtil\EnvironmentInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
@@ -139,27 +114,9 @@
   <ItemGroup>
     <!-- This "service" is required for T4-templating.                                                                                   -->
     <Service Include="{508349b6-6b84-4df5-91f0-309beebad82d}" />
-    <!-- Make sure the value of SharedSrcBaseDir is available in the T4 template: -->
-    <T4ParameterValues Include="SharedSrcBaseDir">
-      <Value>$(SharedSrcBaseDir)</Value>
-      <Visible>false</Visible>
-    </T4ParameterValues>
-    <!-- Log.tt is a T4 template that refers to the Log.tt.cs templete referenced in Datadog.Logging.Emission.props.                     -->
-    <!-- It ensures that the Log Emission API is correctly generated.                                                                    -->
   </ItemGroup>
   <ItemGroup>
-    <!-- LogComposer.tt is a T4 template that refers to the LogComposer.tt.cs templete referenced in Datadog.Logging.Composition.props.  -->
-    <!-- It ensures that the Log Composition API is correctly generated.                                                                 -->
-    <None Include="Datadog.Logging.Composition\LogComposer.tt">
-      <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>LogComposer.cs</LastGenOutput>
-    </None>
     <Compile Include="Computer.cs" />
-    <Compile Include="Datadog.Logging.Composition\LogComposer.cs">
-      <DesignTime>True</DesignTime>
-      <AutoGen>True</AutoGen>
-      <DependentUpon>LogComposer.tt</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="DemoService1.resx">
@@ -168,6 +125,12 @@
     <EmbeddedResource Include="ProjectInstaller.resx">
       <DependentUpon>ProjectInstaller.cs</DependentUpon>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\Util\Datadog.Demos.Util.csproj">
+      <Project>{b0882e91-443b-4161-ab64-07e188067d3f}</Project>
+      <Name>Datadog.Demos.Util</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

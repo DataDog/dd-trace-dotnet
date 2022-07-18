@@ -52,11 +52,6 @@
     <Reference Include="System.Xml" />
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
-  <PropertyGroup>
-    <SharedAssetsBaseDir>$([System.IO.Path]::GetFullPath( $(EnlistmentRoot)\shared\ ))</SharedAssetsBaseDir>
-    <SharedSrcBaseDir>$([System.IO.Path]::GetFullPath( $(SharedAssetsBaseDir)\src\managed-src\ ))</SharedSrcBaseDir>
-    <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
-  </PropertyGroup>
   <ItemGroup>
     <Compile Include="IStringProvider.cs" />
     <Compile Include="StringInfo.cs" />
@@ -65,12 +60,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Link="$(SharedSrcBaseLabel)\Datadog.Util\internal\%(Filename)%(Extension)"
-             Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Validate.cs" />
-    <Compile Link="$(SharedSrcBaseLabel)\Datadog.Util\internal\%(Filename)%(Extension)"
-             Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Hash.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
