@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Web;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -66,6 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         Log.Error(ex, "Error extracting propagated HTTP headers.");
                     }
 
+                    const string httpContextKey = "MS_HttpContext";
                     if (!tracer.Settings.IpHeaderDisabled)
                     {
                         if (request.Properties.TryGetValue("MS_OwinContext", out var owinContextObj))
@@ -76,6 +78,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                                 Headers.Ip.RequestIpExtractor.AddIpToTags(
                                     owinContext.Request.RemoteIpAddress,
                                     owinContext.Request.IsSecure,
+                                    key => request.Headers.TryGetValues(key, out var values) ? values?.FirstOrDefault() : string.Empty,
+                                    tracer.Settings.IpHeader,
+                                    tags);
+                            }
+                        }
+                        else if (request.Properties.ContainsKey(httpContextKey))
+                        {
+                            if (request.Properties[httpContextKey] is HttpContextWrapper objectCtx)
+                            {
+                                Headers.Ip.RequestIpExtractor.AddIpToTags(
+                                    objectCtx.Request.UserHostAddress,
+                                    objectCtx.Request.IsSecureConnection,
                                     key => request.Headers.TryGetValues(key, out var values) ? values?.FirstOrDefault() : string.Empty,
                                     tracer.Settings.IpHeader,
                                     tags);
