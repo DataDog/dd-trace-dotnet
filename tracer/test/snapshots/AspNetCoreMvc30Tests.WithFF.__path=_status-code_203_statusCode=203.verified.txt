@@ -37,7 +37,7 @@
       http.request.headers.sample_correlation_identifier: 0000-0000-0000,
       http.response.headers.sample_correlation_identifier: 0000-0000-0000,
       http.response.headers.server: Kestrel,
-      http.route: status-code/{statuscode},
+      http.route: status-code/{statusCode},
       http.status_code: 203,
       http.url: http://localhost:00000/status-code/203,
       language: dotnet,
