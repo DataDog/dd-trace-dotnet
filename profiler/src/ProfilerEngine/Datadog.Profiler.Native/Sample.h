@@ -69,13 +69,16 @@ class Sample
 {
 public:
     Sample(std::string_view runtimeId); // only for tests
-    Sample(uint64_t timestamp, std::string_view runtimeId);
-    Sample(const Sample&) = delete;
+    Sample(uint64_t timestamp, std::string_view runtimeId);    
     Sample& operator=(const Sample& sample) = delete;
     Sample(Sample&& sample) noexcept;
     Sample& operator=(Sample&& other) noexcept;
 
+protected:
+    Sample(const Sample&) = default;
+
 public:
+    Sample Copy() const;
     uint64_t GetTimeStamp() const;
     const Values& GetValues() const;
     const std::vector<std::pair<std::string, std::string>>& GetCallstack() const;

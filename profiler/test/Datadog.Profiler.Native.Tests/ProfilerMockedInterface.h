@@ -56,7 +56,6 @@ class MockSamplesCollector : public ISamplesCollector
 {
 public:
     MOCK_METHOD(void, Register, (ISamplesProvider * sampleProvider), (override));
-    MOCK_METHOD(std::list<Sample>, GetSamples, (), (override));
 };
 
 class MockSampleProvider : public ISamplesProvider

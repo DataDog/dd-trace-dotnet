@@ -35,7 +35,6 @@ class IManagedThreadList;
 class IStackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
-class SamplesAggregator;
 
 namespace shared {
 class Loader;
@@ -205,7 +204,6 @@ private :
     WallTimeProvider* _pWallTimeProvider = nullptr;
     CpuTimeProvider* _pCpuTimeProvider = nullptr;
     AllocationsProvider* _pAllocationsProvider = nullptr;
-    SamplesAggregator* _pSamplesAggregator = nullptr;
     SamplesCollector* _pSamplesCollector = nullptr;
 
     std::vector<std::unique_ptr<IService>> _services;

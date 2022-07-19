@@ -12,6 +12,5 @@ class ISamplesCollector
 public:
     virtual ~ISamplesCollector() = default;
 
-    virtual std::list<Sample> GetSamples() = 0;
     virtual void Register(ISamplesProvider* sampleProvider) = 0;
 };

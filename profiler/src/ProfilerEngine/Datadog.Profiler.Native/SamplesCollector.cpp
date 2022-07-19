@@ -6,9 +6,16 @@
 #include "Log.h"
 #include "OpSysTools.h"
 
-
-SamplesCollector::SamplesCollector(IThreadsCpuManager* pThreadsCpuManager) :
-    _pThreadsCpuManager(pThreadsCpuManager)
+SamplesCollector::SamplesCollector(
+    IConfiguration* configuration,
+    IThreadsCpuManager* pThreadsCpuManager,
+    IExporter* exporter,
+    IMetricsSender* metricsSender) :
+    _uploadInterval{configuration->GetUploadInterval()},
+    _mustStop{false},
+    _pThreadsCpuManager{pThreadsCpuManager},
+    _metricsSender{metricsSender},
+    _exporter{exporter}
 {
 }
 
@@ -17,19 +24,14 @@ void SamplesCollector::Register(ISamplesProvider* samplesProvider)
     _samplesProviders.push_front(samplesProvider);
 }
 
-std::list<Sample> SamplesCollector::GetSamples()
-{
-    std::lock_guard<std::mutex> lock(_samplesLock);
-
-    return std::move(_samples);
-}
-
 bool SamplesCollector::Start()
 {
     Log::Info("Starting the samples collector");
     _mustStop = false;
-    _worker = std::thread(&SamplesCollector::Work, this);
-    OpSysTools::SetNativeThreadName(&_worker, WorkerThreadName);
+    _workerThread = std::thread(&SamplesCollector::SamplesWork, this);
+    OpSysTools::SetNativeThreadName(&_workerThread, WorkerThreadName);
+    _exporterThread = std::thread(&SamplesCollector::ExportWork, this);
+    OpSysTools::SetNativeThreadName(&_exporterThread, ExporterThreadName);
     return true;
 }
 
@@ -41,7 +43,10 @@ bool SamplesCollector::Stop()
     }
 
     _mustStop = true;
-    _worker.join();
+    _workerThread.join();
+
+    _exporterThreadPromise.set_value();
+    _exporterThread.join();
 
     return true;
 }
@@ -51,7 +56,7 @@ const char* SamplesCollector::GetName()
     return _serviceName;
 }
 
-void SamplesCollector::Work()
+void SamplesCollector::SamplesWork()
 {
     _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), WorkerThreadName);
 
@@ -62,14 +67,67 @@ void SamplesCollector::Work()
     }
 }
 
+void SamplesCollector::ExportWork()
+{
+    const auto future = _exporterThreadPromise.get_future();
+
+    while (future.wait_for(_uploadInterval) == std::future_status::timeout)
+    {
+        Export();
+    }
+
+    // Exiting, export one last time
+    Export();
+}
+
+void SamplesCollector::Export()
+{
+    bool success = false;
+
+    try
+    {
+        std::lock_guard lock(_exportLock);
+        success = _exporter->Export();
+    }
+    catch (std::exception const& ex)
+    {
+        SendHeartBeatMetric(false);
+        Log::Error("An exception occured during export: ", ex.what());
+    }
+
+    SendHeartBeatMetric(success);
+    _pThreadsCpuManager->LogCpuTimes();
+}
+
 void SamplesCollector::CollectSamples()
 {
     for (auto const& samplesProvider : _samplesProviders)
     {
-        auto result = samplesProvider->GetSamples();
+        try
+        {
+            std::lock_guard lock(_exportLock);
 
-        std::lock_guard<std::mutex> lock(_samplesLock);
+            auto result = samplesProvider->GetSamples();
 
-        _samples.splice(_samples.cend(), result);
+            for (auto const& sample : result)
+            {
+                if (!sample.GetCallstack().empty())
+                {
+                    _exporter->Add(sample);
+                }
+            }
+        }
+        catch (std::exception const& ex)
+        {
+            Log::Error("An exception occured while collecting samples: ", ex.what());
+        }
+    }
+}
+
+void SamplesCollector::SendHeartBeatMetric(bool success)
+{
+    if (_metricsSender != nullptr)
+    {
+        _metricsSender->Counter(SuccessfulExportsMetricName, 1, {{"success", success ? "1" : "0"}});
     }
 }
