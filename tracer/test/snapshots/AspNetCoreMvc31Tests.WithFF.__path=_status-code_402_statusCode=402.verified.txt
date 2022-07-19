@@ -39,7 +39,7 @@
       http.request.headers.sample_correlation_identifier: 0000-0000-0000,
       http.response.headers.sample_correlation_identifier: 0000-0000-0000,
       http.response.headers.server: Kestrel,
-      http.route: status-code/{statuscode},
+      http.route: status-code/{statusCode},
       http.status_code: 402,
       http.url: http://localhost:00000/status-code/402,
       language: dotnet,
