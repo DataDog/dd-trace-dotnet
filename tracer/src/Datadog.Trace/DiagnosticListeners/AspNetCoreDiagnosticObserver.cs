@@ -793,6 +793,9 @@ namespace Datadog.Trace.DiagnosticListeners
                     {
                         span = StartMvcCoreSpan(tracer, parentSpan, typedArg, httpContext, request);
                     }
+
+                    // Override the http.route to match the OpenTelemetry implementation
+                    parentSpan.SetTag(Tags.HttpRoute, typedArg.ActionDescriptor?.AttributeRouteInfo?.Template);
                 }
 
                 if (shouldSecure && typedArg.ActionDescriptor?.Parameters != null)
