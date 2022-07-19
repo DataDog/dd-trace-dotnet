@@ -263,7 +263,7 @@ mutation m {
     TraceId: Id_10,
     SpanId: Id_16,
     Name: hotchocolate.execute,
-    Resource: Unknown operation,
+    Resource: Undefined operation,
     Service: Samples.HotChocolate-hotchocolate,
     Type: graphql,
     ParentId: Id_11,
@@ -286,7 +286,7 @@ errors: [
 ]
 ,
       error.type: HotChocolate.Error,
-      hotchocolate.operation.type: Unknown,
+      hotchocolate.operation.type: Undefined,
       hotchocolate.source:
 {
   boook {
@@ -308,7 +308,7 @@ errors: [
     TraceId: Id_12,
     SpanId: Id_17,
     Name: hotchocolate.execute,
-    Resource: Unknown operation,
+    Resource: Undefined operation,
     Service: Samples.HotChocolate-hotchocolate,
     Type: graphql,
     ParentId: Id_13,
@@ -327,7 +327,7 @@ errors: [
 ]
 ,
       error.type: HotChocolate.Error,
-      hotchocolate.operation.type: Unknown,
+      hotchocolate.operation.type: Undefined,
       hotchocolate.source:
 subscription NotImplementedSub {
   throwNotImplementedException {

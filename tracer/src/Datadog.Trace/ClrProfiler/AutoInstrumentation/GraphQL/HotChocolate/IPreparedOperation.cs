@@ -10,8 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// <summary>
     /// HotChocolate.Execution.Processing.IPreparedOperation interface for ducktyping
     /// </summary>
-    [DuckCopy]
-    internal struct IPreparedOperation
+    internal interface IPreparedOperation
     {
         ///// <summary>
         ///// Gets the operation type (Query, Mutation, Subscription)
