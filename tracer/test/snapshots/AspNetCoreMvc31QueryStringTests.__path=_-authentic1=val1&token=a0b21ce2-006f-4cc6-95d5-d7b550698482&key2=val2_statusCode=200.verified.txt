@@ -37,7 +37,6 @@
       http.request.headers.sample_correlation_identifier: 0000-0000-0000,
       http.response.headers.sample_correlation_identifier: 0000-0000-0000,
       http.response.headers.server: Kestrel,
-      http.route: {controller=home}/{action=index}/{id?},
       http.status_code: 200,
       http.url: http://localhost:00000/?authentic1=val1&<redacted>&key2=val2,
       language: dotnet,
