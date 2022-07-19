@@ -99,7 +99,7 @@
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
     <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.16.1 -->
-    <PackageReference Include="MongoDB.Driver.Core" Version="2.16.1" />
+    <PackageReference Include="MongoDB.Driver.Core" Version="2.17.0" />
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
