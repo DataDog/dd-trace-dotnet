@@ -45,6 +45,7 @@ at Samples.AspNetCoreMvc.Controllers.HomeController.StatusCodeTestString(String 
       http.route: status-code-string/{statuscode},
       http.status_code: 500,
       http.url: http://localhost:00000/status-code-string/%5B200%5D,
+      http.useragent: testhelper,
       language: dotnet,
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,

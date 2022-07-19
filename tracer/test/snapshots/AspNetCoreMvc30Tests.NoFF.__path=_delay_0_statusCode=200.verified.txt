@@ -18,6 +18,7 @@
       http.response.headers.server: Kestrel,
       http.status_code: 200,
       http.url: http://localhost:00000/delay/0,
+      http.useragent: testhelper,
       language: dotnet,
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,

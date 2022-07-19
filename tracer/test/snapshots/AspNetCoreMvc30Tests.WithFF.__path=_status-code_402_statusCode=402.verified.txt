@@ -42,6 +42,7 @@
       http.route: status-code/{statuscode},
       http.status_code: 402,
       http.url: http://localhost:00000/status-code/402,
+      http.useragent: testhelper,
       language: dotnet,
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,

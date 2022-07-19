@@ -87,6 +87,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             {
                 _httpClient = new HttpClient();
                 _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+                _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
                 _httpClient.DefaultRequestHeaders.Add(HeaderName1WithMapping, HeaderValue1);
                 _httpClient.DefaultRequestHeaders.Add(HeaderName2, HeaderValue2);
             }

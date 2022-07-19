@@ -17,6 +17,7 @@
       http.response.headers.server: Kestrel,
       http.status_code: 404,
       http.url: http://localhost:00000/not-found,
+      http.useragent: testhelper,
       language: dotnet,
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
