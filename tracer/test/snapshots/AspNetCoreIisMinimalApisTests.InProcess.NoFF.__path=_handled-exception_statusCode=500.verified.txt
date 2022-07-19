@@ -18,6 +18,7 @@ System.Exception: Exception of type 'System.Exception' was thrown.
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: handled-exception,
       http.status_code: 500,
       http.url: http://localhost:00000/handled-exception,
       http.useragent: testhelper,
