@@ -32,7 +32,7 @@
       http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
-      http.route: status-code/{statuscode},
+      http.route: status-code/{statusCode},
       http.status_code: 203,
       http.url: http://localhost:00000/status-code/203,
       http.useragent: testhelper,
