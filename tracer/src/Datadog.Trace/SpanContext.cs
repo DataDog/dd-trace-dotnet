@@ -25,12 +25,12 @@ namespace Datadog.Trace
             Keys.RawTraceId,
             Keys.RawSpanId,
             Keys.PropagatedTags,
+
             // For mismatch version support we need to keep supporting old keys.
             HttpHeaderNames.TraceId,
             HttpHeaderNames.ParentId,
             HttpHeaderNames.SamplingPriority,
             HttpHeaderNames.Origin,
-            HttpHeaderNames.DatadogTags,
 
             // these keys are only used for sharing context across tracer versions,
             // not for propagation across process boundaries

@@ -359,14 +359,18 @@ namespace Datadog.Trace
                     // start a new trace and keep the sampling priority and trace tags.
                     var traceTags = TagPropagation.ParseHeader(parentSpanContext.PropagatedTags);
                     traceContext = new TraceContext(this, traceTags);
-                    traceContext.SetSamplingPriority(parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority());
+
+                    var samplingPriority = parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority();
+                    traceContext.SetSamplingDecision(samplingPriority, SamplingMechanism.Unknown);
                 }
             }
             else
             {
                 // parent is not a SpanContext, start a new trace
+                var samplingPriority = DistributedTracer.Instance.GetSamplingPriority();
+
                 traceContext = new TraceContext(this, tags: null);
-                traceContext.SetSamplingPriority(DistributedTracer.Instance.GetSamplingPriority());
+                traceContext.SetSamplingDecision(samplingPriority, SamplingMechanism.Unknown);
 
                 if (traceId == null)
                 {

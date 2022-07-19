@@ -22,7 +22,7 @@ namespace Datadog.Trace.Propagators
         {
             var traceId = IsValidTraceId(context.RawTraceId) ? context.RawTraceId : context.TraceId.ToString("x32");
             var spanId = IsValidSpanId(context.RawSpanId) ? context.RawSpanId : context.SpanId.ToString("x16");
-            var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
+            var samplingPriority = context.TraceContext?.SamplingDecision?.Priority ?? context.SamplingPriority;
             var sampled = samplingPriority > 0 ? "01" : "00";
             carrierSetter.Set(carrier, TraceParent, $"00-{traceId}-{spanId}-{sampled}");
         }

@@ -11,6 +11,7 @@ using System.Text;
 
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
@@ -78,7 +79,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         internal static Scope CreatePlaceholderScope(Tracer tracer, string traceId, string samplingPriority)
         {
-            Span span = null;
+            Span span;
+
             if (traceId == null)
             {
                 Serverless.Debug("traceId not found");
@@ -92,13 +94,13 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
             if (samplingPriority == null)
             {
-                Serverless.Debug($"samplingPriority not found");
-                span.Context.TraceContext.SetSamplingPriority(tracer.TracerManager.Sampler?.GetSamplingPriority(span));
+                Serverless.Debug("samplingPriority not found");
+                span.Context.TraceContext?.SetSamplingDecision(tracer.TracerManager.Sampler?.MakeSamplingDecision(span));
             }
             else
             {
-                Serverless.Debug($"setting the placeholder sampling proirity to = {samplingPriority}");
-                span.Context.TraceContext.SetSamplingPriority(Convert.ToInt32(samplingPriority));
+                Serverless.Debug($"setting the placeholder sampling priority to = {samplingPriority}");
+                span.Context.TraceContext?.SetSamplingDecision(Convert.ToInt32(samplingPriority), SamplingMechanism.Unknown, rate: null, notifyDistributedTracer: false);
             }
 
             return tracer.TracerManager.ScopeManager.Activate(span, false);

@@ -374,7 +374,7 @@ namespace Datadog.Trace.AppSec
         {
             _instrumentationGateway.EndRequest -= ReportWafInitInfoOnce;
             var span = e.RelatedSpan.Context.TraceContext.RootSpan ?? e.RelatedSpan;
-            span.SetTraceSamplingPriority(SamplingPriorityValues.UserKeep);
+            span.SetTraceSamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.AppSec);
             span.SetMetric(Metrics.AppSecWafInitRulesLoaded, _waf.InitializationResult.LoadedRules);
             span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, _waf.InitializationResult.FailedToLoadRules);
             if (_waf.InitializationResult.HasErrors)
