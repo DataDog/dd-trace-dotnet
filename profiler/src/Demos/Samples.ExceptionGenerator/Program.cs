@@ -6,7 +6,7 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
-using Datadog.TestUtil;
+using Datadog.Demos.Util;
 
 namespace Samples.ExceptionGenerator
 {

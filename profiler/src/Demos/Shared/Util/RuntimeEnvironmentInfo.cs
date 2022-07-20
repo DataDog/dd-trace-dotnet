@@ -1,37 +1,22 @@
-﻿// <copyright file="RuntimeEnvironmentInfo.cs" company="Datadog">
+// <copyright file="RuntimeEnvironmentInfo.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP || NETSTANDARD
-
-#define RUNTIMEINFORMATION_TYPE_AVAILABLE
-
-#endif
-
 using System;
 using System.Reflection;
 
-#if RUNTIMEINFORMATION_TYPE_AVAILABLE
-
-using System.Runtime.InteropServices;
-
-#endif
-
-namespace Datadog.Util
+namespace Datadog.Demos.Util
 {
-    internal class RuntimeEnvironmentInfo
+    public class RuntimeEnvironmentInfo
     {
+        public static readonly RuntimeEnvironmentInfo Instance = CreateNew();
+
         private const string Mscorlib = "mscorlib";
         private const string CoreLib = "System.Private.CoreLib";
         private const string UnknownMoniker = "Unknown";
 
-#pragma warning disable SA1308 // Variable names should not be prefixed
-        private static RuntimeEnvironmentInfo s_this = null;
-#pragma warning restore SA1308 // Variable names should not be prefixed
-
-        private string _stringView = null;
-        private string _osPlatformMoniker = null;
+        private string _stringView;
 
         private RuntimeEnvironmentInfo(
             string runtimeName,
@@ -42,28 +27,13 @@ namespace Datadog.Util
             string osDescription,
             CoreAssembyInformation coreAssembyInfo)
         {
-            this.RuntimeName = runtimeName;
-            this.RuntimeVersion = runtimeVersion;
-            this.ProcessArchitecture = processArchitecture;
-            this.OsPlatform = osPlatform;
-            this.OsArchitecture = osArchitecture;
-            this.OsDescription = osDescription;
-            this.CoreAssembyInfo = coreAssembyInfo;
-        }
-
-        public static RuntimeEnvironmentInfo SingeltonInstance
-        {
-            get
-            {
-                RuntimeEnvironmentInfo current = s_this;
-                if (current == null)
-                {
-                    current = CreateNew();
-                    s_this = current;    // benign race
-                }
-
-                return current;
-            }
+            RuntimeName = runtimeName;
+            RuntimeVersion = runtimeVersion;
+            ProcessArchitecture = processArchitecture;
+            OsPlatform = osPlatform;
+            OsArchitecture = osArchitecture;
+            OsDescription = osDescription;
+            CoreAssembyInfo = coreAssembyInfo;
         }
 
         public string RuntimeName { get; }
@@ -76,12 +46,13 @@ namespace Datadog.Util
 
         public override string ToString()
         {
-            string stringView = _stringView;
+            var stringView = _stringView;
+
             if (stringView == null)
             {
                 stringView = $"{RuntimeName} {RuntimeVersion} ({ProcessArchitecture}) running on {OsPlatform} {OsArchitecture}";
 
-                if (!String.IsNullOrWhiteSpace(OsDescription))
+                if (!string.IsNullOrWhiteSpace(OsDescription))
                 {
                     stringView = $"{stringView} ({OsDescription})";
                 }
@@ -92,51 +63,23 @@ namespace Datadog.Util
             return stringView;
         }
 
-        public string GetOsPlatformMoniker()
-        {
-            string osPlatformMoniker = _osPlatformMoniker;
-            if (osPlatformMoniker == null)
-            {
-                if (OsPlatform.StartsWith("win", StringComparison.OrdinalIgnoreCase))
-                {
-                    osPlatformMoniker = "win";
-                }
-                else if (OsPlatform.StartsWith("linux", StringComparison.OrdinalIgnoreCase))
-                {
-                    osPlatformMoniker = "linux";
-                }
-                else if (OsPlatform.StartsWith("macos", StringComparison.OrdinalIgnoreCase))
-                {
-                    osPlatformMoniker = "osx";
-                }
-                else
-                {
-                    osPlatformMoniker = OsPlatform.ToLower();
-                }
-
-                _osPlatformMoniker = osPlatformMoniker;
-            }
-
-            return osPlatformMoniker;
-        }
-
         private static RuntimeEnvironmentInfo CreateNew()
         {
             try
             {
-                Assembly objectTypeAssembly = (new object()).GetType().Assembly;
-                string objectTypeAssemblyName = objectTypeAssembly.GetName()?.Name ?? UnknownMoniker;
+                var objectTypeAssembly = typeof(object).Assembly;
+                var objectTypeAssemblyName = objectTypeAssembly.GetName().Name ?? UnknownMoniker;
                 var coreAssembyInfo = new CoreAssembyInformation(
                         isMscorlib: Mscorlib.Equals(objectTypeAssemblyName, StringComparison.OrdinalIgnoreCase),
                         isSysPrivCoreLib: CoreLib.Equals(objectTypeAssemblyName, StringComparison.OrdinalIgnoreCase),
                         name: objectTypeAssemblyName);
 
-                string runtimeName = GetRuntimeName(coreAssembyInfo);
-                string runtimeVersion = GetRuntimeVersion(coreAssembyInfo, objectTypeAssembly);
-                string processArchitecture = GetProcessArchitecture();
-                string osPlatform = GetOsPlatform();
-                string osArchitecture = GetOsArchitecture();
-                string osDescription = GetOsDescription();
+                var runtimeName = GetRuntimeName(coreAssembyInfo);
+                var runtimeVersion = GetRuntimeVersion(coreAssembyInfo, objectTypeAssembly);
+                var processArchitecture = GetProcessArchitecture();
+                var osPlatform = GetOsPlatform();
+                var osArchitecture = GetOsArchitecture();
+                var osDescription = GetOsDescription();
 
                 return new RuntimeEnvironmentInfo(
                             runtimeName,
@@ -162,45 +105,26 @@ namespace Datadog.Util
 
         private static string GetRuntimeName(CoreAssembyInformation coreAssembyInfo)
         {
-            string runtimeName = null;
+            string runtimeName;
 
-#if RUNTIMEINFORMATION_TYPE_AVAILABLE
+#if NETSTANDARD || NETCOREAPP2_1_OR_GREATER
             // See https://docs.microsoft.com/en-us/dotnet/api/system.runtime.interopservices.runtimeinformation.frameworkdescription?view=net-5.0#remarks
 
-            string frameworkDescription = RuntimeInformation.FrameworkDescription;
-            if (frameworkDescription.StartsWith(".NET Native", StringComparison.OrdinalIgnoreCase))
-            {
-                runtimeName = ".NET Native";
-            }
-            else if (frameworkDescription.StartsWith(".NET Framework", StringComparison.OrdinalIgnoreCase))
+            runtimeName = System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription;
+#else
+            if (coreAssembyInfo.IsMscorlib)
             {
                 runtimeName = ".NET Framework";
             }
-            else if (frameworkDescription.StartsWith(".NET Core", StringComparison.OrdinalIgnoreCase))
+            else if (coreAssembyInfo.IsSysPrivCoreLib)
             {
-                runtimeName = ".NET Core";
+                runtimeName = $"Unknown {coreAssembyInfo.Name}-based .NET-compatible runtime";
             }
-            else if (frameworkDescription.StartsWith(".NET 5", StringComparison.OrdinalIgnoreCase))
-            {
-                runtimeName = ".NET 5";
-            }
-#endif
-            if (runtimeName == null)
-            {
-                if (coreAssembyInfo.IsMscorlib)
-                {
-                    runtimeName = ".NET Framework";
-                }
-                else if (coreAssembyInfo.IsSysPrivCoreLib)
-                {
-                    runtimeName = $"Unknown {coreAssembyInfo.Name}-based .NET-compatible runtime";
-                }
-            }
-
-            if (runtimeName == null)
+            else
             {
                 runtimeName = $"Unknown .NET-compatible runtime (BCL: {coreAssembyInfo.Name})";
             }
+#endif
 
             return runtimeName;
         }
@@ -320,10 +244,9 @@ namespace Datadog.Util
         {
             internal CoreAssembyInformation(bool isMscorlib, bool isSysPrivCoreLib, string name)
             {
-                Validate.NotNull(name, nameof(name));
-                this.IsMscorlib = isMscorlib;
-                this.IsSysPrivCoreLib = isSysPrivCoreLib;
-                this.Name = name;
+                IsMscorlib = isMscorlib;
+                IsSysPrivCoreLib = isSysPrivCoreLib;
+                Name = name;
             }
 
             public bool IsMscorlib { get; }

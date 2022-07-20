@@ -43,15 +43,6 @@
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
-  <PropertyGroup>
-    <SharedAssetsBaseDir>$([System.IO.Path]::GetFullPath( $(EnlistmentRoot)\shared\ ))</SharedAssetsBaseDir>
-    <SharedSrcBaseDir>$([System.IO.Path]::GetFullPath( $(SharedAssetsBaseDir)\src\managed-src\ ))</SharedSrcBaseDir>
-    <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
-  </PropertyGroup>
-  <PropertyGroup>
-    <SharedDemoSrcBaseDir>$([System.IO.Path]::GetFullPath( $(EnlistmentRoot)\profiler\src\Demos\Shared ))</SharedDemoSrcBaseDir>
-    <SharedDemoSrcBaseLabel>Shared-Demo-Src</SharedDemoSrcBaseLabel>
-  </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System" />
@@ -190,12 +181,6 @@
     <None Include="packages.config" />
     <Content Include="Scripts\jquery-3.4.1.slim.min.map" />
     <Content Include="Scripts\jquery-3.4.1.min.map" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Link="$(SharedSrcBaseLabel)\Datadog.Util\internal\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Validate.cs" />
-    <Compile Link="$(SharedSrcBaseLabel)\Datadog.Util\internal\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\Datadog.Util\internal\RuntimeEnvironmentInfo.cs" />
-    <Compile Link="$(SharedSrcBaseLabel)\Datadog.Util\internal\%(Filename)%(Extension)" Include="$(SharedSrcBaseDir)\Datadog.Util\internal\CurrentProcess.cs" />
-    <Compile Link="$(SharedDemoSrcBaseLabel)\Datadog.TestUtil\%(Filename)%(Extension)" Include="$(SharedDemoSrcBaseDir)\Datadog.TestUtil\EnvironmentInfo.cs" />
   </ItemGroup>
   <PropertyGroup>
     <VisualStudioVersion Condition="'$(VisualStudioVersion)' == ''">10.0</VisualStudioVersion>
