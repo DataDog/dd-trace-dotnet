@@ -31,11 +31,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableFact]
+        [MemberData(nameof(PackageVersions.HotChocolate), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task SubmitsTraces()
-            => await RunSubmitsTraces();
+        public async Task SubmitsTraces(string packageVersion)
+            => await RunSubmitsTraces(packageVersion);
     }
 
     [UsesVerify]
