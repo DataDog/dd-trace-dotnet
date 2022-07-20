@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
-        [SkippableFact]
+        [SkippableTheory]
         [MemberData(nameof(PackageVersions.HotChocolate), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
