@@ -596,8 +596,7 @@ partial class Build
         {
             if (IsWin)
             {
-                CompressZip(TracerHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
-                // for now we do not need a monitoring-home.zip file. So no need to create it.
+                CompressZip(MonitoringHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
             }
             else if (IsLinux)
             {
