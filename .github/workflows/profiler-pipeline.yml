@@ -110,6 +110,9 @@ jobs:
       - name: Install timeit
         run: go install github.com/tonyredondo/timeit@latest
 
+      - name: Restore sample applications
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
+
       - name: Build sample applications
         run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
 
@@ -146,6 +149,9 @@ jobs:
         run: |
           CXX=clang++ CC=clang cmake -S profiler -B __build -DRUN_ASAN=ON
           cmake --build __build --config Release --parallel
+
+      - name: Restore sample applications
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
 
       - name: Build sample applications
         run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
@@ -197,6 +203,9 @@ jobs:
         run: |
           CXX=clang++ CC=clang cmake -S profiler -B __build -DRUN_UBSAN=ON
           cmake --build __build --config Release
+
+      - name: Restore sample applications
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
 
       - name: Build sample applications
         run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
@@ -318,6 +327,9 @@ jobs:
           name: monitoring-home.Windows.${{matrix.configuration}}
           path: shared/bin/monitoring-home
 
+      - name: Restore sample applications
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="${{matrix.configuration}}"
+
       - name: Build sample applications
         run: dotnet build -c ${{matrix.configuration}} profiler/src/Demos/Datadog.Demos.sln -p:Platform=${{matrix.platform}}
 
@@ -417,6 +429,9 @@ jobs:
 
       - name: Install timeit
         run: go install github.com/tonyredondo/timeit@latest
+
+      - name: Restore sample applications
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
 
       - name: Build sample applications
         run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
@@ -520,6 +535,9 @@ jobs:
 
       - name: Build Monitoring home
         run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader --build-configuration ${{matrix.configuration}} --target-platform ${{matrix.platform}}
+
+      - name: Restore sample applications
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="${{matrix.configuration}}"
 
       - name: Build sample applications
         run: dotnet build -c ${{matrix.configuration}} profiler/src/Demos/Datadog.Demos.sln -p:Platform=${{matrix.platform}}

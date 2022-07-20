@@ -1,12 +1,12 @@
-﻿// <copyright file="Program.cs" company="Datadog">
+// <copyright file="Program.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
 using System;
 using System.Diagnostics;
+using Datadog.Demos.Util;
 using Datadog.Demos.WcfService.Client.Demos.WcfService;
-using Datadog.Util;
 
 namespace Datadog.Demos.WcfService.Client
 {
@@ -94,7 +94,7 @@ namespace Datadog.Demos.WcfService.Client
 
             Console.WriteLine("    RuntimeEnvironmentInfo:");
             Console.WriteLine();
-            Console.WriteLine("        " + RuntimeEnvironmentInfo.SingeltonInstance.ToString());
+            Console.WriteLine("        " + RuntimeEnvironmentInfo.Instance);
 
             Console.WriteLine();
             Console.WriteLine("    AppDomain.CurrentDomain.SetupInformation.TargetFrameworkName:");

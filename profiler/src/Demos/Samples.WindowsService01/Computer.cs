@@ -10,8 +10,6 @@ namespace Samples.WindowsService01
 {
     internal class Computer
     {
-        private const string LogSourceMoniker = nameof(Computer);
-
         private static readonly TimeSpan PauseBetweenWorkloads = TimeSpan.FromSeconds(5);
         private static readonly TimeSpan PauseBetweenStatusChecks = TimeSpan.FromSeconds(1);
 
@@ -38,9 +36,8 @@ namespace Samples.WindowsService01
 
                     await Task.Delay(PauseBetweenStatusChecks);
                 }
-                catch (Exception ex)
+                catch
                 {
-                    Log.Error(Log.WithCallInfo(LogSourceMoniker), ex);
                 }
             }
         }
@@ -62,9 +59,6 @@ namespace Samples.WindowsService01
 
         private static void DoSomeWork()
         {
-            Log.Info(Log.WithCallInfo(LogSourceMoniker), "Starting to do some work.");
-
-            int startEnvironmentTicks = Environment.TickCount;
             int val = 0;
             Random rnd = new Random();
             const int MaxIterations = 100000000;
@@ -73,22 +67,6 @@ namespace Samples.WindowsService01
                 int rn = rnd.Next(0, int.MaxValue);
                 val ^= rn;
             }
-
-            int endEnvironmentTicks = Environment.TickCount;
-            int deltaTicks;
-            unchecked
-            {
-                deltaTicks = endEnvironmentTicks - startEnvironmentTicks;
-            }
-
-#pragma warning disable SA1117 // Parameters should be on same line or separate lines
-            Log.Info(
-                Log.WithCallInfo(LogSourceMoniker),
-                "Work completed. Generated and XORed a ton of random numbers.",
-                "MaxIterations", MaxIterations,
-                "value", val,
-                "time taken", TimeSpan.FromMilliseconds(deltaTicks));
-#pragma warning restore SA1117 // Parameters should be on same line or separate lines
         }
     }
 }
