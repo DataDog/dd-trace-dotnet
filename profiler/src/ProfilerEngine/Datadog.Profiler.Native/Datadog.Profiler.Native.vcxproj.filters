@@ -210,6 +210,9 @@
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
     <ClInclude Include="SamplesCollector.h" />
+    <ClInclude Include="ClrEventsParser.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -325,6 +328,9 @@
     </ClCompile>
     <ClCompile Include="SamplesCollector.cpp">
       <Filter>Profiler-Driver</Filter>
+    </ClCompile>
+    <ClCompile Include="ClrEventsParser.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

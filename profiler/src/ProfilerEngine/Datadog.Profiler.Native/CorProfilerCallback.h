@@ -32,6 +32,7 @@ class IStackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
 class SamplesAggregator;
+class ClrEventsParser;
 
 namespace shared {
 class Loader;
@@ -183,7 +184,10 @@ private :
     std::unique_ptr<IClrLifetime> _pClrLifetime = nullptr;
 
     std::atomic<ULONG> _refCount{0};
-    ICorProfilerInfo4* _pCorProfilerInfo = nullptr;
+    ICorProfilerInfo5* _pCorProfilerInfo = nullptr;
+    ICorProfilerInfo12* _pCorProfilerInfoEvents = nullptr;
+    ClrEventsParser* _pClrEventsParser = nullptr;
+    EVENTPIPE_SESSION _session{0};
     inline static bool _isNet46OrGreater = false;
     std::shared_ptr<IMetricsSender> _metricsSender;
     std::atomic<bool> _isInitialized{false}; // pay attention to keeping ProfilerEngineStatus::IsProfilerEngiveActive in sync with this!
@@ -211,7 +215,7 @@ private:
     static void ConfigureDebugLog();
     static void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk);
     static void InspectProcessorInfo();
-    static void InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo);
+    static void InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor);
     static const char* SysInfoProcessorArchitectureToStr(WORD wProcArch);
 
     void DisposeInternal();
