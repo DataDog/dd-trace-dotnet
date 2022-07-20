@@ -147,11 +147,14 @@ namespace Datadog.Trace
         {
             if (priority == null)
             {
+                // remove any previous sampling decision
                 SetSamplingDecision(null, notifyDistributedTracer);
             }
-
-            var decision = new SamplingDecision(priority.Value, mechanism, rate);
-            SetSamplingDecision(decision, notifyDistributedTracer);
+            else
+            {
+                var decision = new SamplingDecision(priority.Value, mechanism, rate);
+                SetSamplingDecision(decision, notifyDistributedTracer);
+            }
         }
 
         public void SetSamplingDecision(SamplingDecision? samplingDecision, bool notifyDistributedTracer = true)
