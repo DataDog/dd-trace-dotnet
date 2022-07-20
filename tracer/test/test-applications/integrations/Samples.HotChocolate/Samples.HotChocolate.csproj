@@ -3,6 +3,10 @@
   <PropertyGroup>
     <!-- override to remove not supported platforms -->
     <TargetFrameworks>net5.0;net6.0;netcoreapp3.1</TargetFrameworks>
+    
+    <!-- Required to build multiple projects with the same Configuration|Platform, which is needed for the CI library/version matrix -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
   
   <ItemGroup>
