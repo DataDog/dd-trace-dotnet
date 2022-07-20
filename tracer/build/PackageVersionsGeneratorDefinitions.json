@@ -80,12 +80,10 @@
       "4.*.*",
       "5.*.*"
     ],
-    "VersionConditions": [
-      {
-        "MaxVersionExclusive": "6.0.0",
-        "ExcludeTargetFrameworks": [ "net461", "netcoreapp2.1", "netcoreapp3.0" ]
-      }
-    ]
+    "VersionConditions": [{
+      "MaxVersionExclusive": "6.0.0",
+      "ExcludeTargetFrameworks": ["net461", "netcoreapp2.1", "netcoreapp3.0"]
+    }]
   },
   {
     "IntegrationName": "HotChocolate",
