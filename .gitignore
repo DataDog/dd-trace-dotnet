@@ -325,23 +325,23 @@ tracer/deploy/AzureAppServices/
 
 # profiler build files
 build_data
-tracer/src/Datadog.Trace.ClrProfiler.Native/build/
-tracer/src/Datadog.Trace.ClrProfiler.Native/deps/
-tracer/src/Datadog.Trace.ClrProfiler.Native/CMakeFiles/
-tracer/src/Datadog.Trace.ClrProfiler.Native/tmp.*
-tracer/src/Datadog.Trace.ClrProfiler.Native/Makefile
-tracer/src/Datadog.Trace.ClrProfiler.Native/CMakeCache.txt
-tracer/src/Datadog.Trace.ClrProfiler.Native/cmake_install.cmake
-!tracer/src/Datadog.Trace.ClrProfiler.Native/lib/**
-tracer/src/Datadog.AutoInstrumentation.NativeLoader/build/
-tracer/src/Datadog.AutoInstrumentation.NativeLoader/deps/
-tracer/src/Datadog.AutoInstrumentation.NativeLoader/CMakeFiles/
-tracer/src/Datadog.AutoInstrumentation.NativeLoader/tmp.*
-tracer/src/Datadog.AutoInstrumentation.NativeLoader/Makefile
-tracer/src/Datadog.AutoInstrumentation.NativeLoader/CMakeCache.txt
-tracer/src/Datadog.AutoInstrumentation.NativeLoader/cmake_install.cmake
-tracer/src/Datadog.AutoInstrumentation.NativeLoader/cmake-build-debug/
-!tracer/src/Datadog.AutoInstrumentation.NativeLoader/lib/**
+tracer/src/Datadog.Tracer.Native/build/
+tracer/src/Datadog.Tracer.Native/deps/
+tracer/src/Datadog.Tracer.Native/CMakeFiles/
+tracer/src/Datadog.Tracer.Native/tmp.*
+tracer/src/Datadog.Tracer.Native/Makefile
+tracer/src/Datadog.Tracer.Native/CMakeCache.txt
+tracer/src/Datadog.Tracer.Native/cmake_install.cmake
+!tracer/src/Datadog.Tracer.Native/lib/**
+shared/src/Datadog.Trace.ClrProfiler.Native/build/
+shared/src/Datadog.Trace.ClrProfiler.Native/deps/
+shared/src/Datadog.Trace.ClrProfiler.Native/CMakeFiles/
+shared/src/Datadog.Trace.ClrProfiler.Native/tmp.*
+shared/src/Datadog.Trace.ClrProfiler.Native/Makefile
+shared/src/Datadog.Trace.ClrProfiler.Native/CMakeCache.txt
+shared/src/Datadog.Trace.ClrProfiler.Native/cmake_install.cmake
+shared/src/Datadog.Trace.ClrProfiler.Native/cmake-build-debug/
+!shared/src/Datadog.Trace.ClrProfiler.Native/lib/**
 profiler/_build/
 
 .ionide/
