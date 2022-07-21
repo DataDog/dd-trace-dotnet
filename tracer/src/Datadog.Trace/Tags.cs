@@ -511,7 +511,9 @@ namespace Datadog.Trace
             internal const string Scope = "usr.scope";
         }
 
+        internal static class Propagated
         {
+            internal const string DecisionMaker = "_dd.p.dm";
         }
     }
 }

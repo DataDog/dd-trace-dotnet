@@ -94,7 +94,7 @@ namespace Datadog.Trace
                 }
                 else
                 {
-                    AddSamplingPriorityTags(span, _samplingDecision.Value.Priority);
+                    AddSamplingDecisionsTags(span, _samplingDecision.Value);
                 }
             }
 
@@ -173,16 +173,21 @@ namespace Datadog.Trace
             return Elapsed + (_utcStart - date);
         }
 
-        private static void AddSamplingPriorityTags(Span span, int samplingPriority)
+        private static void AddSamplingDecisionsTags(Span span, SamplingDecision samplingDecision)
         {
+            // TODO: refactor SamplingPriority from a span tag to a trace tag
+            // set sampling priority tag directly on this span...
             if (span.Tags is CommonTags tags)
             {
-                tags.SamplingPriority = samplingPriority;
+                tags.SamplingPriority = samplingDecision.Priority;
             }
             else
             {
-                span.Tags.SetMetric(Metrics.SamplingPriority, samplingPriority);
+                span.Tags.SetMetric(Metrics.SamplingPriority, samplingDecision.Priority);
             }
+
+            // ... and add the sampling decision trace tag (yes, there's a "-", that's not a typo)
+            span.Context.TraceContext?.Tags.SetTag(Trace.Tags.Propagated.DecisionMaker, $"-{samplingDecision.Mechanism}");
         }
 
         private void PropagateMetadata(ArraySegment<Span> spans)
@@ -193,9 +198,7 @@ namespace Datadog.Trace
             // The agent looks for the sampling priority on the first span that has no parent
             // Finding those spans is not trivial, so instead we apply the priority to every span
 
-            var samplingPriority = _samplingDecision?.Priority;
-
-            if (samplingPriority == null)
+            if (_samplingDecision == null || spans.Array == null)
             {
                 return;
             }
@@ -203,7 +206,7 @@ namespace Datadog.Trace
             // Using a for loop to avoid the boxing allocation on ArraySegment.GetEnumerator
             for (int i = 0; i < spans.Count; i++)
             {
-                AddSamplingPriorityTags(spans.Array[i + spans.Offset], samplingPriority.Value);
+                AddSamplingDecisionsTags(spans.Array[i + spans.Offset], _samplingDecision.Value);
             }
         }
 
