@@ -34,9 +34,9 @@ public class TagPropagationTests
     }
 
     [Theory]
-    [InlineData(null)]                      // null header
-    [InlineData("")]                        // empty header
-
+    [InlineData(null)]                             // null header
+    [InlineData("")]                               // empty header
+    [InlineData("_dd.p.upstream_services=value1")] // special case: ignore deprecated key
     public void ParseHeader_ShouldBeEmpty(string header)
     {
         var tags = TagPropagation.ParseHeader(header);

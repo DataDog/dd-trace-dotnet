@@ -93,6 +93,15 @@ internal static class TagPropagation
                 {
                     // TODO: implement something like StringSegment to avoid allocating new (sub)strings?
                     var key = headerTag.Substring(0, separatorIndex);
+
+                    if (key.Equals("_dd.p.upstream_services", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // special case: ignore deprecated tag, but don't add the "decoding error" tag
+                        // we can't reuse the same header string if we skip any key/value pair
+                        cachedHeader = null;
+                        continue;
+                    }
+
                     var value = headerTag.Substring(separatorIndex + 1);
 
                     if (IsValid(key, value))
