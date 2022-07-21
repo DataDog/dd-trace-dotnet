@@ -16,7 +16,8 @@ internal static class SamplingMechanism
     public const int Unknown = -1;
 
     /// <summary>
-    /// Sampling decision was made using the default mechanism.
+    /// Sampling decision was made using the default mechanism. Used before the tracer
+    /// receives any rates from agent and there are no rules configured.
     /// The available sampling priorities are <see cref="SamplingPriority.AutoReject"/> (0)
     /// and <see cref="SamplingPriority.AutoKeep"/> (1).
     /// </summary>
@@ -71,13 +72,7 @@ internal static class SamplingMechanism
     public const int RemoteRateDatadog = 7;
 
     /// <summary>
-    /// CIApp does not have a defined mechanism value; so default to <see cref="Unknown"/> for now.
+    /// CIApp does not have a defined mechanism value. Default to <see cref="Unknown"/> for now.
     /// </summary>
     public const int CiApp = Unknown;
-
-    /// <summary>
-    /// The sampling decision was made by an upstream service and propagated to this service.
-    /// The sampling mechanism is undefined and irrelevant in this case.
-    /// </summary>
-    public const int Propagated = Unknown;
 }

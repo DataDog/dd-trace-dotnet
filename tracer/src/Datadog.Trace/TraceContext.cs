@@ -65,7 +65,8 @@ namespace Datadog.Trace
                         if (span.Context.Parent is SpanContext { SamplingPriority: { } samplingPriority })
                         {
                             // this is a root span created from a propagated context that contains a sampling priority.
-                            var decision = new SamplingDecision(samplingPriority, SamplingMechanism.Propagated);
+                            // no need to track sampling mechanism since we can't override the propagated tag/header.
+                            var decision = new SamplingDecision(samplingPriority, SamplingMechanism.Unknown);
                             _samplingDecision = decision;
                         }
                         else if (Tracer.Sampler is not null)
