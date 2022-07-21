@@ -2,7 +2,7 @@
 #pragma once
 #include "../../../shared/src/native-src/com_ptr.h"
 #include "../../../shared/src/native-src/string.h"
-#include "../../src/Datadog.Trace.ClrProfiler.Native/integration.h"
+#include "../../src/Datadog.Tracer.Native/integration.h"
 
 
 namespace trace {

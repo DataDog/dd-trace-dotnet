@@ -531,15 +531,9 @@ std::string GetNativeLoaderFilePath()
 #ifdef LINUX
         "Datadog.Trace.ClrProfiler.Native.so";
 #elif MACOS
-        "Datadog.AutoInstrumentation.NativeLoader.dylib";
+        "Datadog.Trace.ClrProfiler.Native.dylib";
 #else
-        "Datadog.AutoInstrumentation.NativeLoader."
-#ifdef BIT64
-        "x64"
-#else
-        "x86"
-#endif
-        ".dll";
+        "Datadog.Trace.ClrProfiler.Native.dll";
 #endif
 
     auto module_file_path = fs::path(shared::GetCurrentModuleFileName());
@@ -548,6 +542,7 @@ std::string GetNativeLoaderFilePath()
         module_file_path.parent_path() / ".." /
 #ifdef _WIN32
         ".." / // On Windows, the tracer native library is 2 levels away from the native loader.
+        
 #endif
         native_loader_filename;
     return native_loader_file_path.string();
@@ -3128,7 +3123,7 @@ void CorProfiler::GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, int* assembl
     {
         const std::string name = std::string(_dyld_get_image_name(i));
 
-        if (name.rfind("Datadog.Trace.ClrProfiler.Native.dylib") != std::string::npos)
+        if (name.rfind("Datadog.Tracer.Native.dylib") != std::string::npos)
         {
             const mach_header_64* header = (const struct mach_header_64*) _dyld_get_image_header(i);
 
