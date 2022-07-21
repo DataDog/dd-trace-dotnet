@@ -81,6 +81,10 @@
       "5.*.*"
     ],
     "VersionConditions": [{
+      "MinVersion": "5.0.0",
+      "MaxVersionExclusive": "5.1.1",
+      "ExcludeTargetFrameworks": ["net461", "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0", "net6.0"]
+    },{
       "MaxVersionExclusive": "6.0.0",
       "ExcludeTargetFrameworks": ["net461", "netcoreapp2.1", "netcoreapp3.0"]
     }]
@@ -266,7 +270,11 @@
     "SpecificVersions": [
       "3.6.*",
       "3.*.*"
-    ]
+    ],
+    "VersionConditions": [{
+      "MinVersion": "3.29.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
+    }]
   },
   {
     "IntegrationName": "Serilog",
