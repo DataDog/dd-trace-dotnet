@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             {
                 var operationName = request.OperationName;
                 var source = request.Query?.ToString();
-                var operationType = "Undefined";
+                var operationType = "Uncompleted";
                 scope = CreateScopeFromExecuteAsync(tracer, (string)operationName, source, operationType);
             }
             catch (Exception ex)
@@ -90,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             try
             {
                 var operation = executionContext.Context.Operation;
-                var operationType = operation.Type.ToString();
+                var operationType = operation.OperationType.ToString();
                 var operationName = span.GetTag(Trace.Tags.HotChocolateOperationName);
                 span.ResourceName = $"{operationType} {operationName ?? "operation"}";
                 span.SetTag(Trace.Tags.HotChocolateOperationType, operationType);

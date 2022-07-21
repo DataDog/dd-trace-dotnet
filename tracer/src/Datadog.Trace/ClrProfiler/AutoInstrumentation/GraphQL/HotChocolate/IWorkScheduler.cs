@@ -16,6 +16,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         /// Gets the executing operation context
         /// </summary>
         [Duck(Name = "HotChocolate.Execution.Processing.Plan.IQueryPlanState.Context")]
-        IOperationContext Context { get; }
+        OperationContextStruct Context { get; }
     }
 }

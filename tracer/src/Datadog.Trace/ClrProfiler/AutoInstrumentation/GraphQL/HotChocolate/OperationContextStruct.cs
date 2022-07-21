@@ -1,4 +1,4 @@
-// <copyright file="IPreparedOperation.cs" company="Datadog">
+// <copyright file="OperationContextStruct.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,13 +8,14 @@ using Datadog.Trace.DuckTyping;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
     /// <summary>
-    /// HotChocolate.Execution.Processing.IPreparedOperation interface for ducktyping
+    /// HotChocolate.Execution.Processing.IOperationContext interface for ducktyping
     /// </summary>
-    internal interface IPreparedOperation
+    [DuckCopy]
+    internal struct OperationContextStruct
     {
         ///// <summary>
-        ///// Gets the operation type (Query, Mutation, Subscription)
+        ///// Gets the context operation
         ///// </summary>
-        public OperationTypeProxy Type { get; }
+        public PreparedOperationStruct Operation;
     }
 }

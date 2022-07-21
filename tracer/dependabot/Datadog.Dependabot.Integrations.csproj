@@ -66,6 +66,11 @@
     <!-- Latest package https://www.nuget.org/packages/Grpc/2.46.3 -->
     <PackageReference Include="Grpc" Version="2.46.3" />
 
+    <!-- Integration: HotChocolate.Execution -->
+    <!-- Assembly: HotChocolate.Execution -->
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/12.12.1 -->
+    <PackageReference Include="HotChocolate.AspNetCore" Version="12.12.1" />
+
     <!-- Integration: System.Net.Http -->
     <!-- Assembly: System.Net.Http -->
     <!-- Latest package https://www.nuget.org/packages/System.Net.Http/4.3.4 -->
