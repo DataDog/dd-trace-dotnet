@@ -24,7 +24,7 @@ public class TagPropagationTests
         var expectedPairs = new KeyValuePair<string, string>[]
                             {
                                 new("_dd.p.key1", "value1"),
-                                new(Tags.TagPropagation.Error, PropagationErrorTagValues.DecodingError), // "key2" is not a propagated tag
+                                new(Tags.TagPropagationError, PropagationErrorTagValues.DecodingError), // "key2" is not a propagated tag
                                 new("_dd.p.key3", "value3"),
                             };
 
@@ -60,7 +60,7 @@ public class TagPropagationTests
     {
         var expectedPairs = new KeyValuePair<string, string>[]
                             {
-                                new(Tags.TagPropagation.Error, PropagationErrorTagValues.DecodingError)
+                                new(Tags.TagPropagationError, PropagationErrorTagValues.DecodingError)
                             };
 
         var tags = TagPropagation.ParseHeader(header);
@@ -77,7 +77,7 @@ public class TagPropagationTests
 
         var expectedPairs = new KeyValuePair<string, string>[]
                             {
-                                new(Tags.TagPropagation.Error, PropagationErrorTagValues.ExtractMaxSize)
+                                new(Tags.TagPropagationError, PropagationErrorTagValues.ExtractMaxSize)
                             };
 
         var tags = TagPropagation.ParseHeader(header);
@@ -100,7 +100,7 @@ public class TagPropagationTests
         var headerValue = traceTags.ToPropagationHeader(MaxInjectLength);
 
         headerValue.Should().Be($"_dd.p.a={value}");
-        traceTags.GetTag(Tags.TagPropagation.Error).Should().BeNull();
+        traceTags.GetTag(Tags.TagPropagationError).Should().BeNull();
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public class TagPropagationTests
 
         // too short: empty header but no error tags
         headerValue.Should().BeEmpty();
-        traceTags.GetTag(Tags.TagPropagation.Error).Should().BeNull();
+        traceTags.GetTag(Tags.TagPropagationError).Should().BeNull();
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class TagPropagationTests
 
         // too long: empty header and an error tag
         headerValue.Should().BeEmpty();
-        traceTags.GetTag(Tags.TagPropagation.Error).Should().Be(PropagationErrorTagValues.InjectMaxSize);
+        traceTags.GetTag(Tags.TagPropagationError).Should().Be(PropagationErrorTagValues.InjectMaxSize);
     }
 
     [Fact]
@@ -141,7 +141,7 @@ public class TagPropagationTests
 
         // propagation disabled: empty header and an error tag
         headerValue.Should().BeEmpty();
-        traceTags.GetTag(Tags.TagPropagation.Error).Should().Be(PropagationErrorTagValues.PropagationDisabled);
+        traceTags.GetTag(Tags.TagPropagationError).Should().Be(PropagationErrorTagValues.PropagationDisabled);
     }
 
     [Theory]
@@ -157,7 +157,7 @@ public class TagPropagationTests
 
         // invalid chars: empty header and an error tag
         headerValue.Should().BeEmpty();
-        traceTags.GetTag(Tags.TagPropagation.Error).Should().Be(PropagationErrorTagValues.EncodingError);
+        traceTags.GetTag(Tags.TagPropagationError).Should().Be(PropagationErrorTagValues.EncodingError);
     }
 
     [Fact]

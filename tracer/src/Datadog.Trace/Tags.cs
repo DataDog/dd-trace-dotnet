@@ -499,6 +499,8 @@ namespace Datadog.Trace
         internal const string GrpcMethodName = "grpc.method.name";
         internal const string GrpcStatusCode = "grpc.status.code";
 
+        internal const string TagPropagationError = "_dd.propagation_error";
+
         internal static class User
         {
             internal const string Email = "usr.email";
@@ -509,9 +511,7 @@ namespace Datadog.Trace
             internal const string Scope = "usr.scope";
         }
 
-        internal static class TagPropagation
         {
-            internal const string Error = "_dd.propagation_error";
         }
     }
 }

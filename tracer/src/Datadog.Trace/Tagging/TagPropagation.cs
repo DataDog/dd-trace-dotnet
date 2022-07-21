@@ -66,7 +66,7 @@ internal static class TagPropagation
         {
             Log.Debug<int, int>("Incoming tag propagation header is too long. Length: {0}, Maximum: {1}.", propagationHeader.Length, IncomingPropagationHeaderMaxLength);
 
-            traceTags = new List<KeyValuePair<string, string>>(1) { new(Tags.TagPropagation.Error, PropagationErrorTagValues.ExtractMaxSize) };
+            traceTags = new List<KeyValuePair<string, string>>(1) { new(Tags.TagPropagationError, PropagationErrorTagValues.ExtractMaxSize) };
             return new TraceTagCollection(traceTags);
         }
 
@@ -117,7 +117,7 @@ internal static class TagPropagation
                 // add "_dd.propagation_error:decoding_error" tag if any of the tags it not valid,
                 // but only add the error tag once
                 addedErrorTag = true;
-                traceTags.Add(new(Tags.TagPropagation.Error, PropagationErrorTagValues.DecodingError));
+                traceTags.Add(new(Tags.TagPropagationError, PropagationErrorTagValues.DecodingError));
             }
 
             // we can't reuse the same header string if we skip any key/value pair
@@ -139,7 +139,7 @@ internal static class TagPropagation
         {
             // propagation is disabled,
             // set tag "_dd.propagation_error:disabled"...
-            tagsCollection.SetTag(Tags.TagPropagation.Error, PropagationErrorTagValues.PropagationDisabled);
+            tagsCollection.SetTag(Tags.TagPropagationError, PropagationErrorTagValues.PropagationDisabled);
 
             // ... and don't set the header
             return string.Empty;
@@ -160,7 +160,7 @@ internal static class TagPropagation
 
                     // if tag contains invalid chars,
                     // set tag "_dd.propagation_error:encoding_error"...
-                    tagsCollection.SetTag(Tags.TagPropagation.Error, PropagationErrorTagValues.EncodingError);
+                    tagsCollection.SetTag(Tags.TagPropagationError, PropagationErrorTagValues.EncodingError);
 
                     // ... and don't set the header
                     StringBuilderCache.Release(sb);
@@ -183,7 +183,7 @@ internal static class TagPropagation
 
                 // if combined tags get too long for propagation headers,
                 // set tag "_dd.propagation_error:inject_max_size"...
-                tagsCollection.SetTag(Tags.TagPropagation.Error, PropagationErrorTagValues.InjectMaxSize);
+                tagsCollection.SetTag(Tags.TagPropagationError, PropagationErrorTagValues.InjectMaxSize);
 
                 // ... and don't set the header
                 StringBuilderCache.Release(sb);
