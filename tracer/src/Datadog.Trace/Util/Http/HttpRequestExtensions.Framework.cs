@@ -12,6 +12,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util.Http.QueryStringObfuscation;
 
 namespace Datadog.Trace.Util.Http
 {
@@ -92,11 +93,11 @@ namespace Datadog.Trace.Util.Http
             return dict;
         }
 
-        internal static string GetUrl(this IHttpRequestMessage request, ImmutableTracerSettings tracerSettings) => HttpRequestUtils.GetUrl(request.RequestUri.Scheme, request.RequestUri.Host, string.Empty, request.RequestUri.AbsolutePath, request.RequestUri.Query, tracerSettings);
+        internal static string GetUrl(this IHttpRequestMessage request, QueryStringObfuscator queryStringObfuscator) => HttpRequestUtils.GetUrl(request.RequestUri.Scheme, request.RequestUri.Host, string.Empty, request.RequestUri.AbsolutePath, request.RequestUri.Query, queryStringObfuscator);
 
-        internal static string GetUrl(this HttpRequestBase request, ImmutableTracerSettings tracerSettings) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, request.Url.Query, tracerSettings);
+        internal static string GetUrl(this HttpRequestBase request, QueryStringObfuscator queryStringObfuscator) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, request.Url.Query, queryStringObfuscator);
 
-        internal static string GetUrl(this HttpRequest request, ImmutableTracerSettings tracerSettings) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, request.Url.Query, tracerSettings);
+        internal static string GetUrl(this HttpRequest request, QueryStringObfuscator queryStringObfuscator) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, request.Url.Query, queryStringObfuscator);
     }
 }
 #endif

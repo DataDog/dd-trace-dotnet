@@ -10,6 +10,7 @@ using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util.Http.QueryStringObfuscation;
 using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.Util.Http
@@ -88,7 +89,7 @@ namespace Datadog.Trace.Util.Http
             return dict;
         }
 
-        internal static string GetUrl(this HttpRequest request, ImmutableTracerSettings settings = null)
+        internal static string GetUrl(this HttpRequest request, QueryStringObfuscator queryStringObfuscator = null)
         {
             var queryString = request.QueryString.Value;
             return HttpRequestUtils.GetUrl(
@@ -97,7 +98,7 @@ namespace Datadog.Trace.Util.Http
                 request.PathBase.ToUriComponent(),
                 request.Path.ToUriComponent(),
                 queryString,
-                settings);
+                queryStringObfuscator);
         }
     }
 }

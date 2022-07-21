@@ -115,7 +115,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         {
             try
             {
-                var tracerSettings = Tracer.Instance.Settings;
+                var tracer = Tracer.Instance;
+                var tracerSettings = tracer.Settings;
                 var newResourceNamesEnabled = tracerSettings.RouteTemplateResourceNamesEnabled;
                 var request = controllerContext.Request;
                 Uri requestUri = request.RequestUri;
@@ -157,7 +158,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         out controller,
                         out action,
                         addSlashPrefix: newResourceNamesEnabled,
-                        expandRouteTemplates: newResourceNamesEnabled && Tracer.Instance.Settings.ExpandRouteTemplatesEnabled);
+                        expandRouteTemplates: newResourceNamesEnabled && tracer.Settings.ExpandRouteTemplatesEnabled);
                 }
                 else if (requestUri != null)
                 {
@@ -184,7 +185,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     }
                 }
 
-                var url = request.GetUrl(tracerSettings);
+                var url = request.GetUrl(tracer.TracerManager.QueryStringObfuscator);
 
                 span.DecorateWebServerSpan(
                     resourceName: resourceName,
