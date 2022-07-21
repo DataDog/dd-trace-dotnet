@@ -7,12 +7,14 @@
 #include <sstream>
 #include <iomanip>
 
+#include "IAllocationsListener.h"
 #include "Log.h"
 
 
-ClrEventsParser::ClrEventsParser(ICorProfilerInfo12* pCorProfilerInfo)
+ClrEventsParser::ClrEventsParser(ICorProfilerInfo12* pCorProfilerInfo, IAllocationsListener* pAllocationListener)
     :
-    _pCorProfilerInfo{pCorProfilerInfo}
+    _pCorProfilerInfo{pCorProfilerInfo},
+    _pAllocationListener{pAllocationListener}
 {
 }
 
@@ -264,16 +266,13 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
             return;
         }
 
-        std::wstringstream buffer;
-        buffer << WStr("AllocationTick - ") << payload.TypeName;
-        buffer << WStr(" (") << payload.ObjectSize << WStr(" bytes)");
-        buffer << std::endl;
-        std::wcout << buffer.str();
+        _pAllocationListener->OnAllocation(payload.AllocationKind, payload.TypeName, payload.Address, payload.ObjectSize);
     }
     else
     {
-        auto provider = std::string("dotnet");
-        DumpEvent(provider, nullptr, id, version, 0, id, version, 0);
+        // TODO: keep for future GC profiler
+        //auto provider = std::string("dotnet");
+        //DumpEvent(provider, nullptr, id, version, 0, id, version, 0);
     }
 }
 
@@ -295,12 +294,13 @@ void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEven
             return;
         }
 
-        std::stringstream buffer;
-        buffer << "ContentionStop";
-        buffer << ((payload.ContentionFlags == 0) ? " - managed " : " - native ");
-        buffer << "(" << payload.DurationNs << " ns)";
-        buffer << std::endl;
-        std::cout << buffer.str();
+        // TODO: for future contention profiler
+        //std::stringstream buffer;
+        //buffer << "ContentionStop";
+        //buffer << ((payload.ContentionFlags == 0) ? " - managed " : " - native ");
+        //buffer << "(" << payload.DurationNs << " ns)";
+        //buffer << std::endl;
+        //std::cout << buffer.str();
     }
 }
 

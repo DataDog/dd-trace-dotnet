@@ -234,6 +234,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AdaptiveSampler.h" />
+    <ClInclude Include="IAllocationsListener.h" />
+    <ClInclude Include="AllocationsProvider.h" />
     <ClInclude Include="AppDomainStore.h" />
     <ClInclude Include="ApplicationInfo.h" />
     <ClInclude Include="ApplicationStore.h" />
@@ -275,6 +277,7 @@
     <ClInclude Include="PInvoke.h" />
     <ClInclude Include="LibddprofExporter.h" />
     <ClInclude Include="ProfilerEngineStatus.h" />
+    <ClInclude Include="RawAllocationSample.h" />
     <ClInclude Include="RawCpuSample.h" />
     <ClInclude Include="RawExceptionSample.h" />
     <ClInclude Include="RawSample.h" />
@@ -301,6 +304,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="AdaptiveSampler.cpp" />
+    <ClCompile Include="AllocationsProvider.cpp" />
     <ClCompile Include="AppDomainStore.cpp" />
     <ClCompile Include="ApplicationInfo.cpp" />
     <ClCompile Include="ApplicationStore.cpp" />

@@ -8,6 +8,7 @@
 #include "corprof.h"
 // end
 
+#include "AllocationsProvider.h"
 #include "ApplicationStore.h"
 #include "ExceptionsProvider.h"
 #include "IAppDomainStore.h"
@@ -201,6 +202,7 @@ private :
     ExceptionsProvider* _pExceptionsProvider = nullptr;
     WallTimeProvider* _pWallTimeProvider = nullptr;
     CpuTimeProvider* _pCpuTimeProvider = nullptr;
+    AllocationsProvider* _pAllocationsProvider = nullptr;
     SamplesAggregator* _pSamplesAggregator = nullptr;
     SamplesCollector* _pSamplesCollector = nullptr;
 

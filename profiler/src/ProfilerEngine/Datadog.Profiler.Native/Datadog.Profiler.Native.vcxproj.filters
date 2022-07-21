@@ -36,6 +36,9 @@
     <Filter Include="Exceptions">
       <UniqueIdentifier>{17ede239-426d-4dba-a5d8-2e7c328d8e78}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Allocations">
+      <UniqueIdentifier>{ebcb3383-0a0b-49fd-a5ad-99ea7b92d783}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CorProfilerCallback.h">
@@ -213,6 +216,15 @@
     <ClInclude Include="ClrEventsParser.h">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClInclude>
+    <ClInclude Include="AllocationsProvider.h">
+      <Filter>Allocations</Filter>
+    </ClInclude>
+    <ClInclude Include="RawAllocationSample.h">
+      <Filter>Allocations</Filter>
+    </ClInclude>
+    <ClInclude Include="IAllocationsListener.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -331,6 +343,9 @@
     </ClCompile>
     <ClCompile Include="ClrEventsParser.cpp">
       <Filter>CorProfiler-Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="AllocationsProvider.cpp">
+      <Filter>Allocations</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

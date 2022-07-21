@@ -13,6 +13,8 @@
 #include <shared_mutex>
 #include <math.h>
 
+#include "IAllocationsListener.h"
+
 #include "shared/src/native-src/string.h"
 #include "assert.h"
 
@@ -56,34 +58,38 @@ public:
 
 struct AllocationTickV4Payload
 {
-    std::uint32_t AllocationAmount;     // The allocation size, in bytes.
-                                        // This value is accurate for allocations that are less than the length of a ULONG(4,294,967,295 bytes).
-                                        // If the allocation is greater, this field contains a truncated value.
-                                        // Use AllocationAmount64 for very large allocations.
-    std::uint32_t AllocationKind;       // 0x0 - Small object allocation(allocation is in small object heap).
-                                        // 0x1 - Large object allocation(allocation is in large object heap).
-    std::uint16_t ClrInstanceId;        // Unique ID for the instance of CLR or CoreCLR.
-    std::uint64_t AllocationAmount64;   // The allocation size, in bytes.This value is accurate for very large allocations.
-    std::uintptr_t TypeId;              // The address of the MethodTable. When there are several types of objects that were allocated during this event,
-                                        // this is the address of the MethodTable that corresponds to the last object allocated (the object that caused the 100 KB threshold to be exceeded).
-    const WCHAR* TypeName;              // The name of the type that was allocated. When there are several types of objects that were allocated during this event,
-                                        // this is the type of the last object allocated (the object that caused the 100 KB threshold to be exceeded).
-    std::uint32_t HeapIndex;            // The heap where the object was allocated. This value is 0 (zero) when running with workstation garbage collection.
-    std::uintptr_t Address;             // The address of the last allocated object.
-    std::uint64_t ObjectSize;           // The size of the last allocated object.
+    uint32_t AllocationAmount;     // The allocation size, in bytes.
+                                   // This value is accurate for allocations that are less than the length of a ULONG(4,294,967,295 bytes).
+                                   // If the allocation is greater, this field contains a truncated value.
+                                   // Use AllocationAmount64 for very large allocations.
+    uint32_t AllocationKind;       // 0x0 - Small object allocation(allocation is in small object heap).
+                                   // 0x1 - Large object allocation(allocation is in large object heap).
+    uint16_t ClrInstanceId;        // Unique ID for the instance of CLR or CoreCLR.
+    uint64_t AllocationAmount64;   // The allocation size, in bytes.This value is accurate for very large allocations.
+    uintptr_t TypeId;              // The address of the MethodTable. When there are several types of objects that were allocated during this event,
+                                   // this is the address of the MethodTable that corresponds to the last object allocated (the object that caused the 100 KB threshold to be exceeded).
+    const WCHAR* TypeName;         // The name of the type that was allocated. When there are several types of objects that were allocated during this event,
+                                   // this is the type of the last object allocated (the object that caused the 100 KB threshold to be exceeded).
+    uint32_t HeapIndex;            // The heap where the object was allocated. This value is 0 (zero) when running with workstation garbage collection.
+    uintptr_t Address;             // The address of the last allocated object.
+    uint64_t ObjectSize;           // The size of the last allocated object.
 };
 
 struct ContentionStopV1Payload
 {
-    std::uint8_t ContentionFlags;   // 0 for managed; 1 for native.
-    std::uint16_t ClrInstanceId;    // Unique ID for the instance of CLR.
-    std::double_t DurationNs;       // Duration of the contention (without spinning)
+    uint8_t ContentionFlags;   // 0 for managed; 1 for native.
+    uint16_t ClrInstanceId;    // Unique ID for the instance of CLR.
+    double_t DurationNs;       // Duration of the contention (without spinning)
 };
 
 class ClrEventsParser
 {
 public:
-    ClrEventsParser(ICorProfilerInfo12* pCorProfilerInfo);
+    static const int KEYWORD_GC = 0x1;
+    static const int KEYWORD_CONTENTION = 0x4000;
+
+public:
+    ClrEventsParser(ICorProfilerInfo12* pCorProfilerInfo, IAllocationsListener* pAllocationListener);
     void ParseEvent(EVENTPIPE_PROVIDER provider,
                     DWORD eventId,
                     DWORD eventVersion,
@@ -134,12 +140,10 @@ private:
 
 private:
     ICorProfilerInfo12* _pCorProfilerInfo = nullptr;
+    IAllocationsListener* _pAllocationListener = nullptr;
     ThreadSafeMap<EVENTPIPE_PROVIDER, std::string> _providerNameCache;
 
 private:
-    const int KEYWORD_GC = 0x1;
-    const int KEYWORD_CONTENTION = 0x4000;
-
     const int EVENT_ALLOCATION_TICK = 10;   // version 4 contains the size + reference
     const int EVENT_CONTENTION_STOP = 91;   // version 1 contains the duration in nanoseconds
 };

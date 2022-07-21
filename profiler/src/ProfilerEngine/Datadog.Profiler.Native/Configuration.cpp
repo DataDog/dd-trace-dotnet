@@ -37,6 +37,7 @@ Configuration::Configuration()
     _isCpuProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::CpuProfilingEnabled, false);
     _isWallTimeProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WallTimeProfilingEnabled, true);
     _isExceptionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::ExceptionProfilingEnabled, false);
+    _isAllocationProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationProfilingEnabled, false);
     _uploadPeriod = ExtractUploadInterval();
     _userTags = ExtractUserTags();
     _version = GetEnvironmentValue(EnvironmentVariables::Version, DefaultVersion);
@@ -103,6 +104,11 @@ bool Configuration::IsWallTimeProfilingEnabled() const
 bool Configuration::IsExceptionProfilingEnabled() const
 {
     return _isExceptionProfilingEnabled;
+}
+
+bool Configuration::IsAllocationProfilingEnabled() const
+{
+    return _isAllocationProfilingEnabled;
 }
 
 int Configuration::ExceptionSampleLimit() const

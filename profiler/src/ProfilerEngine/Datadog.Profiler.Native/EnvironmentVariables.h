@@ -28,6 +28,10 @@ public:
     inline static const shared::WSTRING CpuProfilingEnabled         = WStr("DD_PROFILING_CPU_ENABLED");
     inline static const shared::WSTRING WallTimeProfilingEnabled    = WStr("DD_PROFILING_WALLTIME_ENABLED");
     inline static const shared::WSTRING ExceptionProfilingEnabled   = WStr("DD_PROFILING_EXCEPTION_ENABLED");
+
+    // only available on .NET 5+
+    inline static const shared::WSTRING AllocationProfilingEnabled  = WStr("DD_PROFILING_ALLOCATION_ENABLED");
+
     inline static const shared::WSTRING ExceptionSampleLimit        = WStr("DD_PROFILING_EXCEPTION_SAMPLE_LIMIT");
     inline static const shared::WSTRING ProfilesOutputDir           = WStr("DD_INTERNAL_PROFILING_OUTPUT_DIR");
     inline static const shared::WSTRING DevelopmentConfiguration    = WStr("DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION");

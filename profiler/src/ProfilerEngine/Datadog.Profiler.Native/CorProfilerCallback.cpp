@@ -15,8 +15,10 @@
 #include <windows.h>
 #endif
 
+#include "AllocationsProvider.h"
 #include "AppDomainStore.h"
 #include "ApplicationStore.h"
+#include "ClrEventsParser.h"
 #include "ClrLifetime.h"
 #include "Configuration.h"
 #include "CpuTimeProvider.h"
@@ -36,7 +38,6 @@
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
-#include "ClrEventsParser.h"
 
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/pal.h"
@@ -90,8 +91,6 @@ bool CorProfilerCallback::InitializeServices()
 {
     _metricsSender = IMetricsSenderFactory::Create();
 
-    _pConfiguration = std::make_unique<Configuration>();
-
     _pAppDomainStore = std::make_unique<AppDomainStore>(_pCorProfilerInfo);
 
     _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo, _pConfiguration.get());
@@ -125,6 +124,25 @@ bool CorProfilerCallback::InitializeServices()
             pRuntimeIdStore);
     }
 
+
+    // _pCorProfilerInfoEvents must have been set for any CLR events-based profiler to work
+    if (_pCorProfilerInfoEvents != nullptr)
+    {
+        if (_pConfiguration->IsAllocationProfilingEnabled())
+        {
+            _pAllocationsProvider = RegisterService<AllocationsProvider>(
+                _pCorProfilerInfo,
+                _pManagedThreadList,
+                _pFrameStore.get(),
+                _pThreadsCpuManager,
+                _pAppDomainStore.get(),
+                pRuntimeIdStore);
+        }
+
+        // TODO: add new CLR events-based providers to the event parser
+        _pClrEventsParser = new ClrEventsParser(_pCorProfilerInfoEvents, _pAllocationsProvider);
+    }
+
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
         _pConfiguration.get(),
@@ -156,6 +174,16 @@ bool CorProfilerCallback::InitializeServices()
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
         _pSamplesCollector->Register(_pExceptionsProvider);
+    }
+
+    // CLR events-based providers require ICorProfilerInfo12 (stored in _pCorProfilerInfoEvents).
+    // If not set, no need to even check the configuration
+    if (_pCorProfilerInfoEvents != nullptr)
+    {
+        if (_pConfiguration->IsAllocationProfilingEnabled())
+        {
+            _pSamplesCollector->Register(_pAllocationsProvider);
+        }
     }
 
     _pSamplesAggregator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pThreadsCpuManager, _pExporter.get(), _metricsSender.get(), _pSamplesCollector);
@@ -560,6 +588,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     ConfigureDebugLog();
 
+
     if (!OpSysTools::IsSafeToStartProfiler())
     {
         Log::Warn("It's not safe to start the profiler. See previous log messages for more info.");
@@ -589,12 +618,17 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         return E_FAIL;
     }
 
+    _pConfiguration = std::make_unique<Configuration>();
+
     // Log some more important environment info:
     USHORT major = 0;
     USHORT minor = 0;
     CorProfilerCallback::InspectRuntimeVersion(_pCorProfilerInfo, major, minor);
 
-    if (major >= 5)
+    // CLR events-based profilers need ICorProfilerInfo12 (i.e. .NET 5+) to setup the communication.
+    // If no such provider is enabled, no need to trigger it.
+    // TODO: update the test when a new CLR events-based profiler is added (contention, GC, ...)
+    if ((major >= 5) && _pConfiguration->IsAllocationProfilingEnabled())
     {
         HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&_pCorProfilerInfoEvents);
         if (FAILED(hr))
@@ -603,10 +637,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             _pCorProfilerInfoEvents = nullptr;
 
             // we continue: the CLR events won't be received so no contention/memory profilers...
-        }
-        else
-        {
-            _pClrEventsParser = new ClrEventsParser(_pCorProfilerInfoEvents);
         }
     }
     else
@@ -637,7 +667,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         eventMask |= COR_PRF_MONITOR_EXCEPTIONS | COR_PRF_MONITOR_MODULE_LOADS;
     }
 
-    if ((major >= 5) && (_pCorProfilerInfoEvents != nullptr))
+    if (_pCorProfilerInfoEvents != nullptr)
     {
         // listen to CLR events via ICorProfilerCallback
         DWORD highMask = COR_PRF_HIGH_MONITOR_EVENT_PIPE;
@@ -654,11 +684,13 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //  - ContentionStop_V1
         COR_PRF_EVENTPIPE_PROVIDER_CONFIG providers[] =
             {
-                {WStr("Microsoft-Windows-DotNETRuntime"),
-                 0x01 | 0x4000, // GC and Contention keywords
-                 // 4, // Informational verbosity level
-                 5, // the documentation states that AllocationTick is Informational but... need Verbose  :^(
-                 NULL}};
+                {
+                    WStr("Microsoft-Windows-DotNETRuntime"),
+                    ClrEventsParser::KEYWORD_GC | ClrEventsParser::KEYWORD_CONTENTION,
+                    5, // the documentation states that AllocationTick is Informational but... need Verbose  :^(
+                    NULL
+                }
+            };
 
         hr = _pCorProfilerInfoEvents->EventPipeStartSession(
             sizeof(providers) / sizeof(providers[0]),
@@ -672,8 +704,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
             printf("Failed to start event pipe session with hr=0x%x\n", hr);
             return hr;
         }
-
-        // TODO: add the corresponding CLR events listener service when available
     }
     else
     {
@@ -715,6 +745,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
     if (_pExceptionsProvider != nullptr)
     {
         _pExceptionsProvider->Stop();
+    }
+    if (_pAllocationsProvider != nullptr)
+    {
+        _pAllocationsProvider->Stop();
     }
 
     // dump all threads time
@@ -1286,19 +1320,22 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE
                                                                        ULONG numStackFrames,
                                                                        UINT_PTR stackFrames[])
 {
-    _pClrEventsParser->ParseEvent(
-        provider,
-        eventId,
-        eventVersion,
-        cbMetadataBlob,
-        metadataBlob,
-        cbEventData,
-        eventData,
-        pActivityId,
-        pRelatedActivityId,
-        eventThread,
-        numStackFrames,
-        stackFrames);
+    if (_pClrEventsParser != nullptr)
+    {
+        _pClrEventsParser->ParseEvent(
+            provider,
+            eventId,
+            eventVersion,
+            cbMetadataBlob,
+            metadataBlob,
+            cbEventData,
+            eventData,
+            pActivityId,
+            pRelatedActivityId,
+            eventThread,
+            numStackFrames,
+            stackFrames);
+    }
 
     return S_OK;
 }
