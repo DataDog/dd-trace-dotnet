@@ -186,8 +186,10 @@ namespace Datadog.Trace
                 span.Tags.SetMetric(Metrics.SamplingPriority, samplingDecision.Priority);
             }
 
-            // ... and add the sampling decision trace tag (yes, there's a "-", that's not a typo)
-            span.Context.TraceContext?.Tags.SetTag(Trace.Tags.Propagated.DecisionMaker, $"-{samplingDecision.Mechanism}");
+            // ... and add the sampling decision trace tag if not already set
+            // - we should not overwrite a value propagated from upstream service
+            // - the "-" prefix is not a typo
+            span.Context.TraceContext?.Tags.SetTag(Trace.Tags.Propagated.DecisionMaker, $"-{samplingDecision.Mechanism}", replaceIfExists: false);
         }
 
         private void PropagateMetadata(ArraySegment<Span> spans)
