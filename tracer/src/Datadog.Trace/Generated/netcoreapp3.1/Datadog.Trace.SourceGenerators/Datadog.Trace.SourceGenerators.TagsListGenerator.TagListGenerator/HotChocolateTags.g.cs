@@ -4,20 +4,20 @@
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
-    partial class GraphQLTags
+    partial class HotChocolateTags
     {
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
         // InstrumentationNameBytes = System.Text.Encoding.UTF8.GetBytes("component");
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-        // SourceBytes = System.Text.Encoding.UTF8.GetBytes("graphql.source");
-        private static readonly byte[] SourceBytes = new byte[] { 103, 114, 97, 112, 104, 113, 108, 46, 115, 111, 117, 114, 99, 101 };
-        // OperationNameBytes = System.Text.Encoding.UTF8.GetBytes("graphql.operation.name");
-        private static readonly byte[] OperationNameBytes = new byte[] { 103, 114, 97, 112, 104, 113, 108, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
-        // OperationTypeBytes = System.Text.Encoding.UTF8.GetBytes("graphql.operation.type");
-        private static readonly byte[] OperationTypeBytes = new byte[] { 103, 114, 97, 112, 104, 113, 108, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 116, 121, 112, 101 };
+        // SourceBytes = System.Text.Encoding.UTF8.GetBytes("hotchocolate.source");
+        private static readonly byte[] SourceBytes = new byte[] { 104, 111, 116, 99, 104, 111, 99, 111, 108, 97, 116, 101, 46, 115, 111, 117, 114, 99, 101 };
+        // OperationNameBytes = System.Text.Encoding.UTF8.GetBytes("hotchocolate.operation.name");
+        private static readonly byte[] OperationNameBytes = new byte[] { 104, 111, 116, 99, 104, 111, 99, 111, 108, 97, 116, 101, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
+        // OperationTypeBytes = System.Text.Encoding.UTF8.GetBytes("hotchocolate.operation.type");
+        private static readonly byte[] OperationTypeBytes = new byte[] { 104, 111, 116, 99, 104, 111, 99, 111, 108, 97, 116, 101, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 116, 121, 112, 101 };
 
         public override string? GetTag(string key)
         {
@@ -25,9 +25,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             {
                 "span.kind" => SpanKind,
                 "component" => InstrumentationName,
-                "graphql.source" => Source,
-                "graphql.operation.name" => OperationName,
-                "graphql.operation.type" => OperationType,
+                "hotchocolate.source" => Source,
+                "hotchocolate.operation.name" => OperationName,
+                "hotchocolate.operation.type" => OperationType,
                 _ => base.GetTag(key),
             };
         }
@@ -36,13 +36,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         {
             switch(key)
             {
-                case "graphql.source": 
+                case "hotchocolate.source": 
                     Source = value;
                     break;
-                case "graphql.operation.name": 
+                case "hotchocolate.operation.name": 
                     OperationName = value;
                     break;
-                case "graphql.operation.type": 
+                case "hotchocolate.operation.type": 
                     OperationType = value;
                     break;
                 default: 
@@ -65,17 +65,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
             if (Source is not null)
             {
-                processor.Process(new TagItem<string>("graphql.source", Source, SourceBytes));
+                processor.Process(new TagItem<string>("hotchocolate.source", Source, SourceBytes));
             }
 
             if (OperationName is not null)
             {
-                processor.Process(new TagItem<string>("graphql.operation.name", OperationName, OperationNameBytes));
+                processor.Process(new TagItem<string>("hotchocolate.operation.name", OperationName, OperationNameBytes));
             }
 
             if (OperationType is not null)
             {
-                processor.Process(new TagItem<string>("graphql.operation.type", OperationType, OperationTypeBytes));
+                processor.Process(new TagItem<string>("hotchocolate.operation.type", OperationType, OperationTypeBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -99,21 +99,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
             if (Source is not null)
             {
-                sb.Append("graphql.source (tag):")
+                sb.Append("hotchocolate.source (tag):")
                   .Append(Source)
                   .Append(',');
             }
 
             if (OperationName is not null)
             {
-                sb.Append("graphql.operation.name (tag):")
+                sb.Append("hotchocolate.operation.name (tag):")
                   .Append(OperationName)
                   .Append(',');
             }
 
             if (OperationType is not null)
             {
-                sb.Append("graphql.operation.type (tag):")
+                sb.Append("hotchocolate.operation.type (tag):")
                   .Append(OperationType)
                   .Append(',');
             }

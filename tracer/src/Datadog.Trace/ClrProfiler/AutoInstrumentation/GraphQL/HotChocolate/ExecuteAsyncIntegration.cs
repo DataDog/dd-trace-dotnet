@@ -1,51 +1,45 @@
-﻿// <copyright file="ExecuteAsyncV5Integration.cs" company="Datadog">
+// <copyright file="ExecuteAsyncIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using System.ComponentModel;
+using System.Linq;
+using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
     /// <summary>
-    /// GraphQL.Execution.ExecutionStrategy calltarget instrumentation
+    /// HotChocolate.Execution.RequestExecutor calltarget instrumentation
     /// </summary>
-    [InstrumentMethod(
-        IntegrationName = GraphQLCommon.IntegrationName,
-        MethodName = GraphQLCommon.ExecuteAsyncMethodName,
-        ReturnTypeName = GraphQLCommon.ReturnTypeName,
-        ParameterTypeNames = new[] { GraphQLCommon.ExecutionContextTypeName },
-        AssemblyName = GraphQLCommon.GraphQLAssembly,
-        TypeName = "GraphQL.Execution.ExecutionStrategy",
-        MinimumVersion = GraphQLCommon.Major5,
-        MaximumVersion = GraphQLCommon.Major5)]
-    [InstrumentMethod(
-        IntegrationName = GraphQLCommon.IntegrationName,
-        MethodName = GraphQLCommon.ExecuteAsyncMethodName,
-        ReturnTypeName = GraphQLCommon.ReturnTypeName,
-        ParameterTypeNames = new[] { GraphQLCommon.ExecutionContextTypeName },
-        AssemblyName = GraphQLCommon.GraphQLAssembly,
-        TypeName = "GraphQL.Execution.SubscriptionExecutionStrategy",
-        MinimumVersion = GraphQLCommon.Major5,
-        MaximumVersion = GraphQLCommon.Major5)]
+    [InstrumentMethodAttribute(
+        IntegrationName = HotChocolateCommon.IntegrationName,
+        MethodName = HotChocolateCommon.ExecuteAsyncMethodName,
+        ReturnTypeName = "System.Threading.Tasks.Task`1<HotChocolate.Execution.IExecutionResult>",
+        ParameterTypeNames = new string[] { "HotChocolate.Execution.IQueryRequest", "System.Threading.CancellationToken" },
+        AssemblyName = HotChocolateCommon.HotChocolateAssembly,
+        TypeName = "HotChocolate.Execution.RequestExecutor",
+        MinimumVersion = HotChocolateCommon.Major12,
+        MaximumVersion = "12.*.*")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ExecuteAsyncV5Integration
+    public class ExecuteAsyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TContext">Type of the execution context</typeparam>
+        /// <typeparam name="TQueyRequest">Type of the queryRequest</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="context">The execution context of the GraphQL operation.</param>
+        /// <param name="request">QueryRequest</param>
+        /// <param name="token">Cancellation token</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext context)
-            where TContext : IExecutionContextV5
+        internal static CallTargetState OnMethodBegin<TTarget, TQueyRequest>(TTarget instance, TQueyRequest request, CancellationToken token)
+            where TQueyRequest : IQueryRequest
         {
-            return new CallTargetState(scope: GraphQLCommon.CreateScopeFromExecuteAsyncV5(Tracer.Instance, context), state: context);
+            return new CallTargetState(scope: HotChocolateCommon.CreateScopeFromExecuteAsync(Tracer.Instance, request));
         }
 
         /// <summary>
@@ -57,8 +51,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         /// <param name="executionResult">ExecutionResult instance</param>
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
-        /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TExecutionResult OnAsyncMethodEnd<TTarget, TExecutionResult>(TTarget instance, TExecutionResult executionResult, Exception exception, in CallTargetState state)
+            where TExecutionResult : IExecutionResult
         {
             Scope scope = state.Scope;
             if (state.Scope is null)
@@ -72,9 +66,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 {
                     scope.Span?.SetException(exception);
                 }
-                else if (state.State is IExecutionContextV5 context)
+                else if (executionResult != null && executionResult.Errors != null)
                 {
-                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, GraphQLCommon.ExecuteErrorType, context.Errors);
+                    HotChocolateCommon.RecordExecutionErrorsIfPresent(scope.Span, HotChocolateCommon.ErrorType, executionResult.Errors);
                 }
             }
             finally

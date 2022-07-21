@@ -9,7 +9,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 {
     internal class GraphQLCommon
     {

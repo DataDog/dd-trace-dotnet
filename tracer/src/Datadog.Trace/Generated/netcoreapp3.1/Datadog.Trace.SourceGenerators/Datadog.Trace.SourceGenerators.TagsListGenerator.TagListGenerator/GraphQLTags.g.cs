@@ -4,7 +4,7 @@
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 {
     partial class GraphQLTags
     {
