@@ -22,6 +22,7 @@ using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Http;
 using Datadog.Trace.Util.Http.QueryStringObfuscation;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
@@ -68,7 +69,7 @@ namespace Datadog.Trace
             DirectLogSubmission = directLogSubmission;
             Telemetry = telemetry;
             TraceProcessors = traceProcessors ?? Array.Empty<ITraceProcessor>();
-            QueryStringObfuscator = new(settings.ObfuscationQueryStringRegexTimeout, settings.ObfuscationQueryStringRegex);
+            QueryStringManager = new(settings?.QueryStringReportingEnabled ?? true, settings?.ObfuscationQueryStringRegexTimeout ?? 100, settings?.ObfuscationQueryStringRegex ?? TracerSettings.DefaultObfuscationQueryStringRegex);
             var lstTagProcessors = new List<ITagProcessor>(TraceProcessors.Length);
             foreach (var traceProcessor in TraceProcessors)
             {
@@ -120,8 +121,8 @@ namespace Datadog.Trace
 
         public DirectLogSubmissionManager DirectLogSubmission { get; }
 
-        /// Gets the global <see cref="QueryStringObfuscator"/> instance.
-        public QueryStringObfuscator QueryStringObfuscator { get; }
+        /// Gets the global <see cref="QueryStringManager"/> instance.
+        public QueryStringManager QueryStringManager { get; }
 
         public IDogStatsd Statsd { get; }
 

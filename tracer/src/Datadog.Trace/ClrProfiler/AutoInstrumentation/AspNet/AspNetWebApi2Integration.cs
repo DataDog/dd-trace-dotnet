@@ -185,7 +185,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     }
                 }
 
-                var url = request.GetUrl(tracer.TracerManager.QueryStringObfuscator);
+                var url = request.GetUrl(tracer.TracerManager.QueryStringManager);
 
                 span.DecorateWebServerSpan(
                     resourceName: resourceName,

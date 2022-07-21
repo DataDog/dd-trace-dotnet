@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     string host = httpContext.Request.Headers.Get("Host");
                     var userAgent = httpContext.Request.Headers.Get(HttpHeaderNames.UserAgent);
                     string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
-                    var url = httpContext.Request.GetUrl(tracer.TracerManager.QueryStringObfuscator);
+                    var url = httpContext.Request.GetUrl(tracer.TracerManager.QueryStringManager);
                     string resourceName = null;
 
                     RouteData routeData = controllerContext.RouteData;
@@ -160,7 +160,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     tags.AspNetArea = areaName;
                     tags.AspNetController = controllerName;
                     tags.AspNetAction = actionName;
-                    span.Context.TraceContext?.RootSpan.Tags.SetTag(Tags.HttpRoute, routeUrl);
+                    var rootspanTags = span.Context.TraceContext?.RootSpan.Tags;
+
+                    // in case of a transfered request, the child request shouldnt set a new http route.
+                    if (string.IsNullOrEmpty(rootspanTags.GetTag(Tags.HttpRoute)))
+                    {
+                        span.Context.TraceContext?.RootSpan.Tags.SetTag(Tags.HttpRoute, routeUrl);
+                    }
 
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
 

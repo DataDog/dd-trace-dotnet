@@ -13,12 +13,12 @@ namespace Datadog.Trace.Util.Http
     {
         private const string NoHostSpecified = "UNKNOWN_HOST";
 
-        internal static string GetUrl(string scheme, string host, string pathBase, string path, string queryString, QueryStringObfuscator queryStringObfuscator = null)
+        internal static string GetUrl(string scheme, string host, string pathBase, string path, string queryString, QueryStringManager queryStringManager = null)
         {
-            if (queryStringObfuscator != null)
+            if (queryStringManager != null)
             {
                 queryString = queryString.Substring(0, Math.Min(queryString.Length, 200));
-                queryString = queryStringObfuscator.Obfuscate(queryString);
+                queryString = queryStringManager.Obfuscate(queryString);
                 return $"{scheme}://{(string.IsNullOrEmpty(host) ? NoHostSpecified : host)}{pathBase}{path}{queryString}";
             }
 

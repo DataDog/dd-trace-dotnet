@@ -93,11 +93,11 @@ namespace Datadog.Trace.Util.Http
             return dict;
         }
 
-        internal static string GetUrl(this IHttpRequestMessage request, QueryStringObfuscator queryStringObfuscator) => HttpRequestUtils.GetUrl(request.RequestUri.Scheme, request.RequestUri.Host, string.Empty, request.RequestUri.AbsolutePath, request.RequestUri.Query, queryStringObfuscator);
+        internal static string GetUrl(this IHttpRequestMessage request, QueryStringManager queryStringManager) => HttpRequestUtils.GetUrl(request.RequestUri.Scheme, request.RequestUri.Host, string.Empty, request.RequestUri.AbsolutePath, request.RequestUri.Query, queryStringManager);
 
-        internal static string GetUrl(this HttpRequestBase request, QueryStringObfuscator queryStringObfuscator) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, request.Url.Query, queryStringObfuscator);
+        internal static string GetUrl(this HttpRequestBase request, QueryStringManager queryStringManager) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, request.Url.Query, queryStringManager);
 
-        internal static string GetUrl(this HttpRequest request, QueryStringObfuscator queryStringObfuscator) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, request.Url.Query, queryStringObfuscator);
+        internal static string GetUrl(this HttpRequest request, QueryStringManager queryStringManager) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, request.Url.Query, queryStringManager);
     }
 }
 #endif

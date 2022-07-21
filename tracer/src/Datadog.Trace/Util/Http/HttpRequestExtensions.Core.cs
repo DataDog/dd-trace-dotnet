@@ -89,7 +89,7 @@ namespace Datadog.Trace.Util.Http
             return dict;
         }
 
-        internal static string GetUrl(this HttpRequest request, QueryStringObfuscator queryStringObfuscator = null)
+        internal static string GetUrl(this HttpRequest request, QueryStringManager queryStringManager = null)
         {
             var queryString = request.QueryString.Value;
             return HttpRequestUtils.GetUrl(
@@ -98,7 +98,7 @@ namespace Datadog.Trace.Util.Http
                 request.PathBase.ToUriComponent(),
                 request.Path.ToUriComponent(),
                 queryString,
-                queryStringObfuscator);
+                queryStringManager);
         }
     }
 }
