@@ -6,6 +6,7 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Globalization;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
 using FluentAssertions;
@@ -51,6 +52,25 @@ namespace Datadog.Trace.Tests
             SpanContextPropagator.Instance.Inject(context, headers.Object);
 
             VerifySetCalls(headers);
+        }
+
+        [Fact]
+        public void Inject_IHeadersCollection_Propagation_Disabled()
+        {
+            KeyValuePair<string, string>[] expectedHeaders =
+                {
+                    new(HttpHeaderNames.TraceId, TraceId.ToString(InvariantCulture)),
+                    new(HttpHeaderNames.ParentId, SpanId.ToString(InvariantCulture)),
+                };
+
+            var settings = new TracerSettings { TagPropagationHeaderMaxLength = 0 };
+            var traceContext = new TraceContext(new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, null, telemetry: null));
+            var context = new SpanContext(null, traceContext, serviceName: null, TraceId, SpanId) { PropagatedTags = PropagatedTags };
+
+            var headers = new Mock<IHeadersCollection>();
+
+            SpanContextPropagator.Instance.Inject(context, headers.Object);
+            VerifySetCalls(headers, expectedHeaders);
         }
 
         [Fact]
@@ -294,11 +314,11 @@ namespace Datadog.Trace.Tests
             return headers;
         }
 
-        private static void VerifySetCalls(Mock<IHeadersCollection> headers)
+        private static void VerifySetCalls(Mock<IHeadersCollection> headers, KeyValuePair<string, string>[] headersToCheck = null)
         {
             var once = Times.Once();
 
-            foreach (var pair in DefaultHeaderValues)
+            foreach (var pair in headersToCheck ?? DefaultHeaderValues)
             {
                 headers.Verify(h => h.Set(pair.Key, pair.Value), once);
             }
