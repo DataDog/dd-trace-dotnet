@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tagging
         /// </summary>
         public int Count => _tags?.Count ?? 0;
 
-        public bool SetTag(string name, string? value, bool replaceIfExists = true)
+        public void SetTag(string name, string? value, bool replaceIfExists = true)
         {
             if (name is null)
             {
@@ -50,12 +50,19 @@ namespace Datadog.Trace.Tagging
                     {
                         if (string.Equals(_tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
                         {
+                            // found the tag
                             if (replaceIfExists)
                             {
                                 if (value == null)
                                 {
-                                    // tag already exists, setting it to null removes it
+                                    // tag already exists, remove it
                                     _tags.RemoveAt(i);
+
+                                    // clear the cached header
+                                    if (isPropagated)
+                                    {
+                                        _cachedPropagationHeader = null;
+                                    }
                                 }
                                 else if (!string.Equals(_tags[i].Value, value, StringComparison.Ordinal))
                                 {
@@ -69,16 +76,16 @@ namespace Datadog.Trace.Tagging
                                     }
                                 }
 
-                                return true;
+                                return;
                             }
 
-                            // tag exists and replaceIfExists is false
-                            return false;
+                            // tag exists but replaceIfExists is false, don't modify anything
+                            return;
                         }
                     }
                 }
 
-                // tag not found, add new one
+                // tag not found
                 if (value != null)
                 {
                     // delay creating the List<T> as long as possible
@@ -86,17 +93,12 @@ namespace Datadog.Trace.Tagging
 
                     _tags.Add(new(name, value));
 
-                    // clear the cached header
+                    // clear the cached header if we added a propagated tag
                     if (isPropagated)
                     {
                         _cachedPropagationHeader = null;
                     }
-
-                    return true;
                 }
-
-                // new value is null and tag did not exist, nothing to insert or remove
-                return false;
             }
         }
 
