@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 var operationName = request.OperationName;
                 var source = request.Query?.ToString();
                 var operationType = "Uncompleted";
-                scope = CreateScopeFromExecuteAsync(tracer, (string)operationName, source, operationType);
+                scope = CreateScopeFromExecuteAsync(tracer, operationName, source, operationType);
             }
             catch (Exception ex)
             {
