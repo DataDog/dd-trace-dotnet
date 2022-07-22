@@ -12,56 +12,58 @@ internal static class SamplingMechanism
 {
     /// <summary>
     /// No sampling decision was made; or it was made with an unknown mechanism.
+    /// This is NOT a valid value and should not be sent to the Trace Agent.
+    /// It is only used internally by the tracer.
     /// </summary>
     public const int Unknown = -1;
 
     /// <summary>
     /// Sampling decision was made using the default mechanism. Used before the tracer
     /// receives any rates from agent and there are no rules configured.
-    /// The available sampling priorities are <see cref="SamplingPriority.AutoReject"/> (0)
-    /// and <see cref="SamplingPriority.AutoKeep"/> (1).
+    /// The available sampling priorities are <see cref="SamplingPriorityValues.AutoReject"/> (0)
+    /// and <see cref="SamplingPriorityValues.AutoKeep"/> (1).
     /// </summary>
     public const int Default = 0;
 
     /// <summary>
     /// A sampling decision was made using a sampling rate computed automatically by the Agent.
-    /// The available sampling priorities are <see cref="SamplingPriority.AutoReject"/> (0)
-    /// and <see cref="SamplingPriority.AutoKeep"/> (1).
+    /// The available sampling priorities are <see cref="SamplingPriorityValues.AutoReject"/> (0)
+    /// and <see cref="SamplingPriorityValues.AutoKeep"/> (1).
     /// </summary>
     public const int AgentRate = 1;
 
     /// <summary>
     /// A sampling decision was made using a sampling rate computed automatically by the backend.
-    /// The available sampling priorities are <see cref="SamplingPriority.AutoReject"/> (0)
-    /// and <see cref="SamplingPriority.AutoKeep"/> (1).
+    /// The available sampling priorities are <see cref="SamplingPriorityValues.AutoReject"/> (0)
+    /// and <see cref="SamplingPriorityValues.AutoKeep"/> (1).
     /// </summary>
     public const int RemoteRateAuto = 2;
 
     /// <summary>
     /// A sampling decision was made using a sampling rule or
     /// the global sampling rate configured by the user on the tracer.
-    /// The available sampling priorities are <see cref="SamplingPriority.UserReject"/> (-1)
-    /// and <see cref="SamplingPriority.UserKeep"/> (2).
+    /// The available sampling priorities are <see cref="SamplingPriorityValues.UserReject"/> (-1)
+    /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
     public const int Rule = 3;
 
     /// <summary>
     /// A sampling decision was made manually by the user.
-    /// The available sampling priorities are <see cref="SamplingPriority.UserReject"/> (-1)
-    /// and <see cref="SamplingPriority.UserKeep"/> (2).
+    /// The available sampling priorities are <see cref="SamplingPriorityValues.UserReject"/> (-1)
+    /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
     public const int Manual = 4;
 
     /// <summary>
     /// A sampling decision was made by AppSec; probably due to a security event.
-    /// The sampling priority is always <see cref="SamplingPriority.UserKeep"/> (2).
+    /// The sampling priority is always <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
     public const int AppSec = 5;
 
     /// <summary>
     /// A sampling decision was made using a sampling rule configured remotely by the user.
-    /// The available sampling priorities are <see cref="SamplingPriority.UserReject"/> (-1)
-    /// and <see cref="SamplingPriority.UserKeep"/> (2).
+    /// The available sampling priorities are <see cref="SamplingPriorityValues.UserReject"/> (-1)
+    /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
     public const int RemoteRateUser = 6;
 
