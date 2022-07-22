@@ -94,7 +94,7 @@ namespace Datadog.Trace
                 }
                 else
                 {
-                    AddSamplingDecisionsTags(span, _samplingDecision.Value);
+                    AddSamplingDecisionTags(span, _samplingDecision.Value);
                 }
             }
 
@@ -133,9 +133,9 @@ namespace Datadog.Trace
                 }
             }
 
-            if (shouldPropagateMetadata)
+            if (shouldPropagateMetadata && _samplingDecision != null)
             {
-                PropagateMetadata(spansToWrite);
+                AddSamplingDecisionTags(spansToWrite, _samplingDecision.Value);
             }
 
             if (spansToWrite.Count > 0)
@@ -173,9 +173,8 @@ namespace Datadog.Trace
             return Elapsed + (_utcStart - date);
         }
 
-        private static void AddSamplingDecisionsTags(Span span, SamplingDecision samplingDecision)
+        private static void AddSamplingDecisionTags(Span span, SamplingDecision samplingDecision)
         {
-            // TODO: refactor SamplingPriority from a span tag to a trace tag
             // set sampling priority tag directly on this span...
             if (span.Tags is CommonTags tags)
             {
@@ -186,13 +185,13 @@ namespace Datadog.Trace
                 span.Tags.SetMetric(Metrics.SamplingPriority, samplingDecision.Priority);
             }
 
-            // ... and add the sampling decision trace tag if not already set
-            // - we should not overwrite a value propagated from upstream service
-            // - the "-" prefix is not a typo
+            // ...and add the sampling decision trace tag if not already set
+            // * we should not overwrite an existing value propagated from upstream service
+            // * the "-" prefix is not a typo, it's a left-over separator from a previous iteration of this feature
             span.Context.TraceContext?.Tags.SetTag(Trace.Tags.Propagated.DecisionMaker, $"-{samplingDecision.Mechanism}", replaceIfExists: false);
         }
 
-        private void PropagateMetadata(ArraySegment<Span> spans)
+        private static void AddSamplingDecisionTags(ArraySegment<Span> spans, SamplingDecision samplingDecision)
         {
             // Needs to be done for chunks as well, any span can contain the tags.
             DecorateWithAASMetadata(spans.Array[0]);
@@ -200,15 +199,13 @@ namespace Datadog.Trace
             // The agent looks for the sampling priority on the first span that has no parent
             // Finding those spans is not trivial, so instead we apply the priority to every span
 
-            if (_samplingDecision == null || spans.Array == null)
+            if (spans.Array != null)
             {
-                return;
-            }
-
-            // Using a for loop to avoid the boxing allocation on ArraySegment.GetEnumerator
-            for (int i = 0; i < spans.Count; i++)
-            {
-                AddSamplingDecisionsTags(spans.Array[i + spans.Offset], _samplingDecision.Value);
+                // Using a for loop to avoid the boxing allocation on ArraySegment.GetEnumerator
+                for (int i = 0; i < spans.Count; i++)
+                {
+                    AddSamplingDecisionTags(spans.Array[i + spans.Offset], samplingDecision);
+                }
             }
         }
 
@@ -216,7 +213,7 @@ namespace Datadog.Trace
         /// When receiving chunks of spans, the backend checks whether the aas.resource.id tag is present on any of the
         /// span to decide which metric to emit (datadog.apm.host.instance or datadog.apm.azure_resource_instance one).
         /// </summary>
-        private void DecorateWithAASMetadata(Span span)
+        private static void DecorateWithAASMetadata(Span span)
         {
             if (AzureAppServices.Metadata.IsRelevant)
             {
