@@ -321,7 +321,6 @@ stages:
       artifact: linux-profiler-home-$(baseImage)
 
 - stage: package_linux
-  condition: and(succeeded())
   dependsOn: [master_commit_id, build_linux_tracer, build_linux_profiler]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
