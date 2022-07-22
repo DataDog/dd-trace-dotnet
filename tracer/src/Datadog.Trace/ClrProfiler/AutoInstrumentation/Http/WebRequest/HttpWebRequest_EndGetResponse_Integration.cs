@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
                         if (setSamplingPriority)
                         {
-                            // TODO: figure out SamplingMechanism, do we propagate that as well for special cases like this?
+                            // TODO: figure out SamplingMechanism, do we need to propagate it here?
                             span.SetTraceSamplingDecision(existingSpanContext.SamplingPriority.Value, SamplingMechanism.Unknown);
                         }
 

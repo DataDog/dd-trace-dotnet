@@ -77,6 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
                 if (setSamplingPriority && existingSpanContext?.SamplingPriority is not null)
                 {
+                    // TODO: figure out SamplingMechanism, do we need to propagate it here?
                     span.SetTraceSamplingDecision(existingSpanContext.SamplingPriority.Value, SamplingMechanism.Unknown);
                 }
 

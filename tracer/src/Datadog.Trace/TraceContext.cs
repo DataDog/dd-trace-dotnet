@@ -65,14 +65,14 @@ namespace Datadog.Trace
                         if (span.Context.Parent is SpanContext { SamplingPriority: { } samplingPriority })
                         {
                             // this is a root span created from a propagated context that contains a sampling priority.
-                            // no need to track sampling mechanism since we can't override the propagated tag/header.
+                            // no need to track sampling mechanism since we won't override the propagated tag/header.
                             var decision = new SamplingDecision(samplingPriority, SamplingMechanism.Unknown);
                             _samplingDecision = decision;
                         }
                         else if (Tracer.Sampler is not null)
                         {
                             // this is a local root span (i.e. not propagated).
-                            // determine an initial sampling priority for this trace, but don't lock it yet
+                            // determine an initial sampling priority for this trace.
                             _samplingDecision = Tracer.Sampler.MakeSamplingDecision(span);
                         }
                     }
@@ -175,7 +175,7 @@ namespace Datadog.Trace
 
         private static void AddSamplingDecisionTags(Span span, SamplingDecision samplingDecision)
         {
-            // set sampling priority tag directly on this span...
+            // set sampling priority tag on the span
             if (span.Tags is CommonTags tags)
             {
                 tags.SamplingPriority = samplingDecision.Priority;
@@ -185,10 +185,10 @@ namespace Datadog.Trace
                 span.Tags.SetMetric(Metrics.SamplingPriority, samplingDecision.Priority);
             }
 
-            // ...and add the sampling decision trace tag if not already set
+            // set the sampling decision trace tag
             // * we should not overwrite an existing value propagated from upstream service
-            // * the "-" prefix is not a typo, it's a left-over separator from a previous iteration of this feature
-            // * don't set the tag is sampling mechanism is unknown (-1 is not a valid value, we only use it internally in the tracer)
+            // * the "-" prefix is a left-over separator from a previous iteration of this feature (not a typo or a negative sign)
+            // * don't set the tag if sampling mechanism is unknown
             if (samplingDecision.Mechanism != SamplingMechanism.Unknown)
             {
                 span.Context.TraceContext?.Tags.SetTag(Trace.Tags.Propagated.DecisionMaker, $"-{samplingDecision.Mechanism}", replaceIfExists: false);

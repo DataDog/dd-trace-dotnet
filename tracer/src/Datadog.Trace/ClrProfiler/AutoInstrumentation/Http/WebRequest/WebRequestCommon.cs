@@ -55,9 +55,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
                     if (scope != null)
                     {
-                        if (setSamplingPriority && spanContext?.SamplingPriority is not null)
+                        if (setSamplingPriority)
                         {
-                            // TODO: figure out SamplingMechanism, do we propagate that as well for special cases like this?
+                            // TODO: figure out SamplingMechanism, do we need to propagate it here?
                             scope.Span.SetTraceSamplingDecision(spanContext.SamplingPriority.Value, SamplingMechanism.Unknown);
                         }
 
