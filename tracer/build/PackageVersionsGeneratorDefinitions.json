@@ -10,12 +10,10 @@
       "3.3.*",
       "3.*.*"
     ],
-    "VersionConditions": [
-      {
-        "MaxVersionExclusive": "3.3.0",
-        "IncludeOnlyTargetFrameworks": [ "net461" ]
-      }
-    ]
+    "VersionConditions": [{
+      "MaxVersionExclusive": "3.3.0",
+      "IncludeOnlyTargetFrameworks": ["net461"]
+    }]
   },
   {
     "IntegrationName": "MongoDB",
@@ -29,12 +27,10 @@
       "2.14.*",
       "2.*.*"
     ],
-    "VersionConditions": [
-      {
-        "MaxVersionExclusive": "2.3.0",
-        "IncludeOnlyTargetFrameworks": [ "net461" ]
-      }
-    ]
+    "VersionConditions": [{
+      "MaxVersionExclusive": "2.3.0",
+      "IncludeOnlyTargetFrameworks": ["net461"]
+    }]
   },
   {
     "IntegrationName": "ElasticSearch7",
@@ -102,13 +98,11 @@
     "SpecificVersions": [
       "12.*.*"
     ],
-    "VersionConditions": [
-      {
+    "VersionConditions": [{
         "MaxVersionExclusive": "13.0.0",
         "ExcludeTargetFrameworks": [ "net461", "netcoreapp2.1", "netcoreapp3.0" ]
-      }
-    ]
-  },
+    }]
+  },  
   {
     "IntegrationName": "Npgsql",
     "SampleProjectName": "Samples.Npgsql",
@@ -120,12 +114,10 @@
       "5.*.*",
       "6.*.*"
     ],
-    "VersionConditions": [
-      {
-        "MinVersion": "6.0.0",
-        "ExcludeTargetFrameworks": [ "netcoreapp2.1", "netcoreapp3.0" ]
-      }
-    ]
+    "VersionConditions": [{
+      "MinVersion": "6.0.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
+    }]
   },
   {
     "IntegrationName": "RabbitMQ",
@@ -171,16 +163,13 @@
     "NugetPackageSearchName": "StackExchange.Redis",
     "MinVersion": "1.0.187",
     "MaxVersionExclusive": "3.0.0",
-    "VersionConditions": [
-      {
-        "MaxVersionExclusive": "1.1.700",
-        "IncludeOnlyTargetFrameworks": [ "net461" ]
-      },
-      {
-        "MinVersion": "2.2.0",
-        "ExcludeTargetFrameworks": [ "netcoreapp2.1" ]
-      }
-    ],
+    "VersionConditions": [{
+      "MaxVersionExclusive": "1.1.700",
+      "IncludeOnlyTargetFrameworks": ["net461"]
+    },{
+      "MinVersion": "2.2.0",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1"]
+    }],
     "SpecificVersions": [
       "1.0.*",
       "1.2.*",
@@ -198,12 +187,10 @@
       "5.*.*",
       "6.*.*"
     ],
-    "VersionConditions": [
-      {
-        "MaxVersionExclusive": "5.0.0",
-        "IncludeOnlyTargetFrameworks": [ "net461" ]
-      }
-    ]
+    "VersionConditions": [{
+      "MaxVersionExclusive": "5.0.0",
+      "IncludeOnlyTargetFrameworks": ["net461"]
+    }]
   },
   {
     "IntegrationName": "MySqlData",
@@ -314,12 +301,10 @@
       "1.4.*",
       "2.*.*"
     ],
-    "VersionConditions": [
-      {
-        "MaxVersionExclusive": "2.0.0",
-        "IncludeOnlyTargetFrameworks": [ "net461" ]
-      }
-    ]
+    "VersionConditions": [{
+      "MaxVersionExclusive": "2.0.0",
+      "IncludeOnlyTargetFrameworks": ["net461"]
+    }]
   },
   {
     "IntegrationName": "NLog",
@@ -334,12 +319,10 @@
       "4.*.*",
       "5.*.*"
     ],
-    "VersionConditions": [
-      {
-        "MaxVersionExclusive": "4.5.0",
-        "IncludeOnlyTargetFrameworks": [ "net461" ]
-      }
-    ]
+    "VersionConditions": [{
+      "MaxVersionExclusive": "4.5.0",
+      "IncludeOnlyTargetFrameworks": ["net461"]
+    }]
   },
   {
     "IntegrationName": "log4net",
@@ -351,12 +334,10 @@
       "1.*.*",
       "2.*.*"
     ],
-    "VersionConditions": [
-      {
-        "MaxVersionExclusive": "2.0.6",
-        "IncludeOnlyTargetFrameworks": [ "net461" ]
-      }
-    ]
+    "VersionConditions": [{
+      "MaxVersionExclusive": "2.0.6",
+      "IncludeOnlyTargetFrameworks": ["net461"]
+    }]
   },
   {
     "IntegrationName": "Aerospike",
@@ -369,12 +350,10 @@
       "4.*.*",
       "5.*.*"
     ],
-    "VersionConditions": [
-      {
-        "MinVersion": "5.0.0",
-        "ExcludeTargetFrameworks": [ "net461" ]
-      }
-    ]
+    "VersionConditions": [{
+      "MinVersion": "5.0.0",
+      "ExcludeTargetFrameworks": ["net461"]
+    }]
   },
   {
     "IntegrationName": "Couchbase",
@@ -397,12 +376,10 @@
       "3.0.*",
       "3.*.*"
     ],
-    "VersionConditions": [
-      {
-        "MinVersion": "3.2.6",
-        "ExcludeTargetFrameworks": [ "netcoreapp2.1", "netcoreapp3.0" ]
-      }
-    ]
+    "VersionConditions": [{
+      "MinVersion": "3.2.6",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
+    }]
   },
   {
     "IntegrationName": "Grpc",
@@ -415,16 +392,13 @@
       "2.30.0",
       "2.*.*"
     ],
-    "VersionConditions": [
-      {
-        "MinVersion": "2.0.0",
-        "SkipAlpine": true
-      },
-      {
-        "MaxVersionExclusive": "2.37.0",
-        "SkipArm64": true
-      }
-    ]
+    "VersionConditions": [{
+      "MinVersion": "2.0.0",
+      "SkipAlpine": true
+    }, {
+      "MaxVersionExclusive": "2.37.0",
+      "SkipArm64": true
+    }]
   },
   {
     "IntegrationName": "GrpcLegacy",
@@ -437,15 +411,12 @@
       "2.30.0",
       "2.*.*"
     ],
-    "VersionConditions": [
-      {
-        "MinVersion": "2.0.0",
-        "SkipAlpine": true
-      },
-      {
-        "MaxVersionExclusive": "2.37.0",
-        "SkipArm64": true
-      }
-    ]
+    "VersionConditions": [{
+      "MinVersion": "2.0.0",
+      "SkipAlpine": true
+    }, {
+      "MaxVersionExclusive": "2.37.0",
+      "SkipArm64": true
+    }]
   }
 ]
