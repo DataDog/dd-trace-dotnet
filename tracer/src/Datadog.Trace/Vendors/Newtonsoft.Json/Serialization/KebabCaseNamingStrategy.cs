@@ -35,12 +35,12 @@ using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
 namespace Datadog.Trace.Vendors.Newtonsoft.Json.Serialization
 {
     /// <summary>
-    /// A camel case naming strategy.
+    /// A kebab case naming strategy.
     /// </summary>
-    internal class CamelCaseNamingStrategy : NamingStrategy
+    internal class KebabCaseNamingStrategy : NamingStrategy
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="CamelCaseNamingStrategy"/> class.
+        /// Initializes a new instance of the <see cref="KebabCaseNamingStrategy"/> class.
         /// </summary>
         /// <param name="processDictionaryKeys">
         /// A flag indicating whether dictionary keys should be processed.
@@ -49,14 +49,14 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json.Serialization
         /// A flag indicating whether explicitly specified property names should be processed,
         /// e.g. a property name customized with a <see cref="JsonPropertyAttribute"/>.
         /// </param>
-        public CamelCaseNamingStrategy(bool processDictionaryKeys, bool overrideSpecifiedNames)
+        public KebabCaseNamingStrategy(bool processDictionaryKeys, bool overrideSpecifiedNames)
         {
             ProcessDictionaryKeys = processDictionaryKeys;
             OverrideSpecifiedNames = overrideSpecifiedNames;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CamelCaseNamingStrategy"/> class.
+        /// Initializes a new instance of the <see cref="KebabCaseNamingStrategy"/> class.
         /// </summary>
         /// <param name="processDictionaryKeys">
         /// A flag indicating whether dictionary keys should be processed.
@@ -68,16 +68,16 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json.Serialization
         /// <param name="processExtensionDataNames">
         /// A flag indicating whether extension data names should be processed.
         /// </param>
-        public CamelCaseNamingStrategy(bool processDictionaryKeys, bool overrideSpecifiedNames, bool processExtensionDataNames)
+        public KebabCaseNamingStrategy(bool processDictionaryKeys, bool overrideSpecifiedNames, bool processExtensionDataNames)
             : this(processDictionaryKeys, overrideSpecifiedNames)
         {
             ProcessExtensionDataNames = processExtensionDataNames;
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="CamelCaseNamingStrategy"/> class.
+        /// Initializes a new instance of the <see cref="KebabCaseNamingStrategy"/> class.
         /// </summary>
-        public CamelCaseNamingStrategy()
+        public KebabCaseNamingStrategy()
         {
         }
 
@@ -86,9 +86,6 @@ namespace Datadog.Trace.Vendors.Newtonsoft.Json.Serialization
         /// </summary>
         /// <param name="name">The property name to resolve.</param>
         /// <returns>The resolved property name.</returns>
-        protected override string ResolvePropertyName(string name)
-        {
-            return StringUtils.ToCamelCase(name);
-        }
+        protected override string ResolvePropertyName(string name) => StringUtils.ToKebabCase(name);
     }
 }

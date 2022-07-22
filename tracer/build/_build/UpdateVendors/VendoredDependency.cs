@@ -51,10 +51,11 @@ namespace UpdateVendors
 
             Add(
                 libraryName: "Newtonsoft.Json",
-                version: "12.0.1",
-                downloadUrl: "https://github.com/JamesNK/Newtonsoft.Json/archive/12.0.1.zip",
-                pathToSrc: new[] { "Newtonsoft.Json-12.0.1", "src", "Newtonsoft.Json" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Newtonsoft.Json"));
+                version: "13.0.1",
+                downloadUrl: "https://github.com/JamesNK/Newtonsoft.Json/archive/13.0.1.zip",
+                pathToSrc: new[] { "Newtonsoft.Json-13.0.1", "src", "Newtonsoft.Json" },
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Newtonsoft.Json", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma),
+                relativePathsToExclude: new[] { "Utilities/NullableAttributes.cs" });
             
             Add(
                 libraryName: "dnlib",
@@ -84,13 +85,16 @@ namespace UpdateVendors
         public string[] PathToSrc { get; set; }
 
         public Action<string> Transform { get; set; }
+        
+        public string[] RelativePathsToExclude { get; set; }
 
         private static void Add(
             string libraryName,
             string version,
             string downloadUrl,
             string[] pathToSrc,
-            Action<string> transform)
+            Action<string> transform,
+            string[] relativePathsToExclude = null)
         {
             All.Add(new VendoredDependency()
             {
@@ -99,6 +103,7 @@ namespace UpdateVendors
                 DownloadUrl = downloadUrl,
                 PathToSrc = pathToSrc,
                 Transform = transform,
+                RelativePathsToExclude = relativePathsToExclude ?? Array.Empty<string>(),
             });
         }
 
@@ -112,7 +117,7 @@ namespace UpdateVendors
             return content;
         }
 
-        private static void RewriteCsFileWithStandardTransform(string filePath, string originalNamespace, Func<string, string, string> extraTransform = null)
+        private static void RewriteCsFileWithStandardTransform(string filePath, string originalNamespace, params Func<string, string, string>[] extraTransform)
         {
             if (string.Equals(Path.GetExtension(filePath), ".cs", StringComparison.OrdinalIgnoreCase))
             {
@@ -120,9 +125,12 @@ namespace UpdateVendors
                     filePath,
                     content =>
                     {
-                        if (extraTransform != null)
+                        foreach (var transform in extraTransform)
                         {
-                            content = extraTransform(filePath, content);
+                            if (transform != null)
+                            {
+                                content = transform(filePath, content);
+                            }
                         }
 
                         // Disable analyzer
@@ -139,6 +147,26 @@ namespace UpdateVendors
                             {
                                 builder.Replace($"Func<", $"System.Func<");
                                 builder.Replace($"Action<", $"System.Action<");
+                            }
+
+                            var filename = Path.GetFileName(filePath);
+                            if (filename == "JsonSerializerInternalReader.cs")
+                            {
+                                builder.Replace("#pragma warning restore CS8600, CS8602, CS8603, CS8604", string.Empty);
+                            }
+
+                            builder.Replace("#if !(PORTABLE40 || PORTABLE || DOTNET || NETSTANDARD2_0)", "#if NETFRAMEWORK");
+
+                            if (filename == "JsonPropertyCollection.cs")
+                            {
+                                // eww
+                                builder.Replace(
+                                    @"        private bool TryGetValue(string key, [NotNullWhen(true)]out JsonProperty? item)",
+                                    @"#if NETCOREAPP
+        private new bool TryGetValue(string key, [NotNullWhen(true)]out JsonProperty? item)
+#else
+        private bool TryGetValue(string key, [NotNullWhen(true)]out JsonProperty? item)
+#endif");
                             }
                         }
 
@@ -197,6 +225,25 @@ namespace UpdateVendors
             "CS1584, " +      // XML comment has syntactically incorrect cref attribute
             "SYSLIB0011, " +  // BinaryFormatter serialization is obsolete and should not be used. 
             "SYSLIB0032";     // Recovery from corrupted process state exceptions is not supported; HandleProcessCorruptedStateExceptionsAttribute is ignored."
+
+        static string AddIgnoreNullabilityWarningDisablePragma(string filePath, string content) =>
+            "#pragma warning disable " +
+            "CS8600, " + // Converting null literal or possible null value to non-nullable type.
+            "CS8601, " + // Possible null reference assignment
+            "CS8602, " + // Dereference of a possibly null reference
+            "CS8603, " + // Possible null reference return
+            "CS8604, " + // Possible null reference argument for parameter 'x' in 'y'
+            "CS8618, " + // Non-nullable field 'x' must contain a non-null value when exiting constructor. Consider declaring the field as nullable.
+            "CS8620, " + // Argument of type 'x' cannot be used for parameter 'y' of type 'z[]' in 'a' due to differences in the nullability of reference types.
+            "CS8714, " + // The type 'x' cannot be used as type parameter 'y' in the generic type or method 'z'. Nullability of type argument 'x' doesn't match 'notnull' constraint.
+            "CS8762, " + // Parameter 'x' must have a non-null value when exiting with 'true'
+            "CS8765, " + // Nullability of type of parameter 'x' doesn't match overridden member (possibly because of nullability attributes)
+            "CS8766, " + // Nullability of reference types in return type of 'x' doesn't match implicitly implemented member 'y' (possibly because of nullability attributes)
+            "CS8767, " + // Nullability of reference types in type of parameter 'x' of 'y' doesn't match implicitly implemented member 'z' (possibly because of nullability attributes)
+            "CS8768, " + // Nullability of reference types in return type doesn't match implemented member 'x' (possibly because of nullability attributes)
+            "CS8769, " + // Nullability of reference types in type of parameter 'x' doesn't match implemented member 'y'  (possibly because of nullability attributes)
+            "CS8612" + // Nullability of reference types in type of 'x' doesn't match implicitly implemented member 'y'.
+            Environment.NewLine + content;
 
         private static void RewriteFileWithTransform(string filePath, Func<string, string> transform)
         {
