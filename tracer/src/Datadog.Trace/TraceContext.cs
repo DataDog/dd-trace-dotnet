@@ -188,7 +188,11 @@ namespace Datadog.Trace
             // ...and add the sampling decision trace tag if not already set
             // * we should not overwrite an existing value propagated from upstream service
             // * the "-" prefix is not a typo, it's a left-over separator from a previous iteration of this feature
-            span.Context.TraceContext?.Tags.SetTag(Trace.Tags.Propagated.DecisionMaker, $"-{samplingDecision.Mechanism}", replaceIfExists: false);
+            // * don't set the tag is sampling mechanism is unknown (-1 is not a valid value, we only use it internally in the tracer)
+            if (samplingDecision.Mechanism != SamplingMechanism.Unknown)
+            {
+                span.Context.TraceContext?.Tags.SetTag(Trace.Tags.Propagated.DecisionMaker, $"-{samplingDecision.Mechanism}", replaceIfExists: false);
+            }
         }
 
         private static void AddSamplingDecisionTags(ArraySegment<Span> spans, SamplingDecision samplingDecision)
