@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             where TExecutionResult : IExecutionResult
         {
             Scope scope = state.Scope;
-            if (state.Scope is null)
+            if (scope is null)
             {
                 return executionResult;
             }
