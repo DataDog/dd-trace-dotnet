@@ -9,13 +9,13 @@ class ProfilerEngineStatus
 {
 private:
     // The memory for the IsProfilerEngineActive is allocated on the heap and must be properly aligned to ensure fast atomic operations.
-    static constexpr int MinimalAlignmentOf_IsProfilerEngineActive = 8;
-    static constexpr int ActualAlignmentOf_IsProfilerEngineActive = (MinimalAlignmentOf_IsProfilerEngineActive >= alignof(bool))
+    static constexpr int32_t MinimalAlignmentOf_IsProfilerEngineActive = 8;
+    static constexpr int32_t ActualAlignmentOf_IsProfilerEngineActive = (MinimalAlignmentOf_IsProfilerEngineActive >= alignof(bool))
                                                                         ? MinimalAlignmentOf_IsProfilerEngineActive
                                                                         : alignof(bool);
 
     // We will allocate a memory chunk that is at least as big as the alignment, even if we do not need all of that.
-    static constexpr int SizeOf_IsProfilerEngineActive = (ActualAlignmentOf_IsProfilerEngineActive >= sizeof(bool))
+    static constexpr int32_t SizeOf_IsProfilerEngineActive = (ActualAlignmentOf_IsProfilerEngineActive >= sizeof(bool))
                                                              ? ActualAlignmentOf_IsProfilerEngineActive
                                                              : sizeof(bool);
 

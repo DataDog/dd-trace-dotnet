@@ -138,7 +138,7 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
     SYSTEM_THREAD_INFORMATION sti = {0};
     auto size = sizeof(SYSTEM_THREAD_INFORMATION);
     ULONG buflen = 0;
-    NTSTATUS lResult = NtQueryInformationThread(pThreadInfo->GetOsThreadHandle(), SYSTEMTHREADINFORMATION, &sti, size, &buflen);
+    NTSTATUS lResult = NtQueryInformationThread(pThreadInfo->GetOsThreadHandle(), SYSTEMTHREADINFORMATION, &sti, static_cast<ULONG>(size), &buflen);
     if (lResult != 0)
     {
         // This always happens in 32 bit so uses another API to at least get the CPU consumption

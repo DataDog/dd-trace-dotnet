@@ -65,8 +65,8 @@ bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
     }
 
     char state = ' ';
-    int userTime = 0;
-    int kernelTime = 0;
+    int32_t userTime = 0;
+    int32_t kernelTime = 0;
     bool success = OpSysTools::ParseThreadInfo(sline, state, userTime, kernelTime);
     if (!success)
     {

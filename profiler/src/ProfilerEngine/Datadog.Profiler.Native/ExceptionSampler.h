@@ -20,6 +20,6 @@ private:
     std::mutex _knownExceptionsMutex;
 
     void RollWindow();
-    int SamplingWindowsPerRecording(const IConfiguration* configuration);
-    int SamplesPerWindow(const IConfiguration* configuration);
+    int32_t SamplingWindowsPerRecording(const IConfiguration* configuration);
+    int32_t SamplesPerWindow(const IConfiguration* configuration);
 };
