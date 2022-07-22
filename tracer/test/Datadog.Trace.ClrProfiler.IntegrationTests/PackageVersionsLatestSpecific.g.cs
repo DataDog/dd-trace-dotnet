@@ -237,6 +237,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> HotChocolate =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET5_0
+                new object[] { "12.12.1" },
+#endif
+#if NET6_0
+                new object[] { "12.12.1" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "12.12.1" },
+#endif
+#endif
+            };
+
       public static IEnumerable<object[]> Npgsql =>
 
             new List<object[]>

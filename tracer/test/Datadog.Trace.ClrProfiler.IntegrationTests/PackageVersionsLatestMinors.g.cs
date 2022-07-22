@@ -476,6 +476,61 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> HotChocolate =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET5_0
+                new object[] { "12.0.1" },
+                new object[] { "12.1.1" },
+                new object[] { "12.2.2" },
+                new object[] { "12.3.2" },
+                new object[] { "12.4.1" },
+                new object[] { "12.5.0" },
+                new object[] { "12.6.2" },
+                new object[] { "12.7.0" },
+                new object[] { "12.8.2" },
+                new object[] { "12.9.0" },
+                new object[] { "12.10.0" },
+                new object[] { "12.11.1" },
+                new object[] { "12.12.1" },
+#endif
+#if NET6_0
+                new object[] { "12.0.1" },
+                new object[] { "12.1.1" },
+                new object[] { "12.2.2" },
+                new object[] { "12.3.2" },
+                new object[] { "12.4.1" },
+                new object[] { "12.5.0" },
+                new object[] { "12.6.2" },
+                new object[] { "12.7.0" },
+                new object[] { "12.8.2" },
+                new object[] { "12.9.0" },
+                new object[] { "12.10.0" },
+                new object[] { "12.11.1" },
+                new object[] { "12.12.1" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "12.0.1" },
+                new object[] { "12.1.1" },
+                new object[] { "12.2.2" },
+                new object[] { "12.3.2" },
+                new object[] { "12.4.1" },
+                new object[] { "12.5.0" },
+                new object[] { "12.6.2" },
+                new object[] { "12.7.0" },
+                new object[] { "12.8.2" },
+                new object[] { "12.9.0" },
+                new object[] { "12.10.0" },
+                new object[] { "12.11.1" },
+                new object[] { "12.12.1" },
+#endif
+#endif
+            };
+
       public static IEnumerable<object[]> Npgsql =>
 
             new List<object[]>
