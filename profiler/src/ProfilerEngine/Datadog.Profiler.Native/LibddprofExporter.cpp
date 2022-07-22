@@ -36,7 +36,7 @@ tags LibddprofExporter::CommonTags = {
 // need to be static so it leave longer for the shared library
 std::string const LibddprofExporter::ProcessId = std::to_string(OpSysTools::GetProcId());
 
-int const LibddprofExporter::RequestTimeOutMs = 10000;
+int32_t const LibddprofExporter::RequestTimeOutMs = 10000;
 
 std::string const LibddprofExporter::LanguageFamily = "dotnet";
 
@@ -98,7 +98,7 @@ struct ddprof_ffi_Profile* LibddprofExporter::CreateProfile()
     period.type_ = period_value_type;
     period.value = 1;
 
-    return ddprof_ffi_Profile_new(sample_types, &period);
+    return ddprof_ffi_Profile_new(sample_types, &period, nullptr);
 }
 
 LibddprofExporter::Tags LibddprofExporter::CreateTags(IConfiguration* configuration)
@@ -229,7 +229,7 @@ bool LibddprofExporter::Export()
 {
     bool exported = false;
 
-    int idx = 0;
+    int32_t idx = 0;
     for (auto& [runtimeId, profileInfo] : _perAppInfo)
     {
         auto samplesCount = profileInfo.samplesCount;
@@ -292,7 +292,7 @@ bool LibddprofExporter::Export()
     return exported;
 }
 
-std::string LibddprofExporter::GeneratePprofFilePath(const std::string& applicationName, int idx) const
+std::string LibddprofExporter::GeneratePprofFilePath(const std::string& applicationName, int32_t idx) const
 {
     auto time = std::time(nullptr);
     struct tm buf = {};
@@ -313,7 +313,7 @@ std::string LibddprofExporter::GeneratePprofFilePath(const std::string& applicat
     return pprofFilePath.string();
 }
 
-void LibddprofExporter::ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int idx)
+void LibddprofExporter::ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int32_t idx)
 {
     auto pprofFilePath = GeneratePprofFilePath(applicationName, idx);
 
@@ -363,7 +363,7 @@ bool LibddprofExporter::Send(ddprof_ffi_Request* request, ddprof_ffi_ProfileExpo
 
     auto result = ddprof_ffi_ProfileExporterV3_send(exporter, request, nullptr);
 
-    if (result.tag == DDPROF_FFI_SEND_RESULT_FAILURE)
+    if (result.tag == DDPROF_FFI_SEND_RESULT_ERR)
     {
         // There is an overflow issue when using the error buffer from rust
         // Log::Error("libddprof error: Failed to send profile (", result.failure.ptr, ")");
@@ -402,7 +402,7 @@ fs::path LibddprofExporter::CreatePprofOutputPath(IConfiguration* configuration)
 // LibddprofExporter::SerializedProfile class
 //
 LibddprofExporter::SerializedProfile::SerializedProfile(ddprof_ffi_Profile* profile) :
-    _encodedProfile{ddprof_ffi_Profile_serialize(profile)}
+    _encodedProfile{ddprof_ffi_Profile_serialize(profile, nullptr, nullptr)}
 {
 }
 
@@ -493,7 +493,7 @@ LibddprofExporter::ProfileAutoReset::ProfileAutoReset(struct ddprof_ffi_Profile*
 
 LibddprofExporter::ProfileAutoReset::~ProfileAutoReset()
 {
-    ddprof_ffi_Profile_reset(_profile);
+    ddprof_ffi_Profile_reset(_profile, nullptr);
 }
 
 //

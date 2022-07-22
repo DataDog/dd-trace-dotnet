@@ -3,15 +3,17 @@
 
 #pragma once
 #include <cstdint>
-#include <vector>
 #include "cor.h"
-#include "corprof.h"
-#include "ManagedThreadInfo.h"
 #include "RawSample.h"
 
 
 class RawWallTimeSample : public RawSample
 {
 public:
+    inline void OnTransform(Sample& sample) const override
+    {
+        sample.AddValue(Duration, SampleValue::WallTimeDuration);
+    }
+
     std::uint64_t  Duration;  // in nanoseconds
 };

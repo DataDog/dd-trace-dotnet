@@ -32,6 +32,7 @@ bool* ProfilerEngineStatus::GetPtrIsProfilerEngineActive()
         {
             void* newMemRegion = OpSysTools::AlignedMAlloc(ActualAlignmentOf_IsProfilerEngineActive, SizeOf_IsProfilerEngineActive);
             s_pIsProfilerEngineActive = pIsProfilerEngineActive = static_cast<bool*>(newMemRegion);
+            *s_pIsProfilerEngineActive = false;
         }
     }
 

@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using Datadog.Trace.Debugger;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Util;
 
@@ -71,12 +72,16 @@ namespace Datadog.Trace.Configuration
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
             // Logs injection is enabled by default if direct log submission is enabled, otherwise disabled by default
             LogsInjectionEnabled = settings.LogSubmissionSettings.LogsInjectionEnabled ?? LogSubmissionSettings.IsEnabled;
+            DebuggerSettings = ImmutableDebuggerSettings.Create(settings.DebuggerSettings);
 
             // we cached the static instance here, because is being used in the hotpath
             // by IsIntegrationEnabled method (called from all integrations)
             _domainMetadata = DomainMetadata.Instance;
 
             ExpandRouteTemplatesEnabled = settings.ExpandRouteTemplatesEnabled || !RouteTemplateResourceNamesEnabled;
+
+            // tag propagation
+            TagPropagationHeaderMaxLength = settings.TagPropagationHeaderMaxLength;
         }
 
         /// <summary>
@@ -246,6 +251,8 @@ namespace Datadog.Trace.Configuration
 
         internal ImmutableDirectLogSubmissionSettings LogSubmissionSettings { get; }
 
+        internal ImmutableDebuggerSettings DebuggerSettings { get; }
+
         /// <summary>
         /// Gets a value indicating whether to enable the updated WCF instrumentation that delays execution
         /// until later in the WCF pipeline when the WCF server exception handling is established.
@@ -271,6 +278,16 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the activity listener is enabled or not.
         /// </summary>
         internal bool IsActivityListenerEnabled { get; }
+
+        /// <summary>
+        /// Gets the maximum length of an outgoing propagation header's value ("x-datadog-tags")
+        /// when injecting it into downstream service calls.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.TagPropagation.HeaderMaxLength"/>
+        /// <remarks>
+        /// This value is not used when extracting an incoming propagation header from an upstream service.
+        /// </remarks>
+        internal int TagPropagationHeaderMaxLength { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

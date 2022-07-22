@@ -4,7 +4,6 @@
 #include "WallTimeProvider.h"
 
 #include "IAppDomainStore.h"
-#include "IConfiguration.h"
 #include "IFrameStore.h"
 #include "IRuntimeIdStore.h"
 #include "IThreadsCpuManager.h"
@@ -21,9 +20,3 @@ WallTimeProvider::WallTimeProvider(
     CollectorBase<RawWallTimeSample>("WallTimeProvider", pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore)
 {
 }
-
-void WallTimeProvider::OnTransformRawSample(const RawWallTimeSample& rawSample, Sample& sample)
-{
-    sample.AddValue(rawSample.Duration, SampleValue::WallTimeDuration);
-}
-

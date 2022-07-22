@@ -35,11 +35,22 @@ StackSnapshotResultBuffer* Windows32BitStackFramesCollector::CollectStackSampleI
     // Now walk the stack:
     __try
     {
+        HANDLE osThreadHandle = INVALID_HANDLE_VALUE;
+
+        auto hr = _pCorProfilerInfo->GetHandleFromThread(pThreadInfo->GetClrThreadId(), &osThreadHandle);
+
+        if (FAILED(hr) || osThreadHandle == INVALID_HANDLE_VALUE || osThreadHandle == nullptr)
+        {
+            // Looks like the thread got destroyed, or we don't have its information yet
+            *pHR = E_ABORT;
+            return GetStackSnapshotResult();
+        }
+        
         // Sometimes, we could hit an access violation, so catch it and just return.
         // This can happen if we are in a deadlock situation and resume the target thread
         // while walking its stack.
 
-        HRESULT hr = _pCorProfilerInfo->DoStackSnapshot(
+        hr = _pCorProfilerInfo->DoStackSnapshot(
             selfCollect ? NULL : pThreadInfo->GetClrThreadId(),
             StackSnapshotCallbackHandlerImpl,
             _COR_PRF_SNAPSHOT_INFO::COR_PRF_SNAPSHOT_DEFAULT,

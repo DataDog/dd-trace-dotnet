@@ -8,9 +8,13 @@
 #include <memory>
 #include <string>
 #include <thread>
+#include <chrono>
+#include <future>
 
 #include "IService.h"
+#include <shared/src/native-src/string.h>
 
+class ISamplesCollector;
 class Sample;
 class IConfiguration;
 class IExporter;
@@ -19,37 +23,38 @@ class IProfileFactory;
 class ISamplesProvider;
 class IThreadsCpuManager;
 
+using namespace std::literals::chrono_literals;
 
 class SamplesAggregator : public IService
 {
 public:
-    SamplesAggregator(IConfiguration* configuration, IThreadsCpuManager* pThreadsCpuManager, IExporter* exporter, IMetricsSender* metricsSender);
+    SamplesAggregator(IConfiguration* configuration, IThreadsCpuManager* pThreadsCpuManager, IExporter* exporter, IMetricsSender* metricsSender, ISamplesCollector* samplesCollector);
 
     // Inherited via IService
     virtual const char* GetName() override;
     virtual bool Start() override;
     virtual bool Stop() override;
 
-    void Register(ISamplesProvider* sampleProvider);
-
 private:
     void Work();
     void ProcessSamples();
-    std::list<Sample> CollectSamples();
     void Export();
     void SendHeartBeatMetric(bool success);
 
 private:
     const char* _serviceName = "SamplesAggregator";
-    static const std::chrono::seconds ProcessingInterval;
-    static const std::string SuccessfulExportsMetricName;
+    inline static const std::chrono::seconds ProcessingInterval = 1s;
+    const WCHAR* WorkerThreadName = WStr("DD.Profiler.SamplesAggregator.WorkerThread");
+    const WCHAR* RawSampleThreadName = WStr("DD.Profiler.SamplesAggregator.RawSampleThread");
+    inline static std::string const SuccessfulExportsMetricName = "datadog.profiling.dotnet.operational.exports";
 
     std::chrono::seconds _uploadInterval;
     std::chrono::time_point<std::chrono::steady_clock> _nextExportTime;
-    std::forward_list<ISamplesProvider*> _samplesProviders;
     IExporter* _exporter;
     IThreadsCpuManager* _pThreadsCpuManager;
+    ISamplesCollector* _pSamplesCollector;
     std::thread _worker;
     bool _mustStop;
+    std::promise<void> _exitWorkerPromise;
     IMetricsSender* _metricsSender;
 };

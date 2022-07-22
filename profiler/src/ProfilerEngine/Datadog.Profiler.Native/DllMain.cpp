@@ -42,7 +42,7 @@ extern "C" BOOL STDMETHODCALLTYPE DllMain(HINSTANCE hInstDll, DWORD reason, PVOI
     return TRUE;
 }
 
-bool CheckProfilingEnabledEnvironmentVariable(void)
+bool CheckProfilingEnabledEnvironmentVariable()
 {
     // If we are in this function, then the user has already configured profiling by setting CORECLR_ENABLE_PROFILING to 1
     // and by correctly pointing the CORECLR_PROFILER_XXX variables.
@@ -116,6 +116,11 @@ extern "C" HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID r
 
         return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
     }
+
+#ifdef ARM64
+    Log::Warn("Profiler is deactivated because it runs on an unsupported architecture.");
+    return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
+#endif
 
     CorProfilerCallbackFactory* factory = new CorProfilerCallbackFactory();
     if (factory == nullptr)

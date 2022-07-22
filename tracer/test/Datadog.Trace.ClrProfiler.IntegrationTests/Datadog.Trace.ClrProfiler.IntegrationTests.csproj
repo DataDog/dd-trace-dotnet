@@ -21,11 +21,14 @@
 
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
+    <ProjectReference Include="..\test-applications\debugger\Samples.Probes\Samples.Probes.csproj" />
 
     <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+
+    <PackageReference Include="Microsoft.Diagnostics.Runtime" Version="2.0.226801" />
 
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
 

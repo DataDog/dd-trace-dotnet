@@ -16,7 +16,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Initializes a new instance of the <see cref="UserDetails"/> struct.
         /// </summary>
-        /// <param name="id">The unique identifier assoicated with the users</param>
+        /// <param name="id">The unique identifier associated with the users</param>
         public UserDetails(string id)
         {
             if (string.IsNullOrEmpty(id))
@@ -25,6 +25,7 @@ namespace Datadog.Trace
             }
 
             Id = id;
+            PropagateId = false;
             Email = null;
             Name = null;
             SessionId = null;
@@ -43,9 +44,19 @@ namespace Datadog.Trace
         public string? Name { get; set; }
 
         /// <summary>
-        /// Gets or sets the unique identifier assoicated with the users
+        /// Gets or sets the unique identifier associated with the user.
         /// </summary>
         public string Id { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the Id field should be propagated to other services called.
+        /// NOTE: setting this value to true will automatically propagate the Id field to all downstream services
+        /// including any third-party services called by the application. Therefore this value should only be set
+        /// to true if the user is confident that it is safe to propagate the value to all downstream services
+        /// called by the application.
+        /// Default value is false.
+        /// </summary>
+        public bool PropagateId { get; set; }
 
         /// <summary>
         /// Gets or sets the user's session unique identifier

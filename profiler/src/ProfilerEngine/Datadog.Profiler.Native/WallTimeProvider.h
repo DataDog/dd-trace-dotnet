@@ -2,10 +2,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-#include <list>
-#include <mutex>
-#include <string>
-#include <thread>
 
 #include "CollectorBase.h"
 #include "RawWallTimeSample.h"
@@ -28,7 +24,4 @@ public:
         IAppDomainStore* pAssemblyStore,
         IRuntimeIdStore* pRuntimeIdStore
         );
-
-private:
-    virtual void OnTransformRawSample(const RawWallTimeSample& rawSample, Sample& sample) override;
 };

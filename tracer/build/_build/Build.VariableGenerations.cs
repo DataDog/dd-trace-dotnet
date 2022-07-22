@@ -130,7 +130,7 @@ partial class Build : NukeBuild
             {
                 var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, });
 
-                var baseImages = new[] { "debian", "alpine" };
+                var baseImages = new[] { "centos7", "alpine" };
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
@@ -196,7 +196,7 @@ partial class Build : NukeBuild
                 var testDescriptions = ExplorationTestDescription.GetAllExplorationTestDescriptions();
                 var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NETSTANDARD2_0, });
 
-                var baseImages = new[] { "debian", "alpine" };
+                var baseImages = new[] { "centos7", "alpine" };
 
                 var matrix = new Dictionary<string, object>();
 
@@ -229,7 +229,7 @@ partial class Build : NukeBuild
                 // installer smoke tests
                 GenerateLinuxInstallerSmokeTestsMatrix();
                 GenerateLinuxSmokeTestsArm64Matrix();
-                
+
                 // nuget smoke tests
                 GenerateLinuxNuGetSmokeTestsMatrix();
                 GenerateLinuxNuGetSmokeTestsArm64Matrix();
@@ -266,7 +266,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-stretch-slim"),
                         },
                         installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb",
-                        linuxArtifacts: "linux-packages-debian",
+                        linuxArtifacts: "linux-packages-centos7",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
@@ -286,7 +286,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "29-2.1"),
                         },
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
-                        linuxArtifacts: "linux-packages-debian",
+                        linuxArtifacts: "linux-packages-centos7",
                         dockerName: "andrewlock/dotnet-fedora"
                     );
 
@@ -318,7 +318,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "7-2.1"),
                         },
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
-                        linuxArtifacts: "linux-packages-debian",
+                        linuxArtifacts: "linux-packages-centos7",
                         dockerName: "andrewlock/dotnet-centos"
                     );
 
@@ -332,7 +332,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "8-3.1"),
                         },
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
-                        linuxArtifacts: "linux-packages-debian",
+                        linuxArtifacts: "linux-packages-centos7",
                         dockerName: "andrewlock/dotnet-rhel"
                     );
 
@@ -347,7 +347,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "8-3.1"),
                         },
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
-                        linuxArtifacts: "linux-packages-debian",
+                        linuxArtifacts: "linux-packages-centos7",
                         dockerName: "andrewlock/dotnet-centos-stream"
                     );
 
@@ -362,7 +362,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "15-2.1"),
                         },
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
-                        linuxArtifacts: "linux-packages-debian",
+                        linuxArtifacts: "linux-packages-centos7",
                         dockerName: "andrewlock/dotnet-opensuse"
                     );
 
@@ -419,7 +419,7 @@ partial class Build : NukeBuild
                             });
                     }
                 }
-                
+
                 void GenerateLinuxNuGetSmokeTestsMatrix()
                 {
                     var matrix = new Dictionary<string, object>();

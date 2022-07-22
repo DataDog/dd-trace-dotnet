@@ -8,19 +8,6 @@
     <AssemblyName>Datadog.Demos.NoOpWcfService</AssemblyName>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <SharedAssetsBaseDir>$([System.IO.Path]::GetFullPath( $(EnlistmentRoot)\\shared\ ))</SharedAssetsBaseDir>
-    <SharedSrcBaseDir>$([System.IO.Path]::GetFullPath( $(SharedAssetsBaseDir)\src\managed-src\ ))</SharedSrcBaseDir>
-    <SharedSrcBaseLabel>Shared-Src</SharedSrcBaseLabel>
-  </PropertyGroup>
-
-  <ItemGroup>
-    <Compile Link="$(SharedSrcBaseLabel)\Datadog.Util\internal\%(Filename)%(Extension)"
-             Include="$(SharedSrcBaseDir)\Datadog.Util\internal\RuntimeEnvironmentInfo.cs" />
-    <Compile Link="$(SharedSrcBaseLabel)\Datadog.Util\internal\%(Filename)%(Extension)"
-             Include="$(SharedSrcBaseDir)\Datadog.Util\internal\Validate.cs" />
-  </ItemGroup>
-
   <ItemGroup>
     <WCFMetadata Include="Connected Services" />
   </ItemGroup>
@@ -31,6 +18,10 @@
 
   <ItemGroup>
     <PackageReference Include="System.ServiceModel.Primitives" Version="4.8.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\Util\Datadog.Demos.Util.csproj" />
   </ItemGroup>
 
   <ItemGroup>

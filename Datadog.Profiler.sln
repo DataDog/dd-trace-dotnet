@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31727.386
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32602.215
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Profiler.Native.Linux", "profiler\src\ProfilerEngine\Datadog.Profiler.Native.Linux\Datadog.Profiler.Native.Linux.vcxproj", "{EE53BC26-BBF9-46C6-8212-4E6DAD9DF38A}"
 EndProject
@@ -115,11 +115,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Profiler.Native", "
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.AutoInstrumentation.NativeLoader", "tracer\src\Datadog.AutoInstrumentation.NativeLoader\Datadog.AutoInstrumentation.NativeLoader.vcxproj", "{48D12C26-6E63-419C-BFE2-E668E8550613}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Demos.Util", "profiler\src\Demos\Shared\Util\Datadog.Demos.Util.csproj", "{B0882E91-443B-4161-AB64-07E188067D3F}"
+EndProject
 Global
-	GlobalSection(SharedMSBuildProjectFiles) = preSolution
-		shared\src\native-src\Shared.ManagedLibraryLoader.vcxitems*{a1d8d09c-62e4-44a4-aacd-ca57bce218d0}*SharedItemsImports = 4
-		shared\src\native-src\Shared.ManagedLibraryLoader.vcxitems*{d6380925-f0a0-4da2-b6ab-9ffab35cd088}*SharedItemsImports = 9
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
@@ -339,6 +337,18 @@ Global
 		{48D12C26-6E63-419C-BFE2-E668E8550613}.Release|x64.Build.0 = Release|x64
 		{48D12C26-6E63-419C-BFE2-E668E8550613}.Release|x86.ActiveCfg = Release|Win32
 		{48D12C26-6E63-419C-BFE2-E668E8550613}.Release|x86.Build.0 = Release|Win32
+		{B0882E91-443B-4161-AB64-07E188067D3F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B0882E91-443B-4161-AB64-07E188067D3F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B0882E91-443B-4161-AB64-07E188067D3F}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B0882E91-443B-4161-AB64-07E188067D3F}.Debug|x64.Build.0 = Debug|Any CPU
+		{B0882E91-443B-4161-AB64-07E188067D3F}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B0882E91-443B-4161-AB64-07E188067D3F}.Debug|x86.Build.0 = Debug|Any CPU
+		{B0882E91-443B-4161-AB64-07E188067D3F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B0882E91-443B-4161-AB64-07E188067D3F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B0882E91-443B-4161-AB64-07E188067D3F}.Release|x64.ActiveCfg = Release|Any CPU
+		{B0882E91-443B-4161-AB64-07E188067D3F}.Release|x64.Build.0 = Release|Any CPU
+		{B0882E91-443B-4161-AB64-07E188067D3F}.Release|x86.ActiveCfg = Release|Any CPU
+		{B0882E91-443B-4161-AB64-07E188067D3F}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -374,8 +384,13 @@ Global
 		{9908ACFF-650D-4481-8060-6F6A4FF23B41} = {882D9CEA-09AD-4C08-B737-9E6E04563AB6}
 		{0831386B-1A96-443F-B02B-C1D2B65FD845} = {882D9CEA-09AD-4C08-B737-9E6E04563AB6}
 		{48D12C26-6E63-419C-BFE2-E668E8550613} = {26D13B93-529A-4A73-824D-885CAF1DC0C0}
+		{B0882E91-443B-4161-AB64-07E188067D3F} = {D2476213-2D12-43A8-966C-BCFCE098FD63}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {917C242A-028D-42FD-BA47-E7317B6A36B4}
+	EndGlobalSection
+	GlobalSection(SharedMSBuildProjectFiles) = preSolution
+		shared\src\native-src\Shared.ManagedLibraryLoader.vcxitems*{a1d8d09c-62e4-44a4-aacd-ca57bce218d0}*SharedItemsImports = 4
+		shared\src\native-src\Shared.ManagedLibraryLoader.vcxitems*{d6380925-f0a0-4da2-b6ab-9ffab35cd088}*SharedItemsImports = 9
 	EndGlobalSection
 EndGlobal

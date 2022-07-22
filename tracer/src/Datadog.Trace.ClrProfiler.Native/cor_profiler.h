@@ -62,6 +62,11 @@ private:
     std::unique_ptr<TracerRejitPreprocessor> tracer_integration_preprocessor = nullptr;
     bool trace_annotations_enabled = false;
 
+    //
+    // Debugger Members
+    //
+    std::unique_ptr<debugger::DebuggerProbesInstrumentationRequester> debugger_instrumentation_requester = nullptr;
+
     // Cor assembly properties
     AssemblyProperty corAssemblyProperty{};
     AssemblyReference* managed_profiler_assembly_reference;
@@ -165,10 +170,15 @@ public:
                                           WCHAR* integration_type_name_ptr);
     void InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_name_ptr, WCHAR* integration_type_name_ptr,
                                 WCHAR* configuration_string_ptr);
+    void InstrumentProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,
+                   debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,
+                   debugger::DebuggerRemoveProbesDefinition* revertProbes, int revertProbesLength) const;
+    int GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses);
 
     friend class debugger::DebuggerProbesInstrumentationRequester;
     friend class debugger::DebuggerMethodRewriter;
     friend class TracerMethodRewriter;
+    friend class MethodRewriter;
 };
 
 // Note: Generally you should not have a single, global callback implementation,

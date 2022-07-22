@@ -9,7 +9,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PDBs;
+using Datadog.Trace.Pdb;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 {
@@ -72,6 +72,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
                         span.SetTag(TestTags.CodeOwners, match.Value.GetOwnersString());
                     }
                 }
+            }
+        }
+
+        internal static void StartCoverage()
+        {
+            Ci.Coverage.CoverageReporter.Handler.StartSession();
+        }
+
+        internal static void StopCoverage(Span span)
+        {
+            if (Ci.Coverage.CoverageReporter.Handler.EndSession() is Ci.Coverage.Models.CoveragePayload coveragePayload)
+            {
+                if (span is not null)
+                {
+                    coveragePayload.TraceId = span.TraceId;
+                    coveragePayload.SpanId = span.SpanId;
+                }
+
+                Ci.CIVisibility.Manager?.WriteEvent(coveragePayload);
             }
         }
     }

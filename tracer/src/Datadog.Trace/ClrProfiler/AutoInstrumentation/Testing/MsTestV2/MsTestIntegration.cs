@@ -13,7 +13,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PDBs;
+using Datadog.Trace.Pdb;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
 {
@@ -96,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             Common.DecorateSpanWithSourceAndCodeOwners(span, testMethod);
 
             Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            Ci.Coverage.CoverageReporter.Handler.StartSession();
+            Common.StartCoverage();
             span.ResetStartTime();
             return scope;
         }

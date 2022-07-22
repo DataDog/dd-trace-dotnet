@@ -14,7 +14,7 @@ using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.WindowsPdb;
 
 namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss {
-	sealed class SymbolReaderImpl : SymbolReader {
+	sealed partial class SymbolReaderImpl : SymbolReader {
 		ModuleDef module;
 		ISymUnmanagedReader reader;
 		object[] objsToKeepAlive;

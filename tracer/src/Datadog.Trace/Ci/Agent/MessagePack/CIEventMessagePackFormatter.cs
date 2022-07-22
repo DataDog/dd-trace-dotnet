@@ -13,7 +13,7 @@ using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.MessagePack
 {
-    internal class CIEventMessagePackFormatter : EventMessagePackFormatter<EventsPayload>
+    internal class CIEventMessagePackFormatter : EventMessagePackFormatter<CIVisibilityProtocolPayload>
     {
         private readonly byte[] _metadataBytes = StringEncoding.UTF8.GetBytes("metadata");
         private readonly byte[] _asteriskBytes = StringEncoding.UTF8.GetBytes("*");
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             _envelopBytes = GetEnvelopeArraySegment();
         }
 
-        public override int Serialize(ref byte[] bytes, int offset, EventsPayload? value, IFormatterResolver formatterResolver)
+        public override int Serialize(ref byte[] bytes, int offset, CIVisibilityProtocolPayload? value, IFormatterResolver formatterResolver)
         {
             if (value is null)
             {

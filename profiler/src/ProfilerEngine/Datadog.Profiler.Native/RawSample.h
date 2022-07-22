@@ -10,11 +10,16 @@
 #include "ManagedThreadInfo.h"
 
 
+class Sample;
+
 class RawSample
 {
 public:
     RawSample();
     virtual ~RawSample() = default;
+
+    // set values and additional labels on target sample
+    virtual void OnTransform(Sample& sample) const = 0;
 
 public:
     std::uint64_t Timestamp;        // _unixTimeUtc;
