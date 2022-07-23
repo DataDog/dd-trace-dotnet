@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -9,7 +9,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -52,7 +53,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,

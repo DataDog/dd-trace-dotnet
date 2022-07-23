@@ -8,7 +8,8 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -134,7 +135,8 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -260,7 +262,8 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -390,7 +393,8 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -520,7 +524,8 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -650,7 +655,8 @@
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -784,7 +790,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -914,7 +921,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -1044,7 +1052,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -1174,7 +1183,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -1308,7 +1318,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -1434,7 +1445,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -1560,7 +1572,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -1686,7 +1699,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -1814,7 +1828,8 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
     Tags: {
       env: integration_tests,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,

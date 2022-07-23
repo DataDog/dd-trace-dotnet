@@ -40,7 +40,8 @@
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -91,7 +92,8 @@
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -142,7 +144,8 @@
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -193,7 +196,8 @@
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -244,7 +248,8 @@
       language: dotnet,
       network.client.ip: ::1,
       runtime-id: Guid_1,
-      span.kind: server
+      span.kind: server,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,

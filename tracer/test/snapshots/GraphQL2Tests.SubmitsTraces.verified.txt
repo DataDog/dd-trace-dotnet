@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -19,7 +19,8 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -90,7 +91,8 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -120,7 +122,8 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -150,7 +153,8 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -180,7 +184,8 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -210,7 +215,8 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
@@ -240,7 +246,8 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.p.dm: -1
     },
     Metrics: {
       process_id: 0,
