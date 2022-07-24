@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             return scope;
         }
 
-        internal static Scope UpdateScopeFromExecuteAsync(Tracer tracer, IWorkScheduler executionContext)
+        internal static Scope UpdateScopeFromExecuteAsync(Tracer tracer, IOperationContext context)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
             try
             {
-                var operation = executionContext.Context.Operation;
+                var operation = context.Operation;
                 var operationType = operation.OperationType.ToString();
                 var operationName = span.GetTag(Trace.Tags.GraphQLOperationName);
                 span.ResourceName = $"{operationType} {operationName ?? "operation"}";

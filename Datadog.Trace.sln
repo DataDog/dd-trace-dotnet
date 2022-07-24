@@ -479,6 +479,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Probes", "tracer\te
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.HotChocolate12", "tracer\test\test-applications\integrations\Samples.HotChocolate12\Samples.HotChocolate12.csproj", "{6EB80A57-30D1-48EC-A1DE-6085117B2BE2}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.HotChocolate11", "tracer\test\test-applications\integrations\Samples.HotChocolate11\Samples.HotChocolate11.csproj", "{222E0E71-722E-45B8-8394-F09CA1BA6A1A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -2391,6 +2393,18 @@ Global
 		{6EB80A57-30D1-48EC-A1DE-6085117B2BE2}.Release|x64.Build.0 = Release|x64
 		{6EB80A57-30D1-48EC-A1DE-6085117B2BE2}.Release|x86.ActiveCfg = Release|x86
 		{6EB80A57-30D1-48EC-A1DE-6085117B2BE2}.Release|x86.Build.0 = Release|x86
+		{222E0E71-722E-45B8-8394-F09CA1BA6A1A}.Debug|Any CPU.ActiveCfg = Debug|x64
+		{222E0E71-722E-45B8-8394-F09CA1BA6A1A}.Debug|Any CPU.Build.0 = Debug|x64
+		{222E0E71-722E-45B8-8394-F09CA1BA6A1A}.Debug|x64.ActiveCfg = Debug|x64
+		{222E0E71-722E-45B8-8394-F09CA1BA6A1A}.Debug|x64.Build.0 = Debug|x64
+		{222E0E71-722E-45B8-8394-F09CA1BA6A1A}.Debug|x86.ActiveCfg = Debug|x86
+		{222E0E71-722E-45B8-8394-F09CA1BA6A1A}.Debug|x86.Build.0 = Debug|x86
+		{222E0E71-722E-45B8-8394-F09CA1BA6A1A}.Release|Any CPU.ActiveCfg = Release|x64
+		{222E0E71-722E-45B8-8394-F09CA1BA6A1A}.Release|Any CPU.Build.0 = Release|x64
+		{222E0E71-722E-45B8-8394-F09CA1BA6A1A}.Release|x64.ActiveCfg = Release|x64
+		{222E0E71-722E-45B8-8394-F09CA1BA6A1A}.Release|x64.Build.0 = Release|x64
+		{222E0E71-722E-45B8-8394-F09CA1BA6A1A}.Release|x86.ActiveCfg = Release|x86
+		{222E0E71-722E-45B8-8394-F09CA1BA6A1A}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -2572,6 +2586,7 @@ Global
 		{16427BFB-B4C6-46A9-A290-8EA51FF73FEA} = {9518425A-36A5-4B8F-B0B8-6137DB88441D}
 		{2BED2D88-0B51-468B-A559-DA7B4BACA00B} = {16427BFB-B4C6-46A9-A290-8EA51FF73FEA}
 		{6EB80A57-30D1-48EC-A1DE-6085117B2BE2} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{222E0E71-722E-45B8-8394-F09CA1BA6A1A} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
