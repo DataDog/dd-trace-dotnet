@@ -208,21 +208,6 @@ namespace Datadog.Trace
         internal const string GraphQLSource = "graphql.source";
 
         /// <summary>
-        /// The operation name of the HotChocolate request.
-        /// </summary>
-        internal const string HotChocolateOperationName = "hotchocolate.operation.name";
-
-        /// <summary>
-        /// The operation type of the HotChocolate request.
-        /// </summary>
-        internal const string HotChocolateOperationType = "hotchocolate.operation.type";
-
-        /// <summary>
-        /// The source defining the HotChocolate request.
-        /// </summary>
-        internal const string HotChocolateSource = "hotchocolate.source";
-
-        /// <summary>
         /// The AMQP method.
         /// </summary>
         internal const string AmqpCommand = "amqp.command";

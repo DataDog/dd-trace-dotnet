@@ -28,13 +28,13 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.12.11 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.12.11" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.12.13 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.12.13" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2.80 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.80" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2.81 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.81" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->

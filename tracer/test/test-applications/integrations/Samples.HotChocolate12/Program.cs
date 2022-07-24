@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Collections;
 using Microsoft.AspNetCore.Builder;
 
-namespace Samples.HotChocolate
+namespace Samples.HotChocolate12
 {
     public class Program
     {

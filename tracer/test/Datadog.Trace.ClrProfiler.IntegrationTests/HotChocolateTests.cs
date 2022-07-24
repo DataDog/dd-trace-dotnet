@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class HotChocolate12Tests : HotChocolateTests
     {
         public HotChocolate12Tests(ITestOutputHelper output)
-            : base("HotChocolate", output, nameof(HotChocolate12Tests))
+            : base("HotChocolate12", output, nameof(HotChocolate12Tests))
         {
         }
 

@@ -29,27 +29,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NET461
                 new object[] { "3.1.0.13" },
                 new object[] { "3.3.103.26" },
-                new object[] { "3.7.2.80" },
+                new object[] { "3.7.2.81" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "3.3.103.26" },
-                new object[] { "3.7.2.80" },
+                new object[] { "3.7.2.81" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "3.3.103.26" },
-                new object[] { "3.7.2.80" },
+                new object[] { "3.7.2.81" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "3.3.103.26" },
-                new object[] { "3.7.2.80" },
+                new object[] { "3.7.2.81" },
 #endif
 #if NET5_0
                 new object[] { "3.3.103.26" },
-                new object[] { "3.7.2.80" },
+                new object[] { "3.7.2.81" },
 #endif
 #if NET6_0
                 new object[] { "3.3.103.26" },
-                new object[] { "3.7.2.80" },
+                new object[] { "3.7.2.81" },
 #endif
 #endif
             };

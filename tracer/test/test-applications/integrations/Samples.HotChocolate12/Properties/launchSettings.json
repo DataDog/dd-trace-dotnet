@@ -28,7 +28,7 @@
       "use64Bit": true,
       "nativeDebugging": true
     },
-    "Samples.HotChocolate": {
+    "Samples.HotChocolate12": {
       "commandName": "Project",
       "launchBrowser": false,
       "environmentVariables": {

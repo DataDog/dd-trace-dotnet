@@ -91,7 +91,7 @@
   },
   {
     "IntegrationName": "HotChocolate",
-    "SampleProjectName": "Samples.HotChocolate",
+    "SampleProjectName": "Samples.HotChocolate12",
     "NugetPackageSearchName": "HotChocolate.AspNetCore",
     "MinVersion": "12.0.0",
     "MaxVersionExclusive": "13.0.0",

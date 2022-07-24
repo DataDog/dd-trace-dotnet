@@ -1,4 +1,4 @@
-// <copyright file="ExecuteAsyncIntegrationExtra.cs" company="Datadog">
+// <copyright file="ExecuteAsyncV12IntegrationExtra.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,16 +14,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     /// </summary>
     [InstrumentMethodAttribute(
         IntegrationName = HotChocolateCommon.IntegrationName,
-        MethodName = HotChocolateCommon.ExecuteAsyncMethodName,
+        MethodName = "ExecuteAsync",
         ReturnTypeName = "System.Threading.Tasks.Task",
         ParameterTypeNames = new string[0],
-        AssemblyName = HotChocolateCommon.HotChocolateAssembly,
+        AssemblyName = "HotChocolate.Execution",
         TypeName = "HotChocolate.Execution.Processing.WorkScheduler",
-        MinimumVersion = HotChocolateCommon.Major12,
+        MinimumVersion = "12",
         MaximumVersion = "12.*.*")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ExecuteAsyncIntegrationExtra
+    public class ExecuteAsyncV12IntegrationExtra
     {
         /// <summary>
         /// OnMethodBegin callback

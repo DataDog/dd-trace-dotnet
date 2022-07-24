@@ -11,18 +11,12 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
-    internal class HotChocolateCommon
+    internal class HotChocolateCommon : GraphQLCommonBase
     {
-        internal const string ExecuteAsyncMethodName = "ExecuteAsync";
-        internal const string HotChocolateAssembly = "HotChocolate.Execution";
-        internal const string Major12 = "12";
-
         internal const string IntegrationName = nameof(Configuration.IntegrationId.HotChocolate);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.HotChocolate;
 
         private const string ServiceName = "hotchocolate";
-        private const string ExecuteOperationName = "hotchocolate.execute";
-
         internal const string ErrorType = "HotChocolate.Error";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HotChocolateCommon));
@@ -38,36 +32,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             Scope scope = null;
             try
             {
-                var operationName = request.OperationName;
+                var queryOperationName = request.OperationName;
                 var source = request.Query?.ToString();
                 var operationType = "Uncompleted";
-                scope = CreateScopeFromExecuteAsync(tracer, operationName, source, operationType);
+                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new HotChocolateTags(), ServiceName, queryOperationName, source, operationType);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error creating or populating scope.");
             }
 
-            return scope;
-        }
-
-        private static Scope CreateScopeFromExecuteAsync(Tracer tracer, string operationName, string source, string operationType)
-        {
-            Scope scope;
-
-            var tags = new HotChocolateTags();
-            string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
-            scope = tracer.StartActiveInternal(ExecuteOperationName, serviceName: serviceName, tags: tags);
-
-            var span = scope.Span;
-            span.Type = SpanTypes.GraphQL;
-            span.ResourceName = $"{operationType} {operationName ?? "operation"}";
-            tags.Source = source;
-            tags.OperationName = operationName;
-            tags.OperationType = operationType;
-
-            tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
-            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             return scope;
         }
 
@@ -91,9 +65,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             {
                 var operation = executionContext.Context.Operation;
                 var operationType = operation.OperationType.ToString();
-                var operationName = span.GetTag(Trace.Tags.HotChocolateOperationName);
+                var operationName = span.GetTag(Trace.Tags.GraphQLOperationName);
                 span.ResourceName = $"{operationType} {operationName ?? "operation"}";
-                span.SetTag(Trace.Tags.HotChocolateOperationType, operationType);
+                span.SetTag(Trace.Tags.GraphQLOperationType, operationType);
             }
             catch (Exception ex)
             {
@@ -110,11 +84,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
             if (errorCount > 0)
             {
-                span.Error = true;
-
-                span.SetTag(Trace.Tags.ErrorMsg, $"{errorCount} error(s)");
-                span.SetTag(Trace.Tags.ErrorType, errorType);
-                span.SetTag(Trace.Tags.ErrorStack, ConstructErrorMessage(executionErrors));
+                RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessage(executionErrors));
             }
         }
 

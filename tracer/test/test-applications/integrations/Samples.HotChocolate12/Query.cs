@@ -1,4 +1,4 @@
-﻿namespace Samples.HotChocolate
+namespace Samples.HotChocolate12
 {
     public class Book
     {
