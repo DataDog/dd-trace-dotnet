@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 
 using System.Threading.Tasks;
 
-namespace Samples.HotChocolate12
+namespace Samples.HotChocolate
 {
     public class Startup
     {

@@ -484,6 +484,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { string.Empty },
 #else
 #if NET5_0
+                new object[] { "10.0.1" },
+                new object[] { "10.1.1" },
+                new object[] { "10.2.0" },
+                new object[] { "10.3.6" },
+                new object[] { "10.4.3" },
+                new object[] { "10.5.5" },
                 new object[] { "11.0.9" },
                 new object[] { "11.1.0" },
                 new object[] { "11.2.2" },
@@ -503,6 +509,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "12.12.1" },
 #endif
 #if NET6_0
+                new object[] { "10.0.1" },
+                new object[] { "10.1.1" },
+                new object[] { "10.2.0" },
+                new object[] { "10.3.6" },
+                new object[] { "10.4.3" },
+                new object[] { "10.5.5" },
                 new object[] { "11.0.9" },
                 new object[] { "11.1.0" },
                 new object[] { "11.2.2" },
@@ -522,6 +534,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "12.12.1" },
 #endif
 #if NETCOREAPP3_1
+                new object[] { "10.0.1" },
+                new object[] { "10.1.1" },
+                new object[] { "10.2.0" },
+                new object[] { "10.3.6" },
+                new object[] { "10.4.3" },
+                new object[] { "10.5.5" },
                 new object[] { "11.0.9" },
                 new object[] { "11.1.0" },
                 new object[] { "11.2.2" },

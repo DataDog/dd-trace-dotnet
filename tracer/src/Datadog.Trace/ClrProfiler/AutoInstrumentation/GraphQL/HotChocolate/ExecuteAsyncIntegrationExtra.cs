@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         ParameterTypeNames = new string[] { "HotChocolate.Execution.Processing.IOperationContext" },
         AssemblyName = "HotChocolate.Execution",
         TypeName = "HotChocolate.Execution.Processing.QueryExecutor",
-        MinimumVersion = "11",
+        MinimumVersion = "10",
         MaximumVersion = "12.*.*")]
     [InstrumentMethodAttribute(
         IntegrationName = HotChocolateCommon.IntegrationName,
@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         ParameterTypeNames = new string[] { "HotChocolate.Execution.Processing.IOperationContext" },
         AssemblyName = "HotChocolate.Execution",
         TypeName = "HotChocolate.Execution.Processing.MutationExecutor",
-        MinimumVersion = "11",
+        MinimumVersion = "10",
         MaximumVersion = "11.*.*")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
