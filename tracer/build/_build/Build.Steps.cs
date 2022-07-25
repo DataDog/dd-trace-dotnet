@@ -358,14 +358,17 @@ partial class Build
         void CopyWaf(string architecture, IEnumerable<string> frameworks, AbsolutePath absolutePath, string wafFileName, string extension)
         {
             var source = LibDdwafDirectory / "runtimes" / architecture / "native" / $"{wafFileName}.{extension}";
-            var nativeDir = DDTracerHomeDirectory / architecture / $"Datadog.Trace.ClrProfiler.Native.{extension}";
             foreach (var fmk in frameworks)
             {
-                var dest = absolutePath / "bin" / BuildConfiguration / fmk / architecture;
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                var targetDir = absolutePath / "bin" / BuildConfiguration / fmk;
+                var archTargetDir = targetDir / architecture;
+                CopyFileToDirectory(source, archTargetDir, FileExistsPolicy.Overwrite);
                 if (!IsWin)
                 {
-                    CopyFileToDirectory(nativeDir, absolutePath / "bin" / BuildConfiguration / fmk, FileExistsPolicy.Overwrite);
+                    var tracerNativeLib = DDTracerHomeDirectory / architecture / $"Datadog.Tracer.Native.{extension}";
+                    // The tests use the "wrong" name for the library currently
+                    var target = targetDir / $"Datadog.Trace.ClrProfiler.Native.{extension}";
+                    CopyFile(tracerNativeLib, target, FileExistsPolicy.Overwrite);
                 }
             }
         }
@@ -627,14 +630,9 @@ partial class Build
                 var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
                 EnsureCleanDirectory(workingDirectory);
 
-                var tracerNativeFile = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
+                var tracerNativeFile = MonitoringHomeDirectory / "Datadog.Tracer.Native.so";
                 var newTracerNativeFile = MonitoringHomeDirectory / "tracer" / "Datadog.Tracer.Native.so";
                 MoveFile(tracerNativeFile, newTracerNativeFile);
-
-                // For backward compatibility, we need to rename Datadog.AutoInstrumentation.NativeLoader.so into Datadog.Trace.ClrProfiler.Native.so
-                var sourceFile = MonitoringHomeDirectory / "Datadog.AutoInstrumentation.NativeLoader.so";
-                var newName = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
-                RenameFile(sourceFile, newName);
 
                 // somehow the permissions are lost along the way, ensure they are correctly set here
                 var createLogPathScript = MonitoringHomeDirectory / "createLogPath.sh";
@@ -778,8 +776,8 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            var workingDirectory = TestsDirectory / "Datadog.Trace.ClrProfiler.Native.Tests" / "bin" / BuildConfiguration.ToString() / TargetPlatform.ToString();
-            var exePath = workingDirectory / "Datadog.Trace.ClrProfiler.Native.Tests.exe";
+            var workingDirectory = TestsDirectory / "Datadog.Tracer.Native.Tests" / "bin" / BuildConfiguration.ToString() / TargetPlatform.ToString();
+            var exePath = workingDirectory / "Datadog.Tracer.Native.Tests.exe";
             var testExe = ToolResolver.GetLocalTool(exePath);
             testExe("--gtest_output=xml", workingDirectory: workingDirectory);
         });

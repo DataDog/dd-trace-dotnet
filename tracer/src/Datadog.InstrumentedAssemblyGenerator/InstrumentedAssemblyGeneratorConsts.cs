@@ -4,7 +4,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
     public class InstrumentedAssemblyGeneratorConsts
     {
         // !!!!!! Keep compatibility with the consts used in the native loader
-        // (\DataDog\dd-trace-dotnet\tracer\src\Datadog.AutoInstrumentation.NativeLoader\instrumented_assembly_generator_consts.h) !!!!!
+        // (\DataDog\dd-trace-dotnet\tracer\src\Datadog.Trace.ClrProfiler.Native\instrumented_assembly_generator_consts.h) !!!!!
         public const string InstrumentedAssembliesFolderName = "OUTPUT_InstrumentedAssemblies";
         public const string OriginalModulesFolderName = "INPUT_OriginalAssemblies";
         public const string InstrumentedAssemblyGeneratorInputFolder = "INPUT_InstrumentationLogs";
