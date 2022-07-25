@@ -63,7 +63,7 @@ internal static class AgentTransportStrategy
                     getBaseEndpoint(Localhost));
 #elif NETCOREAPP3_1_OR_GREATER
                 // intentionally using string interpolation, as this is only called once, and avoids array allocation
-                Log.Information($"Using {nameof(UnixDomainSocketStreamFactory)} for {productName} transport, with Unix Domain Sockets path {settings.TracesUnixDomainSocketPath} and timeout {settings.TracesPipeTimeoutMs}ms.");
+                Log.Information($"Using {nameof(UnixDomainSocketStreamFactory)} for {productName} transport, with Unix Domain Sockets path {settings.TracesUnixDomainSocketPath}.");
                 return new HttpStreamRequestFactory(
                     new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath),
                     new DatadogHttpClient(getHttpHeaderHelper()),
