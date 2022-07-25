@@ -26,6 +26,13 @@ namespace Datadog.Trace.Configuration
         public const string AgentPort = "DD_TRACE_AGENT_PORT";
 
         /// <summary>
+        /// Configuration key for setting the timeout in milliseconds for sending traces to the Agent.
+        /// Default value is <c>15,000</c>.
+        /// </summary>
+        /// <seealso cref="ExporterSettings.TracesTimeoutMs"/>
+        public const string TracesTimeoutMs = "DD_TRACE_TIMEOUT_MS";
+
+        /// <summary>
         /// Configuration key for the named pipe where the Tracer can send traces.
         /// Default value is <c>null</c>.
         /// </summary>

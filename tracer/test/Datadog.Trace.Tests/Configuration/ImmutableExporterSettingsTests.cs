@@ -70,6 +70,7 @@ namespace Datadog.Trace.Tests.Configuration
                 (e, i) => e.DogStatsdPort == i.DogStatsdPort,
                 (e, i) => e.MetricsTransport == i.MetricsTransport,
                 (e, i) => e.TracesTransport == i.TracesTransport,
+                (e, i) => e.TracesTimeoutMs == i.TracesTimeoutMs,
                 (e, i) => e.TracesPipeTimeoutMs == i.TracesPipeTimeoutMs,
                 (e, i) => e.AgentUri == i.AgentUri,
                 (e, i) => e.PartialFlushEnabled == i.PartialFlushEnabled,
@@ -95,6 +96,7 @@ namespace Datadog.Trace.Tests.Configuration
             exporterSettings.DogStatsdPort = 1234;
             exporterSettings.MetricsTransport = Vendors.StatsdClient.Transport.TransportType.NamedPipe;
             exporterSettings.TracesTransport = TracesTransportType.WindowsNamedPipe;
+            exporterSettings.TracesTimeoutMs = 7778;
             exporterSettings.TracesPipeTimeoutMs = 5556;
 
             var immutableSettings = new ImmutableExporterSettings(exporterSettings);

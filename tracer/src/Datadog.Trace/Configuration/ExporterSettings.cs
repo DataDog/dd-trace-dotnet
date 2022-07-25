@@ -24,6 +24,13 @@ namespace Datadog.Trace.Configuration
         private int _partialFlushMinSpans;
         private Uri _agentUri;
 
+        // To maintain compatibility with the existing named pipes traces timeout
+        // while adding the a general traces timeout configuration,
+        // use backing fields of type Nullable<int> to determine if the user explicitly configured
+        // the either timeout.
+        private int? _tracesTimeoutMs;
+        private int? _tracesPipeTimeoutMs;
+
         /// <summary>
         /// The default host value for <see cref="AgentUri"/>.
         /// </summary>
@@ -84,10 +91,11 @@ namespace Datadog.Trace.Configuration
 
             // Get values from the config
             var traceAgentUrl = source?.GetString(ConfigurationKeys.AgentUri);
+            var tracesTimeoutMs = source?.GetInt32(ConfigurationKeys.TracesTimeoutMs);
             var tracesPipeName = source?.GetString(ConfigurationKeys.TracesPipeName);
             var tracesUnixDomainSocketPath = source?.GetString(ConfigurationKeys.TracesUnixDomainSocketPath);
 
-            var tracesPipeTimeoutMs = source?.GetInt32(ConfigurationKeys.TracesPipeTimeoutMs) ?? 0;
+            var tracesPipeTimeoutMs = source?.GetInt32(ConfigurationKeys.TracesPipeTimeoutMs);
             var agentHost = source?.GetString(ConfigurationKeys.AgentHost) ??
                         // backwards compatibility for names used in the past
                         source?.GetString("DD_TRACE_AGENT_HOSTNAME") ??
@@ -105,7 +113,16 @@ namespace Datadog.Trace.Configuration
             ConfigureTraceTransport(traceAgentUrl, tracesPipeName, agentHost, agentPort, tracesUnixDomainSocketPath);
             ConfigureMetricsTransport(traceAgentUrl, agentHost, dogStatsdPort, metricsPipeName, metricsUnixDomainSocketPath);
 
-            TracesPipeTimeoutMs = tracesPipeTimeoutMs > 0 ? tracesPipeTimeoutMs : 500;
+            if (tracesTimeoutMs.HasValue)
+            {
+                TracesTimeoutMs = tracesTimeoutMs.Value;
+            }
+
+            if (tracesPipeTimeoutMs.HasValue)
+            {
+                TracesPipeTimeoutMs = tracesPipeTimeoutMs.Value;
+            }
+
             PartialFlushEnabled = source?.GetBool(ConfigurationKeys.PartialFlushEnabled) ?? false;
             PartialFlushMinSpans = partialFlushMinSpans > 0 ? partialFlushMinSpans.Value : 500;
         }
@@ -140,10 +157,20 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets or sets the timeout in milliseconds for the windows named pipe requests.
-        /// Default is <c>100</c>.
+        /// Default is <c>500</c>.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.TracesPipeTimeoutMs"/>
-        public int TracesPipeTimeoutMs { get; set; }
+        public int TracesPipeTimeoutMs
+        {
+            get => _tracesPipeTimeoutMs ?? _tracesTimeoutMs ?? 500;
+            set
+            {
+                if (value > 0)
+                {
+                    _tracesPipeTimeoutMs = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Gets or sets the windows pipe name where the Tracer can send stats.
@@ -197,6 +224,23 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets the transport used to send traces to the Agent.
         /// </summary>
         internal TracesTransportType TracesTransport { get; set; }
+
+        /// <summary>
+        /// Gets or sets the timeout in milliseconds for sending traces to the Agent.
+        /// Default is <c>15,000</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.TracesTimeoutMs"/>
+        internal int TracesTimeoutMs
+        {
+            get => _tracesTimeoutMs ?? 15_000;
+            set
+            {
+                if (value > 0)
+                {
+                    _tracesTimeoutMs = value;
+                }
+            }
+        }
 
         /// <summary>
         /// Gets or sets the transport used to connect to the DogStatsD.
