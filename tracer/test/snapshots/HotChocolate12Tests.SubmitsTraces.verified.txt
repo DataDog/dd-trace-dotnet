@@ -4,7 +4,7 @@
     SpanId: Id_2,
     Name: aspnet_core.request,
     Resource: GET /graphql/{*slug},
-    Service: Samples.HotChocolate12,
+    Service: Samples.HotChocolate,
     Type: web,
     Tags: {
       aspnet_core.endpoint: Hot Chocolate GraphQL Pipeline,
@@ -33,7 +33,7 @@
     SpanId: Id_3,
     Name: graphql.execute,
     Resource: Query operation,
-    Service: Samples.HotChocolate12-hotchocolate,
+    Service: Samples.HotChocolate-hotchocolate,
     Type: graphql,
     ParentId: Id_2,
     Tags: {
@@ -62,7 +62,7 @@
     SpanId: Id_5,
     Name: aspnet_core.request,
     Resource: GET /shutdown,
-    Service: Samples.HotChocolate12,
+    Service: Samples.HotChocolate,
     Type: web,
     Tags: {
       component: aspnet_core,
@@ -89,7 +89,7 @@
     SpanId: Id_7,
     Name: aspnet_core.request,
     Resource: POST /graphql/{*slug},
-    Service: Samples.HotChocolate12,
+    Service: Samples.HotChocolate,
     Type: web,
     Tags: {
       aspnet_core.endpoint: Hot Chocolate GraphQL Pipeline,
@@ -118,7 +118,7 @@
     SpanId: Id_9,
     Name: aspnet_core.request,
     Resource: POST /graphql/{*slug},
-    Service: Samples.HotChocolate12,
+    Service: Samples.HotChocolate,
     Type: web,
     Tags: {
       aspnet_core.endpoint: Hot Chocolate GraphQL Pipeline,
@@ -147,7 +147,7 @@
     SpanId: Id_11,
     Name: aspnet_core.request,
     Resource: POST /graphql/{*slug},
-    Service: Samples.HotChocolate12,
+    Service: Samples.HotChocolate,
     Type: web,
     Tags: {
       aspnet_core.endpoint: Hot Chocolate GraphQL Pipeline,
@@ -176,7 +176,7 @@
     SpanId: Id_13,
     Name: aspnet_core.request,
     Resource: POST /graphql/{*slug},
-    Service: Samples.HotChocolate12,
+    Service: Samples.HotChocolate,
     Type: web,
     Error: 1,
     Tags: {
@@ -207,7 +207,7 @@
     SpanId: Id_14,
     Name: graphql.execute,
     Resource: Query operation,
-    Service: Samples.HotChocolate12-hotchocolate,
+    Service: Samples.HotChocolate-hotchocolate,
     Type: graphql,
     ParentId: Id_7,
     Tags: {
@@ -236,7 +236,7 @@
     SpanId: Id_15,
     Name: graphql.execute,
     Resource: Mutation operation,
-    Service: Samples.HotChocolate12-hotchocolate,
+    Service: Samples.HotChocolate-hotchocolate,
     Type: graphql,
     ParentId: Id_9,
     Tags: {
@@ -264,7 +264,7 @@ mutation m {
     SpanId: Id_16,
     Name: graphql.execute,
     Resource: Uncompleted operation,
-    Service: Samples.HotChocolate12-hotchocolate,
+    Service: Samples.HotChocolate-hotchocolate,
     Type: graphql,
     ParentId: Id_11,
     Error: 1,
@@ -309,7 +309,7 @@ errors: [
     SpanId: Id_17,
     Name: graphql.execute,
     Resource: Uncompleted operation,
-    Service: Samples.HotChocolate12-hotchocolate,
+    Service: Samples.HotChocolate-hotchocolate,
     Type: graphql,
     ParentId: Id_13,
     Error: 1,

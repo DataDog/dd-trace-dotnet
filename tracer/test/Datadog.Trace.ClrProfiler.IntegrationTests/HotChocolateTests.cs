@@ -23,42 +23,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class HotChocolate10Tests : HotChocolateTests
-    {
-        public HotChocolate10Tests(ITestOutputHelper output)
-            : base("HotChocolate10", output, nameof(HotChocolate10Tests))
-        {
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(PackageVersions.HotChocolate), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task SubmitsTraces(string packageVersion)
-            => await RunSubmitsTraces(packageVersion);
-    }
-
-    public class HotChocolate11Tests : HotChocolateTests
-    {
-        public HotChocolate11Tests(ITestOutputHelper output)
-            : base("HotChocolate11", output, nameof(HotChocolate11Tests))
-        {
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(PackageVersions.HotChocolate), MemberType = typeof(PackageVersions))]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task SubmitsTraces(string packageVersion)
-            => await RunSubmitsTraces(packageVersion);
-    }
-
     public class HotChocolate12Tests : HotChocolateTests
     {
         public HotChocolate12Tests(ITestOutputHelper output)
-            : base("HotChocolate12", output, nameof(HotChocolate12Tests))
+            : base("HotChocolate", output, nameof(HotChocolate12Tests))
         {
         }
 
