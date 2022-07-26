@@ -365,8 +365,11 @@ namespace Datadog.Trace
                     writer.WritePropertyName("obfuscation_querystring_regex_timout");
                     writer.WriteValue(instanceSettings.ObfuscationQueryStringRegexTimeout);
 
-                    writer.WritePropertyName("obfuscation_querystring_regex");
-                    writer.WriteValue(instanceSettings.ObfuscationQueryStringRegex.Substring(0, Math.Min(instanceSettings.ObfuscationQueryStringRegex.Length, 200)));
+                    if (string.Compare(instanceSettings.ObfuscationQueryStringRegex, TracerSettings.DefaultObfuscationQueryStringRegex, StringComparison.Ordinal) == 0)
+                    {
+                        writer.WritePropertyName("obfuscation_querystring_regex");
+                        writer.WriteValue(instanceSettings.ObfuscationQueryStringRegex);
+                    }
 
                     writer.WritePropertyName("partialflush_enabled");
                     writer.WriteValue(instanceSettings.Exporter.PartialFlushEnabled);
