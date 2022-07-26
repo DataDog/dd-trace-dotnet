@@ -27,6 +27,9 @@
     <!-- https://www.nuget.org/packages/Datadog.Sketches/1.0.0 -->
     <PackageReference Include="Datadog.Sketches" Version="1.0.0" />
 
+    <!-- https://www.nuget.org/packages/IndieSystem.Text.RegularExpressions/0.1 -->
+    <PackageReference Include="IndieSystem.Text.RegularExpressions" Version="0.1" />
+
   </ItemGroup>
 
 </Project>

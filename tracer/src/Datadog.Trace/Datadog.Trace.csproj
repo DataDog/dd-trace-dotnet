@@ -35,6 +35,7 @@
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
     <Reference Include="System.Configuration" />
     <Reference Include="System.Web" />
+  	<PackageReference Include="System.Memory" Version="4.5.5" />
   </ItemGroup>
 
   <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) ">
@@ -45,6 +46,10 @@
 
     <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="4.4.1" />
   </ItemGroup>
+
+	<ItemGroup Condition="('$(TargetFramework)' == 'net461')">
+		<PackageReference Include="System.ValueTuple" Version="4.5.0" />
+	</ItemGroup>
 
   <ItemGroup>
     <None Remove="AppSec\Waf\rule-set.json" />
@@ -58,6 +63,7 @@
     <!--DuckTyping-->
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
+  	<PackageReference Include="System.Memory" Version="4.5.5" />
   </ItemGroup>
 
   <ItemGroup>
