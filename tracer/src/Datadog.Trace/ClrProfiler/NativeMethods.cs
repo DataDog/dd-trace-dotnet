@@ -40,6 +40,23 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        public static void UninitializeProfiler(string id, NativeCallTargetDefinition[] methodArrays)
+        {
+            if (methodArrays is null || methodArrays.Length == 0)
+            {
+                return;
+            }
+
+            if (IsWindows)
+            {
+                Windows.UninitializeProfiler(id, methodArrays, methodArrays.Length);
+            }
+            else
+            {
+                NonWindows.UninitializeProfiler(id, methodArrays, methodArrays.Length);
+            }
+        }
+
         public static void EnableByRefInstrumentation()
         {
             if (IsWindows)
@@ -142,6 +159,9 @@ namespace Datadog.Trace.ClrProfiler
             public static extern void InitializeProfiler([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
             [DllImport("Datadog.Tracer.Native.dll")]
+            public static extern void UninitializeProfiler([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
+
+            [DllImport("Datadog.Tracer.Native.dll")]
             public static extern void EnableByRefInstrumentation();
 
             [DllImport("Datadog.Tracer.Native.dll")]
@@ -169,6 +189,9 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern void InitializeProfiler([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
+
+            [DllImport("Datadog.Tracer.Native")]
+            public static extern void UninitializeProfiler([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern void EnableByRefInstrumentation();

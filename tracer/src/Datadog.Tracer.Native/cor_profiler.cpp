@@ -1380,7 +1380,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
 //
 // InitializeProfiler method
 //
-void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int size)
+void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int size, bool enable)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
     shared::WSTRING definitionsId = shared::WSTRING(id);
@@ -1389,7 +1389,7 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 
     if (size > 0)
     {
-        InternalAddInstrumentation(id, items, size, false);
+        InternalAddInstrumentation(id, items, size, false, enable);
     }
 }
 
@@ -1428,7 +1428,7 @@ void CorProfiler::AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* it
     }
 }
 
-void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived)
+void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived, bool enable)
 {
     shared::WSTRING definitionsId = shared::WSTRING(id);
     std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
@@ -1501,10 +1501,26 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
         }
 
-        integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
-        for (const auto& integration : integrationDefinitions)
+        if (enable)
         {
-            integration_definitions_.push_back(integration);
+            integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
+            for (const auto& integration : integrationDefinitions)
+            {
+                integration_definitions_.push_back(integration);
+            }
+        }
+        else
+        {
+            // remove the call target definitions
+            std::vector<IntegrationDefinition> new_integration_definitions;
+            //for (const auto& integration : integration_definitions_)
+            //{
+            //    if (std::find(integrationDefinitions.begin(), integrationDefinitions.end(), integration) == integrationDefinitions.end())
+            //    {
+            //        new_integration_definitions.push_back(integration);
+            //    }
+            //}
+            integration_definitions_ = new_integration_definitions;
         }
 
         Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_.size());
