@@ -365,7 +365,7 @@ namespace Datadog.Trace
                     writer.WritePropertyName("obfuscation_querystring_regex_timout");
                     writer.WriteValue(instanceSettings.ObfuscationQueryStringRegexTimeout);
 
-                    if (string.Compare(instanceSettings.ObfuscationQueryStringRegex, TracerSettings.DefaultObfuscationQueryStringRegex, StringComparison.Ordinal) == 0)
+                    if (string.Compare(instanceSettings.ObfuscationQueryStringRegex, TracerSettings.DefaultObfuscationQueryStringRegex, StringComparison.Ordinal) != 0)
                     {
                         writer.WritePropertyName("obfuscation_querystring_regex");
                         writer.WriteValue(instanceSettings.ObfuscationQueryStringRegex);
