@@ -37,6 +37,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -63,6 +64,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -198,6 +200,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -223,6 +226,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -248,6 +252,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -273,6 +278,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -298,6 +304,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -323,6 +330,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -348,6 +356,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -373,6 +382,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -398,6 +408,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -423,6 +434,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -448,6 +460,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -473,6 +486,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -498,6 +512,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -523,6 +538,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -548,6 +564,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -573,6 +590,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -598,6 +616,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -623,6 +642,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -648,6 +668,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -673,6 +694,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -698,6 +720,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -723,6 +746,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -748,6 +772,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -773,6 +798,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -798,6 +824,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -823,6 +850,7 @@
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
+      http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       runtime-id: Guid_1,
       span.kind: client
     },
