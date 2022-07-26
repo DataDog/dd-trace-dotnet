@@ -28,11 +28,14 @@
 System.ArgumentException: Passed in value was not 'true': false
 at Samples.AspNetMvc5.Controllers.ApiController.TransientFailure(String value),
       error.type: System.ArgumentException,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 500,
-      http.url: /api/transient-failure/false,
+      http.url: http://localhost/api/transient-failure/false,
+      http.useragent: testhelper,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0

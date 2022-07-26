@@ -9,11 +9,14 @@
     Tags: {
       component: aspnet_core,
       env: integration_tests,
+      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.status_code: 405,
       http.url: http://localhost:00000/,
+      http.useragent: testhelper,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server
     },

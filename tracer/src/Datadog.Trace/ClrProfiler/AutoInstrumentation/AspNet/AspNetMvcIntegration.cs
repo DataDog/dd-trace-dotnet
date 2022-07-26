@@ -15,6 +15,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
@@ -57,8 +58,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                 {
                     var newResourceNamesEnabled = tracer.Settings.RouteTemplateResourceNamesEnabled;
                     string host = httpContext.Request.Headers.Get("Host");
+                    var userAgent = httpContext.Request.Headers.Get(HttpHeaderNames.UserAgent);
                     string httpMethod = httpContext.Request.HttpMethod.ToUpperInvariant();
-                    string url = httpContext.Request.RawUrl.ToLowerInvariant();
+                    var url = httpContext.Request.GetUrl(tracer.TracerManager.QueryStringManager);
                     string resourceName = null;
 
                     RouteData routeData = controllerContext.RouteData;
@@ -92,7 +94,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     string areaName;
                     string controllerName;
                     string actionName;
-
                     if ((wasAttributeRouted || newResourceNamesEnabled) && string.IsNullOrEmpty(resourceName) && !string.IsNullOrEmpty(routeUrl))
                     {
                         resourceName = AspNetResourceNameHelper.CalculateResourceName(
@@ -152,13 +153,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         method: httpMethod,
                         host: host,
                         httpUrl: url,
+                        userAgent: userAgent,
                         tags,
                         tagsFromHeaders);
-
                     tags.AspNetRoute = routeUrl;
                     tags.AspNetArea = areaName;
                     tags.AspNetController = controllerName;
                     tags.AspNetAction = actionName;
+                    var rootspanTags = span.Context.TraceContext?.RootSpan.Tags;
+
+                    // in case of a transfered request, the child request shouldnt set a new http route.
+                    if (string.IsNullOrEmpty(rootspanTags.GetTag(Tags.HttpRoute)))
+                    {
+                        span.Context.TraceContext?.RootSpan.Tags.SetTag(Tags.HttpRoute, routeUrl);
+                    }
 
                     tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
 

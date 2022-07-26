@@ -61,6 +61,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             SetSecurity(enableSecurity);
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Rules, DefaultRuleFile);
+
             _iisFixture = iisFixture;
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
             _testName = "Security." + nameof(AspNetMvc5)

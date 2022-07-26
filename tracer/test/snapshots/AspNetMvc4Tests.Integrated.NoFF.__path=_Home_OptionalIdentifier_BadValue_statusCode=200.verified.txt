@@ -15,7 +15,8 @@
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.status_code: 200,
-      http.url: /home/optionalidentifier/badvalue,
+      http.url: http://localhost/Home/OptionalIdentifier/BadValue,
+      http.useragent: testhelper,
       language: dotnet,
       span.kind: server,
       version: 1.0.0
@@ -30,11 +31,15 @@
     Type: web,
     Tags: {
       env: integration_tests,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
+      http.route: {controller}/{action}/{id},
       http.status_code: 200,
-      http.url: /home/optionalidentifier/badvalue,
+      http.url: http://localhost/Home/OptionalIdentifier/BadValue,
+      http.useragent: testhelper,
       language: dotnet,
+      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0

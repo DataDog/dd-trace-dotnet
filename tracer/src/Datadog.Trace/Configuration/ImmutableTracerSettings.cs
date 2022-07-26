@@ -51,6 +51,8 @@ namespace Datadog.Trace.Configuration
             GlobalTags = new ReadOnlyDictionary<string, string>(settings.GlobalTags);
             HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
             GrpcTags = new ReadOnlyDictionary<string, string>(settings.GrpcTags);
+            IpHeader = settings.IpHeader;
+            IpHeaderDisabled = settings.IpHeaderDisabled;
             TracerMetricsEnabled = settings.TracerMetricsEnabled;
             StatsComputationEnabled = settings.StatsComputationEnabled;
             RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled;
@@ -82,6 +84,10 @@ namespace Datadog.Trace.Configuration
 
             // tag propagation
             TagPropagationHeaderMaxLength = settings.TagPropagationHeaderMaxLength;
+            // query string related env variables
+            ObfuscationQueryStringRegex = settings.ObfuscationQueryStringRegex;
+            QueryStringReportingEnabled = settings.QueryStringReportingEnabled;
+            ObfuscationQueryStringRegexTimeout = settings.ObfuscationQueryStringRegexTimeout;
         }
 
         /// <summary>
@@ -174,6 +180,16 @@ namespace Datadog.Trace.Configuration
         public IReadOnlyDictionary<string, string> GrpcTags { get; }
 
         /// <summary>
+        /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
+        /// </summary>
+        internal string IpHeader { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the ip header should not be collected. The default is false.
+        /// </summary>
+        internal bool IpHeaderDisabled { get; }
+
+        /// <summary>
         /// Gets a value indicating whether internal metrics
         /// are enabled and sent to DogStatsd.
         /// </summary>
@@ -248,6 +264,23 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ExpandRouteTemplatesEnabled"/>
         internal bool ExpandRouteTemplatesEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating the regex to apply to obfuscate http query strings.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.ObfuscationQueryStringRegex"/>
+        internal string ObfuscationQueryStringRegex { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether or not http.url should contain the query string, enabled by default with DD_HTTP_SERVER_TAG_QUERY_STRING
+        /// </summary>
+        internal bool QueryStringReportingEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating a timeout in milliseconds to the execution of the query string obfuscation regex
+        /// Default value is 200ms
+        /// </summary>
+        internal double ObfuscationQueryStringRegexTimeout { get; }
 
         internal ImmutableDirectLogSubmissionSettings LogSubmissionSettings { get; }
 

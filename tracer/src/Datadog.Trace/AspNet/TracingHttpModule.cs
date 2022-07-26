@@ -120,13 +120,17 @@ namespace Datadog.Trace.AspNet
                 }
 
                 string host = httpRequest.Headers.Get("Host");
+                var userAgent = httpRequest.Headers.Get(HttpHeaderNames.UserAgent);
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
-                string url = httpRequest.RawUrl.ToLowerInvariant();
-
+                string url = httpContext.Request.GetUrl(tracer.TracerManager.QueryStringManager);
                 var tags = new WebTags();
                 scope = tracer.StartActiveInternal(_requestOperationName, propagatedContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
-                scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, tags, tagsFromHeaders);
+                scope.Span.DecorateWebServerSpan(resourceName: null, httpMethod, host, url, userAgent, tags, tagsFromHeaders);
+                if (!tracer.Settings.IpHeaderDisabled)
+                {
+                    Headers.Ip.RequestIpExtractor.AddIpToTags(httpRequest.UserHostAddress, httpRequest.IsSecureConnection, key => httpRequest.Headers[key], tracer.Settings.IpHeader, tags);
+                }
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: true);
 
@@ -208,7 +212,7 @@ namespace Datadog.Trace.AspNet
                         }
 
                         if (app.Context.Items[SharedItems.HttpContextPropagatedResourceNameKey] is string resourceName
-                             && !string.IsNullOrEmpty(resourceName))
+                         && !string.IsNullOrEmpty(resourceName))
                         {
                             scope.Span.ResourceName = resourceName;
                         }

@@ -5,10 +5,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Transports;
 using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
@@ -18,7 +16,6 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -99,7 +96,7 @@ namespace Datadog.Trace.AppSec
                 if (_settings.Enabled)
                 {
                     _waf = waf ?? Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules);
-                    if (_waf.InitializedSuccessfully)
+                    if (_waf?.InitializedSuccessfully ?? false)
                     {
                         _instrumentationGateway.EndRequest += RunWaf;
                         _instrumentationGateway.PathParamsAvailable += AggregateAddressesInContext;
@@ -288,14 +285,13 @@ namespace Datadog.Trace.AppSec
             LogMatchesIfDebugEnabled(resultData, blocked);
 
             span.SetTag(Tags.AppSecJson, "{\"triggers\":" + resultData + "}");
+            var clientIp = span.GetTag(Tags.HttpClientIp);
+            if (!string.IsNullOrEmpty(clientIp))
+            {
+                span.SetTag(Tags.ActorIp, clientIp);
+            }
 
             span.SetTag(Tags.Origin, "appsec");
-
-            var reportedIpInfo = transport.GetReportedIpInfo();
-            span.SetTag(Tags.NetworkClientIp, reportedIpInfo.IpAddress);
-
-            var ipInfo = RequestHeadersHelper.ExtractIpAndPort(transport.GetHeader, _settings.CustomIpHeader, _settings.ExtraHeaders, transport.IsSecureConnection, reportedIpInfo);
-            span.SetTag(Tags.ActorIp, ipInfo.IpAddress);
             span.SetTag(Tags.AppSecRuleFileVersion, _waf.InitializationResult.RuleFileVersion);
             span.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
             span.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);

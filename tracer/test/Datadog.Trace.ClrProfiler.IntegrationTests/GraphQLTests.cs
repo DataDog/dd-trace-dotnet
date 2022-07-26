@@ -241,6 +241,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var request = WebRequest.Create($"http://localhost:{aspNetCorePort}{requestInfo.Url}");
                 request.Method = requestInfo.HttpMethod;
+                ((HttpWebRequest)request).UserAgent = "testhelper";
 
                 if (requestInfo.RequestBody != null)
                 {
