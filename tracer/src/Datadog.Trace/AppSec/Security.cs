@@ -223,7 +223,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private static void AddAppsecSpecificInstrumentations()
+        private static void AddAppsecSpecificInstrumentations(bool enable = true)
         {
             try
             {
@@ -246,7 +246,15 @@ namespace Datadog.Trace.AppSec
             {
                 Log.Debug("Sending CallTarget appsec derived integration definitions to native library.");
                 var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.AppSec);
-                NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                if (enable)
+                {
+                    NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                }
+                else
+                {
+                    NativeMethods.UninitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                }
+
                 foreach (var def in payload.Definitions)
                 {
                     def.Dispose();
