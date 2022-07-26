@@ -482,6 +482,14 @@ partial class Build
            if (IsWin)
            {
                // windows already has the expected layout
+               // except we _temporarily_ need to rename the Tracer native loader
+               // As we're not using the shared native loader yet
+               foreach (var arch in ArchitecturesForPlatform)
+               {
+                   MoveFile(
+                       DDTracerHomeDirectory / $"win-{arch}" / $"{Projects.ClrProfilerNative}.dll",
+                       DDTracerHomeDirectory / $"win-{arch}" / $"{Projects.NativeLoader}.dll");
+               }
                return;
            }
 
@@ -533,7 +541,8 @@ partial class Build
         .Executes(() =>
         {
             // Copy existing files from tracer home to the Distribution location
-            CopyDirectoryRecursively(TracerHomeDirectory, DistributionHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            // This is a hack as dd-tracer-home currently contains the correct filename
+            CopyDirectoryRecursively(DDTracerHomeDirectory, DistributionHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
             // Ensure createLogPath.sh is copied to the directory
             CopyFileToDirectory(
@@ -599,7 +608,8 @@ partial class Build
         {
             if (IsWin)
             {
-                CompressZip(TracerHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
+                // This is a hack for now, as the dd-tracer-home folder contains the correct layout and files for windows 
+                CompressZip(DDTracerHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
                 // for now we do not need a monitoring-home.zip file. So no need to create it.
             }
             else if (IsLinux)
