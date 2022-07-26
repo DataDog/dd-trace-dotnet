@@ -34,7 +34,7 @@ namespace Datadog.Trace.Configuration
         {
             AgentUri = settings.AgentUri;
 
-            TracesTimeoutMs = settings.TracesTimeoutMs;
+            TracesTimeout = settings.TracesTimeout;
             TracesTransport = settings.TracesTransport;
             TracesPipeName = settings.TracesPipeName;
             TracesPipeTimeoutMs = settings.TracesPipeTimeoutMs;
@@ -111,11 +111,11 @@ namespace Datadog.Trace.Configuration
         public string MetricsUnixDomainSocketPath { get; }
 
         /// <summary>
-        /// Gets the timeout in milliseconds for sending traces to the Agent.
-        /// Default is <c>15,000</c>.
+        /// Gets the timeout in seconds for sending traces to the Agent.
+        /// Default is <c>10</c>.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.TracesTimeoutMs"/>
-        internal int TracesTimeoutMs { get; }
+        /// <seealso cref="ConfigurationKeys.TracesTimeout"/>
+        internal int TracesTimeout { get; }
 
         /// <summary>
         /// Gets the transport used to send traces to the Agent.

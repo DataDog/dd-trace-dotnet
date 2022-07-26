@@ -28,7 +28,7 @@ namespace Datadog.Trace.Configuration
         // while adding the a general traces timeout configuration,
         // use backing fields of type Nullable<int> to determine if the user explicitly configured
         // the either timeout.
-        private int? _tracesTimeoutMs;
+        private int? _tracesTimeout;
         private int? _tracesPipeTimeoutMs;
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace Datadog.Trace.Configuration
 
             // Get values from the config
             var traceAgentUrl = source?.GetString(ConfigurationKeys.AgentUri);
-            var tracesTimeoutMs = source?.GetInt32(ConfigurationKeys.TracesTimeoutMs);
+            var tracesTimeout = source?.GetInt32(ConfigurationKeys.TracesTimeout);
             var tracesPipeName = source?.GetString(ConfigurationKeys.TracesPipeName);
             var tracesUnixDomainSocketPath = source?.GetString(ConfigurationKeys.TracesUnixDomainSocketPath);
 
@@ -113,9 +113,9 @@ namespace Datadog.Trace.Configuration
             ConfigureTraceTransport(traceAgentUrl, tracesPipeName, agentHost, agentPort, tracesUnixDomainSocketPath);
             ConfigureMetricsTransport(traceAgentUrl, agentHost, dogStatsdPort, metricsPipeName, metricsUnixDomainSocketPath);
 
-            if (tracesTimeoutMs.HasValue)
+            if (tracesTimeout.HasValue)
             {
-                TracesTimeoutMs = tracesTimeoutMs.Value;
+                TracesTimeout = tracesTimeout.Value;
             }
 
             if (tracesPipeTimeoutMs.HasValue)
@@ -162,7 +162,7 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.TracesPipeTimeoutMs"/>
         public int TracesPipeTimeoutMs
         {
-            get => _tracesPipeTimeoutMs ?? _tracesTimeoutMs ?? 500;
+            get => _tracesPipeTimeoutMs ?? (_tracesTimeout * 1000) ?? 500;
             set
             {
                 if (value > 0)
@@ -226,18 +226,18 @@ namespace Datadog.Trace.Configuration
         internal TracesTransportType TracesTransport { get; set; }
 
         /// <summary>
-        /// Gets or sets the timeout in milliseconds for sending traces to the Agent.
-        /// Default is <c>15,000</c>.
+        /// Gets or sets the timeout in seconds for sending traces to the Agent.
+        /// Default is <c>10</c>.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.TracesTimeoutMs"/>
-        internal int TracesTimeoutMs
+        /// <seealso cref="ConfigurationKeys.TracesTimeout"/>
+        internal int TracesTimeout
         {
-            get => _tracesTimeoutMs ?? 15_000;
+            get => _tracesTimeout ?? 10;
             set
             {
                 if (value > 0)
                 {
-                    _tracesTimeoutMs = value;
+                    _tracesTimeout = value;
                 }
             }
         }

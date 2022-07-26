@@ -403,10 +403,9 @@ namespace Datadog.Trace.Tests.Configuration
                 settings.MetricsTransport.Should().Be(MetricsTransportType.UDP);
             }
 
-            // TracesTimeoutMs
-            if (!paramToIgnore.Contains("TracesTimeoutMs"))
+            if (!paramToIgnore.Contains("TracesTimeout"))
             {
-                settings.TracesTimeoutMs.Should().Be(15_000);
+                settings.TracesTimeout.Should().Be(10);
             }
 
             if (!paramToIgnore.Contains("TracesPipeName"))

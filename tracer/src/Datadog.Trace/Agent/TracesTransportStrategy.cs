@@ -15,7 +15,7 @@ namespace Datadog.Trace.Agent
             => AgentTransportStrategy.Get(
                 settings,
                 productName: "trace",
-                tcpTimeout: TimeSpan.FromMilliseconds(settings.TracesTimeoutMs),
+                tcpTimeout: TimeSpan.FromSeconds(settings.TracesTimeout),
                 AgentHttpHeaderNames.DefaultHeaders,
                 () => new TraceAgentHttpHeaderHelper(),
                 uri => uri);
