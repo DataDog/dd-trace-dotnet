@@ -78,7 +78,7 @@ namespace UpdateVendors
                 downloadUrl: "https://github.com/robertpi/IndieRegex/archive/refs/tags/v0.3.zip",
                 pathToSrc: new[] { "IndieRegex-0.3", "src" },
                 // Perform standard CS file transform with additional '#nullable enable' directive at the beginning of the files, since the vendored project was built with <Nullable>enable</Nullable>
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "IndieSystem.Text.RegularExpressions", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma));
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "IndieSystem.Text.RegularExpressions", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma, RemoveHashCode));
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();
@@ -216,7 +216,7 @@ namespace UpdateVendors
                         // by replacing all "public" access modifiers with "internal"
                         return Regex.Replace(
                             result,
-                            @"public(\s+((abstract|sealed|static|unsafe)\s+)*?(partial\s+)?(partial\s+)?(class|readonly\s+struct|struct|interface|enum|delegate))",
+                            @"public(\s+((abstract|sealed|static|unsafe)\s+)*?(partial\s+)?(partial\s+)?(class|readonly\s+ref\s+struct|readonly\s+struct|struct|interface|enum|delegate))",
                             match => $"internal{match.Groups[1]}");
                     });
             }
@@ -256,6 +256,10 @@ namespace UpdateVendors
             "CS8629, " + // Nullable value type may be null with temporary variables
             "CS8774" +   // Member 'x' must have a non-null value when exiting.
             Environment.NewLine + content;
+
+        static string RemoveHashCode(string filePath, string content) =>
+            // when you have an additional HashCode.cs because another project already imported it ...
+            filePath.EndsWith("HashCode.cs") ? string.Empty : content;
 
         private static void RewriteFileWithTransform(string filePath, Func<string, string> transform)
         {

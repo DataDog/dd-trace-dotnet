@@ -63,6 +63,7 @@
     <!--DuckTyping-->
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />
     <PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.3.0" />
+
   	<PackageReference Include="System.Memory" Version="4.5.5" />
   </ItemGroup>
 
@@ -95,6 +96,10 @@
 
   <PropertyGroup Condition=" '$(TargetFrameworkIdentifier)' == '.NETCoreApp' ">
     <DefineConstants>$(DefineConstants);ASYNCLOCAL;HASHTABLE;FEATURE_DEFAULT_INTERFACE;FEATURE_SPAN</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);REGEXGENERATOR</DefineConstants>
   </PropertyGroup>
 
   <!-- Remove System.Collections.NonGeneric. This was defined in Serilog but it is unnecessary -->
