@@ -16,13 +16,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         internal const string IntegrationName = nameof(Configuration.IntegrationId.HotChocolate);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.HotChocolate;
 
-        private const string ServiceName = "hotchocolate";
         internal const string ErrorType = "HotChocolate.Error";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HotChocolateCommon));
 
         internal static Scope CreateScopeFromExecuteAsync<T>(Tracer tracer, in T request)
-            where T: IQueryRequest
+            where T : IQueryRequest
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -36,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 var queryOperationName = request.OperationName;
                 var source = request.Query?.ToString();
                 var operationType = "Uncompleted";
-                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new HotChocolateTags(), ServiceName, queryOperationName, source, operationType);
+                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(HotChocolateCommon.IntegrationName), ServiceName, queryOperationName, source, operationType);
             }
             catch (Exception ex)
             {
@@ -46,13 +45,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             return scope;
         }
 
-        internal static Scope UpdateScopeFromExecuteAsync<T>(Tracer tracer, in T context)
-            where T: IOperationContext
+        internal static void UpdateScopeFromExecuteAsync<T>(Tracer tracer, in T context)
+            where T : IOperationContext
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this trace
-                return null;
+                return;
             }
 
             var scope = tracer.InternalActiveScope;
@@ -60,17 +59,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             if (span == null || span.OperationName != ExecuteOperationName)
             {
                 // not in a Hotchocolate execution span
-                return null;
+                return;
             }
 
             try
             {
                 var operation = context.Operation;
                 var operationType = operation.OperationType.ToString();
-                if(span.Tags is HotChocolateTags tags)
+                if (span.Tags is GraphQLTags tags)
                 {
-                    span.ResourceName = $"{operationType} {tags.GraphQLOperationName ?? "operation"}";
-                    tags.GraphQLOperationType = operationType;
+                    span.ResourceName = $"{operationType} {tags.OperationName ?? "operation"}";
+                    tags.OperationType = operationType;
                 }
                 else
                 {
@@ -78,16 +77,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                     span.ResourceName = $"{operationType} {operationName ?? "operation"}";
                     span.SetTag(Trace.Tags.GraphQLOperationType, operationType);
                 }
-                
-
-                
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error updating HotChocolate scope.");
             }
-
-            return scope;
         }
 
         internal static void RecordExecutionErrorsIfPresent(Span span, string errorType, System.Collections.IEnumerable errors)
@@ -119,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 {
                     var executionError = executionErrors[i];
 
-                    builder.Append(tab).AppendLine('{');
+                    builder.Append(tab).AppendLine("{");
 
                     var message = executionError.Message;
                     if (message != null)

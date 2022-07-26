@@ -27,8 +27,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         internal const string IntegrationName = nameof(Configuration.IntegrationId.GraphQL);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.GraphQL;
 
-        private const string ServiceName = "graphql";
-
         internal const string ExecuteErrorType = "GraphQL.ExecutionError";
         internal const string ValidationErrorType = "GraphQL.Validation.ValidationError";
 
@@ -46,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
             try
             {
-                var tags = new GraphQLTags();
+                var tags = new GraphQLTags(GraphQLCommon.IntegrationName);
                 string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
                 scope = tracer.StartActiveInternal(ValidateOperationName, serviceName: serviceName, tags: tags);
 
@@ -80,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                 string source = executionContext.Document.OriginalQuery;
                 string operationName = executionContext.Operation.Name;
                 var operationType = executionContext.Operation.OperationType.ToString();
-                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(), ServiceName, operationName, source, operationType);
+                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(GraphQLCommon.IntegrationName), ServiceName, operationName, source, operationType);
             }
             catch (Exception ex)
             {
@@ -105,7 +103,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                 string source = executionContext.Document.Source.ToString();
                 string operationName = executionContext.Operation.Name.StringValue;
                 string operationType = executionContext.Operation.Operation.ToString();
-                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(), ServiceName, operationName, source, operationType);
+                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(GraphQLCommon.IntegrationName), ServiceName, operationName, source, operationType);
             }
             catch (Exception ex)
             {
