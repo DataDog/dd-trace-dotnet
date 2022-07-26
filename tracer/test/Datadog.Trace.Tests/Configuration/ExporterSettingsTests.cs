@@ -110,14 +110,67 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
+        public void AgentTimeout()
+        {
+            var param = 250;
+            var settingsFromSource = Setup("DD_TRACE_AGENT_TIMEOUT", param.ToString());
+
+            settingsFromSource.TracesTimeout.Should().Be(param);
+            settingsFromSource.TracesPipeTimeoutMs.Should().Be(param * 1000);
+
+            CheckDefaultValues(settingsFromSource, "TracesTimeout", "TracesPipeTimeoutMs");
+        }
+
+        [Fact]
         public void TracesPipeName()
         {
             var param = @"C:\temp\someval";
             var settings = new ExporterSettings() { TracesPipeName = param };
             var settingsFromSource = Setup("DD_TRACE_PIPE_NAME", param);
 
-            AssertPipeIsConfigured(settingsFromSource, param);
+            AssertPipeIsConfigured(settingsFromSource, param, 500);
             settings.TracesPipeName.Should().Be(param);
+            settings.TracesPipeTimeoutMs.Should().Be(500);
+        }
+
+        [Fact]
+        public void TracesPipeTimeoutMs()
+        {
+            var param = @"C:\temp\someval";
+            var pipeTimeoutMs = 75;
+            var settings = new ExporterSettings() { TracesPipeName = param, TracesPipeTimeoutMs = pipeTimeoutMs };
+            var settingsFromSource = Setup(new string[] { $"DD_TRACE_PIPE_NAME:{param}", $"DD_TRACE_PIPE_TIMEOUT_MS:{pipeTimeoutMs}" });
+
+            AssertPipeIsConfigured(settingsFromSource, param, pipeTimeoutMs);
+            settings.TracesPipeName.Should().Be(param);
+            settings.TracesPipeTimeoutMs.Should().Be(pipeTimeoutMs);
+        }
+
+        [Fact]
+        public void TracesPipeTimeoutMs_AcceptsAgentTimeoutConfiguration()
+        {
+            var param = @"C:\temp\someval";
+            var timeout = 20;
+            var settings = new ExporterSettings() { TracesPipeName = param, TracesTimeout = timeout };
+            var settingsFromSource = Setup(new string[] { $"DD_TRACE_PIPE_NAME:{param}", $"DD_TRACE_AGENT_TIMEOUT:{timeout}" });
+
+            AssertPipeIsConfigured(settingsFromSource, param, timeout * 1000);
+            settings.TracesPipeName.Should().Be(param);
+            settings.TracesPipeTimeoutMs.Should().Be(timeout * 1000);
+        }
+
+        [Fact]
+        public void TracesPipeTimeoutMs_TakesPrecedenceOverAgentTimeoutConfiguration()
+        {
+            var param = @"C:\temp\someval";
+            var pipeTimeoutMs = 75;
+            var timeout = 20;
+            var settings = new ExporterSettings() { TracesPipeName = param, TracesPipeTimeoutMs = pipeTimeoutMs, TracesTimeout = timeout };
+            var settingsFromSource = Setup(new string[] { $"DD_TRACE_PIPE_NAME:{param}", $"DD_TRACE_PIPE_TIMEOUT_MS:{pipeTimeoutMs}", $"DD_TRACE_AGENT_TIMEOUT:{timeout}" });
+
+            AssertPipeIsConfigured(settingsFromSource, param, pipeTimeoutMs);
+            settings.TracesPipeName.Should().Be(param);
+            settings.TracesPipeTimeoutMs.Should().Be(pipeTimeoutMs);
         }
 
         [Fact]
@@ -238,7 +291,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void Traces_SocketFilesExist_ExplicitWindowsPipeConfig_UsesWindowsNamedPipe()
         {
             var settings = Setup(DefaultTraceSocketFilesExist(), "DD_TRACE_PIPE_NAME:somepipe");
-            AssertPipeIsConfigured(settings, "somepipe");
+            AssertPipeIsConfigured(settings, "somepipe", 500);
         }
 
         /// <summary>
@@ -249,7 +302,7 @@ namespace Datadog.Trace.Tests.Configuration
         public void Traces_SocketFilesExist_ExplicitConfigForWindowsPipeAndUdp_PrioritizesWindowsPipe()
         {
             var settings = Setup(DefaultTraceSocketFilesExist(), "DD_TRACE_PIPE_NAME:somepipe", "DD_APM_RECEIVER_SOCKET:somesocket");
-            AssertPipeIsConfigured(settings, "somepipe");
+            AssertPipeIsConfigured(settings, "somepipe", 500);
         }
 
         [Fact]
@@ -301,6 +354,11 @@ namespace Datadog.Trace.Tests.Configuration
             return new ExporterSettings(BuildSource(key + ":" + value), NoFile());
         }
 
+        private ExporterSettings Setup(string[] config)
+        {
+            return new ExporterSettings(BuildSource(config), NoFile());
+        }
+
         private ExporterSettings Setup(Func<string, bool> fileExistsMock, params string[] config)
         {
             return new ExporterSettings(BuildSource(config), fileExistsMock);
@@ -342,13 +400,14 @@ namespace Datadog.Trace.Tests.Configuration
             CheckDefaultValues(settings, "MetricsUnixDomainSocketPath", "MetricsTransport", "DogStatsdPort");
         }
 
-        private void AssertPipeIsConfigured(ExporterSettings settings, string pipeName)
+        private void AssertPipeIsConfigured(ExporterSettings settings, string pipeName, int timeoutMs)
         {
             Assert.Equal(expected: TracesTransportType.WindowsNamedPipe, actual: settings.TracesTransport);
             Assert.Equal(expected: pipeName, actual: settings.TracesPipeName);
+            Assert.Equal(expected: timeoutMs, actual: settings.TracesPipeTimeoutMs);
             Assert.NotNull(settings.AgentUri);
             Assert.False(string.Equals(settings.AgentUri.Host, "localhost", StringComparison.OrdinalIgnoreCase));
-            CheckDefaultValues(settings, "TracesPipeName", "AgentUri", "TracesTransport", "TracesPipeTimeoutMs");
+            CheckDefaultValues(settings, "TracesPipeName", "AgentUri", "TracesTransport", "TracesTimeout", "TracesPipeTimeoutMs");
         }
 
         private void AssertMetricsPipeIsConfigured(ExporterSettings settings, string pipeName)
