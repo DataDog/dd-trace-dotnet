@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         IntegrationName = HotChocolateCommon.IntegrationName,
         MethodName = "ExecuteAsync",
         ReturnTypeName = "System.Threading.Tasks.Task`1<HotChocolate.Execution.IExecutionResult>",
-        ParameterTypeNames = new string[] { "HotChocolate.Execution.IQueryRequest", "System.Threading.CancellationToken" },
+        ParameterTypeNames = new string[] { "HotChocolate.Execution.IQueryRequest", ClrNames.CancellationToken },
         AssemblyName = "HotChocolate.Execution",
         TypeName = "HotChocolate.Execution.RequestExecutor",
         MinimumVersion = "10",
@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         /// <param name="request">QueryRequest</param>
         /// <param name="token">Cancellation token</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TQueyRequest>(TTarget instance, TQueyRequest request, CancellationToken token)
+        internal static CallTargetState OnMethodBegin<TTarget, TQueyRequest>(TTarget instance, TQueyRequest request, in CancellationToken token)
             where TQueyRequest : IQueryRequest
         {
             return new CallTargetState(scope: HotChocolateCommon.CreateScopeFromExecuteAsync(Tracer.Instance, request));

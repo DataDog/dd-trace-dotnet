@@ -21,7 +21,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HotChocolateCommon));
 
-        internal static Scope CreateScopeFromExecuteAsync(Tracer tracer, IQueryRequest request)
+        internal static Scope CreateScopeFromExecuteAsync<T>(Tracer tracer, in T request)
+            where T: IQueryRequest
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -45,7 +46,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             return scope;
         }
 
-        internal static Scope UpdateScopeFromExecuteAsync(Tracer tracer, IOperationContext context)
+        internal static Scope UpdateScopeFromExecuteAsync<T>(Tracer tracer, in T context)
+            where T: IOperationContext
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -65,13 +67,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             {
                 var operation = context.Operation;
                 var operationType = operation.OperationType.ToString();
-                var operationName = span.GetTag(Trace.Tags.GraphQLOperationName);
-                span.ResourceName = $"{operationType} {operationName ?? "operation"}";
-                span.SetTag(Trace.Tags.GraphQLOperationType, operationType);
+                if(span.Tags is HotChocolateTags tags)
+                {
+                    span.ResourceName = $"{operationType} {tags.GraphQLOperationName ?? "operation"}";
+                    tags.GraphQLOperationType = operationType;
+                }
+                else
+                {
+                    var operationName = span.GetTag(Trace.Tags.GraphQLOperationName);
+                    span.ResourceName = $"{operationType} {operationName ?? "operation"}";
+                    span.SetTag(Trace.Tags.GraphQLOperationType, operationType);
+                }
+                
+
+                
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error creating or populating scope.");
+                Log.Error(ex, "Error updating HotChocolate scope.");
             }
 
             return scope;
@@ -99,14 +112,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
             try
             {
-                var tab = "    ";
+                const string tab = "    ";
                 builder.AppendLine("errors: [");
 
                 for (int i = 0; i < executionErrors.Count; i++)
                 {
                     var executionError = executionErrors[i];
 
-                    builder.AppendLine($"{tab}{{");
+                    builder.Append(tab).AppendLine('{');
 
                     var message = executionError.Message;
                     if (message != null)
