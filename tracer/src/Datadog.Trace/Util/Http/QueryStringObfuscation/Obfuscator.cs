@@ -4,8 +4,8 @@
 // </copyright>
 
 using System;
-using System.Text.RegularExpressions;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
 
 namespace Datadog.Trace.Util.Http.QueryStringObfuscation
 {
@@ -20,7 +20,7 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
         {
             _timeout = timeout;
             _logger = logger;
-            _regex = new(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled, _timeout);
+            _regex = new(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.NonBacktracking, _timeout);
         }
 
         internal override string Obfuscate(string queryString)
