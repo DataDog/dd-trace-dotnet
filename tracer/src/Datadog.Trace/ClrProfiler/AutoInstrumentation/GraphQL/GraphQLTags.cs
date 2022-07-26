@@ -10,6 +10,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
     internal partial class GraphQLTags : InstrumentationTags
     {
+        public GraphQLTags()
+        {
+        }
+
         public GraphQLTags(string instrumentationName)
         {
             InstrumentationName = instrumentationName;
