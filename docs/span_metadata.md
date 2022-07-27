@@ -37,7 +37,6 @@ Type | `web`
 ### Tags
 Name | Required |
 ---------|----------------|
-component | `aspnet`
 http.method | Yes
 http.request.headers.host | Yes
 http.status_code | Yes
@@ -54,10 +53,9 @@ Type | `web`
 Name | Required |
 ---------|----------------|
 aspnet.action | Yes
-aspnet.area | No
+aspnet.area | Yes
 aspnet.controller | Yes
 aspnet.route | Yes
-component | `aspnet`
 http.method | Yes
 http.request.headers.host | Yes
 http.status_code | Yes
@@ -76,10 +74,8 @@ Name | Required |
 aspnet.action | No
 aspnet.controller | No
 aspnet.route | Yes
-component | `aspnet`
 http.method | Yes
 http.request.headers.host | Yes
-http.status_code | Yes
 http.url | Yes
 span.kind | `server`
 
@@ -148,10 +144,10 @@ Type | `sql`
 ### Tags
 Name | Required |
 ---------|----------------|
+b.type | `cosmosdb`
 component | `CosmosDb`
 cosmosdb.container | No
 db.name | No
-db.type | `cosmosdb`
 out.host | Yes
 span.kind | `client`
 
@@ -191,6 +187,7 @@ span.kind | `client`
 ### Span properties
 Name | Required |
 ---------|----------------|
+Name | `graphql.execute`; `graphql.validate`
 Type | `graphql`
 ### Tags
 Name | Required |
@@ -199,7 +196,6 @@ component | `GraphQL`
 graphql.operation.name | No
 graphql.operation.type | No
 graphql.source | Yes
-name | `graphql.execute`; `graphql.validate`
 span.kind | `server`
 
 ## Grpc
@@ -211,14 +207,14 @@ Type | `grpc`
 ### Tags
 Name | Required |
 ---------|----------------|
-component | `Grpc`
+component | `GraphQL`
 grpc.method.kind | Yes
 grpc.method.name | Yes
 grpc.method.package | Yes
 grpc.method.path | Yes
 grpc.method.service | Yes
 grpc.status.code | Yes
-span.kind | `client`; `server`
+span.kind | `server`
 
 ## HttpMessageHandler
 ### Span properties
@@ -240,16 +236,16 @@ span.kind | `client`
 ### Span properties
 Name | Required |
 ---------|----------------|
+Name | `kafka.consume`; `kafka.produce`
 Type | `queue`
 ### Tags
 Name | Required |
 ---------|----------------|
-component | `kafka`
+component | `kakfa`
 kafka.offset | No
 kafka.partition | No
 kafka.tombstone | No
 message.queue_time_ms | No
-name | `kafka.consume`; `kafka.produce`
 span.kind | Yes
 
 ## MongoDB
@@ -283,7 +279,7 @@ msmq.command | Yes
 msmq.message.transactional | No
 msmq.queue.path | Yes
 msmq.queue.transactional | No
-span.kind | `client`; `consumer`; `producer`
+span.kind | `client`; `producer`
 
 ## MySql
 ### Span properties
@@ -308,7 +304,7 @@ Type | `sql`
 ### Tags
 Name | Required |
 ---------|----------------|
-component | `Npgsql`
+component | `MySql`
 db.name | Yes
 db.type | `postgres`
 span.kind | `client`
@@ -345,12 +341,11 @@ component | `RabbitMQ`
 message.size | No
 span.kind | Yes
 
-## Service Fabric
+## ServiceFabric
 ### Span properties
 Name | Required |
 ---------|----------------|
-Name | `amqp.command`
-Type | `redis`
+Name | `service_remoting.client`; `service_remoting.server`
 ### Tags
 Name | Required |
 ---------|----------------|
@@ -365,12 +360,13 @@ service-fabric.service-remoting.invocation-id | No
 service-fabric.service-remoting.method-id | No
 service-fabric.service-remoting.method-name | Yes
 service-fabric.service-remoting.uri | Yes
+span.kind | `client`; `server`
 
-## Service Remoting (client)
+## ServiceRemoting
 ### Span properties
 Name | Required |
 ---------|----------------|
-Name | `service_remoting.client`
+Name | `service_remoting.client`; `service_remoting.server`
 ### Tags
 Name | Required |
 ---------|----------------|
@@ -379,22 +375,7 @@ service-fabric.service-remoting.invocation-id | No
 service-fabric.service-remoting.method-id | No
 service-fabric.service-remoting.method-name | Yes
 service-fabric.service-remoting.uri | Yes
-span.kind | `client`
-
-## Service Remoting (server)
-### Span properties
-Name | Required |
----------|----------------|
-Name | `service_remoting.server`
-### Tags
-Name | Required |
----------|----------------|
-service-fabric.service-remoting.interface-id | No
-service-fabric.service-remoting.invocation-id | No
-service-fabric.service-remoting.method-id | No
-service-fabric.service-remoting.method-name | Yes
-service-fabric.service-remoting.uri | Yes
-span.kind | `server`
+span.kind | `client`; `server`
 
 ## ServiceStackRedis
 ### Span properties
@@ -436,7 +417,7 @@ Type | `sql`
 Name | Required |
 ---------|----------------|
 component | `Sqlite`
-db.name | No
+db.name | Yes
 db.type | `sqlite`
 span.kind | `client`
 
@@ -450,7 +431,7 @@ Type | `sql`
 Name | Required |
 ---------|----------------|
 component | `SqlClient`
-db.name | No
+db.name | Yes
 db.type | `sql-server`
 span.kind | `client`
 
