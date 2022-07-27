@@ -162,6 +162,7 @@ namespace Datadog.Trace.Util
                         }
 
                         continue;
+                    case ',':
                     case '-':
                         continue;
                     default:
