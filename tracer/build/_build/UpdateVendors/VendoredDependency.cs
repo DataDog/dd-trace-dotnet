@@ -72,6 +72,7 @@ namespace UpdateVendors
                 pathToSrc: new[] { "sketches-dotnet-1.0.0", "src", "Datadog.Sketches" },
                 // Perform standard CS file transform with additional '#nullable enable' directive at the beginning of the files, since the vendored project was built with <Nullable>enable</Nullable>
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Datadog.Sketches", AddNullableDirectiveTransform));
+
             Add(
                 libraryName: "IndieSystem.Text.RegularExpressions",
                 version: "0.1",
@@ -81,8 +82,6 @@ namespace UpdateVendors
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "IndieSystem.Text.RegularExpressions",
                     AddIfNetcoreapp31OrGreater, AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma, FixupResources),
                 relativePathsToExclude: new[] { "additional/HashCode.cs" });
-
-);
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();

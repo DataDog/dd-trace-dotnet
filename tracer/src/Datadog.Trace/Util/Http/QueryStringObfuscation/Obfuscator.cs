@@ -37,14 +37,14 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
                     | RegexOptions.Compiled;
 
 #if NETCOREAPP3_1_OR_GREATER
-        if (!supportBacktracking)
-        {
-            options |= RegexOptions.NonBacktracking
-        }
+            if (!supportBacktracking)
+            {
+                options |= RegexOptions.NonBacktracking;
+            }
 #endif
 
             _regex =
-                new(pattern, options,  _timeout);
+                new(pattern, options, _timeout);
         }
 
         internal override string Obfuscate(string queryString)
