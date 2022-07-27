@@ -36,6 +36,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
         {
             switch(key)
             {
+                case "component": 
+                    InstrumentationName = value;
+                    break;
                 case "redis.raw_command": 
                     RawCommand = value;
                     break;

@@ -21,12 +21,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         MinimumVersion = "2.0.0",  // 2.6.48, but dll uses 2.0.0
         MaximumVersion = "2.*.*",
         TypeNames = new[] { "StackExchange.Redis.RedisBatch", "StackExchange.Redis.RedisTransaction" },
-        IntegrationName = StackExchangeRedisHelper.IntegrationName)]
+        IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     // ReSharper disable once InconsistentNaming
     public class RedisExecuteAsyncIntegration_2_6_48
     {
+        private const string IntegrationName = nameof(Configuration.IntegrationId.StackExchangeRedis);
+        private const IntegrationId IntegrationId = Configuration.IntegrationId.StackExchangeRedis;
+
         internal static CallTargetState OnMethodBegin<TTarget, TMessage, TDefaultValue, TProcessor, TServerEndPoint>(TTarget instance, TMessage message, TDefaultValue defaultValue, TProcessor resultProcessor, TServerEndPoint serverEndPoint)
             where TTarget : IRedisBase
             where TMessage : IMessageData
@@ -34,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
             string rawCommand = message.CommandAndKey ?? "COMMAND";
             StackExchangeRedisHelper.HostAndPort hostAndPort = StackExchangeRedisHelper.GetHostAndPort(instance.Multiplexer.Configuration);
 
-            Scope scope = RedisHelper.CreateScope(Tracer.Instance, StackExchangeRedisHelper.IntegrationId, hostAndPort.Host, hostAndPort.Port, rawCommand);
+            Scope scope = RedisHelper.CreateScope(Tracer.Instance, IntegrationId, IntegrationName, hostAndPort.Host, hostAndPort.Port, rawCommand);
             if (scope is not null)
             {
                 return new CallTargetState(scope);
