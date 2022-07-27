@@ -181,6 +181,7 @@ public:
     IManagedThreadList* GetManagedThreadList() { return _pManagedThreadList; }
     IStackSamplerLoopManager* GetStackSamplerLoopManager() { return _pStackSamplerLoopManager; }
     IApplicationStore* GetApplicationStore() { return _pApplicationStore; }
+    IExporter* GetExporter() { return _pExporter.get(); }
 
 private :
     static CorProfilerCallback* _this;

@@ -13,5 +13,6 @@ class IExporter
 public:
     virtual ~IExporter() = default;
     virtual void Add(Sample const& sample) = 0;
+    virtual void SetEndpoint(std::string runtimeId, uint64_t traceId, std::string endpoint) = 0;
     virtual bool Export() = 0;
 };
