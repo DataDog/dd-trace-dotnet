@@ -115,7 +115,7 @@ namespace UpdateVendors
             });
         }
 
-        private static string Add31OrGreader(string filePath, string content)
+        private static string AddIfNetcoreapp31OrGreater(string filePath, string content)
         {
             return "#if NETCOREAPP3_1_OR_GREATER" + Environment.NewLine + content + Environment.NewLine + "#endif";
         }
@@ -222,7 +222,7 @@ namespace UpdateVendors
                         // by replacing all "public" access modifiers with "internal"
                         return Regex.Replace(
                             result,
-                            @"public(\s+((abstract|sealed|static|unsafe)\s+)*?(partial\s+)?(partial\s+)?(class|readonly\s+ref\s+struct|readonly\s+struct|struct|interface|enum|delegate))",
+                            @"public(\s+((abstract|sealed|static|unsafe)\s+)*?(partial\s+)?(class|readonly\s+(ref\s+)?struct|struct|interface|enum|delegate))",
                             match => $"internal{match.Groups[1]}");
                     });
             }
@@ -262,10 +262,6 @@ namespace UpdateVendors
             "CS8629, " + // Nullable value type may be null with temporary variables
             "CS8774" +   // Member 'x' must have a non-null value when exiting.
             Environment.NewLine + content;
-
-        static string RemoveHashCode(string filePath, string content) =>
-            // when you have an additional HashCode.cs because another project already imported it ...
-            filePath.EndsWith("HashCode.cs") ? string.Empty : content;
 
         static string FixupResources(string filePath, string content)
         {
