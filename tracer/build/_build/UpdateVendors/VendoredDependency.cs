@@ -79,7 +79,10 @@ namespace UpdateVendors
                 pathToSrc: new[] { "IndieRegex-0.3", "src" },
                 // Perform standard CS file transform with additional '#nullable enable' directive at the beginning of the files, since the vendored project was built with <Nullable>enable</Nullable>
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "IndieSystem.Text.RegularExpressions",
-                    Add31OrGreader, AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma, FixupResources, RemoveHashCode));
+                    AddIfNetcoreapp31OrGreater, AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma, FixupResources),
+                relativePathsToExclude: new[] { "additional/HashCode.cs" });
+
+);
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();
