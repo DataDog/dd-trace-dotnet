@@ -35,7 +35,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-
 #if NETFRAMEWORK
                 var expectedCount = 56;
                 var frameworkName = "NetFramework";
