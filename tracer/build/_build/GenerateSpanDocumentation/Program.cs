@@ -9,14 +9,14 @@ using System.Linq;
 using System.Text;
 using Nuke.Common.IO;
 
-namespace GenerateDocumentation
+namespace GenerateSpanDocumentation
 {
-    public class DocumentationGenerator
+    public class SpanDocumentationGenerator
     {
         private readonly AbsolutePath _spanModelRulesFilePath;
         private readonly AbsolutePath _outputFilePath;
 
-        public DocumentationGenerator(
+        public SpanDocumentationGenerator(
             AbsolutePath spanModelRulesFilePath,
             AbsolutePath outputFilePath)
         {
@@ -29,7 +29,7 @@ namespace GenerateDocumentation
             }
         }
 
-        public void GenerateDocumentation()
+        public void Run()
         {
             var contents = File.ReadAllText(_spanModelRulesFilePath);
             if (contents == null)

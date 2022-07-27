@@ -8,7 +8,7 @@ using System.Linq;
 using System.Net;
 using System.Reflection;
 using Amazon.SimpleSystemsManagement.Model;
-using GenerateDocumentation;
+using GenerateSpanDocumentation;
 using GeneratePackageVersions;
 using Honeypot;
 using Microsoft.TeamFoundation.Build.WebApi;
@@ -185,15 +185,15 @@ partial class Build
            await DependabotFileManager.UpdateIntegrations(dependabotProj, integrations);
        });
     
-    Target GenerateDocumentation => _ => _
+    Target GenerateSpanDocumentation => _ => _
         .Description("Regenerate documentation from our code models")
         .Executes(() =>
         {
             var rulesFilePath = TestsDirectory / "Datadog.Trace.TestHelpers" / "SpanMetadataRules.cs";
             var rulesOutput = RootDirectory / "docs" / "span_metadata.md";
 
-            var documentationGenerator = new DocumentationGenerator(rulesFilePath, rulesOutput);
-            documentationGenerator.GenerateDocumentation();
+            var generator = new SpanDocumentationGenerator(rulesFilePath, rulesOutput);
+            generator.Run();
         });
 
     Target UpdateVendoredCode => _ => _
