@@ -67,7 +67,7 @@ namespace Datadog.Trace.Tests.Util.Http
         public void ObfuscateTimeout()
         {
             var logger = new Mock<IDatadogLogger>();
-            var obfuscator = ObfuscatorFactory.GetObfuscator(100, @"\[(.*?)\]((?:.\s*)*?)\[\/\1\]", logger.Object);
+            var obfuscator = ObfuscatorFactory.GetObfuscator(100, @"\[(.*?)\]((?:.\s*)*?)\[\/\1\]", logger.Object, supportBacktracking:true);
             const string queryString = @"?[tag1]Test's Text Test Text Test Text Test Text.Test Text Test Text Test ""Text Test Text"" Test Text Test Text.Test Text ? Test Text Test Text Test Text Test Text Test Text Test Text.Test Text, Test Text Test Text Test Text Test Text Test Text Test Text Test Text.[/ ta.g1][tag2]Test's Text Test Text Test Text Test Text.Test Text Test Text Test ""Text Test Text"" Test Text Test Text.Test Text ? Test Text Test Text Test Text Test Text Test Text Test Text.Test Text, Test Text Test Text Test Text Test Text Test Text Test Text Test Text.[/ tag2]";
             var result = obfuscator.Obfuscate(queryString);
             result.Should().Be(string.Empty);

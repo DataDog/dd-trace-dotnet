@@ -24,21 +24,27 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
         private readonly TimeSpan _timeout;
         private readonly IDatadogLogger _logger;
 
-        internal Obfuscator(string pattern, TimeSpan timeout, IDatadogLogger logger)
+        internal Obfuscator(string pattern, TimeSpan timeout, IDatadogLogger logger, bool supportBacktracking)
         {
 #if NETCOREAPP3_1_OR_GREATER
             AppDomain.CurrentDomain.SetData("REGEX_NONBACKTRACKING_MAX_AUTOMATA_SIZE", 2000);
 #endif
             _timeout = timeout;
             _logger = logger;
-            _regex =
-                new(pattern,
+
+            var options =
                     RegexOptions.IgnoreCase
-                    | RegexOptions.Compiled
+                    | RegexOptions.Compiled;
+
 #if NETCOREAPP3_1_OR_GREATER
-                    | RegexOptions.NonBacktracking
+        if (!supportBacktracking)
+        {
+            options |= RegexOptions.NonBacktracking
+        }
 #endif
-                    ,  _timeout);
+
+            _regex =
+                new(pattern, options,  _timeout);
         }
 
         internal override string Obfuscate(string queryString)
