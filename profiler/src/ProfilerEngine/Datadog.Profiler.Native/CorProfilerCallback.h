@@ -187,7 +187,7 @@ private :
     std::atomic<ULONG> _refCount{0};
     ICorProfilerInfo5* _pCorProfilerInfo = nullptr;
     ICorProfilerInfo12* _pCorProfilerInfoEvents = nullptr;
-    ClrEventsParser* _pClrEventsParser = nullptr;
+    std::unique_ptr<ClrEventsParser> _pClrEventsParser = nullptr;
     EVENTPIPE_SESSION _session{0};
     inline static bool _isNet46OrGreater = false;
     std::shared_ptr<IMetricsSender> _metricsSender;

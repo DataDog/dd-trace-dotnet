@@ -18,91 +18,6 @@ ClrEventsParser::ClrEventsParser(ICorProfilerInfo12* pCorProfilerInfo, IAllocati
 {
 }
 
-const char* GetEventName(DWORD eventId)
-{
-    switch (eventId)
-    {
-        // GC events
-        case   1: return "GcStart";
-        case   2: return "GCEnd";
-        case   3: return "GCRestartEEEnd";
-        case   4: return "GCHeapStats";
-        case   5: return "GCCreateSegment";
-        case   7: return "GCRestartEEBegin";
-        case   8: return "GCSuspendEEEnd";
-        case   9: return "GCSuspendEEBegin";
-        case  11: return "GCCreateConcurrentThread";
-        case  13: return "GCFinalizersEnd";
-        case  14: return "GCFinalizersBegin";
-        case  35: return "GCTriggered";
-        case 202: return "GCMarkWithType";
-        case 204: return "GCPerHeapHistory";
-        case 205: return "GCGlobalHeap";
-
-        // verbose
-        case  10: return "___GCAllocationTick___";
-        case  29: return "___FinalizeObject";
-        case  33: return "___PinObjectAtGCTime___";
-        case 200: return "___IncreaseMemoryPressure___";
-        case 201: return "___DecreaseMemoryPressure___";
-        case 203: return "___GCJoin___";
-
-        // Contention events
-        case  81: return "ContentionStart";
-        case  91: return "ContentionStop";
-
-        // other verbose
-        //
-        default:
-        {
-            return nullptr;
-        }
-    }
-}
-
-void DumpEvent(
-    std::string& providerName,
-    const WCHAR* name,
-    DWORD id,
-    DWORD version,
-    INT64 keywords,
-    DWORD eventId,
-    DWORD eventVersion,
-    ULONG numStackFrames
-    )
-{
-    std::stringstream buffer;
-    buffer << providerName << " | "
-           << "k=0x" << std::hex << keywords << std::dec << " = ";
-
-    if ((name != nullptr) && WStrLen(name) > 0)
-    {
-        buffer << "'" << shared::ToString(shared::WSTRING(name)) << "' : ";
-    }
-    else
-    {
-        // most event name are empty strings
-        const char* wellKnownEventName = GetEventName(id);
-        if (wellKnownEventName != nullptr)
-        {
-            buffer << "'" << wellKnownEventName << "' : ";
-        }
-        else
-        {
-            buffer << "'' : ";
-        }
-    }
-    buffer << id << "(" << eventId << ") v"
-           << version << "(" << eventVersion << ")";
-
-    if (numStackFrames > 0)
-    {
-        buffer << " [" << numStackFrames << " frames]";
-    }
-    buffer << std::endl;
-    std::cout << buffer.str();
-}
-
 void ClrEventsParser::ParseEvent(
     EVENTPIPE_PROVIDER provider,
     DWORD eventId,
@@ -119,7 +34,6 @@ void ClrEventsParser::ParseEvent(
 {
     // Currently, only "Microsoft-Windows-DotNETRuntime" provider is used so no need to check.
     // However, during the test, a last (k=0 id=1 V1) event is sent from "Microsoft-DotNETCore-EventPipe".
-    auto providerName = GetProviderName(provider);
 
     // These should be the same as eventId and eventVersion.
     // However it was not the case for the last event received from "Microsoft-DotNETCore-EventPipe".
@@ -141,72 +55,6 @@ void ClrEventsParser::ParseEvent(
     {
         ParseContentionEvent(id, version, cbEventData, eventData);
     }
-    else
-    {
-        // Dump to see all received events
-        //DumpEvent(providerName, name, id, version, keywords, eventId, eventVersion, numStackFrames);
-    }
-}
-
-
-// dump the buffer every 16 bytes + corresponding ASCII characters
-// ex:  44 4F 54 4E 45 54 5F 49  50 43 5F 56 31 00 77 00    DOTNET_IPC_V1.w.
-const DWORD LineWidth = 16;
-
-char GetCharFromBinary(uint8_t byte)
-{
-    if ((byte >= 0x21) && (byte <= 0x7E))
-        return static_cast<char>(byte);
-
-    return '.';
-}
-
-void DumpBuffer(const uint8_t* pBuffer, DWORD byteCount)
-{
-    DWORD pos = 0;
-    char stringBuffer[LineWidth + 1];
-    ::ZeroMemory(stringBuffer, LineWidth + 1);
-
-    std::cout << std::hex;
-    for (DWORD i = 0; i < byteCount; i++)
-    {
-        std::cout << std::uppercase << std::setfill('0') << std::setw(2) << (int)pBuffer[i] << " ";
-        stringBuffer[pos] = GetCharFromBinary(pBuffer[i]);
-        pos++;
-
-        if (pos % LineWidth == 0)
-        {
-            std::cout << "    ";
-            std::cout << stringBuffer;
-            std::cout << "\n";
-
-            ::ZeroMemory(stringBuffer, LineWidth + 1);
-            pos = 0;
-        }
-        else if (pos % (LineWidth / 2) == 0)
-        {
-            std::cout << " ";
-        }
-    }
-
-    // show the remaining characters if any
-    if (pos > 0)
-    {
-        for (size_t i = 0; i < LineWidth - pos; i++)
-        {
-            std::cout << "   ";
-        }
-
-        if (pos > LineWidth / 2)
-            std::cout << "    ";
-        else
-            std::cout << "     ";
-        std::cout << stringBuffer;
-        std::cout << "\n";
-    }
-
-    // reset to default
-    std::cout << std::setfill(' ') << std::setw(1) << std::dec;
 }
 
 void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData)
@@ -268,12 +116,6 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
 
         _pAllocationListener->OnAllocation(payload.AllocationKind, payload.TypeName, payload.Address, payload.ObjectSize);
     }
-    else
-    {
-        // TODO: keep for future GC profiler
-        //auto provider = std::string("dotnet");
-        //DumpEvent(provider, nullptr, id, version, 0, id, version, 0);
-    }
 }
 
 void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData)
@@ -293,39 +135,7 @@ void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEven
         {
             return;
         }
-
-        // TODO: for future contention profiler
-        //std::stringstream buffer;
-        //buffer << "ContentionStop";
-        //buffer << ((payload.ContentionFlags == 0) ? " - managed " : " - native ");
-        //buffer << "(" << payload.DurationNs << " ns)";
-        //buffer << std::endl;
-        //std::cout << buffer.str();
     }
-}
-
-const std::string UnknownProvider("UnknownProvider");
-
-std::string ClrEventsParser::GetProviderName(EVENTPIPE_PROVIDER provider)
-{
-    auto it = _providerNameCache.find(provider);
-    if (it == _providerNameCache.end())
-    {
-        WCHAR nameBuffer[LONG_LENGTH];
-        ULONG nameCount;
-        HRESULT hr = _pCorProfilerInfo->EventPipeGetProviderInfo(provider, LONG_LENGTH, &nameCount, nameBuffer);
-        if (FAILED(hr))
-        {
-            return UnknownProvider;
-        }
-
-        _providerNameCache.insertNew(provider, shared::ToString(shared::WSTRING(nameBuffer)));
-
-        it = _providerNameCache.find(provider);
-        assert(it != _providerNameCache.end());
-    }
-
-    return it->second;
 }
 
 bool ClrEventsParser::TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version)

@@ -21,41 +21,6 @@
 
 #define LONG_LENGTH 1024
 
-// from https://github.com/dotnet/samples/blob/main/core/profiling/eventpipe/src/CorProfiler.h
-template <class Key, class Value>
-class ThreadSafeMap
-{
-private:
-    std::map<Key, Value> _map;
-    mutable std::shared_mutex _mutex;
-
-public:
-    typename std::map<Key, Value>::const_iterator find(Key key) const
-    {
-        std::shared_lock lock(_mutex);
-        return _map.find(key);
-    }
-
-    typename std::map<Key, Value>::const_iterator end() const
-    {
-        return _map.end();
-    }
-
-    // Returns true if new value was inserted
-    bool insertNew(Key key, Value value)
-    {
-        std::unique_lock lock(_mutex);
-
-        if (_map.find(key) != _map.end())
-        {
-            return false;
-        }
-
-        _map[key] = value;
-        return true;
-    }
-};
-
 struct AllocationTickV4Payload
 {
     uint32_t AllocationAmount;     // The allocation size, in bytes.
@@ -105,7 +70,6 @@ public:
                     );
 
 private:
-    std::string GetProviderName(EVENTPIPE_PROVIDER provider);
     bool TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version);
     void ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
     void ParseContentionEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
@@ -141,7 +105,6 @@ private:
 private:
     ICorProfilerInfo12* _pCorProfilerInfo = nullptr;
     IAllocationsListener* _pAllocationListener = nullptr;
-    ThreadSafeMap<EVENTPIPE_PROVIDER, std::string> _providerNameCache;
 
 private:
     const int EVENT_ALLOCATION_TICK = 10;   // version 4 contains the size + reference

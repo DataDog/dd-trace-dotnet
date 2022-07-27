@@ -140,7 +140,7 @@ bool CorProfilerCallback::InitializeServices()
         }
 
         // TODO: add new CLR events-based providers to the event parser
-        _pClrEventsParser = new ClrEventsParser(_pCorProfilerInfoEvents, _pAllocationsProvider);
+        _pClrEventsParser = std::make_unique<ClrEventsParser>(_pCorProfilerInfoEvents, _pAllocationsProvider);
     }
 
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
@@ -647,6 +647,14 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //       the events are received asynchronously, a GC might have happened and moved the
         //       object somewhere else (i.e. the address will point to unknown content in memory;
         //       even unmapped memory if the segment has been reclaimed).
+        if (major < 5)
+        {
+            if (_pConfiguration->IsAllocationProfilingEnabled())
+            {
+                Log::Warn("Allocation profiling is not supported for .NET", major, ".", minor, " (.NET 5+ is required)");
+            }
+            // TODO: add warning for other unsupported CLR event-based profilers
+        }
     }
 
     // Init global state:
