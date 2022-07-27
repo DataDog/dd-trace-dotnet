@@ -17,8 +17,8 @@
 
 namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
     using System;
-    
-    
+
+
     /// <summary>
     ///   A strongly-typed resource class, for looking up localized strings, etc.
     /// </summary>
@@ -30,15 +30,15 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal partial class SR {
-        
+
         private static global::System.Resources.ResourceManager resourceMan;
-        
+
         private static global::System.Globalization.CultureInfo resourceCulture;
-        
+
         [global::System.Diagnostics.CodeAnalysis.SuppressMessageAttribute("Microsoft.Performance", "CA1811:AvoidUncalledPrivateCode")]
         internal SR() {
         }
-        
+
         /// <summary>
         ///   Returns the cached ResourceManager instance used by this class.
         /// </summary>
@@ -46,13 +46,13 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
         internal static global::System.Resources.ResourceManager ResourceManager {
             get {
                 if (object.ReferenceEquals(resourceMan, null)) {
-                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("IndieSystem.Text.RegularExpressions.SR", typeof(SR).Assembly);
+                    global::System.Resources.ResourceManager temp = new global::System.Resources.ResourceManager("Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions.SR", typeof(SR).Assembly);
                     resourceMan = temp;
                 }
                 return resourceMan;
             }
         }
-        
+
         /// <summary>
         ///   Overrides the current thread's CurrentUICulture property for all
         ///   resource lookups using this strongly typed resource class.
@@ -66,7 +66,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 resourceCulture = value;
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Alternation conditions cannot be comments..
         /// </summary>
@@ -75,7 +75,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("AlternationHasComment", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Illegal conditional (?(...)) expression..
         /// </summary>
@@ -84,7 +84,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("AlternationHasMalformedCondition", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Conditional alternation is missing a closing parenthesis after the group number {0}..
         /// </summary>
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("AlternationHasMalformedReference", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Alternation conditions do not capture and cannot be named..
         /// </summary>
@@ -102,7 +102,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("AlternationHasNamedCapture", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Too many | in (?()|)..
         /// </summary>
@@ -111,7 +111,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("AlternationHasTooManyConditions", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Conditional alternation refers to an undefined group number {0}..
         /// </summary>
@@ -120,7 +120,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("AlternationHasUndefinedReference", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Destination array is not long enough to copy all the items in the collection. Check array index and length..
         /// </summary>
@@ -129,7 +129,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("Arg_ArrayPlusOffTooSmall", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Start index cannot be less than 0 or greater than input length..
         /// </summary>
@@ -138,7 +138,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("BeginIndexNotNegative", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Invalid group name: Group names must begin with a word character..
         /// </summary>
@@ -147,7 +147,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("CaptureGroupNameInvalid", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Capture number cannot be zero..
         /// </summary>
@@ -156,7 +156,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("CaptureGroupOfZero", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Count cannot be less than -1..
         /// </summary>
@@ -165,7 +165,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("CountTooSmall", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Enumeration has either not started or has already finished..
         /// </summary>
@@ -174,7 +174,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("EnumNotStarted", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to A subtraction must be the last element in a character class..
         /// </summary>
@@ -183,7 +183,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("ExclusionGroupNotLast", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to atomic subexpressions (?&gt; pattern).
         /// </summary>
@@ -192,7 +192,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("ExpressionDescription_AtomicSubexpressions", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to backreference (\\ number).
         /// </summary>
@@ -201,7 +201,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("ExpressionDescription_Backreference", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to balancing group (?&lt;name1-name2&gt;subexpression) or (?&apos;name1-name2&apos; subexpression).
         /// </summary>
@@ -210,7 +210,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("ExpressionDescription_BalancingGroup", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to captured group conditional (?( name ) yes-pattern | no-pattern ) or (?( number ) yes-pattern| no-pattern ).
         /// </summary>
@@ -219,7 +219,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("ExpressionDescription_Conditional", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to contiguous matches (\\G).
         /// </summary>
@@ -228,7 +228,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("ExpressionDescription_ContiguousMatches", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to test conditional (?( test-pattern ) yes-pattern | no-pattern ).
         /// </summary>
@@ -237,7 +237,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("ExpressionDescription_IfThenElse", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to negative lookahead (?! pattern) or negative lookbehind (?&lt;! pattern).
         /// </summary>
@@ -246,7 +246,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("ExpressionDescription_NegativeLookaround", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to positive lookahead (?= pattern) or positive lookbehind (?&lt;= pattern).
         /// </summary>
@@ -255,7 +255,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("ExpressionDescription_PositiveLookaround", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Regular expression parser error &apos;{0}&apos; at offset {1}..
         /// </summary>
@@ -264,7 +264,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("Generic", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to AppDomain data &apos;{0}&apos; contains the invalid value or object &apos;{1}&apos; for specifying a default matching timeout for System.Text.RegularExpressions.Regex..
         /// </summary>
@@ -273,7 +273,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("IllegalDefaultRegexMatchTimeoutInAppDomain", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Not enough )&apos;s..
         /// </summary>
@@ -282,7 +282,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("InsufficientClosingParentheses", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Too many )&apos;s..
         /// </summary>
@@ -291,7 +291,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("InsufficientOpeningParentheses", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Insufficient hexadecimal digits..
         /// </summary>
@@ -300,7 +300,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("InsufficientOrInvalidHexDigits", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Unrecognized grouping construct..
         /// </summary>
@@ -309,7 +309,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("InvalidGroupingConstruct", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Incomplete \\p{X} character escape..
         /// </summary>
@@ -318,7 +318,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("InvalidUnicodePropertyEscape", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Length cannot be less than 0 or exceed input length..
         /// </summary>
@@ -327,7 +327,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("LengthNotNegative", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Invalid pattern &apos;{0}&apos; at offset {1}. {2}.
         /// </summary>
@@ -336,7 +336,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("MakeException", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Malformed \\k&lt;...&gt; named back reference..
         /// </summary>
@@ -345,7 +345,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("MalformedNamedReference", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Malformed \\p{X} character escape..
         /// </summary>
@@ -354,7 +354,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("MalformedUnicodePropertyEscape", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Missing control character..
         /// </summary>
@@ -363,7 +363,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("MissingControlCharacter", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Nested quantifier &apos;{0}&apos;..
         /// </summary>
@@ -372,7 +372,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("NestedQuantifiersNotParenthesized", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Result cannot be called on a failed Match..
         /// </summary>
@@ -381,7 +381,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("NoResultOnFailed", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Regex replacements with substitutions of groups are not supported with RegexOptions.NonBacktracking..
         /// </summary>
@@ -390,7 +390,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("NotSupported_NonBacktrackingAndReplacementsWithSubstitutionsOfGroups", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to RegexOptions.NonBacktracking is not supported in conjunction with expressions containing: &apos;{0}&apos;..
         /// </summary>
@@ -399,7 +399,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("NotSupported_NonBacktrackingConflictingExpression", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to The specified pattern with RegexOptions.NonBacktracking could result in an automata as large as &apos;{0}&apos; nodes, which is larger than the configured limit of &apos;{1}&apos;..
         /// </summary>
@@ -408,7 +408,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("NotSupported_NonBacktrackingUnsafeSize", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Collection is read-only..
         /// </summary>
@@ -417,7 +417,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("NotSupported_ReadOnlyCollection", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to This platform does not support writing compiled regular expressions to an assembly. Use RegexGeneratorAttribute with the regular expression source generator instead..
         /// </summary>
@@ -426,7 +426,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("PlatformNotSupported_CompileToAssembly", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Quantifier &apos;{0}&apos; following nothing..
         /// </summary>
@@ -435,7 +435,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("QuantifierAfterNothing", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Quantifier and capture group numbers must be less than or equal to Int32.MaxValue..
         /// </summary>
@@ -444,7 +444,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("QuantifierOrCaptureGroupOutOfRange", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to The Regex engine has timed out while trying to match a pattern to an input string. This can occur for many reasons, including very large inputs or excessive backtracking caused by nested quantifiers, back-references and other factors..
         /// </summary>
@@ -453,7 +453,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("RegexMatchTimeoutException_Occurred", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to [x-y] range in reverse order..
         /// </summary>
@@ -462,7 +462,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("ReversedCharacterRange", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Illegal {x,y} with x &gt; y..
         /// </summary>
@@ -471,7 +471,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("ReversedQuantifierRange", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Cannot include class \\{0} in character range..
         /// </summary>
@@ -480,7 +480,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("ShorthandClassInCharacterRange", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Reference to undefined group name &apos;{0}&apos;..
         /// </summary>
@@ -489,7 +489,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("UndefinedNamedReference", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Reference to undefined group number {0}..
         /// </summary>
@@ -498,7 +498,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("UndefinedNumberedReference", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Illegal \\ at end of pattern..
         /// </summary>
@@ -507,7 +507,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("UnescapedEndingBackslash", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Unrecognized control character..
         /// </summary>
@@ -516,7 +516,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("UnrecognizedControlCharacter", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Unrecognized escape sequence \\{0}..
         /// </summary>
@@ -525,7 +525,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("UnrecognizedEscape", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Unknown property &apos;{0}&apos;..
         /// </summary>
@@ -534,7 +534,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("UnrecognizedUnicodeProperty", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Unterminated [] set..
         /// </summary>
@@ -543,7 +543,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("UnterminatedBracket", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Unterminated (?#...) comment..
         /// </summary>
@@ -552,7 +552,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions{
                 return ResourceManager.GetString("UnterminatedComment", resourceCulture);
             }
         }
-        
+
         /// <summary>
         ///   Looks up a localized string similar to Searching an input span using a pre-compiled Regex assembly is not supported. Please use the string overloads or use a newer Regex implementation..
         /// </summary>

@@ -18,6 +18,7 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
 
         internal Obfuscator(string pattern, TimeSpan timeout, IDatadogLogger logger)
         {
+            AppDomain.CurrentDomain.SetData("REGEX_NONBACKTRACKING_MAX_AUTOMATA_SIZE", 2000);
             _timeout = timeout;
             _logger = logger;
             _regex = new(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled | RegexOptions.NonBacktracking, _timeout);
