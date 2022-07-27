@@ -1,4 +1,5 @@
 # Span Metadata
+This file is intended for development purposes only. The markdown is generated from assertions authored [here](/tracer/test/Datadog.Trace.TestHelpers/SpanMetadataRules.cs) and the assertions are actively tested in the tracing integration tests.
 ## AdoNet
 ### Span properties
 Name | Required |

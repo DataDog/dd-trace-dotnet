@@ -13,6 +13,8 @@ namespace GenerateSpanDocumentation
 {
     public class SpanDocumentationGenerator
     {
+        private const string HeaderConst =
+@"This file is intended for development purposes only. The markdown is generated from assertions authored [here](/tracer/test/Datadog.Trace.TestHelpers/SpanMetadataRules.cs) and the assertions are actively tested in the tracing integration tests.";
         private readonly AbsolutePath _spanModelRulesFilePath;
         private readonly AbsolutePath _outputFilePath;
 
@@ -39,6 +41,7 @@ namespace GenerateSpanDocumentation
 
             var sb = new StringBuilder();
             sb.AppendLine("# Span Metadata");
+            sb.AppendLine(HeaderConst);
 
             var reader = new StringReader(contents);
             var currentModel = new SpanModel();
