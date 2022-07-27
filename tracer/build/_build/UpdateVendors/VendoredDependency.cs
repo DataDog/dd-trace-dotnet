@@ -78,7 +78,8 @@ namespace UpdateVendors
                 downloadUrl: "https://github.com/robertpi/IndieRegex/archive/refs/tags/v0.3.zip",
                 pathToSrc: new[] { "IndieRegex-0.3", "src" },
                 // Perform standard CS file transform with additional '#nullable enable' directive at the beginning of the files, since the vendored project was built with <Nullable>enable</Nullable>
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "IndieSystem.Text.RegularExpressions", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma, RemoveHashCode));
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "IndieSystem.Text.RegularExpressions",
+                    Add31OrGreader, AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma, FixupResources, RemoveHashCode));
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();
@@ -112,6 +113,11 @@ namespace UpdateVendors
                 Transform = transform,
                 RelativePathsToExclude = relativePathsToExclude ?? Array.Empty<string>(),
             });
+        }
+
+        private static string Add31OrGreader(string filePath, string content)
+        {
+            return "#if NETCOREAPP3_1_OR_GREATER" + Environment.NewLine + content + Environment.NewLine + "#endif";
         }
 
         private static string AddNullableDirectiveTransform(string filePath, string content)
@@ -260,6 +266,17 @@ namespace UpdateVendors
         static string RemoveHashCode(string filePath, string content) =>
             // when you have an additional HashCode.cs because another project already imported it ...
             filePath.EndsWith("HashCode.cs") ? string.Empty : content;
+
+        static string FixupResources(string filePath, string content)
+        {
+            if (content.Contains("new global::System.Resources.ResourceManager(\"IndieSystem.Text.RegularExpressions.SR\""))
+            {
+                return content.Replace("new global::System.Resources.ResourceManager(\"IndieSystem.Text.RegularExpressions.SR\"",
+                    "new global::System.Resources.ResourceManager(\"Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions.SR\"");
+            }
+
+            return content;
+        }
 
         private static void RewriteFileWithTransform(string filePath, Func<string, string> transform)
         {
