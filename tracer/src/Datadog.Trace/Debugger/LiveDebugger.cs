@@ -88,11 +88,11 @@ namespace Datadog.Trace.Debugger
 
         private void Initialize()
         {
-            if (!_settings.Enabled)
-            {
-                Log.Information("Live Debugger is disabled. To enable it, please set DD_DEBUGGER_ENABLED environment variable to 'true'.");
-                return;
-            }
+            // if (!_settings.Enabled)
+            // {
+            //     Log.Information("Live Debugger is disabled. To enable it, please set DD_DEBUGGER_ENABLED environment variable to 'true'.");
+            //     return;
+            // }
 
             if (_settings.TransportType != TracesTransportType.Default)
             {
