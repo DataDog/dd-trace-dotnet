@@ -52,10 +52,8 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AspNetCoreDiagnosticObserver>();
         private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new AspNetCoreHttpRequestHandler(Log, HttpRequestInOperationName, IntegrationId);
-
         private readonly Tracer _tracer;
         private readonly Security _security;
-
         private string _hostingHttpRequestInStartEventKey;
         private string _mvcBeforeActionEventKey;
         private string _mvcAfterActionEventKey;
@@ -578,6 +576,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 // these will already be set correctly
                 parentTags.AspNetCoreRoute = aspNetRoute;
                 parentSpan.ResourceName = span.ResourceName;
+                parentSpan.SetTag(Tags.HttpRoute, aspNetRoute);
             }
 
             return span;
@@ -756,6 +755,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     span.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
+                    span.SetTag(Tags.HttpRoute, normalizedRoute);
                 }
             }
         }

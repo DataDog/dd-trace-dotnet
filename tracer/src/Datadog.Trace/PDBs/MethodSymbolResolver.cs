@@ -13,7 +13,7 @@ using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 
-namespace Datadog.Trace.PDBs
+namespace Datadog.Trace.Pdb
 {
     internal class MethodSymbolResolver
     {

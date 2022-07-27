@@ -28,7 +28,7 @@ public:
     virtual std::string const& GetHostname() const = 0;
     virtual std::string const& GetAgentUrl() const = 0;
     virtual std::string const& GetAgentHost() const = 0;
-    virtual int GetAgentPort() const = 0;
+    virtual int32_t GetAgentPort() const = 0;
     virtual bool IsAgentless() const = 0;
     virtual std::string const& GetSite() const = 0;
     virtual std::string const& GetApiKey() const = 0;
@@ -37,6 +37,6 @@ public:
     virtual bool IsCpuProfilingEnabled() const = 0;
     virtual bool IsWallTimeProfilingEnabled() const = 0;
     virtual bool IsExceptionProfilingEnabled() const = 0;
-    virtual int ExceptionSampleLimit() const = 0;
+    virtual int32_t ExceptionSampleLimit() const = 0;
     virtual bool IsAllocationProfilingEnabled() const = 0;
 };

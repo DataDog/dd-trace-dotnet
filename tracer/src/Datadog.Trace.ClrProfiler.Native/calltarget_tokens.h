@@ -29,12 +29,7 @@ private:
     mdAssemblyRef corLibAssemblyRef = mdAssemblyRefNil;
     mdTypeRef objectTypeRef = mdTypeRefNil;
     mdTypeRef typeRef = mdTypeRefNil;
-    mdTypeRef runtimeTypeHandleRef = mdTypeRefNil;
     mdToken getTypeFromHandleToken = mdTokenNil;
-    mdTypeRef runtimeMethodHandleRef = mdTypeRefNil;
-
-    // CallTarget tokens
-    mdAssemblyRef profilerAssemblyRef = mdAssemblyRefNil;
 
     mdMemberRef callTargetStateTypeGetDefault = mdMemberRefNil;
     mdMemberRef callTargetReturnVoidTypeGetDefault = mdMemberRefNil;
@@ -53,6 +48,9 @@ private:
                            mdToken* callTargetStateToken, mdToken* exceptionToken, mdToken* callTargetReturnToken);
 
 protected:
+    // CallTarget tokens
+    mdAssemblyRef profilerAssemblyRef = mdAssemblyRefNil;
+
     const bool enable_by_ref_instrumentation = false;
     const bool enable_calltarget_state_by_ref = false;
     mdTypeRef callTargetTypeRef = mdTypeRefNil;
@@ -60,15 +58,19 @@ protected:
     mdTypeRef callTargetReturnVoidTypeRef = mdTypeRefNil;
     mdTypeRef callTargetReturnTypeRef = mdTypeRefNil;
     mdTypeRef exTypeRef = mdTypeRefNil;
+    mdTypeRef runtimeTypeHandleRef = mdTypeRefNil;
+    mdTypeRef runtimeMethodHandleRef = mdTypeRefNil;
 
     ModuleMetadata* GetMetadata();
-    HRESULT EnsureBaseCalltargetTokens();
+    virtual HRESULT EnsureBaseCalltargetTokens();
     mdTypeSpec GetTargetReturnValueTypeRef(TypeSignature* returnArgument);
 
     virtual const shared::WSTRING& GetCallTargetType() = 0;
     virtual const shared::WSTRING& GetCallTargetStateType() = 0;
     virtual const shared::WSTRING& GetCallTargetReturnType() = 0;
     virtual const shared::WSTRING& GetCallTargetReturnGenericType() = 0;
+    virtual int GetAdditionalLocalsCount();
+    virtual void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize);
 
     CallTargetTokens(ModuleMetadata* moduleMetadataPtr, const bool enableByRefInstrumentation,
                      const bool enableCallTargetStateByRef);

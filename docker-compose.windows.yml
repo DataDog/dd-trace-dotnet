@@ -23,7 +23,7 @@ services:
     - "8126:8126"
     environment:
     - SNAPSHOT_CI=1
-    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id
+    - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id,meta.http.client_ip,meta.network.client.ip
 
   smoke-tests.windows:
     build:

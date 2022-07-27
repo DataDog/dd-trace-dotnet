@@ -18,7 +18,7 @@ namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed {
 	/// <summary>
 	/// A managed PDB reader implementation for .NET modules.
 	/// </summary>
-	sealed class PdbReader : SymbolReader {
+	sealed partial class PdbReader : SymbolReader {
 		MsfStream[] streams;
 		Dictionary<string, uint> names;
 		Dictionary<uint, string> strings;

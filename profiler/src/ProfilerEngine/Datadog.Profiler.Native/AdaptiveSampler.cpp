@@ -162,11 +162,11 @@ void AdaptiveSampler::RollWindow()
 
     if (_totalCountRunningAverage == 0 || _emaAlpha <= 0.0)
     {
-        _totalCountRunningAverage = totalCount;
+        _totalCountRunningAverage = static_cast<double>(totalCount);
     }
     else
     {
-        _totalCountRunningAverage = _totalCountRunningAverage + _emaAlpha * (totalCount - _totalCountRunningAverage);
+        _totalCountRunningAverage = _totalCountRunningAverage + _emaAlpha * (static_cast<double>(totalCount) - _totalCountRunningAverage);
     }
 
     if (_totalCountRunningAverage <= 0)

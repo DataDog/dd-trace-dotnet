@@ -11,6 +11,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
 using Datadog.Trace.ServiceFabric;
@@ -150,6 +151,7 @@ namespace Datadog.Trace.ClrProfiler
 
             InitializeNoNativeParts();
             var tracer = Tracer.Instance;
+            InitializeLiveDebugger();
 
             if (tracer is null)
             {
@@ -309,5 +311,18 @@ namespace Datadog.Trace.ClrProfiler
             DiagnosticManager.Instance = diagnosticManager;
         }
 #endif
+
+        internal static void InitializeLiveDebugger()
+        {
+            try
+            {
+                Log.Debug("Initializing live debugger singleton instance.");
+                _ = LiveDebugger.Instance;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to initialize Live Debugger");
+            }
+        }
     }
 }

@@ -177,6 +177,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
                                       : std::make_shared<RejitHandler>(this->info_, work_offloader);
     tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(rejit_handler, work_offloader);
 
+    debugger_instrumentation_requester = std::make_unique<debugger::DebuggerProbesInstrumentationRequester>(rejit_handler, work_offloader);
+
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                        COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_ASSEMBLY_LOADS | COR_PRF_MONITOR_APPDOMAIN_LOADS |
                        COR_PRF_ENABLE_REJIT;
@@ -701,9 +703,11 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 #ifdef _WIN32
         RewritingPInvokeMaps(module_metadata, windows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, appsec_windows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, debugger_windows_nativemethods_type);
 #else
         RewritingPInvokeMaps(module_metadata, nonwindows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, appsec_nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, debugger_nonwindows_nativemethods_type);
 #endif // _WIN32
 
         auto native_loader_library_path = GetNativeLoaderFilePath();
@@ -981,7 +985,17 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         if (tracer_integration_preprocessor != nullptr && !integration_definitions_.empty())
         {
             const auto numReJITs = tracer_integration_preprocessor->RequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_);
-            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+            Logger::Debug("[Tracer] Total number of ReJIT Requested: ", numReJITs);
+        }
+
+        if (debugger_instrumentation_requester != nullptr)
+        {
+            const auto& probes = debugger_instrumentation_requester->GetProbes();
+            if (!probes.empty())
+            {
+                const auto numReJITs = debugger_instrumentation_requester->RequestRejitForLoadedModule(module_id);
+                 Logger::Debug("[Debugger] Total number of ReJIT Requested: ", numReJITs);
+            }
         }
     }
 
@@ -1123,6 +1137,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     // In case is True we create a local ModuleMetadata to inject the loader.
     if (!shared::Contains(module_ids_, module_id))
     {
+        debugger_instrumentation_requester->PerformInstrumentAllIfNeeded(module_id, function_token);
         return S_OK;
     }
 
@@ -1135,6 +1150,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     if (has_loader_injected_in_appdomain)
     {
         // Loader was already injected in a calltarget scenario, we don't need to do anything else here
+
+        debugger_instrumentation_requester->PerformInstrumentAllIfNeeded(module_id, function_token);
+
         return S_OK;
     }
 
@@ -1527,6 +1545,19 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
             Logger::Info("InitializeTraceMethods: Total integrations in profiler: ", integration_definitions_.size());
         }
     }
+}
+
+void CorProfiler::InstrumentProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,
+                            debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,
+                            debugger::DebuggerRemoveProbesDefinition* removeProbes, int revertProbesLength) const
+{
+    debugger_instrumentation_requester->InstrumentProbes(methodProbes, methodProbesLength, lineProbes, lineProbesLength,
+                                                  removeProbes, revertProbesLength);
+}
+
+int CorProfiler::GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses)
+{
+    return debugger_instrumentation_requester->GetProbesStatuses(probeIds, probeIdsLength, probeStatuses);
 }
 
 //
@@ -3168,9 +3199,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef
     {
         Logger::Warn("ReJITError: [functionId: ", functionId, ", moduleId: ", moduleId, ", methodId: ", methodId,
                      ", hrStatus: ", hrStatus, "]");
+        return S_OK;
     }
 
-    return S_OK;
+    return debugger_instrumentation_requester->NotifyReJITError(moduleId, methodId, functionId, hrStatus);
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID functionId, BOOL* pbUseCachedFunction)
@@ -3197,7 +3229,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
-    // Call RequestRejit for register inliners and current NGEN module.
+    // Call RequestRejitOrRevert for register inliners and current NGEN module.
     if (rejit_handler != nullptr)
     {
         // Process the current module to detect inliners.

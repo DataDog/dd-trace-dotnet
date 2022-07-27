@@ -5,14 +5,15 @@
 
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL;
-
-/// <summary>
-/// GraphQLParser.AST.GraphQLDocument proxy for ducktyping
-/// https://github.com/graphql-dotnet/parser/blob/efb83a9f4054c0752cfeaac1e3c6b7cde5fa5607/src/GraphQLParser/AST/GraphQLDocument.cs
-/// </summary>
-[DuckCopy]
-internal struct DocumentV5Struct
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
-    public object Source;
+    /// <summary>
+    /// GraphQLParser.AST.GraphQLDocument proxy for ducktyping
+    /// https://github.com/graphql-dotnet/parser/blob/efb83a9f4054c0752cfeaac1e3c6b7cde5fa5607/src/GraphQLParser/AST/GraphQLDocument.cs
+    /// </summary>
+    [DuckCopy]
+    internal struct DocumentV5Struct
+    {
+        public object Source;
+    }
 }

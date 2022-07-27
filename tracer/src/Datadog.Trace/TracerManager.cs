@@ -22,6 +22,8 @@ using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Http;
+using Datadog.Trace.Util.Http.QueryStringObfuscation;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -67,7 +69,7 @@ namespace Datadog.Trace
             DirectLogSubmission = directLogSubmission;
             Telemetry = telemetry;
             TraceProcessors = traceProcessors ?? Array.Empty<ITraceProcessor>();
-
+            QueryStringManager = new(settings?.QueryStringReportingEnabled ?? true, settings?.ObfuscationQueryStringRegexTimeout ?? 100, settings?.ObfuscationQueryStringRegex ?? TracerSettings.DefaultObfuscationQueryStringRegex);
             var lstTagProcessors = new List<ITagProcessor>(TraceProcessors.Length);
             foreach (var traceProcessor in TraceProcessors)
             {
@@ -118,6 +120,9 @@ namespace Datadog.Trace
         public ISampler Sampler { get; }
 
         public DirectLogSubmissionManager DirectLogSubmission { get; }
+
+        /// Gets the global <see cref="QueryStringManager"/> instance.
+        public QueryStringManager QueryStringManager { get; }
 
         public IDogStatsd Statsd { get; }
 
@@ -353,6 +358,18 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("routetemplate_expansion_enabled");
                     writer.WriteValue(instanceSettings.ExpandRouteTemplatesEnabled);
+
+                    writer.WritePropertyName("querystring_reporting_enabled");
+                    writer.WriteValue(instanceSettings.QueryStringReportingEnabled);
+
+                    writer.WritePropertyName("obfuscation_querystring_regex_timout");
+                    writer.WriteValue(instanceSettings.ObfuscationQueryStringRegexTimeout);
+
+                    if (string.Compare(instanceSettings.ObfuscationQueryStringRegex, TracerSettings.DefaultObfuscationQueryStringRegex, StringComparison.Ordinal) != 0)
+                    {
+                        writer.WritePropertyName("obfuscation_querystring_regex");
+                        writer.WriteValue(instanceSettings.ObfuscationQueryStringRegex);
+                    }
 
                     writer.WritePropertyName("partialflush_enabled");
                     writer.WriteValue(instanceSettings.Exporter.PartialFlushEnabled);

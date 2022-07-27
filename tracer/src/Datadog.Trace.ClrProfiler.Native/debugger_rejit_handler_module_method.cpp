@@ -7,21 +7,38 @@ namespace debugger
 DebuggerRejitHandlerModuleMethod::DebuggerRejitHandlerModuleMethod(
                                                     mdMethodDef methodDef, 
                                                     RejitHandlerModule* module,
-                                                    const FunctionInfo& functionInfo,
-                                                    const MethodProbeDefinition& methodProbe) :
-    RejitHandlerModuleMethod(methodDef, module, functionInfo),
-    m_methodProbeDefinition(std::make_unique<debugger::MethodProbeDefinition>(methodProbe))
+                                                    const FunctionInfo& functionInfo) :
+    RejitHandlerModuleMethod(methodDef, module, functionInfo)
 {
-}
-
-MethodProbeDefinition* DebuggerRejitHandlerModuleMethod::GetMethodProbeDefinition()
-{
-    return m_methodProbeDefinition.get();
 }
 
 MethodRewriter* DebuggerRejitHandlerModuleMethod::GetMethodRewriter()
 {
     return DebuggerMethodRewriter::Instance();
+}
+
+void DebuggerRejitHandlerModuleMethod::AddProbe(ProbeDefinition_S probe)
+{
+    m_probes.push_back(probe);
+}
+
+bool DebuggerRejitHandlerModuleMethod::RemoveProbe(const shared::WSTRING& probeId)
+{
+    for (auto probe = m_probes.begin(); probe != m_probes.end(); ++probe)
+    {
+        if ((*probe)->probeId == probeId)
+        {
+            m_probes.erase(probe);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+std::vector<ProbeDefinition_S>& DebuggerRejitHandlerModuleMethod::GetProbes()
+{
+    return m_probes;
 }
 
 } // namespace debugger

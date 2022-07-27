@@ -16,11 +16,14 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Util;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using MessagePack; // use nuget MessagePack to deserialize
 using Xunit.Abstractions;
 
@@ -64,6 +67,10 @@ namespace Datadog.Trace.TestHelpers
         public IImmutableList<MockClientStatsPayload> Stats { get; private set; } = ImmutableList<MockClientStatsPayload>.Empty;
 
         public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
+
+        public List<string> Snapshots { get; private set; } = new();
+
+        public List<string> ProbesStatuses { get; private set; } = new();
 
         public ConcurrentQueue<string> StatsdRequests { get; } = new();
 
@@ -220,6 +227,90 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return stats;
+        }
+
+        /// <summary>
+        /// Wait for the given number of probe snapshots to appear.
+        /// </summary>
+        /// <param name="snapshotCount">The expected number of probe snapshots when more than one snapshot is expected (e.g. multiple line probes in method).</param>
+        /// <param name="timeout">The timeout</param>
+        /// <returns>The list of probe snapshots.</returns>
+        public async Task<string[]> WaitForSnapshots(int snapshotCount, TimeSpan? timeout = null)
+        {
+            using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(5));
+
+            var isFound = false;
+            while (!isFound && !cancellationSource.IsCancellationRequested)
+            {
+                isFound = Snapshots.Count == snapshotCount;
+
+                if (!isFound)
+                {
+                    await Task.Delay(100);
+                }
+            }
+
+            if (!isFound)
+            {
+                throw new InvalidOperationException($"Snapshot count not found. Expected {snapshotCount}, actual {Snapshots.Count}");
+            }
+
+            return Snapshots.ToArray();
+        }
+
+        public async Task<bool> WaitForNoSnapshots(int timeoutInMilliseconds = 10000)
+        {
+            var deadline = DateTime.Now.AddMilliseconds(timeoutInMilliseconds);
+            while (DateTime.Now < deadline)
+            {
+                if (Snapshots.Any())
+                {
+                    return false;
+                }
+
+                await Task.Delay(100);
+            }
+
+            return !Snapshots.Any();
+        }
+
+        public void ClearSnapshots()
+        {
+            Snapshots.Clear();
+        }
+
+        /// <summary>
+        /// Wait for the given number of probe statuses to appear.
+        /// </summary>
+        /// <param name="statusCount">The expected number of probe statuses when more than one status is expected (e.g. multiple line probes in method).</param>
+        /// <param name="timeout">The timeout</param>
+        /// <returns>The list of probe statuses.</returns>
+        public async Task<string[]> WaitForProbesStatuses(int statusCount, TimeSpan? timeout = null)
+        {
+            using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(5));
+
+            var isFound = false;
+            while (!isFound && !cancellationSource.IsCancellationRequested)
+            {
+                isFound = ProbesStatuses.Count == statusCount;
+
+                if (!isFound)
+                {
+                    await Task.Delay(100);
+                }
+            }
+
+            if (!isFound)
+            {
+                throw new InvalidOperationException($"Snapshot count not found. Expected {statusCount}, actual {Snapshots.Count}");
+            }
+
+            return ProbesStatuses.ToArray();
+        }
+
+        public void ClearProbeStatuses()
+        {
+            ProbesStatuses.Clear();
         }
 
         public virtual void Dispose()
@@ -426,6 +517,32 @@ namespace Datadog.Trace.TestHelpers
             return body;
         }
 
+        private void ReceiveDebuggerBatch(string batch)
+        {
+            var arr = JArray.Parse(batch);
+
+            var probeStatuses = new List<string>();
+            var snapshots = new List<string>();
+
+            foreach (var token in arr)
+            {
+                var stringifiedToken = token.ToString();
+                if (token["debugger"]?["diagnostics"]?["status"] != null)
+                {
+                    probeStatuses.Add(stringifiedToken);
+                }
+                else
+                {
+                    snapshots.Add(stringifiedToken);
+                }
+            }
+
+            // We override the previous Probes Statuses as the debugger-agent is always emitting complete set of probes statuses, so we can
+            // solely rely on that.
+            ProbesStatuses = probeStatuses;
+            Snapshots.AddRange(snapshots);
+        }
+
         public class TcpUdpAgent : MockTracerAgent
         {
             private readonly HttpListener _listener;
@@ -573,7 +690,21 @@ namespace Datadog.Trace.TestHelpers
                         }
                         else
                         {
-                            if (ShouldDeserializeTraces)
+                            var buffer = Encoding.UTF8.GetBytes("{}");
+
+                            if (ctx.Request.RawUrl.EndsWith("/info"))
+                            {
+                                var endpoints = $"{{\"endpoints\":{JsonConvert.SerializeObject(DiscoveryService.AllSupportedEndpoints)}}}";
+                                buffer = Encoding.UTF8.GetBytes(endpoints);
+                            }
+                            else if (ctx.Request.RawUrl.Contains("/debugger/v1/input"))
+                            {
+                                using var body = ctx.Request.InputStream;
+                                using var streamReader = new StreamReader(body);
+                                var batch = streamReader.ReadToEnd();
+                                ReceiveDebuggerBatch(batch);
+                            }
+                            else if (ShouldDeserializeTraces)
                             {
                                 if (ctx.Request.Url?.AbsolutePath == "/v0.6/stats")
                                 {
@@ -602,7 +733,6 @@ namespace Datadog.Trace.TestHelpers
                             }
 
                             ctx.Response.ContentType = "application/json";
-                            var buffer = Encoding.UTF8.GetBytes("{}");
                             ctx.Response.ContentLength64 = buffer.LongLength;
                             ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
                         }

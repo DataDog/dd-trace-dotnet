@@ -5,14 +5,9 @@
 
 #if !NETFRAMEWORK
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
-using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
-using Microsoft.Net.Http.Headers;
 
 namespace Datadog.Trace.AppSec.Transports.Http
 {
@@ -34,13 +29,6 @@ namespace Datadog.Trace.AppSec.Transports.Http
         public void SetAdditiveContext(IContext additive_context)
         {
             _context.Features.Set(additive_context);
-        }
-
-        public IpInfo GetReportedIpInfo()
-        {
-            var ipAddress = _context.Connection.RemoteIpAddress.ToString();
-            var port = _context.Connection.RemotePort;
-            return new IpInfo(ipAddress, port);
         }
 
         public IHeadersCollection GetRequestHeaders()

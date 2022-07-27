@@ -32,7 +32,7 @@ public:
     std::string const& GetHostname() const override;
     std::string const& GetAgentUrl() const override;
     std::string const& GetAgentHost() const override;
-    int GetAgentPort() const override;
+    int32_t GetAgentPort() const override;
     bool IsAgentless() const override;
     std::string const& GetSite() const override;
     std::string const& GetApiKey() const override;
@@ -40,7 +40,7 @@ public:
     bool IsCpuProfilingEnabled() const override;
     bool IsWallTimeProfilingEnabled() const override;
     bool IsExceptionProfilingEnabled() const override;
-    int ExceptionSampleLimit() const override;
+    int32_t ExceptionSampleLimit() const override;
     bool IsAllocationProfilingEnabled() const override;
 
 private:
@@ -64,7 +64,7 @@ private:
     static std::string const DefaultEnvironment;
     static std::string const DefaultAgentHost;
     static std::string const DefaultEmptyString;
-    static int const DefaultAgentPort;
+    static int32_t const DefaultAgentPort;
     static std::chrono::seconds const DefaultDevUploadInterval;
     static std::chrono::seconds const DefaultProdUploadInterval;
 
@@ -90,5 +90,5 @@ private:
     tags _userTags;
     bool _isNativeFrameEnabled;
     bool _isAgentLess;
-    int _exceptionSampleLimit;
+    int32_t _exceptionSampleLimit;
 };

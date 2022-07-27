@@ -121,7 +121,7 @@ namespace Datadog.Trace.TestHelpers
         public Process StartSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "")
         {
             // get path to sample app that the profiler will attach to
-            string sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework);
+            var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework);
             if (!File.Exists(sampleAppPath))
             {
                 throw new Exception($"application not found: {sampleAppPath}");
@@ -520,6 +520,7 @@ namespace Datadog.Trace.TestHelpers
 
             // disable tracing for this HttpClient request
             httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+            httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
             var testStart = DateTime.UtcNow;
             var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
             var content = await response.Content.ReadAsStringAsync();

@@ -1,0 +1,1240 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "a": {
+                "fields": null,
+                "type": "Int32",
+                "value": "-2147483648"
+              }
+            },
+            "fields": null
+          },
+          "return": {
+            "arguments": {
+              "a": {
+                "fields": null,
+                "type": "Int32",
+                "value": "-2147483648"
+              }
+            },
+            "fields": null,
+            "throwable": {
+              "message": "The method or operation is not implemented.",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.ThrowException",
+                  "lineNumber": "ScrubbedValue"
+                },
+                {
+                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Method",
+                  "lineNumber": "ScrubbedValue"
+                },
+                {
+                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.<Run>b__0_0",
+                  "lineNumber": "ScrubbedValue"
+                },
+                {
+                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.CaptureException",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "System.NotImplementedException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.<Run>b__0_0",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.CaptureException",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest",
+      "name": "Method",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "OverloadAndSimpleNameTest.Method(a=-2147483648)",
+    "service": "Unknown"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "a": {
+                "fields": null,
+                "type": "Int32",
+                "value": "-2147483648"
+              },
+              "b": {
+                "fields": null,
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            },
+            "fields": null
+          },
+          "return": {
+            "arguments": {
+              "a": {
+                "fields": null,
+                "type": "Int32",
+                "value": "-2147483648"
+              },
+              "b": {
+                "fields": null,
+                "type": "Int32",
+                "value": "2147483647"
+              }
+            },
+            "fields": null,
+            "throwable": {
+              "message": "The method or operation is not implemented.",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.ThrowException",
+                  "lineNumber": "ScrubbedValue"
+                },
+                {
+                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Method",
+                  "lineNumber": "ScrubbedValue"
+                },
+                {
+                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.<Run>b__0_1",
+                  "lineNumber": "ScrubbedValue"
+                },
+                {
+                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.CaptureException",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "System.NotImplementedException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.<Run>b__0_1",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.CaptureException",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest",
+      "name": "Method",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "OverloadAndSimpleNameTest.Method(a=-2147483648, b=2147483647)",
+    "service": "Unknown"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "a": {
+                "fields": {
+                  "_shouldCloned": {
+                    "fields": null,
+                    "type": "Int32",
+                    "value": "44"
+                  },
+                  "Address": {
+                    "fields": {
+                      "City": {
+                        "fields": {
+                          "Name": {
+                            "fields": null,
+                            "type": "String",
+                            "value": "null"
+                          },
+                          "Type": {
+                            "fields": null,
+                            "type": "PlaceType",
+                            "value": "City"
+                          }
+                        },
+                        "type": "Place",
+                        "value": "Place"
+                      },
+                      "HomeType": {
+                        "fields": null,
+                        "type": "BuildingType",
+                        "value": "Cottage"
+                      },
+                      "Number": {
+                        "fields": null,
+                        "type": "Int32",
+                        "value": "0"
+                      },
+                      "Street": {
+                        "fields": null,
+                        "type": "String",
+                        "value": "null"
+                      }
+                    },
+                    "type": "Address",
+                    "value": "Address"
+                  },
+                  "Age": {
+                    "fields": null,
+                    "type": "Double",
+                    "value": "44"
+                  },
+                  "Children": {
+                    "fields": null,
+                    "type": "List`1",
+                    "value": "null"
+                  },
+                  "Id": {
+                    "fields": null,
+                    "type": "Guid",
+                    "value": "ScrubbedValue"
+                  },
+                  "Name": {
+                    "fields": null,
+                    "type": "String",
+                    "value": "Theodor Herzl"
+                  }
+                },
+                "type": "Person",
+                "value": "Person"
+              },
+              "b": {
+                "fields": {
+                  "_shouldCloned": {
+                    "fields": null,
+                    "type": "Int32",
+                    "value": "58"
+                  },
+                  "Address": {
+                    "fields": {
+                      "City": {
+                        "fields": {
+                          "Name": {
+                            "fields": null,
+                            "type": "String",
+                            "value": "null"
+                          },
+                          "Type": {
+                            "fields": null,
+                            "type": "PlaceType",
+                            "value": "City"
+                          }
+                        },
+                        "type": "Place",
+                        "value": "Place"
+                      },
+                      "HomeType": {
+                        "fields": null,
+                        "type": "BuildingType",
+                        "value": "Cottage"
+                      },
+                      "Number": {
+                        "fields": null,
+                        "type": "Int32",
+                        "value": "0"
+                      },
+                      "Street": {
+                        "fields": null,
+                        "type": "String",
+                        "value": "null"
+                      }
+                    },
+                    "type": "Address",
+                    "value": "Address"
+                  },
+                  "Age": {
+                    "fields": null,
+                    "type": "Double",
+                    "value": "58"
+                  },
+                  "Children": {
+                    "fields": null,
+                    "type": "List`1",
+                    "value": "null"
+                  },
+                  "Id": {
+                    "fields": null,
+                    "type": "Guid",
+                    "value": "ScrubbedValue"
+                  },
+                  "Name": {
+                    "fields": null,
+                    "type": "String",
+                    "value": "David Wolffsohn"
+                  }
+                },
+                "type": "Person",
+                "value": "Person"
+              }
+            },
+            "fields": null
+          },
+          "return": {
+            "arguments": {
+              "a": {
+                "fields": {
+                  "_shouldCloned": {
+                    "fields": null,
+                    "type": "Int32",
+                    "value": "44"
+                  },
+                  "Address": {
+                    "fields": {
+                      "City": {
+                        "fields": {
+                          "Name": {
+                            "fields": null,
+                            "type": "String",
+                            "value": "null"
+                          },
+                          "Type": {
+                            "fields": null,
+                            "type": "PlaceType",
+                            "value": "City"
+                          }
+                        },
+                        "type": "Place",
+                        "value": "Place"
+                      },
+                      "HomeType": {
+                        "fields": null,
+                        "type": "BuildingType",
+                        "value": "Cottage"
+                      },
+                      "Number": {
+                        "fields": null,
+                        "type": "Int32",
+                        "value": "0"
+                      },
+                      "Street": {
+                        "fields": null,
+                        "type": "String",
+                        "value": "null"
+                      }
+                    },
+                    "type": "Address",
+                    "value": "Address"
+                  },
+                  "Age": {
+                    "fields": null,
+                    "type": "Double",
+                    "value": "44"
+                  },
+                  "Children": {
+                    "fields": null,
+                    "type": "List`1",
+                    "value": "null"
+                  },
+                  "Id": {
+                    "fields": null,
+                    "type": "Guid",
+                    "value": "ScrubbedValue"
+                  },
+                  "Name": {
+                    "fields": null,
+                    "type": "String",
+                    "value": "Theodor Herzl"
+                  }
+                },
+                "type": "Person",
+                "value": "Person"
+              },
+              "b": {
+                "fields": {
+                  "_shouldCloned": {
+                    "fields": null,
+                    "type": "Int32",
+                    "value": "58"
+                  },
+                  "Address": {
+                    "fields": {
+                      "City": {
+                        "fields": {
+                          "Name": {
+                            "fields": null,
+                            "type": "String",
+                            "value": "null"
+                          },
+                          "Type": {
+                            "fields": null,
+                            "type": "PlaceType",
+                            "value": "City"
+                          }
+                        },
+                        "type": "Place",
+                        "value": "Place"
+                      },
+                      "HomeType": {
+                        "fields": null,
+                        "type": "BuildingType",
+                        "value": "Cottage"
+                      },
+                      "Number": {
+                        "fields": null,
+                        "type": "Int32",
+                        "value": "0"
+                      },
+                      "Street": {
+                        "fields": null,
+                        "type": "String",
+                        "value": "null"
+                      }
+                    },
+                    "type": "Address",
+                    "value": "Address"
+                  },
+                  "Age": {
+                    "fields": null,
+                    "type": "Double",
+                    "value": "58"
+                  },
+                  "Children": {
+                    "fields": null,
+                    "type": "List`1",
+                    "value": "null"
+                  },
+                  "Id": {
+                    "fields": null,
+                    "type": "Guid",
+                    "value": "ScrubbedValue"
+                  },
+                  "Name": {
+                    "fields": null,
+                    "type": "String",
+                    "value": "David Wolffsohn"
+                  }
+                },
+                "type": "Person",
+                "value": "Person"
+              }
+            },
+            "fields": null,
+            "locals": {
+              "@return": {
+                "fields": {
+                  "_shouldCloned": {
+                    "fields": null,
+                    "type": "Int32",
+                    "value": "50"
+                  },
+                  "Address": {
+                    "fields": {
+                      "City": {
+                        "fields": {
+                          "Name": {
+                            "fields": null,
+                            "type": "String",
+                            "value": "null"
+                          },
+                          "Type": {
+                            "fields": null,
+                            "type": "PlaceType",
+                            "value": "City"
+                          }
+                        },
+                        "type": "Place",
+                        "value": "Place"
+                      },
+                      "HomeType": {
+                        "fields": null,
+                        "type": "BuildingType",
+                        "value": "Cottage"
+                      },
+                      "Number": {
+                        "fields": null,
+                        "type": "Int32",
+                        "value": "0"
+                      },
+                      "Street": {
+                        "fields": null,
+                        "type": "String",
+                        "value": "null"
+                      }
+                    },
+                    "type": "Address",
+                    "value": "Address"
+                  },
+                  "Age": {
+                    "fields": null,
+                    "type": "Double",
+                    "value": "50.5"
+                  },
+                  "Children": {
+                    "fields": null,
+                    "type": "List`1",
+                    "value": "null"
+                  },
+                  "Id": {
+                    "fields": null,
+                    "type": "Guid",
+                    "value": "ScrubbedValue"
+                  },
+                  "Name": {
+                    "fields": null,
+                    "type": "String",
+                    "value": "Person Name"
+                  }
+                },
+                "type": "Person",
+                "value": "Person"
+              },
+              "isEqual": {
+                "fields": null,
+                "type": "Boolean",
+                "value": "False"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "OuterType+OverloadAndSimpleNameTest"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "OuterType+OverloadAndSimpleNameTest.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "OuterType+OverloadAndSimpleNameTest",
+      "name": "Method",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "Method(a=Person, b=Person): Person\r\n@return=Person, isEqual=False",
+    "service": "Unknown"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "a": {
+                "fields": null,
+                "type": "String",
+                "value": "Marty McFly"
+              }
+            },
+            "fields": null
+          },
+          "return": {
+            "arguments": {
+              "a": {
+                "fields": null,
+                "type": "String",
+                "value": "Marty McFly"
+              }
+            },
+            "fields": null,
+            "locals": {
+              "@return": {
+                "fields": null,
+                "type": "String",
+                "value": "OuterType+OverloadAndSimpleNameTest.Method[Marty McFly]"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "OuterType+OverloadAndSimpleNameTest"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "OuterType+OverloadAndSimpleNameTest.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "OuterType+OverloadAndSimpleNameTest",
+      "name": "Method",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "Method(a=Marty McFly): OuterType+OverloadAndSimpleNameTest.Method[Marty McFly]\r\n@return=OuterType+OverloadAndSimpleNameTest.Method[Marty McFly]",
+    "service": "Unknown"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "adr": {
+                "fields": {
+                  "City": {
+                    "fields": {
+                      "Name": {
+                        "fields": null,
+                        "type": "String",
+                        "value": "Some Place"
+                      },
+                      "Type": {
+                        "fields": null,
+                        "type": "PlaceType",
+                        "value": "City"
+                      }
+                    },
+                    "type": "Place",
+                    "value": "Place"
+                  },
+                  "HomeType": {
+                    "fields": null,
+                    "type": "BuildingType",
+                    "value": "Cottage"
+                  },
+                  "Number": {
+                    "fields": null,
+                    "type": "Int32",
+                    "value": "0"
+                  },
+                  "Street": {
+                    "fields": null,
+                    "type": "String",
+                    "value": "null"
+                  }
+                },
+                "type": "Address",
+                "value": "Address"
+              }
+            },
+            "fields": null
+          },
+          "return": {
+            "arguments": {
+              "adr": {
+                "fields": {
+                  "City": {
+                    "fields": {
+                      "Name": {
+                        "fields": null,
+                        "type": "String",
+                        "value": "Some Place"
+                      },
+                      "Type": {
+                        "fields": null,
+                        "type": "PlaceType",
+                        "value": "City"
+                      }
+                    },
+                    "type": "Place",
+                    "value": "Place"
+                  },
+                  "HomeType": {
+                    "fields": null,
+                    "type": "BuildingType",
+                    "value": "Cottage"
+                  },
+                  "Number": {
+                    "fields": null,
+                    "type": "Int32",
+                    "value": "0"
+                  },
+                  "Street": {
+                    "fields": null,
+                    "type": "String",
+                    "value": "null"
+                  }
+                },
+                "type": "Address",
+                "value": "Address"
+              }
+            },
+            "fields": null,
+            "locals": {
+              "@return": {
+                "fields": {
+                  "City": {
+                    "fields": {
+                      "Name": {
+                        "fields": null,
+                        "type": "String",
+                        "value": "Some Place"
+                      },
+                      "Type": {
+                        "fields": null,
+                        "type": "PlaceType",
+                        "value": "City"
+                      }
+                    },
+                    "type": "Place",
+                    "value": "Place"
+                  },
+                  "HomeType": {
+                    "fields": null,
+                    "type": "BuildingType",
+                    "value": "Cottage"
+                  },
+                  "Number": {
+                    "fields": null,
+                    "type": "Int32",
+                    "value": "0"
+                  },
+                  "Street": {
+                    "fields": null,
+                    "type": "String",
+                    "value": "null"
+                  }
+                },
+                "type": "Address",
+                "value": "Address"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Spicing.Things.Up.OverloadAndSimpleNameTest"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Spicing.Things.Up.OverloadAndSimpleNameTest.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Spicing.Things.Up.OverloadAndSimpleNameTest",
+      "name": "Method",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "OverloadAndSimpleNameTest.Method(adr=Address): Address\r\n@return=Address",
+    "service": "Unknown"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "c": {
+                "fields": null,
+                "type": "Char",
+                "value": "@"
+              }
+            },
+            "fields": null
+          },
+          "return": {
+            "arguments": {
+              "c": {
+                "fields": null,
+                "type": "Char",
+                "value": "@"
+              }
+            },
+            "fields": null,
+            "locals": {
+              "@return": {
+                "fields": null,
+                "type": "String",
+                "value": "Spicing.Things.Down.OuterType+OverloadAndSimpleNameTest.Method.@"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Spicing.Things.Down.OuterType+OverloadAndSimpleNameTest"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Spicing.Things.Down.OuterType+OverloadAndSimpleNameTest.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Spicing.Things.Down.OuterType+OverloadAndSimpleNameTest",
+      "name": "Method",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "OuterType+OverloadAndSimpleNameTest.Method(c=@): Spicing.Things.Down.OuterType+OverloadAndSimpleNameTest.Method.@\r\n@return=Spicing.Things.Down.OuterType+OverloadAndSimpleNameTest.Method.@",
+    "service": "Unknown"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "c": {
+                "fields": null,
+                "type": "Char",
+                "value": "@"
+              }
+            },
+            "fields": null
+          },
+          "return": {
+            "arguments": {
+              "c": {
+                "fields": null,
+                "type": "Char",
+                "value": "@"
+              }
+            },
+            "fields": null,
+            "locals": {
+              "@return": {
+                "fields": null,
+                "type": "String",
+                "value": "Spicing.Things.Up.OverloadAndSimpleNameTest.Method.@"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Spicing.Things.Up.OverloadAndSimpleNameTest"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Spicing.Things.Up.OverloadAndSimpleNameTest.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Spicing.Things.Up.OverloadAndSimpleNameTest",
+      "name": "Method",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "OverloadAndSimpleNameTest.Method(c=@): Spicing.Things.Up.OverloadAndSimpleNameTest.Method.@\r\n@return=Spicing.Things.Up.OverloadAndSimpleNameTest.Method.@",
+    "service": "Unknown"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "c": {
+                "fields": null,
+                "type": "Char",
+                "value": "@"
+              }
+            },
+            "fields": null
+          },
+          "return": {
+            "arguments": {
+              "c": {
+                "fields": null,
+                "type": "Char",
+                "value": "@"
+              }
+            },
+            "fields": null,
+            "locals": {
+              "local": {
+                "fields": null,
+                "type": "String",
+                "value": "Method@"
+              }
+            },
+            "throwable": {
+              "message": "The method or operation is not implemented.",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.ThrowException",
+                  "lineNumber": "ScrubbedValue"
+                },
+                {
+                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Method",
+                  "lineNumber": "ScrubbedValue"
+                },
+                {
+                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.<Run>b__0_2",
+                  "lineNumber": "ScrubbedValue"
+                },
+                {
+                  "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.CaptureException",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "System.NotImplementedException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.<Run>b__0_2",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.CaptureException",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest",
+      "name": "Method",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "OverloadAndSimpleNameTest.Method(c=@)\r\nlocal=Method@",
+    "service": "Unknown"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "callerName": {
+                "fields": null,
+                "type": "String",
+                "value": "First Call"
+              }
+            },
+            "fields": null
+          },
+          "return": {
+            "arguments": {
+              "callerName": {
+                "fields": null,
+                "type": "String",
+                "value": "First Call"
+              }
+            },
+            "fields": null,
+            "locals": {
+              "a": {
+                "fields": null,
+                "type": "Int32",
+                "value": "13"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "OverloadAndSimpleNameTest.cs",
+            "function": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest",
+      "name": "Method",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "OverloadAndSimpleNameTest.Method(callerName=First Call)\r\na=13",
+    "service": "Unknown"
+  }
+]

@@ -21,16 +21,20 @@ struct FunctionInfo;
 template <class RejitRequestDefinition>
 class RejitPreprocessor
 {
-private:
-    void ProcessTypeDefForRejit(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
-                           ComPtr<IMetaDataEmit2>& metadataEmit, ComPtr<IMetaDataAssemblyImport>& assemblyImport,
-                           ComPtr<IMetaDataAssemblyEmit>& assemblyEmit, const ModuleInfo& moduleInfo,
-                           const mdTypeDef typeDef, std::vector<ModuleID>& vtModules,
-                           std::vector<mdMethodDef>& vtMethodDefs);
-
 protected:
     std::shared_ptr<RejitHandler> m_rejit_handler = nullptr;
     std::shared_ptr<RejitWorkOffloader> m_work_offloader = nullptr;
+
+    void ProcessTypeDefForRejit(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
+                            ComPtr<IMetaDataEmit2>& metadataEmit, ComPtr<IMetaDataAssemblyImport>& assemblyImport,
+                            ComPtr<IMetaDataAssemblyEmit>& assemblyEmit, const ModuleInfo& moduleInfo,
+                            const mdTypeDef typeDef, std::vector<MethodIdentifier>& rejitRequests);
+
+    virtual void ProcessTypesForRejit(std::vector<MethodIdentifier>& rejitRequests, const ModuleInfo& moduleInfo,
+                          ComPtr<IMetaDataImport2> metadataImport, ComPtr<IMetaDataEmit2> metadataEmit,
+                          ComPtr<IMetaDataAssemblyImport> assemblyImport,
+                          ComPtr<IMetaDataAssemblyEmit> assemblyEmit, const RejitRequestDefinition& definition,
+                          const MethodReference& targetMethod);
 
     virtual const MethodReference& GetTargetMethod(const RejitRequestDefinition& definition) = 0;
     virtual const bool GetIsDerived(const RejitRequestDefinition& definition) = 0;
@@ -39,6 +43,9 @@ protected:
                                                                          RejitHandlerModule* module,
                                                                          const FunctionInfo& functionInfo,
                                                                          const RejitRequestDefinition& definition) = 0;
+    virtual bool ShouldSkipModule(const ModuleInfo& moduleInfo, const RejitRequestDefinition& definition) = 0;
+
+    virtual void UpdateMethod(RejitHandlerModuleMethod* method, const RejitRequestDefinition& definition);
 
 public:
     RejitPreprocessor(std::shared_ptr<RejitHandler> rejit_handler, std::shared_ptr<RejitWorkOffloader> work_offloader);
@@ -50,6 +57,20 @@ public:
     void EnqueueRequestRejitForLoadedModules(const std::vector<ModuleID>& modulesVector,
                                              const std::vector<RejitRequestDefinition>& requests,
                                              std::promise<ULONG>* promise);
+
+    ULONG PreprocessRejitRequests(const std::vector<ModuleID>& modules,
+                                  const std::vector<RejitRequestDefinition>& definitions,
+                                  std::vector<MethodIdentifier>& rejitRequests);
+
+    void EnqueuePreprocessRejitRequests(const std::vector<ModuleID>& modules,
+                                  const std::vector<RejitRequestDefinition>& definitions,
+                                  std::promise<std::vector<MethodIdentifier>>* promise);
+
+    void RequestRejit(std::vector<MethodIdentifier>& rejitRequests, bool enqueueInSameThread = false);
+    void RequestRevert(std::vector<MethodIdentifier>& revertRequests, bool enqueueInSameThread = false);
+
+    void EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests, std::promise<void>* promise);
+    void EnqueueRequestRevert(std::vector<MethodIdentifier>& revertRequests, std::promise<void>* promise);
 };
 
 /// <summary>
@@ -67,6 +88,7 @@ protected:
     virtual const std::unique_ptr<RejitHandlerModuleMethod>
     CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo,
                  const IntegrationDefinition& integrationDefinition) final;
+    bool ShouldSkipModule(const ModuleInfo& moduleInfo, const IntegrationDefinition& integrationDefinition) final;
 };
 
 } // namespace trace

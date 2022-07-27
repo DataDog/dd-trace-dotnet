@@ -38,7 +38,7 @@ void Timer::Start()
     dueTime.dwHighDateTime = rawDueTime.HighPart;
     dueTime.dwLowDateTime = rawDueTime.LowPart;
 
-    SetThreadpoolTimer(_internalTimer, &dueTime, _period.count(), 100);
+    SetThreadpoolTimer(_internalTimer, &dueTime, static_cast<DWORD>(_period.count()), 100);
 }
 
 void NTAPI Timer::OnTick(
