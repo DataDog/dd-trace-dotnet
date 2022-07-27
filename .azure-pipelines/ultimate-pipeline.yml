@@ -116,6 +116,7 @@ variables:
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
   DefaultTimeout: 60
+  DD_INSTRUMENTATION_TELEMETRY_ENABLED: 0
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
