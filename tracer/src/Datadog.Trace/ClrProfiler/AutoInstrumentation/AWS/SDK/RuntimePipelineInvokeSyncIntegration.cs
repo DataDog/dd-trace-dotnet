@@ -9,6 +9,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
 {
@@ -70,15 +71,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
             {
                 if (state.State is IExecutionContext executionContext)
                 {
+                    var uri = executionContext.RequestContext.Request.Endpoint;
+                    var absolutePath = uri.AbsolutePath;
+                    var path = executionContext.RequestContext.Request.ResourcePath switch
+                    {
+                        null => absolutePath,
+                        string resourcePath when absolutePath == "/" => resourcePath,
+                        string resourcePath => UriHelpers.Combine(absolutePath, resourcePath),
+                    };
+
                     // The request object is populated later by the Marshaller,
                     // so we wait until the method end callback to read it
                     tags.HttpMethod = executionContext.RequestContext.Request.HttpMethod.ToUpperInvariant();
-                    tags.HttpUrl = executionContext.RequestContext.Request.ResourcePath switch
-                    {
-                        null => executionContext.RequestContext.Request.Endpoint.AbsoluteUri,
-                        string resourcePath when resourcePath.Length > 0 && resourcePath[0] == '/' => executionContext.RequestContext.Request.Endpoint.AbsoluteUri + resourcePath.Substring(1),
-                        _ => executionContext.RequestContext.Request.Endpoint.AbsoluteUri + executionContext.RequestContext.Request.ResourcePath,
-                    };
+                    tags.HttpUrl = $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{path}";
                 }
 
                 tags.RequestId = responseContext.Response.ResponseMetadata.RequestId;

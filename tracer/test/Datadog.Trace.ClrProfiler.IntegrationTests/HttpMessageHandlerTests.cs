@@ -43,9 +43,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         [MemberData(nameof(IntegrationConfig))]
         public void HttpClient_SubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
+            SetInstrumentationVerification();
             ConfigureInstrumentation(instrumentation, enableSocketsHandler);
 
             var expectedAsyncCount = CalculateExpectedAsyncSpans(instrumentation);
@@ -94,15 +96,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: IsUsingSocketHandler(instrumentation), autoEnabled: null);
                 telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: IsUsingWinHttpHandler(instrumentation), autoEnabled: null);
                 telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: IsUsingCurlHandler(instrumentation), autoEnabled: null);
+                VerifyInstrumentation(processResult.Process);
             }
         }
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         [MemberData(nameof(IntegrationConfig))]
         public void TracingDisabled_DoesNotSubmitsTraces(InstrumentationOptions instrumentation, bool enableSocketsHandler)
         {
+            SetInstrumentationVerification();
             ConfigureInstrumentation(instrumentation, enableSocketsHandler);
 
             const string expectedOperationName = "http.request";
@@ -130,6 +135,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 telemetry.AssertIntegration(IntegrationId.HttpSocketsHandler, enabled: false, autoEnabled: null);
                 telemetry.AssertIntegration(IntegrationId.WinHttpHandler, enabled: false, autoEnabled: null);
                 telemetry.AssertIntegration(IntegrationId.CurlHandler, enabled: false, autoEnabled: null);
+                VerifyInstrumentation(processResult.Process);
             }
         }
 

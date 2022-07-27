@@ -22,7 +22,7 @@ TEST_P(HResultConverterParametersTests, CheckMessageForHresult)
     EXPECT_STREQ(expectedMessage, HResultConverter::ToChars(code));
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     HResultConverterTests,
     HResultConverterParametersTests,
     ::testing::Values(

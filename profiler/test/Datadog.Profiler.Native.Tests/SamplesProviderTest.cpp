@@ -9,20 +9,6 @@
 #include "ProviderBase.h"
 #include "Sample.h"
 
-class TestSamplesProvider : public ProviderBase
-{
-public:
-    TestSamplesProvider(const char* name)
-    :
-        ProviderBase(name)
-    {}
-
-    void Add(Sample&& sample)
-    {
-        Store(std::move(sample));
-    }
-};
-
 Sample GetTestSample(std::string_view runtimeId, const std::string& framePrefix, const std::string& labelId, const std::string& labelValue)
 {
     Sample sample{runtimeId};
@@ -104,29 +90,6 @@ void ValidateTestSample(const Sample& sample, const std::string& framePrefix, co
         std::stringstream buffer;
         buffer << framePrefix << " #" << current;
         ASSERT_EQ(buffer.str(), frame.second);
-
-        current++;
-    }
-}
-
-// Add samples and check their presence
-TEST(SamplesTimeProviderTest, CheckStore)
-{
-    TestSamplesProvider provider("TestSamplesProvider");
-
-    std::string runtimeId = "MyRid";
-    provider.Add(GetTestSample(runtimeId, "Frame", "thread name", "thread 1"));
-    provider.Add(GetTestSample(runtimeId, "Frame", "thread name", "thread 2"));
-
-    auto samples = provider.GetSamples();
-    ASSERT_EQ(2, samples.size());
-
-    size_t current = 1;
-    for (auto const& sample : samples)
-    {
-        std::stringstream builder;
-        builder << "thread " << current;
-        ValidateTestSample(sample, "Frame", "thread name", builder.str());
 
         current++;
     }

@@ -198,6 +198,7 @@ namespace Datadog.Trace
     }
     public static class HttpHeaderNames
     {
+        [System.Obsolete]
         public const string DatadogTags = "x-datadog-tags";
         public const string Origin = "x-datadog-origin";
         public const string ParentId = "x-datadog-parent-id";
@@ -347,6 +348,7 @@ namespace Datadog.Trace
         public string? Email { get; set; }
         public string Id { get; set; }
         public string? Name { get; set; }
+        public bool PropagateId { get; set; }
         public string? Role { get; set; }
         public string? Scope { get; set; }
         public string? SessionId { get; set; }

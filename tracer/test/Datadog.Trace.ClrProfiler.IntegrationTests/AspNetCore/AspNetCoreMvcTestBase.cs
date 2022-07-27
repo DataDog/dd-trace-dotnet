@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             Fixture.SetOutput(null);
         }
 
-        protected string GetTestName(string testName)
+        protected virtual string GetTestName(string testName)
         {
             return testName
                  + (_enableRouteTemplateResourceNames ? ".WithFF" : ".NoFF");
@@ -87,11 +87,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             {
                 _httpClient = new HttpClient();
                 _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+                _httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
                 _httpClient.DefaultRequestHeaders.Add(HeaderName1WithMapping, HeaderValue1);
                 _httpClient.DefaultRequestHeaders.Add(HeaderName2, HeaderValue2);
             }
 
-            public MockTracerAgent Agent { get; private set; }
+            public MockTracerAgent.TcpUdpAgent Agent { get; private set; }
 
             public int HttpPort { get; private set; }
 
@@ -117,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                         var initialAgentPort = TcpPortProvider.GetOpenPort();
                         HttpPort = TcpPortProvider.GetOpenPort();
 
-                        Agent = new MockTracerAgent(initialAgentPort);
+                        Agent = MockTracerAgent.Create(initialAgentPort);
                         Agent.SpanFilters.Add(IsNotServerLifeCheck);
                         WriteToOutput($"Starting aspnetcore sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
                         _process = helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);

@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.Logging;
@@ -23,15 +24,53 @@ namespace Datadog.Trace.Ci.Agent
             Log.Information("CIWriterFileSender Initialized.");
         }
 
-        public Task SendPayloadAsync(EventsPayload payload)
+        public Task SendPayloadAsync(CIVisibilityProtocolPayload payload)
         {
-            var str = $"c:\\temp\\file-{Guid.NewGuid().ToString("n")}";
+            var str = Path.Combine(Path.GetTempPath(), $"civiz-{Guid.NewGuid():n}");
 
             var msgPackBytes = payload.ToArray();
-            File.WriteAllBytes(str + ".mpack", msgPackBytes);
+            var msgPackFile = str + ".mpack";
+            File.WriteAllBytes(msgPackFile, msgPackBytes);
+            Log.Debug("File written: {file}", msgPackFile);
 
             var json = Vendors.MessagePack.MessagePackSerializer.ToJson(msgPackBytes);
-            File.WriteAllText(str + ".json", json);
+            var jsonFile = str + ".json";
+            File.WriteAllText(jsonFile, json);
+            Log.Debug("File written: {file}", jsonFile);
+
+            return Task.CompletedTask;
+        }
+
+        public Task SendPayloadAsync(MultipartPayload payload)
+        {
+            var str = Path.Combine(Path.GetTempPath(), $"multipart-{Guid.NewGuid():n}");
+            foreach (var item in payload.ToArray())
+            {
+                byte[] bytes = null;
+
+                if (item.ContentInStream is { } stream)
+                {
+                    using var ms = new MemoryStream();
+                    stream.CopyTo(ms);
+                    bytes = ms.ToArray();
+                }
+                else if (item.ContentInBytes is { } arraySegment)
+                {
+                    bytes = arraySegment.ToArray();
+                }
+
+                if (bytes is not null)
+                {
+                    var msgPackFile = str + $"{item.Name}.mpack";
+                    File.WriteAllBytes(msgPackFile, bytes);
+                    Log.Debug("File written: {file}", msgPackFile);
+
+                    var json = Vendors.MessagePack.MessagePackSerializer.ToJson(bytes);
+                    var jsonFile = str + $"{item.Name}.json";
+                    File.WriteAllText(jsonFile, json);
+                    Log.Debug("File written: {file}", jsonFile);
+                }
+            }
 
             return Task.CompletedTask;
         }

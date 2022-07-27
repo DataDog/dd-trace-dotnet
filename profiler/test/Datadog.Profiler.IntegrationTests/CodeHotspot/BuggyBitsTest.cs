@@ -29,7 +29,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             _output = output;
         }
 
-        [TestAppFact("Samples.BuggyBits", DisplayName = "BuggyBits")]
+        [TestAppFact("Samples.BuggyBits")]
         public void CheckSpanContextAreAttached(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true);
@@ -73,7 +73,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             // profiler was a subset. But this makes the test flacky: not flushed when the application is closing.
         }
 
-        [TestAppFact("Samples.BuggyBits", DisplayName = "BuggyBits")]
+        [TestAppFact("Samples.BuggyBits")]
         public void NoTraceContextAttachedIfFeatureDeactivated(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true);

@@ -140,6 +140,8 @@ public:
     void DeallocateILMemory(LPBYTE pBody);
 
     unsigned GetMaxStackValue();
+
+    static bool IsBranchTarget(ILInstr* pInstr);
 };
 
 #endif // DD_CLR_PROFILER_IL_REWRITER_H_

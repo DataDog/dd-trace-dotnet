@@ -66,21 +66,11 @@ public:
 public:
     bool Start() override
     {
-        _transformerThread = std::thread(&CollectorBase<TRawSample>::ProcessSamples, this);
-
         return true;
     }
 
     bool Stop() override
     {
-        if (_stopRequested.load())
-        {
-            return true;
-        }
-
-        _stopRequested.store(true);
-        _transformerThread.join();
-
         return true;
     }
 
@@ -96,44 +86,14 @@ public:
         _collectedSamples.push_back(std::forward<TRawSample>(sample));
     }
 
-protected:
-    // set values and additional labels
-    virtual void OnTransformRawSample(const TRawSample& rawSample, Sample& sample) = 0;
-
-private:
-    inline static const std::chrono::nanoseconds CollectingPeriod = 60ms;
-
-    void Flush()
+    inline std::list<Sample> GetSamples() override
     {
         std::list<TRawSample> input = FetchRawSamples();
-        if (input.size() != 0)
-        {
-            TransformRawSamples(input);
-        }
+                
+        return TransformRawSamples(input);
     }
 
-    void ProcessSamples()
-    {
-        auto name = GetName();
-        shared::WSTRINGSTREAM builder;
-        builder << WStr("DD.Profiler.") << name << WStr(".Thread");
-        auto threadName = builder.str();
-        OpSysTools::SetNativeThreadName(&_transformerThread, threadName.c_str());
-        _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), threadName.c_str());
-
-        Log::Info("Starting to process raw '", name, "' samples.");
-        while (!_stopRequested.load())
-        {
-            // TODO: instead of sleeping, we could wait on an event
-            //       that would be set in the Add() method
-            std::this_thread::sleep_for(CollectingPeriod);
-
-            Flush();
-        }
-        // Note: the last raw samples added since Stop was requested have been flushed
-
-        Log::Info("Stop processing raw '", name, "' samples.");
-    }
+private:
 
     std::list<TRawSample> FetchRawSamples()
     {
@@ -143,15 +103,19 @@ private:
         return input;
     }
 
-    void TransformRawSamples(const std::list<TRawSample>& input)
+    std::list<Sample> TransformRawSamples(const std::list<TRawSample>& input)
     {
+        std::list<Sample> samples;
+
         for (auto const& rawSample : input)
         {
-            TransformRawSample(rawSample);
+            samples.push_back(TransformRawSample(rawSample));
         }
+
+        return samples;
     }
 
-    void TransformRawSample(const TRawSample& rawSample)
+    Sample TransformRawSample(const TRawSample& rawSample)
     {
         Sample sample(rawSample.Timestamp, _pRuntimeIdStore->GetId(rawSample.AppDomainId));
         if (rawSample.LocalRootSpanId != 0 && rawSample.SpanId != 0)
@@ -168,10 +132,9 @@ private:
         SetStack(rawSample, sample);
 
         // allow inherited classes to add values and specific labels
-        OnTransformRawSample(rawSample, sample);
+        rawSample.OnTransform(sample);
 
-        // save it in the output list
-        Store(std::move(sample));
+        return sample;
     }
 
     void SetAppDomainDetails(const TRawSample& rawSample, Sample& sample)
@@ -252,7 +215,6 @@ private:
     // A thread is responsible for asynchronously fetching raw samples from the input queue
     // and feeding the output sample list with symbolized frames and thread/appdomain names
     std::atomic<bool> _stopRequested = false;
-    std::thread _transformerThread;
 
     std::mutex _rawSamplesLock;
     std::list<TRawSample> _collectedSamples;

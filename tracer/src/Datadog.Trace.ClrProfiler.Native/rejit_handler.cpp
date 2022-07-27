@@ -182,17 +182,21 @@ void RejitHandlerModule::SetModuleMetadata(ModuleMetadata* metadata)
 }
 
 bool RejitHandlerModule::CreateMethodIfNotExists(const mdMethodDef methodDef,
-                                                 RejitHandlerModuleMethodCreatorFunc creator)
+                                                 RejitHandlerModuleMethodCreatorFunc creator,
+                                                 RejitHandlerModuleMethodUpdaterFunc updater)
 {
     std::lock_guard<std::mutex> guard(m_methods_lock);
 
     auto find_res = m_methods.find(methodDef);
     if (find_res != m_methods.end())
     {
+        updater(find_res->second.get());
         return false; // already exist and was not created
     }
 
-    m_methods[methodDef] = creator(methodDef, this);
+    auto newModuleInfo = creator(methodDef, this);
+    updater(newModuleInfo.get());
+    m_methods[methodDef] = std::move(newModuleInfo);
     return true;
 }
 
@@ -294,6 +298,35 @@ void RejitHandler::RequestRejit(std::vector<ModuleID>& modulesVector,
         else
         {
             Logger::Warn("Error requesting ReJIT for ", modulesVector.size(), " methods");
+        }
+    }
+}
+
+void RejitHandler::RequestRevert(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef)
+{
+    if (IsShutdownRequested())
+    {
+        return;
+    }
+
+    HRESULT hr;
+
+    if (!modulesVector.empty())
+    {
+        // *************************************
+        // Request Revert
+        // *************************************
+        
+        HRESULT* status = nullptr;
+        hr = m_profilerInfo->RequestRevert((ULONG) modulesVector.size(), &modulesVector[0], &modulesMethodDef[0], status);
+
+        if (SUCCEEDED(hr))
+        {
+            Logger::Info("Request Revert done for ", modulesVector.size(), " methods");
+        }
+        else
+        {
+            Logger::Warn("Error requesting Revert for ", modulesVector.size(), " methods");
         }
     }
 }
@@ -426,6 +459,24 @@ void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::ve
                                     methods = std::move(modulesMethodDef)]() mutable {
         // Request ReJIT
         RequestRejit(modules, methods);
+    };
+
+    // Enqueue
+    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+}
+
+void RejitHandler::EnqueueForRevert(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef)
+{
+    if (IsShutdownRequested() || modulesVector.size() == 0 || modulesMethodDef.size() == 0)
+    {
+        return;
+    }
+
+    Logger::Debug("RejitHandler::EnqueueForRevert");
+
+    std::function<void()> action = [=, modules = std::move(modulesVector), methods = std::move(modulesMethodDef)]() mutable {
+        // Request Revert
+        RequestRevert(modules, methods);
     };
 
     // Enqueue

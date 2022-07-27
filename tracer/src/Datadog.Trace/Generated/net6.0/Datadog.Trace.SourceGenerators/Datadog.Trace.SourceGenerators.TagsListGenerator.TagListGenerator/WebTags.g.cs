@@ -10,6 +10,8 @@ namespace Datadog.Trace.Tagging
     {
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        // HttpUserAgentBytes = System.Text.Encoding.UTF8.GetBytes("http.useragent");
+        private static readonly byte[] HttpUserAgentBytes = new byte[] { 104, 116, 116, 112, 46, 117, 115, 101, 114, 97, 103, 101, 110, 116 };
         // HttpMethodBytes = System.Text.Encoding.UTF8.GetBytes("http.method");
         private static readonly byte[] HttpMethodBytes = new byte[] { 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100 };
         // HttpRequestHeadersHostBytes = System.Text.Encoding.UTF8.GetBytes("http.request.headers.host");
@@ -18,16 +20,23 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] HttpUrlBytes = new byte[] { 104, 116, 116, 112, 46, 117, 114, 108 };
         // HttpStatusCodeBytes = System.Text.Encoding.UTF8.GetBytes("http.status_code");
         private static readonly byte[] HttpStatusCodeBytes = new byte[] { 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
+        // NetworkClientIpBytes = System.Text.Encoding.UTF8.GetBytes("network.client.ip");
+        private static readonly byte[] NetworkClientIpBytes = new byte[] { 110, 101, 116, 119, 111, 114, 107, 46, 99, 108, 105, 101, 110, 116, 46, 105, 112 };
+        // HttpClientIpBytes = System.Text.Encoding.UTF8.GetBytes("http.client_ip");
+        private static readonly byte[] HttpClientIpBytes = new byte[] { 104, 116, 116, 112, 46, 99, 108, 105, 101, 110, 116, 95, 105, 112 };
 
         public override string? GetTag(string key)
         {
             return key switch
             {
                 "span.kind" => SpanKind,
+                "http.useragent" => HttpUserAgent,
                 "http.method" => HttpMethod,
                 "http.request.headers.host" => HttpRequestHeadersHost,
                 "http.url" => HttpUrl,
                 "http.status_code" => HttpStatusCode,
+                "network.client.ip" => NetworkClientIp,
+                "http.client_ip" => HttpClientIp,
                 _ => base.GetTag(key),
             };
         }
@@ -36,6 +45,9 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
+                case "http.useragent": 
+                    HttpUserAgent = value;
+                    break;
                 case "http.method": 
                     HttpMethod = value;
                     break;
@@ -48,6 +60,12 @@ namespace Datadog.Trace.Tagging
                 case "http.status_code": 
                     HttpStatusCode = value;
                     break;
+                case "network.client.ip": 
+                    NetworkClientIp = value;
+                    break;
+                case "http.client_ip": 
+                    HttpClientIp = value;
+                    break;
                 default: 
                     base.SetTag(key, value);
                     break;
@@ -59,6 +77,11 @@ namespace Datadog.Trace.Tagging
             if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
+            }
+
+            if (HttpUserAgent is not null)
+            {
+                processor.Process(new TagItem<string>("http.useragent", HttpUserAgent, HttpUserAgentBytes));
             }
 
             if (HttpMethod is not null)
@@ -81,6 +104,16 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("http.status_code", HttpStatusCode, HttpStatusCodeBytes));
             }
 
+            if (NetworkClientIp is not null)
+            {
+                processor.Process(new TagItem<string>("network.client.ip", NetworkClientIp, NetworkClientIpBytes));
+            }
+
+            if (HttpClientIp is not null)
+            {
+                processor.Process(new TagItem<string>("http.client_ip", HttpClientIp, HttpClientIpBytes));
+            }
+
             base.EnumerateTags(ref processor);
         }
 
@@ -90,6 +123,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
+                  .Append(',');
+            }
+
+            if (HttpUserAgent is not null)
+            {
+                sb.Append("http.useragent (tag):")
+                  .Append(HttpUserAgent)
                   .Append(',');
             }
 
@@ -118,6 +158,20 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("http.status_code (tag):")
                   .Append(HttpStatusCode)
+                  .Append(',');
+            }
+
+            if (NetworkClientIp is not null)
+            {
+                sb.Append("network.client.ip (tag):")
+                  .Append(NetworkClientIp)
+                  .Append(',');
+            }
+
+            if (HttpClientIp is not null)
+            {
+                sb.Append("http.client_ip (tag):")
+                  .Append(HttpClientIp)
                   .Append(',');
             }
 

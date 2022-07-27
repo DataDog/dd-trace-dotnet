@@ -17,6 +17,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
@@ -66,7 +67,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             if (_agent == null)
             {
                 var agentPort = TcpPortProvider.GetOpenPort();
-                _agent = new MockTracerAgent(agentPort);
+                _agent = MockTracerAgent.Create(agentPort);
             }
 
             StartSample(

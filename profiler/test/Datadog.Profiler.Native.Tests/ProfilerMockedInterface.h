@@ -13,6 +13,7 @@
 #include "TagsHelper.h"
 #include "IApplicationStore.h"
 #include "IRuntimeIdStore.h"
+#include "ISamplesCollector.h"
 
 class MockConfiguration : public IConfiguration
 {
@@ -36,6 +37,7 @@ public:
     MOCK_METHOD(std::string const&, GetServiceName, (), (const override));
     MOCK_METHOD(bool, IsFFLibddprofEnabled, (), (const override));
     MOCK_METHOD(bool, IsAgentless, (), (const override));
+    MOCK_METHOD(bool, IsWallTimeProfilingEnabled, (), (const override));
     MOCK_METHOD(bool, IsCpuProfilingEnabled, (), (const override));
     MOCK_METHOD(bool, IsExceptionProfilingEnabled, (), (const override));
     MOCK_METHOD(int, ExceptionSampleLimit, (), (const override));
@@ -46,6 +48,13 @@ class MockExporter : public IExporter
 public:
     MOCK_METHOD(void, Add, (Sample const& sample), (override));
     MOCK_METHOD(bool, Export, (), (override));
+};
+
+class MockSamplesCollector : public ISamplesCollector
+{
+public:
+    MOCK_METHOD(void, Register, (ISamplesProvider * sampleProvider), (override));
+    MOCK_METHOD(std::list<Sample>, GetSamples, (), (override));
 };
 
 class MockSampleProvider : public ISamplesProvider
@@ -114,6 +123,7 @@ std::tuple<std::unique_ptr<IConfiguration>, MockConfiguration&> CreateConfigurat
 std::tuple<std::shared_ptr<ISamplesProvider>, MockSampleProvider&> CreateSamplesProvider();
 
 std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter();
+std::tuple<std::unique_ptr<ISamplesCollector>, MockSamplesCollector&> CreateSamplesCollector();
 
 template <typename T>
 Sample CreateSample(std::string_view runtimeId, const T& callstack, std::initializer_list<std::pair<std::string, std::string>> labels, std::int64_t value)

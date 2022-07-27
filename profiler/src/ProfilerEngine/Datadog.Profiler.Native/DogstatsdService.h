@@ -11,7 +11,7 @@
 class DogstatsdService : public IMetricsSender
 {
 public:
-    DogstatsdService(const std::string& host, int port, const Tags& tags);
+    DogstatsdService(const std::string& host, int32_t port, const Tags& tags);
     ~DogstatsdService() override = default;
 
     bool Gauge(const std::string& name, double value) override;
@@ -29,5 +29,5 @@ private:
 private:
     const Tags _commonTags;
     const std::string _host;
-    int _port;
+    int32_t _port;
 };

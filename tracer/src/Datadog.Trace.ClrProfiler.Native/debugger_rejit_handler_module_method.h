@@ -15,16 +15,17 @@ namespace debugger
 class DebuggerRejitHandlerModuleMethod : public RejitHandlerModuleMethod
 {
 private:
-    std::unique_ptr<MethodProbeDefinition> m_methodProbeDefinition;
+    std::vector<ProbeDefinition_S> m_probes;
 
 public:
     DebuggerRejitHandlerModuleMethod(mdMethodDef methodDef, 
                                      RejitHandlerModule* module,
-                                     const FunctionInfo& functionInfo,
-                                     const MethodProbeDefinition& methodProbe);
+                                     const FunctionInfo& functionInfo);
 
-    MethodProbeDefinition* GetMethodProbeDefinition();
     MethodRewriter* GetMethodRewriter() override;
+    void AddProbe(ProbeDefinition_S probe);
+    bool RemoveProbe(const shared::WSTRING& probeId);
+    std::vector<ProbeDefinition_S>& GetProbes();
 };
 
 } // namespace debugger

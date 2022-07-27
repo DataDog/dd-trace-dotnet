@@ -5,67 +5,68 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Telemetry;
-
-internal class TelemetryCircuitBreaker
+namespace Datadog.Trace.Telemetry
 {
-    internal const int MaxFatalErrors = 2;
-    internal const int MaxTransientErrors = 5;
-
-    private bool _hasSentSuccessfully = false;
-    private int _initialFatalCount = 0;
-    private int _failureCount = 0;
-
-    public ICollection<TelemetryValue> PreviousConfiguration { get; private set; }
-
-    public ICollection<DependencyTelemetryData> PreviousDependencies { get; private set; }
-
-    public ICollection<IntegrationTelemetryData> PreviousIntegrations { get; private set; }
-
-    public TelemetryPushResult Evaluate(
-        TelemetryPushResult result,
-        ICollection<TelemetryValue> config,
-        ICollection<DependencyTelemetryData> dependencies,
-        ICollection<IntegrationTelemetryData> integrations)
+    internal class TelemetryCircuitBreaker
     {
-        if (result == TelemetryPushResult.Success)
-        {
-            _hasSentSuccessfully = true;
-            _failureCount = 0;
-            PreviousConfiguration = null;
-            PreviousDependencies = null;
-            PreviousIntegrations = null;
-            return result;
-        }
-        else if (result == TelemetryPushResult.FatalError && !_hasSentSuccessfully)
-        {
-            _initialFatalCount++;
-            if (_initialFatalCount >= MaxFatalErrors)
-            {
-                // we've had MaxFatalErrors 404s, 1 minute apart, prob never going to work.
-                PreviousConfiguration = null;
-                PreviousDependencies = null;
-                PreviousIntegrations = null;
-                return TelemetryPushResult.FatalError;
-            }
-        }
-        else
-        {
-            _failureCount++;
-            if (_failureCount >= MaxTransientErrors)
-            {
-                // we've had MaxTransientErrors in a row, 1 minute apart, probably something bigger wrong
-                PreviousConfiguration = null;
-                PreviousDependencies = null;
-                PreviousIntegrations = null;
-                return TelemetryPushResult.FatalError;
-            }
-        }
+        internal const int MaxFatalErrors = 2;
+        internal const int MaxTransientErrors = 5;
 
-        // We should retry next time
-        PreviousConfiguration = config;
-        PreviousDependencies = dependencies;
-        PreviousIntegrations = integrations;
-        return TelemetryPushResult.TransientFailure;
+        private bool _hasSentSuccessfully = false;
+        private int _initialFatalCount = 0;
+        private int _failureCount = 0;
+
+        public ICollection<TelemetryValue> PreviousConfiguration { get; private set; }
+
+        public ICollection<DependencyTelemetryData> PreviousDependencies { get; private set; }
+
+        public ICollection<IntegrationTelemetryData> PreviousIntegrations { get; private set; }
+
+        public TelemetryPushResult Evaluate(
+            TelemetryPushResult result,
+            ICollection<TelemetryValue> config,
+            ICollection<DependencyTelemetryData> dependencies,
+            ICollection<IntegrationTelemetryData> integrations)
+        {
+            if (result == TelemetryPushResult.Success)
+            {
+                _hasSentSuccessfully = true;
+                _failureCount = 0;
+                PreviousConfiguration = null;
+                PreviousDependencies = null;
+                PreviousIntegrations = null;
+                return result;
+            }
+            else if (result == TelemetryPushResult.FatalError && !_hasSentSuccessfully)
+            {
+                _initialFatalCount++;
+                if (_initialFatalCount >= MaxFatalErrors)
+                {
+                    // we've had MaxFatalErrors 404s, 1 minute apart, prob never going to work.
+                    PreviousConfiguration = null;
+                    PreviousDependencies = null;
+                    PreviousIntegrations = null;
+                    return TelemetryPushResult.FatalError;
+                }
+            }
+            else
+            {
+                _failureCount++;
+                if (_failureCount >= MaxTransientErrors)
+                {
+                    // we've had MaxTransientErrors in a row, 1 minute apart, probably something bigger wrong
+                    PreviousConfiguration = null;
+                    PreviousDependencies = null;
+                    PreviousIntegrations = null;
+                    return TelemetryPushResult.FatalError;
+                }
+            }
+
+            // We should retry next time
+            PreviousConfiguration = config;
+            PreviousDependencies = dependencies;
+            PreviousIntegrations = integrations;
+            return TelemetryPushResult.TransientFailure;
+        }
     }
 }

@@ -55,6 +55,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public async Task SubmitsTraces()
             => await RunSubmitsTraces();
     }
@@ -69,6 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [Trait("SupportsInstrumentationVerification", "True")]
         public async Task SubmitsTraces()
             => await RunSubmitsTraces();
     }
@@ -90,6 +92,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected async Task RunSubmitsTraces(string packageVersion = "")
         {
+            SetInstrumentationVerification();
             using var telemetry = this.ConfigureTelemetry();
             int? aspNetCorePort = null;
 
@@ -185,6 +188,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName($"{_testName}.SubmitsTraces{fxSuffix}")
                                   .DisableRequireUniquePrefix(); // all package versions should be the same
+
+                VerifyInstrumentation(process);
             }
 
             telemetry.AssertIntegrationEnabled(IntegrationId.GraphQL);
@@ -244,6 +249,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var request = WebRequest.Create($"http://localhost:{aspNetCorePort}{requestInfo.Url}");
                 request.Method = requestInfo.HttpMethod;
+                ((HttpWebRequest)request).UserAgent = "testhelper";
 
                 if (requestInfo.RequestBody != null)
                 {

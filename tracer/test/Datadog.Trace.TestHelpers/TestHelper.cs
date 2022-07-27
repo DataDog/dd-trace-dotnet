@@ -121,7 +121,7 @@ namespace Datadog.Trace.TestHelpers
         public Process StartSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "")
         {
             // get path to sample app that the profiler will attach to
-            string sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework);
+            var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework);
             if (!File.Exists(sampleAppPath))
             {
                 throw new Exception($"application not found: {sampleAppPath}");
@@ -397,7 +397,7 @@ namespace Datadog.Trace.TestHelpers
 
         public void SetEnvironmentVariable(string key, string value)
         {
-            EnvironmentHelper.CustomEnvironmentVariables.Add(key, value);
+            EnvironmentHelper.CustomEnvironmentVariables[key] = value;
         }
 
         protected void ValidateSpans<T>(IEnumerable<MockSpan> spans, Func<MockSpan, T> mapper, IEnumerable<T> expected)
@@ -454,6 +454,39 @@ namespace Datadog.Trace.TestHelpers
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Enabled, security ? "true" : "false");
         }
 
+        protected void SetInstrumentationVerification()
+        {
+            bool verificationEnabled = ShouldUseInstrumentationVerification();
+            SetEnvironmentVariable(InstrumentationVerification.InstrumentationVerificationEnabled, verificationEnabled ? "1" : "0");
+            SetEnvironmentVariable(InstrumentationVerification.UseNativeLoader, verificationEnabled ? "1" : "0");
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.LogDirectory, verificationEnabled ? EnvironmentHelper.LogDirectory : null);
+        }
+
+        protected void VerifyInstrumentation(Process process)
+        {
+            if (!ShouldUseInstrumentationVerification())
+            {
+                return;
+            }
+
+            var logDirectory = EnvironmentHelper.LogDirectory;
+            InstrumentationVerification.VerifyInstrumentation(process, logDirectory);
+        }
+
+        protected bool ShouldUseInstrumentationVerification()
+        {
+            if (!EnvironmentTools.IsWindows())
+            {
+                // Instrumentation Verification is currently only supported only on Windows
+                return false;
+            }
+
+            // verify instrumentation adds a lot of time to tests so we only run it on azure and if it a scheduled build.
+            // Return 'true' to verify instrumentation on local machine.
+            // return true;
+            return EnvironmentHelper.IsRunningInAzureDevOps() && EnvironmentHelper.IsScheduledBuild();
+        }
+
         protected void EnableDirectLogSubmission(int intakePort, string integrationName, string host = "integration_tests")
         {
             SetEnvironmentVariable(ConfigurationKeys.DirectLogSubmission.Host, host);
@@ -487,6 +520,7 @@ namespace Datadog.Trace.TestHelpers
 
             // disable tracing for this HttpClient request
             httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.TracingEnabled, "false");
+            httpClient.DefaultRequestHeaders.Add(HttpHeaderNames.UserAgent, "testhelper");
             var testStart = DateTime.UtcNow;
             var response = await httpClient.GetAsync($"http://localhost:{httpPort}" + path);
             var content = await response.Content.ReadAsStringAsync();

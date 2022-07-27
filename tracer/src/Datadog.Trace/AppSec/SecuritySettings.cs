@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.AppSec
 {
@@ -43,7 +44,7 @@ namespace Datadog.Trace.AppSec
                 var wafTimeout = ParseWafTimeout(wafTimeoutString);
                 if (wafTimeout <= 0)
                 {
-                    Log.Warning<string, string>("Ignoring '{WafTimeoutKey}' of '{wafTimeoutString}' because it was zero or less", ConfigurationKeys.AppSec.WafTimeout, wafTimeoutString);
+                    Log.Warning("Ignoring '{WafTimeoutKey}' of '{wafTimeoutString}' because it was zero or less", ConfigurationKeys.AppSec.WafTimeout, wafTimeoutString);
                     wafTimeout = defaultWafTimeout;
                 }
 

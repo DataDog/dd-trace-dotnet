@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using Datadog.Trace.Debugger;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Util;
 
@@ -50,6 +51,8 @@ namespace Datadog.Trace.Configuration
             GlobalTags = new ReadOnlyDictionary<string, string>(settings.GlobalTags);
             HeaderTags = new ReadOnlyDictionary<string, string>(settings.HeaderTags);
             GrpcTags = new ReadOnlyDictionary<string, string>(settings.GrpcTags);
+            IpHeader = settings.IpHeader;
+            IpHeaderDisabled = settings.IpHeaderDisabled;
             TracerMetricsEnabled = settings.TracerMetricsEnabled;
             StatsComputationEnabled = settings.StatsComputationEnabled;
             RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled;
@@ -71,12 +74,20 @@ namespace Datadog.Trace.Configuration
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
             // Logs injection is enabled by default if direct log submission is enabled, otherwise disabled by default
             LogsInjectionEnabled = settings.LogSubmissionSettings.LogsInjectionEnabled ?? LogSubmissionSettings.IsEnabled;
+            DebuggerSettings = ImmutableDebuggerSettings.Create(settings.DebuggerSettings);
 
             // we cached the static instance here, because is being used in the hotpath
             // by IsIntegrationEnabled method (called from all integrations)
             _domainMetadata = DomainMetadata.Instance;
 
             ExpandRouteTemplatesEnabled = settings.ExpandRouteTemplatesEnabled || !RouteTemplateResourceNamesEnabled;
+
+            // tag propagation
+            TagPropagationHeaderMaxLength = settings.TagPropagationHeaderMaxLength;
+            // query string related env variables
+            ObfuscationQueryStringRegex = settings.ObfuscationQueryStringRegex;
+            QueryStringReportingEnabled = settings.QueryStringReportingEnabled;
+            ObfuscationQueryStringRegexTimeout = settings.ObfuscationQueryStringRegexTimeout;
         }
 
         /// <summary>
@@ -169,6 +180,16 @@ namespace Datadog.Trace.Configuration
         public IReadOnlyDictionary<string, string> GrpcTags { get; }
 
         /// <summary>
+        /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
+        /// </summary>
+        internal string IpHeader { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the ip header should not be collected. The default is false.
+        /// </summary>
+        internal bool IpHeaderDisabled { get; }
+
+        /// <summary>
         /// Gets a value indicating whether internal metrics
         /// are enabled and sent to DogStatsd.
         /// </summary>
@@ -244,7 +265,26 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.ExpandRouteTemplatesEnabled"/>
         internal bool ExpandRouteTemplatesEnabled { get; }
 
+        /// <summary>
+        /// Gets a value indicating the regex to apply to obfuscate http query strings.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.ObfuscationQueryStringRegex"/>
+        internal string ObfuscationQueryStringRegex { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether or not http.url should contain the query string, enabled by default with DD_HTTP_SERVER_TAG_QUERY_STRING
+        /// </summary>
+        internal bool QueryStringReportingEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating a timeout in milliseconds to the execution of the query string obfuscation regex
+        /// Default value is 200ms
+        /// </summary>
+        internal double ObfuscationQueryStringRegexTimeout { get; }
+
         internal ImmutableDirectLogSubmissionSettings LogSubmissionSettings { get; }
+
+        internal ImmutableDebuggerSettings DebuggerSettings { get; }
 
         /// <summary>
         /// Gets a value indicating whether to enable the updated WCF instrumentation that delays execution
@@ -271,6 +311,16 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the activity listener is enabled or not.
         /// </summary>
         internal bool IsActivityListenerEnabled { get; }
+
+        /// <summary>
+        /// Gets the maximum length of an outgoing propagation header's value ("x-datadog-tags")
+        /// when injecting it into downstream service calls.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.TagPropagation.HeaderMaxLength"/>
+        /// <remarks>
+        /// This value is not used when extracting an incoming propagation header from an upstream service.
+        /// </remarks>
+        internal int TagPropagationHeaderMaxLength { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

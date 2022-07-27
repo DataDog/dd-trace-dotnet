@@ -63,6 +63,21 @@ namespace Datadog.Trace
         internal const string HttpEndpoint = "http.endpoint";
 
         /// <summary>
+        /// Only when span.kind: server. The matched route(path template).
+        /// </summary>
+        internal const string HttpRoute = "http.route";
+
+        /// <summary>
+        /// Only when span.kind: server. The user agent header received with the request.
+        /// </summary>
+        internal const string HttpUserAgent = "http.useragent";
+
+        /// <summary>
+        /// The IP address of the original client behind all proxies, if known (e.g. from X-Forwarded-For).
+        /// </summary>
+        internal const string HttpClientIp = "http.client_ip";
+
+        /// <summary>
         /// The error message of an exception
         /// </summary>
         public const string ErrorMsg = "error.msg";
@@ -492,6 +507,11 @@ namespace Datadog.Trace
             internal const string SessionId = "usr.session_id";
             internal const string Role = "usr.role";
             internal const string Scope = "usr.scope";
+        }
+
+        internal static class TagPropagation
+        {
+            internal const string Error = "_dd.propagation_error";
         }
     }
 }

@@ -42,7 +42,7 @@ OpSysTools::SetThreadDescriptionDelegate_t OpSysTools::s_setThreadDescriptionDel
 OpSysTools::GetThreadDescriptionDelegate_t OpSysTools::s_getThreadDescriptionDelegate = nullptr;
 #endif
 
-int OpSysTools::GetProcId()
+int32_t OpSysTools::GetProcId()
 {
 #ifdef _WINDOWS
     return ::GetCurrentProcessId();
@@ -51,7 +51,7 @@ int OpSysTools::GetProcId()
 #endif
 }
 
-int OpSysTools::GetThreadId()
+int32_t OpSysTools::GetThreadId()
 {
 #ifdef _WINDOWS
     return ::GetCurrentThreadId();
@@ -97,7 +97,7 @@ std::int64_t OpSysTools::GetHighPrecisionNanosecondsFallback(void)
 {
     std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
 
-    long long totalNanosecs = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
+    int64_t totalNanosecs = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
     return static_cast<std::int64_t>(totalNanosecs);
 }
 
@@ -255,7 +255,7 @@ std::string OpSysTools::GetModuleName(void* nativeIP)
 
     char filename[260];
     // https://docs.microsoft.com/en-us/windows/win32/api/libloaderapi/nf-libloaderapi-getmodulefilenamea
-    auto charCount = GetModuleFileNameA((HMODULE)hModule, filename, sizeof(filename)/sizeof(filename[0]));
+    auto charCount = GetModuleFileNameA((HMODULE)hModule, filename, sizeof(filename) / sizeof(filename[0]));
     if (charCount > 0)
     {
         return filename;
@@ -274,13 +274,12 @@ std::string OpSysTools::GetModuleName(void* nativeIP)
 #endif
 }
 
-
 void* OpSysTools::AlignedMAlloc(size_t alignment, size_t size)
 {
 #ifdef _WINDOWS
     return _aligned_malloc(size, alignment);
 #else
-    return std::aligned_alloc(alignment, size);
+    return aligned_alloc(alignment, size);
 #endif
 }
 
@@ -314,14 +313,14 @@ std::string OpSysTools::GetHostname()
 
 std::string OpSysTools::GetProcessName()
 {
-#ifdef _WIN32
+#ifdef _WINDOWS
     const DWORD length = 260;
     char pathName[length]{};
 
     const DWORD len = GetModuleFileNameA(nullptr, pathName, length);
     return fs::path(pathName).filename().string();
 #elif MACOS
-    const int length = 260;
+    const int32_t length = 260;
     char* buffer = new char[length];
     proc_name(getpid(), buffer, length);
     return std::string(buffer);
@@ -333,3 +332,40 @@ std::string OpSysTools::GetProcessName()
 #endif
 }
 
+bool OpSysTools::IsSafeToStartProfiler()
+{
+#ifdef _WINDOWS
+    // Today we do not have any specific check before starting the profiler on Windows.
+    return true;
+#else
+    // For linux, we check that the wrapper library is loaded and the default `dl_iterate_phdr` is
+    // the one provided by our library.
+
+    // We assume that the profiler library is in the same folder as the wrapper library
+    auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
+    auto wrapperLibrary = currentModulePath.parent_path() / "Datadog.Linux.ApiWrapper.x64.so";
+    auto wrapperLibraryPath = wrapperLibrary.string();
+
+    auto* instance = dlopen(wrapperLibraryPath.c_str(), RTLD_LAZY | RTLD_LOCAL);
+    if (instance == nullptr)
+    {
+        auto errorId = errno;
+        Log::Warn("Library '", wrapperLibraryPath, "' cannot be loaded (", strerror(errorId), "). This means that the profiler/tracer is not correctly installed.");
+        return false;
+    }
+
+    const auto* customFnName = "dl_iterate_phdr";
+    auto customFn = dlsym(instance, customFnName);
+
+    // make sure that the default symbol for the custom function
+    // is at the same address as the one found in our lib
+    if (customFn == dlsym(RTLD_DEFAULT, customFnName))
+    {
+        return true;
+    }
+
+    Log::Warn("Custom function '", customFnName, "' is not the default one. That indicates that the library ",
+              "'", wrapperLibraryPath, "' is not loaded using the LD_PRELOAD environment variable");
+    return false;
+#endif
+}

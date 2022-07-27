@@ -10,7 +10,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.PDBs;
+using Datadog.Trace.Pdb;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
@@ -90,22 +90,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             Common.DecorateSpanWithSourceAndCodeOwners(span, runnerInstance.TestMethod);
 
             Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            Ci.Coverage.CoverageReporter.Handler.StartSession();
+            Common.StartCoverage();
 
             // Skip tests
             if (runnerInstance.SkipReason != null)
             {
                 span.SetTag(TestTags.Status, TestTags.StatusSkip);
                 span.SetTag(TestTags.SkipReason, runnerInstance.SkipReason);
-
-                var coverageSession = Ci.Coverage.CoverageReporter.Handler.EndSession();
-                if (coverageSession is not null)
-                {
-                    scope.Span.SetTag("test.coverage", Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(coverageSession));
-                }
-
                 span.Finish(TimeSpan.Zero);
                 scope.Dispose();
+                Common.StopCoverage(span);
                 return null;
             }
 
@@ -115,33 +109,33 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
         internal static void FinishScope(Scope scope, IExceptionAggregator exceptionAggregator)
         {
-            var coverageSession = Ci.Coverage.CoverageReporter.Handler.EndSession();
-            if (coverageSession is not null)
+            try
             {
-                scope.Span.SetTag("test.coverage", Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(coverageSession));
-            }
+                Exception exception = exceptionAggregator.ToException();
 
-            Exception exception = exceptionAggregator.ToException();
-
-            if (exception != null)
-            {
-                if (exception.GetType().Name == "SkipException")
+                if (exception != null)
                 {
-                    scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
-                    scope.Span.SetTag(TestTags.SkipReason, exception.Message);
+                    if (exception.GetType().Name == "SkipException")
+                    {
+                        scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
+                        scope.Span.SetTag(TestTags.SkipReason, exception.Message);
+                    }
+                    else
+                    {
+                        scope.Span.SetException(exception);
+                        scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                    }
                 }
                 else
                 {
-                    scope.Span.SetException(exception);
-                    scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                    scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
                 }
             }
-            else
+            finally
             {
-                scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+                scope.Dispose();
+                Common.StopCoverage(scope.Span);
             }
-
-            scope.Dispose();
         }
     }
 }

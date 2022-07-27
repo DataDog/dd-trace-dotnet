@@ -33,13 +33,6 @@ namespace Datadog.Trace.AppSec.Transports.Http
             _context.Items[WafKey] = additiveContext;
         }
 
-        public IpInfo GetReportedIpInfo()
-        {
-            var hostAddress = _context.Request.UserHostAddress;
-            var isSecure = _context.Request.IsSecureConnection;
-            return IpExtractor.ExtractAddressAndPort(hostAddress, isSecure);
-        }
-
         public IHeadersCollection GetRequestHeaders()
         {
             return new NameValueHeadersCollection(_context.Request.Headers);

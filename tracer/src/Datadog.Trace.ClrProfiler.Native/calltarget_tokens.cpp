@@ -367,7 +367,8 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
         }
     }
 
-    ULONG newLocalsCount = 3;
+    const auto additionalLocalsCount = GetAdditionalLocalsCount();
+    ULONG newLocalsCount = 3 + additionalLocalsCount;
 
     // Gets the calltarget state type buffer and size
     unsigned callTargetStateTypeRefBuffer;
@@ -454,7 +455,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     }
 
     // Add new locals
-
+    
     // Return value local
     if (returnSignatureType != nullptr)
     {
@@ -480,6 +481,8 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
         newSignatureOffset += callTargetReturnSize;
     }
 
+    AddAdditionalLocals(newSignatureBuffer, newSignatureOffset, newSignatureSize);
+
     // CallTarget state value
     newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_VALUETYPE;
     memcpy(&newSignatureBuffer[newSignatureOffset], &callTargetStateTypeRefBuffer, callTargetStateTypeRefSize);
@@ -500,15 +503,15 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     *callTargetReturnToken = callTargetReturn;
     if (returnSignatureType != nullptr)
     {
-        *returnValueIndex = newLocalsCount - 4;
+        *returnValueIndex = newLocalsCount - 4 - additionalLocalsCount;
     }
     else
     {
         *returnValueIndex = static_cast<ULONG>(ULONG_MAX);
     }
-    *exceptionIndex = newLocalsCount - 3;
-    *callTargetReturnIndex = newLocalsCount - 2;
-    *callTargetStateIndex = newLocalsCount - 1;
+    *exceptionIndex = newLocalsCount - 3 - additionalLocalsCount;
+    *callTargetReturnIndex = newLocalsCount - 2 - additionalLocalsCount;
+    *callTargetStateIndex = newLocalsCount - 1; // Must be the last local.
     return hr;
 }
 
@@ -738,6 +741,15 @@ mdToken CallTargetTokens::GetCurrentTypeRef(const TypeInfo* currentType, bool& i
     return cType->id;
 }
 
+
+int CallTargetTokens::GetAdditionalLocalsCount()
+{
+    return 0;
+}
+
+void CallTargetTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize)
+{
+}
 
 CallTargetTokens::CallTargetTokens(ModuleMetadata* moduleMetadataPtr, const bool enableByRefInstrumentation,
                                    const bool enableCallTargetStateByRef) :

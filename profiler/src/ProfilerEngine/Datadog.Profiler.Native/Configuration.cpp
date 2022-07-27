@@ -22,7 +22,7 @@ std::string const Configuration::DefaultProdSite = "datadoghq.com";
 std::string const Configuration::DefaultVersion = "Unspecified-Version";
 std::string const Configuration::DefaultEnvironment = "Unspecified-Environment";
 std::string const Configuration::DefaultAgentHost = "localhost";
-int const Configuration::DefaultAgentPort = 8126;
+int32_t const Configuration::DefaultAgentPort = 8126;
 std::string const Configuration::DefaultEmptyString = "";
 std::chrono::seconds const Configuration::DefaultDevUploadInterval = 20s;
 std::chrono::seconds const Configuration::DefaultProdUploadInterval = 60s;
@@ -35,6 +35,7 @@ Configuration::Configuration()
     _isOperationalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::OperationalMetricsEnabled, false);
     _isNativeFrameEnabled = GetEnvironmentValue(EnvironmentVariables::NativeFramesEnabled, false);
     _isCpuProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::CpuProfilingEnabled, false);
+    _isWallTimeProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WallTimeProfilingEnabled, true);
     _isExceptionProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::ExceptionProfilingEnabled, false);
     _uploadPeriod = ExtractUploadInterval();
     _userTags = ExtractUserTags();
@@ -94,12 +95,17 @@ bool Configuration::IsCpuProfilingEnabled() const
     return _isCpuProfilingEnabled;
 }
 
+bool Configuration::IsWallTimeProfilingEnabled() const
+{
+    return _isWallTimeProfilingEnabled;
+}
+
 bool Configuration::IsExceptionProfilingEnabled() const
 {
     return _isExceptionProfilingEnabled;
 }
 
-int Configuration::ExceptionSampleLimit() const
+int32_t Configuration::ExceptionSampleLimit() const
 {
     return _exceptionSampleLimit;
 }
@@ -144,7 +150,7 @@ std::string const& Configuration::GetAgentHost() const
     return _agentHost;
 }
 
-int Configuration::GetAgentPort() const
+int32_t Configuration::GetAgentPort() const
 {
     return _agentPort;
 }
@@ -235,7 +241,7 @@ std::chrono::seconds Configuration::GetDefaultUploadInterval()
 // - replace shared::TryParse by this implementation
 // - add tests
 
-bool TryParse(shared::WSTRING const& s, int& result)
+bool TryParse(shared::WSTRING const& s, int32_t& result)
 {
     auto str = shared::ToString(s);
     if (str == "")
@@ -260,7 +266,7 @@ bool TryParse(shared::WSTRING const& s, int& result)
 std::chrono::seconds Configuration::ExtractUploadInterval()
 {
     auto r = shared::GetEnvironmentValue(EnvironmentVariables::UploadInterval);
-    int interval;
+    int32_t interval;
     if (TryParse(r, interval))
     {
         return std::chrono::seconds(interval);
@@ -299,7 +305,7 @@ bool convert_to(shared::WSTRING const& s, shared::WSTRING& result)
     return true;
 }
 
-bool convert_to(shared::WSTRING const& s, int& result)
+bool convert_to(shared::WSTRING const& s, int32_t& result)
 {
     return TryParse(s, result);
 }

@@ -95,38 +95,42 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             total.Should().Be(expectedExceptionCount);
         }
 
-        //[TestAppFact("Samples.ExceptionGenerator")]
-        //public void Sampling(string appName, string framework, string appAssembly)
-        //{
-        //    using var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario3);
-        //    runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
-        //    runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "100");
+        [TestAppFact("Samples.ExceptionGenerator")]
+        public void Sampling(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario3);
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "100");
 
-        //    using var agent = new MockDatadogAgent(_output);
-        //    runner.Run(agent);
+            using var agent = new MockDatadogAgent(_output);
+            runner.Run(agent);
 
-        //    agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
+            agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
 
-        //    var exceptionSamples = ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
+            var exceptionSamples = ExtractExceptionSamples(runner.Environment.PprofDir).ToArray();
 
-        //    var exceptionCounts = exceptionSamples.GroupBy(s => s.Type)
-        //        .ToDictionary(g => g.Key, g => g.Sum(s => s.Count));
+            var exceptionCounts = exceptionSamples.GroupBy(s => s.Type)
+                .ToDictionary(g => g.Key, g => g.Sum(s => s.Count));
 
-        //    // Check that fewer than 500 System.Exception were seen
-        //    // The limit was set to 100, but the sampling algorithm seems to keep more exceptions,
-        //    // so we just check that we are in the right order of magnitude.
-        //    exceptionCounts.Should().ContainKey("System.Exception").WhichValue.Should().BeLessThan(500);
+            // Check that fewer than 500 System.Exception were seen
+            // The limit was set to 100, but the sampling algorithm seems to keep more exceptions,
+            // so we just check that we are in the right order of magnitude.
+            exceptionCounts.Should().ContainKey("System.Exception").WhichValue.Should().BeLessThan(500);
 
-        //    // System.InvalidOperationException is seen only once, so it should be sampled
-        //    // despite the sampler being saturated by the 4000 System.Exception
-        //    exceptionCounts.Should().ContainKey("System.InvalidOperationException").WhichValue.Should().Be(1);
-        //}
+            // System.InvalidOperationException is seen only once, so it should be sampled
+            // despite the sampler being saturated by the 4000 System.Exception
+            exceptionCounts.Should().ContainKey("System.InvalidOperationException").WhichValue.Should().Be(1);
+        }
 
         [TestAppFact("Samples.ExceptionGenerator")]
         public void GetExceptionSamples(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
 
             CheckExceptionProfiles(runner);
         }

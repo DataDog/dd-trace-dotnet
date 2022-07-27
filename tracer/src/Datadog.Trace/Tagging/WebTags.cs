@@ -12,6 +12,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Server;
 
+        [Tag(Trace.Tags.HttpUserAgent)]
+        public string HttpUserAgent { get; set; }
+
         [Tag(Trace.Tags.HttpMethod)]
         public string HttpMethod { get; set; }
 
@@ -23,5 +26,11 @@ namespace Datadog.Trace.Tagging
 
         [Tag(Trace.Tags.HttpStatusCode)]
         public string HttpStatusCode { get; set; }
+
+        [Tag(Trace.Tags.NetworkClientIp)]
+        public string NetworkClientIp { get; set; }
+
+        [Tag(Trace.Tags.HttpClientIp)]
+        public string HttpClientIp { get; set; }
     }
 }

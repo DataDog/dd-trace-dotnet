@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.30114.105
+# Visual Studio Version 17
+VisualStudioVersion = 17.2.32602.215
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Computer01", "Samples.Computer01\Samples.Computer01.csproj", "{977895F2-34C5-432D-BF75-59783F8D9AFC}"
 EndProject
@@ -12,6 +12,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.BuggyBits", "Samples.BuggyBits\Samples.BuggyBits.csproj", "{014F5E95-5224-4EAE-A92D-523CC25B1018}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RuntimeMetrics", "Shared\RuntimeMetrics\RuntimeMetrics.csproj", "{12E3084D-466D-4F24-8A2B-309D0D5C3FCB}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Demos.Util", "Shared\Util\Datadog.Demos.Util.csproj", "{7B58A0ED-A860-48F1-AEA9-7D0F930A5634}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -83,6 +85,18 @@ Global
 		{12E3084D-466D-4F24-8A2B-309D0D5C3FCB}.Release|x64.Build.0 = Release|x64
 		{12E3084D-466D-4F24-8A2B-309D0D5C3FCB}.Release|x86.ActiveCfg = Release|x86
 		{12E3084D-466D-4F24-8A2B-309D0D5C3FCB}.Release|x86.Build.0 = Release|x86
+		{7B58A0ED-A860-48F1-AEA9-7D0F930A5634}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B58A0ED-A860-48F1-AEA9-7D0F930A5634}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B58A0ED-A860-48F1-AEA9-7D0F930A5634}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{7B58A0ED-A860-48F1-AEA9-7D0F930A5634}.Debug|x64.Build.0 = Debug|Any CPU
+		{7B58A0ED-A860-48F1-AEA9-7D0F930A5634}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{7B58A0ED-A860-48F1-AEA9-7D0F930A5634}.Debug|x86.Build.0 = Debug|Any CPU
+		{7B58A0ED-A860-48F1-AEA9-7D0F930A5634}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B58A0ED-A860-48F1-AEA9-7D0F930A5634}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B58A0ED-A860-48F1-AEA9-7D0F930A5634}.Release|x64.ActiveCfg = Release|Any CPU
+		{7B58A0ED-A860-48F1-AEA9-7D0F930A5634}.Release|x64.Build.0 = Release|Any CPU
+		{7B58A0ED-A860-48F1-AEA9-7D0F930A5634}.Release|x86.ActiveCfg = Release|Any CPU
+		{7B58A0ED-A860-48F1-AEA9-7D0F930A5634}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

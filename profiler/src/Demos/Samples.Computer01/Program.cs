@@ -6,8 +6,8 @@
 using System;
 using System.Diagnostics;
 using System.Threading;
+using Datadog.Demos.Util;
 using Datadog.RuntimeMetrics;
-using Datadog.TestUtil;
 
 namespace Samples.Computer01
 {

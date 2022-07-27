@@ -6,6 +6,7 @@
 #include "Configuration.h"
 #include "IExporter.h"
 #include "IMetricsSender.h"
+#include "ISamplesCollector.h"
 #include "ISamplesProvider.h"
 #include "IThreadsCpuManager.h"
 #include "Log.h"
@@ -19,24 +20,20 @@
 
 using namespace std::literals::chrono_literals;
 
-const std::chrono::seconds SamplesAggregator::ProcessingInterval = 1s;
-const WCHAR* WorkerThreadName = WStr("DD.Profiler.SamplesAggregator.WorkerThread");
-std::string const SamplesAggregator::SuccessfulExportsMetricName = "datadog.profiling.dotnet.operational.exports";
-
-
 SamplesAggregator::SamplesAggregator(IConfiguration* configuration,
                                      IThreadsCpuManager* pThreadsCpuManager,
                                      IExporter* exporter,
-                                     IMetricsSender* metricsSender) :
+                                     IMetricsSender* metricsSender,
+                                     ISamplesCollector* samplesCollector) :
     _uploadInterval{configuration->GetUploadInterval()},
     _nextExportTime{std::chrono::steady_clock::now() + _uploadInterval},
-    _pThreadsCpuManager{pThreadsCpuManager},
     _exporter{exporter},
+    _pSamplesCollector{samplesCollector},
+    _pThreadsCpuManager{pThreadsCpuManager},
     _mustStop{false},
     _metricsSender{metricsSender}
 {
 }
-
 
 const char* SamplesAggregator::GetName()
 {
@@ -61,29 +58,35 @@ bool SamplesAggregator::Stop()
 
     Log::Info("Stopping the samples aggregator");
     _mustStop = true;
+    _exitWorkerPromise.set_value();
     _worker.join();
 
+    // Process leftover samples
+    try
+    {
+        ProcessSamples();
+    }
+    catch (std::exception const& ex)
+    {
+        SendHeartBeatMetric(false);
+        Log::Error("An exception occured: ", ex.what());
+    }
+
     return true;
-}
-
-
-void SamplesAggregator::Register(ISamplesProvider* samplesProvider)
-{
-    _samplesProviders.push_front(samplesProvider);
 }
 
 void SamplesAggregator::Work()
 {
     _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), WorkerThreadName);
 
-    while (!_mustStop)
+    const auto future = _exitWorkerPromise.get_future();
+
+    while (future.wait_for(ProcessingInterval) == std::future_status::timeout)
     {
         // TODO catch structured exception
         //      or make the library able to catch then using try/catch
         try
         {
-            std::this_thread::sleep_for(ProcessingInterval);
-
             ProcessSamples();
         }
         catch (std::exception const& ex)
@@ -97,7 +100,8 @@ void SamplesAggregator::Work()
 
 void SamplesAggregator::ProcessSamples()
 {
-    auto samples = CollectSamples();
+    const auto samples = _pSamplesCollector->GetSamples();
+
     for (auto const& sample : samples)
     {
         if (!sample.GetCallstack().empty())
@@ -105,19 +109,8 @@ void SamplesAggregator::ProcessSamples()
             _exporter->Add(sample);
         }
     }
+
     Export();
-}
-
-std::list<Sample> SamplesAggregator::CollectSamples()
-{
-    auto result = std::list<Sample>{};
-
-    for (auto const& samplesProvider : _samplesProviders)
-    {
-        result.splice(result.cend(), samplesProvider->GetSamples());
-    }
-
-    return result;
 }
 
 void SamplesAggregator::Export()

@@ -16,8 +16,8 @@
 class OpSysTools final
 {
 public:
-    static int GetProcId();
-    static int GetThreadId();
+    static int32_t GetProcId();
+    static int32_t GetThreadId();
     // static std::string UnicodeToAnsi(const WCHAR* str);
 
     /// <summary>
@@ -47,6 +47,29 @@ public:
 
     static std::string GetHostname();
     static std::string GetProcessName();
+
+    static bool ParseThreadInfo(std::string line, char& state, int32_t& userTime, int32_t& kernelTime)
+    {
+        // based on https://linux.die.net/man/5/proc
+        // state  = 3rd position  and 'R' for Running
+        // user   = 14th position in clock ticks
+        // kernel = 15th position in clock ticks
+
+        // The thread name is in second position and wrapped by ()
+        // Since the name can contain SPACE and () characters, skip it before scanning the values
+        auto pos = line.find_last_of(")");
+        const char* pEnd = line.c_str() + pos + 1;
+
+#ifdef _WINDOWS
+        bool result = sscanf_s(pEnd, " %c %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %d %d", &state, 1, &userTime, &kernelTime) == 3;
+#else
+        bool result = sscanf(pEnd, " %c %*s %*s %*s %*s %*s %*s %*s %*s %*s %*s %d %d", &state, &userTime, &kernelTime) == 3;
+#endif
+
+        return result;
+    }
+
+    static bool IsSafeToStartProfiler();
 
 private:
     static constexpr std::int64_t NanosecondsPerSecond = 1000000000;

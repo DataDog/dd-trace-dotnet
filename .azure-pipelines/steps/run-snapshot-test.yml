@@ -1,0 +1,95 @@
+parameters:
+  - name: 'target'
+    type: 'string'
+
+  - name: 'snapshotPrefix'
+    type: 'string'
+    
+  - name: isLinux
+    type: boolean
+    default: true
+
+steps:
+- bash: |
+    echo "##vso[task.setvariable variable=TOKEN]$(System.JobId)"
+    echo "##vso[task.setvariable variable=START_ENDPOINT]/test/session/start?test_session_token=$(System.JobId)"
+    echo "##vso[task.setvariable variable=TRACE_DUMP_ENDPOINT]/test/session/traces?test_session_token=$(System.JobId)"
+    echo "##vso[task.setvariable variable=STATS_DUMP_ENDPOINT]/test/session/stats?test_session_token=$(System.JobId)"
+    echo "##vso[task.setvariable variable=REQUESTS_DUMP_ENDPOINT]/test/session/requests?test_session_token=$(System.JobId)"
+    
+    if [ "$(publishFramework)" = "netcoreapp2.1" ]; then
+      snapshotfile="${{ parameters.snapshotPrefix }}_snapshots_2_1"
+    else
+      snapshotfile="${{ parameters.snapshotPrefix }}_snapshots"
+    fi
+    
+    echo "##vso[task.setvariable variable=VERIFY_ENDPOINT]/test/session/snapshot?test_session_token=$(System.JobId)&file=/snapshots/$snapshotfile"
+  displayName: Set endpoints
+
+- ${{ if eq(parameters.isLinux, true) }}:
+  - bash: |
+      echo "##vso[task.setvariable variable=CURL_COMMAND]/usr/bin/curl"
+      echo "##vso[task.setvariable variable=TEST_AGENT_TARGET]test-agent"
+      echo "##vso[task.setvariable variable=START_TEST_AGENT_TARGET]start-test-agent"
+      echo "##vso[task.setvariable variable=COMPOSE_PATH]docker-compose.yml"
+    displayName: Set env-specific variables
+- ${{ else }}:
+  - bash: |
+      echo "##vso[task.setvariable variable=CURL_COMMAND]curl"
+      echo "##vso[task.setvariable variable=TEST_AGENT_TARGET]test-agent.windows"
+      echo "##vso[task.setvariable variable=START_TEST_AGENT_TARGET]start-test-agent.windows"
+      echo "##vso[task.setvariable variable=COMPOSE_PATH]docker-compose.windows.yml"
+    displayName: Set env-specific  variables
+
+- bash: |
+    docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run --rm $(START_TEST_AGENT_TARGET)
+  env:
+    dockerTag: $(dockerTag)
+  displayName: docker-compose run start-test-agent
+  retryCountOnTaskFailure: 3
+
+- script: |
+    echo "Starting snapshot session"
+    docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --fail "http://localhost:8126$(START_ENDPOINT)"
+  displayName: start snapshot session
+
+- bash: |
+    docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) run -e dockerTag=$(dockerTag) ${{ parameters.target }}
+  env:
+    dockerTag: $(dockerTag)
+  displayName: docker-compose run ${{ parameters.target }}
+
+
+- script: |
+    echo "Dumping traces"
+    docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) -o /debug_snapshots/${{ parameters.snapshotPrefix }}_traces.json "http://localhost:8126$(TRACE_DUMP_ENDPOINT)"
+    
+    echo "Dumping stats"
+    docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) -o /debug_snapshots/${{ parameters.snapshotPrefix }}_stats.json "http://localhost:8126$(STATS_DUMP_ENDPOINT)"
+    
+    echo "Dumping all requests"
+    docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) -o /debug_snapshots/${{ parameters.snapshotPrefix }}_requests.json "http://localhost:8126$(REQUESTS_DUMP_ENDPOINT)"
+    
+    echo "Verifying snapshot session (fail on mis-match)"
+    docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --fail "http://localhost:8126$(VERIFY_ENDPOINT)"
+  displayName: check snapshots
+
+- task: DockerCompose@0
+  displayName: dump docker-compose logs for $(TEST_AGENT_TARGET)
+  inputs:
+    containerregistrytype: Container Registry
+    dockerComposeCommand: logs $(TEST_AGENT_TARGET)
+    projectName: ddtrace_$(Build.BuildNumber)
+    dockerComposeFile: $(COMPOSE_PATH)
+  condition: succeededOrFailed()
+  continueOnError: true
+
+- task: DockerCompose@0
+  displayName: docker-compose stop services
+  inputs:
+    containerregistrytype: Container Registry
+    dockerComposeCommand: down
+    projectName: ddtrace_$(Build.BuildNumber)
+    dockerComposeFile: $(COMPOSE_PATH)
+  condition: succeededOrFailed()
+  continueOnError: true

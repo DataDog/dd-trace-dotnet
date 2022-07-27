@@ -44,14 +44,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var version = string.IsNullOrEmpty(packageVersion) ? null : new Version(packageVersion);
                 var snapshotSuffix = version switch
-                    {
-                        null => "2_7", // default is version 2.8.0
-                        { Major: >= 3 } or { Major: 2, Minor: >= 15 } => "2_15", // A bunch of stuff was removed in 2.15.0
-                        { Major: 2, Minor: >= 7 } => "2_7", // default is version 2.8.0
-                        { Major: 2, Minor: >= 5 } => "2_5", // version 2.5 + 2.6 include additional info on queries compared to 2.2
-                        { Major: 2, Minor: >= 2 } => "2_2",
-                        _ => "PRE_2_2"
-                    };
+                {
+                    null => "2_7", // default is version 2.8.0
+                    { Major: >= 3 } or { Major: 2, Minor: >= 15 } => "2_15", // A bunch of stuff was removed in 2.15.0
+                    { Major: 2, Minor: >= 7 } => "2_7", // default is version 2.8.0
+                    { Major: 2, Minor: >= 5 } => "2_5", // version 2.5 + 2.6 include additional info on queries compared to 2.2
+                    { Major: 2, Minor: >= 2 } => "2_2",
+                    _ => "PRE_2_2"
+                };
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 // mongo stamps the current framework version, and OS so normalise those

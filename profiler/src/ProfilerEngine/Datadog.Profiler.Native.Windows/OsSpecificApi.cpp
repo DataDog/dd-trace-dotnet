@@ -15,18 +15,6 @@
 #include "shared/src/native-src/loader.h"
 
 namespace OsSpecificApi {
-void InitializeLoaderResourceMonikerIDs(shared::LoaderResourceMonikerIDs* loaderResourceMonikerIDs)
-{
-    if (loaderResourceMonikerIDs == nullptr)
-    {
-        return;
-    }
-
-    loaderResourceMonikerIDs->Net45_Datadog_AutoInstrumentation_ManagedLoader_dll = NET45_Datadog_AutoInstrumentation_ManagedLoader_dll;
-    loaderResourceMonikerIDs->NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_dll = NETCOREAPP20_Datadog_AutoInstrumentation_ManagedLoader_dll;
-    loaderResourceMonikerIDs->Net45_Datadog_AutoInstrumentation_ManagedLoader_pdb = NET45_Datadog_AutoInstrumentation_ManagedLoader_pdb;
-    loaderResourceMonikerIDs->NetCoreApp20_Datadog_AutoInstrumentation_ManagedLoader_pdb = NETCOREAPP20_Datadog_AutoInstrumentation_ManagedLoader_pdb;
-}
 
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo)
 {
@@ -150,7 +138,7 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
     SYSTEM_THREAD_INFORMATION sti = {0};
     auto size = sizeof(SYSTEM_THREAD_INFORMATION);
     ULONG buflen = 0;
-    NTSTATUS lResult = NtQueryInformationThread(pThreadInfo->GetOsThreadHandle(), SYSTEMTHREADINFORMATION, &sti, size, &buflen);
+    NTSTATUS lResult = NtQueryInformationThread(pThreadInfo->GetOsThreadHandle(), SYSTEMTHREADINFORMATION, &sti, static_cast<ULONG>(size), &buflen);
     if (lResult != 0)
     {
         // This always happens in 32 bit so uses another API to at least get the CPU consumption
@@ -162,6 +150,5 @@ bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime)
 
     return IsRunning(sti.ThreadState);
 }
-
 
 } // namespace OsSpecificApi

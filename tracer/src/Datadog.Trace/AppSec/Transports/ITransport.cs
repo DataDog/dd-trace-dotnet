@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 
@@ -19,8 +18,6 @@ namespace Datadog.Trace.AppSec.Transports
         IContext GetAdditiveContext();
 
         void SetAdditiveContext(IContext additiveContext);
-
-        IpInfo GetReportedIpInfo();
 
         IHeadersCollection GetRequestHeaders();
 
