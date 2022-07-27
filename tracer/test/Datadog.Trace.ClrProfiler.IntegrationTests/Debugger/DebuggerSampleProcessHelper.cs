@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger
             using var httpWebResponse = await WebRequest.CreateHttp(_stopUrl).GetResponseAsync();
             var timeout = 10_000;
             var isExited = Process.WaitForExit(timeout);
-            
+
             if (!isExited)
             {
                 throw new InvalidOperationException($"The process did not exit after {timeout}ms");
