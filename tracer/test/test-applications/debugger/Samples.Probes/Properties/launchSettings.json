@@ -11,7 +11,7 @@
         "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
         "DD_DEBUGGER_PROBE_FILE": "$(SolutionDir)tracer\\test\\test-applications\\debugger\\Samples.Probes\\probes_definition.json",
         "CORECLR_ENABLE_PROFILING": "1",
-        "DD_DEBUGGER_ENABLED": "1",
+        "DD_INTERNAL_DEBUGGER_ENABLED": "1",
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer",
         "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
       },

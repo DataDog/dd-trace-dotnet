@@ -35,7 +35,7 @@ public class LiveDebuggerTests : TestHelper
         SetServiceVersion("1.0.0");
     }
 
-    [Fact]
+    [Fact(Skip = "Live Debugger is temporarily disabled.")]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
@@ -45,7 +45,7 @@ public class LiveDebuggerTests : TestHelper
         await RunTest();
     }
 
-    [Fact]
+    [Fact(Skip = "Live Debugger is temporarily disabled.")]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
