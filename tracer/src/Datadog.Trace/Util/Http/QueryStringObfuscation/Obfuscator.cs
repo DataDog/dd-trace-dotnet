@@ -24,7 +24,7 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
         private readonly TimeSpan _timeout;
         private readonly IDatadogLogger _logger;
 
-        internal Obfuscator(string pattern, TimeSpan timeout, IDatadogLogger logger, bool supportsNonBacktracking)
+        internal Obfuscator(string pattern, TimeSpan timeout, IDatadogLogger logger)
         {
 #if NETCOREAPP3_1_OR_GREATER
             AppDomain.CurrentDomain.SetData("REGEX_NONBACKTRACKING_MAX_AUTOMATA_SIZE", 2000);
@@ -37,10 +37,7 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
                     | RegexOptions.Compiled;
 
 #if NETCOREAPP3_1_OR_GREATER
-            if (supportsNonBacktracking)
-            {
-                options |= RegexOptions.NonBacktracking;
-            }
+            options |= RegexOptions.NonBacktracking;
 #endif
 
             _regex =
