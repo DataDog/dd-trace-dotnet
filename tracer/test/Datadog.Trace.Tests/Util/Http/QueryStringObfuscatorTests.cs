@@ -81,7 +81,7 @@ namespace Datadog.Trace.Tests.Util.Http
             {
                 var result = obfuscator.Obfuscate(queryString);
                 result.Should().Be(string.Empty);
-                logger.Verify(o => o.Error(It.IsAny<NotSupportedException>(), It.IsAny<string>(), It.IsAny<double>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()), Times.Once);
+                logger.Verify(o => o.Error(It.IsAny<RegexMatchTimeoutException>(), It.IsAny<string>(), It.IsAny<double>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()), Times.Once);
             }
         }
     }
