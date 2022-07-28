@@ -70,6 +70,14 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
+            if (CIVisibility.Settings.Enabled && !CIVisibility.Enabled)
+            {
+                // If CI Visibility is enabled by configuration
+                // we check if is the testhost.dll process
+                // we avoid instrumenting other process started from dotnet test.
+                return;
+            }
+
             Log.Debug("Initialization started.");
 
             try
