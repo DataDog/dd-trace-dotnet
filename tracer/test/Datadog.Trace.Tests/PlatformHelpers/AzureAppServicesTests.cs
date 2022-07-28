@@ -16,8 +16,7 @@ using Xunit.Sdk;
 
 namespace Datadog.Trace.Tests.PlatformHelpers
 {
-    [CollectionDefinition(nameof(AzureAppServicesTests), DisableParallelization = true)]
-    [Collection(nameof(AzureAppServicesTests))]
+    [Collection(nameof(AzureAppServicesTestCollection))]
     [AzureAppServicesRestorer]
     public class AzureAppServicesTests
     {
@@ -309,24 +308,6 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             vars.Add(AzureAppServices.AasEnableCustomMetrics, enableCustomMetrics ?? "false");
 
             return vars;
-        }
-
-        [AttributeUsage(AttributeTargets.Class, Inherited = true)]
-        private class AzureAppServicesRestorerAttribute : BeforeAfterTestAttribute
-        {
-            private AzureAppServices _metadata;
-
-            public override void Before(MethodInfo methodUnderTest)
-            {
-                _metadata = AzureAppServices.Metadata;
-                base.Before(methodUnderTest);
-            }
-
-            public override void After(MethodInfo methodUnderTest)
-            {
-                AzureAppServices.Metadata = _metadata;
-                base.After(methodUnderTest);
-            }
         }
     }
 }

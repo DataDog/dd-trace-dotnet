@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.VerifyNoOtherCalls();
 
             // Extract sampling from trace context
-            var newContext = new SpanContext(null, new TraceContext(null, null), null, traceId, spanId);
+            var newContext = new SpanContext(null, new TraceContext(null), null, traceId, spanId);
             var newHeaders = new Mock<IHeadersCollection>();
             W3CPropagator.Inject(newContext, newHeaders.Object);
             newHeaders.Verify(h => h.Set(W3CContextPropagator.TraceParent, "00-000000000000000000000000075bcd15-000000003ade68b1-00"), Times.Once());
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.VerifyNoOtherCalls();
 
             // Extract sampling from trace context
-            var newContext = new SpanContext(null, new TraceContext(null, null), null, traceId, spanId);
+            var newContext = new SpanContext(null, new TraceContext(null), null, traceId, spanId);
             var newHeaders = new Mock<IHeadersCollection>();
             W3CPropagator.Inject(newContext, newHeaders.Object, (carrier, name, value) => carrier.Set(name, value));
             newHeaders.Verify(h => h.Set(W3CContextPropagator.TraceParent, "00-000000000000000000000000075bcd15-000000003ade68b1-00"), Times.Once());

@@ -59,7 +59,7 @@ namespace Datadog.Trace
                 {
                     // first span added is the root span
                     RootSpan = span;
-                    DecorateRootSpan(span);
+                    DecorateWithAASMetadata(span);
 
                     if (_samplingPriority == null)
                     {
@@ -173,6 +173,9 @@ namespace Datadog.Trace
 
         private void PropagateMetadata(ArraySegment<Span> spans)
         {
+            // Needs to be done for chunks as well, any span can contain the tags.
+            DecorateWithAASMetadata(spans.Array[0]);
+
             // The agent looks for the sampling priority on the first span that has no parent
             // Finding those spans is not trivial, so instead we apply the priority to every span
 
@@ -190,7 +193,11 @@ namespace Datadog.Trace
             }
         }
 
-        private void DecorateRootSpan(Span span)
+        /// <summary>
+        /// When receiving chunks of spans, the backend checks whether the aas.resource.id tag is present on any of the
+        /// span to decide which metric to emit (datadog.apm.host.instance or datadog.apm.azure_resource_instance one).
+        /// </summary>
+        private void DecorateWithAASMetadata(Span span)
         {
             if (AzureAppServices.Metadata.IsRelevant)
             {
