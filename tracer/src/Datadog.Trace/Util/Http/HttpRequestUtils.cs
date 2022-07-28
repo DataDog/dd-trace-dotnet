@@ -5,21 +5,26 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util.Http.QueryStringObfuscation;
 
 namespace Datadog.Trace.Util.Http
 {
-    internal class HttpRequestUtils
+    internal static class HttpRequestUtils
     {
         private const string NoHostSpecified = "UNKNOWN_HOST";
 
-        internal static string GetUrl(string scheme, string host, string pathBase, string path, string queryString, QueryStringManager queryStringManager = null)
+        internal static LazyOrString GetUrl(string scheme, string host, string pathBase, string path, string queryString, QueryStringManager queryStringManager = null)
         {
-            if (queryStringManager != null)
+            if (queryStringManager?.ShouldObfuscate(queryString) ?? false)
             {
-                queryString = queryString.Substring(0, Math.Min(queryString.Length, 200));
-                queryString = queryStringManager.Obfuscate(queryString);
-                return $"{scheme}://{(string.IsNullOrEmpty(host) ? NoHostSpecified : host)}{pathBase}{path}{queryString}";
+                return new(
+                    () =>
+                    {
+                        var queryStringLocal = queryString.Substring(0, Math.Min(queryString.Length, 200));
+                        queryStringLocal = queryStringManager.Obfuscate(queryStringLocal);
+                        return $"{scheme}://{(string.IsNullOrEmpty(host) ? NoHostSpecified : host)}{pathBase}{path}{queryStringLocal}";
+                    });
             }
 
             return $"{scheme}://{(string.IsNullOrEmpty(host) ? NoHostSpecified : host)}{pathBase}{path}";

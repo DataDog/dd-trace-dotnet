@@ -20,6 +20,8 @@ namespace Datadog.Trace.Util.Http
             _obfuscator = ObfuscatorFactory.GetObfuscator(timeout, pattern, logger, reportQueryString);
         }
 
-        internal string Obfuscate(string queryString) => !_reportQueryString ? string.Empty : _obfuscator.Obfuscate(queryString);
+        internal bool ShouldObfuscate(string queryString) => _reportQueryString && !string.IsNullOrEmpty(queryString);
+
+        internal string Obfuscate(string queryString) => _obfuscator.Obfuscate(queryString);
     }
 }

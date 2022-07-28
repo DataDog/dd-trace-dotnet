@@ -46,11 +46,6 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
 
         internal override string Obfuscate(string queryString)
         {
-            if (string.IsNullOrEmpty(queryString))
-            {
-                return queryString;
-            }
-
             try
             {
                 return _regex.Replace(queryString, ReplacementString);

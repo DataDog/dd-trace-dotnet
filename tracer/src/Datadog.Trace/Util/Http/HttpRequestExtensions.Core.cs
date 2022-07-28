@@ -10,6 +10,7 @@ using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util.Http.QueryStringObfuscation;
 using Microsoft.AspNetCore.Http;
 
@@ -89,7 +90,7 @@ namespace Datadog.Trace.Util.Http
             return dict;
         }
 
-        internal static string GetUrl(this HttpRequest request, QueryStringManager queryStringManager = null)
+        internal static LazyOrString GetUrl(this HttpRequest request, QueryStringManager queryStringManager = null)
         {
             var queryString = request.QueryString.Value;
             return HttpRequestUtils.GetUrl(

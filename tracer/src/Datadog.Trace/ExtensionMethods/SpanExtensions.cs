@@ -44,7 +44,7 @@ namespace Datadog.Trace.ExtensionMethods
             string resourceName,
             string method,
             string host,
-            string httpUrl,
+            LazyOrString httpUrl,
             string userAgent,
             WebTags tags,
             IEnumerable<KeyValuePair<string, string>> tagsFromHeaders)
@@ -56,8 +56,8 @@ namespace Datadog.Trace.ExtensionMethods
             {
                 tags.HttpMethod = method;
                 tags.HttpRequestHeadersHost = host;
-                tags.HttpUrl = httpUrl;
                 tags.HttpUserAgent = userAgent;
+                tags.SetTag(Tags.HttpUrl, httpUrl);
             }
 
             foreach (var kvp in tagsFromHeaders)

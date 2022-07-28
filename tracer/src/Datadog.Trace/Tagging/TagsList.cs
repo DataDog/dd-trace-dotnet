@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -12,7 +13,7 @@ namespace Datadog.Trace.Tagging
 {
     internal abstract class TagsList : ITags
     {
-        private List<KeyValuePair<string, string>> _tags;
+        private List<KeyValuePair<string, LazyOrString>> _tags;
         private List<KeyValuePair<string, double>> _metrics;
 
         public virtual string GetTag(string key)
@@ -26,7 +27,7 @@ namespace Datadog.Trace.Tagging
                     {
                         if (tags[i].Key == key)
                         {
-                            return tags[i].Value;
+                            return tags[i].Value.ToString();
                         }
                     }
                 }
@@ -35,13 +36,15 @@ namespace Datadog.Trace.Tagging
             return null;
         }
 
-        public virtual void SetTag(string key, string value)
+        public virtual void SetTag(string key, string value) => SetTag(key, new LazyOrString(value));
+
+        public virtual void SetTag(string key, LazyOrString value)
         {
             var tags = Volatile.Read(ref _tags);
 
             if (tags == null)
             {
-                var newTags = new List<KeyValuePair<string, string>>();
+                var newTags = new List<KeyValuePair<string, LazyOrString>>();
                 tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
             }
 
@@ -57,7 +60,7 @@ namespace Datadog.Trace.Tagging
                         }
                         else
                         {
-                            tags[i] = new KeyValuePair<string, string>(key, value);
+                            tags[i] = new(key, value);
                         }
 
                         return;
@@ -67,7 +70,7 @@ namespace Datadog.Trace.Tagging
                 // If we get there, the tag wasn't in the collection
                 if (value != null)
                 {
-                    tags.Add(new KeyValuePair<string, string>(key, value));
+                    tags.Add(new(key, value));
                 }
             }
         }
@@ -82,7 +85,7 @@ namespace Datadog.Trace.Tagging
                 {
                     for (int i = 0; i < tags.Count; i++)
                     {
-                        processor.Process(new TagItem<string>(tags[i].Key, tags[i].Value, null));
+                        processor.Process(new TagItem<string>(tags[i].Key, tags[i].Value.ToString(), null));
                     }
                 }
             }

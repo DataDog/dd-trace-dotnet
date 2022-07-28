@@ -12,6 +12,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util.Http.QueryStringObfuscation;
 
 namespace Datadog.Trace.Util.Http
@@ -93,11 +94,11 @@ namespace Datadog.Trace.Util.Http
             return dict;
         }
 
-        internal static string GetUrl(this IHttpRequestMessage request, QueryStringManager queryStringManager) => HttpRequestUtils.GetUrl(request.RequestUri.Scheme, request.RequestUri.Host, string.Empty, request.RequestUri.AbsolutePath, request.RequestUri.Query, queryStringManager);
+        internal static LazyOrString GetUrl(this IHttpRequestMessage request, QueryStringManager queryStringManager) => HttpRequestUtils.GetUrl(request.RequestUri.Scheme, request.RequestUri.Host, string.Empty, request.RequestUri.AbsolutePath, request.RequestUri.Query, queryStringManager);
 
-        internal static string GetUrl(this HttpRequestBase request, QueryStringManager queryStringManager) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, request.Url.Query, queryStringManager);
+        internal static LazyOrString GetUrl(this HttpRequestBase request, QueryStringManager queryStringManager) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, request.Url.Query, queryStringManager);
 
-        internal static string GetUrl(this HttpRequest request, QueryStringManager queryStringManager) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, request.Url.Query, queryStringManager);
+        internal static LazyOrString GetUrl(this HttpRequest request, QueryStringManager queryStringManager) => HttpRequestUtils.GetUrl(request.Url.Scheme, request.Url.Host, string.Empty, request.Url.AbsolutePath, request.Url.Query, queryStringManager);
     }
 }
 #endif
