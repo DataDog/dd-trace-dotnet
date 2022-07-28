@@ -39,8 +39,20 @@ namespace Datadog.Trace.Tests.Util.Http
         {
             var logger = new Mock<IDatadogLogger>();
             var queryStringObfuscator = ObfuscatorFactory.GetObfuscator(Timeout, TracerSettings.DefaultObfuscationQueryStringRegex, logger.Object);
-            var result = queryStringObfuscator.Obfuscate(querystring);
-            result.Should().Be(querystring);
+            if (querystring == null)
+            {
+                // normally we should always call ShouldObfuscate on the query string manager before passing null, and avoid doing twice the string.isnullorempty test
+                Assert.Throws<ArgumentNullException>(
+                    () =>
+                    {
+                        queryStringObfuscator.Obfuscate(null);
+                    });
+            }
+            else
+            {
+                var result = queryStringObfuscator.Obfuscate(querystring);
+                result.Should().Be(querystring);
+            }
         }
 
         [Fact]
