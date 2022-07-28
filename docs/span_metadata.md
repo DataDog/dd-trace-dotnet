@@ -208,14 +208,14 @@ Type | `grpc`
 ### Tags
 Name | Required |
 ---------|----------------|
-component | `GraphQL`
+component | `Grpc`
 grpc.method.kind | Yes
 grpc.method.name | Yes
 grpc.method.package | Yes
 grpc.method.path | Yes
 grpc.method.service | Yes
 grpc.status.code | Yes
-span.kind | `server`
+span.kind | `client`; `server`
 
 ## HttpMessageHandler
 ### Span properties
@@ -280,7 +280,7 @@ msmq.command | Yes
 msmq.message.transactional | No
 msmq.queue.path | Yes
 msmq.queue.transactional | No
-span.kind | `client`; `producer`
+span.kind | `client`; `producer`; `consumer`
 
 ## MySql
 ### Span properties
@@ -418,7 +418,7 @@ Type | `sql`
 Name | Required |
 ---------|----------------|
 component | `Sqlite`
-db.name | Yes
+db.name | No
 db.type | `sqlite`
 span.kind | `client`
 
@@ -432,7 +432,7 @@ Type | `sql`
 Name | Required |
 ---------|----------------|
 component | `SqlClient`
-db.name | Yes
+db.name | No
 db.type | `sql-server`
 span.kind | `client`
 

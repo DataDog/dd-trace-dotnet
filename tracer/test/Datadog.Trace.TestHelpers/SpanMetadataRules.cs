@@ -183,8 +183,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("grpc.method.path")
                 .IsPresent("grpc.method.service")
                 .IsPresent("grpc.status.code")
-                .Matches("component", "GraphQL")
-                .Matches("span.kind", "server"));
+                .Matches("component", "Grpc")
+                .MatchesOneOf("span.kind", "client", "server"));
 
         public static Result IsHttpMessageHandler(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
@@ -233,7 +233,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("msmq.queue.path")
                 .IsOptional("msmq.queue.transactional")
                 .Matches("component", "msmq")
-                .MatchesOneOf("span.kind", "client", "producer"));
+                .MatchesOneOf("span.kind", "client", "producer", "consumer"));
 
         public static Result IsMySql(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
@@ -334,7 +334,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "sqlite.query")
                 .Matches(Type, "sql"))
             .Tags(s => s
-                .IsPresent("db.name")
+                .IsOptional("db.name")
                 .Matches("db.type", "sqlite")
                 .Matches("component", "Sqlite")
                 .Matches("span.kind", "client"));
@@ -344,7 +344,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "sql-server.query")
                 .Matches(Type, "sql"))
             .Tags(s => s
-                .IsPresent("db.name")
+                .IsOptional("db.name")
                 .Matches("db.type", "sql-server")
                 .Matches("component", "SqlClient")
                 .Matches("span.kind", "client"));
