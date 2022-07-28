@@ -49,6 +49,26 @@ namespace Datadog.Trace.TestHelpers
         [Key("metrics")]
         public Dictionary<string, double> Metrics { get; set; }
 
+        public string GetTag(string key)
+        {
+            if (Tags.TryGetValue(key, out string value))
+            {
+                return value;
+            }
+
+            return null;
+        }
+
+        public double? GetMetric(string key)
+        {
+            if (Metrics.TryGetValue(key, out double value))
+            {
+                return value;
+            }
+
+            return null;
+        }
+
         public override string ToString()
         {
             return $"{nameof(TraceId)}: {TraceId}, {nameof(SpanId)}: {SpanId}, {nameof(Name)}: {Name}, {nameof(Resource)}: {Resource}, {nameof(Service)}: {Service}";

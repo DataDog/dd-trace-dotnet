@@ -1,4 +1,4 @@
-﻿// <copyright file="GrpcTests.cs" company="Datadog">
+// <copyright file="GrpcTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -313,6 +313,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 if (EnvironmentHelper.SampleName == "GrpcLegacy")
                 {
                     FixVerySlowClientSpans(spans);
+                }
+
+                var grpcSpans = spans.Where(s => s.Name == "grpc.request")
+                                     .ToList();
+
+                foreach (var grpcSpan in grpcSpans)
+                {
+                    var result = grpcSpan.IsGrpc();
+                    Assert.True(result.Success, result.ToString());
                 }
 
                 await VerifyHelper.VerifySpans(spans, settings)
