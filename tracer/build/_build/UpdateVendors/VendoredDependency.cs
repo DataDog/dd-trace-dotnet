@@ -56,7 +56,7 @@ namespace UpdateVendors
                 pathToSrc: new[] { "Newtonsoft.Json-13.0.1", "src", "Newtonsoft.Json" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Newtonsoft.Json", AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma),
                 relativePathsToExclude: new[] { "Utilities/NullableAttributes.cs" });
-            
+
             Add(
                 libraryName: "dnlib",
                 version: "3.4.0",
@@ -72,6 +72,16 @@ namespace UpdateVendors
                 pathToSrc: new[] { "sketches-dotnet-1.0.0", "src", "Datadog.Sketches" },
                 // Perform standard CS file transform with additional '#nullable enable' directive at the beginning of the files, since the vendored project was built with <Nullable>enable</Nullable>
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Datadog.Sketches", AddNullableDirectiveTransform));
+
+            Add(
+                libraryName: "IndieSystem.Text.RegularExpressions",
+                version: "0.1",
+                downloadUrl: "https://github.com/robertpi/IndieRegex/archive/refs/tags/v0.3.zip",
+                pathToSrc: new[] { "IndieRegex-0.3", "src" },
+                // Perform standard CS file transform with additional '#nullable enable' directive at the beginning of the files, since the vendored project was built with <Nullable>enable</Nullable>
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "IndieSystem.Text.RegularExpressions",
+                    AddIfNetcoreapp31OrGreater, AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma, FixupResources),
+                relativePathsToExclude: new[] { "additional/HashCode.cs" });
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();
@@ -85,7 +95,7 @@ namespace UpdateVendors
         public string[] PathToSrc { get; set; }
 
         public Action<string> Transform { get; set; }
-        
+
         public string[] RelativePathsToExclude { get; set; }
 
         private static void Add(
@@ -105,6 +115,11 @@ namespace UpdateVendors
                 Transform = transform,
                 RelativePathsToExclude = relativePathsToExclude ?? Array.Empty<string>(),
             });
+        }
+
+        private static string AddIfNetcoreapp31OrGreater(string filePath, string content)
+        {
+            return "#if NETCOREAPP3_1_OR_GREATER" + Environment.NewLine + content + Environment.NewLine + "#endif";
         }
 
         private static string AddNullableDirectiveTransform(string filePath, string content)
@@ -173,10 +188,10 @@ namespace UpdateVendors
 
                         if (originalNamespace.Equals("dnlib"))
                         {
-                            // dnlib's only targets net461 and netstandard2.0. 
+                            // dnlib's only targets net461 and netstandard2.0.
                             // For our needs, it's more correct to consider `NETSTANDARD` as 'everything not .NET Framework'
                             builder.Replace("#if NETSTANDARD", "#if !NETFRAMEWORK");
-                            
+
                             // Make certain classes partial so we can extend them.
                             foreach (var className in new[] { "SymbolReaderImpl", "PdbReader", "PortablePdbReader" })
                             {
@@ -203,13 +218,13 @@ namespace UpdateVendors
                                 @$"using\s+(\S+)\s+=\s+{Regex.Escape(originalNamespace)}.(.*);",
                                 match => $"using {match.Groups[1].Value} = Datadog.Trace.Vendors.{originalNamespace}.{match.Groups[2].Value};");
 
-                        
-                        
+
+
                         // Don't expose anything we don't intend to
                         // by replacing all "public" access modifiers with "internal"
                         return Regex.Replace(
                             result,
-                            @"public(\s+((abstract|sealed|static|unsafe)\s+)*?(partial\s+)?(partial\s+)?(class|readonly\s+struct|struct|interface|enum|delegate))",
+                            @"public(\s+((abstract|sealed|static|unsafe)\s+)*?(partial\s+)?(class|readonly\s+(ref\s+)?struct|struct|interface|enum|delegate))",
                             match => $"internal{match.Groups[1]}");
                     });
             }
@@ -217,13 +232,16 @@ namespace UpdateVendors
 
         static string GenerateWarningDisablePragma() =>
             "#pragma warning disable " +
-            "CS0618, " +      // Type or member is obsolete 
-            "CS0649, " +      // Field is never assigned to, and will always have its default value 
+            "CS0618, " +      // Type or member is obsolete
+            "CS0649, " +      // Field is never assigned to, and will always have its default value
             "CS1574, " +      // XML comment has a cref attribute that could not be resolved
-            "CS1580, " +      // Invalid type for parameter in XML comment cref attribute 
+            "CS1580, " +      // Invalid type for parameter in XML comment cref attribute
             "CS1581, " +      // Invalid return type in XML comment cref attribute
             "CS1584, " +      // XML comment has syntactically incorrect cref attribute
-            "SYSLIB0011, " +  // BinaryFormatter serialization is obsolete and should not be used. 
+            "CS1591, " +      // Missing XML comment for publicly visible type or member 'x'
+            "CS1573, " +      // Parameter 'x' has no matching param tag in the XML comment for 'y' (but other parameters do)
+            "CS8018, " +      // Within cref attributes, nested types of generic types should be qualified
+            "SYSLIB0011, " +  // BinaryFormatter serialization is obsolete and should not be used.
             "SYSLIB0032";     // Recovery from corrupted process state exceptions is not supported; HandleProcessCorruptedStateExceptionsAttribute is ignored."
 
         static string AddIgnoreNullabilityWarningDisablePragma(string filePath, string content) =>
@@ -242,8 +260,21 @@ namespace UpdateVendors
             "CS8767, " + // Nullability of reference types in type of parameter 'x' of 'y' doesn't match implicitly implemented member 'z' (possibly because of nullability attributes)
             "CS8768, " + // Nullability of reference types in return type doesn't match implemented member 'x' (possibly because of nullability attributes)
             "CS8769, " + // Nullability of reference types in type of parameter 'x' doesn't match implemented member 'y'  (possibly because of nullability attributes)
-            "CS8612" + // Nullability of reference types in type of 'x' doesn't match implicitly implemented member 'y'.
+            "CS8612, " + // Nullability of reference types in type of 'x' doesn't match implicitly implemented member 'y'.
+            "CS8629, " + // Nullable value type may be null with temporary variables
+            "CS8774" +   // Member 'x' must have a non-null value when exiting.
             Environment.NewLine + content;
+
+        static string FixupResources(string filePath, string content)
+        {
+            if (content.Contains("new global::System.Resources.ResourceManager(\"IndieSystem.Text.RegularExpressions.SR\""))
+            {
+                return content.Replace("new global::System.Resources.ResourceManager(\"IndieSystem.Text.RegularExpressions.SR\"",
+                    "new global::System.Resources.ResourceManager(\"Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions.SR\"");
+            }
+
+            return content;
+        }
 
         private static void RewriteFileWithTransform(string filePath, Func<string, string> transform)
         {
