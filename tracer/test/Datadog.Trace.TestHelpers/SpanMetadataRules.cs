@@ -48,7 +48,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "web"))
             .Tags(s => s
                 .IsPresent("aspnet.action")
-                .IsPresent("aspnet.area")
+                .IsOptional("aspnet.area")
                 .IsPresent("aspnet.controller")
                 .IsPresent("aspnet.route")
                 .IsPresent("http.method")
@@ -207,7 +207,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("kafka.partition")
                 .IsOptional("kafka.tombstone")
                 .IsOptional("message.queue_time_ms")
-                .Matches("component", "kakfa")
+                .Matches("component", "kafka")
                 .IsPresent("span.kind"));
 
         public static Result IsMongoDB(this MockSpan span) => Result.FromSpan(span)
@@ -252,7 +252,7 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsPresent("db.name")
                 .Matches("db.type", "postgres")
-                .Matches("component", "MySql")
+                .Matches("component", "Npgsql")
                 .Matches("span.kind", "client"));
 
         public static Result IsOracle(this MockSpan span) => Result.FromSpan(span)

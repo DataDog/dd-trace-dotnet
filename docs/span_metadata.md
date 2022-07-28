@@ -54,7 +54,7 @@ Type | `web`
 Name | Required |
 ---------|----------------|
 aspnet.action | Yes
-aspnet.area | Yes
+aspnet.area | No
 aspnet.controller | Yes
 aspnet.route | Yes
 http.method | Yes
@@ -242,7 +242,7 @@ Type | `queue`
 ### Tags
 Name | Required |
 ---------|----------------|
-component | `kakfa`
+component | `kafka`
 kafka.offset | No
 kafka.partition | No
 kafka.tombstone | No
@@ -305,7 +305,7 @@ Type | `sql`
 ### Tags
 Name | Required |
 ---------|----------------|
-component | `MySql`
+component | `Npgsql`
 db.name | Yes
 db.type | `postgres`
 span.kind | `client`

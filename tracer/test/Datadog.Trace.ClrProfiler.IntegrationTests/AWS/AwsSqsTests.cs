@@ -43,7 +43,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var frameworkName = "NetCore";
 #endif
                 var spans = agent.WaitForSpans(expectedCount);
-                foreach (var span in spans)
+                var sqsSpans = spans.Where(s => s.Name == "sqs.request");
+                foreach (var span in sqsSpans)
                 {
                     var result = span.IsAwsSqs();
                     Assert.True(result.Success, result.ToString());
