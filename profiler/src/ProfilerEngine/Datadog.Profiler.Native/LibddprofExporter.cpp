@@ -67,9 +67,20 @@ LibddprofExporter::LibddprofExporter(
 
 LibddprofExporter::~LibddprofExporter()
 {
-    for (auto [runtimeId, appInfo] : _perAppInfo)
+    std::lock_guard lock(_profileInfoLock);
+
+    for (auto& [runtimeId, appInfo] : _perAppInfo)
     {
-        ddprof_ffi_Profile_free(appInfo.profile);
+        {
+            std::lock_guard lockProfile(appInfo.lock);
+
+            if (appInfo.profile != nullptr)
+            {
+                ddprof_ffi_Profile_free(appInfo.profile);
+            }
+
+            appInfo.profile = nullptr;
+        }
     }
     _perAppInfo.clear();
 }
@@ -243,24 +254,25 @@ ddprof_ffi_EndpointV3 LibddprofExporter::CreateEndpoint(IConfiguration* configur
     return ddprof_ffi_EndpointV3_agent(FfiHelper::StringToCharSlice(_agentUrl));
 }
 
-LibddprofExporter::ProfileInfo& LibddprofExporter::GetInfo(std::string_view runtimeId)
+LibddprofExporter::ProfileInfoScope LibddprofExporter::GetInfo(std::string_view runtimeId)
 {
-    auto& profileInfo = _perAppInfo[runtimeId];
-    if (profileInfo.profile != nullptr)
-    {
-        return profileInfo;
-    }
+    std::lock_guard lock(_profileInfoLock);
 
-    profileInfo.profile = CreateProfile();
+    auto& profileInfo = _perAppInfo[runtimeId];
 
     return profileInfo;
 }
 
 void LibddprofExporter::Add(Sample const& sample)
 {
-    auto& profileInfo = GetInfo(sample.GetRuntimeId());
+    auto profileInfoScope = GetInfo(sample.GetRuntimeId());
 
-    auto* profile = profileInfo.profile;
+    if (profileInfoScope.profileInfo.profile == nullptr)
+    {
+        profileInfoScope.profileInfo.profile = CreateProfile();
+    }
+
+    auto* profile = profileInfoScope.profileInfo.profile;
 
     auto const& callstack = sample.GetCallstack();
     auto nbFrames = callstack.size();
@@ -312,7 +324,7 @@ void LibddprofExporter::Add(Sample const& sample)
     ffiSample.values = {values.data(), values.size()};
 
     ddprof_ffi_Profile_add(profile, ffiSample);
-    profileInfo.samplesCount++;
+    profileInfoScope.profileInfo.samplesCount++;
 }
 
 bool LibddprofExporter::Export()
@@ -320,22 +332,48 @@ bool LibddprofExporter::Export()
     bool exported = false;
 
     int32_t idx = 0;
-    for (auto& [runtimeId, profileInfo] : _perAppInfo)
+
+    std::vector<std::string_view> keys;
+
     {
-        auto samplesCount = profileInfo.samplesCount;
+        std::lock_guard lock(_profileInfoLock);
+        for (const auto& [key, _] : _perAppInfo)
+        {
+            keys.push_back(key);
+        }
+    }
+
+    for (auto& runtimeId : keys)
+    {
+        ddprof_ffi_Profile* profile;
+        int32_t samplesCount;
+        int32_t exportsCount;
+
+        {
+            const auto scope = GetInfo(runtimeId);
+
+            // Get everything we need then release the lock
+            profile = scope.profileInfo.profile;
+            samplesCount = scope.profileInfo.samplesCount;
+
+            // Count is incremented BEFORE creating and sending the .pprof
+            // so that it will be possible to detect "missing" profiles
+            // in the back end
+            exportsCount = ++scope.profileInfo.exportsCount;
+
+            scope.profileInfo.profile = nullptr;
+            scope.profileInfo.samplesCount = 0;
+        }
+
         const auto& applicationInfo = _applicationStore->GetApplicationInfo(std::string(runtimeId));
 
-        if (samplesCount <= 0)
+        if (profile == nullptr || samplesCount == 0)
         {
             Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be send.");
             continue;
         }
 
-        // reset the samples count
-        profileInfo.samplesCount = 0;
-        auto* profile = profileInfo.profile;
-        on_leave { ddprof_ffi_Profile_reset(profile, nullptr); };
-
+        auto profileAutoDelete = ProfileAutoDelete{profile};
         auto serializedProfile = SerializedProfile{profile};
         if (!serializedProfile.IsValid())
         {
@@ -361,7 +399,7 @@ bool LibddprofExporter::Export()
         additionalTags.Add("version", applicationInfo.Version);
         additionalTags.Add("service", applicationInfo.ServiceName);
         additionalTags.Add("runtime-id", std::string(runtimeId));
-        additionalTags.Add("profile_seq", std::to_string(profileInfo.exportsCount));
+        additionalTags.Add("profile_seq", std::to_string(exportsCount));
 
         // Count is incremented BEFORE creating and sending the .pprof
         // so that it will be possible to detect "missing" profiles
@@ -575,6 +613,20 @@ const ddprof_ffi_Vec_tag* LibddprofExporter::Tags::GetFfiTags() const
 }
 
 //
+// LibddprofExporter::ProfileAutoDelete class
+//
+
+LibddprofExporter::ProfileAutoDelete::ProfileAutoDelete(struct ddprof_ffi_Profile* profile) :
+    _profile{profile}
+{
+}
+
+LibddprofExporter::ProfileAutoDelete::~ProfileAutoDelete()
+{
+    ddprof_ffi_Profile_free(_profile);
+}
+
+//
 // LibddprofExporter::ProfileInfo class
 //
 
@@ -583,4 +635,10 @@ LibddprofExporter::ProfileInfo::ProfileInfo()
     profile = nullptr;
     samplesCount = 0;
     exportsCount = 0;
+}
+
+LibddprofExporter::ProfileInfoScope::ProfileInfoScope(LibddprofExporter::ProfileInfo& profileInfo) :
+    profileInfo(profileInfo),
+    _lockGuard(profileInfo.lock)
+{
 }
