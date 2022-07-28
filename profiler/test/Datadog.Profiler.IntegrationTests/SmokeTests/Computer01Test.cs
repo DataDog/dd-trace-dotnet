@@ -26,28 +26,28 @@ namespace Datadog.Profiler.SmokeTests
         //  4: start a thread to compute pi at a certain precision(high CPU usage)
         //  5: start a to compute fibonacci (high CPU usage + deep stacks)
         // -----------------------------------------------------------------------------------------
-        [TestAppFact("Samples.Computer01", DisplayName = "AppDomain")]
+        [TestAppFact("Samples.Computer01")]
         public void CheckAppDomain(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output);
             runner.RunAndCheck();
         }
 
-        [TestAppFact("Samples.Computer01", DisplayName = "Generics")]
+        [TestAppFact("Samples.Computer01")]
         public void CheckGenerics(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", _output);
             runner.RunAndCheck();
         }
 
-        [TestAppFact("Samples.Computer01", DisplayName = "Pi")]
+        [TestAppFact("Samples.Computer01")]
         public void CheckPi(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", _output);
             runner.RunAndCheck();
         }
 
-        [TestAppFact("Samples.Computer01", DisplayName = "Fibonacci")]
+        [TestAppFact("Samples.Computer01")]
         public void CheckFibonacci(string appName, string framework, string appAssembly)
         {
             var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", _output);

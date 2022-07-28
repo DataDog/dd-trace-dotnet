@@ -13,7 +13,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Datadog.Trace.PDBs;
+using Datadog.Trace.Pdb;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci

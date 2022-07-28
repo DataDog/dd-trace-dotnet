@@ -8,6 +8,7 @@ public static class BuildVariables
     {
         envVars.AddTracerEnvironmentVariables(tracerHomeDirectory);
         envVars.Add("DD_DEBUGGER_ENABLED", "1");
+        envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL", "1");
     }
 
     public static void AddContinuousProfilerEnvironmentVariables(this Dictionary<string, string> envVars, AbsolutePath tracerHomeDirectory)
@@ -37,8 +38,8 @@ public static class BuildVariables
 
         if (EnvironmentInfo.IsWin)
         {
-            envVars.Add("CORECLR_PROFILER_PATH_32", monitoringHomeDirectory / "win-x86" / "Datadog.AutoInstrumentation.NativeLoader.x86.dll");
-            envVars.Add("CORECLR_PROFILER_PATH_64", monitoringHomeDirectory / "win-x64" / "Datadog.AutoInstrumentation.NativeLoader.x64.dll");
+            envVars.Add("CORECLR_PROFILER_PATH_32", monitoringHomeDirectory / "Datadog.AutoInstrumentation.NativeLoader.x86.dll");
+            envVars.Add("CORECLR_PROFILER_PATH_64", monitoringHomeDirectory / "Datadog.AutoInstrumentation.NativeLoader.x64.dll");
         }
         else
         {

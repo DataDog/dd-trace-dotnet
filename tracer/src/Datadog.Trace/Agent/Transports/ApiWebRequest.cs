@@ -34,6 +34,23 @@ namespace Datadog.Trace.Agent.Transports
             _request.Headers.Add(name, value);
         }
 
+        public async Task<IApiResponse> GetAsync()
+        {
+            _request.Method = "GET";
+
+            try
+            {
+                var httpWebResponse = (HttpWebResponse)await _request.GetResponseAsync().ConfigureAwait(false);
+                return new ApiWebResponse(httpWebResponse);
+            }
+            catch (WebException exception)
+                when (exception.Status == WebExceptionStatus.ProtocolError && exception.Response != null)
+            {
+                // If the exception is caused by an error status code, swallow the exception and let the caller handle the result
+                return new ApiWebResponse((HttpWebResponse)exception.Response);
+            }
+        }
+
         public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
         {
             _request.Method = "POST";

@@ -1,0 +1,116 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "lastName": {
+                "fields": null,
+                "type": "String",
+                "value": "First"
+              }
+            },
+            "fields": {
+              "FirstName": {
+                "fields": {
+                  "IsValueCreated": {
+                    "fields": null,
+                    "type": "Boolean",
+                    "value": "True"
+                  },
+                  "Value": {
+                    "fields": null,
+                    "type": "String",
+                    "value": "First"
+                  }
+                },
+                "type": "Lazy`1",
+                "value": "Lazy`1"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "lastName": {
+                "fields": null,
+                "type": "String",
+                "value": "First"
+              }
+            },
+            "fields": {
+              "FirstName": {
+                "fields": {
+                  "IsValueCreated": {
+                    "fields": null,
+                    "type": "Boolean",
+                    "value": "True"
+                  },
+                  "Value": {
+                    "fields": null,
+                    "type": "String",
+                    "value": "First"
+                  }
+                },
+                "type": "Lazy`1",
+                "value": "Lazy`1"
+              }
+            },
+            "locals": {
+              "@return": {
+                "fields": null,
+                "type": "String",
+                "value": "First"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.SmokeTests.HasFieldLazyValueInitialized"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "HasFieldLazyValueInitialized.cs",
+            "function": "Samples.Probes.SmokeTests.HasFieldLazyValueInitialized.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "HasFieldLazyValueInitialized.cs",
+            "function": "Samples.Probes.SmokeTests.HasFieldLazyValueInitialized.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Samples.Probes.SmokeTests.HasFieldLazyValueInitialized",
+      "name": "Method",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "HasFieldLazyValueInitialized.Method(lastName=First): First\r\n@return=First",
+    "service": "Unknown"
+  }
+]

@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.HttpOverStreams.HttpContent;
@@ -31,15 +32,20 @@ namespace Datadog.Trace.Agent.Transports
             _headers.Add(name, value);
         }
 
-        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType) => (await PostSegmentAsync(bytes, contentType).ConfigureAwait(false)).Item1;
+        public async Task<IApiResponse> GetAsync() => (await SendAsync(WebRequestMethods.Http.Get, null, null).ConfigureAwait(false)).Item1;
 
-        private async Task<Tuple<IApiResponse, HttpRequest>> PostSegmentAsync(ArraySegment<byte> segment, string contentType)
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType) => (await SendAsync(WebRequestMethods.Http.Post, contentType, new BufferContent(bytes)).ConfigureAwait(false)).Item1;
+
+        private async Task<Tuple<IApiResponse, HttpRequest>> SendAsync(string verb, string contentType, IHttpContent content)
         {
             using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())
             {
-                var content = new BufferContent(segment);
-                _headers.Add("Content-Type", contentType);
-                var request = new HttpRequest("POST", _uri.Host, _uri.PathAndQuery, _headers, content);
+                if (contentType != null)
+                {
+                    _headers.Add("Content-Type", contentType);
+                }
+
+                var request = new HttpRequest(verb, _uri.Host, _uri.PathAndQuery, _headers, content);
                 // send request, get response
                 var response = await _client.SendAsync(request, bidirectionalStream, bidirectionalStream).ConfigureAwait(false);
 

@@ -31,7 +31,7 @@ using namespace std::chrono_literals;
 std::mutex LinuxStackFramesCollector::s_signalHandlerInitLock;
 std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
 bool LinuxStackFramesCollector::s_isSignalHandlerSetup = false;
-int LinuxStackFramesCollector::s_signalToSend = -1;
+int32_t LinuxStackFramesCollector::s_signalToSend = -1;
 LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
 
 LinuxStackFramesCollector::LinuxStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo) :
@@ -192,7 +192,7 @@ void LinuxStackFramesCollector::InitializeSignalHandler()
     s_isSignalHandlerSetup = SetupSignalHandler();
 }
 
-bool LinuxStackFramesCollector::TrySetHandlerForSignal(int signal, struct sigaction& action)
+bool LinuxStackFramesCollector::TrySetHandlerForSignal(int32_t signal, struct sigaction& action)
 {
     struct sigaction oldAction;
     if (sigaction(signal, nullptr, &oldAction) < 0)
@@ -209,7 +209,7 @@ bool LinuxStackFramesCollector::TrySetHandlerForSignal(int signal, struct sigact
     if (oldAction.sa_handler == SIG_DFL || oldAction.sa_handler == SIG_IGN)
     {
         sigaddset(&action.sa_mask, signal);
-        int result = sigaction(signal, &action, &oldAction);
+        int32_t result = sigaction(signal, &action, &oldAction);
         if (result == 0)
         {
             return true;
@@ -258,7 +258,7 @@ bool LinuxStackFramesCollector::SetupSignalHandler()
     return false;
 }
 
-char const* LinuxStackFramesCollector::ErrorCodeToString(int errorCode)
+char const* LinuxStackFramesCollector::ErrorCodeToString(int32_t errorCode)
 {
     switch (errorCode)
     {
@@ -349,7 +349,7 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread()
     }
 }
 
-void LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal)
+void LinuxStackFramesCollector::CollectStackSampleSignalHandler(int32_t signal)
 {
     std::unique_lock<std::mutex> stackWalkInProgressLock(s_stackWalkInProgressMutex);
     LinuxStackFramesCollector* pCollectorInstanceCurrentlyStackWalking = s_pInstanceCurrentlyStackWalking;

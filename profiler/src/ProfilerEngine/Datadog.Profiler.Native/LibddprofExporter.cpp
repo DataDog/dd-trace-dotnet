@@ -36,7 +36,7 @@ tags LibddprofExporter::CommonTags = {
 // need to be static so it leave longer for the shared library
 std::string const LibddprofExporter::ProcessId = std::to_string(OpSysTools::GetProcId());
 
-int const LibddprofExporter::RequestTimeOutMs = 10000;
+int32_t const LibddprofExporter::RequestTimeOutMs = 10000;
 
 std::string const LibddprofExporter::LanguageFamily = "dotnet";
 
@@ -229,7 +229,7 @@ bool LibddprofExporter::Export()
 {
     bool exported = false;
 
-    int idx = 0;
+    int32_t idx = 0;
     for (auto& [runtimeId, profileInfo] : _perAppInfo)
     {
         auto samplesCount = profileInfo.samplesCount;
@@ -292,7 +292,7 @@ bool LibddprofExporter::Export()
     return exported;
 }
 
-std::string LibddprofExporter::GeneratePprofFilePath(const std::string& applicationName, int idx) const
+std::string LibddprofExporter::GeneratePprofFilePath(const std::string& applicationName, int32_t idx) const
 {
     auto time = std::time(nullptr);
     struct tm buf = {};
@@ -313,7 +313,7 @@ std::string LibddprofExporter::GeneratePprofFilePath(const std::string& applicat
     return pprofFilePath.string();
 }
 
-void LibddprofExporter::ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int idx)
+void LibddprofExporter::ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int32_t idx)
 {
     auto pprofFilePath = GeneratePprofFilePath(applicationName, idx);
 

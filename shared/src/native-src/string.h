@@ -31,6 +31,8 @@ namespace shared {
 
     bool TryParse(WSTRING const& s, int& result);
 
+    bool EndsWith(const std::string& str, const std::string& suffix);
+
     template <typename TChar>
     std::basic_string<TChar> ReplaceString(std::basic_string<TChar> subject, const std::basic_string<TChar>& search, const std::basic_string<TChar>& replace) {
         size_t pos = 0;

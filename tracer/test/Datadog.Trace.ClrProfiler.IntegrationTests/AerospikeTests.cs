@@ -40,6 +40,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
+                foreach (var span in spans)
+                {
+                    var result = span.IsAerospike();
+                    Assert.True(result.Success, result.ToString());
+                }
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 

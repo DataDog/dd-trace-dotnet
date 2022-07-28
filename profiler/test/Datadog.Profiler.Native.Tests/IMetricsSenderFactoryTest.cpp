@@ -8,12 +8,12 @@
 #include "IMetricsSender.h"
 #include "IMetricsSenderFactory.h"
 
-#include "string.h"
+#include "shared/src/native-src/util.h"
 
 TEST(IMetricsSenderFactoryTest, MustReturnNullIfEnvVarNotSet)
-{
-    auto envVarValue = std::getenv(shared::ToString(EnvironmentVariables::OperationalMetricsEnabled).c_str());
-    EXPECT_TRUE(envVarValue == nullptr);
+{    
+    auto envVarValue = shared::GetEnvironmentValue(EnvironmentVariables::OperationalMetricsEnabled);
+    EXPECT_TRUE(envVarValue.length() == 0);
 
     auto metricsSender = IMetricsSenderFactory::Create();
     EXPECT_TRUE(metricsSender == nullptr);

@@ -16,8 +16,8 @@
 class OpSysTools final
 {
 public:
-    static int GetProcId();
-    static int GetThreadId();
+    static int32_t GetProcId();
+    static int32_t GetThreadId();
     // static std::string UnicodeToAnsi(const WCHAR* str);
 
     /// <summary>
@@ -48,7 +48,7 @@ public:
     static std::string GetHostname();
     static std::string GetProcessName();
 
-    static bool ParseThreadInfo(std::string line, char& state, int& userTime, int& kernelTime)
+    static bool ParseThreadInfo(std::string line, char& state, int32_t& userTime, int32_t& kernelTime)
     {
         // based on https://linux.die.net/man/5/proc
         // state  = 3rd position  and 'R' for Running

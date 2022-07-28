@@ -165,6 +165,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 var spans = agent.WaitForSpans(expectedSpans);
+                var graphQLSpans = spans.Where(s => s.Type == "graphql")
+                                        .ToList();
+
+                foreach (var graphQLSpan in graphQLSpans)
+                {
+                    var result = graphQLSpan.IsGraphQL();
+                    Assert.True(result.Success, result.ToString());
+                }
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 
@@ -241,6 +249,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var request = WebRequest.Create($"http://localhost:{aspNetCorePort}{requestInfo.Url}");
                 request.Method = requestInfo.HttpMethod;
+                ((HttpWebRequest)request).UserAgent = "testhelper";
 
                 if (requestInfo.RequestBody != null)
                 {

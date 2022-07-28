@@ -5,6 +5,7 @@
 
 #if NETFRAMEWORK
 using System;
+using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 {
@@ -27,6 +28,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         /// Gets the request headers
         /// </summary>
         IRequestHeaders Headers { get; }
+
+        /// <summary>
+        /// Gets the request properties
+        /// </summary>
+        Dictionary<string, object> Properties { get; }
     }
 }
 #endif

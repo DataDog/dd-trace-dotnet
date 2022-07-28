@@ -176,10 +176,10 @@ void StackSamplerLoop::MainLoopIteration(void)
 
 void StackSamplerLoop::WalltimeProfilingIteration(void)
 {
-    int managedThreadsCount = _pManagedThreadList->Count();
-    int sampledThreadsCount = (std::min)(managedThreadsCount, MaxThreadsPerIterationForWallTime);
+    int32_t managedThreadsCount = _pManagedThreadList->Count();
+    int32_t sampledThreadsCount = (std::min)(managedThreadsCount, MaxThreadsPerIterationForWallTime);
 
-    for (int i = 0; i < sampledThreadsCount && !_shutdownRequested; i++)
+    for (int32_t i = 0; i < sampledThreadsCount && !_shutdownRequested; i++)
     {
         _targetThread = _pManagedThreadList->LoopNext(_iteratorWallTime);
         if (_targetThread != nullptr)
@@ -207,11 +207,11 @@ void StackSamplerLoop::WalltimeProfilingIteration(void)
 
 void StackSamplerLoop::CpuProfilingIteration(void)
 {
-    int managedThreadsCount = _pManagedThreadList->Count();
+    int32_t managedThreadsCount = _pManagedThreadList->Count();
     // TODO: as an optimization, don't scan more threads than nb logical cores
-    int sampledThreadsCount = (std::min)(managedThreadsCount, MaxThreadsPerIterationForCpuTime);
+    int32_t sampledThreadsCount = (std::min)(managedThreadsCount, MaxThreadsPerIterationForCpuTime);
 
-    for (int i = 0; i < sampledThreadsCount && !_shutdownRequested; i++)
+    for (int32_t i = 0; i < sampledThreadsCount && !_shutdownRequested; i++)
     {
         _targetThread = _pManagedThreadList->LoopNext(_iteratorCpuTime);
         if (_targetThread != nullptr)

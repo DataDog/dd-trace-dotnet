@@ -62,6 +62,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 };
 
                 var spans = agent.WaitForSpans(expectedCount);
+                foreach (var span in spans)
+                {
+                    var result = span.IsStackExchangeRedis();
+                    Assert.True(result.Success, result.ToString());
+                }
 
                 var host = Environment.GetEnvironmentVariable("STACKEXCHANGE_REDIS_HOST") ?? "localhost:6389";
                 var port = host.Substring(host.IndexOf(':') + 1);

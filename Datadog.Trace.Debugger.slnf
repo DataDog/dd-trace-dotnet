@@ -1,0 +1,19 @@
+{
+  "solution": {
+    "path": "Datadog.Trace.sln",
+    "projects": [
+      "tracer\\src\\Datadog.AutoInstrumentation.NativeLoader\\Datadog.AutoInstrumentation.NativeLoader.vcxproj",
+      "tracer\\src\\Datadog.Trace.ClrProfiler.Native\\Datadog.Trace.ClrProfiler.Native.DLL.vcxproj",
+      "tracer\\src\\Datadog.Trace.ClrProfiler.Native\\Datadog.Trace.ClrProfiler.Native.vcxproj",
+      "tracer\\src\\Datadog.Trace.SourceGenerators\\Datadog.Trace.SourceGenerators.csproj",
+      "tracer\\src\\Datadog.Trace.Tools.Analyzers\\Datadog.Trace.Tools.Analyzers.csproj",
+      "tracer\\src\\Datadog.Trace\\Datadog.Trace.csproj",
+      "tracer\\test\\Datadog.Trace.ClrProfiler.IntegrationTests\\Datadog.Trace.ClrProfiler.IntegrationTests.csproj",
+      "tracer\\test\\Datadog.Trace.TestHelpers\\Datadog.Trace.TestHelpers.csproj",
+      "tracer\\test\\Datadog.Trace.Tests\\Datadog.Trace.Tests.csproj",
+      "tracer\\test\\test-applications\\debugger\\Samples.Probes\\Samples.Probes.csproj",
+      "tracer\\build\\_build\\_build.csproj",
+      "tracer\\src\\Datadog.Trace.Tools.Analyzers\\Datadog.Trace.Tools.Analyzers.csproj"
+    ]
+  }
+}

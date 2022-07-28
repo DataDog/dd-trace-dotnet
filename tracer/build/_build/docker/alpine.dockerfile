@@ -20,6 +20,7 @@ RUN apk update \
         xz-dev \
         gdb \
         musl-dbg \
+    && gem install --version 2.7.6 dotenv \
     && gem install --no-document fpm
 
 ENV IsAlpine=true
