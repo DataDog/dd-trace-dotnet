@@ -700,6 +700,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
         const auto& assemblyVersion = assemblyImport.version.str();
 
         Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " v", assemblyVersion, " - Fix PInvoke maps");
+        RewritingPInvokeMaps(module_metadata, interop_nativemethods_type);
+
 #ifdef _WIN32
         RewritingPInvokeMaps(module_metadata, windows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, appsec_windows_nativemethods_type);
@@ -1314,8 +1316,49 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
 }
 
 //
-// InitializeProfiler method
+// Initialization methods.
 //
+void CorProfiler::Initialize(
+        WCHAR* id,
+        CallTargetDefinition* definitions, int definitionsSize,
+        CallTargetDefinition* derivedDefinitions, int derivedDefinitionsSize,
+        WCHAR* traceAttributeAssemblyName, WCHAR* traceAttributeTypeName,
+        WCHAR* traceMethodAssemblyName, WCHAR* traceMethodTypeName, WCHAR* traceMethodConfiguration)
+{
+    auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+
+    shared::WSTRING definitionsId = shared::WSTRING(id);
+    std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
+
+    Logger::Info("Initialize: received id: ", definitionsId, " from managed side with ", definitionsSize,
+                 " integrations and with ", derivedDefinitionsSize,
+                 " derived ones. Total: ", (definitionsSize + derivedDefinitionsSize), " integrations.");
+
+    if (definitions_ids_.find(definitionsId) != definitions_ids_.end())
+    {
+        Logger::Info("Initialize: Id already processed.");
+        return;
+    }
+
+    // Enable by ref instrumentation
+    EnableByRefInstrumentation();
+
+    // Enable passing calltargetstate by ref
+    EnableCallTargetStateByRef();
+
+    // Add normal and derived integrations
+    InternalAddInstrumentation(definitionsId, definitions, definitionsSize, derivedDefinitions, derivedDefinitionsSize);
+
+    // Add trace attribute instrumentation
+    InternalAddTraceAttributeInstrumentation(definitionsId, traceAttributeAssemblyName, traceAttributeTypeName);
+
+    // Add trace methods instrumentation
+    InternalInitializeTraceMethods(definitionsId, traceMethodAssemblyName, traceMethodTypeName, traceMethodConfiguration);
+
+    definitions_ids_.emplace(definitionsId);
+    Logger::Info("Initialize: Done.");
+}
+
 void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int size)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
@@ -1323,10 +1366,20 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
     Logger::Info("InitializeProfiler: received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
 
+    std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
+
+    if (definitions_ids_.find(definitionsId) != definitions_ids_.end())
+    {
+        Logger::Info("InitializeProfiler: Id already processed.");
+        return;
+    }
+
     if (size > 0)
     {
-        InternalAddInstrumentation(id, items, size, false);
+        InternalAddInstrumentation(definitionsId, items, size, nullptr, 0);
     }
+
+    definitions_ids_.emplace(definitionsId);
 }
 
 void CorProfiler::EnableByRefInstrumentation()
@@ -1358,15 +1411,6 @@ void CorProfiler::AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* it
     Logger::Info("AddDerivedInstrumentations: received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
 
-    if (size > 0)
-    {
-        InternalAddInstrumentation(id, items, size, true);
-    }
-}
-
-void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived)
-{
-    shared::WSTRING definitionsId = shared::WSTRING(id);
     std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
 
     if (definitions_ids_.find(definitionsId) != definitions_ids_.end())
@@ -1375,55 +1419,114 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
         return;
     }
 
-    if (items != nullptr && rejit_handler != nullptr)
+    if (size > 0)
+    {
+        InternalAddInstrumentation(definitionsId, nullptr, 0, items, size);
+    }
+
+    definitions_ids_.emplace(definitionsId);
+}
+
+void CorProfiler::InternalAddInstrumentation(const shared::WSTRING& definitionsId,
+                                             CallTargetDefinition* definitions, int definitionsSize,
+                                             CallTargetDefinition* derivedDefinitions, int derivedDefinitionsSize)
+{
+    if (rejit_handler != nullptr)
     {
         std::vector<IntegrationDefinition> integrationDefinitions;
+        integrationDefinitions.reserve(definitionsSize + derivedDefinitionsSize);
 
-        for (int i = 0; i < size; i++)
+        bool isDerived = false;
+        if (definitions != nullptr)
         {
-            const CallTargetDefinition& current = items[i];
-
-            const shared::WSTRING& targetAssembly = shared::WSTRING(current.targetAssembly);
-            const shared::WSTRING& targetType = shared::WSTRING(current.targetType);
-            const shared::WSTRING& targetMethod = shared::WSTRING(current.targetMethod);
-
-            const shared::WSTRING& integrationAssembly = shared::WSTRING(current.integrationAssembly);
-            const shared::WSTRING& integrationType = shared::WSTRING(current.integrationType);
-
-            std::vector<shared::WSTRING> signatureTypes;
-            for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
+            for (int i = 0; i < definitionsSize; i++)
             {
-                const auto& currentSignature = current.signatureTypes[sIdx];
-                if (currentSignature != nullptr)
+                const CallTargetDefinition &current = definitions[i];
+                const shared::WSTRING &targetAssembly = shared::WSTRING(current.targetAssembly);
+                const shared::WSTRING &targetType = shared::WSTRING(current.targetType);
+                const shared::WSTRING &targetMethod = shared::WSTRING(current.targetMethod);
+                const shared::WSTRING &integrationAssembly = shared::WSTRING(current.integrationAssembly);
+                const shared::WSTRING &integrationType = shared::WSTRING(current.integrationType);
+
+                std::vector<shared::WSTRING> signatureTypes;
+                for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
                 {
-                    signatureTypes.push_back(shared::WSTRING(currentSignature));
+                    const auto &currentSignature = current.signatureTypes[sIdx];
+                    if (currentSignature != nullptr)
+                    {
+                        signatureTypes.push_back(shared::WSTRING(currentSignature));
+                    }
                 }
+
+                const Version &minVersion =
+                        Version(current.targetMinimumMajor, current.targetMinimumMinor, current.targetMinimumPatch, 0);
+                const Version &maxVersion =
+                        Version(current.targetMaximumMajor, current.targetMaximumMinor, current.targetMaximumPatch, 0);
+
+                const auto &integration = IntegrationDefinition(
+                        MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion,
+                                        signatureTypes),
+                        TypeReference(integrationAssembly, integrationType, {}, {}),
+                        isDerived,
+                        true);
+
+                if (Logger::IsDebugEnabled())
+                {
+                    Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(",
+                                  signatureTypes.size(), ") { ", minVersion.str(), " - ", maxVersion.str(), " } [",
+                                  integrationAssembly, " | ", integrationType, "]");
+                }
+
+                integrationDefinitions.push_back(integration);
             }
+        }
 
-            const Version& minVersion =
-                Version(current.targetMinimumMajor, current.targetMinimumMinor, current.targetMinimumPatch, 0);
-            const Version& maxVersion =
-                Version(current.targetMaximumMajor, current.targetMaximumMinor, current.targetMaximumPatch, 0);
-
-            const auto& integration = IntegrationDefinition(
-                MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
-                TypeReference(integrationAssembly, integrationType, {}, {}),
-                isDerived,
-                true);
-
-            if (Logger::IsDebugEnabled())
+        if (derivedDefinitions != nullptr)
+        {
+            isDerived = true;
+            for (int i = 0; i < derivedDefinitionsSize; i++)
             {
-                Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(",
-                              signatureTypes.size(), ") { ", minVersion.str(), " - ", maxVersion.str(), " } [",
-                              integrationAssembly, " | ", integrationType, "]");
-            }
+                const CallTargetDefinition &current = derivedDefinitions[i];
+                const shared::WSTRING &targetAssembly = shared::WSTRING(current.targetAssembly);
+                const shared::WSTRING &targetType = shared::WSTRING(current.targetType);
+                const shared::WSTRING &targetMethod = shared::WSTRING(current.targetMethod);
+                const shared::WSTRING &integrationAssembly = shared::WSTRING(current.integrationAssembly);
+                const shared::WSTRING &integrationType = shared::WSTRING(current.integrationType);
 
-            integrationDefinitions.push_back(integration);
+                std::vector<shared::WSTRING> signatureTypes;
+                for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
+                {
+                    const auto &currentSignature = current.signatureTypes[sIdx];
+                    if (currentSignature != nullptr)
+                    {
+                        signatureTypes.push_back(shared::WSTRING(currentSignature));
+                    }
+                }
+
+                const Version &minVersion =
+                        Version(current.targetMinimumMajor, current.targetMinimumMinor, current.targetMinimumPatch, 0);
+                const Version &maxVersion =
+                        Version(current.targetMaximumMajor, current.targetMaximumMinor, current.targetMaximumPatch, 0);
+
+                const auto &integration = IntegrationDefinition(
+                        MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion,
+                                        signatureTypes),
+                        TypeReference(integrationAssembly, integrationType, {}, {}),
+                        isDerived,
+                        true);
+
+                if (Logger::IsDebugEnabled())
+                {
+                    Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(",
+                                  signatureTypes.size(), ") { ", minVersion.str(), " - ", maxVersion.str(), " } [",
+                                  integrationAssembly, " | ", integrationType, "]");
+                }
+
+                integrationDefinitions.push_back(integration);
+            }
         }
 
         std::scoped_lock<std::mutex> moduleLock(module_ids_lock_);
-
-        definitions_ids_.emplace(definitionsId);
 
         Logger::Info("Total number of modules to analyze: ", module_ids_.size());
         if (rejit_handler != nullptr)
@@ -1443,7 +1546,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             integration_definitions_.push_back(integration);
         }
 
-        Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_.size());
+        Logger::Info("Total integrations in profiler: ", integration_definitions_.size());
     }
 }
 
@@ -1459,11 +1562,23 @@ void CorProfiler::AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration
         return;
     }
 
+    InternalAddTraceAttributeInstrumentation(definitionsId, integration_assembly_name_ptr, integration_type_name_ptr);
     definitions_ids_.emplace(definitionsId);
+}
+
+void CorProfiler::InternalAddTraceAttributeInstrumentation(const shared::WSTRING& definitionsId, WCHAR* integration_assembly_name_ptr,
+                                                           WCHAR* integration_type_name_ptr)
+{
     shared::WSTRING integration_assembly_name = shared::WSTRING(integration_assembly_name_ptr);
     shared::WSTRING integration_type_name = shared::WSTRING(integration_type_name_ptr);
+
+    if (integration_assembly_name.size() == 0 || integration_type_name.size() == 0)
+    {
+        return;
+    }
+
     trace_annotation_integration_type =
-        std::unique_ptr<TypeReference>(new TypeReference(integration_assembly_name, integration_type_name, {}, {}));
+            std::unique_ptr<TypeReference>(new TypeReference(integration_assembly_name, integration_type_name, {}, {}));
 
     Logger::Info("AddTraceAttributeInstrumentation: Initialized assembly=", integration_assembly_name, ", type=",
                  integration_type_name);
@@ -1481,9 +1596,22 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
         return;
     }
 
+    InternalInitializeTraceMethods(definitionsId, integration_assembly_name_ptr, integration_type_name_ptr, configuration_string_ptr);
+
+    definitions_ids_.emplace(definitionsId);
+}
+
+void CorProfiler::InternalInitializeTraceMethods(const shared::WSTRING& definitionsId, WCHAR* integration_assembly_name_ptr, WCHAR* integration_type_name_ptr,
+                                                 WCHAR* configuration_string_ptr)
+{
     shared::WSTRING integration_assembly_name = shared::WSTRING(integration_assembly_name_ptr);
     shared::WSTRING integration_type_name = shared::WSTRING(integration_type_name_ptr);
     shared::WSTRING configuration_string = shared::WSTRING(configuration_string_ptr);
+
+    if (integration_assembly_name.size() == 0 || integration_type_name.size() == 0)
+    {
+        return;
+    }
 
     if (trace_annotation_integration_type == nullptr)
     {
@@ -1504,7 +1632,6 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
 
     // TODO we do a handful of string splits here. We could probably do this with indexOf operations instead, but I'm gonna
     // first make sure this works
-    definitions_ids_.emplace(definitionsId);
     if (rejit_handler != nullptr)
     {
         if (trace_annotation_integration_type == nullptr)
@@ -1512,7 +1639,7 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
             Logger::Warn("InitializeTraceMethods: Integration type was not initialized. AddTraceAttributeInstrumentation must be called first");
         }
         else if (trace_annotation_integration_type.get()->assembly.str() != integration_assembly_name
-            || trace_annotation_integration_type.get()->name != integration_type_name)
+                 || trace_annotation_integration_type.get()->name != integration_type_name)
         {
             Logger::Warn("InitializeTraceMethods: Integration type was initialized to assembly=",
                          trace_annotation_integration_type.get()->assembly.str(), ", type=", trace_annotation_integration_type.get()->name,
@@ -1529,7 +1656,7 @@ void CorProfiler::InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_
                 std::promise<ULONG> promise;
                 std::future<ULONG> future = promise.get_future();
                 tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(module_ids_, integrationDefinitions,
-                                                                                    &promise);
+                                                                                     &promise);
 
                 // wait and get the value from the future<int>
                 const auto& numReJITs = future.get();

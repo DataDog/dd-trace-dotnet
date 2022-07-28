@@ -105,8 +105,13 @@ private:
     //
     // Initialization methods
     //
-    void InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived);
-
+    void InternalAddInstrumentation(const shared::WSTRING& definitionsId,
+                                    CallTargetDefinition* definitions, int definitionsSize,
+                                    CallTargetDefinition* derivedDefinitions, int derivedDefinitionsSize);
+    void InternalAddTraceAttributeInstrumentation(const shared::WSTRING& definitionsId, WCHAR* integration_assembly_name_ptr,
+                                                  WCHAR* integration_type_name_ptr);
+    void InternalInitializeTraceMethods(const shared::WSTRING& definitionsId, WCHAR* integration_assembly_name_ptr, WCHAR* integration_type_name_ptr,
+                                        WCHAR* configuration_string_ptr);
 public:
     CorProfiler() = default;
 
@@ -162,6 +167,12 @@ public:
     //
     // Add Integrations methods
     //
+    void Initialize(
+            WCHAR* id,
+            CallTargetDefinition* definitions, int definitionsSize,
+            CallTargetDefinition* derivedDefinitions, int derivedDefinitionsSize,
+            WCHAR* traceAttributeAssemblyName, WCHAR* traceAttributeTypeName,
+            WCHAR* traceMethodAssemblyName, WCHAR* traceMethodTypeName, WCHAR* traceMethodConfiguration);
     void InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int size);
     void EnableByRefInstrumentation();
     void EnableCallTargetStateByRef();
