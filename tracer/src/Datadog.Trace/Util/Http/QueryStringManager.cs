@@ -17,7 +17,7 @@ namespace Datadog.Trace.Util.Http
         {
             _reportQueryString = reportQueryString;
             pattern ??= Tracer.Instance.Settings.ObfuscationQueryStringRegex;
-            _obfuscator = ObfuscatorFactory.GetObfuscator(timeout, pattern, logger, reportQueryString);
+            _obfuscator = ObfuscatorFactory.GetObfuscator(timeout, pattern, logger, reportQueryString, supportsNonBacktracking: true);
         }
 
         internal string Obfuscate(string queryString) => !_reportQueryString ? string.Empty : _obfuscator.Obfuscate(queryString);
