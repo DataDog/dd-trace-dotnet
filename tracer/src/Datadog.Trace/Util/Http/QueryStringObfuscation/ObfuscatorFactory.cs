@@ -10,9 +10,9 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
 {
     internal class ObfuscatorFactory
     {
-        internal static ObfuscatorBase GetObfuscator(double timeoutInMs, string pattern, IDatadogLogger logger, bool reportQueryString = true, bool supportBacktracking = false)
+        internal static ObfuscatorBase GetObfuscator(double timeoutInMs, string pattern, IDatadogLogger logger, bool reportQueryString = true, bool supportsNonBacktracking = false)
             => string.IsNullOrEmpty(pattern) || !reportQueryString
                    ? new NullObfuscator()
-                   : new Obfuscator(pattern, TimeSpan.FromMilliseconds(timeoutInMs), logger ?? DatadogLogging.GetLoggerFor(typeof(QueryStringManager)), supportBacktracking);
+                   : new Obfuscator(pattern, TimeSpan.FromMilliseconds(timeoutInMs), logger ?? DatadogLogging.GetLoggerFor(typeof(QueryStringManager)), supportsNonBacktracking);
     }
 }
