@@ -64,16 +64,23 @@ namespace Datadog.Trace.Tests.Util.Http
         }
 
         [Theory]
-        [InlineData(false, typeof(RegexMatchTimeoutException))]
-        [InlineData(true, typeof(NotSupportedException))]
-        public void ObfuscateTimeout(bool supportsNonBacktracking, Type expectedExceptionType)
+        [InlineData(false)]
+        [InlineData(true)]
+        public void ObfuscateTimeout(bool supportsNonBacktracking)
         {
             var logger = new Mock<IDatadogLogger>();
             var obfuscator = ObfuscatorFactory.GetObfuscator(100, @"\[(.*?)\]((?:.\s*)*?)\[\/\1\]", logger.Object, supportsNonBacktracking: supportsNonBacktracking);
             const string queryString = @"?[tag1]Test's Text Test Text Test Text Test Text.Test Text Test Text Test ""Text Test Text"" Test Text Test Text.Test Text ? Test Text Test Text Test Text Test Text Test Text Test Text.Test Text, Test Text Test Text Test Text Test Text Test Text Test Text Test Text.[/ ta.g1][tag2]Test's Text Test Text Test Text Test Text.Test Text Test Text Test ""Text Test Text"" Test Text Test Text.Test Text ? Test Text Test Text Test Text Test Text Test Text Test Text.Test Text, Test Text Test Text Test Text Test Text Test Text Test Text Test Text.[/ tag2]";
             var result = obfuscator.Obfuscate(queryString);
             result.Should().Be(string.Empty);
-            logger.Verify(o => o.Error(It.Is<Exception>(x => x.GetType() == expectedExceptionType), It.IsAny<string>(), It.IsAny<double>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()), Times.Once);
+            if (supportsNonBacktracking)
+            {
+                logger.Verify(o => o.Error(It.IsAny<NotSupportedException>(), It.IsAny<string>(), It.IsAny<double>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()), Times.Once);
+            }
+            else
+            {
+                logger.Verify(o => o.Error(It.IsAny<RegexMatchTimeoutException>(), It.IsAny<string>(), It.IsAny<double>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()), Times.Once);
+            }
         }
     }
 }
