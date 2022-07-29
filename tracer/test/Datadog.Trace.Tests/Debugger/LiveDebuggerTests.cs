@@ -87,6 +87,8 @@ public class LiveDebuggerTests
 
         public string DebuggerEndpoint => nameof(DebuggerEndpoint);
 
+        public string StatsEndpoint => nameof(StatsEndpoint);
+
         public string AgentVersion => nameof(AgentVersion);
 
         internal bool Called { get; private set; }

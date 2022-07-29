@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using FluentAssertions;
@@ -41,7 +42,7 @@ namespace Datadog.Trace.Tests.Agent
                     })
                 .Returns(Task.FromResult(true));
 
-            var aggregator = new StatsAggregator(api.Object, GetSettings(), bucketDuration);
+            var aggregator = new StatsAggregator(api.Object, GetSettings(), new DiscoveryServiceMock(), bucketDuration);
 
             try
             {
@@ -76,7 +77,7 @@ namespace Datadog.Trace.Tests.Agent
 
             // First, validate that Flush does call SendStatsAsync even if disposed
             // If this behavior change then the test needs to be rewritten
-            var aggregator = new StatsAggregator(api.Object, GetSettings(), Timeout.InfiniteTimeSpan);
+            var aggregator = new StatsAggregator(api.Object, GetSettings(), new DiscoveryServiceMock(), Timeout.InfiniteTimeSpan);
 
             // Dispose immediately to make Flush complete without delay
             await aggregator.DisposeAsync();
@@ -90,7 +91,7 @@ namespace Datadog.Trace.Tests.Agent
             api.Reset();
 
             // Now the actual test
-            aggregator = new StatsAggregator(api.Object, GetSettings(), Timeout.InfiniteTimeSpan);
+            aggregator = new StatsAggregator(api.Object, GetSettings(), null, Timeout.InfiniteTimeSpan);
             await aggregator.DisposeAsync();
 
             await aggregator.Flush();
@@ -109,7 +110,7 @@ namespace Datadog.Trace.Tests.Agent
             ulong id = 0;
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Timeout.InfiniteTimeSpan);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), new DiscoveryServiceMock(), Timeout.InfiniteTimeSpan);
 
             try
             {
@@ -189,7 +190,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Timeout.InfiniteTimeSpan);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), new DiscoveryServiceMock(), Timeout.InfiniteTimeSpan);
 
             try
             {
@@ -252,7 +253,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Timeout.InfiniteTimeSpan);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), new DiscoveryServiceMock(), Timeout.InfiniteTimeSpan);
 
             try
             {
@@ -322,7 +323,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Timeout.InfiniteTimeSpan);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), new DiscoveryServiceMock(), Timeout.InfiniteTimeSpan);
 
             try
             {
@@ -365,7 +366,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Timeout.InfiniteTimeSpan);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), new DiscoveryServiceMock(), Timeout.InfiniteTimeSpan);
 
             try
             {
@@ -428,6 +429,25 @@ namespace Datadog.Trace.Tests.Agent
             }
 
             return ns << shift;
+        }
+
+        private class DiscoveryServiceMock : IDiscoveryService
+        {
+            public string ProbeConfigurationEndpoint => nameof(ProbeConfigurationEndpoint);
+
+            public string DebuggerEndpoint => nameof(DebuggerEndpoint);
+
+            public string StatsEndpoint => nameof(StatsEndpoint);
+
+            public string AgentVersion => nameof(AgentVersion);
+
+            internal bool Called { get; private set; }
+
+            public Task<bool> DiscoverAsync()
+            {
+                Called = true;
+                return Task.FromResult(true);
+            }
         }
     }
 }

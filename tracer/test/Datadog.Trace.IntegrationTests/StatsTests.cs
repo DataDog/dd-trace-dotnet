@@ -42,7 +42,7 @@ namespace Datadog.Trace.IntegrationTests
             await SendStatsHelper(statsComputationEnabled: false);
         }
 
-        [Fact(Skip = "DiscoveryService is not yet hooked up to Tracer initialization.")]
+        [Fact]
         public async Task IsDisabledWhenIncompatibleAgentDetected_TS011()
         {
             await SendStatsHelper(statsComputationEnabled: true, expectStats: false, statsEndpointEnabled: false);

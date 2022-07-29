@@ -5,6 +5,7 @@
 
 using System;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -23,6 +24,7 @@ namespace Datadog.Trace.Agent
         private readonly StatsBuffer[] _buffers;
 
         private readonly IApi _api;
+        private readonly IDiscoveryService _discoveryService;
 
         private readonly TaskCompletionSource<bool> _processExit;
 
@@ -32,9 +34,10 @@ namespace Datadog.Trace.Agent
 
         private int _currentBuffer;
 
-        internal StatsAggregator(IApi api, ImmutableTracerSettings settings, TimeSpan bucketDuration)
+        internal StatsAggregator(IApi api, ImmutableTracerSettings settings, IDiscoveryService discoveryService, TimeSpan bucketDuration)
         {
             _api = api;
+            _discoveryService = discoveryService;
             _processExit = new TaskCompletionSource<bool>();
             _bucketDuration = bucketDuration;
             _buffers = new StatsBuffer[BufferCount];
@@ -62,9 +65,11 @@ namespace Datadog.Trace.Agent
         /// </summary>
         internal StatsBuffer CurrentBuffer => _buffers[_currentBuffer];
 
-        public static IStatsAggregator Create(IApi api, ImmutableTracerSettings settings)
+        public bool? AgentIsCompatible { get; private set; }
+
+        public static IStatsAggregator Create(IApi api, ImmutableTracerSettings settings, IDiscoveryService discoveryService)
         {
-            return settings.StatsComputationEnabled ? new StatsAggregator(api, settings, TimeSpan.FromSeconds(BucketDurationSeconds)) : new NullStatsAggregator();
+            return settings.StatsComputationEnabled ? new StatsAggregator(api, settings, discoveryService, TimeSpan.FromSeconds(BucketDurationSeconds)) : new NullStatsAggregator();
         }
 
         public Task DisposeAsync()
@@ -113,10 +118,38 @@ namespace Datadog.Trace.Agent
 
         internal async Task Flush()
         {
+            bool initiailizationCompleted = false;
+            var initializationTask = InitializeAsync();
+
             // Use a do/while loop to still flush once if _processExit is already completed (this makes testing easier)
             do
             {
-                await Task.WhenAny(_processExit.Task, Task.Delay(_bucketDuration)).ConfigureAwait(false);
+                var delayTask = Task.Delay(_bucketDuration);
+                var sendStats = true;
+
+                // Until the initialization task has finished, check it on each iteration
+                if (!initiailizationCompleted)
+                {
+                    var completedTask = await Task.WhenAny(initializationTask, _processExit.Task, delayTask).ConfigureAwait(false);
+
+                    if (completedTask == initializationTask && initializationTask.Result == false)
+                    {
+                        AgentIsCompatible = false;
+                        return;
+                    }
+                    else if (completedTask == initializationTask && initializationTask.Result == true)
+                    {
+                        AgentIsCompatible = true;
+                        initiailizationCompleted = true;
+                    }
+                    else
+                    {
+                        // The initialization task hasn't completed yet so we don't know if we can compute stats
+                        sendStats = false;
+                    }
+                }
+
+                await Task.WhenAny(_processExit.Task, delayTask).ConfigureAwait(false);
 
                 var buffer = CurrentBuffer;
 
@@ -128,7 +161,10 @@ namespace Datadog.Trace.Agent
                 if (buffer.Buckets.Count > 0)
                 {
                     // Push the metrics
-                    await _api.SendStatsAsync(buffer, _bucketDuration.ToNanoseconds()).ConfigureAwait(false);
+                    if (sendStats)
+                    {
+                        await _api.SendStatsAsync(buffer, _bucketDuration.ToNanoseconds()).ConfigureAwait(false);
+                    }
 
                     buffer.Reset();
                 }
@@ -157,6 +193,30 @@ namespace Datadog.Trace.Agent
             }
 
             return ns << shift;
+        }
+
+        private async Task<bool> InitializeAsync()
+        {
+            try
+            {
+                var isDiscoverySuccessful = await _discoveryService.DiscoverAsync().ConfigureAwait(false);
+                var agentCompatible = isDiscoverySuccessful && !string.IsNullOrWhiteSpace(_discoveryService.StatsEndpoint);
+                if (agentCompatible)
+                {
+                    Log.Debug("Stats computation has been enabled.");
+                }
+                else
+                {
+                    Log.Warning("Stats computation disabled because the detected agent does not support this feature.");
+                }
+
+                return agentCompatible;
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Initializing stats computation failed.");
+                return false;
+            }
         }
 
         private void AddToBuffer(Span span)

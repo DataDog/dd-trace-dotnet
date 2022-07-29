@@ -7,6 +7,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
@@ -30,7 +31,8 @@ namespace Datadog.Trace.Ci.Agent
             var statsComputationEnabled = settings.StatsComputationEnabled;
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
             var api = new Api(apiRequestFactory, null, rates => sampler.SetDefaultSampleRates(rates), partialFlushEnabled, statsComputationEnabled);
-            var statsAggregator = StatsAggregator.Create(api, settings);
+            var discoveryService = DiscoveryService.Create(apiRequestFactory);
+            var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
             _agentWriter = new AgentWriter(api, statsAggregator, null, maxBufferSize: maxBufferSize);
         }
@@ -39,6 +41,8 @@ namespace Datadog.Trace.Ci.Agent
         {
             _agentWriter = new AgentWriter(api, null, null, maxBufferSize: maxBufferSize);
         }
+
+        public bool CanDropP0s => _agentWriter.CanDropP0s;
 
         public void WriteEvent(IEvent @event)
         {

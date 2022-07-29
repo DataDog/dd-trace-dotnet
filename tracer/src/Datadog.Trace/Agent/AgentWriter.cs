@@ -101,6 +101,8 @@ namespace Datadog.Trace.Agent
 
         internal SpanBuffer BackBuffer => _backBuffer;
 
+        public bool CanDropP0s => _statsAggregator.AgentIsCompatible ?? false;
+
         public Task<bool> Ping()
         {
             return _api.SendTracesAsync(EmptyPayload, 0);
