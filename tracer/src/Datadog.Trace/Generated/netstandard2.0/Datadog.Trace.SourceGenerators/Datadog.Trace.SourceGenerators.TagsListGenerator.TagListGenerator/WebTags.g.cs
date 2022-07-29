@@ -16,8 +16,6 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] HttpMethodBytes = new byte[] { 104, 116, 116, 112, 46, 109, 101, 116, 104, 111, 100 };
         // HttpRequestHeadersHostBytes = System.Text.Encoding.UTF8.GetBytes("http.request.headers.host");
         private static readonly byte[] HttpRequestHeadersHostBytes = new byte[] { 104, 116, 116, 112, 46, 114, 101, 113, 117, 101, 115, 116, 46, 104, 101, 97, 100, 101, 114, 115, 46, 104, 111, 115, 116 };
-        // HttpUrlBytes = System.Text.Encoding.UTF8.GetBytes("http.url");
-        private static readonly byte[] HttpUrlBytes = new byte[] { 104, 116, 116, 112, 46, 117, 114, 108 };
         // HttpStatusCodeBytes = System.Text.Encoding.UTF8.GetBytes("http.status_code");
         private static readonly byte[] HttpStatusCodeBytes = new byte[] { 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
         // NetworkClientIpBytes = System.Text.Encoding.UTF8.GetBytes("network.client.ip");
@@ -33,7 +31,6 @@ namespace Datadog.Trace.Tagging
                 "http.useragent" => HttpUserAgent,
                 "http.method" => HttpMethod,
                 "http.request.headers.host" => HttpRequestHeadersHost,
-                "http.url" => HttpUrl,
                 "http.status_code" => HttpStatusCode,
                 "network.client.ip" => NetworkClientIp,
                 "http.client_ip" => HttpClientIp,
@@ -53,9 +50,6 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "http.request.headers.host": 
                     HttpRequestHeadersHost = value;
-                    break;
-                case "http.url": 
-                    HttpUrl = value;
                     break;
                 case "http.status_code": 
                     HttpStatusCode = value;
@@ -92,11 +86,6 @@ namespace Datadog.Trace.Tagging
             if (HttpRequestHeadersHost is not null)
             {
                 processor.Process(new TagItem<string>("http.request.headers.host", HttpRequestHeadersHost, HttpRequestHeadersHostBytes));
-            }
-
-            if (HttpUrl is not null)
-            {
-                processor.Process(new TagItem<string>("http.url", HttpUrl, HttpUrlBytes));
             }
 
             if (HttpStatusCode is not null)
@@ -144,13 +133,6 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("http.request.headers.host (tag):")
                   .Append(HttpRequestHeadersHost)
-                  .Append(',');
-            }
-
-            if (HttpUrl is not null)
-            {
-                sb.Append("http.url (tag):")
-                  .Append(HttpUrl)
                   .Append(',');
             }
 

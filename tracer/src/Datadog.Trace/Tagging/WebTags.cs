@@ -21,9 +21,6 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.HttpRequestHeadersHost)]
         public string HttpRequestHeadersHost { get; set; }
 
-        [Tag(Trace.Tags.HttpUrl)]
-        public string HttpUrl { get; set; }
-
         [Tag(Trace.Tags.HttpStatusCode)]
         public string HttpStatusCode { get; set; }
 
