@@ -38,7 +38,6 @@ partial class Build
 
     AbsolutePath OutputDirectory => TracerDirectory / "bin";
     AbsolutePath SymbolsDirectory => OutputDirectory / "symbols";
-    AbsolutePath DDTracerHomeDirectory => DDTracerHome ?? (OutputDirectory / "dd-tracer-home");
     AbsolutePath ArtifactsDirectory => Artifacts ?? (OutputDirectory / "artifacts");
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
@@ -83,6 +82,7 @@ partial class Build
     [LazyPathExecutable(name: "chmod")] readonly Lazy<Tool> Chmod;
     [LazyPathExecutable(name: "objcopy")] readonly Lazy<Tool> ExtractDebugInfo;
     [LazyPathExecutable(name: "strip")] readonly Lazy<Tool> StripBinary;
+    [LazyPathExecutable(name: "ln")] readonly Lazy<Tool> HardLinkUtil;
 
     IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform =>
         Equals(TargetPlatform, MSBuildTargetPlatform.x64)
@@ -128,8 +128,8 @@ partial class Build
         {
             EnsureExistingDirectory(MonitoringHomeDirectory);
             EnsureExistingDirectory(ArtifactsDirectory);
-            EnsureExistingDirectory(DDTracerHomeDirectory);
             EnsureExistingDirectory(BuildDataDirectory);
+            EnsureExistingDirectory(SymbolsDirectory);
         });
 
     Target Restore => _ => _
@@ -203,9 +203,12 @@ partial class Build
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {
-            var nativeProjectDirectory = NativeProfilerProject.Directory;
-            CMake.Value(arguments: ".", workingDirectory: nativeProjectDirectory);
-            Make.Value(workingDirectory: nativeProjectDirectory);
+            var sourceDirectory = NativeProfilerProject.Directory;
+            var buildDirectory = sourceDirectory / "build";
+            EnsureExistingDirectory(buildDirectory);
+
+            CMake.Value(arguments: $"-B {buildDirectory} -S {sourceDirectory}");
+            Make.Value(workingDirectory: buildDirectory);
         });
 
     Target CompileNativeSrc => _ => _
@@ -314,61 +317,63 @@ partial class Build
             }
             else
             {
-                var (architecture, ext) = GetUnixArchitectureAndExtension();
+                var (sourceArch, ext) = GetLibDdWafUnixArchitectureAndExtension();
+                var (destArch, _) = GetUnixArchitectureAndExtension();
+
                 var ddwafFileName = $"libddwaf.{ext}";
 
-                var source = LibDdwafDirectory / "runtimes" / architecture / "native" / ddwafFileName;
-                var dest = MonitoringHomeDirectory;
+                var source = LibDdwafDirectory / "runtimes" / sourceArch / "native" / ddwafFileName;
+                var dest = MonitoringHomeDirectory / destArch;
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
             }
         });
 
-    Target CopyLibDdwafForAppSecUnitTests => _ => _
+    Target CopyNativeFilesForAppSecUnitTests => _ => _
         .Unlisted()
         .After(Clean)
         .After(DownloadLibDdwaf)
         .Executes(() =>
         {
             var project = Solution.GetProject(Projects.AppSecUnitTests);
-            CopyWafForProject(project);
-        });
+            var testDir = project.Directory;
+            var frameworks = project.GetTargetFrameworks();
 
-    private void CopyWafForProject(Project project)
-    {
-        var directory = project.Directory;
-        var targetFrameworks = project.GetTargetFrameworks();
-        if (IsWin)
-        {
-            foreach (var architecture in WafWindowsArchitectureFolders)
-            {
-                CopyWaf(architecture, targetFrameworks, directory, "ddwaf", "dll");
-            }
-        }
-        else
-        {
-            var (architecture, ext) = GetUnixArchitectureAndExtension();
-            CopyWaf(architecture, targetFrameworks, directory, "libddwaf", ext);
-        }
+            var testBinFolder = testDir / "bin" / BuildConfiguration;
 
-        void CopyWaf(string architecture, IEnumerable<string> frameworks, AbsolutePath absolutePath, string wafFileName, string extension)
-        {
-            var source = LibDdwafDirectory / "runtimes" / architecture / "native" / $"{wafFileName}.{extension}";
-            foreach (var fmk in frameworks)
+            // dotnet test runs under x86 for net461, even on x64 platforms
+            // so copy both, just to be safe
+            if (IsWin)
             {
-                var targetDir = absolutePath / "bin" / BuildConfiguration / fmk;
-                var archTargetDir = targetDir / architecture;
-                CopyFileToDirectory(source, archTargetDir, FileExistsPolicy.Overwrite);
-                if (!IsWin)
+                foreach (var arch in WafWindowsArchitectureFolders)
+                foreach (var fmk in frameworks)
                 {
-                    var tracerNativeLib = DDTracerHomeDirectory / architecture / $"Datadog.Tracer.Native.{extension}";
-                    // The tests use the "wrong" name for the library currently
-                    var target = targetDir / $"Datadog.Trace.ClrProfiler.Native.{extension}";
-                    CopyFile(tracerNativeLib, target, FileExistsPolicy.Overwrite);
+                    var source = MonitoringHomeDirectory / arch;
+                    var dest = testBinFolder / fmk / arch;
+                    CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
                 }
             }
-        }
-    }
+
+            else
+            {
+                var (arch, _) = GetUnixArchitectureAndExtension();
+                foreach (var fmk in frameworks)
+                {
+                    var source = MonitoringHomeDirectory / arch;
+                    // We have to copy into the _root_ test bin folder here, not the arch sub-folder.
+                    // This is because these tests try to load the WAF.
+                    // Loading the WAF requires using the native tracer as a proxy, which means either
+                    // - The native tracer must be loaded first, so it can rewrite the PInvoke calls
+                    // - The native tracer must be side-by-side with the running dll
+                    // As this is a managed-only unit test, the native tracer _must_ be in the root folder
+                    // For simplicity, we just copy all the native dlls there
+                    var dest = testBinFolder / fmk;
+
+                    // use the files from the monitoring native folder
+                    CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                }
+            }
+        });
 
     Target PublishManagedProfiler => _ => _
         .Unlisted()
@@ -422,90 +427,25 @@ partial class Build
             }
         });
 
-    Target PublishNativeProfilerLinux => _ => _
+    Target PublishNativeProfilerUnix => _ => _
         .Unlisted()
-        .OnlyWhenStatic(() => IsLinux)
+        .OnlyWhenStatic(() => IsLinux || IsOsx)
         .After(CompileNativeSrc, PublishManagedProfiler)
         .Executes(() =>
         {
-            // copy createLogPath.sh
-            CopyFileToDirectory(
-                BuildDirectory / "artifacts" / "createLogPath.sh",
-                MonitoringHomeDirectory,
-                FileExistsPolicy.Overwrite);
-
+            var (arch, extension) = GetUnixArchitectureAndExtension();
+            
             // Copy Native file
             CopyFileToDirectory(
-                NativeProfilerProject.Directory / "build" / "bin" / $"{NativeProfilerProject.Name}.so",
-                MonitoringHomeDirectory,
-                FileExistsPolicy.Overwrite);
-        });
-
-    Target PublishNativeProfilerMacOs => _ => _
-        .Unlisted()
-        .OnlyWhenStatic(() => IsOsx)
-        .After(CompileNativeSrc, PublishManagedProfiler)
-        .Executes(() =>
-        {
-            // copy createLogPath.sh
-            CopyFileToDirectory(
-                BuildDirectory / "artifacts" / "createLogPath.sh",
-                MonitoringHomeDirectory,
-                FileExistsPolicy.Overwrite);
-
-            // Create home directory
-            CopyFileToDirectory(
-                NativeProfilerProject.Directory / "bin" / $"{NativeProfilerProject.Name}.dylib",
-                MonitoringHomeDirectory,
+                NativeProfilerProject.Directory / "build" / "bin" / $"{NativeProfilerProject.Name}.{extension}",
+                MonitoringHomeDirectory / arch,
                 FileExistsPolicy.Overwrite);
         });
 
     Target PublishNativeProfiler => _ => _
         .Unlisted()
         .DependsOn(PublishNativeProfilerWindows)
-        .DependsOn(PublishNativeProfilerLinux)
-        .DependsOn(PublishNativeProfilerMacOs);
-
-    Target CreateDdTracerHome => _ => _
-       .Unlisted()
-       .After(PublishNativeProfiler, PublishManagedProfiler, DownloadLibDdwaf, CopyLibDdwaf)
-       .Executes(() =>
-       {
-           // start by copying everything from the tracer home dir
-           CopyDirectoryRecursively(MonitoringHomeDirectory, DDTracerHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-
-           if (IsWin)
-           {
-               // windows already has the expected layout
-               // except we _temporarily_ need to rename the Tracer native loader
-               // As we're not using the shared native loader yet
-               foreach (var arch in ArchitecturesForPlatform)
-               {
-                   MoveFile(
-                       DDTracerHomeDirectory / $"win-{arch}" / $"{Projects.ClrProfilerNative}.dll",
-                       DDTracerHomeDirectory / $"win-{arch}" / $"{Projects.NativeLoader}.dll");
-               }
-               return;
-           }
-
-           // Move the native file to the architecture-specific folder
-           var (architecture, ext) = GetUnixArchitectureAndExtension();
-
-           var profilerFileName = $"{NativeProfilerProject.Name}.{ext}";
-           var ddwafFileName = $"libddwaf.{ext}";
-
-           var outputDir = DDTracerHomeDirectory / architecture;
-
-           EnsureCleanDirectory(outputDir);
-           MoveFile(
-               DDTracerHomeDirectory / profilerFileName,
-               outputDir / profilerFileName);
-
-           var srcDdwafFile = DDTracerHomeDirectory / ddwafFileName;
-           MoveFile(
-               srcDdwafFile,
-               DDTracerHomeDirectory / architecture / ddwafFileName);
-       });
+        .DependsOn(PublishNativeProfilerUnix);
 
     Target BuildMsi => _ => _
         .Unlisted()
@@ -593,97 +533,126 @@ partial class Build
         });
 
     Target ZipMonitoringHome => _ => _
+       .DependsOn(ZipMonitoringHomeWindows)
+       .DependsOn(ZipMonitoringHomeLinux);
+
+    Target ZipMonitoringHomeWindows => _ => _
         .Unlisted()
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
+        .OnlyWhenStatic(() => IsWin)
+        .Executes(() =>
+        {
+            CompressZip(MonitoringHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
+        });
+
+    Target ZipMonitoringHomeLinux => _ => _
+        .Unlisted()
+        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
+        .OnlyWhenStatic(() => IsLinux)
         .Requires(() => Version)
         .Executes(() =>
         {
-            if (IsWin)
+            var fpm = Fpm.Value;
+            var gzip = GZip.Value;
+            var chmod = Chmod.Value;
+
+            // For legacy back-compat reasons, we _must_ add certain files to their expected locations
+            // in the linux packages, as customers may have environment variables pointing to them
+            // we do this work in the temp folder to avoid "messing" with the artifacts directory
+            var (arch, ext) = GetUnixArchitectureAndExtension();
+            var assetsDirectory = TemporaryDirectory / arch;
+            EnsureCleanDirectory(assetsDirectory);
+            CopyDirectoryRecursively(MonitoringHomeDirectory, assetsDirectory, DirectoryExistsPolicy.Merge);
+            
+            // Strip out the debug info
+            // We don't save it in this task, instead we save it in the dd-tool stage, which has access to 
+            // _all_ of the debug info
+            ExtractDebugInfoAndStripSymbols(assetsDirectory, saveDebugInfo: false);
+            
+            // For back-compat reasons, we must always have the Datadog.ClrProfiler.Native.so file in the root folder
+            // as it's set in the COR_PROFILER_PATH etc env var
+            // so create a symlink to avoid bloating package sizes
+            var archSpecificFile = assetsDirectory / arch / $"{FileNames.NativeLoader}.{ext}";
+            var linkLocation = assetsDirectory / $"{FileNames.NativeLoader}.{ext}";
+            HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
+            
+            // For back-compat reasons, we have to keep the libddwaf.so file in the root folder
+            // because the way AppSec probes the paths won't find the linux-musl-x64 target currently
+            archSpecificFile = assetsDirectory / arch / FileNames.AppSecLinuxWaf;
+            linkLocation = assetsDirectory / FileNames.AppSecLinuxWaf;
+            HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
+            
+            // we must always have the Datadog.Linux.ApiWrapper.x64.so file in the continuousprofiler subfolder
+            // as it's set in the LD_PRELOAD env var
+            var continuousProfilerDir = assetsDirectory / "continuousprofiler"; 
+            EnsureExistingDirectory(continuousProfilerDir);
+            archSpecificFile = assetsDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
+            linkLocation = continuousProfilerDir / FileNames.ProfilerLinuxApiWrapper;
+            HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
+
+            // TODO: Do we need to link the libddwaf, or is it ok being next to the tracer dll?
+            
+            // Copy the loader.conf to the root folder, this is required for when the "root" native loader is used,
+            // It needs to include the architecture in the paths to the native dlls
+            //
+            // The regex replaces (for example):
+            //      PROFILER;{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A};linux-x64;./Datadog.Profiler.Native.so
+            // with (adds folder prefix):
+            //      PROFILER;{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A};linux-x64;./linux-x64/Datadog.Profiler.Native.so
+            var loaderConfContents = File.ReadAllText(MonitoringHomeDirectory / arch / FileNames.LoaderConf);
+            loaderConfContents = Regex.Replace(
+                input: loaderConfContents,
+                pattern: @";(linux-.*?);\.\/Datadog\.",
+                replacement:$@";$1;./{arch}/Datadog.");
+            File.WriteAllText(assetsDirectory / FileNames.LoaderConf, contents: loaderConfContents);
+
+            // Copy createLogPath.sh script and set the permissions 
+            CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, assetsDirectory);
+            chmod.Invoke($"+x {assetsDirectory / FileNames.CreateLogPathScript}");
+
+            var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
+            EnsureCleanDirectory(workingDirectory);
+
+            const string packageName = "datadog-dotnet-apm";
+            foreach (var packageType in LinuxPackageTypes)
             {
-                // This is a hack for now, as the dd-tracer-home folder contains the correct layout and files for windows 
-                CompressZip(DDTracerHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
-                // for now we do not need a monitoring-home.zip file. So no need to create it.
-            }
-            else if (IsLinux)
-            {
-                void ExtractDebugInfoAndStripSymbols()
+                var args = new List<string>()
                 {
-                    var files = MonitoringHomeDirectory.GlobFiles("**/*.so");
+                    "-f",
+                    "-s dir",
+                    $"-t {packageType}",
+                    $"-n {packageName}",
+                    $"-v {Version}",
+                    packageType == "tar" ? "" : "--prefix /opt/datadog",
+                    $"--chdir {assetsDirectory}",
+                    "createLogPath.sh",
+                    "netstandard2.0/",
+                    "netcoreapp3.1/",
+                    "net6.0/",
+                    "Datadog.Trace.ClrProfiler.Native.so",
+                    "libddwaf.so",
+                    "continuousprofiler/",
+                    "loader.conf",
+                    $"{arch}/",
+                };
 
-                    EnsureExistingDirectory(SymbolsDirectory);
-
-                    foreach (var file in files)
-                    {
-                        var outputFile = SymbolsDirectory / Path.GetFileNameWithoutExtension(file);
-
-                        Logger.Info($"Extracting debug symbol for {file} to {outputFile}.debug");
-                        ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {outputFile}.debug");
-
-                        Logger.Info($"Stripping out unneeded information from {file}");
-                        StripBinary.Value(arguments: $"--strip-unneeded {file}");
-                    }
-                }
-
-                var fpm = Fpm.Value;
-                var gzip = GZip.Value;
-                var chmod = Chmod.Value;
-                var packageName = "datadog-dotnet-apm";
-
-                var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
-                EnsureCleanDirectory(workingDirectory);
-
-                var tracerNativeFile = MonitoringHomeDirectory / "Datadog.Tracer.Native.so";
-                var newTracerNativeFile = MonitoringHomeDirectory / "tracer" / "Datadog.Tracer.Native.so";
-                MoveFile(tracerNativeFile, newTracerNativeFile);
-
-                // somehow the permissions are lost along the way, ensure they are correctly set here
-                var createLogPathScript = MonitoringHomeDirectory / "createLogPath.sh";
-                chmod.Invoke("+x " + createLogPathScript);
-
-                ExtractDebugInfoAndStripSymbols();
-
-                foreach (var packageType in LinuxPackageTypes)
-                {
-                    var args = new List<string>()
-                    {
-                        "-f",
-                        "-s dir",
-                        $"-t {packageType}",
-                        $"-n {packageName}",
-                        $"-v {Version}",
-                        packageType == "tar" ? "" : "--prefix /opt/datadog",
-                        $"--chdir {MonitoringHomeDirectory}",
-                        "createLogPath.sh",
-                        "netstandard2.0/",
-                        "netcoreapp3.1/",
-                        "net6.0/",
-                        "Datadog.Trace.ClrProfiler.Native.so",
-                    };
-
-                    args.Add("libddwaf.so");
-                    args.Add("tracer/");
-                    args.Add("continuousprofiler/");
-                    args.Add("loader.conf");
-
-                    var arguments = string.Join(" ", args);
-                    fpm(arguments, workingDirectory: workingDirectory);
-                }
-
-                gzip($"-f {packageName}.tar", workingDirectory: workingDirectory);
-
-
-                var suffix = RuntimeInformation.ProcessArchitecture == Architecture.X64
-                    ? string.Empty
-                    : $".{RuntimeInformation.ProcessArchitecture.ToString().ToLower()}";
-
-                var versionedName = IsAlpine
-                    ? $"{packageName}-{Version}-musl{suffix}.tar.gz"
-                    : $"{packageName}-{Version}{suffix}.tar.gz";
-
-                RenameFile(
-                    workingDirectory / $"{packageName}.tar.gz",
-                    workingDirectory / versionedName);
+                var arguments = string.Join(" ", args);
+                fpm(arguments, workingDirectory: workingDirectory);
             }
+
+            gzip($"-f {packageName}.tar", workingDirectory: workingDirectory);
+
+            var suffix = RuntimeInformation.ProcessArchitecture == Architecture.X64
+                ? string.Empty
+                : $".{RuntimeInformation.ProcessArchitecture.ToString().ToLower()}";
+
+            var versionedName = IsAlpine
+                ? $"{packageName}-{Version}-musl{suffix}.tar.gz"
+                : $"{packageName}-{Version}{suffix}.tar.gz";
+
+            RenameFile(
+                workingDirectory / $"{packageName}.tar.gz",
+                workingDirectory / versionedName);
         });
 
 
@@ -722,7 +691,7 @@ partial class Build
         .After(Restore)
         .After(CompileManagedSrc)
         .After(BuildRunnerTool)
-        .DependsOn(CopyLibDdwafForAppSecUnitTests)
+        .DependsOn(CopyNativeFilesForAppSecUnitTests)
         .DependsOn(CompileManagedTestHelpers)
         .Executes(() =>
         {
@@ -1752,7 +1721,21 @@ partial class Build
 
     private void EnsureResultsDirectory(Project proj) => EnsureCleanDirectory(GetResultsDirectory(proj));
 
-    private (string, string) GetUnixArchitectureAndExtension() => IsOsx ? ("osx-x64", "dylib") : ($"linux-{LinuxArchitectureIdentifier}", "so");
+    private (string Arch, string Ext) GetLibDdWafUnixArchitectureAndExtension() =>
+        (IsOsx) switch
+        {
+            (true) => ("osx-x64", "dylib"),
+            (false) => ($"linux-{LinuxArchitectureIdentifier}", "so"), // LibDdWaf doesn't 
+        };
+
+    private (string Arch, string Ext) GetUnixArchitectureAndExtension() =>
+        (IsOsx, IsAlpine) switch
+        {
+            (true, _) => ("osx-x64", "dylib"),
+            (false, false) => ($"linux-{LinuxArchitectureIdentifier}", "so"),
+            (false, true) => ($"linux-musl-{LinuxArchitectureIdentifier}", "so"),
+        };
+    
     // the integration tests need their own copy of the profiler, this achieved through build.props on Windows, but doesn't seem to work under Linux
     private void IntegrationTestLinuxProfilerDirFudge(string project)
     {
@@ -1799,6 +1782,27 @@ partial class Build
                              .Add($"DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.StrongNameKey=\"{strongNameKeyPath}\"")
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=\"[*]Datadog.Trace.Vendors.*,[Datadog.Trace]System.*,[Datadog.Trace]Mono.*\",")
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include=\"[Datadog.Trace.ClrProfiler.*]*,[Datadog.Trace]*,[Datadog.Trace.AspNet]*\""));
+    }
+
+    private void ExtractDebugInfoAndStripSymbols(AbsolutePath sourceDir, bool saveDebugInfo)
+    {
+        var files = sourceDir.GlobFiles("linux-*/*.so");
+
+        foreach (var file in files)
+        {
+            if (saveDebugInfo)
+            {
+                var outputDir = SymbolsDirectory / new FileInfo(file).Directory!.Name;
+                EnsureExistingDirectory(outputDir);
+                var outputFile = outputDir / Path.GetFileNameWithoutExtension(file);
+
+                Logger.Info($"Extracting debug symbol for {file} to {outputFile}.debug");
+                ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {outputFile}.debug");    
+            }
+
+            Logger.Info($"Stripping out unneeded information from {file}");
+            StripBinary.Value(arguments: $"--strip-unneeded {file}");
+        }
     }
 
     protected override void OnTargetStart(string target)

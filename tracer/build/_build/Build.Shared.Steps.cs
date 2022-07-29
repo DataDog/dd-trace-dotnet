@@ -68,8 +68,7 @@ partial class Build
     Target PublishNativeLoader => _ => _
         .Unlisted()
         .DependsOn(PublishNativeLoaderWindows)
-        .DependsOn(PublishNativeLoaderLinux)
-        .DependsOn(PublishNativeLoaderOsx);
+        .DependsOn(PublishNativeLoaderUnix);
 
     Target PublishNativeLoaderWindows => _ => _
         .Unlisted()
@@ -79,66 +78,41 @@ partial class Build
         {
             foreach (var architecture in ArchitecturesForPlatform)
             {
-                // Copy native tracer assets
-                var source = NativeProfilerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
-                             $"{NativeProfilerProject.Name}.dll";
-                var dest = MonitoringHomeDirectory / $"win-{architecture}";
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                var archFolder = $"win-{architecture}";
 
                 // Copy native loader assets
-                source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
+                var source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                              "loader.conf";
-                dest = MonitoringHomeDirectory;
+                var dest = MonitoringHomeDirectory / archFolder;
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
                 source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                              $"{NativeLoaderProject.Name}.dll";
-                var destFile = MonitoringHomeDirectory / $"Datadog.AutoInstrumentation.NativeLoader.{architecture.ToString()}.dll";
-                CopyFile(source, destFile, FileExistsPolicy.Overwrite);
+                dest = MonitoringHomeDirectory / archFolder;
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
                 source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                              $"{NativeLoaderProject.Name}.pdb";
-                destFile = SymbolsDirectory / $"win-{architecture}";
-                CopyFileToDirectory(source, destFile, FileExistsPolicy.Overwrite);
+                dest = SymbolsDirectory / archFolder;
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
             }
         });
 
-    Target PublishNativeLoaderLinux => _ => _
+    Target PublishNativeLoaderUnix => _ => _
         .Unlisted()
-        .OnlyWhenStatic(() => IsLinux)
+        .OnlyWhenStatic(() => IsLinux || IsOsx)
         .After(CompileNativeLoader)
         .Executes(() =>
         {
-                // Copy native loader assets
-                var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
-                var dest = MonitoringHomeDirectory;
-                Logger.Info($"Copying '{source}' to '{dest}'");
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+            // Copy native loader assets
+            var (arch, ext) = GetUnixArchitectureAndExtension();
+            var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
+            var dest = MonitoringHomeDirectory / arch;
+            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
-                source = NativeLoaderProject.Directory / "bin" /
-                             $"{NativeLoaderProject.Name}.so";
-                dest = MonitoringHomeDirectory;
-                Logger.Info($"Copying file '{source}' to 'file {dest}'");
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+            source = NativeLoaderProject.Directory / "bin" /
+                         $"{NativeLoaderProject.Name}.{ext}";
+            dest = MonitoringHomeDirectory / arch;
+            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
         });
-
-    Target PublishNativeLoaderOsx=> _ => _
-        .Unlisted()
-        .OnlyWhenStatic(() => IsOsx)
-        .After(CompileNativeLoader)
-        .Executes(() =>
-        {
-                // Copy native loader assets
-                var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
-                var dest = MonitoringHomeDirectory;
-                Logger.Info($"Copying '{source}' to '{dest}'");
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-
-                source = NativeLoaderProject.Directory / "bin" /
-                             $"{NativeLoaderProject.Name}.dylib";
-                dest = MonitoringHomeDirectory;
-                Logger.Info($"Copying file '{source}' to 'file {dest}'");
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-        });
-
 }

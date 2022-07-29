@@ -23,3 +23,16 @@ public static class Projects
 
     public const string Tool = "Datadog.Trace.Tools.Runner";
 }
+
+public static class FileNames
+{
+    public const string NativeLoader = "Datadog.Trace.ClrProfiler.Native";
+    public const string NativeTracer = "Datadog.Tracer.Native";
+    public const string NativeProfiler = "Datadog.Profiler.Native";
+    public const string ProfilerLinuxApiWrapper = "Datadog.Linux.ApiWrapper.x64.so";
+    public const string AppSecLinuxWaf = "libddwaf.so";
+
+    public const string LoaderConf = "loader.conf";
+    public const string CreateLogPathScript = "createLogPath.sh";
+
+}
