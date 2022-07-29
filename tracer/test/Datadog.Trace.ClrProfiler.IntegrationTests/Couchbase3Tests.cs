@@ -47,7 +47,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    Assert.Equal("couchbase.query", span.Name);
+                    var result = span.IsCouchbase();
+                    Assert.True(result.Success, result.ToString());
+
                     Assert.Equal("Samples.Couchbase3-couchbase", span.Service);
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }

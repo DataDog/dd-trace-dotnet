@@ -47,6 +47,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  .OrderBy(s => s.Start)
                                  .ToList();
                 spans.Count.Should().Be(numberOfRuns * expectedSpansPerRun);
+                foreach (var span in spans)
+                {
+                    var result = span.IsServiceStackRedis();
+                    Assert.True(result.Success, result.ToString());
+                }
 
                 var host = Environment.GetEnvironmentVariable("SERVICESTACK_REDIS_HOST") ?? "localhost:6379";
                 var port = host.Substring(host.IndexOf(':') + 1);

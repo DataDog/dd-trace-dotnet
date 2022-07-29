@@ -46,13 +46,15 @@ RUN yum update -y \
         sudo \
         gawk
 
-# Install newer version of fpm
+# Install newer version of fpm and specific version of dotenv 
 RUN echo "gem: --no-document --no-rdoc --no-ri" > ~/.gemrc && \
     gem install --version 1.12.2 --user-install ffi && \
     gem install --version 1.6.0 --user-install git && \
     gem install --version 0.9.10 --user-install rb-inotify && \
     gem install --version 3.2.3  --user-install rexml && \
-    gem install backports -v 3.21.0 && gem install fpm
+    gem install backports -v 3.21.0 && \
+    gem install --version 2.7.6 dotenv && \
+    gem install fpm
 
 
 # Install the .NET SDK

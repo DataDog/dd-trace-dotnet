@@ -18,7 +18,7 @@ namespace Datadog.Trace.Tagging
         public string InstrumentationName => nameof(IntegrationId.CosmosDb);
 
         [Tag(Trace.Tags.DbType)]
-        public string DbType { get; set; }
+        public string DbType => "cosmosdb";
 
         [Tag(Trace.Tags.CosmosDbContainer)]
         public string ContainerId { get; set; }

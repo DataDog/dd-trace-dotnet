@@ -7,7 +7,7 @@ public static class BuildVariables
     public static void AddDebuggerEnvironmentVariables(this Dictionary<string, string> envVars, AbsolutePath tracerHomeDirectory)
     {
         envVars.AddTracerEnvironmentVariables(tracerHomeDirectory);
-        envVars.Add("DD_DEBUGGER_ENABLED", "1");
+        envVars.Add("DD_INTERNAL_DEBUGGER_ENABLED", "1");
         envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL", "1");
     }
 
