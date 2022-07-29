@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
@@ -66,6 +67,7 @@ namespace Datadog.Trace.AppSec.Waf
                 {
                     null => CreateNativeString(string.Empty, applyLimits),
                     string s => CreateNativeString(s, applyLimits),
+                    LazyOrString s => CreateNativeString(s.ToString(), applyLimits),
                     JValue jv => CreateNativeString(jv.Value?.ToString() ?? string.Empty, applyLimits),
                     int i => CreateNativeString(i.ToString(), applyLimits),
                     long i => CreateNativeString(i.ToString(), applyLimits),
