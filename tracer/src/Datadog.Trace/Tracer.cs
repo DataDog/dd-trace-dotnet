@@ -216,7 +216,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets a value indicating whether the tracer can drop P0 spans and traces.
         /// </summary>
-        bool IDatadogTracer.CanDropP0s => Settings.StatsComputationEnabled;
+        bool IDatadogTracer.CanDropP0s => TracerManager.AgentWriter.CanDropP0s;
 
         /// <summary>
         /// Gets the <see cref="ISampler"/> instance used by this <see cref="IDatadogTracer"/> instance.

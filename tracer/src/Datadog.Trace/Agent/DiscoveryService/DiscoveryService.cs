@@ -18,6 +18,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private const string InfoPath = "/info";
         private static readonly string[] SupportedDebuggerEndpoints = new[] { "debugger/v1/input" };
         private static readonly string[] SupportedProbeConfigurationEndpoints = new[] { "v0.7/config" };
+        private static readonly string[] SupportedStatsEndpoints = new[] { "v0.6/stats" };
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DiscoveryService>();
 
@@ -36,6 +37,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
         public string ProbeConfigurationEndpoint { get; private set; }
 
         public string DebuggerEndpoint { get; private set; }
+
+        public string StatsEndpoint { get; private set; }
 
         public string AgentVersion { get; private set; }
 
@@ -85,6 +88,11 @@ namespace Datadog.Trace.Agent.DiscoveryService
                         endpoint => endpoint.Trim('/').Equals(supportedEndpoint, StringComparison.OrdinalIgnoreCase)));
 
             DebuggerEndpoint = SupportedDebuggerEndpoints
+               .FirstOrDefault(
+                    supportedEndpoint => discoveredEndpoints.Any(
+                        endpoint => endpoint.Trim('/').Equals(supportedEndpoint, StringComparison.OrdinalIgnoreCase)));
+
+            StatsEndpoint = SupportedStatsEndpoints
                .FirstOrDefault(
                     supportedEndpoint => discoveredEndpoints.Any(
                         endpoint => endpoint.Trim('/').Equals(supportedEndpoint, StringComparison.OrdinalIgnoreCase)));

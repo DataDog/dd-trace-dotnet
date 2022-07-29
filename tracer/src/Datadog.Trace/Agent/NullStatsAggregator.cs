@@ -11,6 +11,8 @@ namespace Datadog.Trace.Agent
     {
         public bool? CanComputeStats => false;
 
+        public bool? AgentIsCompatible => false;
+
         public void Add(params Span[] spans)
         {
         }
