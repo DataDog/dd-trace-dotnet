@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
         [Fact]
-        public void DoesHaveChangesWhenSameAssemblyAddedTwice()
+        public void DoesNotHaveChangesWhenSameAssemblyAddedTwice()
         {
             var assembly = typeof(DependencyTelemetryCollectorTests).Assembly;
             var collector = new DependencyTelemetryCollector();
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Tests.Telemetry
             collector.HasChanges().Should().BeFalse();
 
             collector.AssemblyLoaded(assembly);
-            collector.HasChanges().Should().BeTrue();
+            collector.HasChanges().Should().BeFalse();
         }
 
         [Theory]
@@ -67,6 +67,8 @@ namespace Datadog.Trace.Tests.Telemetry
         [InlineData("00821386-7d9a-499b-8e7f-53dbbefcaf3d")]
         [InlineData("ℛ*00093a17-a657-432d-ad25-13cf53f44319#2-0")]
         [InlineData("ℛ*71ccc5b6-6f30-4c09-9e23-4e7ac5a9ad31#13-0")]
+        [InlineData("ℛ*1887feb5-1546-46da-a64e-07cba2cb32fa#112-0")]
+        [InlineData("ℛ*bcd9d48c-2728-46f5-bd56-bfb58cb0bb22#1156-0")]
         [InlineData("OK_IM_NO-GUID-BUUT-NOT_-THAT_FAR_OFF")]
         public void DoesNotHaveChangesWhenAssemblyNameIsIgnoredAssembly(string assemblyName)
         {
@@ -120,13 +122,17 @@ namespace Datadog.Trace.Tests.Telemetry
             var assemblyV2 = CreateAssemblyName(new Version(2, 0));
             var collector = new DependencyTelemetryCollector();
             collector.AssemblyLoaded(assemblyV1);
+
+            collector.GetData();
+            collector.HasChanges().Should().BeFalse();
+
             collector.AssemblyLoaded(assemblyV2);
             collector.HasChanges().Should().BeTrue();
             var data = collector.GetData();
             data.Should().NotBeNull();
             data.Should()
                 .NotBeNullOrEmpty()
-                .And.HaveCount(2)
+                .And.HaveCount(1) // as we send to the backend only new versions
                 .And.OnlyHaveUniqueItems();
         }
 

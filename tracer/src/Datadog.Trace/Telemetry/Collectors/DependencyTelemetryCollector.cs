@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 
@@ -13,7 +14,9 @@ namespace Datadog.Trace.Telemetry
 {
     internal class DependencyTelemetryCollector
     {
-        private ConcurrentDictionary<DependencyTelemetryData, bool> _assemblies = new();
+        // value is true when sent to the backend
+        private readonly ConcurrentDictionary<DependencyTelemetryData, bool> _assemblies = new();
+        private int _hasChangesFlag = 0;
 
         /// <summary>
         /// Called when an assembly is loaded
@@ -47,12 +50,16 @@ namespace Datadog.Trace.Telemetry
             }
 
             var key = new DependencyTelemetryData(name: assemblyName) { Version = assembly.Version?.ToString() };
-            _assemblies.TryAdd(key, true);
+
+            if (_assemblies.TryAdd(key, false))
+            {
+                SetHasChanges();
+            }
         }
 
         public bool HasChanges()
         {
-            return !_assemblies.IsEmpty;
+            return _hasChangesFlag == 1;
         }
 
         /// <summary>
@@ -61,14 +68,28 @@ namespace Datadog.Trace.Telemetry
         /// <returns>Null if there are no changes, or the collector is not yet initialized</returns>
         public ICollection<DependencyTelemetryData> GetData()
         {
-            var assemblies = Interlocked.Exchange(ref _assemblies, new ConcurrentDictionary<DependencyTelemetryData, bool>());
+            var hasChanges = Interlocked.CompareExchange(ref _hasChangesFlag, 0, 1) == 1;
 
-            if (assemblies.IsEmpty)
+            if (!hasChanges)
             {
                 return null;
             }
 
-            return assemblies.Keys;
+            var assembliesToRecord = new List<DependencyTelemetryData>();
+            foreach (var assembly in _assemblies)
+            {
+                if (assembly.Value == false)
+                {
+                    assembliesToRecord.Add(assembly.Key);
+                }
+            }
+
+            foreach (var key in assembliesToRecord)
+            {
+                _assemblies[key] = true;
+            }
+
+            return assembliesToRecord;
         }
 
         private static bool IsTempPathPattern(string assemblyName)
@@ -104,12 +125,17 @@ namespace Datadog.Trace.Telemetry
             {
                 // Simple implementation to remove guids
                 case 36 when assemblyName[8] == '-' && assemblyName[13] == '-' && assemblyName[18] == '-' && assemblyName[23] == '-':
-                // and other weird use cases like ℛ*710fa04a-6428-4dd1-85a0-0419c142709b#5-0
-                case 42 or 43 when assemblyName[10] == '-' && assemblyName[15] == '-' && assemblyName[20] == '-' && assemblyName[25] == '-':
+                // and other weird use cases like ℛ*710fa04a-6428-4dd1-85a0-0419c142709b#5-0 where the suffix can be up to 7 chars long
+                case >= 42 and <= 45 when assemblyName[10] == '-' && assemblyName[15] == '-' && assemblyName[20] == '-' && assemblyName[25] == '-':
                     return true;
                 default:
                     return false;
             }
+        }
+
+        private void SetHasChanges()
+        {
+            Interlocked.Exchange(ref _hasChangesFlag, 1);
         }
     }
 }
