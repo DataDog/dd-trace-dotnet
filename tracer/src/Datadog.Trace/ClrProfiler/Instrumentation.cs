@@ -158,6 +158,13 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Warning(ex, "Error calling NativeMethods.Initialize(), falling back to the slow method.");
                 InitializeNativePartsOld();
             }
+            catch (EntryPointNotFoundException ex)
+            {
+                // If the DLL import is not found then we try the old initialization process.
+                // This is required for native + managed version mismatch support.
+                Log.Warning(ex, "Error calling NativeMethods.Initialize(), falling back to the slow method.");
+                InitializeNativePartsOld();
+            }
             catch (Exception ex)
             {
                 Log.Error(ex, ex.Message);
