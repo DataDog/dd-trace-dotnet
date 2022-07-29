@@ -99,9 +99,8 @@
 	  <Compile Include="common\ValueListBuilder.Pop.cs" />
 
 	  <!-- our additional files -->
-	  <Compile Include="AssemblyInfo.cs" />
 	  <Compile Include="SR.cs" />
-	  <Compile Include="SR.Designer.cs" />
+	  <Compile Include="SR.g.cs" />
 	  <Compile Include="additional\HashCode.cs" />
 	  <Compile Include="additional\RequiresDynamicCodeAttribute.cs" />
 	  <Compile Include="additional\StringSyntaxAttribute.cs" />
@@ -119,18 +118,8 @@
 		<PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<Compile Update="SR.Designer.cs">
-			<DesignTime>True</DesignTime>
-			<AutoGen>True</AutoGen>
-			<DependentUpon>SR.resx</DependentUpon>
-		</Compile>
-	</ItemGroup>
 
 	<ItemGroup>
-		<EmbeddedResource Update="SR.resx">
-			<Generator>ResXFileCodeGenerator</Generator>
-			<LastGenOutput>SR.Designer.cs</LastGenOutput>
-		</EmbeddedResource>
+		<EmbeddedResource Remove="SR.resx" />
 	</ItemGroup>
-</Project> 
+</Project>
