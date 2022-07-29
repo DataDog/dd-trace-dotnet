@@ -58,7 +58,7 @@ namespace Datadog.Trace.Debugger
             }
 
             var apiFactory = DebuggerTransportStrategy.Get(settings.AgentUri);
-            IDiscoveryService discoveryService = DiscoveryService.Create(source, apiFactory);
+            IDiscoveryService discoveryService = DiscoveryService.Create(apiFactory);
 
             var probeConfigurationApi = ProbeConfigurationApiFactory.Create(settings, apiFactory, discoveryService);
             var updater = ConfigurationUpdater.Create(settings);
