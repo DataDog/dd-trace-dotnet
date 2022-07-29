@@ -56,7 +56,7 @@ namespace {namespacename}
 #if NET5_0_OR_GREATER
                 Enum.GetValues<UnicodeCategory>()
 #else
-                Enum.GetValues(typeof(UnicodeCategory))
+                (UnicodeCategory[])Enum.GetValues(typeof(UnicodeCategory))
 #endif
                 )
 
