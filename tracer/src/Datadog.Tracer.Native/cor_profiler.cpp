@@ -533,7 +533,13 @@ std::string GetNativeLoaderFilePath()
 #elif MACOS
         "Datadog.Trace.ClrProfiler.Native.dylib";
 #else
-        "Datadog.Trace.ClrProfiler.Native.dll";
+    "Datadog.AutoInstrumentation.NativeLoader."
+#ifdef BIT64
+"x64"
+#else
+"x86"
+#endif
+".dll";
 #endif
 
     auto module_file_path = fs::path(shared::GetCurrentModuleFileName());
