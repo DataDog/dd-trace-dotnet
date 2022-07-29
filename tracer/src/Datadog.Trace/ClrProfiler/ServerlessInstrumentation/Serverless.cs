@@ -38,6 +38,18 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             }
         }
 
+        internal static NativeCallTargetDefinition[] GetDefinitionsIfNeeded()
+        {
+            if (IsRunningInLambda(ExtensionFullPath))
+            {
+                var serverlessDefinitions = GetServerlessDefinitions();
+                Debug($"Getting {serverlessDefinitions.Length} CallTarget serverless integration definitions.");
+                return serverlessDefinitions;
+            }
+
+            return null;
+        }
+
         internal static bool IsRunningInLambda(string extensionPath)
         {
             string path = EnvironmentHelpers.GetEnvironmentVariable(ExtensionEnvName) ?? extensionPath;

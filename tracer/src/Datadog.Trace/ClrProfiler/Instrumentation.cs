@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
@@ -104,10 +105,22 @@ namespace Datadog.Trace.ClrProfiler
         {
             try
             {
+                // Get all definitions
                 var definitions = InstrumentationDefinitions.GetAllDefinitions();
+
+                // Get all derived definitions
                 var derivedDefinitions = InstrumentationDefinitions.GetDerivedDefinitions();
+
+                // Get the trace attribute definition
                 var traceAttributeDefinition = InstrumentationDefinitions.GetTraceAttributeDefinitions();
 
+                // Include serverless definitions if is required
+                if (Serverless.GetDefinitionsIfNeeded() is { } serverlessDefinitions)
+                {
+                    definitions.Definitions = definitions.Definitions.Concat(serverlessDefinitions).ToArray();
+                }
+
+                // Call a single PInvoke (newer clrprofiler version)
                 NativeMethods.Initialize(
                     definitions.DefinitionsId,
                     definitions.Definitions,
@@ -118,7 +131,7 @@ namespace Datadog.Trace.ClrProfiler
                     null,
                     null);
 
-                // Defer the disposal of unmanaged memory
+                // Defer the disposal of unmanaged memory (is not required to wait for it to start the application)
                 Task.Run(
                     () =>
                     {
@@ -133,21 +146,14 @@ namespace Datadog.Trace.ClrProfiler
                         }
                     });
 
-                try
-                {
-                    Serverless.InitIfNeeded();
-                }
-                catch (Exception ex)
-                {
-                    Serverless.Error("Error while loading Serverless definitions", ex);
-                }
-
                 Log.Information<int, int>("The profiler has been initialized with {count} definitions and {derived} derived definitions.", definitions.Definitions.Length, derivedDefinitions.Definitions.Length);
             }
             catch (DllNotFoundException ex)
             {
+                // If the DLL import is not found then we try the old initialization process.
+                // This is required for native + managed version mismatch support.
                 Log.Warning(ex, "Error calling NativeMethods.Initialize(), falling back to the slow method.");
-                InitializeNativePartsSlow();
+                InitializeNativePartsOld();
             }
             catch (Exception ex)
             {
@@ -155,7 +161,7 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        private static void InitializeNativePartsSlow()
+        private static void InitializeNativePartsOld()
         {
             try
             {
