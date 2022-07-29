@@ -523,7 +523,7 @@ namespace Datadog.Trace
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void WriteTrace(ArraySegment<Span> trace)
+        public void WriteTrace(ArraySegment<Span> trace, bool shouldSerializeSpans)
         {
             foreach (var processor in TraceProcessors)
             {
@@ -542,7 +542,7 @@ namespace Datadog.Trace
 
             if (trace.Count > 0)
             {
-                AgentWriter.WriteTrace(trace);
+                AgentWriter.WriteTrace(trace, shouldSerializeSpans);
             }
         }
     }

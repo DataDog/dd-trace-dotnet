@@ -214,6 +214,11 @@ namespace Datadog.Trace
         ImmutableTracerSettings ITracer.Settings => Settings;
 
         /// <summary>
+        /// Gets a value indicating whether the tracer can drop P0 spans and traces.
+        /// </summary>
+        bool IDatadogTracer.CanDropP0s => Settings.StatsComputationEnabled;
+
+        /// <summary>
         /// Gets the <see cref="ISampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
         /// </summary>
         ISampler IDatadogTracer.Sampler => TracerManager.Sampler;
@@ -319,11 +324,12 @@ namespace Datadog.Trace
         /// Writes the specified <see cref="Span"/> collection to the agent writer.
         /// </summary>
         /// <param name="trace">The <see cref="Span"/> collection to write.</param>
-        void IDatadogTracer.Write(ArraySegment<Span> trace)
+        /// <param name="shouldSerializeSpans">Indicates whether the spans should be serialized into traces.</param>
+        void IDatadogTracer.Write(ArraySegment<Span> trace, bool shouldSerializeSpans)
         {
             if (Settings.TraceEnabled || AzureAppServices.Metadata.CustomTracingEnabled)
             {
-                TracerManager.WriteTrace(trace);
+                TracerManager.WriteTrace(trace, shouldSerializeSpans);
             }
         }
 
