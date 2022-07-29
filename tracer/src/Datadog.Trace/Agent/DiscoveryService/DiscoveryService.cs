@@ -15,6 +15,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
 {
     internal class DiscoveryService : IDiscoveryService
     {
+        private const string InfoPath = "/info";
         private static readonly string[] SupportedDebuggerEndpoints = new[] { "debugger/v1/input" };
         private static readonly string[] SupportedProbeConfigurationEndpoints = new[] { "v0.7/config" };
 
@@ -24,11 +25,10 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private readonly Uri _agentUri;
 
         private DiscoveryService(
-            Uri agentUri,
             IApiRequestFactory apiRequestFactory)
         {
-            _agentUri = agentUri;
             _apiRequestFactory = apiRequestFactory;
+            _agentUri = apiRequestFactory.GetEndpoint(InfoPath);
         }
 
         public static string[] AllSupportedEndpoints => SupportedDebuggerEndpoints.Concat(SupportedProbeConfigurationEndpoints).ToArray();
@@ -39,17 +39,16 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         public string AgentVersion { get; private set; }
 
-        public static DiscoveryService Create(IConfigurationSource configurationSource, IApiRequestFactory apiRequestFactory)
+        public static DiscoveryService Create(IApiRequestFactory apiRequestFactory)
         {
-            var exporterSettings = new ExporterSettings(configurationSource);
-            return new DiscoveryService(exporterSettings.AgentUri, apiRequestFactory);
+            return new DiscoveryService(apiRequestFactory);
         }
 
         public async Task<bool> DiscoverAsync()
         {
             try
             {
-                var api = _apiRequestFactory.Create(new Uri($"{_agentUri}/info"));
+                var api = _apiRequestFactory.Create(_agentUri);
                 using var response = await api.GetAsync().ConfigureAwait(false);
                 if (response.StatusCode != 200)
                 {
