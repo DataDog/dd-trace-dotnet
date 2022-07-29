@@ -165,7 +165,7 @@ namespace Datadog.Trace.Ci
                 // When is enabled by configuration we only enable it to the testhost child process if the process name is dotnet.
                 if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) && Environment.CommandLine.IndexOf("testhost.dll", StringComparison.OrdinalIgnoreCase) == -1)
                 {
-                    Log.Information("CI Visibility disabled because the commandline doesn't contains testhost.dll when the process name is dotnet: {cmdline}", Environment.CommandLine);
+                    Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {cmdline}", Environment.CommandLine);
                     return false;
                 }
 
