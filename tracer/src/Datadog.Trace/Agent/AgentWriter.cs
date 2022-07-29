@@ -106,7 +106,7 @@ namespace Datadog.Trace.Agent
             return _api.SendTracesAsync(EmptyPayload, 0);
         }
 
-        public void WriteTrace(ArraySegment<Span> trace)
+        public void WriteTrace(ArraySegment<Span> trace, bool shouldSerializeSpans)
         {
             if (trace.Count == 0)
             {
@@ -117,11 +117,11 @@ namespace Datadog.Trace.Agent
             if (_serializationTask.IsCompleted)
             {
                 // Serialization thread is not running, serialize the trace in the current thread
-                SerializeTrace(trace);
+                SerializeTrace(trace, shouldSerializeSpans);
             }
             else
             {
-                _pendingTraces.Enqueue(new WorkItem(trace));
+                _pendingTraces.Enqueue(new WorkItem(trace, shouldSerializeSpans));
 
                 if (!_serializationMutex.IsSet)
                 {
@@ -342,7 +342,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private void SerializeTrace(ArraySegment<Span> trace)
+        private void SerializeTrace(ArraySegment<Span> trace, bool shouldSerializeSpans)
         {
             // Declaring as inline method because only safe to invoke in the context of SerializeTrace
             SpanBuffer SwapBuffers()
@@ -368,6 +368,13 @@ namespace Datadog.Trace.Agent
             }
 
             _statsAggregator?.AddRange(trace.Array, trace.Offset, trace.Count);
+
+            // If stats computation determined that we should drop the P0 Trace,
+            // skip all other processing
+            if (!shouldSerializeSpans)
+            {
+                return;
+            }
 
             // Add the current keep rate to the root span
             var rootSpan = trace.Array[trace.Offset].Context.TraceContext?.RootSpan;
@@ -450,7 +457,7 @@ namespace Datadog.Trace.Agent
                         }
 
                         hasDequeuedTraces = true;
-                        SerializeTrace(item.Trace);
+                        SerializeTrace(item.Trace, item.ShouldSerializeSpans);
                     }
                 }
                 catch (Exception ex)
@@ -479,17 +486,20 @@ namespace Datadog.Trace.Agent
         private readonly struct WorkItem
         {
             public readonly ArraySegment<Span> Trace;
+            public readonly bool ShouldSerializeSpans;
             public readonly Action Callback;
 
-            public WorkItem(ArraySegment<Span> trace)
+            public WorkItem(ArraySegment<Span> trace, bool shouldSerializeSpans)
             {
                 Trace = trace;
+                ShouldSerializeSpans = shouldSerializeSpans;
                 Callback = null;
             }
 
             public WorkItem(Action callback)
             {
                 Trace = default;
+                ShouldSerializeSpans = default;
                 Callback = callback;
             }
         }

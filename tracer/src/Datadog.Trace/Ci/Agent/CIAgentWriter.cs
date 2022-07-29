@@ -54,12 +54,12 @@ namespace Datadog.Trace.Ci.Agent
             if (@event is TestEvent testEvent)
             {
                 spanArray[0] = testEvent.Content;
-                WriteTrace(new ArraySegment<Span>(spanArray));
+                WriteTrace(new ArraySegment<Span>(spanArray), true);
             }
             else if (@event is SpanEvent spanEvent)
             {
                 spanArray[0] = spanEvent.Content;
-                WriteTrace(new ArraySegment<Span>(spanArray));
+                WriteTrace(new ArraySegment<Span>(spanArray), true);
             }
         }
 
@@ -78,9 +78,9 @@ namespace Datadog.Trace.Ci.Agent
             return _agentWriter.Ping();
         }
 
-        public void WriteTrace(ArraySegment<Span> trace)
+        public void WriteTrace(ArraySegment<Span> trace, bool shouldSerializeSpans)
         {
-            _agentWriter.WriteTrace(trace);
+            _agentWriter.WriteTrace(trace, shouldSerializeSpans);
         }
     }
 }
