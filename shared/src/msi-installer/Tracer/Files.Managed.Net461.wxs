@@ -4,35 +4,35 @@
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
-    <ComponentGroup Id="Tracer.Files.Managed.Net461" Directory="Tracer.net461">
+    <ComponentGroup Id="Tracer.Files.Managed.Net461" Directory="INSTALLFOLDER.net461">
       <Component Win64="$(var.Win64)">
         <File Id="net461_Datadog.Trace.AspNet.dll"
-              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.AspNet.dll"
+              Source="$(var.MonitoringHomeDirectory)\net461\Datadog.Trace.AspNet.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net461_Datadog.Trace.AspNet.pdb"
-              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.AspNet.pdb"
+              Source="$(var.MonitoringHomeDirectory)\net461\Datadog.Trace.AspNet.pdb"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net461_Datadog.Trace.dll"
-              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.dll"
+              Source="$(var.MonitoringHomeDirectory)\net461\Datadog.Trace.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net461_Datadog.Trace.MSBuild.dll"
-              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.MSBuild.dll"
+              Source="$(var.MonitoringHomeDirectory)\net461\Datadog.Trace.MSBuild.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net461_Datadog.Trace.MSBuild.pdb"
-              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.MSBuild.pdb"
+              Source="$(var.MonitoringHomeDirectory)\net461\Datadog.Trace.MSBuild.pdb"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net461_Datadog.Trace.pdb"
-              Source="$(var.TracerHomeDirectory)\net461\Datadog.Trace.pdb"
+              Source="$(var.MonitoringHomeDirectory)\net461\Datadog.Trace.pdb"
               KeyPath="yes" Checksum="yes"/>
       </Component>
     </ComponentGroup>

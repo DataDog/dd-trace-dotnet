@@ -519,9 +519,6 @@ partial class Build
                     .SetConfiguration(BuildConfiguration)
                     .SetMSBuildPath()
                     .AddProperty("RunWixToolsOutOfProc", true)
-                    .SetProperty("TracerHomeDirectory", MonitoringHomeDirectory)
-                    .SetProperty("LibDdwafDirectory", LibDdwafDirectory)
-                    .SetProperty("ProfilerHomeDirectory", MonitoringHomeDirectory)
                     .SetProperty("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetMaxCpuCount(null)
                     .CombineWith(ArchitecturesForPlatform, (o, arch) => o

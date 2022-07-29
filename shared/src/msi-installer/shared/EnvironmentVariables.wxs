@@ -7,7 +7,11 @@
     <ComponentGroup Id="Shared.EnvironmentVariables.Machine" Directory="INSTALLFOLDER">
       <Component Id="EnvironmentVariablesShared" Guid="{C314A305-9C24-4E46-9ECF-E5EEA703BDEA}" Win64="$(var.Win64)">
         <CreateFolder/>
-        <Environment Id="DD_NATIVELOADER_CONFIGFILE" Name="DD_NATIVELOADER_CONFIGFILE" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]loader.conf" Part="all" />
+        <?if $(var.Win64) = yes ?>
+          <Environment Id="DD_NATIVELOADER_CONFIGFILE" Name="DD_NATIVELOADER_CONFIGFILE" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]win-x64\loader.conf" Part="all" />
+        <?else ?>
+          <Environment Id="DD_NATIVELOADER_CONFIGFILE" Name="DD_NATIVELOADER_CONFIGFILE" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]win-x86\loader.conf" Part="all" />
+        <?endif ?>
       </Component>
     </ComponentGroup>
   

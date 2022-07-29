@@ -4,50 +4,50 @@
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
-    <ComponentGroup Id="Tracer.Files.Managed.NetStandard20" Directory="Tracer.netstandard2.0">
+    <ComponentGroup Id="Tracer.Files.Managed.NetStandard20" Directory="INSTALLFOLDER.netstandard2.0">
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_Datadog.Trace.dll"
-              Source="$(var.TracerHomeDirectory)\netstandard2.0\Datadog.Trace.dll"
+              Source="$(var.MonitoringHomeDirectory)\netstandard2.0\Datadog.Trace.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_Datadog.Trace.MSBuild.dll"
-              Source="$(var.TracerHomeDirectory)\netstandard2.0\Datadog.Trace.MSBuild.dll"
+              Source="$(var.MonitoringHomeDirectory)\netstandard2.0\Datadog.Trace.MSBuild.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_Datadog.Trace.MSBuild.pdb"
-              Source="$(var.TracerHomeDirectory)\netstandard2.0\Datadog.Trace.MSBuild.pdb"
+              Source="$(var.MonitoringHomeDirectory)\netstandard2.0\Datadog.Trace.MSBuild.pdb"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_Datadog.Trace.pdb"
-              Source="$(var.TracerHomeDirectory)\netstandard2.0\Datadog.Trace.pdb"
+              Source="$(var.MonitoringHomeDirectory)\netstandard2.0\Datadog.Trace.pdb"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Diagnostics.DiagnosticSource.dll"
-              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Diagnostics.DiagnosticSource.dll"
+              Source="$(var.MonitoringHomeDirectory)\netstandard2.0\System.Diagnostics.DiagnosticSource.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Reflection.Emit.dll"
-              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Reflection.Emit.dll"
+              Source="$(var.MonitoringHomeDirectory)\netstandard2.0\System.Reflection.Emit.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Reflection.Emit.ILGeneration.dll"
-              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Reflection.Emit.ILGeneration.dll"
+              Source="$(var.MonitoringHomeDirectory)\netstandard2.0\System.Reflection.Emit.ILGeneration.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Reflection.Emit.Lightweight.dll"
-              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Reflection.Emit.Lightweight.dll"
+              Source="$(var.MonitoringHomeDirectory)\netstandard2.0\System.Reflection.Emit.Lightweight.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netstandard20_System.Threading.dll"
-              Source="$(var.TracerHomeDirectory)\netstandard2.0\System.Threading.dll"
+              Source="$(var.MonitoringHomeDirectory)\netstandard2.0\System.Threading.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
     </ComponentGroup>

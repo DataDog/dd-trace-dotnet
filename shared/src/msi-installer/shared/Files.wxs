@@ -5,16 +5,16 @@
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
     <ComponentGroup Id="Shared.Files" Directory="INSTALLFOLDER">
-      <Component Win64="$(var.Win64)">
-        <File Id="loader.conf" Source="$(var.MonitoringHomeDirectory)\loader.conf" />
-      </Component>
     </ComponentGroup>
 
     <?if $(var.Win64) = yes ?>
-    <ComponentGroup Id="Shared.Files.NativeLoader.64" Directory="INSTALLFOLDER">
+    <ComponentGroup Id="Shared.Files.NativeLoader.64" Directory="INSTALLFOLDER.win_x64">
+      <Component Win64="yes">
+        <File Id="loader.conf.x64" Source="$(var.MonitoringHomeDirectory)\win-x64\loader.conf" />
+      </Component>
       <Component Win64="yes">
         <File Id="Datadog.AutoInstrumentation.NativeLoader.x64.dll"
-              Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x64.dll"
+              Source="$(var.MonitoringHomeDirectory)\win-x64\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
@@ -23,10 +23,10 @@
     </ComponentGroup>
 
     <!-- For the 64-bit installer, also install the 32-bit binaries -->
-    <ComponentGroup Id="Shared.Files.NativeLoader.32" Directory="INSTALLFOLDER.32">
+    <ComponentGroup Id="Shared.Files.NativeLoader.32" Directory="INSTALLFOLDER.32.win_x86">
       <Component Win64="no" Id="Datadog.AutoInstrumentation.NativeLoader.x86.dll">
         <File Id="Datadog.AutoInstrumentation.NativeLoader.x86.dll"
-              Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x86.dll"
+              Source="$(var.MonitoringHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
@@ -36,10 +36,10 @@
     <?else ?>
 
     <!-- note that for the 32-bit build, we need to install into INSTALLFOLDER instead of INSTALLFOLDER.32 -->
-    <ComponentGroup Id="Shared.Files.NativeLoader.32" Directory="INSTALLFOLDER">
+    <ComponentGroup Id="Shared.Files.NativeLoader.32" Directory="INSTALLFOLDER.win_x86">
       <Component Win64="no">
         <File Id="Datadog.AutoInstrumentation.NativeLoader.x86.dll"
-              Source="$(var.MonitoringHomeDirectory)\Datadog.AutoInstrumentation.NativeLoader.x86.dll"
+              Source="$(var.MonitoringHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
           <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
@@ -47,5 +47,12 @@
     </ComponentGroup>
 
     <?endif ?>
+
+    <!-- The 32-bit loader.conf needs to sit next to the tracer and profiler dlls-->
+    <ComponentGroup Id="Shared.Files.LoaderConf.32" Directory="INSTALLFOLDER.win_x86">
+      <Component Win64="$(var.Win64)" Id="loader.conf.x86" >
+        <File Id="loader.conf.x86" Source="$(var.MonitoringHomeDirectory)\win-x86\loader.conf" />
+      </Component>
+    </ComponentGroup>
   </Fragment>
 </Wix>

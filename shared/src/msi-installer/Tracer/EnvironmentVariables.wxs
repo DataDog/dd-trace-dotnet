@@ -4,10 +4,10 @@
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
-    <ComponentGroup Id="Tracer.EnvironmentVariables.Machine" Directory="Tracer">
+    <ComponentGroup Id="Tracer.EnvironmentVariables.Machine" Directory="INSTALLFOLDER">
         <Component Id="Tracer.EnvironmentVariablesShared" Guid="{3BBBC152-D016-489D-B811-E85412F8AFCF}" Win64="$(var.Win64)">
           <CreateFolder/>
-          <Environment Id="DD_DOTNET_TRACER_HOME" Name="DD_DOTNET_TRACER_HOME" Action="set" Permanent="no" System="yes" Value="[Tracer]" Part="all" />
+          <Environment Id="DD_DOTNET_TRACER_HOME" Name="DD_DOTNET_TRACER_HOME" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]" Part="all" />
         </Component>
       </ComponentGroup>
   </Fragment>

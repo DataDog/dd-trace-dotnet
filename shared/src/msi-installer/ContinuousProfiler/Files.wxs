@@ -4,14 +4,14 @@
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
-    <ComponentGroup Id="ContinuousProfiler.Files" Directory="ContinuousProfiler">
+    <ComponentGroup Id="ContinuousProfiler.Files" Directory="INSTALLFOLDER">
     </ComponentGroup>
 
     <?if $(var.Win64) = yes ?>
-    <ComponentGroup Id="ContinuousProfiler.Files.Native.64" Directory="ContinuousProfiler">
+    <ComponentGroup Id="ContinuousProfiler.Files.Native.64" Directory="INSTALLFOLDER.win_x64">
       <Component Win64="yes">
         <File Id="Datadog.AutoInstrumentation.Profiler.Native.x64.dll"
-              Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x64.dll"
+              Source="$(var.MonitoringHomeDirectory)\win-x64\Datadog.Profiler.Native.dll"
               Checksum="yes">
         </File>
       </Component>
@@ -19,10 +19,10 @@
     <?endif ?>
 
     <!-- Always install the 32-bit binaries, even for the 64-bit installer -->
-    <ComponentGroup Id="ContinuousProfiler.Files.Native.32" Directory="ContinuousProfiler">
+    <ComponentGroup Id="ContinuousProfiler.Files.Native.32" Directory="INSTALLFOLDER.win_x86">
       <Component Win64="$(var.Win64)">
         <File Id="Datadog.AutoInstrumentation.Profiler.Native.x86.dll"
-              Source="$(var.ProfilerHomeDirectory)\Datadog.AutoInstrumentation.Profiler.Native.x86.dll"
+              Source="$(var.MonitoringHomeDirectory)\win-x86\Datadog.Profiler.Native.dll"
               Checksum="yes">
         </File>
       </Component>

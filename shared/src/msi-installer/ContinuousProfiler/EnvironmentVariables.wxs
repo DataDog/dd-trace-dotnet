@@ -4,10 +4,10 @@
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
-    <ComponentGroup Id="ContinuousProfiler.EnvironmentVariables.Machine" Directory="ContinuousProfiler">
+    <ComponentGroup Id="ContinuousProfiler.EnvironmentVariables.Machine" Directory="INSTALLFOLDER">
         <Component Id="ContinuousProfiler.EnvironmentVariablesShared" Guid="{9973ACAE-A4D4-495C-BD4E-FCC384C45C70}" Win64="$(var.Win64)">
           <CreateFolder/>
-          <Environment Id="DD_DOTNET_PROFILER_HOME" Name="DD_DOTNET_PROFILER_HOME" Action="set" Permanent="no" System="yes" Value="[ContinuousProfiler]" Part="all" />
+          <Environment Id="DD_DOTNET_PROFILER_HOME" Name="DD_DOTNET_PROFILER_HOME" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]" Part="all" />
         </Component>
       </ComponentGroup>
   </Fragment>

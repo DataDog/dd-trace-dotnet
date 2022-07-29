@@ -4,20 +4,20 @@
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
-    <ComponentGroup Id="Tracer.Files" Directory="Tracer">
+    <ComponentGroup Id="Tracer.Files" Directory="INSTALLFOLDER">
     </ComponentGroup>
 
     <?if $(var.Win64) = yes ?>
-    <ComponentGroup Id="Tracer.Files.Native.64" Directory="Tracer.win_x64">
+    <ComponentGroup Id="Tracer.Files.Native.64" Directory="INSTALLFOLDER.win_x64">
       <Component Win64="yes">
         <File Id="Datadog.Trace.ClrProfiler.Native"
-              Source="$(var.TracerHomeDirectory)\win-x64\Datadog.Tracer.Native.dll"
+              Source="$(var.MonitoringHomeDirectory)\win-x64\Datadog.Tracer.Native.dll"
               Checksum="yes">
         </File>
       </Component>
       <Component Win64="yes">
         <File Id="LibDdwaf"
-              Source="$(var.LibDdwafDirectory)\runtimes\win-x64\native\ddwaf.dll"
+              Source="$(var.MonitoringHomeDirectory)\win-x64\ddwaf.dll"
               Checksum="yes">
         </File>
       </Component>
@@ -25,14 +25,14 @@
     <?endif ?>
 
     <!-- Always install the 32-bit binaries, even for the 64-bit installer -->
-    <ComponentGroup Id="Tracer.Files.Native.32" Directory="Tracer.win_x86">
+    <ComponentGroup Id="Tracer.Files.Native.32" Directory="INSTALLFOLDER.win_x86">
       <Component Win64="$(var.Win64)" Id="Datadog.Trace.ClrProfiler.Native.32">
         <File Id="Datadog.Trace.ClrProfiler.Native.32"
-              Source="$(var.TracerHomeDirectory)\win-x86\Datadog.Tracer.Native.dll"
+              Source="$(var.MonitoringHomeDirectory)\win-x86\Datadog.Tracer.Native.dll"
               Checksum="yes">
         </File>
         <File Id="LibDdwaf.32"
-              Source="$(var.LibDdwafDirectory)\runtimes\win-x86\native\ddwaf.dll"
+              Source="$(var.MonitoringHomeDirectory)\win-x86\ddwaf.dll"
               Checksum="yes">
         </File>
       </Component>
