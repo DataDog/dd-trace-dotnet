@@ -205,6 +205,8 @@ namespace Datadog.Trace.ClrProfiler
             public static extern void InitializeTraceMethods([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName, [MarshalAs(UnmanagedType.LPWStr)] string configuration);
         }
 
+        // Because we are rewriting the PInvoke maps we don't need to have a Windows and NonWindows implementation
+        // We kept these classes for backward compatibility (we can remove it in a next major version)
         private static class Interop
         {
             [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]

@@ -1325,11 +1325,10 @@ void CorProfiler::Initialize(
         WCHAR* traceAttributeAssemblyName, WCHAR* traceAttributeTypeName,
         WCHAR* traceMethodAssemblyName, WCHAR* traceMethodTypeName, WCHAR* traceMethodConfiguration)
 {
+    std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
 
     shared::WSTRING definitionsId = shared::WSTRING(id);
-    std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
-
     Logger::Info("Initialize: received id: ", definitionsId, " from managed side with ", definitionsSize,
                  " integrations and with ", derivedDefinitionsSize,
                  " derived ones. Total: ", (definitionsSize + derivedDefinitionsSize), " integrations.");
@@ -1355,8 +1354,8 @@ void CorProfiler::Initialize(
     // Add trace methods instrumentation
     InternalInitializeTraceMethods(definitionsId, traceMethodAssemblyName, traceMethodTypeName, traceMethodConfiguration);
 
+    // Ensure the definition is not processed again
     definitions_ids_.emplace(definitionsId);
-    Logger::Info("Initialize: Done.");
 }
 
 void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int size)
