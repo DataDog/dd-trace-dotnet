@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
@@ -17,6 +18,7 @@ namespace Datadog.Trace.Tests
     [AzureAppServicesRestorer]
     public class TraceContextTests
     {
+        private const ulong KnuthFactor = 1_111_111_111_111_111_111;
         private readonly Mock<IDatadogTracer> _tracerMock = new Mock<IDatadogTracer>();
 
         [Fact]
@@ -77,18 +79,18 @@ namespace Datadog.Trace.Tests
             }
 
             // At this point in time, we have 4 closed spans in the trace
-            tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>()), Times.Never);
+            tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>(), true), Times.Never);
 
             AddAndCloseSpan();
 
             // Now we have 5 closed spans, partial flush should kick-in if activated
             if (partialFlush)
             {
-                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 5)), Times.Once);
+                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 5), true), Times.Once);
             }
             else
             {
-                tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>()), Times.Never);
+                tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>(), true), Times.Never);
             }
 
             for (int i = 0; i < 5; i++)
@@ -99,11 +101,11 @@ namespace Datadog.Trace.Tests
             // We have 5 more closed spans, partial flush should kick-in a second time if activated
             if (partialFlush)
             {
-                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 5)), Times.Exactly(2));
+                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 5), true), Times.Exactly(2));
             }
             else
             {
-                tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>()), Times.Never);
+                tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>(), true), Times.Never);
             }
 
             traceContext.CloseSpan(rootSpan);
@@ -111,11 +113,11 @@ namespace Datadog.Trace.Tests
             // Now the remaining spans are flushed
             if (partialFlush)
             {
-                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 1)), Times.Once);
+                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 1), true), Times.Once);
             }
             else
             {
-                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 11)), Times.Once);
+                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 11), true), Times.Once);
             }
         }
 
@@ -139,8 +141,8 @@ namespace Datadog.Trace.Tests
 
             ArraySegment<Span>? spans = null;
 
-            tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
-                  .Callback<ArraySegment<Span>>(s => spans = s);
+            tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>(), true))
+                  .Callback<ArraySegment<Span>, bool>((s, _) => spans = s);
 
             var traceContext = new TraceContext(tracer.Object);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
@@ -192,13 +194,12 @@ namespace Datadog.Trace.Tests
 
             ArraySegment<Span>? spans = null;
 
-            tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
-                  .Callback<ArraySegment<Span>>(s => spans = s);
-
-            var vars = Environment.GetEnvironmentVariables();
+            tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>(), true))
+                  .Callback<ArraySegment<Span>, bool>((s, _) => spans = s);
 
             if (inAASContext)
             {
+                Dictionary<string, string> vars = new();
                 vars.Add(AzureAppServices.AzureAppServicesContextKey, "true");
                 vars.Add(AzureAppServices.ResourceGroupKey, "ThisIsAResourceGroup");
                 vars.Add(Datadog.Trace.Configuration.ConfigurationKeys.ApiKey, "xxx");
@@ -233,6 +234,137 @@ namespace Datadog.Trace.Tests
             {
                 spans.Value.Array[0].GetTag(Tags.AzureAppServicesResourceGroup).Should().BeNull();
             }
+        }
+
+        [Theory]
+        [InlineData(-1)]
+        [InlineData(0)]
+        public void StatsComputationEnabled_SerializeSpansFalseWhen_SamplingPriorityLessThanEqualTo0(int samplingPriority)
+        {
+            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.ThreadInstance.CreateNew()), DateTimeOffset.UtcNow);
+
+            var tracer = new Mock<IDatadogTracer>();
+
+            tracer.Setup(t => t.CanDropP0s).Returns(true);
+            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
+            {
+                Exporter = new Trace.Configuration.ExporterSettings()
+                {
+                    PartialFlushEnabled = false,
+                }
+            }.Build());
+
+            var traceContext = new TraceContext(tracer.Object);
+            traceContext.SetSamplingPriority(samplingPriority);
+
+            var rootSpan = CreateSpan();
+            traceContext.AddSpan(rootSpan);
+            traceContext.CloseSpan(rootSpan);
+            tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>(), false));
+        }
+
+        [Theory]
+        [InlineData(1)]
+        [InlineData(2)]
+        public void StatsComputationEnabled_SerializeSpansTrueWhen_SamplingPriorityGreaterThan0(int samplingPriority)
+        {
+            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.ThreadInstance.CreateNew()), DateTimeOffset.UtcNow);
+
+            var tracer = new Mock<IDatadogTracer>();
+
+            tracer.Setup(t => t.CanDropP0s).Returns(true);
+            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
+            {
+                Exporter = new Trace.Configuration.ExporterSettings()
+                {
+                    PartialFlushEnabled = false,
+                }
+            }.Build());
+
+            var traceContext = new TraceContext(tracer.Object);
+            traceContext.SetSamplingPriority(samplingPriority);
+
+            var rootSpan = CreateSpan();
+            traceContext.AddSpan(rootSpan);
+            traceContext.CloseSpan(rootSpan);
+            tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>(), true));
+        }
+
+        [Theory]
+        [InlineData(false)]
+        [InlineData(true)]
+        public void StatsComputationEnabled_SerializeSpansTrueWhen_TraceHasErrors(bool hasChildSpans)
+        {
+            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.ThreadInstance.CreateNew()), DateTimeOffset.UtcNow);
+
+            var tracer = new Mock<IDatadogTracer>();
+
+            tracer.Setup(t => t.CanDropP0s).Returns(true);
+            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
+            {
+                Exporter = new Trace.Configuration.ExporterSettings()
+                {
+                    PartialFlushEnabled = false,
+                }
+            }.Build());
+
+            var traceContext = new TraceContext(tracer.Object);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
+
+            var rootSpan = CreateSpan();
+            traceContext.AddSpan(rootSpan);
+            rootSpan.Error = true;
+
+            if (hasChildSpans)
+            {
+                var childSpan = CreateSpan();
+                traceContext.AddSpan(childSpan);
+                traceContext.CloseSpan(childSpan);
+            }
+
+            traceContext.CloseSpan(rootSpan);
+            tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>(), true));
+        }
+
+        [Theory]
+        [InlineData(false, 0)]
+        [InlineData(true, 0)]
+        [InlineData(false, 0.5)]
+        [InlineData(true, 0.5)]
+        [InlineData(false, 1)]
+        [InlineData(true, 1)]
+        public void StatsComputationEnabled_SerializeSpansTrueWhen_SpanHasAnalyticsAndSampled(bool hasChildSpans, double analyticsSampleRate)
+        {
+            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.ThreadInstance.CreateNew()), DateTimeOffset.UtcNow);
+
+            var tracer = new Mock<IDatadogTracer>();
+
+            tracer.Setup(t => t.CanDropP0s).Returns(true);
+            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
+            {
+                Exporter = new Trace.Configuration.ExporterSettings()
+                {
+                    PartialFlushEnabled = false,
+                }
+            }.Build());
+
+            var traceContext = new TraceContext(tracer.Object);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
+
+            var rootSpan = CreateSpan();
+            traceContext.AddSpan(rootSpan);
+            rootSpan.SetMetric(Tags.Analytics, analyticsSampleRate);
+
+            if (hasChildSpans)
+            {
+                var childSpan = CreateSpan();
+                traceContext.AddSpan(childSpan);
+                traceContext.CloseSpan(childSpan);
+            }
+
+            traceContext.CloseSpan(rootSpan);
+            var sampled = ((rootSpan.TraceId * KnuthFactor) % TracerConstants.MaxTraceId) <= (analyticsSampleRate * TracerConstants.MaxTraceId);
+            tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>(), sampled));
         }
     }
 }

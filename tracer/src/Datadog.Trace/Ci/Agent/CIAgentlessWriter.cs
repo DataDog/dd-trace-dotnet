@@ -142,7 +142,7 @@ namespace Datadog.Trace.Ci.Agent
             return Task.FromResult(true);
         }
 
-        public void WriteTrace(ArraySegment<Span> trace)
+        public void WriteTrace(ArraySegment<Span> trace, bool shouldSerializeSpans)
         {
             // Transform spans to events
             for (var i = trace.Offset; i < trace.Count; i++)

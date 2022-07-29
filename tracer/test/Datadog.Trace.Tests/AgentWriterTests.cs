@@ -37,7 +37,7 @@ namespace Datadog.Trace.Tests
 
             var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator.Object, statsd: null, automaticFlush: false);
 
-            agent.WriteTrace(CreateTrace(1));
+            agent.WriteTrace(CreateTrace(1), true);
 
             statsAggregator.Verify(s => s.AddRange(It.IsAny<Span[]>(), 0, 1), Times.Once);
         }
@@ -48,7 +48,7 @@ namespace Datadog.Trace.Tests
             var trace = new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) };
             var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, SpanFormatterResolver.Instance);
 
-            _agentWriter.WriteTrace(new ArraySegment<Span>(trace));
+            _agentWriter.WriteTrace(new ArraySegment<Span>(trace), true);
             await _agentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1)), Times.Once);
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tests
             trace = new[] { new Span(new SpanContext(2, 2), DateTimeOffset.UtcNow) };
             var expectedData2 = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, SpanFormatterResolver.Instance);
 
-            _agentWriter.WriteTrace(new ArraySegment<Span>(trace));
+            _agentWriter.WriteTrace(new ArraySegment<Span>(trace), true);
             await _agentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData2)), It.Is<int>(i => i == 1)), Times.Once);
@@ -92,7 +92,7 @@ namespace Datadog.Trace.Tests
                     throw new InvalidOperationException();
                 });
 
-            agent.WriteTrace(CreateTrace(1));
+            agent.WriteTrace(CreateTrace(1), true);
 
             mutex.Wait();
 
@@ -120,7 +120,7 @@ namespace Datadog.Trace.Tests
                 })
                 .Returns(Task.FromResult(true));
 
-            agent.WriteTrace(CreateTrace(1));
+            agent.WriteTrace(CreateTrace(1), true);
 
             // Wait for the flush operation
             barrier.SignalAndWait();
@@ -133,7 +133,7 @@ namespace Datadog.Trace.Tests
 
             var mutex = new ManualResetEventSlim();
 
-            agent.WriteTrace(CreateTrace(2));
+            agent.WriteTrace(CreateTrace(2), true);
 
             // Wait for the trace to be dequeued
             WaitForDequeue(agent);
@@ -170,8 +170,8 @@ namespace Datadog.Trace.Tests
             // Make the buffer size big enough for a single trace
             var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, automaticFlush: false, maxBufferSize: (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1);
 
-            agent.WriteTrace(CreateTrace(1));
-            agent.WriteTrace(CreateTrace(1));
+            agent.WriteTrace(CreateTrace(1), true);
+            agent.WriteTrace(CreateTrace(1), true);
 
             Assert.True(agent.ActiveBuffer == agent.BackBuffer);
             Assert.True(agent.FrontBuffer.IsFull);
@@ -199,8 +199,8 @@ namespace Datadog.Trace.Tests
             var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator: null, statsd.Object, automaticFlush: false, (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1);
 
             // Fill the two buffers
-            agent.WriteTrace(CreateTrace(1));
-            agent.WriteTrace(CreateTrace(1));
+            agent.WriteTrace(CreateTrace(1), true);
+            agent.WriteTrace(CreateTrace(1), true);
 
             // Buffers should have swapped
             Assert.True(agent.ActiveBuffer == agent.BackBuffer);
@@ -220,7 +220,7 @@ namespace Datadog.Trace.Tests
             statsd.Invocations.Clear();
 
             // Both buffers are at capacity, write a new trace
-            agent.WriteTrace(CreateTrace(2));
+            agent.WriteTrace(CreateTrace(2), true);
 
             // Buffers shouldn't have swapped since the reserve buffer was full
             Assert.True(agent.ActiveBuffer == agent.BackBuffer);
@@ -259,7 +259,7 @@ namespace Datadog.Trace.Tests
             }
 
             // Serialization thread is asleep, makes sure it wakes up when enqueuing a trace
-            agent.WriteTrace(CreateTrace(1));
+            agent.WriteTrace(CreateTrace(1), true);
             Assert.True(WaitForDequeue(agent));
 
             return agent.FlushAndCloseAsync();
@@ -289,22 +289,22 @@ namespace Datadog.Trace.Tests
             var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, calculator, automaticFlush: false, maxBufferSize: (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1, batchInterval: 100);
 
             // Fill both buffers
-            agent.WriteTrace(trace);
-            agent.WriteTrace(trace);
+            agent.WriteTrace(trace, true);
+            agent.WriteTrace(trace, true);
 
             // Drop one
-            agent.WriteTrace(trace);
+            agent.WriteTrace(trace, true);
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             // Write another one
-            agent.WriteTrace(trace);
+            agent.WriteTrace(trace, true);
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
             api.Verify();
             api.Invocations.Clear();
 
             // Write trace and update keep rate
             calculator.UpdateBucket();
-            agent.WriteTrace(trace);
+            agent.WriteTrace(trace, true);
             await agent.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             const double expectedTraceKeepRate = 0.75;
@@ -338,19 +338,19 @@ namespace Datadog.Trace.Tests
             var trace = new ArraySegment<Span>(new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) });
 
             // Write trace to the front buffer
-            agentWriter.WriteTrace(trace);
+            agentWriter.WriteTrace(trace, true);
 
             // Flush front buffer
             var firstFlush = agentWriter.FlushTracesAsync();
 
             // This will swap to the back buffer due front buffer is blocked.
-            agentWriter.WriteTrace(trace);
+            agentWriter.WriteTrace(trace, true);
 
             // Flush the second buffer
             var secondFlush = agentWriter.FlushTracesAsync();
 
             // This trace will force other buffer swap and then a drop because both buffers are blocked
-            agentWriter.WriteTrace(trace);
+            agentWriter.WriteTrace(trace, true);
 
             // This will try to flush the front buffer again.
             var thirdFlush = agentWriter.FlushTracesAsync();

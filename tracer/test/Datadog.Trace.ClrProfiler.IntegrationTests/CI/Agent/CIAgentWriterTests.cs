@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             var trace = new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) };
             var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, SpanFormatterResolver.Instance);
 
-            _ciAgentWriter.WriteTrace(new ArraySegment<Span>(trace));
+            _ciAgentWriter.WriteTrace(new ArraySegment<Span>(trace), true);
             await _ciAgentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1)), Times.Once);
@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             trace = new[] { new Span(new SpanContext(2, 2), DateTimeOffset.UtcNow) };
             var expectedData2 = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, SpanFormatterResolver.Instance);
 
-            _ciAgentWriter.WriteTrace(new ArraySegment<Span>(trace));
+            _ciAgentWriter.WriteTrace(new ArraySegment<Span>(trace), true);
             await _ciAgentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData2)), It.Is<int>(i => i == 1)), Times.Once);

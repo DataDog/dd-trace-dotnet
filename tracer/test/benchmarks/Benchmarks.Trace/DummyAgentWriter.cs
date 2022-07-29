@@ -9,6 +9,8 @@ namespace Benchmarks.Trace
     {
         private static readonly Task<bool> PingTask = Task.FromResult(true);
 
+        public bool CanDropP0s => false;
+
         public Task FlushAndCloseAsync()
         {
             return Task.CompletedTask;
@@ -32,7 +34,7 @@ namespace Benchmarks.Trace
             return PingTask;
         }
 
-        public void WriteTrace(ArraySegment<Span> trace)
+        public void WriteTrace(ArraySegment<Span> trace, bool shouldSerializeSpans)
         {
         }
     }
