@@ -282,7 +282,7 @@ namespace Datadog.Trace.Debugger
 
 internal record BoundLineProbeLocation
 {
-    public BoundLineProbeLocation(ProbeDefinition probe, Guid mvid, int methodToken, int? bytecodeOffset, int lineNumber)
+    public BoundLineProbeLocation(ProbeDefinition probe, Guid mvid, int methodToken, int bytecodeOffset, int lineNumber)
     {
         ProbeDefinition = probe;
         MVID = mvid;
@@ -297,7 +297,7 @@ internal record BoundLineProbeLocation
 
     public int MethodToken { get; set; }
 
-    public int? BytecodeOffset { get; set; }
+    public int BytecodeOffset { get; set; }
 
     public int LineNumber { get; set; }
 }

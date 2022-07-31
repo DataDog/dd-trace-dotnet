@@ -21,6 +21,7 @@ namespace Datadog.Trace.Debugger
     internal class LineProbeResolver : ILineProbeResolver
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LineProbeResolver>();
+        private static readonly string[] DirectorySeparatorsCrossPlatform = { @"\", @"/" };
 
         private readonly object _locker;
         private readonly Dictionary<Assembly, Trie> _loadedAssemblies;
@@ -74,8 +75,8 @@ namespace Datadog.Trace.Debugger
 
         private static string GetReversePath(string documentFullPath)
         {
-            var partsReverse = documentFullPath.Split(' ', Path.PathSeparator).Reverse();
-            return string.Join(Path.PathSeparator.ToString(), partsReverse);
+            var partsReverse = documentFullPath.Split(DirectorySeparatorsCrossPlatform, StringSplitOptions.None).Reverse();
+            return string.Join(Path.DirectorySeparatorChar.ToString(), partsReverse);
         }
 
         private Trie GetSourceFilePathForAssembly(Assembly loadedAssembly)
@@ -105,31 +106,41 @@ namespace Datadog.Trace.Debugger
             return trie;
         }
 
-        private Assembly FindAssemblyContainingFile(string sourceFileFullPath)
+        private bool TryFindAssemblyContainingFile(string sourceFileFullPath, out string sourceFileFullPathFromPdb, out Assembly assembly)
         {
             lock (_locker)
             {
-                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                foreach (var candidateAssembly in AppDomain.CurrentDomain.GetAssemblies())
                 {
-                    var trie = GetSourceFilePathForAssembly(assembly);
-
-                    if (trie != null && trie.ContainsPrefix(GetReversePath(sourceFileFullPath)))
+                    var trie = GetSourceFilePathForAssembly(candidateAssembly);
+                    if (trie == null)
                     {
-                        return assembly;
+                        continue;
+                    }
+
+                    // Because we're actually interested in matching the ending of the string rather than the beginning,
+                    // we reverse the string before inserting or querying the trie, and then reverse it again when we get a string out.
+                    var reversedPath = trie.GetStringStartingWith(GetReversePath(sourceFileFullPath));
+                    if (reversedPath != null)
+                    {
+                        sourceFileFullPathFromPdb = GetReversePath(reversedPath);
+                        assembly = candidateAssembly;
+                        return true;
                     }
                 }
             }
 
-            return null;
+            sourceFileFullPathFromPdb = null;
+            assembly = null;
+            return false;
         }
 
         public LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out BoundLineProbeLocation location)
         {
             location = null;
-            var assembly = FindAssemblyContainingFile(probe.Where.SourceFile);
-            if (assembly == null)
+            if (!TryFindAssemblyContainingFile(probe.Where.SourceFile, out var filePathFromPdb, out var assembly))
             {
-                var message = $"Could not find a source file location for probe {probe.Id}.";
+                var message = $"Source file location for probe {probe.Id} was not found, possibly because the relevant assembly was not yet loaded.";
                 Log.Information(message);
                 return new LineProbeResolveResult(LiveProbeResolveStatus.Unbound, message);
             }
@@ -147,13 +158,20 @@ namespace Datadog.Trace.Debugger
             {
                 var message = $"Failed to parse line number for Line Probe {probe.Id}. " +
                               $"The Lines collection contains {PrintContents(probe.Where.Lines)}.";
-                Log.Error(message);
+                Log.Warning(message);
 
                 return new LineProbeResolveResult(LiveProbeResolveStatus.Error, message);
             }
 
-            var method = pdbReader.GetContainingMethodAndOffset(probe.Where.SourceFile, lineNum, column: 0, out var bytecodeOffset);
-            location = new BoundLineProbeLocation(probe, assembly.ManifestModule.ModuleVersionId, method.Token, bytecodeOffset, lineNum);
+            var method = pdbReader.GetContainingMethodAndOffset(filePathFromPdb, lineNum, column: null, out var bytecodeOffset);
+            if (bytecodeOffset.HasValue == false)
+            {
+                var message = $"Probe location did not map out to a valid bytecode offset for probe id {probe.Id}";
+                Log.Warning(message);
+                return new LineProbeResolveResult(LiveProbeResolveStatus.Error, message);
+            }
+
+            location = new BoundLineProbeLocation(probe, assembly.ManifestModule.ModuleVersionId, method.Token, bytecodeOffset.Value, lineNum);
             return new LineProbeResolveResult(LiveProbeResolveStatus.Bound);
 
             string PrintContents<T>(T[] array)
