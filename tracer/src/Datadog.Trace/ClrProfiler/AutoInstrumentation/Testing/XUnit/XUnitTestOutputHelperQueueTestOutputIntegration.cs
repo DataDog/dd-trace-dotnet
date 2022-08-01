@@ -6,7 +6,9 @@
 using System;
 using System.ComponentModel;
 using System.Text;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
@@ -58,52 +60,70 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
         private class XUnitLogEvent : DatadogLogEvent
         {
             private readonly string _message;
-            private readonly Context? _context;
+            private readonly Span _span;
 
             public XUnitLogEvent(string message, Span span)
             {
                 _message = message;
-                _context = span is null ? null : new Context(span.TraceId, span.SpanId, span.Context.Origin);
+                _span = span;
             }
 
             public override void Format(StringBuilder sb, LogFormatter formatter)
             {
-                formatter.FormatLog<Context?>(
-                    sb,
-                    _context,
-                    DateTime.UtcNow,
-                    _message,
-                    eventId: null,
-                    logLevel: DirectSubmissionLogLevelExtensions.Information,
-                    exception: null,
-                    (JsonTextWriter writer, in Context? state) =>
-                    {
-                        if (state.HasValue)
-                        {
-                            writer.WritePropertyName("dd.trace_id");
-                            writer.WriteValue($"{state.Value.TraceId}");
-                            writer.WritePropertyName("dd.span_id");
-                            writer.WriteValue($"{state.Value.SpanId}");
-                            writer.WritePropertyName("_dd.origin");
-                            writer.WriteValue($"{state.Value.Origin}");
-                        }
+                using var writer = LogFormatter.GetJsonWriter(sb);
 
-                        return default;
-                    });
-            }
+                // Based on JsonFormatter
+                writer.WriteStartObject();
 
-            private readonly struct Context
-            {
-                public readonly ulong TraceId;
-                public readonly ulong SpanId;
-                public readonly string Origin;
+                writer.WritePropertyName("ddsource", escape: false);
+                writer.WriteValue("xunit");
 
-                public Context(ulong traceId, ulong spanId, string origin)
+                writer.WritePropertyName("timestamp", escape: false);
+                writer.WriteValue(DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
+
+                writer.WritePropertyName("message", escape: false);
+                writer.WriteValue(_message);
+
+                writer.WritePropertyName("status", escape: false);
+                writer.WriteValue("info");
+
+                string env = string.Empty;
+                if (_span is { } span)
                 {
-                    TraceId = traceId;
-                    SpanId = spanId;
-                    Origin = origin;
+                    env = span.GetTag(Tags.Env) ?? string.Empty;
+
+                    writer.WritePropertyName("service", escape: false);
+                    writer.WriteValue(span.ServiceName);
+
+                    writer.WritePropertyName("dd.trace_id", escape: false);
+                    writer.WriteValue($"{span.TraceId}");
+
+                    writer.WritePropertyName("dd.span_id", escape: false);
+                    writer.WriteValue($"{span.SpanId}");
+
+                    if (span.GetTag(TestTags.Suite) is { } suite)
+                    {
+                        writer.WritePropertyName("test.suite", escape: false);
+                        writer.WriteValue(suite);
+                    }
+
+                    if (span.GetTag(TestTags.Name) is { } name)
+                    {
+                        writer.WritePropertyName("test.name", escape: false);
+                        writer.WriteValue(name);
+                    }
+
+                    if (span.GetTag(TestTags.Bundle) is { } bundle)
+                    {
+                        writer.WritePropertyName("test.bundle", escape: false);
+                        writer.WriteValue(bundle);
+                    }
                 }
+
+                // spaces are not allowed inside ddtags
+                env = env.Replace(" ", string.Empty);
+                writer.WritePropertyName("ddtags", escape: false);
+                writer.WriteValue($"env:{env},datadog.product:citest");
             }
         }
     }
