@@ -42,6 +42,8 @@ namespace Datadog.Trace.Ci.Agent
             _agentWriter = new AgentWriter(api, null, null, maxBufferSize: maxBufferSize);
         }
 
+        public bool CanComputeStats => _agentWriter.CanComputeStats;
+
         public bool CanDropP0s => _agentWriter.CanDropP0s;
 
         public void WriteEvent(IEvent @event)

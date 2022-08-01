@@ -10,6 +10,8 @@ namespace Datadog.Trace.Agent
 {
     internal interface IAgentWriter
     {
+        bool CanComputeStats { get; }
+
         bool CanDropP0s { get; }
 
         void WriteTrace(ArraySegment<Span> trace, bool shouldSerializeSpans);
