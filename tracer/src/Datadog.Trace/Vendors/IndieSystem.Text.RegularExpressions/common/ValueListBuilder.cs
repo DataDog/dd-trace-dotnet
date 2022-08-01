@@ -82,12 +82,16 @@ namespace System.Collections.Generic
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Dispose()
         {
+#if NO_ARRAY_POOL
+            _arrayFromPool = null;
+#else
             T[]? toReturn = _arrayFromPool;
             if (toReturn != null)
             {
                 _arrayFromPool = null;
                 ArrayPool<T>.Shared.Return(toReturn);
             }
+#endif
         }
 
         private void Grow()
@@ -109,7 +113,15 @@ namespace System.Collections.Generic
                 nextCapacity = Math.Max(Math.Max(_span.Length + 1, ArrayMaxLength), _span.Length);
             }
 
+#if NO_ARRAY_POOL
+            T[] array = new T[nextCapacity];
+
+            _span.CopyTo(array);
+
+            _span = _arrayFromPool = array;
+#else
             T[] array = ArrayPool<T>.Shared.Rent(nextCapacity);
+
             _span.CopyTo(array);
 
             T[]? toReturn = _arrayFromPool;
@@ -118,6 +130,7 @@ namespace System.Collections.Generic
             {
                 ArrayPool<T>.Shared.Return(toReturn);
             }
+#endif
         }
     }
 }

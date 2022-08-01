@@ -6,7 +6,15 @@
 	<Nullable>enable</Nullable>
 	<EnablePreviewFeatures>true</EnablePreviewFeatures>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+
+	<!-- nuget stuff -->
+	<PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>regex;regular-expression;non-backtracking</PackageTags>
+	<Authors>Robert Pickering</Authors>
+	<Copyright>Robert Pickering, .NET Foundation and Contributors</Copyright>
+    <Description>IndieRegex or IndieSystem.Text.RegularExpressions is a drop-in replacement for .NET's Regex class. It is built using the source of Regex from .NET 7.0, modified and patched to run on .NET Framework 4.6.1, .NET Standard 2.0, .NET Core 3.1, .NET 5.0 and .NET 6.0.</Description>
   </PropertyGroup>
+
   <ItemGroup>
 	  <Compile Include="additional\BitOperations.cs" />
 	  <Compile Include="System\Collections\HashtableExtensions.cs" />
@@ -35,7 +43,6 @@
 	  <Compile Include="System\Text\RegularExpressions\RegexCharClass.cs" />
 	  <Compile Include="System\Text\RegularExpressions\RegexCompilationInfo.cs" />
 	  <Compile Include="System\Text\RegularExpressions\RegexFindOptimizations.cs" />
-	  <Compile Include="System\Text\RegularExpressions\RegexGeneratorAttribute.cs" />
 	  <Compile Include="System\Text\RegularExpressions\RegexInterpreter.cs" />
 	  <Compile Include="System\Text\RegularExpressions\RegexInterpreterCode.cs" />
 	  <Compile Include="System\Text\RegularExpressions\RegexMatchTimeoutException.cs" />

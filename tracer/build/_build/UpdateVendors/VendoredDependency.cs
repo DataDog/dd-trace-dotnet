@@ -75,9 +75,9 @@ namespace UpdateVendors
 
             Add(
                 libraryName: "IndieSystem.Text.RegularExpressions",
-                version: "0.1",
-                downloadUrl: "https://github.com/robertpi/IndieRegex/archive/refs/tags/v0.4.zip",
-                pathToSrc: new[] { "IndieRegex-0.4", "src" },
+                version: "0.5",
+                downloadUrl: "https://github.com/robertpi/IndieRegex/archive/refs/tags/v0.5.zip",
+                pathToSrc: new[] { "IndieRegex-0.5", "src" },
                 // Perform standard CS file transform with additional '#nullable enable' directive at the beginning of the files, since the vendored project was built with <Nullable>enable</Nullable>
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "IndieSystem.Text.RegularExpressions",
                     AddIfNetcoreapp31OrGreater, AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma),

@@ -14,12 +14,7 @@ using System;
 namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions
 {
     [Flags]
-#if REGEXGENERATOR
-    internal
-#else
-    public
-#endif
-    enum RegexOptions
+    internal enum RegexOptions
     {
         /// <summary>Use default behavior.</summary>
         None                    = 0x0000,
