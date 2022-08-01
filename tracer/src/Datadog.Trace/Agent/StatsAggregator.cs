@@ -62,6 +62,8 @@ namespace Datadog.Trace.Agent
         /// </summary>
         internal StatsBuffer CurrentBuffer => _buffers[_currentBuffer];
 
+        public bool? CanComputeStats { get; private set; } = true;
+
         public static IStatsAggregator Create(IApi api, ImmutableTracerSettings settings)
         {
             return settings.StatsComputationEnabled ? new StatsAggregator(api, settings, TimeSpan.FromSeconds(BucketDurationSeconds)) : new NullStatsAggregator();

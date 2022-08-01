@@ -54,6 +54,9 @@ namespace Datadog.Trace.Agent
         private Task _frontBufferFlushTask;
         private Task _backBufferFlushTask;
 
+        private long _droppedP0Traces;
+        private long _droppedP0Spans;
+
         private long _droppedSpans;
 
         static AgentWriter()
@@ -101,9 +104,11 @@ namespace Datadog.Trace.Agent
 
         internal SpanBuffer BackBuffer => _backBuffer;
 
+        public bool CanComputeStats => _statsAggregator.CanComputeStats ?? false;
+
         public Task<bool> Ping()
         {
-            return _api.SendTracesAsync(EmptyPayload, 0);
+            return _api.SendTracesAsync(EmptyPayload, 0, false, 0, 0);
         }
 
         public void WriteTrace(ArraySegment<Span> trace, bool shouldSerializeSpans)
@@ -315,9 +320,19 @@ namespace Datadog.Trace.Agent
 
                     if (buffer.TraceCount > 0)
                     {
-                        Log.Debug<int, int>("Flushing {spans} spans across {traces} traces", buffer.SpanCount, buffer.TraceCount);
+                        var droppedP0Traces = Interlocked.Exchange(ref _droppedP0Traces, 0);
+                        var droppedP0Spans = Interlocked.Exchange(ref _droppedP0Spans, 0);
 
-                        var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount).ConfigureAwait(false);
+                        if (CanComputeStats)
+                        {
+                            Log.Debug<int, int, long, long>("Flushing {spans} spans across {traces} traces. CanComputeStats is enabled with {droppedP0Traces} droppedP0Traces and {droppedP0Spans} droppedP0Spans", buffer.SpanCount, buffer.TraceCount, droppedP0Traces, droppedP0Spans);
+                        }
+                        else
+                        {
+                            Log.Debug<int, int>("Flushing {spans} spans across {traces} traces. CanComputeStats is disabled.", buffer.SpanCount, buffer.TraceCount);
+                        }
+
+                        var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans).ConfigureAwait(false);
 
                         if (success)
                         {
@@ -373,6 +388,8 @@ namespace Datadog.Trace.Agent
             // skip all other processing
             if (!shouldSerializeSpans)
             {
+                Interlocked.Increment(ref _droppedP0Traces);
+                Interlocked.Add(ref _droppedP0Spans, trace.Count);
                 return;
             }
 

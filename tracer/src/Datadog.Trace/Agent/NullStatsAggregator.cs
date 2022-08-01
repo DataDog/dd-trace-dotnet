@@ -9,6 +9,8 @@ namespace Datadog.Trace.Agent
 {
     internal class NullStatsAggregator : IStatsAggregator
     {
+        public bool? CanComputeStats => false;
+
         public void Add(params Span[] spans)
         {
         }
