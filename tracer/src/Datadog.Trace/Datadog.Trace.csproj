@@ -91,6 +91,10 @@
     <DefineConstants>$(DefineConstants);ASYNCLOCAL;HASHTABLE;FEATURE_DEFAULT_INTERFACE;FEATURE_SPAN</DefineConstants>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);REGEXGENERATOR</DefineConstants>
+  </PropertyGroup>
+
   <!-- Remove System.Collections.NonGeneric. This was defined in Serilog but it is unnecessary -->
   <!--
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">

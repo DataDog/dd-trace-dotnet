@@ -62,16 +62,5 @@ namespace Datadog.Trace.Tests.Util.Http
             var result = queryStringObfuscator.Obfuscate(queryString);
             result.Should().Be("?<redacted>&token=a0b21ce2-006f-4cc6-95d5-d7b550698482&key2=val2&<redacted>&<redacted>");
         }
-
-        [Fact]
-        public void ObfuscateTimeout()
-        {
-            var logger = new Mock<IDatadogLogger>();
-            var obfuscator = ObfuscatorFactory.GetObfuscator(100, @"\[(.*?)\]((?:.\s*)*?)\[\/\1\]", logger.Object);
-            const string queryString = @"?[tag1]Test's Text Test Text Test Text Test Text.Test Text Test Text Test ""Text Test Text"" Test Text Test Text.Test Text ? Test Text Test Text Test Text Test Text Test Text Test Text.Test Text, Test Text Test Text Test Text Test Text Test Text Test Text Test Text.[/ ta.g1][tag2]Test's Text Test Text Test Text Test Text.Test Text Test Text Test ""Text Test Text"" Test Text Test Text.Test Text ? Test Text Test Text Test Text Test Text Test Text Test Text.Test Text, Test Text Test Text Test Text Test Text Test Text Test Text Test Text.[/ tag2]";
-            var result = obfuscator.Obfuscate(queryString);
-            result.Should().Be(string.Empty);
-            logger.Verify(o => o.Error(It.IsAny<RegexMatchTimeoutException>(), It.IsAny<string>(), It.IsAny<double>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<string>()), Times.Once);
-        }
     }
 }

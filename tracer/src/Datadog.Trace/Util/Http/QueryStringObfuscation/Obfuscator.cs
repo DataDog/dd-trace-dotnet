@@ -3,9 +3,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+// turns out strict formatting and optional compilation don't like each other
+#pragma warning disable SA1001, SA1116, SA1118
+
 using System;
+#if !NETCOREAPP3_1_OR_GREATER
 using System.Text.RegularExpressions;
+#endif
 using Datadog.Trace.Logging;
+#if NETCOREAPP3_1_OR_GREATER
+using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
+#endif
 
 namespace Datadog.Trace.Util.Http.QueryStringObfuscation
 {
@@ -18,9 +26,22 @@ namespace Datadog.Trace.Util.Http.QueryStringObfuscation
 
         internal Obfuscator(string pattern, TimeSpan timeout, IDatadogLogger logger)
         {
+#if NETCOREAPP3_1_OR_GREATER
+            AppDomain.CurrentDomain.SetData("REGEX_NONBACKTRACKING_MAX_AUTOMATA_SIZE", 2000);
+#endif
             _timeout = timeout;
             _logger = logger;
-            _regex = new(pattern, RegexOptions.IgnoreCase | RegexOptions.Compiled, _timeout);
+
+            var options =
+                    RegexOptions.IgnoreCase
+                    | RegexOptions.Compiled;
+
+#if NETCOREAPP3_1_OR_GREATER
+            options |= RegexOptions.NonBacktracking;
+#endif
+
+            _regex =
+                new(pattern, options, _timeout);
         }
 
         internal override string Obfuscate(string queryString)
