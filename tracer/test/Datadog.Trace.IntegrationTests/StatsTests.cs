@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -68,6 +69,18 @@ namespace Datadog.Trace.IntegrationTests
             }
 
             using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort(), configuration: agentConfiguration);
+
+            List<string> droppedP0TracesHeaderValues = new();
+            List<string> droppedP0SpansHeaderValues = new();
+            agent.RequestReceived += (sender, args) =>
+            {
+                var context = args.Value;
+                if (context.Request.RawUrl.EndsWith("/traces"))
+                {
+                    droppedP0TracesHeaderValues.Add(context.Request.Headers.Get("Datadog-Client-Dropped-P0-Traces"));
+                    droppedP0SpansHeaderValues.Add(context.Request.Headers.Get("Datadog-Client-Dropped-P0-Spans"));
+                }
+            };
 
             var statsReceived = false;
             agent.StatsDeserialized += (_, _) =>
@@ -174,6 +187,24 @@ namespace Datadog.Trace.IntegrationTests
             else
             {
                 tracesWaitEvent.WaitOne(TimeSpan.FromSeconds(2)).Should().Be(false, "No traces should be received");
+            }
+
+            // Assert header values
+            var headersAlwaysZeroes = !expectStats || !clientDropP0sEnabled || expectAllTraces;
+            if (!finishSpansOnClose)
+            {
+                droppedP0TracesHeaderValues.Should().BeEquivalentTo(new string[] { });
+                droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { });
+            }
+            else if (headersAlwaysZeroes)
+            {
+                droppedP0TracesHeaderValues.Should().BeEquivalentTo(new string[] { "0", "0" });
+                droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { "0", "0" });
+            }
+            else
+            {
+                droppedP0TracesHeaderValues.Should().BeEquivalentTo(new string[] { "1" });
+                droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { "1" });
             }
 
             void AssertStats(MockClientStatsPayload stats, Span span, bool isError)

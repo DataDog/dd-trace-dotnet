@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tests
 
             var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false, statsComputationEnabled: false);
 
-            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
+            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0);
 
             requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Once());
         }
@@ -59,7 +59,7 @@ namespace Datadog.Trace.Tests
 
             var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false, statsComputationEnabled: false);
 
-            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
+            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0);
 
             requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Exactly(5));
         }
@@ -128,7 +128,7 @@ namespace Datadog.Trace.Tests
 
             var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false, statsComputationEnabled: statsComputationEnabled);
 
-            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
+            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0);
 
             requestMock.Verify(x => x.AddHeader(AgentHttpHeaderNames.StatsComputation, "true"), statsComputationEnabled ? Times.Once : Times.Never);
         }
@@ -155,9 +155,9 @@ namespace Datadog.Trace.Tests
             var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: true, log: logMock.Object, statsComputationEnabled: false);
 
             // First time should write the warning
-            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
+            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0);
             // Second time, it won't
-            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
+            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0);
 
             // ReSharper disable ExplicitCallerInfoArgument
             logMock.Verify(
@@ -194,7 +194,7 @@ namespace Datadog.Trace.Tests
             Action<Dictionary<string, float>> updateSampleRates = _ => ratesWereSet = true;
             var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: updateSampleRates, partialFlushEnabled: false, statsComputationEnabled: false);
 
-            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
+            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0);
             ratesWereSet.Should().BeTrue();
         }
 

@@ -59,6 +59,16 @@ namespace Datadog.Trace
         public const string StatsComputation = "Datadog-Client-Computed-Stats";
 
         /// <summary>
+        /// Tells the agent how many P0 traces were dropped as a result of stats computation in the tracer
+        /// </summary>
+        public const string DroppedP0Traces = "Datadog-Client-Dropped-P0-Traces";
+
+        /// <summary>
+        /// Tells the agent how many P0 spans were dropped as a result of stats computation in the tracer
+        /// </summary>
+        public const string DroppedP0Spans = "Datadog-Client-Dropped-P0-Spans";
+
+        /// <summary>
         /// Gets the default constant header that should be added to any request to the agent
         /// </summary>
         internal static KeyValuePair<string, string>[] DefaultHeaders { get; } =
