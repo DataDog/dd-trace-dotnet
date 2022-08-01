@@ -21,25 +21,25 @@ namespace Datadog.Trace.IntegrationTests
         [Fact]
         public async Task SendStats()
         {
-            await SendStatsHelper(statsComputationEnabled: true);
+            await SendStatsHelper(statsComputationEnabled: true, expectStats: true);
         }
 
         [Fact]
         public async Task SendsStatsAndDropsSpansWhenSampleRateIsZero_TS007()
         {
-            await SendStatsHelper(statsComputationEnabled: true, expectAllTraces: false, globalSamplingRate: 0.0);
+            await SendStatsHelper(statsComputationEnabled: true, expectStats: true, expectAllTraces: false, globalSamplingRate: 0.0);
         }
 
         [Fact]
         public async Task SendsStatsOnlyAfterSpansAreFinished_TS008()
         {
-            await SendStatsHelper(statsComputationEnabled: true, finishSpansOnClose: false);
+            await SendStatsHelper(statsComputationEnabled: true, expectStats: false, finishSpansOnClose: false);
         }
 
         [Fact]
         public async Task IsDisabledThroughConfiguration_TS010()
         {
-            await SendStatsHelper(statsComputationEnabled: false);
+            await SendStatsHelper(statsComputationEnabled: false, expectStats: false);
         }
 
         [Fact]
@@ -48,9 +48,8 @@ namespace Datadog.Trace.IntegrationTests
             await SendStatsHelper(statsComputationEnabled: true, expectStats: false, statsEndpointEnabled: false);
         }
 
-        private async Task SendStatsHelper(bool statsComputationEnabled, double? globalSamplingRate = null, bool statsEndpointEnabled = true, bool expectStats = true, bool expectAllTraces = true, bool finishSpansOnClose = true)
+        private async Task SendStatsHelper(bool statsComputationEnabled, bool expectStats, double? globalSamplingRate = null, bool statsEndpointEnabled = true, bool expectAllTraces = true, bool finishSpansOnClose = true)
         {
-            expectStats &= statsComputationEnabled && statsEndpointEnabled && finishSpansOnClose;
             var statsWaitEvent = new AutoResetEvent(false);
             var tracesWaitEvent = new AutoResetEvent(false);
 
