@@ -49,12 +49,19 @@ namespace Datadog.Trace.IntegrationTests
             await SendStatsHelper(statsComputationEnabled: true, expectStats: false, statsEndpointEnabled: false);
         }
 
-        private async Task SendStatsHelper(bool statsComputationEnabled, bool expectStats, double? globalSamplingRate = null, bool statsEndpointEnabled = true, bool expectAllTraces = true, bool finishSpansOnClose = true)
+        [Fact]
+        public async Task SendsStatsAndKeepsP0sWhenAgentDropP0sIsFalse()
+        {
+            await SendStatsHelper(statsComputationEnabled: true, expectStats: true, expectAllTraces: true, globalSamplingRate: 0.0, clientDropP0sEnabled: false);
+        }
+
+        private async Task SendStatsHelper(bool statsComputationEnabled, bool expectStats, double? globalSamplingRate = null, bool statsEndpointEnabled = true, bool clientDropP0sEnabled = true, bool expectAllTraces = true, bool finishSpansOnClose = true)
         {
             var statsWaitEvent = new AutoResetEvent(false);
             var tracesWaitEvent = new AutoResetEvent(false);
 
             var agentConfiguration = new MockTracerAgent.AgentConfiguration();
+            agentConfiguration.ClientDropP0s = clientDropP0sEnabled;
             if (!statsEndpointEnabled)
             {
                 agentConfiguration.Endpoints = agentConfiguration.Endpoints.Where(s => s != "/v0.6/stats").ToArray();

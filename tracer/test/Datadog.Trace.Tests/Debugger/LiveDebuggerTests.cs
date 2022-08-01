@@ -91,6 +91,8 @@ public class LiveDebuggerTests
 
         public string AgentVersion => nameof(AgentVersion);
 
+        public bool ClientDropP0s => true;
+
         internal bool Called { get; private set; }
 
         public Task<bool> DiscoverAsync()

@@ -552,7 +552,7 @@ namespace Datadog.Trace.TestHelpers
             public string[] Endpoints { get; set; } = DiscoveryService.AllSupportedEndpoints.Select(s => s.StartsWith("/") ? s : "/" + s).ToArray();
 
             [JsonProperty("client_drop_p0s")]
-            public bool ClientDropP0s { get; set; }
+            public bool ClientDropP0s { get; set; } = true;
         }
 
         public class TcpUdpAgent : MockTracerAgent
