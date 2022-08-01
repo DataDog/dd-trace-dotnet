@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -53,7 +54,13 @@ namespace Datadog.Trace.IntegrationTests
             var statsWaitEvent = new AutoResetEvent(false);
             var tracesWaitEvent = new AutoResetEvent(false);
 
-            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort(), statsEndpointEnabled: statsEndpointEnabled);
+            var agentConfiguration = new MockTracerAgent.AgentConfiguration();
+            if (!statsEndpointEnabled)
+            {
+                agentConfiguration.Endpoints = agentConfiguration.Endpoints.Where(s => s != "/v0.6/stats").ToArray();
+            }
+
+            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort(), configuration: agentConfiguration);
 
             var statsReceived = false;
             agent.StatsDeserialized += (_, _) =>
