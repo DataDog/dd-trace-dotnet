@@ -32,7 +32,7 @@ namespace Samples
         private static readonly MethodInfo SpanProperty = ScopeType?.GetProperty("Span", BindingFlags.NonPublic | BindingFlags.Instance)?.GetMethod;
         private static readonly MethodInfo CorrelationIdentifierTraceIdProperty = CorrelationIdentifierType?.GetProperty("TraceId", BindingFlags.Public | BindingFlags.Static)?.GetMethod;
         private static readonly MethodInfo SetResourceNameProperty = SpanType?.GetProperty("ResourceName", BindingFlags.NonPublic | BindingFlags.Instance)?.SetMethod;
-        private static readonly MethodInfo SetTagMethod = SpanType?.GetMethod("SetTag", BindingFlags.NonPublic | BindingFlags.Instance, null, types: new[] {typeof(string)}, modifiers: null);
+        private static readonly MethodInfo SetTagMethod = SpanType?.GetMethod("SetTag", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo SetExceptionMethod = SpanType?.GetMethod("SetException", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo FromDefaultSourcesMethod = TracerSettingsType?.GetMethod("FromDefaultSources", BindingFlags.NonPublic | BindingFlags.Instance);
         private static readonly MethodInfo SetService = TracerSettingsType?.GetProperty("Service")?.SetMethod;

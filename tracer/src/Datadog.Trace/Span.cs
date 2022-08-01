@@ -151,12 +151,6 @@ namespace Datadog.Trace
             return StringBuilderCache.GetStringAndRelease(sb);
         }
 
-        internal ISpan SetTag(string key, Lazy<string> value)
-        {
-            Tags.SetTag(key, value);
-            return this;
-        }
-
         /// <summary>
         /// Add a the specified tag to this span.
         /// </summary>

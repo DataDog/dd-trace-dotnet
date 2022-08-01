@@ -22,13 +22,6 @@ namespace Datadog.Trace.Tagging
             _lazyValue = new(valueFactory);
         }
 
-        private LazyOrString(Lazy<string> value)
-        {
-            _lazyValue = value;
-        }
-
-        public static implicit operator LazyOrString(Lazy<string> value) => new(value);
-
         public static implicit operator LazyOrString(string value) => new(value);
 
         public override string ToString() => _value ?? _lazyValue.Value;

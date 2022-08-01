@@ -4,9 +4,7 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Util.Http.QueryStringObfuscation;
 
 namespace Datadog.Trace.Util.Http
 {
