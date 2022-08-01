@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -49,6 +50,18 @@ namespace Datadog.Trace.IntegrationTests
             var tracesWaitEvent = new AutoResetEvent(false);
 
             using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+
+            List<string> droppedP0TracesHeaderValues = new();
+            List<string> droppedP0SpansHeaderValues = new();
+            agent.RequestReceived += (sender, args) =>
+            {
+                var context = args.Value;
+                if (context.Request.RawUrl.EndsWith("/traces"))
+                {
+                    droppedP0TracesHeaderValues.Add(context.Request.Headers.Get("Datadog-Client-Dropped-P0-Traces"));
+                    droppedP0SpansHeaderValues.Add(context.Request.Headers.Get("Datadog-Client-Dropped-P0-Spans"));
+                }
+            };
 
             agent.StatsDeserialized += (_, _) =>
             {
@@ -144,6 +157,24 @@ namespace Datadog.Trace.IntegrationTests
             else
             {
                 tracesWaitEvent.WaitOne(TimeSpan.FromSeconds(15)).Should().Be(false, "No traces should be received");
+            }
+
+            // Assert header values
+            var headersAlwaysZeroes = !expectStats || expectAllTraces;
+            if (!finishSpansOnClose)
+            {
+                droppedP0TracesHeaderValues.Should().BeEquivalentTo(new string[] { });
+                droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { });
+            }
+            else if (headersAlwaysZeroes)
+            {
+                droppedP0TracesHeaderValues.Should().BeEquivalentTo(new string[] { "0", "0" });
+                droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { "0", "0" });
+            }
+            else
+            {
+                droppedP0TracesHeaderValues.Should().BeEquivalentTo(new string[] { "1" });
+                droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { "1" });
             }
 
             void AssertStats(MockClientStatsPayload stats, Span span, bool isError)

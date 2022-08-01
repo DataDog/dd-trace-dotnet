@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tests
             _agentWriter.WriteTrace(new ArraySegment<Span>(trace), true);
             await _agentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
-            _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1)), Times.Once);
+            _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()), Times.Once);
 
             _api.Invocations.Clear();
 
@@ -61,7 +61,7 @@ namespace Datadog.Trace.Tests
             _agentWriter.WriteTrace(new ArraySegment<Span>(trace), true);
             await _agentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
-            _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData2)), It.Is<int>(i => i == 1)), Times.Once);
+            _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData2)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()), Times.Once);
 
             await _agentWriter.FlushAndCloseAsync();
         }
@@ -86,7 +86,7 @@ namespace Datadog.Trace.Tests
 
             agent.Flushed += () => mutex.Set();
 
-            api.Setup(a => a.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>()))
+            api.Setup(a => a.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()))
                 .Returns(() =>
                 {
                     throw new InvalidOperationException();
@@ -112,7 +112,7 @@ namespace Datadog.Trace.Tests
 
             var barrier = new Barrier(2);
 
-            api.Setup(a => a.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>()))
+            api.Setup(a => a.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()))
                 .Callback(() =>
                 {
                     barrier.SignalAndWait();
@@ -184,7 +184,7 @@ namespace Datadog.Trace.Tests
             Assert.True(agent.FrontBuffer.IsEmpty);
             Assert.True(agent.BackBuffer.IsEmpty);
 
-            api.Verify(a => a.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), 1), Times.Exactly(2));
+            api.Verify(a => a.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), 1, It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()), Times.Exactly(2));
         }
 
         [Fact]
@@ -284,7 +284,7 @@ namespace Datadog.Trace.Tests
 
             // Make the buffer size big enough for a single trace
             var api = new Mock<IApi>();
-            api.Setup(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>()))
+            api.Setup(x => x.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()))
                .ReturnsAsync(() => true);
             var agent = new AgentWriter(api.Object, statsAggregator: null, statsd: null, calculator, automaticFlush: false, maxBufferSize: (sizeOfTrace * 2) + SpanBuffer.HeaderSize - 1, batchInterval: 100);
 
@@ -312,7 +312,7 @@ namespace Datadog.Trace.Tests
             var expectedData = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, SpanFormatterResolver.Instance);
             await agent.FlushAndCloseAsync();
 
-            api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData)), It.Is<int>(i => i == 1)), Times.Once);
+            api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()), Times.Once);
         }
 
         [Fact]
@@ -323,7 +323,7 @@ namespace Datadog.Trace.Tests
             var flushTcs = new TaskCompletionSource<bool>();
             int invocation = 0;
 
-            api.Setup(i => i.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>()))
+            api.Setup(i => i.SendTracesAsync(It.IsAny<ArraySegment<byte>>(), It.IsAny<int>(), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()))
                 .Returns(() =>
                 {
                     // One for the front buffer, one for the back buffer
