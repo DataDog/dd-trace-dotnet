@@ -9,7 +9,7 @@ namespace Datadog.Trace.Agent
 {
     internal class NullStatsAggregator : IStatsAggregator
     {
-        public bool? AgentIsCompatible => false;
+        public bool? CanDropP0s => false;
 
         public void Add(params Span[] spans)
         {
