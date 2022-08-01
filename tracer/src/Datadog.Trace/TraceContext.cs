@@ -107,8 +107,6 @@ namespace Datadog.Trace
             bool shouldPropagateMetadata = false;
             bool shouldKeepTraceFinal = default;
 
-            // For now, assume that we have enabled stats computation AND the agent has been confirmed to be compatible
-            // We'll need to redo this because we should asynchronously send the agent compatibility check and then set enabled/disabled accordingly
             if (Tracer.CanDropP0s)
             {
                 shouldKeepSpan = ShouldKeepSpan(span);

@@ -19,13 +19,13 @@ namespace Datadog.Trace.Agent
         bool? CanComputeStats { get; }
 
         /// <summary>
-        /// Gets a value indicating whether the Datadog agent supports stats
-        /// computation in tracers.
+        /// Gets a value indicating whether the Datadog agent supports
+        /// tracers dropping P0 traces.
         ///
         /// This will return null if the endpoint discovery request has not
         /// completed.
         /// </summary>
-        bool? AgentIsCompatible { get; }
+        bool? CanDropP0s { get; }
 
         void Add(params Span[] spans);
 

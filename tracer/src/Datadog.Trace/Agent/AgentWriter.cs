@@ -106,7 +106,7 @@ namespace Datadog.Trace.Agent
 
         public bool CanComputeStats => _statsAggregator.CanComputeStats ?? false;
 
-        public bool CanDropP0s => _statsAggregator.AgentIsCompatible ?? false;
+        public bool CanDropP0s => _statsAggregator.CanDropP0s ?? false;
 
         public Task<bool> Ping()
         {

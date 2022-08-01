@@ -67,7 +67,7 @@ namespace Datadog.Trace.Agent
 
         public bool? CanComputeStats { get; private set; }
 
-        public bool? AgentIsCompatible { get; private set; }
+        public bool? CanDropP0s { get; private set; }
 
         public static IStatsAggregator Create(IApi api, ImmutableTracerSettings settings, IDiscoveryService discoveryService)
         {
@@ -137,13 +137,13 @@ namespace Datadog.Trace.Agent
                     if (completedTask == initializationTask && initializationTask.Result == false)
                     {
                         CanComputeStats = false;
-                        AgentIsCompatible = false;
+                        CanDropP0s = false;
                         return;
                     }
                     else if (completedTask == initializationTask && initializationTask.Result == true)
                     {
                         CanComputeStats = true;
-                        AgentIsCompatible = true;
+                        CanDropP0s = true;
                         initiailizationCompleted = true;
                     }
                     else
