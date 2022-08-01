@@ -2351,7 +2351,8 @@ stages:
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux-arm64
 
     - script: |
-        test ! -s "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux-arm64/tracer/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux-arm64/tracer/Datadog.Tracer.Native.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
         ./run.sh "linux_arm64" "$(runExtendedThroughputTests)"
