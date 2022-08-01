@@ -472,8 +472,6 @@ services:
       - SYS_PTRACE
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - tracerHome=/project/${relativeTracerHome:-shared/bin/monitoring-home/tracer}
-      - profilerHome=/project/${relativeTracerHome:-shared/bin/monitoring-home/continuousprofiler}
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
@@ -493,7 +491,6 @@ services:
       - ./:/project
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - tracerHome=/project/${relativeTracerHome:-shared/bin/monitoring-home/tracer}
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
@@ -566,7 +563,6 @@ services:
       - ./:/project
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - tracerHome=/project/${relativeTracerHome:-shared/bin/monitoring-home/tracer}
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - explorationTestUseCase=${explorationTestUseCase:-debugger}
@@ -623,7 +619,6 @@ services:
       - ./:/project
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
-      - tracerHome=/project/${relativeTracerHome:-shared/bin/monitoring-home/tracer}
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-debian}

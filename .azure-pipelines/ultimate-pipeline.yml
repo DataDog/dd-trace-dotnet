@@ -90,11 +90,7 @@ schedules:
 variables:
   buildConfiguration: Release
   dotnetCoreSdkLatestVersion: 6.0.100
-  relativeTracerHome: /shared/bin/monitoring-home/tracer
   relativeArtifacts: /tracer/src/bin/artifacts
-  tracerHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/tracer
-  profilerHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/continuousprofiler
-  profilerSrcDirectory: $(System.DefaultWorkingDirectory)/../dd-continuous-profiler-dotnet
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
   symbols: $(System.DefaultWorkingDirectory)/tracer/bin/symbols
@@ -208,7 +204,7 @@ stages:
     - script: tracer\build.cmd BuildNativeLoader
       displayName: Build monitoring home
 
-    - publish: $(tracerHome)
+    - publish: $(monitoringHome)
       displayName: Upload Windows tracer home directory
       artifact: windows-tracer-home
 
@@ -273,7 +269,7 @@ stages:
         baseImage: $(baseImage)
         command: "Clean BuildTracerHome"
 
-    - publish: $(tracerHome)
+    - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
       artifact: linux-tracer-home-$(baseImage)
 
@@ -523,7 +519,7 @@ stages:
     - script: ./tracer/build.sh BuildTracerHome BuildNativeLoader
       displayName: Build tracer home
 
-    - publish: $(tracerHome)
+    - publish: $(monitoringHome)
       displayName: Uploading macos profiler artifact
       artifact: macos-tracer-home
 

@@ -44,15 +44,10 @@ partial class Build : NukeBuild
 
     [Parameter("The location to create the monitoring home directory. Default is ./shared/bin/monitoring-home ")]
     readonly AbsolutePath MonitoringHome;
-    [Parameter("The location to create the tracer home directory. Default is ./shared/bin/monitoring-home/tracer ")]
-    readonly AbsolutePath TracerHome;
     [Parameter("The location to create the dd-trace home directory. Default is ./bin/dd-tracer-home ")]
     readonly AbsolutePath DDTracerHome;
     [Parameter("The location to place NuGet packages and other packages. Default is ./bin/artifacts ")]
     readonly AbsolutePath Artifacts;
-
-    [Parameter("The location to the find the profiler build artifacts. Default is ./shared/bin/monitoring-home/continousprofiler")]
-    readonly AbsolutePath ProfilerHome;
 
     [Parameter("The location to restore Nuget packages (optional) ")]
     readonly AbsolutePath NugetPackageDirectory;
@@ -99,7 +94,7 @@ partial class Build : NukeBuild
             Logger.Info($"Platform: {TargetPlatform}");
             Logger.Info($"Framework: {Framework}");
             Logger.Info($"TestAllPackageVersions: {TestAllPackageVersions}");
-            Logger.Info($"TracerHomeDirectory: {TracerHomeDirectory}");
+            Logger.Info($"MonitoringHomeDirectory: {MonitoringHomeDirectory}");
             Logger.Info($"ArtifactsDirectory: {ArtifactsDirectory}");
             Logger.Info($"NugetPackageDirectory: {NugetPackageDirectory}");
             Logger.Info($"IsAlpine: {IsAlpine}");
@@ -121,7 +116,7 @@ partial class Build : NukeBuild
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             DistributionHomeDirectory.GlobFiles("**").Where(x => !x.ToString().Contains("readme.txt")).ForEach(x => DeleteFile(x));
             EnsureCleanDirectory(OutputDirectory);
-            EnsureCleanDirectory(TracerHomeDirectory);
+            EnsureCleanDirectory(MonitoringHomeDirectory);
             EnsureCleanDirectory(DDTracerHomeDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
             EnsureCleanDirectory(NativeProfilerProject.Directory / "build");

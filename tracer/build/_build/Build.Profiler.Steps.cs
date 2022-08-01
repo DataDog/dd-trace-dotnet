@@ -145,13 +145,11 @@ partial class Build
         .Executes(() =>
         {
             var source = ProfilerOutputDirectory / "DDProf-Deploy" / "Datadog.AutoInstrumentation.Profiler.Native.x64.so";
-            var dest = ProfilerHomeDirectory;
-            Logger.Info($"Copying file '{source}' to 'file {dest}'");
+            var dest = MonitoringHomeDirectory;
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
             source = ProfilerOutputDirectory / "DDProf-Deploy" / "Datadog.Linux.ApiWrapper.x64.so";
-            dest = ProfilerHomeDirectory;
-            Logger.Info($"Copying file '{source}' to 'file {dest}'");
+            dest = MonitoringHomeDirectory;
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
         });
 
@@ -164,7 +162,7 @@ partial class Build
             foreach (var architecture in ArchitecturesForPlatform)
             {
                 var source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.AutoInstrumentation.Profiler.Native.{architecture}.dll";
-                var dest = ProfilerHomeDirectory;
+                var dest = MonitoringHomeDirectory;
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
                 source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.AutoInstrumentation.Profiler.Native.{architecture}.pdb";

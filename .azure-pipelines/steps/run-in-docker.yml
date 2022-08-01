@@ -29,7 +29,6 @@ steps:
     docker run --rm \
         --mount type=bind,source="$(System.DefaultWorkingDirectory)",target=/project \
         --env NugetPackageDirectory=/project/$(relativeNugetPackageDirectory) \
-        --env tracerHome=/project/$(relativeTracerHome) \
         --env artifacts=/project/$(relativeArtifacts) \
         --env DD_CLR_ENABLE_NGEN=$(DD_CLR_ENABLE_NGEN) \
         --env DD_INSTRUMENTATION_TELEMETRY_ENABLED \

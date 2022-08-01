@@ -31,11 +31,9 @@ partial class Build
             var dllsInBin = ProjectsToPack
                            .Select(project => project.Directory)
                            .SelectMany(projectDir => projectDir.GlobFiles("**/bin/**/Datadog*.dll"));
-            var tracerdlls = TracerHomeDirectory.GlobFiles("**/Datadog*.dll");
-            var profilerDlls = ProfilerHomeDirectory.GlobFiles("**/Datadog*.dll");
-            var sharedDlls = MonitoringHomeDirectory.GlobFiles("**/Datadog*.dll");
+            var homeDlls = MonitoringHomeDirectory.GlobFiles("**/Datadog*.dll");
 
-            var dlls = tracerdlls.Concat(profilerDlls).Concat(sharedDlls).Concat(dllsInBin);
+            var dlls = homeDlls.Concat(dllsInBin);
             await SignFiles(dlls);
         });
 

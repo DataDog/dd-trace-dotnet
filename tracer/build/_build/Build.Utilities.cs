@@ -68,7 +68,7 @@ partial class Build
         {
             foreach (var dll in GacProjects)
             {
-                var path = TracerHomeDirectory / Framework / $"{dll}.dll";
+                var path = MonitoringHomeDirectory / Framework / $"{dll}.dll";
                 GacUtil.Value($"/i \"{path}\"");
             }
         });
@@ -107,9 +107,9 @@ partial class Build
             // Override environment variables
             envVars["COR_ENABLE_PROFILING"] = "1";
             envVars["COR_PROFILER"] = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
-            envVars["COR_PROFILER_PATH_64"] = TracerHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll";
-            envVars["COR_PROFILER_PATH_32"] = TracerHomeDirectory / "win-x86" / "Datadog.Trace.ClrProfiler.Native.dll";
-            envVars["DD_DOTNET_TRACER_HOME"] = TracerHomeDirectory;
+            envVars["COR_PROFILER_PATH_64"] = MonitoringHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll";
+            envVars["COR_PROFILER_PATH_32"] = MonitoringHomeDirectory / "win-x86" / "Datadog.Trace.ClrProfiler.Native.dll";
+            envVars["DD_DOTNET_TRACER_HOME"] = MonitoringHomeDirectory;
 
             envVars.AddExtraEnvVariables(ExtraEnvVars);
 
@@ -174,7 +174,7 @@ partial class Build
            var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir);
            await versionGenerator.GenerateVersions(Solution);
 
-           var assemblies = TracerHomeDirectory
+           var assemblies = MonitoringHomeDirectory
                            .GlobFiles("**/Datadog.Trace.dll")
                            .Select(x => x.ToString())
                            .ToList();
@@ -234,7 +234,7 @@ partial class Build
        .DependsOn(Clean, BuildTracerHome)
        .Executes(() =>
         {
-            SyncMsiContent.Run(SharedDirectory, TracerHomeDirectory);
+            SyncMsiContent.Run(SharedDirectory, MonitoringHomeDirectory);
         });
 
     Target UpdateSnapshots => _ => _
