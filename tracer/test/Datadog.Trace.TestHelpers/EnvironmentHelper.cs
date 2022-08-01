@@ -148,34 +148,6 @@ namespace Datadog.Trace.TestHelpers
             return path;
         }
 
-        public static string GetTracerNativeDLLPath()
-        {
-            var tracerHome = GetTracerHomePath();
-
-            var (extension, dir) = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform()) switch
-            {
-                ("win", "X64") => ("dll", "win-x64"),
-                ("win", "X86") => ("dll", "win-x86"),
-                ("linux", "X64") => ("so", null),
-                ("linux", "Arm64") => ("so", null),
-                ("osx", _) => ("dylib", null),
-                _ => throw new PlatformNotSupportedException()
-            };
-
-            var fileName = $"Datadog.Tracer.Native.{extension}";
-
-            var path = dir is null
-                           ? Path.Combine(tracerHome, fileName)
-                           : Path.Combine(tracerHome, dir, fileName);
-
-            if (!File.Exists(path))
-            {
-                throw new Exception($"Unable to find profiler at {path}");
-            }
-
-            return path;
-        }
-
         public static void ClearProfilerEnvironmentVariables()
         {
             var environmentVariables = new[]
