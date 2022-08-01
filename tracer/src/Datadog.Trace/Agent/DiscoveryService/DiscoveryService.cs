@@ -32,7 +32,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             _agentUri = apiRequestFactory.GetEndpoint(InfoPath);
         }
 
-        public static string[] AllSupportedEndpoints => SupportedDebuggerEndpoints.Concat(SupportedProbeConfigurationEndpoints).ToArray();
+        public static string[] AllSupportedEndpoints => SupportedDebuggerEndpoints.Concat(SupportedProbeConfigurationEndpoints).Concat(SupportedStatsEndpoints).ToArray();
 
         public string ProbeConfigurationEndpoint { get; private set; }
 

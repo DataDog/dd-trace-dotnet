@@ -7,10 +7,11 @@ namespace Datadog.Trace.TestHelpers
 {
     public class WindowsPipesConfig
     {
-        public WindowsPipesConfig(string traces, string metrics)
+        public WindowsPipesConfig(string traces, string metrics, MockTracerAgent.AgentConfiguration configuration = null)
         {
             Traces = traces;
             Metrics = metrics;
+            Configuration = configuration ?? new MockTracerAgent.AgentConfiguration();
         }
 
         public string Traces { get; }
@@ -21,6 +22,6 @@ namespace Datadog.Trace.TestHelpers
 
         public bool UseTelemetry { get; set; } = false;
 
-        public bool StatsEndpointEnabled { get; set; } = false;
+        public MockTracerAgent.AgentConfiguration Configuration { get; set; }
     }
 }
