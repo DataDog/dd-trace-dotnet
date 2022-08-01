@@ -10,6 +10,15 @@ namespace Datadog.Trace.Agent
     internal interface IStatsAggregator
     {
         /// <summary>
+        /// Gets a value indicating whether the Datadog agent supports stats
+        /// computation in tracers.
+        ///
+        /// This will return null if the endpoint discovery request has not
+        /// completed.
+        /// </summary>
+        bool? CanComputeStats { get; }
+
+        /// <summary>
         /// Gets a value indicating whether the Datadog agent supports
         /// tracers dropping P0 traces.
         ///

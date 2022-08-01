@@ -83,6 +83,13 @@ namespace Datadog.Trace.IntegrationTests
 
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
 
+            // Wait until the discovery service has been reached and we've confirmed that we can send stats
+            if (expectStats)
+            {
+                SpinWait.SpinUntil(() => tracer.CanComputeStats, 5_000);
+                tracer.CanComputeStats.Should().Be(true, "the stats agreggator should invoke the agent discovery");
+            }
+
             // Scenario 1: Send server span with 200 status code (success)
             Span span1;
             using (var scope = tracer.StartActiveInternal("operationName", finishOnClose: finishSpansOnClose))

@@ -214,6 +214,12 @@ namespace Datadog.Trace
         ImmutableTracerSettings ITracer.Settings => Settings;
 
         /// <summary>
+        /// Gets a value indicating whether the tracer can compute stats and the
+        /// agent will accept them.
+        /// </summary>
+        internal bool CanComputeStats => TracerManager.AgentWriter.CanComputeStats;
+
+        /// <summary>
         /// Gets a value indicating whether the tracer can drop P0 spans and traces.
         /// </summary>
         bool IDatadogTracer.CanDropP0s => TracerManager.AgentWriter.CanDropP0s;

@@ -88,6 +88,8 @@ namespace Datadog.Trace.Ci.Agent
             Log.Information<int>($"CIAgentlessWriter Initialized with concurrency level of: {concurrencyLevel}", concurrencyLevel);
         }
 
+        public bool CanComputeStats => false;
+
         public bool CanDropP0s => false;
 
         public void WriteEvent(IEvent @event)

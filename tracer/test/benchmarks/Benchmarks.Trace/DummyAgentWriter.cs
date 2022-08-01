@@ -9,6 +9,8 @@ namespace Benchmarks.Trace
     {
         private static readonly Task<bool> PingTask = Task.FromResult(true);
 
+        public bool CanComputeStats => false;
+
         public bool CanDropP0s => false;
 
         public Task FlushAndCloseAsync()
