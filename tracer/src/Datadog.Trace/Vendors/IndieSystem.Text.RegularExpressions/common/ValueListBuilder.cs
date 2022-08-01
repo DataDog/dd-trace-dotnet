@@ -18,13 +18,17 @@ namespace System.Collections.Generic
     internal ref partial struct ValueListBuilder<T>
     {
         private Span<T> _span;
+#if !NO_ARRAY_POOL
         private T[]? _arrayFromPool;
+#endif
         private int _pos;
 
         public ValueListBuilder(Span<T> initialSpan)
         {
             _span = initialSpan;
+#if !NO_ARRAY_POOL
             _arrayFromPool = null;
+#endif
             _pos = 0;
         }
 
@@ -82,9 +86,8 @@ namespace System.Collections.Generic
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Dispose()
         {
-#if NO_ARRAY_POOL
+#if !NO_ARRAY_POOL
             _arrayFromPool = null;
-#else
             T[]? toReturn = _arrayFromPool;
             if (toReturn != null)
             {
@@ -118,7 +121,7 @@ namespace System.Collections.Generic
 
             _span.CopyTo(array);
 
-            _span = _arrayFromPool = array;
+            _span = array;
 #else
             T[] array = ArrayPool<T>.Shared.Rent(nextCapacity);
 

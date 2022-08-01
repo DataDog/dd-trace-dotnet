@@ -61,14 +61,14 @@ namespace System.Text
             int newSize = array.Length == 0 ? DefaultArraySize : array.Length * 2;
 
 #if NO_ARRAY_POOL
-            ReadOnlyMemory<char>[] newArray = _array = new ReadOnlyMemory<char>[newSize];
-            Array.Copy(array, newArray, _count);
+            _array = new ReadOnlyMemory<char>[newSize];
+            Array.Copy(array, _array, _count);
 #else
             ReadOnlyMemory<char>[] newArray = _array = ArrayPool<ReadOnlyMemory<char>>.Shared.Rent(newSize);
             Array.Copy(array, newArray, _count);
             ArrayPool<ReadOnlyMemory<char>>.Shared.Return(array, clearArray: true);
 #endif
-            newArray[_count++] = segment;
+            _array[_count++] = segment;
         }
 
         /// <summary>Gets a span of all segments in the builder.</summary>

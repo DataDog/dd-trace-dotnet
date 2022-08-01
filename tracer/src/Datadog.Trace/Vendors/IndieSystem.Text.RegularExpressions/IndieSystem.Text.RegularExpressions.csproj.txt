@@ -129,4 +129,9 @@
 	<ItemGroup>
 		<EmbeddedResource Remove="SR.resx" />
 	</ItemGroup>
+
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);NO_ARRAY_POOL</DefineConstants>
+  </PropertyGroup>
+
 </Project>

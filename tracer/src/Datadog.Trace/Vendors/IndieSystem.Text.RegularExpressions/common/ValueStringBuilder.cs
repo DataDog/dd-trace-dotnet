@@ -18,13 +18,17 @@ namespace System.Text
 {
     internal ref partial struct ValueStringBuilder
     {
+#if !NO_ARRAY_POOL
         private char[]? _arrayToReturnToPool;
+#endif
         private Span<char> _chars;
         private int _pos;
 
         public ValueStringBuilder(Span<char> initialBuffer)
         {
+#if !NO_ARRAY_POOL
             _arrayToReturnToPool = null;
+#endif
             _chars = initialBuffer;
             _pos = 0;
         }
@@ -32,11 +36,11 @@ namespace System.Text
         public ValueStringBuilder(int initialCapacity)
         {
 #if NO_ARRAY_POOL
-            _arrayToReturnToPool = new char[initialCapacity];
+            _chars = new char[initialCapacity];
 #else
             _arrayToReturnToPool = ArrayPool<char>.Shared.Rent(initialCapacity);
-#endif
             _chars = _arrayToReturnToPool;
+#endif
             _pos = 0;
         }
 
@@ -317,11 +321,11 @@ namespace System.Text
             // Make sure to let Rent throw an exception if the caller has a bug and the desired capacity is negative.
             // This could also go negative if the actual required length wraps around.
 #if NO_ARRAY_POOL
-            char[] poolArray = new char[newCapacity];
+            char[] array = new char[newCapacity];
 
-            _chars.Slice(0, _pos).CopyTo(poolArray);
+            _chars.Slice(0, _pos).CopyTo(array);
 
-            _chars = _arrayToReturnToPool = poolArray;
+            _chars = array;
 #else
             char[] poolArray = ArrayPool<char>.Shared.Rent(newCapacity);
 
