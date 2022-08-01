@@ -80,13 +80,9 @@ namespace Datadog.Trace.Telemetry
             {
                 if (assembly.Value == false)
                 {
+                    _assemblies[assembly.Key] = true;
                     assembliesToRecord.Add(assembly.Key);
                 }
-            }
-
-            foreach (var key in assembliesToRecord)
-            {
-                _assemblies[key] = true;
             }
 
             return assembliesToRecord;
@@ -126,7 +122,7 @@ namespace Datadog.Trace.Telemetry
                 // Simple implementation to remove guids
                 case 36 when assemblyName[8] == '-' && assemblyName[13] == '-' && assemblyName[18] == '-' && assemblyName[23] == '-':
                 // and other weird use cases like ℛ*710fa04a-6428-4dd1-85a0-0419c142709b#5-0 where the suffix can be up to 7 chars long
-                case >= 42 and <= 45 when assemblyName[10] == '-' && assemblyName[15] == '-' && assemblyName[20] == '-' && assemblyName[25] == '-':
+                case >= 42 when assemblyName[10] == '-' && assemblyName[15] == '-' && assemblyName[20] == '-' && assemblyName[25] == '-':
                     return true;
                 default:
                     return false;
