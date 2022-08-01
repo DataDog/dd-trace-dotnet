@@ -21,25 +21,25 @@ namespace Datadog.Trace.IntegrationTests
         [Fact]
         public async Task SendStats()
         {
-            await SendStatsHelper(statsComputationEnabled: true);
+            await SendStatsHelper(statsComputationEnabled: true, expectStats: true);
         }
 
         [Fact(Skip = "P0 traces can be dropped when stats computation is enabled, but the feature has not been implemented yet")]
         public async Task SendsStatsAndDropsSpansWhenSampleRateIsZero_TS007()
         {
-            await SendStatsHelper(statsComputationEnabled: true, globalSamplingRate: 0.0);
+            await SendStatsHelper(statsComputationEnabled: true, expectStats: true, globalSamplingRate: 0.0);
         }
 
         [Fact]
         public async Task SendsStatsOnlyAfterSpansAreFinished_TS008()
         {
-            await SendStatsHelper(statsComputationEnabled: true, finishSpansOnClose: false);
+            await SendStatsHelper(statsComputationEnabled: true, expectStats: false, finishSpansOnClose: false);
         }
 
         [Fact]
         public async Task IsDisabledThroughConfiguration_TS010()
         {
-            await SendStatsHelper(statsComputationEnabled: false);
+            await SendStatsHelper(statsComputationEnabled: false, expectStats: false);
         }
 
         [Fact(Skip = "DiscoveryService is not yet hooked up to Tracer initialization.")]
@@ -48,7 +48,7 @@ namespace Datadog.Trace.IntegrationTests
             await SendStatsHelper(statsComputationEnabled: true, expectStats: false, statsEndpointEnabled: false);
         }
 
-        private async Task SendStatsHelper(bool statsComputationEnabled, double? globalSamplingRate = null, bool statsEndpointEnabled = true, bool expectStats = true, bool finishSpansOnClose = true)
+        private async Task SendStatsHelper(bool statsComputationEnabled, bool expectStats, double? globalSamplingRate = null, bool statsEndpointEnabled = true, bool finishSpansOnClose = true)
         {
             expectStats &= statsComputationEnabled && statsEndpointEnabled && finishSpansOnClose;
             var waitEvent = new AutoResetEvent(false);
