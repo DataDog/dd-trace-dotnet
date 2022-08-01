@@ -77,8 +77,6 @@ namespace Datadog.Trace.TestHelpers
 
         public string FullSampleName => $"{_appNamePrepend}{SampleName}";
 
-        public bool UseNativeLoader => string.Equals("true", Environment.GetEnvironmentVariable("USE_NATIVE_LOADER"), StringComparison.InvariantCultureIgnoreCase);
-
         public static bool IsNet5()
         {
             return Environment.Version.Major >= 5;
@@ -222,17 +220,20 @@ namespace Datadog.Trace.TestHelpers
             string profilerEnabled = AutomaticInstrumentationEnabled ? "1" : "0";
             environmentVariables["DD_DOTNET_TRACER_HOME"] = TracerHome;
 
+            // Everything should be using the native loader now
+            var nativeLoaderPath = GetNativeLoaderPath();
+
             if (IsCoreClr())
             {
                 environmentVariables["CORECLR_ENABLE_PROFILING"] = profilerEnabled;
                 environmentVariables["CORECLR_PROFILER"] = EnvironmentTools.ProfilerClsId;
-                environmentVariables["CORECLR_PROFILER_PATH"] = GetProfilerPath();
+                environmentVariables["CORECLR_PROFILER_PATH"] = nativeLoaderPath;
             }
             else
             {
                 environmentVariables["COR_ENABLE_PROFILING"] = profilerEnabled;
                 environmentVariables["COR_PROFILER"] = EnvironmentTools.ProfilerClsId;
-                environmentVariables["COR_PROFILER_PATH"] = GetProfilerPath();
+                environmentVariables["COR_PROFILER_PATH"] = nativeLoaderPath;
             }
 
             if (DebugModeEnabled)
@@ -599,14 +600,6 @@ namespace Datadog.Trace.TestHelpers
             }
 
             return evValue == "1" || string.Equals(evValue, "true", StringComparison.InvariantCultureIgnoreCase);
-        }
-
-        private string GetProfilerPath()
-        {
-            // The Tracer is not currently utilizing the Native Loader in production. It is only being used in the Continuous Profiler beta.
-            // Because of that, we don't test it in the default pipeline.
-            bool useNativeLoader = IsEnvironmentVariableSet(InstrumentationVerification.UseNativeLoader);
-            return useNativeLoader ? GetNativeLoaderPath() : GetTracerNativeDLLPath();
         }
     }
 }

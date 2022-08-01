@@ -812,8 +812,6 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
-    variables:
-      USE_NATIVE_LOADER: true
 
     steps:
     - template: steps/clone-repo.yml
@@ -884,7 +882,6 @@ stages:
       name: azure-windows-scale-set
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
-      USE_NATIVE_LOADER: true
 
     steps:
     - template: steps/clone-repo.yml
@@ -928,7 +925,6 @@ stages:
       name: azure-windows-scale-set
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
-      USE_NATIVE_LOADER: true
 
     steps:
     - template: steps/clone-repo.yml
@@ -983,7 +979,6 @@ stages:
       name: azure-windows-scale-set
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
-      USE_NATIVE_LOADER: true
 
     steps:
     - template: steps/clone-repo.yml
@@ -1094,7 +1089,7 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=false IntegrationTests
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=false IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
 
     - publish: tracer/build_data
@@ -1177,7 +1172,7 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=true IntegrationTests
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=true IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
 
     - task: DockerCompose@0
@@ -1334,7 +1329,7 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
+            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
 
         - publish: tracer/build_data
@@ -1410,7 +1405,7 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e USE_NATIVE_LOADER=true -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
+            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
 
         - task: DockerCompose@0
