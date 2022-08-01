@@ -36,7 +36,6 @@ scenarios:
   calltarget_ngen:
     application:
       job: server
-      framework: netcoreapp3.1
       environmentVariables:
         COR_ENABLE_PROFILING: 1
         CORECLR_ENABLE_PROFILING: 1
