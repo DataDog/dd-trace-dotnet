@@ -24,7 +24,21 @@ namespace Datadog.Trace.Ci.Agent
             Log.Information("CIWriterFileSender Initialized.");
         }
 
-        public Task SendPayloadAsync(CIVisibilityProtocolPayload payload)
+        public Task SendPayloadAsync(EvpPayload payload)
+        {
+            switch (payload)
+            {
+                case CIVisibilityProtocolPayload ciVisibilityProtocolPayload:
+                    return SendPayloadAsync(ciVisibilityProtocolPayload);
+                case MultipartPayload multipartPayload:
+                    return SendPayloadAsync(multipartPayload);
+                default:
+                    Util.ThrowHelper.ThrowNotSupportedException("Payload is not supported.");
+                    return Task.FromException(new NotSupportedException("Payload is not supported."));
+            }
+        }
+
+        private Task SendPayloadAsync(CIVisibilityProtocolPayload payload)
         {
             var str = Path.Combine(Path.GetTempPath(), $"civiz-{Guid.NewGuid():n}");
 
@@ -41,7 +55,7 @@ namespace Datadog.Trace.Ci.Agent
             return Task.CompletedTask;
         }
 
-        public Task SendPayloadAsync(MultipartPayload payload)
+        private Task SendPayloadAsync(MultipartPayload payload)
         {
             var str = Path.Combine(Path.GetTempPath(), $"multipart-{Guid.NewGuid():n}");
             foreach (var item in payload.ToArray())

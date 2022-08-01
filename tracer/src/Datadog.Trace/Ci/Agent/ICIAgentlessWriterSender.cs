@@ -10,8 +10,6 @@ namespace Datadog.Trace.Ci.Agent
 {
     internal interface ICIAgentlessWriterSender
     {
-        Task SendPayloadAsync(CIVisibilityProtocolPayload payload);
-
-        Task SendPayloadAsync(MultipartPayload payload);
+        Task SendPayloadAsync(EvpPayload payload);
     }
 }

@@ -31,32 +31,18 @@ namespace Datadog.Trace.Ci.Agent
             Log.Information("CIWriterHttpSender Initialized.");
         }
 
-        public async Task SendPayloadAsync(CIVisibilityProtocolPayload payload)
+        public Task SendPayloadAsync(EvpPayload payload)
         {
-            var payloadArray = payload.ToArray();
-            Log.Debug<int, string>("Sending ({numberOfTraces} events) {bytesValue} bytes...", payload.Count, payloadArray.Length.ToString("N0"));
-            await SendPayloadAsync(
-                payload.Url,
-                static (request, payloadBytes) => request.PostAsync(new ArraySegment<byte>(payloadBytes), MimeTypes.MsgPack),
-                payloadArray).ConfigureAwait(false);
-        }
-
-        public async Task SendPayloadAsync(MultipartPayload payload)
-        {
-            Log.Debug<int>("Sending {count} multipart items...", payload.Count);
-            await SendPayloadAsync(
-                payload.Url,
-                static (request, payloadArray) =>
-                {
-                    if (request is IMultipartApiRequest multipartRequest)
-                    {
-                        return multipartRequest.PostAsync(payloadArray);
-                    }
-
-                    MultipartApiRequestNotSupported.Throw();
-                    return Task.FromResult<IApiResponse>(null);
-                },
-                payload.ToArray()).ConfigureAwait(false);
+            switch (payload)
+            {
+                case CIVisibilityProtocolPayload ciVisibilityProtocolPayload:
+                    return SendPayloadAsync(ciVisibilityProtocolPayload);
+                case MultipartPayload multipartPayload:
+                    return SendPayloadAsync(multipartPayload);
+                default:
+                    Util.ThrowHelper.ThrowNotSupportedException("Payload is not supported.");
+                    return Task.FromException(new NotSupportedException("Payload is not supported."));
+            }
         }
 
         private static async Task<bool> SendPayloadAsync<T>(Func<IApiRequest, T, Task<IApiResponse>> senderFunc, IApiRequest request, T state, bool finalTry)
@@ -184,6 +170,34 @@ namespace Datadog.Trace.Ci.Agent
                 Log.Debug<string>("Successfully sent events to {AgentEndpoint}", _apiRequestFactory.Info(url));
                 return;
             }
+        }
+
+        private async Task SendPayloadAsync(CIVisibilityProtocolPayload payload)
+        {
+            var payloadArray = payload.ToArray();
+            Log.Debug<int, string>("Sending ({numberOfTraces} events) {bytesValue} bytes...", payload.Count, payloadArray.Length.ToString("N0"));
+            await SendPayloadAsync(
+                payload.Url,
+                static (request, payloadBytes) => request.PostAsync(new ArraySegment<byte>(payloadBytes), MimeTypes.MsgPack),
+                payloadArray).ConfigureAwait(false);
+        }
+
+        private async Task SendPayloadAsync(MultipartPayload payload)
+        {
+            Log.Debug<int>("Sending {count} multipart items...", payload.Count);
+            await SendPayloadAsync(
+                payload.Url,
+                static (request, payloadArray) =>
+                {
+                    if (request is IMultipartApiRequest multipartRequest)
+                    {
+                        return multipartRequest.PostAsync(payloadArray);
+                    }
+
+                    MultipartApiRequestNotSupported.Throw();
+                    return Task.FromResult<IApiResponse>(null);
+                },
+                payload.ToArray()).ConfigureAwait(false);
         }
 
         internal class MultipartApiRequestNotSupported : NotSupportedException

@@ -17,27 +17,13 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         public CICodeCoveragePayload(int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver formatterResolver = null)
             : base(maxItemsPerPayload, maxBytesPerPayload, formatterResolver)
         {
-            var agentlessUrl = CIVisibility.Settings.AgentlessUrl;
-            if (!string.IsNullOrWhiteSpace(agentlessUrl))
-            {
-                var builder = new UriBuilder(agentlessUrl);
-                builder.Path = "api/v2/citestcov";
-                Url = builder.Uri;
-            }
-            else
-            {
-                Url = new UriBuilder(
-                    scheme: "https",
-                    host: "event-platform-intake." + CIVisibility.Settings.Site,
-                    port: 443,
-                    pathValue: "api/v2/citestcov").Uri;
-            }
-
             // We call reset here to add the dummy event
             Reset();
         }
 
-        public override Uri Url { get; }
+        public override string EvpSubdomain => "event-platform-intake";
+
+        public override string EvpPath => "api/v2/citestcov";
 
         public override bool HasEvents
         {

@@ -5,12 +5,11 @@
 
 using System;
 using Datadog.Trace.Ci.Agent.MessagePack;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.Payloads
 {
-    internal abstract class CIVisibilityProtocolPayload
+    internal abstract class CIVisibilityProtocolPayload : EvpPayload
     {
         private readonly EventsBuffer<IEvent> _events;
         private readonly IFormatterResolver _formatterResolver;
@@ -23,19 +22,15 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             _events = new EventsBuffer<IEvent>(Ci.CIVisibility.Settings.MaximumAgentlessPayloadSize - (500 * 1024), _formatterResolver);
         }
 
-        public abstract Uri Url { get; }
+        public override bool HasEvents => _events.Count > 0;
 
-        public bool HasEvents => _events.Count > 0;
-
-        public int Count => _events.Count;
+        public override int Count => _events.Count;
 
         internal EventsBuffer<IEvent> Events => _events;
 
-        public abstract bool CanProcessEvent(IEvent @event);
+        public override bool TryProcessEvent(IEvent @event) => _events.TryWrite(@event);
 
-        public bool TryProcessEvent(IEvent @event) => _events.TryWrite(@event);
-
-        public void Reset() => _events.Clear();
+        public override void Reset() => _events.Clear();
 
         public byte[] ToArray() => MessagePackSerializer.Serialize(this, _formatterResolver);
     }

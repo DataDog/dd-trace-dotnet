@@ -14,24 +14,11 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         public CITestCyclePayload(IFormatterResolver formatterResolver = null)
             : base(formatterResolver)
         {
-            var agentlessUrl = CIVisibility.Settings.AgentlessUrl;
-            if (!string.IsNullOrWhiteSpace(agentlessUrl))
-            {
-                var builder = new UriBuilder(agentlessUrl);
-                builder.Path = "api/v2/citestcycle";
-                Url = builder.Uri;
-            }
-            else
-            {
-                Url = new UriBuilder(
-                    scheme: "https",
-                    host: "citestcycle-intake." + CIVisibility.Settings.Site,
-                    port: 443,
-                    pathValue: "api/v2/citestcycle").Uri;
-            }
         }
 
-        public override Uri Url { get; }
+        public override string EvpSubdomain => "citestcycle-intake";
+
+        public override string EvpPath => "api/v2/citestcycle";
 
         public override bool CanProcessEvent(IEvent @event)
         {
