@@ -25,6 +25,7 @@ namespace Datadog.Trace.Agent
 
         private readonly IApi _api;
         private readonly IDiscoveryService _discoveryService;
+        private readonly Task _initializationTask;
 
         private readonly TaskCompletionSource<bool> _processExit;
 
@@ -54,6 +55,7 @@ namespace Datadog.Trace.Agent
                 _buffers[i] = new(header);
             }
 
+            _initializationTask = Task.Run(InitializeAsync);
             _flushTask = Task.Run(Flush);
             _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in StatsAggregator"), TaskContinuationOptions.OnlyOnFaulted);
         }
@@ -87,15 +89,18 @@ namespace Datadog.Trace.Agent
 
         public void AddRange(Span[] spans, int offset, int count)
         {
-            // Contention around this lock is expected to be very small:
-            // AddRange is called from the serialization thread, and concurrent serialization
-            // of traces is a rare corner-case (happening only during shutdown).
-            // The Flush thread only acquires the lock long enough to swap the metrics buffer.
-            lock (_buffers)
+            if (CanComputeStats == true || CanComputeStats is null)
             {
-                for (int i = 0; i < count; i++)
+                // Contention around this lock is expected to be very small:
+                // AddRange is called from the serialization thread, and concurrent serialization
+                // of traces is a rare corner-case (happening only during shutdown).
+                // The Flush thread only acquires the lock long enough to swap the metrics buffer.
+                lock (_buffers)
                 {
-                    AddToBuffer(spans[offset + i]);
+                    for (int i = 0; i < count; i++)
+                    {
+                        AddToBuffer(spans[offset + i]);
+                    }
                 }
             }
         }
@@ -120,9 +125,6 @@ namespace Datadog.Trace.Agent
 
         internal async Task Flush()
         {
-            bool initiailizationCompleted = false;
-            var initializationTask = InitializeAsync();
-
             // Use a do/while loop to still flush once if _processExit is already completed (this makes testing easier)
             do
             {
@@ -130,27 +132,20 @@ namespace Datadog.Trace.Agent
                 var sendStats = true;
 
                 // Until the initialization task has finished, check it on each iteration
-                if (!initiailizationCompleted)
+                if (CanComputeStats is null)
                 {
-                    var completedTask = await Task.WhenAny(initializationTask, _processExit.Task, delayTask).ConfigureAwait(false);
+                    var completedTask = await Task.WhenAny(_initializationTask, _processExit.Task, delayTask).ConfigureAwait(false);
 
-                    if (completedTask == initializationTask && initializationTask.Result == false)
-                    {
-                        CanComputeStats = false;
-                        CanDropP0s = false;
-                        return;
-                    }
-                    else if (completedTask == initializationTask && initializationTask.Result == true)
-                    {
-                        CanComputeStats = true;
-                        CanDropP0s = true;
-                        initiailizationCompleted = true;
-                    }
-                    else
+                    if (completedTask != _initializationTask)
                     {
                         // The initialization task hasn't completed yet so we don't know if we can compute stats
                         sendStats = false;
                     }
+                }
+
+                if (CanComputeStats == false)
+                {
+                    return;
                 }
 
                 await Task.WhenAny(_processExit.Task, delayTask).ConfigureAwait(false);
@@ -199,27 +194,26 @@ namespace Datadog.Trace.Agent
             return ns << shift;
         }
 
-        private async Task<bool> InitializeAsync()
+        private async Task InitializeAsync()
         {
             try
             {
                 var isDiscoverySuccessful = await _discoveryService.DiscoverAsync().ConfigureAwait(false);
-                var agentCompatible = isDiscoverySuccessful && !string.IsNullOrWhiteSpace(_discoveryService.StatsEndpoint);
-                if (agentCompatible)
+                CanComputeStats = isDiscoverySuccessful && !string.IsNullOrWhiteSpace(_discoveryService.StatsEndpoint);
+                CanDropP0s = isDiscoverySuccessful && _discoveryService.ClientDropP0s;
+
+                if (CanComputeStats.Value)
                 {
-                    Log.Debug("Stats computation has been enabled.");
+                    Log.Debug("Stats computation has been enabled with client_drop_p0s={ClientDropP0s}", CanDropP0s);
                 }
                 else
                 {
                     Log.Warning("Stats computation disabled because the detected agent does not support this feature.");
                 }
-
-                return agentCompatible;
             }
             catch (Exception e)
             {
                 Log.Error(e, "Initializing stats computation failed.");
-                return false;
             }
         }
 

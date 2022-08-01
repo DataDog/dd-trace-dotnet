@@ -42,6 +42,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         public string AgentVersion { get; private set; }
 
+        public bool ClientDropP0s { get; private set; }
+
         public static DiscoveryService Create(IApiRequestFactory apiRequestFactory)
         {
             return new DiscoveryService(apiRequestFactory);
@@ -96,6 +98,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
                .FirstOrDefault(
                     supportedEndpoint => discoveredEndpoints.Any(
                         endpoint => endpoint.Trim('/').Equals(supportedEndpoint, StringComparison.OrdinalIgnoreCase)));
+
+            ClientDropP0s = jObject["client_drop_p0s"]?.Value<bool>() ?? false;
         }
     }
 }
