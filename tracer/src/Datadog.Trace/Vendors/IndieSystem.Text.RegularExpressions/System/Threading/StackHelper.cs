@@ -20,22 +20,11 @@ namespace System.Threading
         /// <summary>Tries to ensure there is sufficient stack to execute the average .NET function.</summary>
         public static bool TryEnsureSufficientExecutionStack()
         {
-#if REGEXGENERATOR
-            try
-            {
-                RuntimeHelpers.EnsureSufficientExecutionStack();
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-#else
+
 #if NETFRAMEWORK || NETSTANDARD
             return true;
 #else
             return RuntimeHelpers.TryEnsureSufficientExecutionStack();
-#endif
 #endif
         }
 

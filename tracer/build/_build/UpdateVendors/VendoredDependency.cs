@@ -75,13 +75,13 @@ namespace UpdateVendors
 
             Add(
                 libraryName: "IndieSystem.Text.RegularExpressions",
-                version: "0.1",
-                downloadUrl: "https://github.com/robertpi/IndieRegex/archive/refs/tags/v0.3.zip",
-                pathToSrc: new[] { "IndieRegex-0.3", "src" },
+                version: "0.6",
+                downloadUrl: "https://github.com/robertpi/IndieRegex/archive/refs/tags/v0.6.zip",
+                pathToSrc: new[] { "IndieRegex-0.6", "src" },
                 // Perform standard CS file transform with additional '#nullable enable' directive at the beginning of the files, since the vendored project was built with <Nullable>enable</Nullable>
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "IndieSystem.Text.RegularExpressions",
-                    AddIfNetcoreapp31OrGreater, AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma, FixupResources),
-                relativePathsToExclude: new[] { "additional/HashCode.cs" });
+                    AddIfNetcoreapp31OrGreater, AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma),
+                relativePathsToExclude: new[] { "additional/HashCode.cs", "SR.resx" });
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();
@@ -264,17 +264,6 @@ namespace UpdateVendors
             "CS8629, " + // Nullable value type may be null with temporary variables
             "CS8774" +   // Member 'x' must have a non-null value when exiting.
             Environment.NewLine + content;
-
-        static string FixupResources(string filePath, string content)
-        {
-            if (content.Contains("new global::System.Resources.ResourceManager(\"IndieSystem.Text.RegularExpressions.SR\""))
-            {
-                return content.Replace("new global::System.Resources.ResourceManager(\"IndieSystem.Text.RegularExpressions.SR\"",
-                    "new global::System.Resources.ResourceManager(\"Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions.SR\"");
-            }
-
-            return content;
-        }
 
         private static void RewriteFileWithTransform(string filePath, Func<string, string> transform)
         {
