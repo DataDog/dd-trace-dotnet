@@ -60,7 +60,7 @@ typedef std::pair<std::string_view, std::string> Label;
 typedef std::list<Label> Labels;
 typedef std::vector<std::pair<std::string_view, std::string_view>> CallStack;
 
-    /// <summary>
+/// <summary>
 /// Unfinished class. The purpose, for now, is just to work on the export component.
 /// </summary>
 class Sample

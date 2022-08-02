@@ -52,8 +52,8 @@ private:
         ClassID* genericParameters
         );
     bool GetTypeDesc(IMetaDataImport2* pMetadataImport, ClassID classId, ModuleID moduleId, mdTypeDef mdTokenType, TypeDesc& typeDesc);
-    std::pair <std::string_view, std::string_view> GetManagedFrame(FunctionID functionId);
-    std::pair <std::string_view, std::string_view> GetNativeFrame(uintptr_t instructionPointer);
+    std::pair<std::string_view, std::string_view> GetManagedFrame(FunctionID functionId);
+    std::pair<std::string_view, std::string_view> GetNativeFrame(uintptr_t instructionPointer);
 
 public:   // global helpers
     static bool GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName);

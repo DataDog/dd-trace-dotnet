@@ -50,9 +50,12 @@ public:
 
     Sample CreateSample(std::string_view rid)
     {
+        static std::string ModuleName = "My module";
+        static std::string FunctionName = "My frame";
+
         Sample s{rid};
 
-        s.AddFrame("My module", "My frame");
+        s.AddFrame(ModuleName, FunctionName);
 
         return s;
     }
@@ -90,7 +93,7 @@ TEST(SamplesCollectorTest, MustCollectSamplesFromTwoProviders)
     collector.Start();
     // wait for more than upload interval so that ProcessSamples() is called multiple times
     std::this_thread::sleep_for(90ms);
-    
+
     collector.Stop();
 
     auto exportsCount = samplesProvider.GetNbCalls();
@@ -141,7 +144,7 @@ TEST(SamplesCollectorTest, MustStopCollectingSamples)
     collector.Start();
     // wait for more than upload interval so that ProcessSamples() is called multiple times
     std::this_thread::sleep_for(90ms);
-    
+
     collector.Stop();
 
     auto exportsCount = samplesProvider.GetNbCalls();

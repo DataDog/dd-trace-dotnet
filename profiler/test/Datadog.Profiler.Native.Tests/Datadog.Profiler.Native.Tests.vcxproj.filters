@@ -59,9 +59,6 @@
     <ClCompile Include="AppDomainStoreHelper.cpp">
       <Filter>Helpers</Filter>
     </ClCompile>
-    <ClCompile Include="SamplesProviderTest.cpp">
-      <Filter>Tests</Filter>
-    </ClCompile>
     <ClCompile Include="LogTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
