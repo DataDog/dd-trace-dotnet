@@ -1239,7 +1239,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions
                 }
 
                 uint[]? cache = asciiLazyCache ?? Interlocked.CompareExchange(ref asciiLazyCache, new uint[CacheArrayLength], null) ?? asciiLazyCache;
-#if REGEXGENERATOR || !NET5_0_OR_GREATER
+#if !NET5_0_OR_GREATER
                 InterlockedExtensions.Or(ref cache[ch >> 4], bitsToSet);
 #else
                 Interlocked.Or(ref cache[ch >> 4], bitsToSet);
