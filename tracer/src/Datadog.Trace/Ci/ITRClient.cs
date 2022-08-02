@@ -11,6 +11,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.ExceptionServices;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
@@ -33,6 +34,7 @@ internal class ITRClient
     private const int MaxPackFileSizeInMb = 3;
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ITRClient));
+    private static readonly Regex ShaRegex = new Regex("[0-9a-f]+", RegexOptions.Compiled);
 
     private readonly GlobalSettings _globalSettings;
     private readonly CIVisibilitySettings _settings;
@@ -148,6 +150,12 @@ internal class ITRClient
             var stringArray = new string[deserializedResult.Data.Length];
             for (var i = 0; i < deserializedResult.Data.Length; i++)
             {
+                var value = deserializedResult.Data[i].Id;
+                if (ShaRegex.Matches(value).Count != 1)
+                {
+                    ThrowHelper.ThrowException($"The value '{value}' is not a valid Sha.");
+                }
+
                 stringArray[i] = deserializedResult.Data[i].Id;
             }
 
