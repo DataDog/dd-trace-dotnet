@@ -94,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 Uri requestHeadersTo = requestHeaders.To;
 
                 span.DecorateWebServerSpan(
-                    resourceName: action ?? requestHeadersTo?.LocalPath,
+                    resourceName: string.IsNullOrEmpty(action) ? requestHeadersTo?.LocalPath : action,
                     httpMethod,
                     host,
                     userAgent,
