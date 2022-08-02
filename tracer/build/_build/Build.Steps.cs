@@ -1642,16 +1642,16 @@ partial class Build
            static List<ParsedLogLine> ParseNativeTracerLogFiles(AbsolutePath logFile)
            {
                var regex = new Regex(@"^(\d\d\/\d\d\/\d\d\W\d\d\:\d\d\:\d\d\.\d\d\d\W\w\w)\W\[.*?\]\W\[(.*?)\](.*)", RegexOptions.Compiled);
-               return ParseNativeLogs(regex, logFile);
+               return ParseNativeLogs(regex, "MM/dd/yy hh:mm:ss.fff tt", logFile);
            }
 
            static List<ParsedLogLine> ParseNativeProfilerLogFiles(AbsolutePath logFile)
            {
                var regex = new Regex(@"^\[(\d\d\d\d-\d\d-\d\d\W\d\d\:\d\d\:\d\d\.\d\d\d)\W\|\W([^ ]+)\W[^\]]+\W(.*)", RegexOptions.Compiled);
-               return ParseNativeLogs(regex, logFile);
+               return ParseNativeLogs(regex, "yyyy-MM-dd H:mm:ss.fff", logFile);
            }
 
-           static List<ParsedLogLine> ParseNativeLogs(Regex regex, AbsolutePath logFile)
+           static List<ParsedLogLine> ParseNativeLogs(Regex regex, string dateFormat, AbsolutePath logFile)
            {
                var allLines = File.ReadAllLines(logFile);
                var allLogs = new List<ParsedLogLine>(allLines.Length);
@@ -1668,7 +1668,7 @@ partial class Build
                        try
                        {
                            // native logs are on one line
-                           var timestamp = DateTimeOffset.ParseExact(match.Groups[1].Value, "MM/dd/yy hh:mm:ss.fff tt", null);
+                           var timestamp = DateTimeOffset.ParseExact(match.Groups[1].Value, dateFormat, null);
                            var level = ParseNativeLogLevel(match.Groups[2].Value);
                            var message = match.Groups[3].Value;
                            var currentLine = new ParsedLogLine(timestamp, level, message, logFile);
