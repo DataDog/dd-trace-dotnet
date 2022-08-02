@@ -28,7 +28,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger
         internal async Task StopSample()
         {
             using var httpWebResponse = await WebRequest.CreateHttp(_stopUrl).GetResponseAsync();
-            Process.WaitForExit(1000);
+            var timeout = 10_000;
+            var isExited = Process.WaitForExit(timeout);
+
+            if (!isExited)
+            {
+                throw new InvalidOperationException($"The process did not exit after {timeout}ms");
+            }
 
             if (Process.ExitCode != 0)
             {
