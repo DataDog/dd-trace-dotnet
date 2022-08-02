@@ -107,6 +107,13 @@ namespace Datadog.Trace
                 _spans.Add(span);
                 _openSpans--;
 
+                // If we close the local root span, make sure to unreference it in case we were to send another
+                // span in the same context later on (important in the case of AAS, to propagate resource.id)
+                if (span == RootSpan)
+                {
+                    RootSpan = default;
+                }
+
                 if (_openSpans == 0)
                 {
                     spansToWrite = _spans.GetArray();
