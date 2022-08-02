@@ -87,7 +87,6 @@ namespace System.Collections.Generic
         public void Dispose()
         {
 #if !NO_ARRAY_POOL
-            _arrayFromPool = null;
             T[]? toReturn = _arrayFromPool;
             if (toReturn != null)
             {
