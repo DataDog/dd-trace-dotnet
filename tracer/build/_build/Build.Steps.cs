@@ -472,15 +472,39 @@ partial class Build
         .After(BuildTracerHome)
         .Executes(() =>
         {
-            // Copy existing files from tracer home to the Distribution location
-            // This is a hack as dd-tracer-home currently contains the correct filename
-            CopyDirectoryRecursively(DDTracerHomeDirectory, DistributionHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            // clean directory of everything except the text files
+            DistributionHomeDirectory
+               .GlobFiles("*.*")
+               .Where(filepath => Path.GetExtension(filepath) != ".txt")
+               .ForEach(DeleteFile);
 
-            // Ensure createLogPath.sh is copied to the directory
-            CopyFileToDirectory(
-                BuildDirectory / "artifacts" / "createLogPath.sh",
-                DistributionHomeDirectory,
-                FileExistsPolicy.Overwrite);
+            // Copy existing files from tracer home to the Distribution location
+            CopyDirectoryRecursively(MonitoringHomeDirectory, DistributionHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            
+            // Add the create log path script
+            CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, DistributionHomeDirectory);
+        });
+
+    Target ExtractDebugInfoLinux => _ => _
+        .Unlisted()
+        .After(BuildProfilerHome, BuildTracerHome, BuildNativeLoader)
+        .Executes(() =>
+        {
+            // extract debug info from everything in monitoring home and copy it to the linux symbols directory
+            var files = MonitoringHomeDirectory.GlobFiles("linux-*/*.so");
+
+            foreach (var file in files)
+            {
+                var outputDir = SymbolsDirectory / new FileInfo(file).Directory!.Name;
+                EnsureExistingDirectory(outputDir);
+                var outputFile = outputDir / Path.GetFileNameWithoutExtension(file);
+
+                Logger.Info($"Extracting debug symbol for {file} to {outputFile}.debug");
+                ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {outputFile}.debug");    
+
+                Logger.Info($"Stripping out unneeded information from {file}");
+                StripBinary.Value(arguments: $"--strip-unneeded {file}");
+            }
         });
 
     /// <summary>
@@ -563,11 +587,6 @@ partial class Build
             var assetsDirectory = TemporaryDirectory / arch;
             EnsureCleanDirectory(assetsDirectory);
             CopyDirectoryRecursively(MonitoringHomeDirectory, assetsDirectory, DirectoryExistsPolicy.Merge);
-            
-            // Strip out the debug info
-            // We don't save it in this task, instead we save it in the dd-tool stage, which has access to 
-            // _all_ of the debug info
-            ExtractDebugInfoAndStripSymbols(assetsDirectory, saveDebugInfo: false);
             
             // For back-compat reasons, we must always have the Datadog.ClrProfiler.Native.so file in the root folder
             // as it's set in the COR_PROFILER_PATH etc env var
@@ -1784,21 +1803,18 @@ partial class Build
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include=\"[Datadog.Trace.ClrProfiler.*]*,[Datadog.Trace]*,[Datadog.Trace.AspNet]*\""));
     }
 
-    private void ExtractDebugInfoAndStripSymbols(AbsolutePath sourceDir, bool saveDebugInfo)
+    private void ExtractDebugInfoAndStripSymbols(AbsolutePath sourceDir)
     {
         var files = sourceDir.GlobFiles("linux-*/*.so");
 
         foreach (var file in files)
         {
-            if (saveDebugInfo)
-            {
-                var outputDir = SymbolsDirectory / new FileInfo(file).Directory!.Name;
-                EnsureExistingDirectory(outputDir);
-                var outputFile = outputDir / Path.GetFileNameWithoutExtension(file);
+            var outputDir = SymbolsDirectory / new FileInfo(file).Directory!.Name;
+            EnsureExistingDirectory(outputDir);
+            var outputFile = outputDir / Path.GetFileNameWithoutExtension(file);
 
-                Logger.Info($"Extracting debug symbol for {file} to {outputFile}.debug");
-                ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {outputFile}.debug");    
-            }
+            Logger.Info($"Extracting debug symbol for {file} to {outputFile}.debug");
+            ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {outputFile}.debug");    
 
             Logger.Info($"Stripping out unneeded information from {file}");
             StripBinary.Value(arguments: $"--strip-unneeded {file}");
