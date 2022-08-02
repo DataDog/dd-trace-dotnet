@@ -12,7 +12,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
@@ -78,8 +78,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                 writer.WritePropertyName("ddsource", escape: false);
                 writer.WriteValue("xunit");
 
+                if (HostMetadata.Instance.Hostname is { } hostname)
+                {
+                    writer.WritePropertyName("hostname", escape: false);
+                    writer.WriteValue(hostname);
+                }
+
                 writer.WritePropertyName("timestamp", escape: false);
-                writer.WriteValue(DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
+                writer.WriteValue(DateTimeOffset.UtcNow.ToUnixTimeNanoseconds() / 1_000_000);
 
                 writer.WritePropertyName("message", escape: false);
                 writer.WriteValue(_message);
@@ -103,19 +109,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
                     if (span.GetTag(TestTags.Suite) is { } suite)
                     {
-                        writer.WritePropertyName("test.suite", escape: false);
+                        writer.WritePropertyName(TestTags.Suite, escape: false);
                         writer.WriteValue(suite);
                     }
 
                     if (span.GetTag(TestTags.Name) is { } name)
                     {
-                        writer.WritePropertyName("test.name", escape: false);
+                        writer.WritePropertyName(TestTags.Name, escape: false);
                         writer.WriteValue(name);
                     }
 
                     if (span.GetTag(TestTags.Bundle) is { } bundle)
                     {
-                        writer.WritePropertyName("test.bundle", escape: false);
+                        writer.WritePropertyName(TestTags.Bundle, escape: false);
                         writer.WriteValue(bundle);
                     }
                 }
@@ -124,6 +130,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                 env = env.Replace(" ", string.Empty);
                 writer.WritePropertyName("ddtags", escape: false);
                 writer.WriteValue($"env:{env},datadog.product:citest");
+
+                writer.WriteEndObject();
             }
         }
     }
