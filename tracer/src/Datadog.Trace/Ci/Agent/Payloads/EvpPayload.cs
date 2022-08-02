@@ -61,7 +61,8 @@ namespace Datadog.Trace.Ci.Agent.Payloads
                     builder.Path = $"/evp_proxy/v1/{EvpPath}";
                 }
 
-                _url = url = builder.Uri;
+                url = builder.Uri;
+                _url = url;
                 return url;
             }
 
