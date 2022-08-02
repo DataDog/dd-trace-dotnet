@@ -146,9 +146,6 @@ namespace Datadog.Trace
                     _spans = new ArrayBuilder<Span>(spansToWrite.Count);
                 }
 
-                // TODO: I guess we should also report the number of P0 traces and P0 spans were dropped?
-                // The Go tracer seems to add this in a trace requst header, that only increments
-                // Gotta feed that into the Tracer somehow
                 shouldKeepTraceFinal = _shouldKeepTrace;
             }
 
