@@ -1539,13 +1539,19 @@ partial class Build
                                                .Where(IsNewError)
                                                .ToList();
 
-               var nativeErrors = logDirectory.GlobFiles("**/dotnet-tracer-native-*")
-                                               .SelectMany(ParseNativeLogFiles)
+               var nativeTracerErrors = logDirectory.GlobFiles("**/dotnet-tracer-native-*")
+                                               .SelectMany(ParseNativeTracerLogFiles)
                                                .Where(x => x.Level >= LogLevel.Error)
                                                .Where(IsNewError)
                                                .ToList();
 
-               if (managedErrors.Count == 0 && nativeErrors.Count == 0)
+               var nativeProfilerErrors = logDirectory.GlobFiles("**/DD-DotNet-Profiler-Native-*")
+                                               .SelectMany(ParseNativeProfilerLogFiles)
+                                               .Where(x => x.Level >= LogLevel.Error)
+                                               .Where(IsNewError)
+                                               .ToList();
+
+               if (managedErrors.Count == 0 && nativeTracerErrors.Count == 0 && nativeProfilerErrors.Count == 0)
                {
                    Logger.Info("No errors found in managed or native logs");
                    return;
@@ -1553,7 +1559,8 @@ partial class Build
 
                Logger.Warn("Found the following errors in log files:");
                var allErrors = managedErrors
-                              .Concat(nativeErrors)
+                              .Concat(nativeTracerErrors)
+                              .Concat(nativeProfilerErrors)
                               .GroupBy(x => x.FileName);
 
                foreach (var erroredFile in allErrors)
@@ -1632,9 +1639,20 @@ partial class Build
                return allLogs;
            }
 
-           static List<ParsedLogLine> ParseNativeLogFiles(AbsolutePath logFile)
+           static List<ParsedLogLine> ParseNativeTracerLogFiles(AbsolutePath logFile)
            {
                var regex = new Regex(@"^(\d\d\/\d\d\/\d\d\W\d\d\:\d\d\:\d\d\.\d\d\d\W\w\w)\W\[.*?\]\W\[(.*?)\](.*)", RegexOptions.Compiled);
+               return ParseNativeLogs(regex, logFile);
+           }
+
+           static List<ParsedLogLine> ParseNativeProfilerLogFiles(AbsolutePath logFile)
+           {
+               var regex = new Regex(@"^\[(\d\d\d\d-\d\d-\d\d\W\d\d\:\d\d\:\d\d\.\d\d\d)\W\|\W([^ ]+)\W[^\]]+\W(.*)", RegexOptions.Compiled);
+               return ParseNativeLogs(regex, logFile);
+           }
+
+           static List<ParsedLogLine> ParseNativeLogs(Regex regex, AbsolutePath logFile)
+           {
                var allLines = File.ReadAllLines(logFile);
                var allLogs = new List<ParsedLogLine>(allLines.Length);
 
