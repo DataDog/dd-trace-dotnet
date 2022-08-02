@@ -90,6 +90,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
                     coveragePayload.SpanId = span.SpanId;
                 }
 
+                Log.Debug("Coverage data for TraceId={traceId} and SpanId={spanId} processed.", coveragePayload.TraceId, coveragePayload.SpanId);
                 Ci.CIVisibility.Manager?.WriteEvent(coveragePayload);
             }
         }
