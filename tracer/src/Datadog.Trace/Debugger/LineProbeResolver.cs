@@ -140,9 +140,8 @@ namespace Datadog.Trace.Debugger
             location = null;
             if (!TryFindAssemblyContainingFile(probe.Where.SourceFile, out var filePathFromPdb, out var assembly))
             {
-                var message = $"Source file location for probe {probe.Id} was not found, possibly because the relevant assembly was not yet loaded.";
-                Log.Information(message);
-                return new LineProbeResolveResult(LiveProbeResolveStatus.Unbound, message);
+                Log.Information("Source file location for probe {ProbeId} was not found, possibly because the relevant assembly was not yet loaded.", probe.Id);
+                return new LineProbeResolveResult(LiveProbeResolveStatus.Unbound);
             }
 
             using var pdbReader = DatadogPdbReader.CreatePdbReader(assembly);
