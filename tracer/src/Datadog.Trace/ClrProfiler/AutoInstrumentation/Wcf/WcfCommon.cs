@@ -15,6 +15,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 {
@@ -94,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 Uri requestHeadersTo = requestHeaders.To;
 
                 span.DecorateWebServerSpan(
-                    resourceName: string.IsNullOrEmpty(action) ? requestHeadersTo?.LocalPath : action,
+                    resourceName: string.IsNullOrEmpty(action) ? UriHelpers.CleanUri(requestHeadersTo, removeScheme: true, tryRemoveIds: true) : action,
                     httpMethod,
                     host,
                     userAgent,
