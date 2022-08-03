@@ -145,12 +145,12 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 TracerHomeNotFoundFormat("TheDirectoryDoesNotExist"),
                 WrongEnvironmentVariableFormat(CorProfilerKey, Utils.Profilerid, Guid.Empty.ToString("B")),
                 WrongEnvironmentVariableFormat(CorEnableKey, "1", "0"),
-                MissingProfilerEnvironment(CorProfilerPathKey, "dummyPath"),
-                WrongProfilerEnvironment(CorProfilerPathKey, "dummyPath"),
-                MissingProfilerEnvironment(CorProfilerPath32Key, "dummyPath"),
-                WrongProfilerEnvironment(CorProfilerPath32Key, "dummyPath"),
-                MissingProfilerEnvironment(CorProfilerPath64Key, "dummyPath"),
-                WrongProfilerEnvironment(CorProfilerPath64Key, "dummyPath"));
+                MissingNativeLibrary(ValueSource.EnvironmentVariable, CorProfilerPathKey, "dummyPath"),
+                WrongNativeLibraryFileName(ValueSource.EnvironmentVariable, CorProfilerPathKey, "dummyPath"),
+                MissingNativeLibrary(ValueSource.EnvironmentVariable, CorProfilerPath32Key, "dummyPath"),
+                WrongNativeLibraryFileName(ValueSource.EnvironmentVariable, CorProfilerPath32Key, "dummyPath"),
+                MissingNativeLibrary(ValueSource.EnvironmentVariable, CorProfilerPath64Key, "dummyPath"),
+                WrongNativeLibraryFileName(ValueSource.EnvironmentVariable, CorProfilerPath64Key, "dummyPath"));
         }
 
         [SkippableFact]
@@ -170,11 +170,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             result.Should().BeTrue();
 
-            console.Output.Should().Contain(TracerVersion(TracerConstants.AssemblyVersion));
+            console.Output.Should().Contain(ManagedLibraryVersion(TracerConstants.AssemblyVersion));
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                console.Output.Should().Contain(ProfilerVersion(TracerConstants.AssemblyVersion));
+                console.Output.Should().Contain(NativeLibraryVersion(TracerConstants.AssemblyVersion));
             }
 
             console.Output.Should().NotContainAny(
@@ -195,13 +195,13 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.CheckRegistry(registryService);
+            var result = ProcessBasicCheck.CheckRegistry(processArchitecture: null, registryService);
 
             result.Should().BeTrue();
 
-            console.Output.Should().NotContainAny(ErrorCheckingRegistry(string.Empty), "is defined and could prevent the tracer from working properly");
+            console.Output.Should().NotContainAny(ErrorCheckingRegistry(), "is defined and could prevent the tracer from working properly");
             console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
-            console.Output.Should().NotContain(MissingProfilerRegistry(ClsidKey, ProfilerPath));
+            console.Output.Should().NotContain(MissingNativeLibrary(ValueSource.WindowsRegistry, ClsidKey, ProfilerPath));
         }
 
         [SkippableTheory]
@@ -213,7 +213,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.CheckRegistry(registryService);
+            var result = ProcessBasicCheck.CheckRegistry(processArchitecture: null, registryService);
 
             result.Should().BeFalse();
 
@@ -229,7 +229,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.CheckRegistry(registryService);
+            var result = ProcessBasicCheck.CheckRegistry(processArchitecture: null, registryService);
 
             result.Should().BeFalse();
 
@@ -243,12 +243,12 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.CheckRegistry(registryService);
+            var result = ProcessBasicCheck.CheckRegistry(processArchitecture: null, registryService);
 
             result.Should().BeFalse();
 
             console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
-            console.Output.Should().Contain(MissingProfilerRegistry(ClsidKey, "dummyPath/" + Path.GetFileName(ProfilerPath)));
+            console.Output.Should().Contain(MissingNativeLibrary(ValueSource.WindowsRegistry, ClsidKey, "dummyPath/" + Path.GetFileName(ProfilerPath)));
         }
 
         [SkippableFact]
@@ -258,12 +258,33 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.CheckRegistry(registryService);
+            var result = ProcessBasicCheck.CheckRegistry(processArchitecture: null, registryService);
 
             result.Should().BeFalse();
 
             console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
-            console.Output.Should().Contain(Resources.WrongProfilerRegistry(ClsidKey, "wrongProfiler.dll"));
+            console.Output.Should().Contain(WrongNativeLibraryFileName(ValueSource.WindowsRegistry, ClsidKey, "wrongProfiler.dll"));
+        }
+
+        [SkippableFact]
+        public void GetNativeLibraryArchitecture_NotFound()
+        {
+            using var console = ConsoleHelper.Redirect();
+
+            const string path = "invaliddll.dll";
+            var actual = ProcessBasicCheck.GetNativeLibraryArchitecture(path);
+
+            actual.Should().BeNull();
+            console.Output.Should().Contain(CannotDetermineNativeLibraryArchitecture(path));
+        }
+
+        [SkippableFact]
+        [InlineData(Architecture.X64, "smalldll64.dll")]
+        [InlineData(Architecture.X86, "smalldll.dll")]
+        public void GetNativeLibraryArchitecture(Architecture expected, string path)
+        {
+            var actual = ProcessBasicCheck.GetNativeLibraryArchitecture(path);
+            actual.Should().Be(expected);
         }
 
         private static IRegistryService MockRegistryService(string[] frameworkKeyValues, string profilerKeyValue, bool wow64 = false)

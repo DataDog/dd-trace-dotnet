@@ -7,10 +7,22 @@
 
   <ItemGroup>
     <None Remove="applicationHost.config" />
-  </ItemGroup>
-
-  <ItemGroup>
     <Content Include="applicationHost.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+
+    <None Remove="smalldll.dll" />
+    <Content Include="smalldll.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+
+    <None Remove="smalldll64.dll" />
+    <Content Include="smalldll64.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+
+    <None Remove="invaliddll.dll" />
+    <Content Include="invaliddll.dll">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
