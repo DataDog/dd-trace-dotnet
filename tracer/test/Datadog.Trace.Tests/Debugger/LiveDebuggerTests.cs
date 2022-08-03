@@ -23,7 +23,7 @@ namespace Datadog.Trace.Tests.Debugger;
 
 public class LiveDebuggerTests
 {
-    [Fact]
+    [Fact(Skip = "Non deterministic test, will be fixed in `RCM support PR`")]
     public void DebuggerEnabled_ServicesCalled()
     {
         var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
@@ -57,7 +57,7 @@ public class LiveDebuggerTests
         probeStatusPoller.Called.Should().BeTrue();
     }
 
-    [Fact]
+    [Fact(Skip = "Non deterministic test, will be fixed in `RCM support PR`")]
     public void DebuggerDisabled_ServicesNotCalled()
     {
         var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
