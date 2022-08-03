@@ -105,20 +105,32 @@ namespace Datadog.Trace.Agent.Transports
 
             foreach (var item in items)
             {
+                HttpContent content = null;
+
                 // Adds a form data item
                 if (item.ContentInBytes is { } arraySegment)
                 {
-                    var content = new ByteArrayContent(arraySegment.Array, arraySegment.Offset, arraySegment.Count);
+                    content = new ByteArrayContent(arraySegment.Array, arraySegment.Offset, arraySegment.Count);
                     Log.Debug("Adding to Multipart Byte Array | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
-                    content.Headers.ContentType = new MediaTypeHeaderValue(item.ContentType);
-                    formDataContent.Add(content, item.Name, item.FileName);
                 }
                 else if (item.ContentInStream is { } stream)
                 {
-                    var content = new StreamContent(stream);
+                    content = new StreamContent(stream);
                     Log.Debug("Adding to Multipart Stream | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
-                    content.Headers.ContentType = new MediaTypeHeaderValue(item.ContentType);
+                }
+                else
+                {
+                    continue;
+                }
+
+                content.Headers.ContentType = new MediaTypeHeaderValue(item.ContentType);
+                if (item.FileName is not null)
+                {
                     formDataContent.Add(content, item.Name, item.FileName);
+                }
+                else
+                {
+                    formDataContent.Add(content, item.Name);
                 }
             }
 

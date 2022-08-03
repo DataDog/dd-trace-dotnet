@@ -187,7 +187,7 @@ namespace Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions
         /// </summary>
         private int StringCode(string str)
         {
-#if REGEXGENERATOR || !NET6_0_OR_GREATER
+#if !NET6_0_OR_GREATER
             if (!_stringTable.TryGetValue(str, out int i))
             {
                 i = _stringTable.Count;
