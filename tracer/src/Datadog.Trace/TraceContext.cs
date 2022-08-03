@@ -133,9 +133,18 @@ namespace Datadog.Trace
                 }
             }
 
-            if (shouldPropagateMetadata && _samplingDecision != null)
+            if (shouldPropagateMetadata)
             {
-                AddSamplingDecisionTags(spansToWrite, _samplingDecision.Value);
+                if (spansToWrite.Array != null)
+                {
+                    // any span can contain the tags
+                    DecorateWithAASMetadata(spansToWrite.Array[0]);
+                }
+
+                if (_samplingDecision != null)
+                {
+                    AddSamplingDecisionTags(spansToWrite, _samplingDecision.Value);
+                }
             }
 
             if (spansToWrite.Count > 0)
@@ -197,9 +206,6 @@ namespace Datadog.Trace
 
         private static void AddSamplingDecisionTags(ArraySegment<Span> spans, SamplingDecision samplingDecision)
         {
-            // Needs to be done for chunks as well, any span can contain the tags.
-            DecorateWithAASMetadata(spans.Array[0]);
-
             // The agent looks for the sampling priority on the first span that has no parent
             // Finding those spans is not trivial, so instead we apply the priority to every span
 
