@@ -11,6 +11,7 @@ using System.Reflection;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Sdk;
 
@@ -200,13 +201,12 @@ namespace Datadog.Trace.Tests.PlatformHelpers
         }
 
         [Fact]
-        public void PopulatesOnlyRootSpans()
+        public void PopulatesOneSpanPerChunk()
         {
             var vars = GetMockVariables(SubscriptionId, DeploymentId, PlanResourceGroup, SiteResourceGroup);
             AzureAppServices.Metadata = new AzureAppServices(vars);
             var tracer = TracerHelper.Create();
-            var rootSpans = new List<ISpan>();
-            var nonRootSpans = new List<ISpan>();
+            var spans = new List<ISpan>();
             var iterations = 5;
             var remaining = iterations;
 
@@ -214,45 +214,33 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             {
                 using (var rootScope = tracer.StartActive("root"))
                 {
-                    rootSpans.Add(rootScope.Span);
+                    spans.Add(rootScope.Span);
 
                     using (var nestedScope = tracer.StartActive("nest-a"))
                     {
-                        nonRootSpans.Add(nestedScope.Span);
+                        spans.Add(nestedScope.Span);
                     }
 
                     using (var nestedScope = tracer.StartActive("nest-b"))
                     {
-                        nonRootSpans.Add(nestedScope.Span);
+                        spans.Add(nestedScope.Span);
 
                         using (var doublyNestedScope = tracer.StartActive("nest-b-1"))
                         {
-                            nonRootSpans.Add(doublyNestedScope.Span);
+                            spans.Add(doublyNestedScope.Span);
                         }
                     }
                 }
             }
 
-            Assert.Equal(expected: iterations, actual: rootSpans.Count);
-            Assert.NotEmpty(nonRootSpans);
+            Assert.NotEmpty(spans);
 
-            var rootSpansMissingExpectedTag =
-                rootSpans.Where(s => s.GetTag(Tags.AzureAppServicesResourceId) != ExpectedResourceId).ToList();
+            var spansWithTag =
+                spans.Where(s => s.GetTag(Tags.AzureAppServicesResourceId) == ExpectedResourceId).ToList();
 
-            var nonRootSpansWithTag =
-                nonRootSpans.Where(s => s.GetTag(Tags.AzureAppServicesResourceId) == ExpectedResourceId);
-
-            var newLine = Environment.NewLine;
-            var detailedMessage =
-                string.Join(
-                    Environment.NewLine,
-                    rootSpansMissingExpectedTag.Select(
-                        r => $"Expected {ExpectedResourceId} {newLine}but received {r.GetTag(Tags.AzureAppServicesResourceId) ?? "NULL"} {newLine}{newLine}({r}) {newLine}"));
-
-            var envVarValues = string.Join(", ", EnvVars.Select(e => $"{e}: {Environment.GetEnvironmentVariable(e)}"));
-
-            Assert.True(!rootSpansMissingExpectedTag.Any(), $"All root spans should have the resource id: {newLine}{envVarValues}{newLine}{detailedMessage}");
-            Assert.True(!nonRootSpansWithTag.Any(), "No non root spans should have the resource id.");
+            // We should have one space decorated per traceId
+            spansWithTag.Should().HaveCount(iterations);
+            spansWithTag.Select(span => span.TraceId).Distinct().Should().HaveCount(iterations);
         }
 
         private IDictionary GetMockVariables(
