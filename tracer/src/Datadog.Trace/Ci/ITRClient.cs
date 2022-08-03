@@ -28,7 +28,6 @@ namespace Datadog.Trace.Ci;
 /// </summary>
 internal class ITRClient
 {
-    private const string BaseUrl = "https://git-api-ci-app-backend.us1.staging.dog";
     private const string ApiKeyHeader = "dd-api-key";
     private const int MaxRetries = 3;
     private const int MaxPackFileSizeInMb = 3;
@@ -68,17 +67,17 @@ internal class ITRClient
         }
         else
         {
-            _searchCommitsUrl = new UriBuilder("https://datadog.host.com/")
-            {
-                Host = "api." + _settings.Site,
-                Path = "api/v2/git/repository/search_commits"
-            }.Uri;
+            _searchCommitsUrl = new UriBuilder(
+                scheme: "https",
+                host: "api." + _settings.Site,
+                port: 443,
+                pathValue: "api/v2/git/repository/search_commits").Uri;
 
-            _packFileUrl = new UriBuilder("https://datadog.host.com/")
-            {
-                Host = "api." + _settings.Site,
-                Path = "api/v2/git/repository/packfile"
-            }.Uri;
+            _packFileUrl = new UriBuilder(
+                scheme: "https",
+                host: "api." + _settings.Site,
+                port: 443,
+                pathValue: "api/v2/git/repository/packfile").Uri;
         }
     }
 
