@@ -10,6 +10,7 @@
 
 #include "AllocationsProvider.h"
 #include "ApplicationStore.h"
+#include "ClrEventsParser.h"
 #include "ExceptionsProvider.h"
 #include "IAppDomainStore.h"
 #include "IClrLifetime.h"
@@ -33,7 +34,6 @@ class IStackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
 class SamplesAggregator;
-class ClrEventsParser;
 
 namespace shared {
 class Loader;
