@@ -40,12 +40,12 @@ internal static class SamplingMechanism
     public const int RemoteRateAuto = 2;
 
     /// <summary>
-    /// A sampling decision was made using a sampling rule or
-    /// the global sampling rate configured by the user on the tracer.
+    /// A sampling decision was made using a trace sampling rule or
+    /// the global trace sampling rate configured by the user on the tracer.
     /// The available sampling priorities are <see cref="SamplingPriorityValues.UserReject"/> (-1)
     /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
-    public const int Rule = 3;
+    public const int TraceSamplingRule = 3;
 
     /// <summary>
     /// A sampling decision was made manually by the user.
@@ -55,10 +55,10 @@ internal static class SamplingMechanism
     public const int Manual = 4;
 
     /// <summary>
-    /// A sampling decision was made by AppSec; probably due to a security event.
+    /// A sampling decision was made by ASM (formerly AppSec), probably due to a security event.
     /// The sampling priority is always <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
-    public const int AppSec = 5;
+    public const int Asm = 5;
 
     /// <summary>
     /// A sampling decision was made using a sampling rule configured remotely by the user.
@@ -72,6 +72,12 @@ internal static class SamplingMechanism
     /// The available sampling priorities are [TBD].
     /// </summary>
     public const int RemoteRateDatadog = 7;
+
+    /// <summary>
+    /// A sampling decision was made using a span sampling rule configured by the user on the tracer.
+    /// The only available sampling priority is <see cref="SamplingPriorityValues.UserKeep"/> (2).
+    /// </summary>
+    public const int SpanSamplingRule = 8;
 
     /// <summary>
     /// CIApp does not have a defined mechanism value. Default to <see cref="Unknown"/> for now.

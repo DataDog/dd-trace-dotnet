@@ -37,7 +37,7 @@ namespace Datadog.Trace.Sampling
 
         public string RuleName { get; }
 
-        public int SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.Rule;
+        public int SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.TraceSamplingRule;
 
         /// <summary>
         /// Gets or sets the priority of the rule.

@@ -305,11 +305,11 @@ namespace Datadog.Trace.AppSec
             {
                 // NOTE: setting DD_APPSEC_KEEP_TRACES=false means "drop all traces by setting AutoReject".
                 // It does _not_ mean "stop setting UserKeep (do nothing)". It should only be used for testing.
-                span.SetTraceSamplingDecision(SamplingPriorityValues.AutoReject, SamplingMechanism.AppSec);
+                span.SetTraceSamplingDecision(SamplingPriorityValues.AutoReject, SamplingMechanism.Asm);
             }
             else if (_rateLimiter.Allowed(span))
             {
-                span.SetTraceSamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.AppSec);
+                span.SetTraceSamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             }
         }
 
@@ -374,7 +374,7 @@ namespace Datadog.Trace.AppSec
         {
             _instrumentationGateway.EndRequest -= ReportWafInitInfoOnce;
             var span = e.RelatedSpan.Context.TraceContext.RootSpan ?? e.RelatedSpan;
-            span.SetTraceSamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.AppSec);
+            span.SetTraceSamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             span.SetMetric(Metrics.AppSecWafInitRulesLoaded, _waf.InitializationResult.LoadedRules);
             span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, _waf.InitializationResult.FailedToLoadRules);
             if (_waf.InitializationResult.HasErrors)
