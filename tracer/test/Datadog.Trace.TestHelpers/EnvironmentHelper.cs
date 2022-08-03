@@ -164,7 +164,7 @@ namespace Datadog.Trace.TestHelpers
                 _ => throw new PlatformNotSupportedException()
             };
 
-            var fileName = $"Datadog.Trace.ClrProfiler.Native.{extension}";
+            var fileName = $"Datadog.Tracer.Native.{extension}";
 
             var path = dir is null
                            ? Path.Combine(tracerHome, fileName)

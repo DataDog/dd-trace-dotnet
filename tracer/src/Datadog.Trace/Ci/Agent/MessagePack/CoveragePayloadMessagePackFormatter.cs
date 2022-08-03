@@ -35,7 +35,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.SpanId);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionBytes);
-            offset += MessagePackBinary.WriteString(ref bytes, offset, value.Version);
+            offset += MessagePackBinary.WriteInt32(ref bytes, offset, value.Version);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _filesBytes);
 

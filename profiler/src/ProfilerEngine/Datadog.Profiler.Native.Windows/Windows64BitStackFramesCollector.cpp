@@ -11,7 +11,7 @@
 #include "Log.h"
 #include "ManagedThreadInfo.h"
 #include "StackSamplerLoopManager.h"
-#include "StackSnapshotResultBuffer.h"
+#include "StackSnapshotResultReusableBuffer.h"
 
 #endif // matches the '#ifdef BIT64' above
 

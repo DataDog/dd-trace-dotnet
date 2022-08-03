@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "../../src/Datadog.AutoInstrumentation.NativeLoader/runtimeid_store.h"
+#include "../../src/Datadog.Trace.ClrProfiler.Native/runtimeid_store.h"
 
 using namespace datadog::shared::nativeloader;
 

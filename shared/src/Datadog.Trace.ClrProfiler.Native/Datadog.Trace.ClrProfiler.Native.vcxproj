@@ -41,7 +41,7 @@
     <CharacterSet>Unicode</CharacterSet>
     <OutDir>bin\$(Configuration)\x86\</OutDir>
     <IntDir>obj\$(Configuration)\x86\</IntDir>
-    <TargetName>Datadog.AutoInstrumentation.NativeLoader</TargetName>
+    <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -52,7 +52,7 @@
     <CharacterSet>Unicode</CharacterSet>
     <OutDir>bin\$(Configuration)\x86\</OutDir>
     <IntDir>obj\$(Configuration)\x86\</IntDir>
-    <TargetName>Datadog.AutoInstrumentation.NativeLoader</TargetName>
+    <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -62,7 +62,7 @@
     <CharacterSet>Unicode</CharacterSet>
     <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
-    <TargetName>Datadog.AutoInstrumentation.NativeLoader</TargetName>
+    <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
@@ -73,7 +73,7 @@
     <CharacterSet>Unicode</CharacterSet>
     <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
-    <TargetName>Datadog.AutoInstrumentation.NativeLoader</TargetName>
+    <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -121,7 +121,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ModuleDefinitionFile>.\Datadog.AutoInstrumentation.NativeLoader.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
       <EnableUAC>false</EnableUAC>
       <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -151,7 +151,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ModuleDefinitionFile>.\Datadog.AutoInstrumentation.NativeLoader.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
       <EnableUAC>false</EnableUAC>
       <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -173,7 +173,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ModuleDefinitionFile>.\Datadog.AutoInstrumentation.NativeLoader.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
       <EnableUAC>false</EnableUAC>
       <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -201,7 +201,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ModuleDefinitionFile>.\Datadog.AutoInstrumentation.NativeLoader.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
       <EnableUAC>false</EnableUAC>
       <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
@@ -250,7 +250,7 @@
     <ClCompile Include="runtimeid_store.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Datadog.AutoInstrumentation.NativeLoader.def" />
+    <None Include="Datadog.Trace.ClrProfiler.Native.def" />
     <CopyFileToFolders Include="loader.conf">
       <FileType>Document</FileType>
     </CopyFileToFolders>

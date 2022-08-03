@@ -105,11 +105,11 @@ const shared::WSTRING distributed_tracer_interface_name = WStr("Datadog.Trace.Cl
 const shared::WSTRING distributed_tracer_target_method_name = WStr("__GetInstanceForProfiler__");
 
 #ifdef _WIN32
-const shared::WSTRING native_dll_filename = WStr("DATADOG.TRACE.CLRPROFILER.NATIVE.DLL");
+const shared::WSTRING native_dll_filename = WStr("DATADOG.TRACER.NATIVE.DLL");
 #elif MACOS
-const shared::WSTRING native_dll_filename = WStr("Datadog.Trace.ClrProfiler.Native.dylib");
+const shared::WSTRING native_dll_filename = WStr("Datadog.Tracer.Native.dylib");
 #else
-const shared::WSTRING native_dll_filename = WStr("Datadog.Trace.ClrProfiler.Native.so");
+const shared::WSTRING native_dll_filename = WStr("Datadog.Tracer.Native.so");
 #endif
 
 const AssemblyProperty managed_profiler_assembly_property = AssemblyProperty(

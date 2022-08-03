@@ -35,6 +35,6 @@ namespace Datadog.Trace.Ci.Coverage.Models
         /// Gets the payload version.
         /// </summary>
         [JsonProperty("version")]
-        public string Version { get; } = "1";
+        public int Version { get; } = 1;
     }
 }
