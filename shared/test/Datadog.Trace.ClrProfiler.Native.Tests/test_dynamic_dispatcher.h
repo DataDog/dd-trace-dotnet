@@ -1,5 +1,5 @@
 #pragma once
-#include "../../src/Datadog.AutoInstrumentation.NativeLoader/dynamic_dispatcher.h"
+#include "../../src/Datadog.Trace.ClrProfiler.Native/dynamic_dispatcher.h"
 
 using namespace datadog::shared::nativeloader;
 

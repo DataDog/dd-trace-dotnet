@@ -93,7 +93,7 @@ partial class Build
 
                 source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
                              $"{NativeLoaderProject.Name}.dll";
-                var destFile = MonitoringHomeDirectory / $"{NativeLoaderProject.Name}.{architecture.ToString()}.dll";
+                var destFile = MonitoringHomeDirectory / $"Datadog.AutoInstrumentation.NativeLoader.{architecture.ToString()}.dll";
                 CopyFile(source, destFile, FileExistsPolicy.Overwrite);
 
                 source = NativeLoaderProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /

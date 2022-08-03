@@ -1,7 +1,7 @@
 #include "pch.h"
 
-#include "../../src/Datadog.Trace.ClrProfiler.Native/clr_helpers.h"
-#include "../../src/Datadog.Trace.ClrProfiler.Native/metadata_builder.h"
+#include "../../src/Datadog.Tracer.Native/clr_helpers.h"
+#include "../../src/Datadog.Tracer.Native/metadata_builder.h"
 
 #include "../../../shared/src/native-src/string.h"
 

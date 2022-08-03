@@ -291,6 +291,14 @@ partial class Build : NukeBuild
         .After(CreateDistributionHome)
         .Executes(() =>
         {
+            // HACK fix file names while we don't yet support native loader in the NuGet
+            var homeDir = Solution.GetProject(Projects.DatadogMonitoringDistribution).Directory / "home";
+
+            foreach (var file in Directory.EnumerateFiles(homeDir, "Datadog.Tracer.Native.*", SearchOption.AllDirectories))
+            {
+                RenameFile(file, $"{Projects.NativeLoader}{Path.GetExtension(file)}");
+            }
+            
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DatadogMonitoringDistribution))
                 .EnableNoRestore()

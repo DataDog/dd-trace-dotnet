@@ -145,6 +145,6 @@
     <Text Include="CMakeLists.txt" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Datadog.AutoInstrumentation.NativeLoader.def" />
+    <None Include="Datadog.Trace.ClrProfiler.Native.def" />
   </ItemGroup>
 </Project>

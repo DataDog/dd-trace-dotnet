@@ -103,7 +103,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);..\..\src\Datadog.AutoInstrumentation.NativeLoader\obj\Debug\x86\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Debug\x86\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -123,7 +123,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);..\..\src\Datadog.AutoInstrumentation.NativeLoader\obj\Release\x86\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Release\x86\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -139,7 +139,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);..\..\src\Datadog.AutoInstrumentation.NativeLoader\obj\Debug\x64\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Debug\x64\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -159,7 +159,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);..\..\src\Datadog.AutoInstrumentation.NativeLoader\obj\Release\x64\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>Rpcrt4.lib;$(SHARED-LIB-BINARIES);..\..\src\Datadog.Trace.ClrProfiler.Native\obj\Release\x64\*.obj;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -176,10 +176,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Datadog.AutoInstrumentation.NativeLoader\Datadog.AutoInstrumentation.NativeLoader.vcxproj">
+    <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Native\Datadog.Trace.ClrProfiler.Native.vcxproj">
       <Project>{48d12c26-6e63-419c-bfe2-e668e8550613}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Native\Datadog.Trace.ClrProfiler.Native.DLL.vcxproj">
+    <ProjectReference Include="..\..\..\tracer\src\Datadog.Tracer.Native\Datadog.Tracer.Native.DLL.vcxproj">
       <Project>{c0c8d381-d6b9-4c76-9428-f40f2fa93a9a}</Project>
     </ProjectReference>
   </ItemGroup>
