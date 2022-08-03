@@ -29,8 +29,17 @@
     <Target Name="PrepareDeployDirectory" AfterTargets="Build">
 
         <PropertyGroup>
-          <DeployDirectoryBase Condition="'$(DeployToMonitoringHome)' == 'True'">$(EnlistmentRoot)\shared\bin\monitoring-home\continuousprofiler</DeployDirectoryBase>
-          <DeployDirectoryBase Condition="'$(DeployToMonitoringHome)' != 'True'">$(BuildOutputRoot)\DDProf-Deploy</DeployDirectoryBase>
+          <TopLevelDeployDirectoryBase Condition="'$(DeployToMonitoringHome)' == 'True'">$(EnlistmentRoot)\shared\bin\monitoring-home</TopLevelDeployDirectoryBase>
+          <TopLevelDeployDirectoryBase Condition="'$(DeployToMonitoringHome)' != 'True'">$(BuildOutputRoot)\DDProf-Deploy</TopLevelDeployDirectoryBase>
+
+          <!-- In Linux case, we test against $(Platform), while on Windows case, we test against $(PlatformShortName). The reason is that for Windows, for   -->
+          <!-- 64bit, $(PlatformShortName) == to x64. But on Linux, $(PlatformShortName) == x86_64.                        -->
+          <DDPlatform Condition=" '$(PlatformShortName)' != '' AND $([MSBuild]::IsOSPlatform('Windows'))">win-$(PlatformShortName)</DDPlatform>
+          <DDPlatform Condition=" '$(PlatformShortName)' == '' AND $([MSBuild]::IsOSPlatform('Windows'))">win-unknown</DDPlatform>
+          <DDPlatform Condition=" '$(Platform)' != '' AND $([MSBuild]::IsOSPlatform('Linux')) ">linux-$(PlatformShortName)</DDPlatform>
+          <DDPlatform Condition=" '$(Platform)' == '' AND $([MSBuild]::IsOSPlatform('Linux')) ">win-unknown</DDPlatform>
+          
+          <DeployDirectoryBase >$(TopLevelDeployDirectoryBase)\$(DDPlatform)</DeployDirectoryBase>
         </PropertyGroup>
 
         <PropertyGroup>

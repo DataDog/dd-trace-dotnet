@@ -110,7 +110,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         internal string GetProfilerNativeLibraryPath()
         {
             var profilerHome = GetProfilerHomeDirectory();
-            return Path.Combine(profilerHome, $"Datadog.AutoInstrumentation.Profiler.Native.{GetPlatform()}.{GetLibraryExtension()}");
+            return Path.Combine(profilerHome, $"Datadog.Profiler.Native.{GetLibraryExtension()}");
         }
 
         internal string GetTracerNativeLibraryPath()

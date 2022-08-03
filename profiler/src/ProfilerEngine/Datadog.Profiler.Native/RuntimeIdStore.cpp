@@ -19,27 +19,12 @@ Error("unknown platform");
 
 const char* const RuntimeIdStore::ServiceName = "RuntimeID Store";
 const char* const RuntimeIdStore::ExternalFunctionName = "GetRuntimeId";
-const char* const RuntimeIdStore::NativeLoaderFilename =
-#ifdef _WINDOWS
-#ifdef BIT64
-    "Datadog.AutoInstrumentation.NativeLoader.x64" LIBRARY_FILE_EXTENSION;
-#else
-    "Datadog.AutoInstrumentation.NativeLoader.x86" LIBRARY_FILE_EXTENSION;
-#endif
-#else
-    "Datadog.Trace.ClrProfiler.Native.so";
-#endif
+const char* const RuntimeIdStore::NativeLoaderFilename = "Datadog.Trace.ClrProfiler.Native" LIBRARY_FILE_EXTENSION;
 
 bool RuntimeIdStore::Start()
 {
-#ifdef _WINDOWS
+    // the native loader is always available in the same directory
     auto nativeLoaderFilename = NativeLoaderFilename;
-#else
-    auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
-    // the native loader is in the parent directory
-    auto nativeLoaderPath = currentModulePath.parent_path() / ".." / NativeLoaderFilename;
-    auto nativeLoaderFilename = nativeLoaderPath.string();
-#endif
     _instance = LoadDynamicLibrary(nativeLoaderFilename);
 
     if (_instance == nullptr)

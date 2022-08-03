@@ -114,13 +114,13 @@ Computer\HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\Datadog_Demos_Wind
 ```
 COR_ENABLE_PROFILING=1
 COR_PROFILER={BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}
-COR_PROFILER_PATH_64=c:\00\Code\GitHubDD\DD-DotNet\_build\DDProf-Deploy\Datadog.AutoInstrumentation.Profiler.Native.x64.dll
-COR_PROFILER_PATH_32=c:\00\Code\GitHubDD\DD-DotNet\_build\DDProf-Deploy\Datadog.AutoInstrumentation.Profiler.Native.x86.dll
+COR_PROFILER_PATH_64=c:\00\Code\GitHubDD\DD-DotNet\_build\DDProf-Deploy\win-x64\Datadog.Profiler.Native.dll
+COR_PROFILER_PATH_32=c:\00\Code\GitHubDD\DD-DotNet\_build\DDProf-Deploy\win-x86\Datadog.Profiler.Native.dll
 
 CORECLR_ENABLE_PROFILING=1
 CORECLR_PROFILER={BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}
-CORECLR_PROFILER_PATH_64=c:\00\Code\GitHubDD\DD-DotNet\_build\DDProf-Deploy\Datadog.AutoInstrumentation.Profiler.Native.x64.dll
-CORECLR_PROFILER_PATH_32=c:\00\Code\GitHubDD\DD-DotNet\_build\DDProf-Deploy\Datadog.AutoInstrumentation.Profiler.Native.x86.dll
+CORECLR_PROFILER_PATH_64=c:\00\Code\GitHubDD\DD-DotNet\_build\DDProf-Deploy\win-x64\Datadog.Profiler.Native.dll
+CORECLR_PROFILER_PATH_32=c:\00\Code\GitHubDD\DD-DotNet\_build\DDProf-Deploy\win-x86\Datadog.Profiler.Native.dll
 
 DD_API_KEY=<!YOUR API KEY!>
 ```
