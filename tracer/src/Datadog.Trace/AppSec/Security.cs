@@ -280,7 +280,7 @@ namespace Datadog.Trace.AppSec
         {
             span.SetTag(Tags.AppSecEvent, "true");
             var resultData = result.Data;
-            SetSamplingPriority(span);
+            SetTraceSamplingDecision(span);
 
             LogMatchesIfDebugEnabled(resultData, blocked);
 
@@ -299,7 +299,7 @@ namespace Datadog.Trace.AppSec
             AddHeaderTags(span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
         }
 
-        private void SetSamplingPriority(Span span)
+        private void SetTraceSamplingDecision(Span span)
         {
             if (!_settings.KeepTraces)
             {
