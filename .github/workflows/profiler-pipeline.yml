@@ -148,7 +148,7 @@ jobs:
       - name: Build Native Profiler Engine
         run: |
           CXX=clang++ CC=clang cmake -S profiler -B __build -DRUN_ASAN=ON
-          cmake --build __build --config Release --parallel
+          cmake --build __build --config Release
 
       - name: Restore sample applications
         run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
