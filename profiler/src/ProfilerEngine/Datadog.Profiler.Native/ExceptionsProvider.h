@@ -11,7 +11,7 @@
 #include "corprof.h"
 #include "ExceptionSampler.h"
 #include "OsSpecificApi.h"
-#include "StackSnapshotResultReusableBuffer.h"
+#include "StackSnapshotResultBuffer.h"
 
 class ExceptionsProvider
     : public CollectorBase<RawExceptionSample>

@@ -80,7 +80,7 @@
     <ClCompile Include="ManagedThreadListTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
-    <ClCompile Include="StackSnapshotResultReusableBufferTest.cpp">
+    <ClCompile Include="StackSnapshotResultBufferTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="RuntimeIdTest.cpp">

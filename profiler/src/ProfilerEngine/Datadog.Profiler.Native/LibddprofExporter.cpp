@@ -504,9 +504,27 @@ ddog_Request* LibddprofExporter::CreateRequest(SerializedProfile const& encodedP
 
     ddog_File file{FfiHelper::StringToCharSlice(RequestFileName), ddog_Vec_u8_as_slice(&buffer)};
 
+    const std::string otherFileName = "metrics.json";
+
+    // J'ai pris un vector pour l'exemple, mais l'API a changer et c'est assez pourri comme API
+    // Je l'ai note pour une amelioration futur.
+    std::vector<byte> content;
+
+    // on doit creer un Vec_u8 de byte
+    ddog_Vec_u8 v = {content.data(), content.size(), content.capacity()};
+
+    // ici on cree le fameux fichier
+    ddog_File otherFile{FfiHelper::StringToCharSlice(otherFileName), ddog_Vec_u8_as_slice(&v)};
+
+    // la c'est la lose on doit cree un vector de file pour ajouter nos fichiers
+    std::vector<ddog_File> vecFiles;
+    vecFiles.push_back(file);
+    vecFiles.push_back(otherFile);
+
+    // on passe le pointeur sur le debut du vector + le nombre d'elements
     struct ddog_Slice_file files
     {
-        &file, 1
+        vecFiles.data(), vecFiles.size()
     };
 
     return ddog_ProfileExporter_build(exporter, start, end, files, additionalTags.GetFfiTags(), RequestTimeOutMs);

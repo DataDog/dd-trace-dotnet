@@ -86,7 +86,7 @@
     <ClInclude Include="StackSamplerLoopManager.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
-    <ClInclude Include="StackSnapshotResultReusableBuffer.h">
+    <ClInclude Include="StackSnapshotResultBuffer.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
     <ClInclude Include="ThreadCpuInfo.h">
@@ -304,7 +304,7 @@
     <ClCompile Include="StackSamplerLoopManager.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
-    <ClCompile Include="StackSnapshotResultReusableBuffer.cpp">
+    <ClCompile Include="StackSnapshotResultBuffer.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
     <ClCompile Include="ThreadCpuInfo.cpp">
