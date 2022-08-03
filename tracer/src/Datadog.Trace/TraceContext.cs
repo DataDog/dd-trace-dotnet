@@ -141,7 +141,7 @@ namespace Datadog.Trace
             {
                 // When receiving chunks of spans, the backend checks whether the aas.resource.id tag is present on any of the
                 // span to decide which metric to emit (datadog.apm.host.instance or datadog.apm.azure_resource_instance one).
-                AddAASMetadataToTraceChunk(spansToWrite.Array[0]);
+                AddAASMetadata(spansToWrite.Array[0]);
                 Tracer.Write(spansToWrite);
             }
         }
