@@ -15,9 +15,11 @@ using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
+#pragma warning disable SA1402 // File may only contain a single class
+
 namespace Datadog.Trace.TestHelpers
 {
-    public class MockLogsIntake : IDisposable
+    public class MockLogsIntake<T> : IDisposable
     {
         private static readonly JsonSerializer JsonSerializer = new();
         private readonly HttpListener _listener;
@@ -71,7 +73,7 @@ namespace Datadog.Trace.TestHelpers
 
         public event EventHandler<EventArgs<HttpListenerContext>> RequestReceived;
 
-        public event EventHandler<EventArgs<IList<Log>>> RequestDeserialized;
+        public event EventHandler<EventArgs<IList<T>>> RequestDeserialized;
 
         /// <summary>
         /// Gets the TCP port that this intake is listening on.
@@ -80,7 +82,7 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         public int Port { get; }
 
-        public IImmutableList<Log> Logs { get; private set; } = ImmutableList<Log>.Empty;
+        public IImmutableList<T> Logs { get; private set; } = ImmutableList<T>.Empty;
 
         public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
@@ -93,6 +95,13 @@ namespace Datadog.Trace.TestHelpers
         {
             _listener?.Stop();
             _cancellationTokenSource.Cancel();
+        }
+
+        private static List<T> DeserializeFromStream(Stream stream)
+        {
+            using var sr = new StreamReader(stream);
+            using var jsonTextReader = new JsonTextReader(sr);
+            return JsonSerializer.Deserialize<List<T>>(jsonTextReader);
         }
 
         private void AssertHeader(
@@ -123,8 +132,8 @@ namespace Datadog.Trace.TestHelpers
                     RequestReceived?.Invoke(this, new EventArgs<HttpListenerContext>(ctx));
                     if (ShouldDeserializeLogs)
                     {
-                        var logs = Log.DeserializeFromStream(ctx.Request.InputStream);
-                        RequestDeserialized?.Invoke(this, new EventArgs<IList<Log>>(logs));
+                        var logs = DeserializeFromStream(ctx.Request.InputStream);
+                        RequestDeserialized?.Invoke(this, new EventArgs<IList<T>>(logs));
 
                         lock (this)
                         {
@@ -164,7 +173,10 @@ namespace Datadog.Trace.TestHelpers
                 }
             }
         }
+    }
 
+    public class MockLogsIntake : MockLogsIntake<MockLogsIntake.Log>
+    {
         public class Log
         {
             [JsonProperty("@t")]
@@ -244,13 +256,6 @@ namespace Datadog.Trace.TestHelpers
             private string Version2
             {
                 set => Version = value;
-            }
-
-            public static List<Log> DeserializeFromStream(Stream stream)
-            {
-                using var sr = new StreamReader(stream);
-                using var jsonTextReader = new JsonTextReader(sr);
-                return JsonSerializer.Deserialize<List<Log>>(jsonTextReader);
             }
         }
     }
