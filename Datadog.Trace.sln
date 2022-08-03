@@ -2,12 +2,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.1.31903.286
 MinimumVisualStudioVersion = 15.0.26124.0
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Trace.ClrProfiler.Native", "tracer\src\Datadog.Trace.ClrProfiler.Native\Datadog.Trace.ClrProfiler.Native.vcxproj", "{91B6272F-5780-4C94-8071-DBBA7B4F67F3}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Tracer.Native", "tracer\src\Datadog.Tracer.Native\Datadog.Tracer.Native.vcxproj", "{91B6272F-5780-4C94-8071-DBBA7B4F67F3}"
 	ProjectSection(ProjectDependencies) = postProject
 		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77} = {AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Trace.ClrProfiler.Native.DLL", "tracer\src\Datadog.Trace.ClrProfiler.Native\Datadog.Trace.ClrProfiler.Native.DLL.vcxproj", "{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Tracer.Native.DLL", "tracer\src\Datadog.Tracer.Native\Datadog.Tracer.Native.DLL.vcxproj", "{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}"
 	ProjectSection(ProjectDependencies) = postProject
 		{AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77} = {AB8596C1-CFDA-4A5E-9E9C-74A3DF9AED77}
 	EndProjectSection
@@ -60,7 +60,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AspNetMvc5", "trace
 		{C0C8D381-D6B9-4C76-9428-F40F2FA93A9A} = {C0C8D381-D6B9-4C76-9428-F40F2FA93A9A}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Trace.ClrProfiler.Native.Tests", "tracer\test\Datadog.Trace.ClrProfiler.Native.Tests\Datadog.Trace.ClrProfiler.Native.Tests.vcxproj", "{5728056A-51AA-4FF5-AD0C-E86E44E36102}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Tracer.Native.Tests", "tracer\test\Datadog.Tracer.Native.Tests\Datadog.Tracer.Native.Tests.vcxproj", "{5728056A-51AA-4FF5-AD0C-E86E44E36102}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.ExampleLibrary", "tracer\test\test-applications\integrations\dependency-libs\Samples.ExampleLibrary\Samples.ExampleLibrary.csproj", "{FDB5C8D0-018D-4FF9-9680-C6A5078F819B}"
 EndProject
@@ -330,11 +330,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogsInjectionHelper", "trac
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{550362BF-A3A7-4F20-9590-24F4F8C380FF}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.AutoInstrumentation.NativeLoader", "tracer\src\Datadog.AutoInstrumentation.NativeLoader\Datadog.AutoInstrumentation.NativeLoader.vcxproj", "{48D12C26-6E63-419C-BFE2-E668E8550613}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Trace.ClrProfiler.Native", "shared\src\Datadog.Trace.ClrProfiler.Native\Datadog.Trace.ClrProfiler.Native.vcxproj", "{48D12C26-6E63-419C-BFE2-E668E8550613}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{7D231B65-AA8E-4917-85FF-BBBF7992B6FC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.AutoInstrumentation.NativeLoader.Tests", "tracer\test\Datadog.AutoInstrumentation.NativeLoader.Tests\Datadog.AutoInstrumentation.NativeLoader.Tests.vcxproj", "{3FCBD2EB-ACBE-4DA1-850F-12BEE08B937B}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Datadog.Trace.ClrProfiler.Native.Tests", "shared\test\Datadog.Trace.ClrProfiler.Native.Tests\Datadog.Trace.ClrProfiler.Native.Tests.vcxproj", "{3FCBD2EB-ACBE-4DA1-850F-12BEE08B937B}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.AspNet", "tracer\src\Datadog.Trace.AspNet\Datadog.Trace.AspNet.csproj", "{04B3C44A-D21B-40A8-A167-CB6C035D613B}"
 EndProject
@@ -383,7 +383,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureFunctions.AllT
 EndProject
 Project("{D954291E-2A0B-460D-934E-DC6B0785DB48}") = "Samples.Shared", "tracer\test\test-applications\Samples.Shared\Samples.Shared.shproj", "{5A806F4B-39E7-4F38-B36F-F5CFC4F8760A}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.ClrProfiler.Native.Checks", "tracer\test\test-applications\instrumentation\Datadog.Trace.ClrProfiler.Native.Checks\Datadog.Trace.ClrProfiler.Native.Checks.csproj", "{7DFDD339-30C5-4C1D-AB07-F9106256AF77}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Tracer.Native.Checks", "tracer\test\test-applications\instrumentation\Datadog.Tracer.Native.Checks\Datadog.Tracer.Native.Checks.csproj", "{7DFDD339-30C5-4C1D-AB07-F9106256AF77}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.MySqlConnector", "tracer\test\test-applications\integrations\Samples.MySqlConnector\Samples.MySqlConnector.csproj", "{73252693-2563-4B20-A2F5-F8DB37B91DBE}"
 EndProject

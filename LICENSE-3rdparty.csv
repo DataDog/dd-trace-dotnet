@@ -3,15 +3,15 @@ Datadog.Trace,https://github.com/neuecc/MessagePack-CSharp,MIT,Copyright (c) 201
 Datadog.Trace,https://github.com/serilog/serilog,Apache-2.0,Copyright (c) 2013-2018 Serilog Contributors
 Datadog.Trace,https://github.com/serilog/serilog-sinks-file,Apache-2.0,Copyright (c) 2016 Serilog Contributors
 Datadog.Trace,https://github.com/JamesNK/Newtonsoft.Json,MIT,Copyright (c) 2007 James Newton-King
-Datadog.Trace.ClrProfiler.Native,https://github.com/dotnet/runtime,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.
-Datadog.Trace.ClrProfiler.Native,https://github.com/Microsoft/clr-samples,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.
-Datadog.Trace.ClrProfiler.Native,https://github.com/MicrosoftArchive/clrprofiler,MIT,Copyright (c) Microsoft Corporation.  All rights reserved.
-Datadog.Trace.ClrProfiler.Native,https://github.com/dropbox/miniutf,MIT,"Copyright (c) 2013 Dropbox, Inc."
-Datadog.Trace.ClrProfiler.Native,https://github.com/gabime/spdlog,MIT,Copyright (c) 2016 Gabi Melman.
-Datadog.Trace.ClrProfiler.Native,https://github.com/fmtlib/fmt,MIT,"Copyright (c) 2012 - present, Victor Zverovich"
-Datadog.Trace.ClrProfiler.Native,https://github.com/gulrak/filesystem/,MIT,"Copyright (c) 2018, Steffen Schümann <s.schuemann@pobox.com>"
+Datadog.Tracer.Native,https://github.com/dotnet/runtime,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.
+Datadog.Tracer.Native,https://github.com/Microsoft/clr-samples,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.
+Datadog.Tracer.Native,https://github.com/MicrosoftArchive/clrprofiler,MIT,Copyright (c) Microsoft Corporation.  All rights reserved.
+Datadog.Tracer.Native,https://github.com/dropbox/miniutf,MIT,"Copyright (c) 2013 Dropbox, Inc."
+Datadog.Tracer.Native,https://github.com/gabime/spdlog,MIT,Copyright (c) 2016 Gabi Melman.
+Datadog.Tracer.Native,https://github.com/fmtlib/fmt,MIT,"Copyright (c) 2012 - present, Victor Zverovich"
+Datadog.Tracer.Native,https://github.com/gulrak/filesystem/,MIT,"Copyright (c) 2018, Steffen Schümann <s.schuemann@pobox.com>"
 Datadog.Trace.OpenTracing,https://github.com/opentracing/opentracing-csharp,MIT,Copyright 2016-2017 The OpenTracing Authors
 Datadog.Trace.OpenTracing,https://github.com/opentracing-contrib/csharp-netcore,Apache-2.0,
-Datadog.AutoInstrumentation.NativeLoader,https://github.com/gulrak/filesystem/,MIT,"Copyright (c) 2018, Steffen Schümann <s.schuemann@pobox.com>"
+Datadog.Trace.ClrProfiler.Native,https://github.com/gulrak/filesystem/,MIT,"Copyright (c) 2018, Steffen Schümann <s.schuemann@pobox.com>"
 Datadog.Profiler.Native,https://github.com/gulrak/filesystem/,MIT,"Copyright (c) 2018, Steffen Schümann <s.schuemann@pobox.com>"
 (all),https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation,Apache-2.0,

@@ -288,7 +288,7 @@
     <ClInclude Include="StackFramesCollectorBase.h" />
     <ClInclude Include="StackSamplerLoop.h" />
     <ClInclude Include="StackSamplerLoopManager.h" />
-    <ClInclude Include="StackSnapshotResultBuffer.h" />
+    <ClInclude Include="StackSnapshotResultReusableBuffer.h" />
     <ClInclude Include="TagsHelper.h" />
     <ClInclude Include="ThreadCpuInfo.h" />
     <ClInclude Include="ThreadsCpuManager.h" />
@@ -332,7 +332,7 @@
     <ClCompile Include="StackFramesCollectorBase.cpp" />
     <ClCompile Include="StackSamplerLoop.cpp" />
     <ClCompile Include="StackSamplerLoopManager.cpp" />
-    <ClCompile Include="StackSnapshotResultBuffer.cpp" />
+    <ClCompile Include="StackSnapshotResultReusableBuffer.cpp" />
     <ClCompile Include="TagsHelper.cpp" />
     <ClCompile Include="ThreadCpuInfo.cpp" />
     <ClCompile Include="ThreadsCpuManager.cpp" />

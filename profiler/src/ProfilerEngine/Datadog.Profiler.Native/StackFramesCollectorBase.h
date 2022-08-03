@@ -8,7 +8,7 @@
 #include <mutex>
 
 #include "ManagedThreadInfo.h"
-#include "StackSnapshotResultBuffer.h"
+#include "StackSnapshotResultReusableBuffer.h"
 
 class StackFramesCollectorBase
 {
@@ -18,9 +18,6 @@ protected:
     bool TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot(void);
     bool AddFrame(std::uintptr_t ip);
     void AddFakeFrame();
-    void SetFrameCount(std::uint16_t count);
-
-    std::pair<uintptr_t*, std::uint16_t> Data();
 
     StackSnapshotResultBuffer* GetStackSnapshotResult(void);
     bool IsCurrentCollectionAbortRequested();
@@ -51,7 +48,7 @@ protected:
     ManagedThreadInfo* _pCurrentCollectionThreadInfo;
 
 private:
-    StackSnapshotResultBuffer* _pStackSnapshotResult;
+    StackSnapshotResultReusableBuffer* _pReusableStackSnapshotResult;
     std::atomic<bool> _isCurrentCollectionAbortRequested;
     std::condition_variable _collectionAbortPerformedSignal;
     std::mutex _collectionAbortNotificationLock;

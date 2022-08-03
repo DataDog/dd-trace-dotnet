@@ -78,25 +78,25 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <OutDir>bin\$(Configuration)\x86\</OutDir>
     <IntDir>obj\$(Configuration)\x86\</IntDir>
-    <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
+    <TargetName>Datadog.Tracer.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
-    <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
+    <TargetName>Datadog.Tracer.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <OutDir>bin\$(Configuration)\$(Platform)\</OutDir>
     <IntDir>obj\$(Configuration)\$(Platform)\</IntDir>
-    <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
+    <TargetName>Datadog.Tracer.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <OutDir>bin\$(Configuration)\x86\</OutDir>
     <IntDir>obj\$(Configuration)\x86\</IntDir>
-    <TargetName>Datadog.Trace.ClrProfiler.Native</TargetName>
+    <TargetName>Datadog.Tracer.Native</TargetName>
     <TargetExt>.dll</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -115,7 +115,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>.\Datadog.Tracer.Native.def</ModuleDefinitionFile>
     </Link>
     <PreBuildEvent>
       <Command>IF EXIST $(ProjectDir)pre-build-events-cpp.bat CALL $(ProjectDir)pre-build-events-cpp.bat  "$(TargetPath)"  "$(TargetFileName)"  "$(TargetDir)"  "$(TargetName)"</Command>
@@ -139,7 +139,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>.\Datadog.Tracer.Native.def</ModuleDefinitionFile>
     </Link>
     <PreBuildEvent>
       <Command>IF EXIST $(ProjectDir)pre-build-events-cpp.bat CALL $(ProjectDir)pre-build-events-cpp.bat  "$(TargetPath)"  "$(TargetFileName)"  "$(TargetDir)"  "$(TargetName)"</Command>
@@ -167,7 +167,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>.\Datadog.Tracer.Native.def</ModuleDefinitionFile>
     </Link>
     <PreBuildEvent>
       <Command>IF EXIST $(ProjectDir)pre-build-events-cpp.bat CALL $(ProjectDir)pre-build-events-cpp.bat  "$(TargetPath)"  "$(TargetFileName)"  "$(TargetDir)"  "$(TargetName)"</Command>
@@ -195,7 +195,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <ModuleDefinitionFile>.\Datadog.Trace.ClrProfiler.Native.def</ModuleDefinitionFile>
+      <ModuleDefinitionFile>.\Datadog.Tracer.Native.def</ModuleDefinitionFile>
     </Link>
     <PreBuildEvent>
       <Command>IF EXIST $(ProjectDir)pre-build-events-cpp.bat CALL $(ProjectDir)pre-build-events-cpp.bat  "$(TargetPath)"  "$(TargetFileName)"  "$(TargetDir)"  "$(TargetName)"</Command>
@@ -203,12 +203,12 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="Datadog.Trace.ClrProfiler.Native.vcxproj">
+    <ProjectReference Include="Datadog.Tracer.Native.vcxproj">
       <Project>{91b6272f-5780-4c94-8071-dbba7b4f67f3}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Datadog.Trace.ClrProfiler.Native.def" />
+    <None Include="Datadog.Tracer.Native.def" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="dllmain.cpp" />
