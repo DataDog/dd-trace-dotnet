@@ -36,18 +36,12 @@ namespace Datadog.Trace.IntegrationTests
             await SendStatsHelper(statsComputationEnabled: false, expectStats: false);
         }
 
-        [Fact(Skip = "DiscoveryService is not yet hooked up to Tracer initialization.")]
-        public async Task IsDisabledWhenIncompatibleAgentDetected_TS011()
+        private async Task SendStatsHelper(bool statsComputationEnabled, bool expectStats, bool finishSpansOnClose = true)
         {
-            await SendStatsHelper(statsComputationEnabled: true, expectStats: false, statsEndpointEnabled: false);
-        }
-
-        private async Task SendStatsHelper(bool statsComputationEnabled, bool expectStats, bool statsEndpointEnabled = true, bool finishSpansOnClose = true)
-        {
-            expectStats &= statsComputationEnabled && statsEndpointEnabled && finishSpansOnClose;
+            expectStats &= statsComputationEnabled && finishSpansOnClose;
             var waitEvent = new AutoResetEvent(false);
 
-            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort(), statsEndpointEnabled: statsEndpointEnabled);
+            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
 
             var statsReceived = false;
             agent.StatsDeserialized += (_, _) =>
