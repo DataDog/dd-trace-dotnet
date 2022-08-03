@@ -3,11 +3,11 @@
 
 #include "gtest/gtest.h"
 
-#include "StackSnapshotResultBuffer.h"
+#include "StackSnapshotResultReusableBuffer.h"
 
-TEST(StackSnapshotResultBufferTest, CheckAddedFrames)
+TEST(StackSnapshotResultReusableBufferTest, CheckAddedFrames)
 {
-    auto buffer = StackSnapshotResultBuffer();
+    auto buffer = StackSnapshotResultReusableBuffer();
 
     std::vector<std::uintptr_t> expectedIps = {42, 21, 11, 4};
     for (auto ip : expectedIps)
@@ -23,9 +23,9 @@ TEST(StackSnapshotResultBufferTest, CheckAddedFrames)
     ASSERT_EQ(expectedIps, ips);
 }
 
-TEST(StackSnapshotResultBufferTest, CheckAddedFakeFrame)
+TEST(StackSnapshotResultReusableBufferTest, CheckAddedFakeFrame)
 {
-    auto buffer = StackSnapshotResultBuffer();
+    auto buffer = StackSnapshotResultReusableBuffer();
 
     std::vector<std::uintptr_t> expectedIps = {42, 21, 11, 4};
 
@@ -46,9 +46,9 @@ TEST(StackSnapshotResultBufferTest, CheckAddedFakeFrame)
     ASSERT_EQ(expectedIps, ips);
 }
 
-TEST(StackSnapshotResultBufferTest, CheckIfWeReachTheBufferLimitTheLastFrameIsFake)
+TEST(StackSnapshotResultReusableBufferTest, CheckIfWeReachTheBufferLimitTheLastFrameIsFake)
 {
-    auto buffer = StackSnapshotResultBuffer();
+    auto buffer = StackSnapshotResultReusableBuffer();
 
     for (auto i = 1; i < 2049; i++)
     {
