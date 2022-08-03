@@ -37,22 +37,27 @@ void ThreadsCpuManager::LogCpuTimes()
     }
 
     // get process time to compute % per thread
-    FILETIME processCreationTime, processExitTime, processKernelTime, processUserTime;
+    FILETIME processCreationTime, processExitTime, processKernelTime, processUserTime, currentTime;
+    ::GetSystemTimePreciseAsFileTime(&currentTime);
 
     // I don't see why this API would fail for the current process...
     bool isProcessTimesAvailable = ::GetProcessTimes(::GetCurrentProcess(), &processCreationTime, &processExitTime, &processKernelTime, &processUserTime);
-    DWORD64 ProcessUserTimeMs = 0;
+    DWORD64 processLifetimeMs = GetTotalMilliseconds(currentTime) - GetTotalMilliseconds(processCreationTime);
+
+    DWORD64 processCpuTimeMs = 0;
     if (isProcessTimesAvailable)
     {
-        ProcessUserTimeMs = GetTotalMilliseconds(processUserTime);
+        processCpuTimeMs = GetTotalMilliseconds(processUserTime) + GetTotalMilliseconds(processKernelTime);
     }
 
     std::stringstream builder;
 
     builder << "\r\n";
-    builder << "   TID |    CPU Time     Usage  Name"
+    builder << "Process lifetime = " << processLifetimeMs << " ms";
+    builder << "\r\n";
+    builder << "   TID |    CPU Time      CPU %      ms/sec   Name"
             << "\r\n";
-    builder << "--------------------------------------------"
+    builder << "--------------------------------------------------"
             << "\r\n";
 
     std::lock_guard<std::recursive_mutex> lock(_lockThreads);
@@ -72,29 +77,26 @@ void ThreadsCpuManager::LogCpuTimes()
         }
         else
         {
-            auto ThreadMs = GetTotalMilliseconds(userTime);
+            auto threadMS = GetTotalMilliseconds(userTime) + GetTotalMilliseconds(kernelTime);
             float percent = -1; // in case GetProcessTimes fails
-            if (ProcessUserTimeMs != 0)
-                percent = ((static_cast<float>(ThreadMs) * 100) / ProcessUserTimeMs);
+            float msPerSec = (float)threadMS * 1000 / processLifetimeMs;
+            if (processCpuTimeMs != 0)
+                percent = ((static_cast<float>(threadMS) * 100) / processCpuTimeMs);
+
+            builder << std::setw(6) << threadEntry.th32ThreadID << " | ";
+            builder << std::setw(8) << threadMS << " ms  [";
+            builder << std::setw(5) << std::setprecision(2) << percent << " %]   [";
+            builder << std::setw(7) << std::setprecision(3) << msPerSec << "]";
 
             // show the thread name if any
             auto element = _threads.find(threadEntry.th32ThreadID);
-            if (element == _threads.end())
+            if (element != _threads.end())
             {
-                builder << std::setw(6) << threadEntry.th32ThreadID << " | ";
-                builder << std::setw(8) << ThreadMs << " ms [";
-                builder << std::setw(5) << std::setprecision(2) << percent << " %]";
-                builder << "\r\n";
-            }
-            else
-            {
-                builder << std::setw(6) << threadEntry.th32ThreadID << " | ";
-                builder << std::setw(8) << ThreadMs << " ms [";
-                builder << std::setw(5) << std::setprecision(2) << percent << " %]  ";
+                builder << "  ";
                 auto name = *element->second->GetName();
                 builder << shared::ToString(name);
-                builder << "\r\n";
             }
+            builder << "\r\n";
         }
 
         if (hThread != 0)
