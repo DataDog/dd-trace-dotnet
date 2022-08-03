@@ -43,13 +43,19 @@ namespace Datadog.Trace.IntegrationTests
             await SendStatsHelper(statsComputationEnabled: false, expectStats: false);
         }
 
-        private async Task SendStatsHelper(bool statsComputationEnabled, bool expectStats, double? globalSamplingRate = null, bool expectAllTraces = true, bool finishSpansOnClose = true)
+        [Fact(Skip = "DiscoveryService is not yet hooked up to Tracer initialization.")]
+        public async Task IsDisabledWhenIncompatibleAgentDetected_TS011()
         {
-            expectStats &= statsComputationEnabled && finishSpansOnClose;
+            await SendStatsHelper(statsComputationEnabled: true, expectStats: false, statsEndpointEnabled: false);
+        }
+
+        private async Task SendStatsHelper(bool statsComputationEnabled, bool expectStats, double? globalSamplingRate = null, bool statsEndpointEnabled = true, bool expectAllTraces = true, bool finishSpansOnClose = true)
+        {
+            expectStats &= statsComputationEnabled && statsEndpointEnabled && finishSpansOnClose;
             var statsWaitEvent = new AutoResetEvent(false);
             var tracesWaitEvent = new AutoResetEvent(false);
 
-            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
+            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort(), statsEndpointEnabled: statsEndpointEnabled);
 
             List<string> droppedP0TracesHeaderValues = new();
             List<string> droppedP0SpansHeaderValues = new();

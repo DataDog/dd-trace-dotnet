@@ -20,5 +20,7 @@ namespace Datadog.Trace.TestHelpers
         public bool UseDogstatsD { get; set; } = false;
 
         public bool UseTelemetry { get; set; } = false;
+
+        public bool StatsEndpointEnabled { get; set; } = false;
     }
 }
