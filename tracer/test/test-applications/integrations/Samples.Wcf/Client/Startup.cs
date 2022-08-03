@@ -50,6 +50,19 @@ namespace Samples.Wcf.Client
             try
             {
                 Console.WriteLine();
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: ServerEmptyActionAdd(1, 2)");
+                double result = calculator.ServerEmptyActionAdd(1, 2);
+                LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
+            }
+            catch (Exception ex)
+            {
+                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex.Message}");
+                exceptionsSeen++;
+            }
+
+            try
+            {
+                Console.WriteLine();
                 LoggingHelper.WriteLineWithDate($"[Client] Invoke: Sync_ServerSyncAdd(1, 2)");
                 double result = calculator.Sync_ServerSyncAdd(1, 2);
                 LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");

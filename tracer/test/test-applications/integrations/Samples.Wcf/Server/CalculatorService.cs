@@ -49,5 +49,14 @@ namespace Samples.Wcf.Server
             await Task.Delay(50);
             return n1 + n2;
         }
+
+        public double ServerEmptyActionAdd(double n1, double n2)
+        {
+            LoggingHelper.WriteLineWithDate($"[Server] Received ServerEmptyActionAdd({n1},{n2})");
+            double result = n1 + n2;
+
+            LoggingHelper.WriteLineWithDate($"[Server] Return: {result}");
+            return result;
+        }
     }
 }

@@ -11,12 +11,16 @@
 
 
 using System;
-using System.ServiceModel;
 
 [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
 [System.ServiceModel.ServiceContractAttribute(Namespace = "WcfSample", ConfigurationName = "ICalculator")]
 public interface ICalculator
 {
+    [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "WcfSample/ICalculator/ServerEmptyActionAddResponse")]
+    double ServerEmptyActionAdd(double n1, double n2);
+
+    [System.ServiceModel.OperationContractAttribute(Action = "", ReplyAction = "WcfSample/ICalculator/ServerEmptyActionAddResponse")]
+    System.Threading.Tasks.Task<double> ServerEmptyActionAddAsync(double n1, double n2);
 
     [System.ServiceModel.OperationContractAttribute(Name = "ServerSyncAdd", Action = "WcfSample/ICalculator/ServerSyncAdd", ReplyAction = "WcfSample/ICalculator/ServerSyncAddResponse")]
     double Sync_ServerSyncAdd(double n1, double n2);
@@ -83,6 +87,15 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
     {
     }
 
+    public double ServerEmptyActionAdd(double n1, double n2)
+    {
+        return base.Channel.ServerEmptyActionAdd(n1, n2);
+    }
+
+    public System.Threading.Tasks.Task<double> ServerEmptyActionAddAsync(double n1, double n2)
+    {
+        return base.Channel.ServerEmptyActionAddAsync(n1, n2);
+    }
     public double Sync_ServerSyncAdd(double n1, double n2)
     {
         return base.Channel.Sync_ServerSyncAdd(n1, n2);
