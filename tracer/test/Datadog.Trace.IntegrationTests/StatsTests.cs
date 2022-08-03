@@ -24,12 +24,6 @@ namespace Datadog.Trace.IntegrationTests
             await SendStatsHelper(statsComputationEnabled: true, expectStats: true);
         }
 
-        [Fact(Skip = "P0 traces can be dropped when stats computation is enabled, but the feature has not been implemented yet")]
-        public async Task SendsStatsAndDropsSpansWhenSampleRateIsZero_TS007()
-        {
-            await SendStatsHelper(statsComputationEnabled: true, expectStats: true, globalSamplingRate: 0.0);
-        }
-
         [Fact]
         public async Task SendsStatsOnlyAfterSpansAreFinished_TS008()
         {
@@ -48,7 +42,7 @@ namespace Datadog.Trace.IntegrationTests
             await SendStatsHelper(statsComputationEnabled: true, expectStats: false, statsEndpointEnabled: false);
         }
 
-        private async Task SendStatsHelper(bool statsComputationEnabled, bool expectStats, double? globalSamplingRate = null, bool statsEndpointEnabled = true, bool finishSpansOnClose = true)
+        private async Task SendStatsHelper(bool statsComputationEnabled, bool expectStats, bool statsEndpointEnabled = true, bool finishSpansOnClose = true)
         {
             expectStats &= statsComputationEnabled && statsEndpointEnabled && finishSpansOnClose;
             var waitEvent = new AutoResetEvent(false);
@@ -64,7 +58,6 @@ namespace Datadog.Trace.IntegrationTests
 
             var settings = new TracerSettings
             {
-                GlobalSamplingRate = globalSamplingRate,
                 StatsComputationEnabled = statsComputationEnabled,
                 ServiceVersion = "V",
                 Environment = "Test",
