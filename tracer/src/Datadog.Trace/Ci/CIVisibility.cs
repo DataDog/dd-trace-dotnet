@@ -22,7 +22,7 @@ namespace Datadog.Trace.Ci
     {
         private static readonly CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
         private static int _firstInitialization = 1;
-        private static Lazy<bool> _enabledLazy = new(InternalEnabled, true);
+        private static Lazy<bool> _enabledLazy = new Lazy<bool>(() => InternalEnabled(), true);
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
 
         public static bool Enabled => _enabledLazy.Value;
@@ -55,7 +55,6 @@ namespace Datadog.Trace.Ci
             }
 
             Log.Information("Initializing CI Visibility");
-            Log.Information("Environment.CommandLine: {cmd}", Environment.CommandLine);
 
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
