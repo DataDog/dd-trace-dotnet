@@ -444,7 +444,7 @@ partial class Build
             const string buildAndTest = "Build / Test";
             const string misc = "Miscellaneous";
             const string tracer = "Tracer";
-            const string ciApp = "CI App";
+            const string ciVisibility = "CI Visibility";
             const string appSecMonitoring = "ASM";
             const string profiler = "Continuous Profiler";
             const string debugger = "Debugger";
@@ -535,7 +535,7 @@ partial class Build
                 var fixIssues = new[] { "type:bug", "type:regression", "type:cleanup" };
                 var areaLabelToComponentMap = new Dictionary<string, string>() {
                     { "area:tracer", tracer },
-                    { "area:ci-app", ciApp },
+                    { "area:ci-visibility", ciVisibility },
                     { "area:asm", appSecMonitoring },
                     { "area:profiler", profiler },
                     { "area:debugger", debugger },
@@ -580,7 +580,7 @@ partial class Build
             static int CategoryToOrder(string category) => category switch
             {
                 tracer => 0,
-                ciApp => 1,
+                ciVisibility => 1,
                 appSecMonitoring => 2,
                 profiler => 3,
                 debugger => 4,
