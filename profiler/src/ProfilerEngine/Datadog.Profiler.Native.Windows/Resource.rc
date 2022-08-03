@@ -62,8 +62,8 @@ END
 
 // ------- version info -------------------------------------------------------
 VS_VERSION_INFO VERSIONINFO
-FILEVERSION             2,13,0,0
-PRODUCTVERSION          2,13,0,0
+FILEVERSION             2,14,0,0
+PRODUCTVERSION          2,14,0,0
 FILEFLAGSMASK           VS_FF_PRERELEASE
 FILEOS                  VOS_NT
 FILETYPE                VFT_DLL
@@ -74,12 +74,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Datadog"
             VALUE "FileDescription", "Continuous Profiler for .NET Applications"
-            VALUE "FileVersion", "2.13.0.0"
+            VALUE "FileVersion", "2.14.0.0"
             VALUE "InternalName", "Native Profiler Engine"
             VALUE "LegalCopyright", "(c) Datadog 2020-2022"
             VALUE "OriginalFilename", "Datadog.Profiler.Native.dll"
             VALUE "ProductName", "Continuous Profiler for .NET Applications"
-            VALUE "ProductVersion", "2.13.0.0"
+            VALUE "ProductVersion", "2.14.0.0"
         END
     END
     BLOCK "VarFileInfo"
