@@ -6,7 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Datadog.Monitoring.Distribution" Version="1.28.6-beta01" />
-    <PackageReference Include="Datadog.Trace" Version="2.12.0" />
+    <PackageReference Include="Datadog.Trace" Version="2.13.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="3.1.18" />
     <PackageReference Include="NetEscapades.Extensions.Logging.RollingFile" Version="2.5.0-beta01" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="3.0.1" />

@@ -60,10 +60,15 @@ namespace System.Text
             const int DefaultArraySize = 256;
             int newSize = array.Length == 0 ? DefaultArraySize : array.Length * 2;
 
+#if NO_ARRAY_POOL
+            _array = new ReadOnlyMemory<char>[newSize];
+            Array.Copy(array, _array, _count);
+#else
             ReadOnlyMemory<char>[] newArray = _array = ArrayPool<ReadOnlyMemory<char>>.Shared.Rent(newSize);
             Array.Copy(array, newArray, _count);
             ArrayPool<ReadOnlyMemory<char>>.Shared.Return(array, clearArray: true);
-            newArray[_count++] = segment;
+#endif
+            _array[_count++] = segment;
         }
 
         /// <summary>Gets a span of all segments in the builder.</summary>
@@ -101,7 +106,10 @@ namespace System.Text
 
             span.Clear();
             this = default;
+
+#if !NO_ARRAY_POOL
             ArrayPool<ReadOnlyMemory<char>>.Shared.Return(array);
+#endif
 
             return result;
         }

@@ -6,7 +6,15 @@
 	<Nullable>enable</Nullable>
 	<EnablePreviewFeatures>true</EnablePreviewFeatures>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+
+	<!-- nuget stuff -->
+	<PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageTags>regex;regular-expression;non-backtracking</PackageTags>
+	<Authors>Robert Pickering</Authors>
+	<Copyright>Robert Pickering, .NET Foundation and Contributors</Copyright>
+    <Description>IndieRegex or IndieSystem.Text.RegularExpressions is a drop-in replacement for .NET's Regex class. It is built using the source of Regex from .NET 7.0, modified and patched to run on .NET Framework 4.6.1, .NET Standard 2.0, .NET Core 3.1, .NET 5.0 and .NET 6.0.</Description>
   </PropertyGroup>
+
   <ItemGroup>
 	  <Compile Include="additional\BitOperations.cs" />
 	  <Compile Include="System\Collections\HashtableExtensions.cs" />
@@ -35,7 +43,6 @@
 	  <Compile Include="System\Text\RegularExpressions\RegexCharClass.cs" />
 	  <Compile Include="System\Text\RegularExpressions\RegexCompilationInfo.cs" />
 	  <Compile Include="System\Text\RegularExpressions\RegexFindOptimizations.cs" />
-	  <Compile Include="System\Text\RegularExpressions\RegexGeneratorAttribute.cs" />
 	  <Compile Include="System\Text\RegularExpressions\RegexInterpreter.cs" />
 	  <Compile Include="System\Text\RegularExpressions\RegexInterpreterCode.cs" />
 	  <Compile Include="System\Text\RegularExpressions\RegexMatchTimeoutException.cs" />
@@ -99,9 +106,8 @@
 	  <Compile Include="common\ValueListBuilder.Pop.cs" />
 
 	  <!-- our additional files -->
-	  <Compile Include="AssemblyInfo.cs" />
 	  <Compile Include="SR.cs" />
-	  <Compile Include="SR.Designer.cs" />
+	  <Compile Include="SR.g.cs" />
 	  <Compile Include="additional\HashCode.cs" />
 	  <Compile Include="additional\RequiresDynamicCodeAttribute.cs" />
 	  <Compile Include="additional\StringSyntaxAttribute.cs" />
@@ -119,18 +125,13 @@
 		<PackageReference Include="System.Reflection.Emit.Lightweight" Version="4.7.0" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<Compile Update="SR.Designer.cs">
-			<DesignTime>True</DesignTime>
-			<AutoGen>True</AutoGen>
-			<DependentUpon>SR.resx</DependentUpon>
-		</Compile>
-	</ItemGroup>
 
 	<ItemGroup>
-		<EmbeddedResource Update="SR.resx">
-			<Generator>ResXFileCodeGenerator</Generator>
-			<LastGenOutput>SR.Designer.cs</LastGenOutput>
-		</EmbeddedResource>
+		<EmbeddedResource Remove="SR.resx" />
 	</ItemGroup>
-</Project> 
+
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);NO_ARRAY_POOL</DefineConstants>
+  </PropertyGroup>
+
+</Project>
