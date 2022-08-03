@@ -70,10 +70,12 @@ namespace Datadog.Trace.Ci
             }
 
             // Update and upload git tree metadata.
-            Log.Information("Update and uploading git tree metadata.");
-            var itrClient = new ITRClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
-            var tskItrUpdate = UploadGitMetadataAsync();
-            LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
+            if (_settings.GitUploadEnabled)
+            {
+                Log.Information("Update and uploading git tree metadata.");
+                var tskItrUpdate = UploadGitMetadataAsync();
+                LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
+            }
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
