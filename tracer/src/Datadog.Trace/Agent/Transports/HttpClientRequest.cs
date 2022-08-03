@@ -111,28 +111,14 @@ namespace Datadog.Trace.Agent.Transports
                     var content = new ByteArrayContent(arraySegment.Array, arraySegment.Offset, arraySegment.Count);
                     Log.Debug("Adding to Multipart Byte Array | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
                     content.Headers.ContentType = new MediaTypeHeaderValue(item.ContentType);
-                    if (item.FileName is not null)
-                    {
-                        formDataContent.Add(content, item.Name, item.FileName);
-                    }
-                    else
-                    {
-                        formDataContent.Add(content, item.Name);
-                    }
+                    formDataContent.Add(content, item.Name, item.FileName);
                 }
                 else if (item.ContentInStream is { } stream)
                 {
                     var content = new StreamContent(stream);
                     Log.Debug("Adding to Multipart Stream | Name: {Name} | FileName: {FileName} | ContentType: {ContentType}", item.Name, item.FileName, item.ContentType);
                     content.Headers.ContentType = new MediaTypeHeaderValue(item.ContentType);
-                    if (item.FileName is not null)
-                    {
-                        formDataContent.Add(content, item.Name, item.FileName);
-                    }
-                    else
-                    {
-                        formDataContent.Add(content, item.Name);
-                    }
+                    formDataContent.Add(content, item.Name, item.FileName);
                 }
             }
 
