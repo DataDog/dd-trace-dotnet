@@ -6,7 +6,9 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
@@ -70,8 +72,107 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
-            Log.Debug("Initialization started.");
+            Log.Information("Initialization started.");
 
+            // Initialize no native parts first (to ensure the tracer instance is not null / required by trace methods instrumentation)
+            InitializeNoNativeParts();
+
+            // Initialize native parts
+            InitializeNativeParts();
+
+            // Live debugger initialization
+            InitializeLiveDebugger();
+
+            Log.Information("Initialization finished.");
+        }
+
+        private static void InitializeNativeParts()
+        {
+            try
+            {
+                // Get all definitions
+                var definitions = InstrumentationDefinitions.GetAllDefinitions();
+
+                // Get all derived definitions
+                var derivedDefinitions = InstrumentationDefinitions.GetDerivedDefinitions();
+
+                // Get the trace attribute definition
+                var traceAttributeDefinition = InstrumentationDefinitions.GetTraceAttributeDefinitions();
+
+                // Get the trace method definition (if is available)
+                string traceMethodAssemblyName = null;
+                string traceMethodTypeName = null;
+                string traceMethodConfiguration = null;
+                if (Tracer.Instance is { } tracer)
+                {
+                    Log.Debug("Including TraceMethods instrumentation.");
+                    var traceMethodsConfiguration = tracer.Settings.TraceMethods;
+                    var payload = InstrumentationDefinitions.GetTraceMethodDefinitions();
+                    traceMethodAssemblyName = payload.AssemblyName;
+                    traceMethodTypeName = payload.TypeName;
+                    traceMethodConfiguration = traceMethodsConfiguration;
+                }
+                else
+                {
+                    Log.Debug("Skipping TraceMethods initialization because Tracer.Instance was null after InitializeNoNativeParts was invoked");
+                }
+
+                // Include serverless definitions if is required
+                if (Serverless.GetDefinitionsIfNeeded() is { } serverlessDefinitions)
+                {
+                    definitions.Definitions = definitions.Definitions.Concat(serverlessDefinitions).ToArray();
+                }
+
+                // Call a single PInvoke (newer clrprofiler version)
+                NativeMethods.Initialize(
+                    definitions.DefinitionsId,
+                    definitions.Definitions,
+                    derivedDefinitions.Definitions,
+                    traceAttributeDefinition.AssemblyName,
+                    traceAttributeDefinition.TypeName,
+                    traceMethodAssemblyName,
+                    traceMethodTypeName,
+                    traceMethodConfiguration);
+
+                // Defer the disposal of unmanaged memory (is not required to wait for it to start the application)
+                Task.Run(
+                    () =>
+                    {
+                        foreach (var def in definitions.Definitions)
+                        {
+                            def.Dispose();
+                        }
+
+                        foreach (var def in derivedDefinitions.Definitions)
+                        {
+                            def.Dispose();
+                        }
+                    });
+
+                Log.Information<int, int>("The profiler has been initialized with {count} definitions and {derived} derived definitions.", definitions.Definitions.Length, derivedDefinitions.Definitions.Length);
+            }
+            catch (DllNotFoundException ex)
+            {
+                // If the DLL import is not found then we try the old initialization process.
+                // This is required for native + managed version mismatch support.
+                Log.Warning(ex, "Error calling NativeMethods.Initialize(), falling back to the slow method.");
+                InitializeNativePartsOld();
+            }
+            catch (EntryPointNotFoundException ex)
+            {
+                // If the DLL import is not found then we try the old initialization process.
+                // This is required for native + managed version mismatch support.
+                Log.Warning(ex, "Error calling NativeMethods.Initialize(), falling back to the slow method.");
+                InitializeNativePartsOld();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+        }
+
+        private static void InitializeNativePartsOld()
+        {
             try
             {
                 Log.Debug("Enabling by ref instrumentation.");
@@ -149,15 +250,7 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, ex.Message);
             }
 
-            InitializeNoNativeParts();
-            var tracer = Tracer.Instance;
-            InitializeLiveDebugger();
-
-            if (tracer is null)
-            {
-                Log.Debug("Skipping TraceMethods initialization because Tracer.Instance was null after InitializeNoNativeParts was invoked");
-            }
-            else
+            if (Tracer.Instance is { } tracer)
             {
                 try
                 {
@@ -172,8 +265,10 @@ namespace Datadog.Trace.ClrProfiler
                     Log.Error(ex, ex.Message);
                 }
             }
-
-            Log.Debug("Initialization finished.");
+            else
+            {
+                Log.Debug("Skipping TraceMethods initialization because Tracer.Instance was null after InitializeNoNativeParts was invoked");
+            }
         }
 
         internal static void InitializeNoNativeParts()
@@ -290,6 +385,7 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Error(ex, "Error initializing activity listener");
             }
 
+            _ = Tracer.Instance;
             Log.Debug("Initialization of non native parts finished.");
         }
 

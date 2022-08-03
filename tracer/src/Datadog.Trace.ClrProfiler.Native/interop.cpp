@@ -23,6 +23,18 @@ EXTERN_C VOID STDAPICALLTYPE GetAssemblyAndSymbolsBytes(BYTE** pAssemblyArray, i
     return trace::profiler->GetAssemblyAndSymbolsBytes(pAssemblyArray, assemblySize, pSymbolsArray, symbolsSize);
 }
 
+EXTERN_C VOID STDAPICALLTYPE Initialize(
+        WCHAR* id,
+        trace::CallTargetDefinition* definitions, int definitionsSize,
+        trace::CallTargetDefinition* derivedDefinitions, int derivedDefinitionsSize,
+        WCHAR* traceAttributeAssemblyName, WCHAR* traceAttributeTypeName,
+        WCHAR* traceMethodAssemblyName, WCHAR* traceMethodTypeName, WCHAR* traceMethodConfiguration)
+{
+    return trace::profiler->Initialize(id, definitions, definitionsSize, derivedDefinitions, derivedDefinitionsSize,
+                                       traceAttributeAssemblyName, traceAttributeTypeName,
+                                       traceMethodAssemblyName, traceMethodTypeName, traceMethodConfiguration);
+}
+
 EXTERN_C VOID STDAPICALLTYPE InitializeProfiler(WCHAR* id, trace::CallTargetDefinition* items, int size)
 {
     return trace::profiler->InitializeProfiler(id, items, size);

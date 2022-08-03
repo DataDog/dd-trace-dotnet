@@ -11,11 +11,11 @@ namespace Datadog.Trace.ClrProfiler
 {
     internal static class NativeMethods
     {
-        private static readonly bool IsWindows = FrameworkDescription.Instance.IsWindows();
+        private static readonly Lazy<bool> IsWindows = new(() => FrameworkDescription.Instance.IsWindows());
 
         public static bool IsProfilerAttached()
         {
-            if (IsWindows)
+            if (IsWindows.Value)
             {
                 return Windows.IsProfilerAttached();
             }
@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
-            if (IsWindows)
+            if (IsWindows.Value)
             {
                 Windows.InitializeProfiler(id, methodArrays, methodArrays.Length);
             }
@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler
 
         public static void EnableByRefInstrumentation()
         {
-            if (IsWindows)
+            if (IsWindows.Value)
             {
                 Windows.EnableByRefInstrumentation();
             }
@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler
 
         public static void EnableCallTargetStateByRef()
         {
-            if (IsWindows)
+            if (IsWindows.Value)
             {
                 Windows.EnableCallTargetStateByRef();
             }
@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
-            if (IsWindows)
+            if (IsWindows.Value)
             {
                 Windows.AddDerivedInstrumentations(id, methodArrays, methodArrays.Length);
             }
@@ -89,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
-            if (IsWindows)
+            if (IsWindows.Value)
             {
                 Windows.AddTraceAttributeInstrumentation(id, assemblyName, typeName);
             }
@@ -108,7 +108,7 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
-            if (IsWindows)
+            if (IsWindows.Value)
             {
                 Windows.InitializeTraceMethods(id, assemblyName, typeName, configuration);
             }
@@ -116,6 +116,42 @@ namespace Datadog.Trace.ClrProfiler
             {
                 NonWindows.InitializeTraceMethods(id, assemblyName, typeName, configuration);
             }
+        }
+
+        public static void Initialize(
+            string id,
+            NativeCallTargetDefinition[] definitionsArray,
+            NativeCallTargetDefinition[] derivedDefinitionsArray,
+            string traceAttributeAssemblyName,
+            string traceAttributeTypeName,
+            string traceMethodAssemblyName,
+            string traceMethodTypeName,
+            string traceMethodConfiguration)
+        {
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                return;
+            }
+
+            definitionsArray ??= Array.Empty<NativeCallTargetDefinition>();
+            derivedDefinitionsArray ??= Array.Empty<NativeCallTargetDefinition>();
+            traceAttributeAssemblyName ??= string.Empty;
+            traceAttributeTypeName ??= string.Empty;
+            traceMethodAssemblyName ??= string.Empty;
+            traceMethodTypeName ??= string.Empty;
+            traceMethodConfiguration ??= string.Empty;
+
+            Interop.Initialize(
+                id,
+                definitionsArray,
+                definitionsArray.Length,
+                derivedDefinitionsArray,
+                derivedDefinitionsArray.Length,
+                traceAttributeAssemblyName,
+                traceAttributeTypeName,
+                traceMethodAssemblyName,
+                traceMethodTypeName,
+                traceMethodConfiguration);
         }
 
         // the "dll" extension is required on .NET Framework
@@ -167,6 +203,24 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Trace.ClrProfiler.Native")]
             public static extern void InitializeTraceMethods([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName, [MarshalAs(UnmanagedType.LPWStr)] string configuration);
+        }
+
+        // Because we are rewriting the PInvoke maps we don't need to have a Windows and NonWindows implementation
+        // We kept these classes for backward compatibility (we can remove it in a next major version)
+        private static class Interop
+        {
+            [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
+            public static extern void Initialize(
+                [MarshalAs(UnmanagedType.LPWStr)] string id,
+                [In] NativeCallTargetDefinition[] definitionsArray,
+                int definitionsSize,
+                [In] NativeCallTargetDefinition[] derivedDefinitionsArray,
+                int derivedDefinitionsSize,
+                [MarshalAs(UnmanagedType.LPWStr)] string traceAttributeAssemblyName,
+                [MarshalAs(UnmanagedType.LPWStr)] string traceAttributeTypeName,
+                [MarshalAs(UnmanagedType.LPWStr)] string traceMethodAssemblyName,
+                [MarshalAs(UnmanagedType.LPWStr)] string traceMethodTypeName,
+                [MarshalAs(UnmanagedType.LPWStr)] string traceMethodConfiguration);
         }
     }
 }

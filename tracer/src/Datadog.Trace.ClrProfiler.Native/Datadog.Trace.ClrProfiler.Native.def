@@ -5,6 +5,7 @@ EXPORTS
     DllGetClassObject PRIVATE
     IsProfilerAttached
     GetAssemblyAndSymbolsBytes
+    Initialize
     InitializeProfiler
     EnableByRefInstrumentation
     EnableCallTargetStateByRef
