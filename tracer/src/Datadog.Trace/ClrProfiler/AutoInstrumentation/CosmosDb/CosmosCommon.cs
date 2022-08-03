@@ -125,7 +125,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                     ContainerId = containerId,
                     DatabaseId = databaseId,
                     Host = endpoint,
-                    DbType = "cosmosdb",
                 };
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);

@@ -273,11 +273,11 @@ namespace PrepareRelease
                     FullAssemblyNameReplace);
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.ClrProfiler.Native/dd_profiler_constants.h",
+                    "src/Datadog.Tracer.Native/dd_profiler_constants.h",
                     FullAssemblyNameReplace);
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.ClrProfiler.Native/dd_profiler_constants.h",
+                    "src/Datadog.Tracer.Native/dd_profiler_constants.h",
                     text => FunctionCallReplace(text, "WithVersion"));
 
                 // Four-part AssemblyVersion update
@@ -287,11 +287,11 @@ namespace PrepareRelease
 
                 // Native clr profiler updates
                 SynchronizeVersion(
-                    "src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
+                    "src/Datadog.Tracer.Native/CMakeLists.txt",
                     text => FullVersionReplace(text, ".", prefix: "VERSION "));
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.ClrProfiler.Native/Resource.rc",
+                    "src/Datadog.Tracer.Native/Resource.rc",
                     text =>
                     {
                         text = FullVersionReplace(text, ",");
@@ -300,7 +300,7 @@ namespace PrepareRelease
                     });
 
                 SynchronizeVersion(
-                    "src/Datadog.Trace.ClrProfiler.Native/version.h",
+                    "src/Datadog.Tracer.Native/version.h",
                     text => FullVersionReplace(text, "."));
 
                 // .NET profiler

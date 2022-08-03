@@ -61,7 +61,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "2.13.0";
+    readonly string Version = "2.14.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -291,6 +291,14 @@ partial class Build : NukeBuild
         .After(CreateDistributionHome)
         .Executes(() =>
         {
+            // HACK fix file names while we don't yet support native loader in the NuGet
+            var homeDir = Solution.GetProject(Projects.DatadogMonitoringDistribution).Directory / "home";
+
+            foreach (var file in Directory.EnumerateFiles(homeDir, "Datadog.Tracer.Native.*", SearchOption.AllDirectories))
+            {
+                RenameFile(file, $"{Projects.NativeLoader}{Path.GetExtension(file)}");
+            }
+            
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DatadogMonitoringDistribution))
                 .EnableNoRestore()

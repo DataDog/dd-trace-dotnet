@@ -1,0 +1,15 @@
+LIBRARY "Datadog.Tracer.Native.dll"
+
+EXPORTS
+    DllCanUnloadNow PRIVATE
+    DllGetClassObject PRIVATE
+    IsProfilerAttached
+    GetAssemblyAndSymbolsBytes
+    InitializeProfiler
+    EnableByRefInstrumentation
+    EnableCallTargetStateByRef
+    AddDerivedInstrumentations
+    AddTraceAttributeInstrumentation
+    InitializeTraceMethods
+    InstrumentProbes
+    GetProbesStatuses

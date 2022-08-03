@@ -88,9 +88,9 @@ profiles:
           - "{{ linuxEndpoint }}"
         environmentVariables:
           COR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-          COR_PROFILER_PATH: "{{ linuxProfilerPath }}/monitoring-home-linux/Datadog.AutoInstrumentation.NativeLoader.so"
+          COR_PROFILER_PATH: "{{ linuxProfilerPath }}/monitoring-home-linux/Datadog.Trace.ClrProfiler.Native.so"
           CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-          CORECLR_PROFILER_PATH: "{{ linuxProfilerPath }}/monitoring-home-linux/Datadog.AutoInstrumentation.NativeLoader.so"
+          CORECLR_PROFILER_PATH: "{{ linuxProfilerPath }}/monitoring-home-linux/Datadog.Trace.ClrProfiler.Native.so"
           DD_DOTNET_TRACER_HOME: "{{ linuxProfilerPath }}/tracer-home-linux"
           DD_DOTNET_PROFILER_HOME: "{{ linuxProfilerPath }}/profiler-home-linux"
           DD_AGENT_HOST: "{{ controllerIp }}"
@@ -104,7 +104,7 @@ profiles:
           requiredArchitecture: x64
           buildFiles:
           - "../../../shared/bin/monitoring-home/tracer/**;{{ linuxProfilerPath }}/tracer-home-linux"
-          - "../../../shared/bin/monitoring-home/Datadog.AutoInstrumentation.NativeLoader.so;{{ linuxProfilerPath }}/monitoring-home-linux"
+          - "../../../shared/bin/monitoring-home/Datadog.Trace.ClrProfiler.Native.so;{{ linuxProfilerPath }}/monitoring-home-linux"
           - "./loader.conf;{{ linuxProfilerPath }}/monitoring-home-linux"
           - "../../../profiler/_build/DDProf-Deploy/**;{{ linuxProfilerPath }}/profiler-home-linux"
       load:

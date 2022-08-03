@@ -11,7 +11,7 @@
     <ComponentGroup Id="Tracer.Files.Native.64" Directory="Tracer.win_x64">
       <Component Win64="yes">
         <File Id="Datadog.Trace.ClrProfiler.Native"
-              Source="$(var.TracerHomeDirectory)\win-x64\Datadog.Trace.ClrProfiler.Native.dll"
+              Source="$(var.TracerHomeDirectory)\win-x64\Datadog.Tracer.Native.dll"
               Checksum="yes">
         </File>
       </Component>
@@ -28,7 +28,7 @@
     <ComponentGroup Id="Tracer.Files.Native.32" Directory="Tracer.win_x86">
       <Component Win64="$(var.Win64)" Id="Datadog.Trace.ClrProfiler.Native.32">
         <File Id="Datadog.Trace.ClrProfiler.Native.32"
-              Source="$(var.TracerHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
+              Source="$(var.TracerHomeDirectory)\win-x86\Datadog.Tracer.Native.dll"
               Checksum="yes">
         </File>
         <File Id="LibDdwaf.32"

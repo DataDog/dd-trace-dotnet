@@ -61,13 +61,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    span.Name.Should().Be(ExpectedOperationName);
+                    var result = span.IsCosmosDb();
+                    Assert.True(result.Success, result.ToString());
+
                     span.Service.Should().Be(ExpectedServiceName);
-                    span.Type.Should().Be(SpanTypes.Sql);
                     span.Resource.Should().StartWith("SELECT * FROM");
                     span.Tags.Should().NotContain(Tags.Version, "External service span should not have service version tag.");
-                    span.Tags.Should().Contain(new KeyValuePair<string, string>(Tags.DbType, "cosmosdb"));
-                    span.Tags.Should().Contain(new KeyValuePair<string, string>(Tags.OutHost, "https://localhost:8081/"));
 
                     if (span.Tags.ContainsKey(Tags.CosmosDbContainer))
                     {

@@ -20,12 +20,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint" },
         MinimumVersion = "1.0.0",
         MaximumVersion = "2.*.*",
-        IntegrationName = nameof(IntegrationId.StackExchangeRedis),
+        IntegrationName = IntegrationName,
         TypeName = "StackExchange.Redis.RedisBase")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class RedisExecuteSyncIntegration
     {
+        private const string IntegrationName = nameof(Configuration.IntegrationId.StackExchangeRedis);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.StackExchangeRedis;
 
         /// <summary>
@@ -47,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
             string rawCommand = message.CommandAndKey ?? "COMMAND";
             StackExchangeRedisHelper.HostAndPort hostAndPort = StackExchangeRedisHelper.GetHostAndPort(instance.Multiplexer.Configuration);
 
-            Scope scope = RedisHelper.CreateScope(Tracer.Instance, IntegrationId, hostAndPort.Host, hostAndPort.Port, rawCommand);
+            Scope scope = RedisHelper.CreateScope(Tracer.Instance, IntegrationId, IntegrationName, hostAndPort.Host, hostAndPort.Port, rawCommand);
             if (scope is not null)
             {
                 return new CallTargetState(scope);

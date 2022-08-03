@@ -2,9 +2,9 @@
   "solution": {
     "path": "Datadog.Trace.sln",
     "projects": [
-      "tracer\\src\\Datadog.AutoInstrumentation.NativeLoader\\Datadog.AutoInstrumentation.NativeLoader.vcxproj",
-      "tracer\\src\\Datadog.Trace.ClrProfiler.Native\\Datadog.Trace.ClrProfiler.Native.DLL.vcxproj",
-      "tracer\\src\\Datadog.Trace.ClrProfiler.Native\\Datadog.Trace.ClrProfiler.Native.vcxproj",
+      "shared\\src\\Datadog.Trace.ClrProfiler.Native\\Datadog.Trace.ClrProfiler.Native.vcxproj",
+      "tracer\\src\\Datadog.Tracer.Native\\Datadog.Tracer.Native.DLL.vcxproj",
+      "tracer\\src\\Datadog.Tracer.Native\\Datadog.Tracer.Native.vcxproj",
       "tracer\\src\\Datadog.Trace.SourceGenerators\\Datadog.Trace.SourceGenerators.csproj",
       "tracer\\src\\Datadog.Trace.Tools.Analyzers\\Datadog.Trace.Tools.Analyzers.csproj",
       "tracer\\src\\Datadog.Trace\\Datadog.Trace.csproj",

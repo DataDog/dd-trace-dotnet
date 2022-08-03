@@ -522,11 +522,11 @@
 7f98d9a25000-7f98da225000 rwxp 00000000 00:00 0 
 7f98da225000-7f98da226000 ---p 00000000 00:00 0 
 7f98da226000-7f98daa26000 rwxp 00000000 00:00 0 
-7f98daa26000-7f98daaf6000 r--p 00000000 08:40 127083                     /project/tracer/bin/tracer-home/Datadog.Trace.ClrProfiler.Native.so
-7f98daaf6000-7f98dac67000 r-xp 000d0000 08:40 127083                     /project/tracer/bin/tracer-home/Datadog.Trace.ClrProfiler.Native.so
-7f98dac67000-7f98dacec000 r--p 00241000 08:40 127083                     /project/tracer/bin/tracer-home/Datadog.Trace.ClrProfiler.Native.so
-7f98dacec000-7f98dacfc000 r--p 002c5000 08:40 127083                     /project/tracer/bin/tracer-home/Datadog.Trace.ClrProfiler.Native.so
-7f98dacfc000-7f98dad06000 rw-p 002d5000 08:40 127083                     /project/tracer/bin/tracer-home/Datadog.Trace.ClrProfiler.Native.so
+7f98daa26000-7f98daaf6000 r--p 00000000 08:40 127083                     /project/tracer/bin/tracer-home/Datadog.Tracer.Native.so
+7f98daaf6000-7f98dac67000 r-xp 000d0000 08:40 127083                     /project/tracer/bin/tracer-home/Datadog.Tracer.Native.so
+7f98dac67000-7f98dacec000 r--p 00241000 08:40 127083                     /project/tracer/bin/tracer-home/Datadog.Tracer.Native.so
+7f98dacec000-7f98dacfc000 r--p 002c5000 08:40 127083                     /project/tracer/bin/tracer-home/Datadog.Tracer.Native.so
+7f98dacfc000-7f98dad06000 rw-p 002d5000 08:40 127083                     /project/tracer/bin/tracer-home/Datadog.Tracer.Native.so
 7f98dad06000-7f98dad0e000 rw-p 00000000 00:00 0 
 7f98dad0e000-7f98dad0f000 ---p 00000000 00:00 0 
 7f98dad0f000-7f98dad12000 rw-p 00000000 00:00 0 

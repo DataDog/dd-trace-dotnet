@@ -6,6 +6,67 @@
 
 
 
+
+## [Release 2.13.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.13.0)
+
+## Summary
+
+- The `http.route`, http.url`, `http.useragenet`, and `http.client_ip` tags have been standardised
+  - As part of this change, the (obfuscated) querystring is now reported in `http.url`. Set `DD_HTTP_SERVER_TAG_QUERY_STRING=false` to disable querystring collection.
+- Fixes a bug where `x-datadog-tags` propagation header was added even when empty or disabled
+- Add support for continuous profiler on Cent0S7
+
+## Changes
+
+### Tracer
+* [Tracer] Fix span properties (#2918)
+* [Tracer][AAS] Add Resource Id on chunks to avoid double billing (#2960)
+* Add support for Multipart form data to ApiWebRequest and HttpClientRequest (#2962)
+* Add FNV-64bit hash implementation for Data Streams Monitoring (#2973)
+* [Tracer] Do not add x-datadog-tags header when empty or disabled (#3001)
+* [Profiler] Fix Arm64 installer smoke tests (#3002)
+
+### ASM
+* [ASM] Tags standardization, http.route, http.url, http.useragent, http.client_ip (#2915)
+* Non-backtracking regex from .NET 7.0 (#3009, #3022, #3025)
+
+### Continuous Profiler
+* [Profiler] Refactor raw sample processing (#2917)
+* [Profiler] Ensure the profiler run on CentOS7 (#2950)
+* [Profiler] Deactivate profiling on linux if wrapper library is not used (#2967)
+* [Profiler] Bump libddprof to libdatadog (former libddprof) 0.7.0 (#2970)
+* [Profiler] Run Profiler unit tests in container in Github Actions (#2975)
+* [Profiler] Minor cleanup (#2977)
+* [Profiler] Remove shared managed code (#2978)
+* [Profiler] Use net6.0 for integration tests (#2987)
+* [Profiler] Deactivate profiler on ARM64 (#2994)
+
+### Debugger
+* [Debugger] Introducing the Live Debugger product (#2965)
+* Temporarily disable Live Debugger (#3012)
+* Increase WaitForExit time in `DebuggerSampleProcessHelper` (#3013)
+
+### Build / Test
+* Installer test tweaks (#2963)
+* [Test Package Versions Bump] Updating package versions (#2972)
+* Update vendored version of Newtonsoft.Json (#2980)
+* Fix Aerospike tests and convert to snapshots (#2985)
+* Remove confusing DD_HEADER_TAGS configuration in OwinWebApi2Tests (#2986)
+* Ignore `process_id` in smoke test snapshots on Linux (#3003)
+* [CI] Allow throughput to run on benchmark branches (#3005)
+* Fix the path to the native loader (#3006)
+* Try disabling telemetry in ci (#3010)
+* [Tracer] Add Fluent API to validate integration spans and produce documentation of tracing integrations -- Redo (#3011)
+* Downgrade version of `dotenv` installed with `fpm` (#3014)
+* Use macos-11 for builds instead of macos-10.15 as that is deprecated (#3035)
+
+### Miscellaneous
+* [CI Visibility] - Add support for CoveragePayload message pack serialization (#2969)
+* [CI Visibility] Send Code Coverage Payload to the agentless endpoint (#2983)
+
+
+[Changes since 2.12.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.12.0...v2.13.0)
+
 ## [Release 2.12.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.12.0)
 
 ## Summary

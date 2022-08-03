@@ -70,10 +70,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             foreach (var span in spans)
             {
-                Assert.Equal(expectedOperationName, span.Name);
+                var result = span.IsSqlClient();
+                Assert.True(result.Success, result.ToString());
+
                 Assert.Equal(expectedServiceName, span.Service);
-                Assert.Equal(SpanTypes.Sql, span.Type);
-                Assert.Equal(dbType, span.Tags[Tags.DbType]);
                 Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
             }
 
