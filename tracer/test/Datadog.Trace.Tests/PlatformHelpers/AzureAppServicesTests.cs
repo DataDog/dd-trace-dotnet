@@ -238,7 +238,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             var spansWithTag =
                 spans.Where(s => s.GetTag(Tags.AzureAppServicesResourceId) == ExpectedResourceId).ToList();
 
-            // We should have one space decorated per traceId
+            // We should have one span decorated per traceId
             spansWithTag.Should().HaveCount(iterations);
             spansWithTag.Select(span => span.TraceId).Should().OnlyHaveUniqueItems();
         }
