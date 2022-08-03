@@ -192,7 +192,7 @@ namespace Datadog.Trace
             }
         }
 
-        private void AddAASMetadataToTraceChunk(Span span)
+        private void AddAASMetadata(Span span)
         {
             if (AzureAppServices.Metadata.IsRelevant)
             {
