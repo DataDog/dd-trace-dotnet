@@ -9,11 +9,6 @@ namespace Datadog.Trace.Sampling;
 
 internal readonly struct SamplingDecision
 {
-    /// <summary>
-    /// The default sampling decision used as a fall back when there are no matching sampling rates or rules.
-    /// </summary>
-    public static readonly SamplingDecision Default = new(SamplingPriorityValues.AutoKeep, SamplingMechanism.Default, rate: null);
-
     public readonly int Priority;
 
     public readonly int Mechanism;

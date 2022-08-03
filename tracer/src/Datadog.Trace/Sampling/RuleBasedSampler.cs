@@ -53,7 +53,7 @@ namespace Datadog.Trace.Sampling
             }
 
             Log.Debug("No rules matched for trace {TraceId}", traceId);
-            return SamplingDecision.Default;
+            return new SamplingDecision(SamplingPriorityValues.AutoKeep, SamplingMechanism.Default);
         }
 
         /// <summary>
