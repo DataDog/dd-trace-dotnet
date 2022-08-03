@@ -10,9 +10,8 @@
 
 #include "StackFramesCollectorBase.h"
 
-class StackSnapshotResultReusableBuffer;
+class StackSnapshotResultBuffer;
 struct ManagedThreadInfo;
-class IManagedThreadList;
 
 class Windows32BitStackFramesCollector : public StackFramesCollectorBase
 {
