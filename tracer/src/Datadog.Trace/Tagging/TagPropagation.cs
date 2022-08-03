@@ -96,8 +96,8 @@ internal static class TagPropagation
 
                     if (key.Equals("_dd.p.upstream_services", StringComparison.OrdinalIgnoreCase))
                     {
-                        // special case: ignore deprecated tag, but don't add the "decoding error" tag
-                        // we can't reuse the same header string if we skip any key/value pair
+                        // special case: ignore deprecated tag, but don't add the "decoding error" tag.
+                        // we can't reuse the same header string if we skip any key/value pair.
                         cachedHeader = null;
                         continue;
                     }
