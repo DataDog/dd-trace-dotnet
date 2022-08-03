@@ -50,12 +50,7 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"Configuration: {EnvironmentTools.GetBuildConfiguration()}");
             Output.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
-            Output.WriteLine($"Tracer Native DLL: {EnvironmentHelper.GetTracerNativeDLLPath()}");
-
-            if (EnvironmentHelper.UseNativeLoader)
-            {
-                Output.WriteLine($"Native Loader DLL: {EnvironmentHelper.GetNativeLoaderPath()}");
-            }
+            Output.WriteLine($"Native Loader DLL: {EnvironmentHelper.GetNativeLoaderPath()}");
         }
 
         protected EnvironmentHelper EnvironmentHelper { get; }
@@ -458,7 +453,6 @@ namespace Datadog.Trace.TestHelpers
         {
             bool verificationEnabled = ShouldUseInstrumentationVerification();
             SetEnvironmentVariable(InstrumentationVerification.InstrumentationVerificationEnabled, verificationEnabled ? "1" : "0");
-            SetEnvironmentVariable(InstrumentationVerification.UseNativeLoader, verificationEnabled ? "1" : "0");
             SetEnvironmentVariable(Configuration.ConfigurationKeys.LogDirectory, verificationEnabled ? EnvironmentHelper.LogDirectory : null);
         }
 
