@@ -97,7 +97,7 @@ namespace Datadog.Trace.TestHelpers
             _cancellationTokenSource.Cancel();
         }
 
-        private static List<T> DeserializeFromStream(Stream stream)
+        internal static List<T> DeserializeFromStream(Stream stream)
         {
             using var sr = new StreamReader(stream);
             using var jsonTextReader = new JsonTextReader(sr);
