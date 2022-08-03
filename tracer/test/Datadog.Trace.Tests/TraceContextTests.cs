@@ -219,35 +219,17 @@ namespace Datadog.Trace.Tests
 
             spans.Value.Should().NotBeNullOrEmpty("a full flush should have been triggered");
 
-            rootSpan.GetMetric(Metrics.SamplingPriority).Should().Be(SamplingPriorityValues.UserKeep, "priority should be assigned to the root span");
+            CheckAASDecoration(inAASContext, spans);
 
-            spans.Value.Should().OnlyContain(s => s == rootSpan || s.GetMetric(Metrics.SamplingPriority) == null, "only the root span should have a priority");
-
-            if (inAASContext)
-            {
-                spans.Value.Array[0].GetTag(Tags.AzureAppServicesResourceGroup).Should().NotBeNull();
-            }
-            else
-            {
-                spans.Value.Array[0].GetTag(Tags.AzureAppServicesResourceGroup).Should().BeNull();
-            }
-
-            // Now test the case where a spans gets opened when the root has been sent (It can happen)
+            // Now test the case where a span gets opened when the root has been sent (It can happen)
             spans = null;
             var newSpan = CreateSpan();
             traceContext.AddSpan(newSpan);
             traceContext.CloseSpan(newSpan);
 
-            spans.Value.Should().NotBeNullOrEmpty("a full flush should have been triggered containung the new span");
+            spans.Value.Should().NotBeNullOrEmpty("a full flush should have been triggered containing the new span");
 
-            if (inAASContext)
-            {
-                spans.Value.Array[0].GetTag(Tags.AzureAppServicesResourceGroup).Should().NotBeNull();
-            }
-            else
-            {
-                spans.Value.Array[0].GetTag(Tags.AzureAppServicesResourceGroup).Should().BeNull();
-            }
+            CheckAASDecoration(inAASContext, spans);
         }
 
         [Theory]
@@ -297,6 +279,11 @@ namespace Datadog.Trace.Tests
 
             spans.Value.Should().OnlyContain(s => (int)s.GetMetric(Metrics.SamplingPriority) == SamplingPriorityValues.UserKeep);
 
+            CheckAASDecoration(inAASContext, spans);
+        }
+
+        private void CheckAASDecoration(bool inAASContext, ArraySegment<Span>? spans)
+        {
             if (inAASContext)
             {
                 spans.Value.Array[0].GetTag(Tags.AzureAppServicesResourceGroup).Should().NotBeNull();
@@ -309,16 +296,19 @@ namespace Datadog.Trace.Tests
 
         private void SetAASContext(bool inAASContext)
         {
+            var vars = Environment.GetEnvironmentVariables();
+
             if (!inAASContext)
             {
-                return;
+                AzureAppServices.Metadata = new AzureAppServices(vars);
             }
-
-            var vars = Environment.GetEnvironmentVariables();
-            vars.Add(AzureAppServices.AzureAppServicesContextKey, "true");
-            vars.Add(AzureAppServices.ResourceGroupKey, "ThisIsAResourceGroup");
-            vars.Add(Datadog.Trace.Configuration.ConfigurationKeys.ApiKey, "xxx");
-            AzureAppServices.Metadata = new AzureAppServices(vars);
+            else
+            {
+                vars.Add(AzureAppServices.AzureAppServicesContextKey, "true");
+                vars.Add(AzureAppServices.ResourceGroupKey, "ThisIsAResourceGroup");
+                vars.Add(Datadog.Trace.Configuration.ConfigurationKeys.ApiKey, "xxx");
+                AzureAppServices.Metadata = new AzureAppServices(vars);
+            }
         }
     }
 }

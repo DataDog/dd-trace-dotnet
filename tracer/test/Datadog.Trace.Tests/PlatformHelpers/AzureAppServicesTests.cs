@@ -240,7 +240,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
 
             // We should have one space decorated per traceId
             spansWithTag.Should().HaveCount(iterations);
-            spansWithTag.Select(span => span.TraceId).Distinct().Should().HaveCount(iterations);
+            spansWithTag.Select(span => span.TraceId).Should().OnlyHaveUniqueItems();
         }
 
         private IDictionary GetMockVariables(
