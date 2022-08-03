@@ -12,6 +12,9 @@ namespace shared {
 struct LoaderResourceMonikerIDs;
 }
 
+class StackSnapshotResultReusableBuffer;
+class IManagedThreadList;
+
 // Those functions must be defined in the main projects (Linux and Windows)
 // Here are forward declarations to avoid hard coupling
 namespace OsSpecificApi {
