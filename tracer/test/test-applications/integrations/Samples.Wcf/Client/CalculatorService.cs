@@ -96,6 +96,7 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
     {
         return base.Channel.ServerEmptyActionAddAsync(n1, n2);
     }
+
     public double Sync_ServerSyncAdd(double n1, double n2)
     {
         return base.Channel.Sync_ServerSyncAdd(n1, n2);

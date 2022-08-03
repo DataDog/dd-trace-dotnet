@@ -10,7 +10,7 @@ namespace Samples.Wcf
     public static class Program
     {
         private const string WcfPort = "8585";
-        private const string WcfNamespace = "WcfSample";
+        private const string WcfNamespace = "WcfSample/123,123"; // appending 123,123 to the namespace to validate obsfucation in LocalPath for ResourceName
 
         private static async Task Main(string[] args)
         {
