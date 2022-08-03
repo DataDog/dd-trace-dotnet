@@ -8,7 +8,7 @@
     <!-- Alpha 1.0.2                                                                                                                        -->
     <!-- Beta 1.1.1                                                                                                                         -->
     <!-- GA 1.2.0                                                                                                                           -->
-    <ProductVersion>2.13.0</ProductVersion>
+    <ProductVersion>2.14.0</ProductVersion>
     <BetaVersion>2</BetaVersion>
 
     <!-- ProductVersionPrerelease format examples: alpha.1, alpha.2, beta.1, beta.2; EMPTY for stable releases.                             -->

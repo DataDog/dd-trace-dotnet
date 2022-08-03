@@ -26,7 +26,7 @@ namespace Datadog.Trace.Ci.Coverage
                 var fileName = boundariesPerFile.Key;
                 var coverageFileName = new FileCoverage
                 {
-                    FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(fileName)
+                    FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(fileName, false)
                 };
 
                 coveragePayload.Files.Add(coverageFileName);
