@@ -44,8 +44,6 @@ namespace Datadog.Trace.Ci
             }
         }
 
-        public static bool EnabledLazy => _enabledLazy.Value;
-
         public static void Initialize()
         {
             if (Interlocked.Exchange(ref _firstInitialization, 0) != 1)
