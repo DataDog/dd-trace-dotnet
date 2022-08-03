@@ -1,5 +1,5 @@
 #pragma once
-#include "../../src/Datadog.AutoInstrumentation.NativeLoader/dynamic_instance.h"
+#include "../../src/Datadog.Trace.ClrProfiler.Native/dynamic_instance.h"
 
 #if AMD64
 const std::string CurrentArch = "x64";
@@ -71,8 +71,8 @@ public:
 
 
 #if _WINDOWS
-const std::string TestDynamicInstanceFilePath = "..\\..\\src\\Datadog.Trace.ClrProfiler.Native\\bin\\Debug\\" +
-                                                CurrentArch + "\\Datadog.Trace.ClrProfiler.Native.dll";
+const std::string TestDynamicInstanceFilePath = "..\\..\\..\\tracer\\src\\Datadog.Tracer.Native\\bin\\Debug\\" +
+                                                CurrentArch + "\\Datadog.Tracer.Native.dll";
 #else
 const std::string TestDynamicInstanceFilePath = "Test";
 #endif

@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>2.13.0</Version>
+    <Version>2.14.0</Version>
     <Version>$(Version)-beta01</Version> <!-- Unconditionally add a beta suffix to the package, but keep the rest of the name so we can associate it with the rest of the release -->
     <Title>Datadog APM Auto-instrumentation Assets</Title>
     <Description>Auto-instrumentation assets for Datadog APM</Description>

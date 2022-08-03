@@ -358,14 +358,17 @@ partial class Build
         void CopyWaf(string architecture, IEnumerable<string> frameworks, AbsolutePath absolutePath, string wafFileName, string extension)
         {
             var source = LibDdwafDirectory / "runtimes" / architecture / "native" / $"{wafFileName}.{extension}";
-            var nativeDir = DDTracerHomeDirectory / architecture / $"Datadog.Trace.ClrProfiler.Native.{extension}";
             foreach (var fmk in frameworks)
             {
-                var dest = absolutePath / "bin" / BuildConfiguration / fmk / architecture;
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                var targetDir = absolutePath / "bin" / BuildConfiguration / fmk;
+                var archTargetDir = targetDir / architecture;
+                CopyFileToDirectory(source, archTargetDir, FileExistsPolicy.Overwrite);
                 if (!IsWin)
                 {
-                    CopyFileToDirectory(nativeDir, absolutePath / "bin" / BuildConfiguration / fmk, FileExistsPolicy.Overwrite);
+                    var tracerNativeLib = DDTracerHomeDirectory / architecture / $"Datadog.Tracer.Native.{extension}";
+                    // The tests use the "wrong" name for the library currently
+                    var target = targetDir / $"Datadog.Trace.ClrProfiler.Native.{extension}";
+                    CopyFile(tracerNativeLib, target, FileExistsPolicy.Overwrite);
                 }
             }
         }
@@ -479,6 +482,14 @@ partial class Build
            if (IsWin)
            {
                // windows already has the expected layout
+               // except we _temporarily_ need to rename the Tracer native loader
+               // As we're not using the shared native loader yet
+               foreach (var arch in ArchitecturesForPlatform)
+               {
+                   MoveFile(
+                       DDTracerHomeDirectory / $"win-{arch}" / $"{Projects.ClrProfilerNative}.dll",
+                       DDTracerHomeDirectory / $"win-{arch}" / $"{Projects.NativeLoader}.dll");
+               }
                return;
            }
 
@@ -530,7 +541,8 @@ partial class Build
         .Executes(() =>
         {
             // Copy existing files from tracer home to the Distribution location
-            CopyDirectoryRecursively(TracerHomeDirectory, DistributionHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            // This is a hack as dd-tracer-home currently contains the correct filename
+            CopyDirectoryRecursively(DDTracerHomeDirectory, DistributionHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
             // Ensure createLogPath.sh is copied to the directory
             CopyFileToDirectory(
@@ -596,7 +608,8 @@ partial class Build
         {
             if (IsWin)
             {
-                CompressZip(TracerHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
+                // This is a hack for now, as the dd-tracer-home folder contains the correct layout and files for windows 
+                CompressZip(DDTracerHomeDirectory, WindowsTracerHomeZip, fileMode: FileMode.Create);
                 // for now we do not need a monitoring-home.zip file. So no need to create it.
             }
             else if (IsLinux)
@@ -627,14 +640,9 @@ partial class Build
                 var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
                 EnsureCleanDirectory(workingDirectory);
 
-                var tracerNativeFile = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
+                var tracerNativeFile = MonitoringHomeDirectory / "Datadog.Tracer.Native.so";
                 var newTracerNativeFile = MonitoringHomeDirectory / "tracer" / "Datadog.Tracer.Native.so";
                 MoveFile(tracerNativeFile, newTracerNativeFile);
-
-                // For backward compatibility, we need to rename Datadog.AutoInstrumentation.NativeLoader.so into Datadog.Trace.ClrProfiler.Native.so
-                var sourceFile = MonitoringHomeDirectory / "Datadog.AutoInstrumentation.NativeLoader.so";
-                var newName = MonitoringHomeDirectory / "Datadog.Trace.ClrProfiler.Native.so";
-                RenameFile(sourceFile, newName);
 
                 // somehow the permissions are lost along the way, ensure they are correctly set here
                 var createLogPathScript = MonitoringHomeDirectory / "createLogPath.sh";
@@ -778,8 +786,8 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            var workingDirectory = TestsDirectory / "Datadog.Trace.ClrProfiler.Native.Tests" / "bin" / BuildConfiguration.ToString() / TargetPlatform.ToString();
-            var exePath = workingDirectory / "Datadog.Trace.ClrProfiler.Native.Tests.exe";
+            var workingDirectory = TestsDirectory / "Datadog.Tracer.Native.Tests" / "bin" / BuildConfiguration.ToString() / TargetPlatform.ToString();
+            var exePath = workingDirectory / "Datadog.Tracer.Native.Tests.exe";
             var testExe = ToolResolver.GetLocalTool(exePath);
             testExe("--gtest_output=xml", workingDirectory: workingDirectory);
         });
@@ -1539,13 +1547,19 @@ partial class Build
                                                .Where(IsNewError)
                                                .ToList();
 
-               var nativeErrors = logDirectory.GlobFiles("**/dotnet-tracer-native-*")
-                                               .SelectMany(ParseNativeLogFiles)
+               var nativeTracerErrors = logDirectory.GlobFiles("**/dotnet-tracer-native-*")
+                                               .SelectMany(ParseNativeTracerLogFiles)
                                                .Where(x => x.Level >= LogLevel.Error)
                                                .Where(IsNewError)
                                                .ToList();
 
-               if (managedErrors.Count == 0 && nativeErrors.Count == 0)
+               var nativeProfilerErrors = logDirectory.GlobFiles("**/DD-DotNet-Profiler-Native-*")
+                                               .SelectMany(ParseNativeProfilerLogFiles)
+                                               .Where(x => x.Level >= LogLevel.Error)
+                                               .Where(IsNewError)
+                                               .ToList();
+
+               if (managedErrors.Count == 0 && nativeTracerErrors.Count == 0 && nativeProfilerErrors.Count == 0)
                {
                    Logger.Info("No errors found in managed or native logs");
                    return;
@@ -1553,7 +1567,8 @@ partial class Build
 
                Logger.Warn("Found the following errors in log files:");
                var allErrors = managedErrors
-                              .Concat(nativeErrors)
+                              .Concat(nativeTracerErrors)
+                              .Concat(nativeProfilerErrors)
                               .GroupBy(x => x.FileName);
 
                foreach (var erroredFile in allErrors)
@@ -1632,9 +1647,20 @@ partial class Build
                return allLogs;
            }
 
-           static List<ParsedLogLine> ParseNativeLogFiles(AbsolutePath logFile)
+           static List<ParsedLogLine> ParseNativeTracerLogFiles(AbsolutePath logFile)
            {
                var regex = new Regex(@"^(\d\d\/\d\d\/\d\d\W\d\d\:\d\d\:\d\d\.\d\d\d\W\w\w)\W\[.*?\]\W\[(.*?)\](.*)", RegexOptions.Compiled);
+               return ParseNativeLogs(regex, "MM/dd/yy hh:mm:ss.fff tt", logFile);
+           }
+
+           static List<ParsedLogLine> ParseNativeProfilerLogFiles(AbsolutePath logFile)
+           {
+               var regex = new Regex(@"^\[(\d\d\d\d-\d\d-\d\d\W\d\d\:\d\d\:\d\d\.\d\d\d)\W\|\W([^ ]+)\W[^\]]+\W(.*)", RegexOptions.Compiled);
+               return ParseNativeLogs(regex, "yyyy-MM-dd H:mm:ss.fff", logFile);
+           }
+
+           static List<ParsedLogLine> ParseNativeLogs(Regex regex, string dateFormat, AbsolutePath logFile)
+           {
                var allLines = File.ReadAllLines(logFile);
                var allLogs = new List<ParsedLogLine>(allLines.Length);
 
@@ -1650,7 +1676,7 @@ partial class Build
                        try
                        {
                            // native logs are on one line
-                           var timestamp = DateTimeOffset.ParseExact(match.Groups[1].Value, "MM/dd/yy hh:mm:ss.fff tt", null);
+                           var timestamp = DateTimeOffset.ParseExact(match.Groups[1].Value, dateFormat, null);
                            var level = ParseNativeLogLevel(match.Groups[2].Value);
                            var message = match.Groups[3].Value;
                            var currentLine = new ParsedLogLine(timestamp, level, message, logFile);

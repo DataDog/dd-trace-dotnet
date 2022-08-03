@@ -14,11 +14,11 @@ namespace Datadog.Trace.Agent
     {
         public readonly string Name;
         public readonly string ContentType;
-        public readonly string FileName;
+        public readonly string? FileName;
         public readonly ArraySegment<byte>? ContentInBytes;
         public readonly Stream? ContentInStream;
 
-        public MultipartFormItem(string name, string contentType, string fileName, ArraySegment<byte> contentInBytes)
+        public MultipartFormItem(string name, string contentType, string? fileName, ArraySegment<byte> contentInBytes)
         {
             Name = name;
             ContentType = contentType;
@@ -27,7 +27,7 @@ namespace Datadog.Trace.Agent
             ContentInStream = null;
         }
 
-        public MultipartFormItem(string name, string contentType, string fileName, Stream contentInStream)
+        public MultipartFormItem(string name, string contentType, string? fileName, Stream contentInStream)
         {
             Name = name;
             ContentType = contentType;

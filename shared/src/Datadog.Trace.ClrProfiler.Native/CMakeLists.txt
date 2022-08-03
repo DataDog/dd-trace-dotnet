@@ -5,7 +5,7 @@ cmake_policy(SET CMP0015 NEW)
 # Project definition
 # ******************************************************
 
-project("Datadog.AutoInstrumentation.NativeLoader" VERSION 0.1.0)
+project("Datadog.Trace.ClrProfiler.Native" VERSION 0.1.0)
 
 # ******************************************************
 # Environment detection
@@ -152,7 +152,7 @@ endif()
 # ******************************************************
 # Define target
 # ******************************************************
-add_library("Datadog.AutoInstrumentation.NativeLoader" SHARED
+add_library("Datadog.Trace.ClrProfiler.Native" SHARED
         cor_profiler.cpp
         cor_profiler_class_factory.cpp
         dllmain.cpp
@@ -174,14 +174,14 @@ add_library("Datadog.AutoInstrumentation.NativeLoader" SHARED
         ${GENERATED_OBJ_FILES}
         )
 
-target_compile_definitions("Datadog.AutoInstrumentation.NativeLoader" PRIVATE "-D_GLIBCXX_USE_CXX11_ABI=0")
+target_compile_definitions("Datadog.Trace.ClrProfiler.Native" PRIVATE "-D_GLIBCXX_USE_CXX11_ABI=0")
 
-add_dependencies("Datadog.AutoInstrumentation.NativeLoader" "fmt")
+add_dependencies("Datadog.Trace.ClrProfiler.Native" "fmt")
 
-set_target_properties("Datadog.AutoInstrumentation.NativeLoader" PROPERTIES PREFIX "")
+set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
 
 # Define directories includes
-target_include_directories("Datadog.AutoInstrumentation.NativeLoader"
+target_include_directories("Datadog.Trace.ClrProfiler.Native"
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc/rt
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/inc
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc
@@ -192,7 +192,7 @@ target_include_directories("Datadog.AutoInstrumentation.NativeLoader"
 
 # Define linker libraries
 if(ISLINUX)
-    target_link_libraries("Datadog.AutoInstrumentation.NativeLoader"
+    target_link_libraries("Datadog.Trace.ClrProfiler.Native"
             ${OUTPUT_DEPS_DIR}/fmt/src/fmt-build/libfmt.a
             -static-libgcc
             -static-libstdc++

@@ -64,13 +64,17 @@ namespace Datadog.Trace.Util
 
         public ulong CreateNew()
         {
-            long high = _random.Next(int.MinValue, int.MaxValue);
-            long low = _random.Next(int.MinValue, int.MaxValue);
+            ulong value;
+            do
+            {
+                long high = _random.Next(int.MinValue, int.MaxValue);
+                long low = _random.Next(int.MinValue, int.MaxValue);
 
-            // Concatenate both values, and truncate the 32 top bits from low
-            var value = high << 32 | (low & 0xFFFFFFFF);
-
-            return (ulong)value & 0x7FFFFFFFFFFFFFFF;
+                // Concatenate both values, and truncate the 32 top bits from low
+                value = (ulong)(high << 32 | (low & 0xFFFFFFFF)) & 0x7FFFFFFFFFFFFFFF;
+            }
+            while (value == 0);
+            return value;
         }
     }
 }

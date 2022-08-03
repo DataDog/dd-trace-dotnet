@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Diagnostics;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,6 +11,7 @@ using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci
 {
@@ -157,41 +157,47 @@ namespace Datadog.Trace.Ci
 
         private static bool InternalEnabled()
         {
+            var processName = ProcessHelpers.GetCurrentProcessName() ?? string.Empty;
+
+            // By configuration
             if (_settings.Enabled)
             {
+                // When is enabled by configuration we only enable it to the testhost child process if the process name is dotnet.
+                if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) && Environment.CommandLine.IndexOf("testhost.dll", StringComparison.OrdinalIgnoreCase) == -1)
+                {
+                    Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {cmdline}", Environment.CommandLine);
+                    return false;
+                }
+
                 Log.Information("CI Visibility Enabled by Configuration");
                 return true;
             }
 
             // Try to autodetect based in the domain name.
-            string domainName = AppDomain.CurrentDomain.FriendlyName;
-            if (domainName != null &&
-                (domainName.StartsWith("testhost") == true ||
-                 domainName.StartsWith("vstest") == true ||
-                 domainName.StartsWith("xunit") == true ||
-                 domainName.StartsWith("nunit") == true ||
-                 domainName.StartsWith("MSBuild") == true))
+            var domainName = AppDomain.CurrentDomain.FriendlyName ?? string.Empty;
+            if (domainName.StartsWith("testhost", StringComparison.Ordinal) ||
+                domainName.StartsWith("vstest", StringComparison.Ordinal) ||
+                domainName.StartsWith("xunit", StringComparison.Ordinal) ||
+                domainName.StartsWith("nunit", StringComparison.Ordinal) ||
+                domainName.StartsWith("MSBuild", StringComparison.Ordinal))
             {
                 Log.Information("CI Visibility Enabled by Domain name whitelist");
-
-                try
-                {
-                    // Set the configuration key to propagate the configuration to child processes.
-                    Environment.SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "1", EnvironmentVariableTarget.Process);
-                }
-                catch
-                {
-                    // .
-                }
-
+                PropagateCiVisibilityEnvironmentVariable();
                 return true;
             }
 
             // Try to autodetect based in the process name.
-            if (Process.GetCurrentProcess()?.ProcessName?.StartsWith("testhost.") == true)
+            if (processName.StartsWith("testhost.", StringComparison.Ordinal))
             {
                 Log.Information("CI Visibility Enabled by Process name whitelist");
+                PropagateCiVisibilityEnvironmentVariable();
+                return true;
+            }
 
+            return false;
+
+            static void PropagateCiVisibilityEnvironmentVariable()
+            {
                 try
                 {
                     // Set the configuration key to propagate the configuration to child processes.
@@ -201,11 +207,7 @@ namespace Datadog.Trace.Ci
                 {
                     // .
                 }
-
-                return true;
             }
-
-            return false;
         }
     }
 }

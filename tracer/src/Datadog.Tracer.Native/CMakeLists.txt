@@ -5,7 +5,7 @@ cmake_policy(SET CMP0015 NEW)
 # Project definition
 # ******************************************************
 
-project("Datadog.Trace.ClrProfiler.Native" VERSION 2.13.0)
+project("Datadog.Tracer.Native" VERSION 2.14.0)
 
 # ******************************************************
 # Environment detection
@@ -209,7 +209,7 @@ endif()
 # ******************************************************
 # Define static target
 # ******************************************************
-add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
+add_library("Datadog.Tracer.Native.static" STATIC
         class_factory.cpp
         clr_helpers.cpp
         cor_profiler_base.cpp
@@ -239,10 +239,10 @@ add_library("Datadog.Trace.ClrProfiler.Native.static" STATIC
         ${GENERATED_OBJ_FILES}
 )
 
-set_target_properties("Datadog.Trace.ClrProfiler.Native.static" PROPERTIES PREFIX "")
+set_target_properties("Datadog.Tracer.Native.static" PROPERTIES PREFIX "")
 
 # Define directories includes
-target_include_directories("Datadog.Trace.ClrProfiler.Native.static"
+target_include_directories("Datadog.Tracer.Native.static"
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc/rt
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/inc
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc
@@ -254,13 +254,13 @@ target_include_directories("Datadog.Trace.ClrProfiler.Native.static"
 
 # Define linker libraries
 if (ISMACOS)
-    target_link_libraries("Datadog.Trace.ClrProfiler.Native.static"
+    target_link_libraries("Datadog.Tracer.Native.static"
         ${OUTPUT_DEPS_DIR}/re2/obj/libre2.a
         ${OUTPUT_DEPS_DIR}/fmt/libfmt.a
         ${CMAKE_DL_LIBS}
     )
 elseif(ISLINUX)
-    target_link_libraries("Datadog.Trace.ClrProfiler.Native.static"
+    target_link_libraries("Datadog.Tracer.Native.static"
         ${OUTPUT_DEPS_DIR}/re2/obj/libre2.a
         ${OUTPUT_DEPS_DIR}/fmt/libfmt.a
         ${CMAKE_DL_LIBS}
@@ -273,19 +273,19 @@ endif()
 # Define shared target
 # ******************************************************
 if (ISMACOS)
-    add_library("Datadog.Trace.ClrProfiler.Native" SHARED
+    add_library("Datadog.Tracer.Native" SHARED
         dllmain.cpp
         interop.cpp
         ${GENERATED_OBJ_FILES}
     )
 else()
-    add_library("Datadog.Trace.ClrProfiler.Native" SHARED
+    add_library("Datadog.Tracer.Native" SHARED
         dllmain.cpp
         interop.cpp
     )
 endif()
 
-set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
+set_target_properties("Datadog.Tracer.Native" PROPERTIES PREFIX "")
 
 # Define linker libraries
-target_link_libraries("Datadog.Trace.ClrProfiler.Native" "Datadog.Trace.ClrProfiler.Native.static")
+target_link_libraries("Datadog.Tracer.Native" "Datadog.Tracer.Native.static")

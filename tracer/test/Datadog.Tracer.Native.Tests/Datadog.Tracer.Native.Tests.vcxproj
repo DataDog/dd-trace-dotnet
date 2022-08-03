@@ -92,7 +92,7 @@
     <ProjectReference Include="..\test-applications\integrations\dependency-libs\Samples.ExampleLibrary\Samples.ExampleLibrary.csproj">
       <Project>{fdb5c8d0-018d-4ff9-9680-c6a5078f819b}</Project>
     </ProjectReference>
-    <ProjectReference Include="..\..\src\Datadog.Trace.ClrProfiler.Native\Datadog.Trace.ClrProfiler.Native.vcxproj">
+    <ProjectReference Include="..\..\src\Datadog.Tracer.Native\Datadog.Tracer.Native.vcxproj">
       <Project>{91b6272f-5780-4c94-8071-dbba7b4f67f3}</Project>
     </ProjectReference>
   </ItemGroup>

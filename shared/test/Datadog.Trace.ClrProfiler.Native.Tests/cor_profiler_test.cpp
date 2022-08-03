@@ -2,7 +2,7 @@
 #include "test_dynamic_instance.h"
 #include "test_dynamic_dispatcher.h"
 #include "test_cor_profiler.h"
-#include "../../src/Datadog.AutoInstrumentation.NativeLoader/cor_profiler.h"
+#include "../../src/Datadog.Trace.ClrProfiler.Native/cor_profiler.h"
 
 TEST(cor_profiler, CallBackTests)
 {
