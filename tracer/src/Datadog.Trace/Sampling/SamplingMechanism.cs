@@ -36,6 +36,7 @@ internal static class SamplingMechanism
     /// A sampling decision was made using a sampling rate computed automatically by the backend.
     /// The available sampling priorities are <see cref="SamplingPriorityValues.AutoReject"/> (0)
     /// and <see cref="SamplingPriorityValues.AutoKeep"/> (1).
+    /// (Reserved for future use.)
     /// </summary>
     public const int RemoteRateAuto = 2;
 
@@ -64,12 +65,13 @@ internal static class SamplingMechanism
     /// A sampling decision was made using a sampling rule configured remotely by the user.
     /// The available sampling priorities are <see cref="SamplingPriorityValues.UserReject"/> (-1)
     /// and <see cref="SamplingPriorityValues.UserKeep"/> (2).
+    /// (Reserved for future use.)
     /// </summary>
     public const int RemoteRateUser = 6;
 
     /// <summary>
     /// A sampling decision was made using a sampling rule configured remotely by Datadog.
-    /// The available sampling priorities are [TBD].
+    /// (Reserved for future use.)
     /// </summary>
     public const int RemoteRateDatadog = 7;
 
