@@ -6,15 +6,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Threading;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Sampling
 {
     internal abstract class RateLimiter : IRateLimiter
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RateLimiter>();
-
         private readonly ConcurrentQueue<DateTime> _intervalQueue = new();
 
         private readonly int _maxTracesPerInterval;
