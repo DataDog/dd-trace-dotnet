@@ -173,7 +173,7 @@ namespace Datadog.Trace.Tests
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
-        public void AllChunksShouldContainAASMetadata(bool inAASContext)
+        public void AllChunksShouldContainAASMetadataAndSamplingPriority(bool inAASContext)
         {
             const int partialFlushThreshold = 3;
 
@@ -218,18 +218,24 @@ namespace Datadog.Trace.Tests
             traceContext.CloseSpan(rootSpan);
 
             spans.Value.Should().NotBeNullOrEmpty("a full flush should have been triggered");
+            rootSpan.GetMetric(Metrics.SamplingPriority).Should().Be(SamplingPriorityValues.UserKeep, "priority should be assigned to the root span");
+            spans.Value.Should().OnlyContain(s => s == rootSpan || s.GetMetric(Metrics.SamplingPriority) == null, "only the root span should have a priority");
 
             CheckAASDecoration(inAASContext, spans);
 
             // Now test the case where a span gets opened when the root has been sent (It can happen)
             spans = null;
             var newSpan = CreateSpan();
+            var aSecondSpan = CreateSpan();
             traceContext.AddSpan(newSpan);
+            traceContext.AddSpan(aSecondSpan);
+            traceContext.CloseSpan(aSecondSpan);
             traceContext.CloseSpan(newSpan);
 
             spans.Value.Should().NotBeNullOrEmpty("a full flush should have been triggered containing the new span");
 
             CheckAASDecoration(inAASContext, spans);
+            spans.Value.Should().OnlyContain(s => (int)s.GetMetric(Metrics.SamplingPriority) == SamplingPriorityValues.UserKeep, "all spans should have a priority");
         }
 
         [Theory]
@@ -286,11 +292,12 @@ namespace Datadog.Trace.Tests
         {
             if (inAASContext)
             {
-                spans.Value.Array[0].GetTag(Tags.AzureAppServicesResourceGroup).Should().NotBeNull();
+                // only one span should contain the aas metadata
+                spans.Value.Should().ContainSingle(s => s.GetTag(Tags.AzureAppServicesResourceGroup) != null);
             }
             else
             {
-                spans.Value.Array[0].GetTag(Tags.AzureAppServicesResourceGroup).Should().BeNull();
+                spans.Value.Should().OnlyContain(s => s.GetTag(Tags.AzureAppServicesResourceGroup) == null);
             }
         }
 
