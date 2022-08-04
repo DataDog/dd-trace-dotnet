@@ -98,8 +98,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     resourceName: string.IsNullOrEmpty(action) ? UriHelpers.GetCleanUriPath(requestHeadersTo?.LocalPath) : action,
                     httpMethod,
                     host,
-                    userAgent,
                     httpUrl: requestHeadersTo?.AbsoluteUri,
+                    userAgent,
                     tags,
                     tagsFromHeaders);
 
