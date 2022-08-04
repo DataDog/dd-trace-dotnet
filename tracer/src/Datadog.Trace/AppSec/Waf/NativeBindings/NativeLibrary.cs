@@ -156,14 +156,16 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private static class NonWindows
         {
+            // These are re-written by the native tracer to point to the correct location,
+            // but if running in a managed-only context (i.e. unit tests) they need to have the right file name
 #pragma warning disable SA1300 // Element should begin with upper-case letter
-            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            [DllImport("Datadog.Tracer.Native")]
             internal static extern IntPtr dddlopen(string fileName, int flags);
 
-            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            [DllImport("Datadog.Tracer.Native")]
             internal static extern IntPtr dddlerror();
 
-            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            [DllImport("Datadog.Tracer.Native")]
             internal static extern IntPtr dddlsym(IntPtr hModule, string lpProcName);
         }
     }
