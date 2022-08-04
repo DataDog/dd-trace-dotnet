@@ -28,6 +28,7 @@ namespace Datadog.Trace.Telemetry
         public const string SecurityEnabled = "security_enabled";
         public const string FullTrustAppDomain = "environment_fulltrust_appdomain";
         public const string TraceMethods = "trace_methods";
+        public const string StatsComputationEnabled = "stats_computation_enabled";
 
         public const string CloudHosting = "cloud_hosting";
         public const string AasSiteExtensionVersion = "aas_siteextensions_version";
