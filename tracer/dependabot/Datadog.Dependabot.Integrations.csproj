@@ -28,13 +28,13 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.12.13 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.12.13" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.12.17 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.12.17" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2.81 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.81" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2.85 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.85" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
@@ -43,8 +43,8 @@
 
     <!-- Integration: Couchbase.NetClient -->
     <!-- Assembly: Couchbase.NetClient -->
-    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.3.3 -->
-    <PackageReference Include="CouchbaseNetClient" Version="3.3.3" />
+    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.3.4 -->
+    <PackageReference Include="CouchbaseNetClient" Version="3.3.4" />
 
     <!-- Integration: Elasticsearch.Net -->
     <!-- Assembly: Elasticsearch.Net -->
@@ -93,23 +93,23 @@
 
     <!-- Integration: Confluent.Kafka -->
     <!-- Assembly: Confluent.Kafka -->
-    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/1.9.0 -->
-    <PackageReference Include="Confluent.Kafka" Version="1.9.0" />
+    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/1.9.2 -->
+    <PackageReference Include="Confluent.Kafka" Version="1.9.2" />
 
     <!-- Integration: log4net -->
     <!-- Assembly: log4net -->
-    <!-- Latest package https://www.nuget.org/packages/log4net/2.0.14 -->
-    <PackageReference Include="log4net" Version="2.0.14" />
+    <!-- Latest package https://www.nuget.org/packages/log4net/2.0.15 -->
+    <PackageReference Include="log4net" Version="2.0.15" />
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.17.0 -->
-    <PackageReference Include="MongoDB.Driver.Core" Version="2.17.0" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.17.1 -->
+    <PackageReference Include="MongoDB.Driver.Core" Version="2.17.1" />
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.17.0 -->
-    <PackageReference Include="MongoDB.Driver" Version="2.17.0" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.17.1 -->
+    <PackageReference Include="MongoDB.Driver" Version="2.17.1" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!-- Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
@@ -123,8 +123,8 @@
 
     <!-- Integration: MySql.Data -->
     <!-- Assembly: MySql.Data -->
-    <!-- Latest package https://www.nuget.org/packages/MySql.Data/8.0.29 -->
-    <PackageReference Include="MySql.Data" Version="8.0.29" />
+    <!-- Latest package https://www.nuget.org/packages/MySql.Data/8.0.30 -->
+    <PackageReference Include="MySql.Data" Version="8.0.30" />
 
     <!-- Integration: MySqlConnector -->
     <!-- Assembly: MySqlConnector -->
@@ -138,8 +138,8 @@
 
     <!-- Integration: Npgsql -->
     <!-- Assembly: Npgsql -->
-    <!-- Latest package https://www.nuget.org/packages/Npgsql/6.0.5 -->
-    <PackageReference Include="Npgsql" Version="6.0.5" />
+    <!-- Latest package https://www.nuget.org/packages/Npgsql/6.0.6 -->
+    <PackageReference Include="Npgsql" Version="6.0.6" />
 
     <!-- Integration: nunit.framework -->
     <!-- Assembly: nunit.framework -->
@@ -168,8 +168,8 @@
 
     <!-- Integration: ServiceStack.Redis -->
     <!-- Assembly: ServiceStack.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/6.1.0 -->
-    <PackageReference Include="ServiceStack.Redis" Version="6.1.0" />
+    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/6.2.0 -->
+    <PackageReference Include="ServiceStack.Redis" Version="6.2.0" />
 
     <!-- Integration: Microsoft.Data.SqlClient -->
     <!-- Assembly: Microsoft.Data.SqlClient -->
@@ -213,13 +213,13 @@
 
     <!-- Integration: xunit.execution.desktop -->
     <!-- Assembly: xunit.execution.desktop -->
-    <!-- Latest package https://www.nuget.org/packages/xunit/2.4.1 -->
-    <PackageReference Include="xunit" Version="2.4.1" />
+    <!-- Latest package https://www.nuget.org/packages/xunit/2.4.2 -->
+    <PackageReference Include="xunit" Version="2.4.2" />
 
     <!-- Integration: xunit.execution.dotnet -->
     <!-- Assembly: xunit.execution.dotnet -->
-    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.4.1 -->
-    <PackageReference Include="xunit.extensibility.execution" Version="2.4.1" />
+    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.4.2 -->
+    <PackageReference Include="xunit.extensibility.execution" Version="2.4.2" />
 
     <!-- Integration: Microsoft.Azure.WebJobs.Host -->
     <!-- Assembly: Microsoft.Azure.WebJobs.Host -->

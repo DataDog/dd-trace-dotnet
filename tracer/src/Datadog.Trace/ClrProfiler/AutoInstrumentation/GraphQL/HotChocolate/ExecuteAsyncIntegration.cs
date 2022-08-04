@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         ParameterTypeNames = new string[] { "HotChocolate.Execution.IQueryRequest", ClrNames.CancellationToken },
         AssemblyName = "HotChocolate.Execution",
         TypeName = "HotChocolate.Execution.RequestExecutor",
-        MinimumVersion = "10",
+        MinimumVersion = "11",
         MaximumVersion = "12.*.*")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
