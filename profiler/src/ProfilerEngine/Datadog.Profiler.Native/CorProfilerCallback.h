@@ -8,7 +8,9 @@
 #include "corprof.h"
 // end
 
+#include "AllocationsProvider.h"
 #include "ApplicationStore.h"
+#include "ClrEventsParser.h"
 #include "ExceptionsProvider.h"
 #include "IAppDomainStore.h"
 #include "IClrLifetime.h"
@@ -183,7 +185,10 @@ private :
     std::unique_ptr<IClrLifetime> _pClrLifetime = nullptr;
 
     std::atomic<ULONG> _refCount{0};
-    ICorProfilerInfo4* _pCorProfilerInfo = nullptr;
+    ICorProfilerInfo5* _pCorProfilerInfo = nullptr;
+    ICorProfilerInfo12* _pCorProfilerInfoEvents = nullptr;
+    std::unique_ptr<ClrEventsParser> _pClrEventsParser = nullptr;
+    EVENTPIPE_SESSION _session{0};
     inline static bool _isNet46OrGreater = false;
     std::shared_ptr<IMetricsSender> _metricsSender;
     std::atomic<bool> _isInitialized{false}; // pay attention to keeping ProfilerEngineStatus::IsProfilerEngiveActive in sync with this!
@@ -197,6 +202,7 @@ private :
     ExceptionsProvider* _pExceptionsProvider = nullptr;
     WallTimeProvider* _pWallTimeProvider = nullptr;
     CpuTimeProvider* _pCpuTimeProvider = nullptr;
+    AllocationsProvider* _pAllocationsProvider = nullptr;
     SamplesAggregator* _pSamplesAggregator = nullptr;
     SamplesCollector* _pSamplesCollector = nullptr;
 
@@ -211,7 +217,7 @@ private:
     static void ConfigureDebugLog();
     static void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk);
     static void InspectProcessorInfo();
-    static void InspectRuntimeVersion(ICorProfilerInfo4* pCorProfilerInfo);
+    static void InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor);
     static const char* SysInfoProcessorArchitectureToStr(WORD wProcArch);
 
     void DisposeInternal();

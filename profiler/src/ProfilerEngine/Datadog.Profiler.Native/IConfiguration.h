@@ -38,4 +38,5 @@ public:
     virtual bool IsWallTimeProfilingEnabled() const = 0;
     virtual bool IsExceptionProfilingEnabled() const = 0;
     virtual int32_t ExceptionSampleLimit() const = 0;
+    virtual bool IsAllocationProfilingEnabled() const = 0;
 };

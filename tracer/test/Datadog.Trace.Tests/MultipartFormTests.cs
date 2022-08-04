@@ -18,10 +18,9 @@ namespace Datadog.Trace.Tests
 {
     [Collection(nameof(WebRequestCollection))]
     [UsesVerify]
-    public class MultipartFormTests : TestHelper
+    public class MultipartFormTests
     {
-        public MultipartFormTests(ITestOutputHelper output)
-            : base(string.Empty, output)
+        public MultipartFormTests()
         {
             VerifyHelper.InitializeGlobalSettings();
         }
@@ -29,7 +28,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public async Task ApiWebRequestMultipartTest()
         {
-            using var agent = (MockTracerAgent.TcpUdpAgent)EnvironmentHelper.GetMockAgent();
+            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
             agent.ShouldDeserializeTraces = false;
             string requestBody = null;
             agent.RequestReceived += (sender, args) =>
@@ -56,7 +55,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public async Task ApiWebRequestValidationTest()
         {
-            using var agent = (MockTracerAgent.TcpUdpAgent)EnvironmentHelper.GetMockAgent();
+            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
             agent.ShouldDeserializeTraces = false;
             string requestBody = null;
             agent.RequestReceived += (sender, args) =>
@@ -94,7 +93,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public async Task HttpClientRequestMultipartTest()
         {
-            using var agent = (MockTracerAgent.TcpUdpAgent)EnvironmentHelper.GetMockAgent();
+            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
             agent.ShouldDeserializeTraces = false;
             string requestBody = null;
             agent.RequestReceived += (sender, args) =>
