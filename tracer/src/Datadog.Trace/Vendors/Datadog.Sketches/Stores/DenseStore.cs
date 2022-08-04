@@ -74,9 +74,7 @@ internal abstract class DenseStore : Store, ISerializable
 
         if (store.Counts.Length > 0 && !store.IsEmpty())
         {
-            // This change seems correct based on the code in the java repo: https://github.com/DataDog/sketches-java/blob/5031ddff8e6d6de5174d2c06e2ced618f3a48621/src/main/java/com/datadoghq/sketch/ddsketch/store/DenseStore.java#L60-L64
-            // If we approve of this change, I'll push this as a PR to DataDog/sketches-dotnet, update the package, then update our vendor reference
-            Counts = new double[store.MaxIndex - store.Offset + 1];
+            Counts = new double[store.MaxIndex - store.MinIndex + 1];
             Array.Copy(store.Counts, store.MinIndex - store.Offset, Counts, 0, Counts.Length);
             Offset = store.MinIndex;
         }
