@@ -43,12 +43,7 @@ namespace Datadog.Trace.IntegrationTests
 
             using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
 
-            var statsReceived = false;
-            agent.StatsDeserialized += (_, _) =>
-            {
-                waitEvent.Set();
-                statsReceived = true;
-            };
+            agent.StatsDeserialized += (_, _) => waitEvent.Set();
 
             var settings = new TracerSettings
             {
@@ -102,7 +97,6 @@ namespace Datadog.Trace.IntegrationTests
 
                 var payload = agent.WaitForStats(2);
                 payload.Should().HaveCount(2);
-                statsReceived.Should().BeTrue();
 
                 var stats1 = payload[0];
                 stats1.Sequence.Should().Be(1);
@@ -115,7 +109,6 @@ namespace Datadog.Trace.IntegrationTests
             else
             {
                 waitEvent.WaitOne(TimeSpan.FromSeconds(10)).Should().Be(false, "No stats should be received");
-                statsReceived.Should().BeFalse();
             }
 
             void AssertStats(MockClientStatsPayload stats, Span span, bool isError)
