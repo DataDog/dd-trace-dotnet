@@ -73,11 +73,11 @@ namespace Datadog.Trace.IntegrationTests
             await tracer.FlushAsync();
             if (expectStats)
             {
-                waitEvent.WaitOne(TimeSpan.FromMinutes(1)).Should().Be(true, "timeout while waiting for stats");
+                waitEvent.WaitOne(TimeSpan.FromSeconds(15)).Should().Be(true, "timeout while waiting for stats");
             }
             else
             {
-                waitEvent.WaitOne(TimeSpan.FromSeconds(10)).Should().Be(false, "No stats should be received");
+                waitEvent.WaitOne(TimeSpan.FromSeconds(15)).Should().Be(false, "No stats should be received");
             }
 
             Span span2;
@@ -93,7 +93,7 @@ namespace Datadog.Trace.IntegrationTests
             await tracer.FlushAsync();
             if (expectStats)
             {
-                waitEvent.WaitOne(TimeSpan.FromMinutes(1)).Should().Be(true, "timeout while waiting for stats");
+                waitEvent.WaitOne(TimeSpan.FromSeconds(15)).Should().Be(true, "timeout while waiting for stats");
 
                 var payload = agent.WaitForStats(2);
                 payload.Should().HaveCount(2);
@@ -108,7 +108,7 @@ namespace Datadog.Trace.IntegrationTests
             }
             else
             {
-                waitEvent.WaitOne(TimeSpan.FromSeconds(10)).Should().Be(false, "No stats should be received");
+                waitEvent.WaitOne(TimeSpan.FromSeconds(15)).Should().Be(false, "No stats should be received");
             }
 
             void AssertStats(MockClientStatsPayload stats, Span span, bool isError)
