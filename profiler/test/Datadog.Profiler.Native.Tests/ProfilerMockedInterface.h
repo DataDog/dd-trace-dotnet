@@ -41,6 +41,7 @@ public:
     MOCK_METHOD(bool, IsCpuProfilingEnabled, (), (const override));
     MOCK_METHOD(bool, IsExceptionProfilingEnabled, (), (const override));
     MOCK_METHOD(int, ExceptionSampleLimit, (), (const override));
+    MOCK_METHOD(bool, IsAllocationProfilingEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter

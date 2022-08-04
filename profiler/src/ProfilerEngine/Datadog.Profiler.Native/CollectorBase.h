@@ -89,7 +89,7 @@ public:
     inline std::list<Sample> GetSamples() override
     {
         std::list<TRawSample> input = FetchRawSamples();
-                
+
         return TransformRawSamples(input);
     }
 

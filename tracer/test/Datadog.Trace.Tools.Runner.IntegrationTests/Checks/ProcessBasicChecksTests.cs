@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         private const string CorEnableKey = "CORECLR_ENABLE_PROFILING";
 #endif
 
-        private static readonly string ProfilerPath = EnvironmentHelper.GetTracerNativeDLLPath();
+        private static readonly string ProfilerPath = EnvironmentHelper.GetNativeLoaderPath();
 
         public ProcessBasicChecksTests(ITestOutputHelper output)
             : base(output)
