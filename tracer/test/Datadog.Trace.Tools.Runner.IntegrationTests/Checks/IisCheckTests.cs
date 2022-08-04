@@ -178,7 +178,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             registryService.Setup(r => r.GetLocalMachineValueNames(It.Is(@"SOFTWARE\Microsoft\.NETFramework", StringComparer.Ordinal)))
                 .Returns(Array.Empty<string>());
             registryService.Setup(r => r.GetLocalMachineValue(It.Is<string>(s => s == ProcessBasicChecksTests.ClsidKey || s == ProcessBasicChecksTests.Clsid32Key)))
-                .Returns(EnvironmentHelper.GetTracerNativeDLLPath());
+                .Returns(EnvironmentHelper.GetNativeLoaderPath());
 
             return registryService.Object;
         }

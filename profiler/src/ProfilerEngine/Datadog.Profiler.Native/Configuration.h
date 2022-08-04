@@ -41,6 +41,7 @@ public:
     bool IsWallTimeProfilingEnabled() const override;
     bool IsExceptionProfilingEnabled() const override;
     int32_t ExceptionSampleLimit() const override;
+    bool IsAllocationProfilingEnabled() const override;
 
 private:
     static tags ExtractUserTags();
@@ -71,6 +72,7 @@ private:
     bool _isCpuProfilingEnabled;
     bool _isWallTimeProfilingEnabled;
     bool _isExceptionProfilingEnabled;
+    bool _isAllocationProfilingEnabled;
     bool _debugLogEnabled;
     fs::path _logDirectory;
     fs::path _pprofDirectory;

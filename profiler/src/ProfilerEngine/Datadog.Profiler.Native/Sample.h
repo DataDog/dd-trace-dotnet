@@ -20,9 +20,11 @@ struct SampleValueType
 // This array define the list of ALL values set by all profilers
 SampleValueType const SampleTypeDefinitions[] =
 {
-    {"wall", "nanoseconds"}, // WallTimeDuration
-    {"cpu", "nanoseconds"},  // CPUTimeDuration
-    {"exception", "count"},
+    {"wall", "nanoseconds"},    // WallTimeDuration
+    {"cpu", "nanoseconds"},     // CPUTimeDuration
+    {"exception", "count"},     // ExceptionCount
+    {"alloc-samples", "count"}, // AllocationCount
+    {"alloc-size", "bytes"},    // AllocationSize
 
     // the new ones should be added here at the same time
     // new identifiers are added to SampleValue
@@ -42,12 +44,13 @@ enum class SampleValue : size_t
     // Exception profiler
     ExceptionCount = 2,
 
-    // Allocation tick profiler
-    //AllocationCount = 3,
+    // Allocation profiler
+    AllocationCount = 3,
+    AllocationSize = 4,
 
     // Thread contention profiler
-    //ContentionCount = 4,
-    //ContentionDuration = 5,
+    //ContentionCount = 5,
+    //ContentionDuration = 6,
 
 
 };
@@ -105,6 +108,7 @@ public:
     static const std::string SpanIdLabel;
     static const std::string ExceptionTypeLabel;
     static const std::string ExceptionMessageLabel;
+    static const std::string AllocationClassLabel;
 
 private:
     uint64_t _timestamp;

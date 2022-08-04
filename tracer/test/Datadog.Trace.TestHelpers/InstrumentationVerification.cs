@@ -17,12 +17,6 @@ namespace Datadog.Trace.TestHelpers;
 internal static class InstrumentationVerification
 {
     /// <summary>
-    /// Configuration key for enabling the native loader profiler.
-    /// Default value is disabled.
-    /// </summary>
-    public const string UseNativeLoader = "USE_NATIVE_LOADER";
-
-    /// <summary>
     /// Configuration key for enabling or disabling the instrumentation verification.
     /// Default is value is disabled.
     /// </summary>
