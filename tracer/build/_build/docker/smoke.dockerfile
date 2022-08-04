@@ -32,6 +32,7 @@ ENV CORECLR_PROFILER_PATH=/opt/datadog/Datadog.Trace.ClrProfiler.Native.so
 ENV DD_DOTNET_TRACER_HOME=/opt/datadog
 ENV LD_PRELOAD=/opt/datadog/continuousprofiler/Datadog.Linux.ApiWrapper.x64.so
 ENV DD_PROFILING_ENABLED=1
+ENV DD_APPSEC_ENABLED=1
 
 ENV ASPNETCORE_URLS=http://localhost:5000
 
