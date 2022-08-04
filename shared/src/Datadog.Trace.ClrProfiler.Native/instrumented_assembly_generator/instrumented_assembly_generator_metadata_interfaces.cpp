@@ -156,15 +156,33 @@ void MetadataInterfaces::WriteMetadataChange(const mdToken* pToken,
     auto [hr, moduleName, mvid] = GetModuleNameAndMvid(metadataImport);
     if (FAILED(hr)) return;
 
+    shared::WSTRING fileNameString;
+
+#ifndef MACOS
     shared::WSTRINGSTREAM fileNameStream;
     fileNameStream << mvid << FileNameSeparator << GetCleanedFileName(moduleName) << ModuleMembersFileExtension;
+    fileNameString = fileNameStream.str()
+#else
+    fileNameString = mvid + FileNameSeparator + GetCleanedFileName(moduleName) + ModuleMembersFileExtension;
+#endif
 
+    shared::WSTRING stringString;
+
+#ifndef MACOS
     shared::WSTRINGSTREAM stringStream;
     // each line in the file is: "token=name"
     // TODO: handle empty token
     stringStream << std::hex << *pToken << WStr("=") << metadataName << std::endl;
+    stringString = stringStream.str();
+#else
+    // TODO: shared::WSTRINGSTREAM is not supported in osx, so as a workaround we convert to char
+    // In the case we want to support MACOS this should be solved.
+    std::stringstream stringStream;
+    stringStream << std::hex << *pToken << "=" << shared::ToString(metadataName) << std::endl;
+    stringString = shared::ToWSTRING(stringStream.str());
+#endif
 
-    WriteTextToFile(fileNameStream.str(), stringStream.str());
+    WriteTextToFile(fileNameString, stringString);
 }
 
 HRESULT MetadataInterfaces::DefineTypeDef(LPCWSTR szTypeDef, DWORD dwTypeDefFlags,

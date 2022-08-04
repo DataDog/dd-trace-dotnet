@@ -446,9 +446,8 @@ namespace datadog::shared::nativeloader
                         moduleName = modulePath;
                     }
 
-                    WSTRINGSTREAM stringStream;
-                    stringStream << moduleName << std::endl;
-                    instrumented_assembly_generator::WriteTextToFile(instrumented_assembly_generator::ModulesFileName, stringStream.str());
+                    moduleName = moduleName + EndLWStr;
+                    instrumented_assembly_generator::WriteTextToFile(instrumented_assembly_generator::ModulesFileName, moduleName);
                     instrumented_assembly_generator::CopyOriginalModuleForInstrumentationVerification(modulePath);
                 }
             }
