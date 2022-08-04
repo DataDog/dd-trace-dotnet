@@ -161,7 +161,7 @@ void MetadataInterfaces::WriteMetadataChange(const mdToken* pToken,
 #ifndef MACOS
     shared::WSTRINGSTREAM fileNameStream;
     fileNameStream << mvid << FileNameSeparator << GetCleanedFileName(moduleName) << ModuleMembersFileExtension;
-    fileNameString = fileNameStream.str()
+    fileNameString = fileNameStream.str();
 #else
     fileNameString = mvid + FileNameSeparator + GetCleanedFileName(moduleName) + ModuleMembersFileExtension;
 #endif
