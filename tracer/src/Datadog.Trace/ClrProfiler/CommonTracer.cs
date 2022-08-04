@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler
         public void SetSamplingPriority(int? samplingPriority)
         {
             Tracer.Instance.InternalActiveScope?.Span.Context?.TraceContext
-                 ?.SetSamplingDecision(samplingPriority, SamplingMechanism.Unknown, notifyDistributedTracer: false);
+                 ?.SetSamplingDecision(samplingPriority, notifyDistributedTracer: false);
         }
     }
 }

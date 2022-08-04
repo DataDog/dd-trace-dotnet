@@ -66,7 +66,7 @@ namespace Datadog.Trace
                         {
                             // this is a root span created from a propagated context that contains a sampling priority.
                             // no need to track sampling mechanism since we won't override the propagated tag/header.
-                            var decision = new SamplingDecision(samplingPriority, SamplingMechanism.Unknown);
+                            var decision = new SamplingDecision(samplingPriority);
                             _samplingDecision = decision;
                         }
                         else if (Tracer.Sampler is not null)
@@ -153,7 +153,7 @@ namespace Datadog.Trace
             }
         }
 
-        public void SetSamplingDecision(int? priority, int mechanism, double? rate = null, bool notifyDistributedTracer = true)
+        public void SetSamplingDecision(int? priority, int? mechanism = null, double? rate = null, bool notifyDistributedTracer = true)
         {
             if (priority == null)
             {
@@ -198,9 +198,9 @@ namespace Datadog.Trace
             // * we should not overwrite an existing value propagated from upstream service
             // * the "-" prefix is a left-over separator from a previous iteration of this feature (not a typo or a negative sign)
             // * don't set the tag if sampling mechanism is unknown
-            if (samplingDecision.Mechanism != SamplingMechanism.Unknown)
+            if (samplingDecision.Mechanism != null)
             {
-                span.Context.TraceContext?.Tags.SetTag(Trace.Tags.Propagated.DecisionMaker, $"-{samplingDecision.Mechanism}", replaceIfExists: false);
+                span.Context.TraceContext?.Tags.SetTag(Trace.Tags.Propagated.DecisionMaker, $"-{samplingDecision.Mechanism.Value}", replaceIfExists: false);
             }
         }
 

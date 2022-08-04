@@ -11,7 +11,6 @@ using System.Text;
 
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
@@ -102,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                 Serverless.Debug($"setting the placeholder sampling priority to = {samplingPriority}");
 
                 // TODO: figure out SamplingMechanism, do we need to propagate it here?
-                span.Context.TraceContext?.SetSamplingDecision(Convert.ToInt32(samplingPriority), SamplingMechanism.Unknown, rate: null, notifyDistributedTracer: false);
+                span.Context.TraceContext?.SetSamplingDecision(Convert.ToInt32(samplingPriority), notifyDistributedTracer: false);
             }
 
             return tracer.TracerManager.ScopeManager.Activate(span, false);

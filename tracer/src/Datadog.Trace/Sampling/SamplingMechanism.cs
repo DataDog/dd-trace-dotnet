@@ -1,4 +1,4 @@
-﻿// <copyright file="SamplingMechanism.cs" company="Datadog">
+// <copyright file="SamplingMechanism.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,13 +10,6 @@ namespace Datadog.Trace.Sampling;
 /// </summary>
 internal static class SamplingMechanism
 {
-    /// <summary>
-    /// No sampling decision was made; or it was made with an unknown mechanism.
-    /// This is NOT a valid value and should not be sent to the Trace Agent.
-    /// It is only used internally by the tracer.
-    /// </summary>
-    public const int Unknown = -1;
-
     /// <summary>
     /// Sampling decision was made using the default mechanism. Used before the tracer
     /// receives any rates from agent and there are no rules configured.
@@ -80,9 +73,4 @@ internal static class SamplingMechanism
     /// The only available sampling priority is <see cref="SamplingPriorityValues.UserKeep"/> (2).
     /// </summary>
     public const int SpanSamplingRule = 8;
-
-    /// <summary>
-    /// CIApp does not have a defined mechanism value. Default to <see cref="Unknown"/> for now.
-    /// </summary>
-    public const int CiApp = Unknown;
 }

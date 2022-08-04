@@ -144,7 +144,7 @@ namespace Datadog.Trace.Tests
                   .Callback<ArraySegment<Span>>(s => spans = s);
 
             var traceContext = new TraceContext(tracer.Object);
-            traceContext.SetSamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.Unknown);
+            traceContext.SetSamplingDecision(SamplingPriorityValues.UserKeep);
 
             var rootSpan = CreateSpan();
 
@@ -207,7 +207,7 @@ namespace Datadog.Trace.Tests
             }
 
             var traceContext = new TraceContext(tracer.Object);
-            traceContext.SetSamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.Unknown);
+            traceContext.SetSamplingDecision(SamplingPriorityValues.UserKeep);
 
             var rootSpan = CreateSpan();
 

@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                         if (setSamplingPriority)
                         {
                             // TODO: figure out SamplingMechanism, do we need to propagate it here?
-                            scope.Span.SetTraceSamplingDecision(spanContext.SamplingPriority.Value, SamplingMechanism.Unknown);
+                            scope.Span.SetTraceSamplingDecision(spanContext.SamplingPriority.Value);
                         }
 
                         // add distributed tracing headers to the HTTP request
