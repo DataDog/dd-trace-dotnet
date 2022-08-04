@@ -376,7 +376,7 @@ bool OpSysTools::IsSafeToStartProfiler()
         if (cpuLimit < 1)
         {
             Log::Warn("The CPU limit is too low for the profiler to work properly.");
-            return true;
+            return false;
         }        
     }
 
