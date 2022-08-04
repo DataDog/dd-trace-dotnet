@@ -18,9 +18,21 @@ namespace Datadog.Trace.Agent
         /// </summary>
         bool? CanComputeStats { get; }
 
-        void Add(params Span[] spans);
+        /// <summary>
+        /// Receives an array of spans and computes stats points for them.
+        /// </summary>
+        /// <param name="spans">The array of spans to process.</param>
+        /// <returns>True if the spans should be kept based on rare stats points or error stats points, false otherwise.</returns>
+        bool Add(params Span[] spans);
 
-        void AddRange(Span[] spans, int offset, int count);
+        /// <summary>
+        /// Receives an array of spans and computes stats points for them.
+        /// </summary>
+        /// <param name="spans">The array of spans to process.</param>
+        /// <param name="offset">The array offset of the spans to process.</param>
+        /// <param name="count">The number of spans to process.</param>
+        /// <returns>True if the spans should be kept based on rare stats points or error stats points, false otherwise.</returns>
+        bool AddRange(Span[] spans, int offset, int count);
 
         Task DisposeAsync();
     }

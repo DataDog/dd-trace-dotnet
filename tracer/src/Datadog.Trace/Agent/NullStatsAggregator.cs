@@ -11,13 +11,9 @@ namespace Datadog.Trace.Agent
     {
         public bool? CanComputeStats => false;
 
-        public void Add(params Span[] spans)
-        {
-        }
+        public bool Add(params Span[] spans) => false;
 
-        public void AddRange(Span[] spans, int offset, int count)
-        {
-        }
+        public bool AddRange(Span[] spans, int offset, int count) => false;
 
         public Task DisposeAsync()
         {

@@ -382,11 +382,11 @@ namespace Datadog.Trace.Agent
                 return null;
             }
 
-            _statsAggregator?.AddRange(trace.Array, trace.Offset, trace.Count);
+            bool forceKeep = _statsAggregator?.AddRange(trace.Array, trace.Offset, trace.Count) ?? false;
 
             // If stats computation determined that we should drop the P0 Trace,
             // skip all other processing
-            if (!shouldSerializeSpans)
+            if (!shouldSerializeSpans && !forceKeep)
             {
                 Interlocked.Increment(ref _droppedP0Traces);
                 Interlocked.Add(ref _droppedP0Spans, trace.Count);
