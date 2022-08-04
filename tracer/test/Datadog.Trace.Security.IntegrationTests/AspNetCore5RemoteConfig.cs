@@ -20,7 +20,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCore5RemoteConfig : AspNetCoreBase, IDisposable
+    public class AspNetCore5RemoteConfig : AspNetBase, IDisposable
     {
         public AspNetCore5RemoteConfig(ITestOutputHelper outputHelper)
             : base("AspNetCore5", outputHelper, "/shutdown")
