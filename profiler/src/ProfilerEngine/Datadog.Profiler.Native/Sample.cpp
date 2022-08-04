@@ -12,6 +12,7 @@ const std::string Sample::LocalRootSpanIdLabel = "local root span id";
 const std::string Sample::SpanIdLabel = "span id";
 const std::string Sample::ExceptionTypeLabel = "exception type";
 const std::string Sample::ExceptionMessageLabel = "exception message";
+const std::string Sample::AllocationClassLabel = "allocation class";
 
 
 Sample::Sample(uint64_t timestamp, std::string_view runtimeId) :
