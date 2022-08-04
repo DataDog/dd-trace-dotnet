@@ -26,7 +26,6 @@ namespace Datadog.Trace
         private bool _rootSpanSent;
         private bool _rootSpanInNextBatch;
 
-        private bool _hasErrorSpans;
         private bool _shouldKeepTrace;
         private int _openSpans;
         private int? _samplingPriority;
@@ -95,15 +94,8 @@ namespace Datadog.Trace
 
             ArraySegment<Span> spansToWrite = default;
             var rootSpanInNextBatch = false;
-            bool shouldKeepSpan = true;
-            bool shouldKeepTraceFinal = default;
-
-            // For now, assume that we have enabled stats computation AND the agent has been confirmed to be compatible
-            // We'll need to redo this because we should asynchronously send the agent compatibility check and then set enabled/disabled accordingly
-            if (Tracer.CanDropP0s)
-            {
-                shouldKeepSpan = ShouldKeepSpan(span);
-            }
+            bool shouldKeepTraceFinal = false;
+            bool shouldKeepSpan = ShouldKeepSpan(span);
 
             lock (this)
             {
@@ -115,10 +107,7 @@ namespace Datadog.Trace
                 }
 
                 _openSpans--;
-                if (shouldKeepSpan)
-                {
-                    _shouldKeepTrace = true;
-                }
+                _shouldKeepTrace |= shouldKeepSpan;
 
                 if (_openSpans == 0)
                 {
@@ -238,23 +227,21 @@ namespace Datadog.Trace
         // - If the current span doesn't have Metrics["_dd1.sr.eausr"] (aka AnalyticsSampleRate), skip. If it does, run the Knuth sampling decision on the metric value and return the result.
         private bool ShouldKeepSpan(Span span)
         {
+            // For now, assume that we have enabled stats computation AND the agent has been confirmed to be compatible
+            // We'll need to redo this because we should asynchronously send the agent compatibility check and then set enabled/disabled accordingly
+            if (_shouldKeepTrace || !Tracer.CanDropP0s)
+            {
+                return true;
+            }
+
             if (_samplingPriority is int a && a > 0)
             {
                 return true;
             }
 
-            // TODO: Is there a better way to read and write this value? Open to suggestions
-            lock (this)
+            if (span.Error)
             {
-                if (_hasErrorSpans)
-                {
-                    return true;
-                }
-                else if (span.Error)
-                {
-                    _hasErrorSpans = true;
-                    return true;
-                }
+                return true;
             }
 
             if (span.GetMetric(Trace.Tags.Analytics) is double rate)
