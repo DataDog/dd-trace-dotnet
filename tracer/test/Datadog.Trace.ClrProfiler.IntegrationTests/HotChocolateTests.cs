@@ -132,17 +132,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 
-                // hacky scrubber for the fact that version 4.1.0+ switched to using " in error message in one place
-                // where every other version uses '
-                settings.AddSimpleScrubber("Did you mean \"appearsIn\"", "Did you mean 'appearsIn'");
-                // Graphql 5 has different error message for missing subscription
-                settings.AddSimpleScrubber("Could not resolve source stream for field", "Error trying to resolve field");
-
-                // Overriding the type name here as we have multiple test classes in the file
-                // Ensures that we get nice file nesting in Solution Explorer
-                var fxSuffix = EnvironmentHelper.IsCoreClr() ? string.Empty : ".netfx";
                 await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName($"{_testName}.SubmitsTraces{fxSuffix}")
+                                  .UseFileName("HotChocolateTests.SubmitsTraces")
                                   .DisableRequireUniquePrefix(); // all package versions should be the same
 
                 VerifyInstrumentation(process);
