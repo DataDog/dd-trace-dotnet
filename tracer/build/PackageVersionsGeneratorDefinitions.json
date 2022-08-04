@@ -191,6 +191,9 @@
     "VersionConditions": [{
       "MaxVersionExclusive": "5.0.0",
       "IncludeOnlyTargetFrameworks": ["net461"]
+    },{
+      "MaxVersionExclusive": "6.2.0",
+      "ExcludeTargetFrameworks": ["net461", "netcoreapp2.1", "netcoreapp3.0"]
     }]
   },
   {

@@ -473,15 +473,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NET461
                 new object[] { "4.5.14" },
-                new object[] { "5.14.0" },
-                new object[] { "6.2.0" },
-#endif
-#if NETCOREAPP2_1
-                new object[] { "5.14.0" },
-                new object[] { "6.2.0" },
-#endif
-#if NETCOREAPP3_0
-                new object[] { "5.14.0" },
                 new object[] { "6.2.0" },
 #endif
 #if NETCOREAPP3_1
@@ -494,6 +485,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
 #if NET6_0
                 new object[] { "5.14.0" },
+                new object[] { "6.2.0" },
+#endif
+#if NETCOREAPP2_1
+                new object[] { "6.2.0" },
+#endif
+#if NETCOREAPP3_0
                 new object[] { "6.2.0" },
 #endif
 #endif
