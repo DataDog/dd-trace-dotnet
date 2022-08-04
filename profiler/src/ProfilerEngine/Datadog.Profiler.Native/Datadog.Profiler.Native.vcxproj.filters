@@ -213,6 +213,9 @@
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
     <ClInclude Include="SamplesCollector.h" />
+    <ClInclude Include="cgroup.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
     <ClInclude Include="ClrEventsParser.h">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClInclude>
@@ -347,7 +350,7 @@
     <ClCompile Include="AllocationsProvider.cpp">
       <Filter>Allocations</Filter>
     </ClCompile>
-    <ClCompile Include="cgroup.hpp">
+    <ClCompile Include="cgroup.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>

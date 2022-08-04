@@ -21,7 +21,7 @@
 #include <unistd.h>
 #define _GNU_SOURCE
 #include <errno.h>
-#include "cgroup.hpp"
+#include "cgroup.h"
 #endif
 
 #include <chrono>

@@ -14,7 +14,7 @@
 #include <VersionHelpers.h>
 #include <windows.h>
 #else
-#include "cgroup.hpp"
+#include "cgroup.h"
 #endif
 
 #include "AllocationsProvider.h"
