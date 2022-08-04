@@ -123,6 +123,8 @@ namespace Datadog.Trace.Configuration
 
             StatsComputationEnabled = source?.GetBool(ConfigurationKeys.StatsComputationEnabled) ?? false;
 
+            StatsComputationInterval = source?.GetInt32(ConfigurationKeys.StatsComputationInterval) ?? 10;
+
             RuntimeMetricsEnabled = source?.GetBool(ConfigurationKeys.RuntimeMetricsEnabled) ??
                                     false;
 
@@ -395,6 +397,11 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a value indicating whether the diagnostic log at startup is enabled
         /// </summary>
         public bool StartupDiagnosticLogEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets the time interval (in seconds) for sending stats
+        /// </summary>
+        internal int StatsComputationInterval { get; set; }
 
         /// <summary>
         /// Gets or sets the maximum length of an outgoing propagation header's value ("x-datadog-tags")

@@ -55,6 +55,7 @@ namespace Datadog.Trace.Configuration
             IpHeaderDisabled = settings.IpHeaderDisabled;
             TracerMetricsEnabled = settings.TracerMetricsEnabled;
             StatsComputationEnabled = settings.StatsComputationEnabled;
+            StatsComputationInterval = settings.StatsComputationInterval;
             RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled;
             KafkaCreateConsumerScopeEnabled = settings.KafkaCreateConsumerScopeEnabled;
             StartupDiagnosticLogEnabled = settings.StartupDiagnosticLogEnabled;
@@ -200,6 +201,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether stats are computed on the tracer side
         /// </summary>
         public bool StatsComputationEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating the time interval (in seconds) for sending stats
+        /// </summary>
+        public int StatsComputationInterval { get; }
 
         /// <summary>
         /// Gets a value indicating whether a span context should be created on exiting a successful Kafka

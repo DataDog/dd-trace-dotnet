@@ -17,8 +17,6 @@ namespace Datadog.Trace.Agent
     {
         private const int BufferCount = 2;
 
-        private const int BucketDurationSeconds = 10;
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StatsAggregator>();
 
         private readonly HashSet<StatsAggregationKey> _keys;
@@ -35,11 +33,11 @@ namespace Datadog.Trace.Agent
 
         private int _currentBuffer;
 
-        internal StatsAggregator(IApi api, ImmutableTracerSettings settings, TimeSpan bucketDuration)
+        internal StatsAggregator(IApi api, ImmutableTracerSettings settings)
         {
             _api = api;
             _processExit = new TaskCompletionSource<bool>();
-            _bucketDuration = bucketDuration;
+            _bucketDuration = TimeSpan.FromSeconds(settings.StatsComputationInterval);
             _keys = new HashSet<StatsAggregationKey>();
             _buffers = new StatsBuffer[BufferCount];
 
@@ -70,7 +68,7 @@ namespace Datadog.Trace.Agent
 
         public static IStatsAggregator Create(IApi api, ImmutableTracerSettings settings)
         {
-            return settings.StatsComputationEnabled ? new StatsAggregator(api, settings, TimeSpan.FromSeconds(BucketDurationSeconds)) : new NullStatsAggregator();
+            return settings.StatsComputationEnabled ? new StatsAggregator(api, settings) : new NullStatsAggregator();
         }
 
         public Task DisposeAsync()

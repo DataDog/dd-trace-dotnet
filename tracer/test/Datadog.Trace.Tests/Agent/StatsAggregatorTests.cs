@@ -23,7 +23,8 @@ namespace Datadog.Trace.Tests.Agent
         [Fact]
         public async Task CallFlushAutomatically()
         {
-            var bucketDuration = TimeSpan.FromSeconds(1);
+            const int bucketDurationSeconds = 1;
+            var bucketDuration = TimeSpan.FromSeconds(bucketDurationSeconds);
 
             var mutex = new ManualResetEventSlim();
 
@@ -41,7 +42,7 @@ namespace Datadog.Trace.Tests.Agent
                     })
                 .Returns(Task.FromResult(true));
 
-            var aggregator = new StatsAggregator(api.Object, GetSettings(), bucketDuration);
+            var aggregator = new StatsAggregator(api.Object, GetSettings(bucketDurationSeconds));
 
             try
             {
@@ -76,7 +77,7 @@ namespace Datadog.Trace.Tests.Agent
 
             // First, validate that Flush does call SendStatsAsync even if disposed
             // If this behavior change then the test needs to be rewritten
-            var aggregator = new StatsAggregator(api.Object, GetSettings(), Timeout.InfiniteTimeSpan);
+            var aggregator = new StatsAggregator(api.Object, GetSettings());
 
             // Dispose immediately to make Flush complete without delay
             await aggregator.DisposeAsync();
@@ -90,7 +91,7 @@ namespace Datadog.Trace.Tests.Agent
             api.Reset();
 
             // Now the actual test
-            aggregator = new StatsAggregator(api.Object, GetSettings(), Timeout.InfiniteTimeSpan);
+            aggregator = new StatsAggregator(api.Object, GetSettings());
             await aggregator.DisposeAsync();
 
             await aggregator.Flush();
@@ -109,7 +110,7 @@ namespace Datadog.Trace.Tests.Agent
             ulong id = 0;
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Timeout.InfiniteTimeSpan);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings());
 
             try
             {
@@ -189,7 +190,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Timeout.InfiniteTimeSpan);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings());
 
             try
             {
@@ -252,7 +253,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Timeout.InfiniteTimeSpan);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings());
 
             try
             {
@@ -322,7 +323,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Timeout.InfiniteTimeSpan);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings());
 
             try
             {
@@ -365,7 +366,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Timeout.InfiniteTimeSpan);
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings());
 
             try
             {
@@ -411,7 +412,16 @@ namespace Datadog.Trace.Tests.Agent
             }
         }
 
-        private static ImmutableTracerSettings GetSettings() => new TracerSettings().Build();
+        private static ImmutableTracerSettings GetSettings(int? statsComputationIntervalSeconds = null)
+        {
+            var settings = new TracerSettings();
+            if (statsComputationIntervalSeconds.HasValue)
+            {
+                settings.StatsComputationInterval = statsComputationIntervalSeconds.Value;
+            }
+
+            return settings.Build();
+        }
 
         // Re-implement timestamp conversion to independently verify the operation
         private static double ConvertTimestamp(long ns)
