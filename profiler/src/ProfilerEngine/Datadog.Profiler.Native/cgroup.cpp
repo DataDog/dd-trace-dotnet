@@ -28,18 +28,18 @@
 #define CGROUP1_CFS_PERIOD_FILENAME "/cpu.cfs_period_us"
 #define CGROUP2_CPU_MAX_FILENAME "/cpu.max"
 
-static void CGroup::Initialize()
+void CGroup::Initialize()
 {
     s_cgroup_version = FindCGroupVersion();
     s_cpu_cgroup_path = FindCGroupPath(s_cgroup_version == 1 ? &IsCGroup1CpuSubsystem : nullptr);
 }
 
-static void CGroup::Cleanup()
+void CGroup::Cleanup()
 {
     free(s_cpu_cgroup_path);
 }
 
-static bool CGroup::GetCpuLimit(double *val)
+bool CGroup::GetCpuLimit(double *val)
 {
     if (s_cgroup_version == 1)
         return GetCGroup1CpuLimit(val);
@@ -51,7 +51,7 @@ static bool CGroup::GetCpuLimit(double *val)
     }
 }
 
-static int CGroup::FindCGroupVersion()
+int CGroup::FindCGroupVersion()
 {
     // It is possible to have both cgroup v1 and v2 enabled on a system.
     // Most non-bleeding-edge Linux distributions fall in this group. We
@@ -77,11 +77,11 @@ static int CGroup::FindCGroupVersion()
     }
 }
 
-static bool CGroup::IsCGroup1CpuSubsystem(const char *strTok){
+bool CGroup::IsCGroup1CpuSubsystem(const char *strTok){
     return strcmp("cpu", strTok) == 0;
 }
 
-static char* CGroup::FindCGroupPath(bool (*is_subsystem)(const char *)){
+char* CGroup::FindCGroupPath(bool (*is_subsystem)(const char *)){
     char *cgroup_path = nullptr;
     char *hierarchy_mount = nullptr;
     char *hierarchy_root = nullptr;
@@ -134,7 +134,7 @@ static char* CGroup::FindCGroupPath(bool (*is_subsystem)(const char *)){
     return cgroup_path;
 }
 
-static void CGroup::FindHierarchyMount(bool (*is_subsystem)(const char *), char** pmountpath, char** pmountroot)
+void CGroup::FindHierarchyMount(bool (*is_subsystem)(const char *), char** pmountpath, char** pmountroot)
 {
     char *line = nullptr;
     size_t lineLen = 0, maxLineLen = 0;
@@ -219,7 +219,7 @@ static void CGroup::FindHierarchyMount(bool (*is_subsystem)(const char *), char*
         fclose(mountinfofile);
 }
 
-static char* CGroup::FindCGroupPathForSubsystem(bool (*is_subsystem)(const char *))
+char* CGroup::FindCGroupPathForSubsystem(bool (*is_subsystem)(const char *))
 {
     char *line = nullptr;
     size_t lineLen = 0;
@@ -303,7 +303,7 @@ static char* CGroup::FindCGroupPathForSubsystem(bool (*is_subsystem)(const char 
     return cgroup_path;
 }
 
-static bool CGroup::GetCGroup1CpuLimit(double *val)
+bool CGroup::GetCGroup1CpuLimit(double *val)
 {
     long long quota;
     long long period;
@@ -321,7 +321,7 @@ static bool CGroup::GetCGroup1CpuLimit(double *val)
     return true;
 }
 
-static bool CGroup::GetCGroup2CpuLimit(double *val)
+bool CGroup::GetCGroup2CpuLimit(double *val)
 {
     char *filename = nullptr;
     FILE *file = nullptr;
@@ -390,13 +390,13 @@ static bool CGroup::GetCGroup2CpuLimit(double *val)
     return result;
 }
 
-static void CGroup::ComputeCpuLimit(long long period, long long quota, double *val)
+void CGroup::ComputeCpuLimit(long long period, long long quota, double *val)
 {
     // Calculate cpu count based on quota
     *val = (double) quota / period;
 }
 
-static long long CGroup::ReadCpuCGroupValue(const char* subsystemFilename){
+long long CGroup::ReadCpuCGroupValue(const char* subsystemFilename){
     char *filename = nullptr;
     bool result = false;
     long long val;
@@ -415,7 +415,7 @@ static long long CGroup::ReadCpuCGroupValue(const char* subsystemFilename){
     return val;
 }
 
-static bool CGroup::ReadLongLongValueFromFile(const char* filename, long long* val)
+bool CGroup::ReadLongLongValueFromFile(const char* filename, long long* val)
 {
     bool result = false;
     char *line = nullptr;
