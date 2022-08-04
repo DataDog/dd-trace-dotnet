@@ -13,6 +13,8 @@
 #ifdef _WINDOWS
 #include <VersionHelpers.h>
 #include <windows.h>
+#else
+#include "cgroup.hpp"
 #endif
 
 #include "AllocationsProvider.h"
@@ -77,6 +79,10 @@ CorProfilerCallback::CorProfilerCallback()
     _this = this;
 
     _pClrLifetime = std::make_unique<ClrLifetime>(&_isInitialized);
+
+#ifndef _WINDOWS
+    CGroup::Initialize();
+#endif
 }
 
 // Cleanup
@@ -85,6 +91,10 @@ CorProfilerCallback::~CorProfilerCallback()
     DisposeInternal();
 
     _this = nullptr;
+
+#ifndef _WINDOWS
+    CGroup::Cleanup();
+#endif
 }
 
 bool CorProfilerCallback::InitializeServices()

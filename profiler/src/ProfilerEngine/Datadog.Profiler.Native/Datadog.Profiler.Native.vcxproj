@@ -309,6 +309,7 @@
     <ClCompile Include="ApplicationInfo.cpp" />
     <ClCompile Include="ApplicationStore.cpp" />
     <ClCompile Include="ClrEventsParser.cpp" />
+    <ClCompile Include="cgroup.hpp" />
     <ClCompile Include="ClrLifetime.cpp" />
     <ClCompile Include="Configuration.cpp" />
     <ClCompile Include="CorProfilerCallback.cpp" />

@@ -21,6 +21,7 @@
 #include <unistd.h>
 #define _GNU_SOURCE
 #include <errno.h>
+#include "cgroup.hpp"
 #endif
 
 #include <chrono>
@@ -359,13 +360,27 @@ bool OpSysTools::IsSafeToStartProfiler()
 
     // make sure that the default symbol for the custom function
     // is at the same address as the one found in our lib
-    if (customFn == dlsym(RTLD_DEFAULT, customFnName))
+    if (customFn != dlsym(RTLD_DEFAULT, customFnName))
     {
-        return true;
+        Log::Warn("Custom function '", customFnName, "' is not the default one. That indicates that the library ",
+              "'", wrapperLibraryPath, "' is not loaded using the LD_PRELOAD environment variable");
+        return false;
     }
 
-    Log::Warn("Custom function '", customFnName, "' is not the default one. That indicates that the library ",
-              "'", wrapperLibraryPath, "' is not loaded using the LD_PRELOAD environment variable");
-    return false;
+   double cpuLimit;
+
+    if (CGroup::GetCpuLimit(&cpuLimit))
+    {
+        Log::Info("CPU limit is ", cpuLimit);
+
+        if (cpuLimit < 1)
+        {
+            Log::Warn("The CPU limit is too low for the profiler to work properly.");
+            return false;
+        }        
+    }
+
+    return true;
+    
 #endif
 }

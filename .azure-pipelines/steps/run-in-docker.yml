@@ -14,6 +14,10 @@ parameters:
   - name: command
     type: string
 
+  - name: extraArgs
+    type: string
+    default: ''
+
 steps:
 - ${{ if eq(parameters.build, true) }}:
   - script: |
@@ -38,6 +42,7 @@ steps:
         --env TestAllPackageVersions=$(TestAllPackageVersions) \
         --env IncludeMinorPackageVersions=$(IncludeMinorPackageVersions) \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
+        ${{ extraArgs }} \
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
   displayName: Run '${{ parameters.command }}' in Docker
