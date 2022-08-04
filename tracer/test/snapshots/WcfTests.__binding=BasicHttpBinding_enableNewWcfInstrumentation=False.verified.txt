@@ -169,6 +169,7 @@
     Type: web,
     ParentId: Id_21,
     Tags: {
+      component: Wcf,
       env: integration_tests,
       http.method: POST,
       http.request.headers.host: localhost:00000,

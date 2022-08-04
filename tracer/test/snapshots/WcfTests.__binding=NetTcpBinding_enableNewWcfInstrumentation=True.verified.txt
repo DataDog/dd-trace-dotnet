@@ -156,6 +156,7 @@
     Service: Samples.Wcf,
     Type: web,
     Tags: {
+      component: Wcf,
       env: integration_tests,
       http.url: net.tcp://localhost:00000/WcfSample/123,123/CalculatorService,
       language: dotnet,
