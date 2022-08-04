@@ -5,17 +5,22 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Text;
 using System.Threading;
 using Datadog.Trace.AppSec.Transports;
 using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -36,13 +41,14 @@ namespace Datadog.Trace.AppSec
         private static object _globalInstanceLock = new();
 
         private readonly AppSecRateLimiter _rateLimiter;
-        private readonly IWaf _waf;
         private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
 
 #if NETFRAMEWORK
         private readonly bool _usingIntegratedPipeline;
 #endif
+
+        private IWaf _waf;
 
         static Security()
         {
@@ -89,47 +95,27 @@ namespace Datadog.Trace.AppSec
         {
             try
             {
+                SharedRemoteConfiguration.FeaturesProduct.ConfigChanged += AcceptFeaturesConfiguration;
+
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
-
                 _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
+                _rateLimiter = new AppSecRateLimiter(_settings.TraceRateLimit);
 
-                if (_settings.Enabled)
-                {
-                    _waf = waf ?? Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules);
-                    if (_waf?.InitializedSuccessfully ?? false)
-                    {
-                        _instrumentationGateway.EndRequest += RunWaf;
-                        _instrumentationGateway.PathParamsAvailable += AggregateAddressesInContext;
-                        _instrumentationGateway.BodyAvailable += AggregateAddressesInContext;
 #if NETFRAMEWORK
-                        try
-                        {
-                            _usingIntegratedPipeline = TryGetUsingIntegratedPipelineBool();
-                        }
-                        catch (Exception ex)
-                        {
-                            _usingIntegratedPipeline = false;
-                            Log.Error(ex, "Unable to query the IIS pipeline. Request and response information may be limited.");
-                        }
-
-                        if (_usingIntegratedPipeline)
-                        {
-                            _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
-                        }
-#else
-                        _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
-#endif
-                        AddAppsecSpecificInstrumentations();
-                    }
-                    else
-                    {
-                        _settings.Enabled = false;
-                    }
-
-                    _instrumentationGateway.EndRequest += ReportWafInitInfoOnce;
-                    LifetimeManager.Instance.AddShutdownTask(RunShutdown);
-                    _rateLimiter = new AppSecRateLimiter(_settings.TraceRateLimit);
+                try
+                {
+                    _usingIntegratedPipeline = TryGetUsingIntegratedPipelineBool();
                 }
+                catch (Exception ex)
+                {
+                    _usingIntegratedPipeline = false;
+                    Log.Error(ex, "Unable to query the IIS pipeline. Request and response information may be limited.");
+                }
+#endif
+
+                ChangeActivationStatus(waf);
+
+                LifetimeManager.Instance.AddShutdownTask(UnhookInstrumentGatewayEvents);
             }
             catch (Exception ex)
             {
@@ -137,6 +123,15 @@ namespace Datadog.Trace.AppSec
                 Log.Error(ex, "DDAS-0001-01: AppSec could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
             }
         }
+
+        /// <summary>
+        /// Gets the remote configuration product for the latest WAF rules
+        /// </summary>
+        public static Product AsmProduct { get; } = new("ASM");
+
+        public static Product AsmDDProduct { get; } = new("ASM_DD");
+
+        public static Product AsmDataProduct { get; } = new("ASM_DATA");
 
         /// <summary>
         /// Gets or sets the global <see cref="Security"/> instance.
@@ -173,6 +168,8 @@ namespace Datadog.Trace.AppSec
         internal SecuritySettings Settings => _settings;
 
         internal Version DdlibWafVersion => _waf?.Version;
+
+        public string ServiceName { get; }
 
         private static void AnnotateSpan(Span span)
         {
@@ -257,6 +254,48 @@ namespace Datadog.Trace.AppSec
             catch (Exception ex)
             {
                 Log.Error(ex, ex.Message);
+            }
+        }
+
+        private void ChangeActivationStatus(IWaf waf)
+        {
+            try
+            {
+                if (_settings.Enabled)
+                {
+                    _waf = waf ?? Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules);
+                    if (_waf?.InitializedSuccessfully ?? false)
+                    {
+                        _instrumentationGateway.EndRequest += RunWaf;
+                        _instrumentationGateway.PathParamsAvailable += AggregateAddressesInContext;
+                        _instrumentationGateway.BodyAvailable += AggregateAddressesInContext;
+
+#if NETFRAMEWORK
+                        if (_usingIntegratedPipeline)
+                        {
+                            _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
+                        }
+#else
+                        _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
+#endif
+                        AddAppsecSpecificInstrumentations();
+                    }
+                    else
+                    {
+                        _settings.Enabled = false;
+                    }
+
+                    _instrumentationGateway.EndRequest += ReportWafInitInfoOnce;
+                }
+                else
+                {
+                    UnhookInstrumentGatewayEvents();
+                }
+            }
+            catch (Exception ex)
+            {
+                _settings.Enabled = false;
+                Log.Error(ex, "failed to change status");
             }
         }
 
@@ -383,7 +422,25 @@ namespace Datadog.Trace.AppSec
             span.SetTag(Tags.AppSecWafVersion, _waf.Version.ToString());
         }
 
-        private void RunShutdown()
+        private void AcceptFeaturesConfiguration(object sender, ProductConfigChangedEventArgs args)
+        {
+            var config = args.NewConfigs.FirstOrDefault(x => x.Id == "asm_features_activation");
+
+            if (config == null)
+            {
+                Log.Warning("No matching feature configuration found in target paths.");
+                return;
+            }
+
+            var content = Encoding.UTF8.GetString(config.Contents);
+            var feature = JsonConvert.DeserializeObject<Features>(content);
+
+            _settings.Enabled = feature?.Asm?.Enabled ?? false;
+
+            ChangeActivationStatus(null);
+        }
+
+        private void UnhookInstrumentGatewayEvents()
         {
             if (_instrumentationGateway != null)
             {

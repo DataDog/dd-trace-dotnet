@@ -9,6 +9,9 @@
 
   <ItemGroup>
     <None Remove="applicationHost.config" />
+    <None Remove="ASM.json" />
+    <None Remove="ASM_DD.json" />
+    <None Remove="FEATURES.json" />
     <None Remove="xunit.runner.json" />
     <Compile Include="..\Datadog.Trace.TestHelpers.SharedSource\VerifyHelper.cs" Link="VerifyHelper.cs" />
     <Content Include="applicationHost.config">
@@ -17,6 +20,9 @@
     <Content Include="xunit.runner.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <EmbeddedResource Include="ASM.json" />
+    <EmbeddedResource Include="ASM_DD.json" />
+    <EmbeddedResource Include="FEATURES.json" />
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
     <PackageReference Include="libddwaf" Version="1.3.0" GeneratePathProperty="true" />

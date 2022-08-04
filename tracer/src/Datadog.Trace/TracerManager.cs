@@ -18,6 +18,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
@@ -46,6 +47,7 @@ namespace Datadog.Trace
         private static object _globalInstanceLock = new();
 
         private volatile bool _isClosing = false;
+        private RcmSimulator _rcmSimulator;
 
         public TracerManager(
             ImmutableTracerSettings settings,
@@ -80,6 +82,12 @@ namespace Datadog.Trace
             }
 
             TagProcessors = lstTagProcessors.ToArray();
+
+            var remoteConfigDir = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "RemoteConfig");
+            if (Directory.Exists(remoteConfigDir))
+            {
+                _rcmSimulator = new RcmSimulator(remoteConfigDir, new[] { SharedRemoteConfiguration.FeaturesProduct });
+            }
         }
 
         /// <summary>
@@ -215,6 +223,8 @@ namespace Datadog.Trace
                     telemetryReplaced = true;
                     await oldManager.Telemetry.DisposeAsync(sendAppClosingTelemetry: false).ConfigureAwait(false);
                 }
+
+                oldManager._rcmSimulator?.Dispose();
 
                 Log.Information(
                     exception: null,
@@ -503,6 +513,8 @@ namespace Datadog.Trace
                     var logSubmissionTask = _instance.DirectLogSubmission?.DisposeAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing Telemetry.");
                     var telemetryTask = _instance.Telemetry?.DisposeAsync() ?? Task.CompletedTask;
+
+                    _instance._rcmSimulator?.Dispose();
 
                     Log.Debug("Waiting for disposals.");
                     await Task.WhenAll(flushTracesTask, logSubmissionTask, telemetryTask).ConfigureAwait(false);

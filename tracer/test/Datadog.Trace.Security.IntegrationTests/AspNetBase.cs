@@ -110,6 +110,17 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false)
         {
+            var spans = await TestAppSecRequestAsync(agent, url, body, expectedSpans, spansPerRequest, settings, contentType, testInit);
+
+            // Overriding the type name here as we have multiple test classes in the file
+            // Ensures that we get nice file nesting in Solution Explorer
+            await Verifier.Verify(spans, settings)
+                          .UseMethodName("_")
+                          .UseTypeName(GetTestName());
+        }
+
+        public async Task<IImmutableList<MockSpan>> TestAppSecRequestAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false)
+        {
             var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType);
 
             settings.ModifySerialization(serializationSettings =>
@@ -141,11 +152,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 appsecSpans.Should().OnlyContain(s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]);
             }
 
-            // Overriding the type name here as we have multiple test classes in the file
-            // Ensures that we get nice file nesting in Solution Explorer
-            await Verifier.Verify(spans, settings)
-                          .UseMethodName("_")
-                          .UseTypeName(GetTestName());
+            return spans;
         }
 
         protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int appsecTraceRateLimit, int totalRequests, int spansPerRequest)
