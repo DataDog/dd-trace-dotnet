@@ -12,7 +12,7 @@ namespace Samples.HotChocolate
     {
         public async Task<BookAddedPayload> AddBook(Book book)
         {
-            return new BookAddedPayload { Book = book };
+            return await Task<BookAddedPayload>.Run(() => new BookAddedPayload { Book = book });
         }
     }
 }
