@@ -119,7 +119,7 @@ private:
     {
         auto runtimeId = _pRuntimeIdStore->GetId(rawSample.AppDomainId);
 
-        Sample sample(rawSample.Timestamp, runtimeId == nullptr ? std::string() : std::string(runtimeId));
+        Sample sample(rawSample.Timestamp, runtimeId == nullptr ? std::string_view() : std::string_view(runtimeId));
         if (rawSample.LocalRootSpanId != 0 && rawSample.SpanId != 0)
         {
             sample.AddLabel(Label{Sample::LocalRootSpanIdLabel, std::to_string(rawSample.LocalRootSpanId)});
