@@ -149,7 +149,7 @@
     <!-- Integration: Oracle.ManagedDataAccess -->
     <!-- Assembly: Oracle.ManagedDataAccess -->
     <!-- Latest package https://www.nuget.org/packages/Oracle.ManagedDataAccess/21.6.1 -->
-    <PackageReference Include="Oracle.ManagedDataAccess" Version="21.6.1" />
+    <PackageReference Include="Oracle.ManagedDataAccess" Version="21.7.0" />
 
     <!-- Integration: RabbitMQ.Client -->
     <!-- Assembly: RabbitMQ.Client -->
