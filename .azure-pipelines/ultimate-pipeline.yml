@@ -521,7 +521,7 @@ stages:
         masterCommitId: $(masterCommitId)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: ./tracer/build.sh BuildTracerHome
+    - script: ./tracer/build.sh BuildTracerHome BuildNativeLoader
       displayName: Build tracer home
 
     - publish: $(tracerHome)
