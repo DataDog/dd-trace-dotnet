@@ -28,18 +28,6 @@ namespace Datadog.Trace
         public const string SamplingPriority = "x-datadog-sampling-priority";
 
         /// <summary>
-        /// Used to propagate sampling mechanism across tracer versions in the same process,
-        /// not for propagation across process boundaries.
-        /// </summary>
-        internal const string SamplingMechanism = "x-datadog-sampling-mechanism";
-
-        /// <summary>
-        /// Used to propagate sampling mechanism across tracer versions in the same process,
-        /// not for propagation across process boundaries.
-        /// </summary>
-        internal const string SamplingRate = "x-datadog-sampling-rate";
-
-        /// <summary>
         /// If header is set to "false", tracing is disabled for that http request.
         /// Tracing is enabled by default.
         /// </summary>

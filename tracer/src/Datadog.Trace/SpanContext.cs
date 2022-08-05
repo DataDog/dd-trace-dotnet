@@ -31,11 +31,6 @@ namespace Datadog.Trace
             HttpHeaderNames.ParentId,
             HttpHeaderNames.SamplingPriority,
             HttpHeaderNames.Origin,
-
-            // these keys are only used for sharing context across tracer versions,
-            // not for propagation across process boundaries
-            HttpHeaderNames.SamplingMechanism,
-            HttpHeaderNames.SamplingRate,
         };
 
         /// <summary>
