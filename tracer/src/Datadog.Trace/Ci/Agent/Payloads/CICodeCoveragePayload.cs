@@ -7,6 +7,7 @@ using System;
 using System.Text;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage.Models;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -14,30 +15,16 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 {
     internal class CICodeCoveragePayload : MultipartPayload
     {
-        public CICodeCoveragePayload(int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver formatterResolver = null)
-            : base(maxItemsPerPayload, maxBytesPerPayload, formatterResolver)
+        public CICodeCoveragePayload(CIVisibilitySettings settings, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver formatterResolver = null)
+            : base(settings, maxItemsPerPayload, maxBytesPerPayload, formatterResolver)
         {
-            var agentlessUrl = CIVisibility.Settings.AgentlessUrl;
-            if (!string.IsNullOrWhiteSpace(agentlessUrl))
-            {
-                var builder = new UriBuilder(agentlessUrl);
-                builder.Path = "api/v2/citestcov";
-                Url = builder.Uri;
-            }
-            else
-            {
-                Url = new UriBuilder(
-                    scheme: "https",
-                    host: "event-platform-intake." + CIVisibility.Settings.Site,
-                    port: 443,
-                    pathValue: "api/v2/citestcov").Uri;
-            }
-
             // We call reset here to add the dummy event
             Reset();
         }
 
-        public override Uri Url { get; }
+        public override string EventPlatformSubdomain => "event-platform-intake";
+
+        public override string EventPlatformPath => "api/v2/citestcov";
 
         public override bool HasEvents
         {
