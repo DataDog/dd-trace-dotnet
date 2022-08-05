@@ -3,7 +3,7 @@
     TraceId: Id_1,
     SpanId: Id_2,
     Name: wcf.request,
-    Resource: /WcfSample/?/CalculatorService,
+    Resource: /WcfSample/123,123/CalculatorService,
     Service: Samples.Wcf,
     Type: web,
     Tags: {
@@ -13,8 +13,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.p.dm: -0
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -38,8 +37,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.p.dm: -0
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -63,8 +61,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.p.dm: -0
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -88,8 +85,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.p.dm: -0
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -113,8 +109,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.p.dm: -0
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
@@ -162,8 +157,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      version: 1.0.0,
-      _dd.p.dm: -0
+      version: 1.0.0
     },
     Metrics: {
       process_id: 0,
