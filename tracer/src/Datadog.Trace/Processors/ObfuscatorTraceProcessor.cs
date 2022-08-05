@@ -6,9 +6,8 @@
 using System;
 using System.Collections;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Processors;
 
-namespace Datadog.Trace.TraceProcessors
+namespace Datadog.Trace.Processors
 {
     // https://github.com/DataDog/dd-trace-java/blob/35487fa08f16503105b2ff37fb084ffa5c894f24/internal-api/src/main/java/datadog/trace/api/normalize/SQLNormalizer.java
 

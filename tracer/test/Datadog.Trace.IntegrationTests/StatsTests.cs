@@ -224,6 +224,77 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [Fact]
+        public async Task SendsStatsWithProcessing_Obfuscator()
+        {
+            var agentConfiguration = new MockTracerAgent.AgentConfiguration();
+            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort(), configuration: agentConfiguration);
+
+            var settings = new TracerSettings
+            {
+                StatsComputationEnabled = true,
+                ServiceName = "default-service",
+                ServiceVersion = "v1",
+                Environment = "test",
+                Exporter = new ExporterSettings
+                {
+                    AgentUri = new Uri($"http://localhost:{agent.Port}"),
+                }
+            };
+
+            var immutableSettings = settings.Build();
+            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+            List<Span> spans = new();
+            SpinWait.SpinUntil(() => tracer.CanComputeStats, 5_000);
+
+            spans.Add(CreateDefaultSpan(type: "sql", resource: "SELECT * FROM TABLE WHERE userId = 'abc1287681964'"));
+            spans.Add(CreateDefaultSpan(type: "sql", resource: "SELECT * FROM TABLE WHERE userId = 'abc\\'1287\\'681\\'\\'\\'\\'964'"));
+
+            spans.Add(CreateDefaultSpan(type: "cassandra", resource: "SELECT * FROM TABLE WHERE userId = 'abc1287681964'"));
+            spans.Add(CreateDefaultSpan(type: "cassandra", resource: "SELECT * FROM TABLE WHERE userId = 'abc\\'1287\\'681\\'\\'\\'\\'964'"));
+
+            spans.Add(CreateDefaultSpan(type: "redis", resource: "SET le_key le_value"));
+            spans.Add(CreateDefaultSpan(type: "redis", resource: "SET another_key another_value"));
+
+            await tracer.FlushAsync();
+
+            var statsPayload = agent.WaitForStats(1);
+            statsPayload.Should().HaveCount(1);
+            statsPayload[0].Stats.Should().HaveCount(1);
+
+            var buckets = statsPayload[0].Stats[0].Stats;
+            buckets.Sum(stats => stats.Hits).Should().Be(6);
+            buckets.Should().HaveCount(3, "obfuscator should reduce the cardinality of resource names");
+
+            using var assertionScope = new AssertionScope();
+
+            var sqlBuckets = buckets.Where(stats => stats.Type == "sql");
+            sqlBuckets.Should().ContainSingle();
+            sqlBuckets.Single().Hits.Should().Be(2);
+            sqlBuckets.Single().Resource.Should().Be("SELECT * FROM TABLE WHERE userId = ?");
+
+            var cassandraBuckets = buckets.Where(stats => stats.Type == "cassandra");
+            cassandraBuckets.Should().ContainSingle();
+            cassandraBuckets.Single().Hits.Should().Be(2);
+            cassandraBuckets.Single().Resource.Should().Be("SELECT * FROM TABLE WHERE userId = ?");
+
+            var redisBuckets = buckets.Where(stats => stats.Type == "redis");
+            redisBuckets.Should().ContainSingle();
+            redisBuckets.Single().Hits.Should().Be(2);
+            redisBuckets.Single().Resource.Should().Be("SET");
+
+            Span CreateDefaultSpan(string type, string resource)
+            {
+                using (var scope = tracer.StartActiveInternal("default-operation"))
+                {
+                    var span = scope.Span;
+                    span.ResourceName = resource;
+                    span.Type = type;
+                    return span;
+                }
+            }
+        }
+
+        [Fact]
         public async Task SendStats()
         {
             await SendStatsHelper(statsComputationEnabled: true, expectStats: true);

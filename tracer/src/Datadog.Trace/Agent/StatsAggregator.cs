@@ -46,6 +46,7 @@ namespace Datadog.Trace.Agent
             _traceProcessors = new ITraceProcessor[]
             {
                 new Processors.NormalizerTraceProcessor(),
+                new Processors.ObfuscatorTraceProcessor(false),
             };
 
             var header = new ClientStatsPayload
