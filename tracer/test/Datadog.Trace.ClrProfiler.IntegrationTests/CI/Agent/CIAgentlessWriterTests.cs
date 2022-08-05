@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.Coverage.Models;
 using Datadog.Trace.Ci.EventModel;
@@ -23,14 +24,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task AgentlessTestEventTest()
         {
+            var settings = CIVisibility.Settings;
             var sender = new Mock<ICIAgentlessWriterSender>();
-            var agentlessWriter = new CIAgentlessWriter(sender.Object);
+            var agentlessWriter = new CIAgentlessWriter(settings, sender.Object);
 
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             span.Type = SpanTypes.Test;
             span.SetTag(TestTags.Type, TestTags.TypeTest);
 
-            var expectedPayload = new Ci.Agent.Payloads.CITestCyclePayload();
+            var expectedPayload = new Ci.Agent.Payloads.CITestCyclePayload(settings);
             expectedPayload.TryProcessEvent(new TestEvent(span));
             var expectedBytes = expectedPayload.ToArray();
 
@@ -52,8 +54,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task AgentlessCodeCoverageEvent()
         {
+            var settings = CIVisibility.Settings;
             var sender = new Mock<ICIAgentlessWriterSender>();
-            var agentlessWriter = new CIAgentlessWriter(sender.Object);
+            var agentlessWriter = new CIAgentlessWriter(settings, sender.Object);
             var coveragePayload = new CoveragePayload
             {
                 TraceId = 42,
@@ -71,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                 }
             };
 
-            var expectedPayload = new Ci.Agent.Payloads.CICodeCoveragePayload();
+            var expectedPayload = new Ci.Agent.Payloads.CICodeCoveragePayload(settings);
             expectedPayload.TryProcessEvent(coveragePayload);
             var expectedFormItems = expectedPayload.ToArray();
 
@@ -103,10 +106,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task SlowSenderTest()
         {
+            var settings = CIVisibility.Settings;
             var flushTcs = new TaskCompletionSource<bool>();
 
             var sender = new Mock<ICIAgentlessWriterSender>();
-            var agentlessWriter = new CIAgentlessWriter(sender.Object, concurrency: 1);
+            var agentlessWriter = new CIAgentlessWriter(settings, sender.Object, concurrency: 1);
             var lstPayloads = new List<byte[]>();
 
             sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.CIVisibilityProtocolPayload>()))
@@ -117,7 +121,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                 });
 
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
-            var expectedPayload = new Ci.Agent.Payloads.CITestCyclePayload();
+            var expectedPayload = new Ci.Agent.Payloads.CITestCyclePayload(settings);
             expectedPayload.TryProcessEvent(new SpanEvent(span));
             expectedPayload.TryProcessEvent(new SpanEvent(span));
             expectedPayload.TryProcessEvent(new SpanEvent(span));
@@ -185,6 +189,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public void CoverageBufferTest()
         {
+            var settings = CIVisibility.Settings;
+
             int bufferSize = 256;
             int maxBufferSize = (int)(4.5 * 1024 * 1024);
             var coveragePayload = new CoveragePayload
@@ -208,7 +214,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 
             while (bufferSize < maxBufferSize)
             {
-                var payloadBuffer = new Ci.Agent.Payloads.CICodeCoveragePayload(maxItemsPerPayload: int.MaxValue, maxBytesPerPayload: bufferSize);
+                var payloadBuffer = new Ci.Agent.Payloads.CICodeCoveragePayload(settings, maxItemsPerPayload: int.MaxValue, maxBytesPerPayload: bufferSize);
                 while (payloadBuffer.TryProcessEvent(coveragePayload))
                 {
                     // .

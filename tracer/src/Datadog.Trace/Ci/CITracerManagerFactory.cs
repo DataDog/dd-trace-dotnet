@@ -56,7 +56,7 @@ namespace Datadog.Trace.Ci
             {
                 if (!string.IsNullOrEmpty(_settings.ApiKey))
                 {
-                    return new CIAgentlessWriter(new CIWriterHttpSender(GetRequestFactory(settings)));
+                    return new CIAgentlessWriter(_settings, new CIWriterHttpSender(GetRequestFactory(settings)));
                 }
                 else
                 {

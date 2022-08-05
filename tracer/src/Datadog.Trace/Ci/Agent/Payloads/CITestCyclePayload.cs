@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -11,8 +12,8 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 {
     internal class CITestCyclePayload : CIVisibilityProtocolPayload
     {
-        public CITestCyclePayload(IFormatterResolver formatterResolver = null)
-            : base(formatterResolver)
+        public CITestCyclePayload(CIVisibilitySettings settings, IFormatterResolver formatterResolver = null)
+            : base(settings, formatterResolver)
         {
         }
 

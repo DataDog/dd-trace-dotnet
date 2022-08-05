@@ -7,6 +7,7 @@ using System;
 using System.Text;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage.Models;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -14,8 +15,8 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 {
     internal class CICodeCoveragePayload : MultipartPayload
     {
-        public CICodeCoveragePayload(int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver formatterResolver = null)
-            : base(maxItemsPerPayload, maxBytesPerPayload, formatterResolver)
+        public CICodeCoveragePayload(CIVisibilitySettings settings, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver formatterResolver = null)
+            : base(settings, maxItemsPerPayload, maxBytesPerPayload, formatterResolver)
         {
             // We call reset here to add the dummy event
             Reset();

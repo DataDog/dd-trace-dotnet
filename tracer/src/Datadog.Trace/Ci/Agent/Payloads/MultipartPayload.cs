@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Ci.Agent.MessagePack;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.Payloads
@@ -22,7 +23,8 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         private readonly int _maxBytesPerPayload;
         private long _bytesCount;
 
-        public MultipartPayload(int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver formatterResolver = null)
+        public MultipartPayload(CIVisibilitySettings settings, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver formatterResolver = null)
+            : base(settings)
         {
             _maxItemsPerPayload = maxItemsPerPayload;
             _maxBytesPerPayload = maxBytesPerPayload;

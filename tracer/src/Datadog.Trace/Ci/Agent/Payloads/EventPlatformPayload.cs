@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Agent.Payloads
 {
@@ -12,7 +14,18 @@ namespace Datadog.Trace.Ci.Agent.Payloads
     /// </summary>
     internal abstract class EventPlatformPayload
     {
+        private readonly CIVisibilitySettings _settings;
         private Uri _url;
+
+        protected EventPlatformPayload(CIVisibilitySettings settings)
+        {
+            if (settings is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(settings));
+            }
+
+            _settings = settings;
+        }
 
         /// <summary>
         /// Gets Event-Platform subdomain/track
@@ -37,9 +50,9 @@ namespace Datadog.Trace.Ci.Agent.Payloads
                 }
 
                 UriBuilder builder;
-                if (CIVisibility.Settings.Agentless)
+                if (_settings.Agentless)
                 {
-                    var agentlessUrl = CIVisibility.Settings.AgentlessUrl;
+                    var agentlessUrl = _settings.AgentlessUrl;
                     if (!string.IsNullOrWhiteSpace(agentlessUrl))
                     {
                         builder = new UriBuilder(agentlessUrl);
@@ -49,7 +62,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
                     {
                         builder = new UriBuilder(
                             scheme: "https",
-                            host: $"{EventPlatformSubdomain}.{CIVisibility.Settings.Site}",
+                            host: $"{EventPlatformSubdomain}.{_settings.Site}",
                             port: 443,
                             pathValue: EventPlatformPath);
                     }
@@ -57,7 +70,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
                 else
                 {
                     // Use Agent EVP Proxy
-                    builder = new UriBuilder(CIVisibility.Settings.TracerSettings.Exporter.AgentUri);
+                    builder = new UriBuilder(_settings.TracerSettings.Exporter.AgentUri);
                     builder.Path = $"/evp_proxy/v1/{EventPlatformPath}";
                 }
 
