@@ -95,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 Uri requestHeadersTo = requestHeaders.To;
 
                 span.DecorateWebServerSpan(
-                    resourceName: string.IsNullOrEmpty(action) ? UriHelpers.GetCleanUriPath(requestHeadersTo?.LocalPath) : action,
+                    resourceName: GetResourceName(requestHeaders),
                     httpMethod,
                     host,
                     httpUrl: requestHeadersTo?.AbsoluteUri,
@@ -113,6 +113,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 
             // always returns the scope, even if it's null
             return scope;
+        }
+
+        private static string GetResourceName(IMessageHeaders requestHeaders)
+        {
+            var action = requestHeaders.Action;
+            if (!string.IsNullOrEmpty(action))
+            {
+                return action;
+            }
+
+            if (Tracer.Instance.Settings.WcfObfuscationEnabled)
+            {
+                return UriHelpers.GetCleanUriPath(requestHeaders.To?.LocalPath);
+            }
+
+            return requestHeaders.To?.LocalPath;
         }
 
         private static Func<object> CreateGetCurrentOperationContextDelegate()

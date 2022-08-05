@@ -67,6 +67,7 @@ namespace Datadog.Trace.Configuration
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
             DelayWcfInstrumentationEnabled = settings.DelayWcfInstrumentationEnabled;
+            WcfObfuscationEnabled = settings.WcfObfuscationEnabled;
             PropagationStyleInject = settings.PropagationStyleInject;
             PropagationStyleExtract = settings.PropagationStyleExtract;
             TraceMethods = settings.TraceMethods;
@@ -298,6 +299,12 @@ namespace Datadog.Trace.Configuration
         /// until later in the WCF pipeline when the WCF server exception handling is established.
         /// </summary>
         internal bool DelayWcfInstrumentationEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether to obfuscate the <c>LocalPath</c> of a WCF request that goes
+        /// into the <c>resourceName</c> of a span.
+        /// </summary>
+        internal bool WcfObfuscationEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating the injection propagation style.

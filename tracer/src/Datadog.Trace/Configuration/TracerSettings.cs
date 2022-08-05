@@ -175,6 +175,9 @@ namespace Datadog.Trace.Configuration
             DelayWcfInstrumentationEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.DelayWcfInstrumentationEnabled)
                                           ?? false;
 
+            WcfObfuscationEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled)
+                                 ?? true; // default value
+
             ObfuscationQueryStringRegex = source?.GetString(ConfigurationKeys.ObfuscationQueryStringRegex) ?? DefaultObfuscationQueryStringRegex;
 
             QueryStringReportingEnabled = source?.GetBool(ConfigurationKeys.QueryStringReportingEnabled) ?? true;
@@ -376,6 +379,13 @@ namespace Datadog.Trace.Configuration
         /// until later in the WCF pipeline when the WCF server exception handling is established.
         /// </summary>
         internal bool DelayWcfInstrumentationEnabled { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether to obfuscate the <c>LocalPath</c> of a WCF request that goes
+        /// into the <c>resourceName</c> of a span.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled"/>
+        internal bool WcfObfuscationEnabled { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating the regex to apply to obfuscate http query strings.
