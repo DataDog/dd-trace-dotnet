@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Agent.Payloads;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.MessagePack;
@@ -65,7 +66,7 @@ namespace Datadog.Trace.Ci.Agent
         private readonly AutoResetEvent _flushDelayEvent;
         private readonly Buffers[] _buffersArray;
 
-        public CIAgentlessWriter(ICIAgentlessWriterSender sender, IFormatterResolver formatterResolver = null, int? concurrency = null)
+        public CIAgentlessWriter(CIVisibilitySettings settings, ICIAgentlessWriterSender sender, IFormatterResolver formatterResolver = null, int? concurrency = null)
         {
             _eventQueue = new BlockingCollection<IEvent>(MaxItemsInQueue);
             _flushDelayEvent = new AutoResetEvent(false);
@@ -78,8 +79,8 @@ namespace Datadog.Trace.Ci.Agent
             {
                 _buffersArray[i] = new Buffers(
                     sender,
-                    new CITestCyclePayload(formatterResolver: formatterResolver),
-                    new CICodeCoveragePayload(formatterResolver: formatterResolver));
+                    new CITestCyclePayload(settings, formatterResolver: formatterResolver),
+                    new CICodeCoveragePayload(settings, formatterResolver: formatterResolver));
                 var tskFlush = Task.Factory.StartNew(InternalFlushEventsAsync, new object[] { this, _buffersArray[i] }, TaskCreationOptions.LongRunning);
                 tskFlush.ContinueWith(t => Log.Error(t.Exception, "Error in sending ci visibility events"), TaskContinuationOptions.OnlyOnFaulted);
                 _buffersArray[i].SetFlushTask(tskFlush);

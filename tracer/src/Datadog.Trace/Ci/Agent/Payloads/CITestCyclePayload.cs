@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -11,27 +12,14 @@ namespace Datadog.Trace.Ci.Agent.Payloads
 {
     internal class CITestCyclePayload : CIVisibilityProtocolPayload
     {
-        public CITestCyclePayload(IFormatterResolver formatterResolver = null)
-            : base(formatterResolver)
+        public CITestCyclePayload(CIVisibilitySettings settings, IFormatterResolver formatterResolver = null)
+            : base(settings, formatterResolver)
         {
-            var agentlessUrl = CIVisibility.Settings.AgentlessUrl;
-            if (!string.IsNullOrWhiteSpace(agentlessUrl))
-            {
-                var builder = new UriBuilder(agentlessUrl);
-                builder.Path = "api/v2/citestcycle";
-                Url = builder.Uri;
-            }
-            else
-            {
-                Url = new UriBuilder(
-                    scheme: "https",
-                    host: "citestcycle-intake." + CIVisibility.Settings.Site,
-                    port: 443,
-                    pathValue: "api/v2/citestcycle").Uri;
-            }
         }
 
-        public override Uri Url { get; }
+        public override string EventPlatformSubdomain => "citestcycle-intake";
+
+        public override string EventPlatformPath => "api/v2/citestcycle";
 
         public override bool CanProcessEvent(IEvent @event)
         {

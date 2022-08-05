@@ -7,11 +7,12 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Ci.Agent.MessagePack;
+using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.Payloads
 {
-    internal abstract class MultipartPayload
+    internal abstract class MultipartPayload : EventPlatformPayload
     {
         internal const int DefaultMaxItemsPerPayload = 100;
         internal const int DefaultMaxBytesPerPayload = 48_000_000;
@@ -22,7 +23,8 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         private readonly int _maxBytesPerPayload;
         private long _bytesCount;
 
-        public MultipartPayload(int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver formatterResolver = null)
+        public MultipartPayload(CIVisibilitySettings settings, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver formatterResolver = null)
+            : base(settings)
         {
             _maxItemsPerPayload = maxItemsPerPayload;
             _maxBytesPerPayload = maxBytesPerPayload;
@@ -31,15 +33,11 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             _items = new List<MultipartFormItem>(Math.Min(maxItemsPerPayload, DefaultMaxItemsPerPayload));
         }
 
-        public abstract Uri Url { get; }
+        public override bool HasEvents => _items.Count > 0;
 
-        public virtual bool HasEvents => _items.Count > 0;
-
-        public int Count => _items.Count;
+        public override int Count => _items.Count;
 
         public long BytesCount => _bytesCount;
-
-        public abstract bool CanProcessEvent(IEvent @event);
 
         protected abstract MultipartFormItem CreateMultipartFormItem(ArraySegment<byte> eventInBytes);
 
@@ -51,7 +49,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             }
         }
 
-        public bool TryProcessEvent(IEvent @event)
+        public override bool TryProcessEvent(IEvent @event)
         {
             lock (_items)
             {
@@ -77,7 +75,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             }
         }
 
-        public virtual void Reset()
+        public override void Reset()
         {
             lock (_items)
             {
