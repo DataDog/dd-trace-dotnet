@@ -195,9 +195,10 @@ namespace Datadog.Trace
                 Log.Warning("Root span wasn't found even though expected here.");
             }
 
-            // Here we must be in the case when rootspan has already been sent or we are in a partial flush
-            // The agent looks for the sampling priority on the first span that has no parent
-            // Finding those spans is not trivial, so instead we apply the priority to every span
+            // Here we must be in the case when rootspan has already been sent or we are in a partial flush.
+            // Agent versions < 7.34.0 look for the sampling priority in one of the spans whose parent is not found in the same chunk.
+            // If there are multiple orphans, the agent picks one nondeterministically and does not check the others.
+            // Finding those spans is not trivial, so instead we apply the priority to every span.
             for (var i = 0; i < spansToWrite.Count; i++)
             {
                 AddSamplingPriorityTags(spansToWrite.Array[i + spansToWrite.Offset], _samplingPriority.Value);
