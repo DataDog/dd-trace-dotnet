@@ -1,6 +1,6 @@
 labels:
-  - name: "area:ci-app"
-    title: "^\\[?(?i)ciapp"
+  - name: "area:ci-visibility"
+    title: "^\\[?(?i)civisibility"
 
   - name: "area:serverless"
     title: "^\\[?(?i)serverless"
