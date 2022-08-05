@@ -9,7 +9,7 @@ using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.Payloads
 {
-    internal abstract class CIVisibilityProtocolPayload : EvpPayload
+    internal abstract class CIVisibilityProtocolPayload : EventPlatformPayload
     {
         private readonly EventsBuffer<IEvent> _events;
         private readonly IFormatterResolver _formatterResolver;

@@ -21,9 +21,9 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             Reset();
         }
 
-        public override string EvpSubdomain => "event-platform-intake";
+        public override string EventPlatformSubdomain => "event-platform-intake";
 
-        public override string EvpPath => "api/v2/citestcov";
+        public override string EventPlatformPath => "api/v2/citestcov";
 
         public override bool HasEvents
         {

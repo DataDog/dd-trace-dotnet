@@ -16,9 +16,9 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         {
         }
 
-        public override string EvpSubdomain => "citestcycle-intake";
+        public override string EventPlatformSubdomain => "citestcycle-intake";
 
-        public override string EvpPath => "api/v2/citestcycle";
+        public override string EventPlatformPath => "api/v2/citestcycle";
 
         public override bool CanProcessEvent(IEvent @event)
         {

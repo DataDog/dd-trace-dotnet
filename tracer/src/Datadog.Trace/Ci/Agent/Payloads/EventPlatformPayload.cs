@@ -1,4 +1,4 @@
-// <copyright file="EvpPayload.cs" company="Datadog">
+// <copyright file="EventPlatformPayload.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,19 +10,19 @@ namespace Datadog.Trace.Ci.Agent.Payloads
     /// <summary>
     /// Event-platform payload
     /// </summary>
-    internal abstract class EvpPayload
+    internal abstract class EventPlatformPayload
     {
         private Uri _url;
 
         /// <summary>
         /// Gets Event-Platform subdomain/track
         /// </summary>
-        public abstract string EvpSubdomain { get; }
+        public abstract string EventPlatformSubdomain { get; }
 
         /// <summary>
         /// Gets Event-Platform path
         /// </summary>
-        public abstract string EvpPath { get; }
+        public abstract string EventPlatformPath { get; }
 
         /// <summary>
         /// Gets or sets the Payload url
@@ -43,22 +43,22 @@ namespace Datadog.Trace.Ci.Agent.Payloads
                     if (!string.IsNullOrWhiteSpace(agentlessUrl))
                     {
                         builder = new UriBuilder(agentlessUrl);
-                        builder.Path = EvpPath;
+                        builder.Path = EventPlatformPath;
                     }
                     else
                     {
                         builder = new UriBuilder(
                             scheme: "https",
-                            host: $"{EvpSubdomain}.{CIVisibility.Settings.Site}",
+                            host: $"{EventPlatformSubdomain}.{CIVisibility.Settings.Site}",
                             port: 443,
-                            pathValue: EvpPath);
+                            pathValue: EventPlatformPath);
                     }
                 }
                 else
                 {
                     // Use Agent EVP Proxy
                     builder = new UriBuilder(CIVisibility.Settings.TracerSettings.Exporter.AgentUri);
-                    builder.Path = $"/evp_proxy/v1/{EvpPath}";
+                    builder.Path = $"/evp_proxy/v1/{EventPlatformPath}";
                 }
 
                 url = builder.Uri;

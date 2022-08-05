@@ -11,7 +11,7 @@ using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.Payloads
 {
-    internal abstract class MultipartPayload : EvpPayload
+    internal abstract class MultipartPayload : EventPlatformPayload
     {
         internal const int DefaultMaxItemsPerPayload = 100;
         internal const int DefaultMaxBytesPerPayload = 48_000_000;

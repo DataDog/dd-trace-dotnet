@@ -24,7 +24,7 @@ namespace Datadog.Trace.Ci.Agent
             Log.Information("CIWriterFileSender Initialized.");
         }
 
-        public Task SendPayloadAsync(EvpPayload payload)
+        public Task SendPayloadAsync(EventPlatformPayload payload)
         {
             switch (payload)
             {
