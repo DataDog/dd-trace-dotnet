@@ -16,6 +16,8 @@ namespace Datadog.Trace.Agent
 
         public bool AddRange(ArraySegment<Span> spans) => false;
 
+        public ArraySegment<Span> ProcessTrace(ArraySegment<Span> trace) => trace;
+
         public Task DisposeAsync()
         {
             return Task.CompletedTask;
