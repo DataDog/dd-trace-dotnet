@@ -34,6 +34,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             string env,
             string version)
         {
+            Settings = settings;
             _source = string.IsNullOrEmpty(settings.Source) ? null : settings.Source;
             _service = string.IsNullOrEmpty(serviceName) ? null : serviceName;
             _host = string.IsNullOrEmpty(settings.Host) ? null : settings.Host;
@@ -43,6 +44,14 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
         }
 
         internal delegate LogPropertyRenderingDetails FormatDelegate<T>(JsonTextWriter writer, in T state);
+
+        internal ImmutableDirectLogSubmissionSettings Settings { get; private set; }
+
+        internal string? Service => _service;
+
+        internal string? Env => _env;
+
+        internal string? GlobalTags => _globalTags;
 
         internal static bool IsSourceProperty(string? propertyName) =>
             string.Equals(propertyName, SourcePropertyName, StringComparison.OrdinalIgnoreCase);

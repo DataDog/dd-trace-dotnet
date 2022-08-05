@@ -78,7 +78,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                 writer.WritePropertyName("ddsource", escape: false);
                 writer.WriteValue("xunit");
 
-                if (HostMetadata.Instance.Hostname is { } hostname)
+                if (formatter.Settings.Host is { } formatterHost)
+                {
+                    writer.WritePropertyName("hostname", escape: false);
+                    writer.WriteValue(formatterHost);
+                }
+                else if (HostMetadata.Instance.Hostname is { } hostname)
                 {
                     writer.WritePropertyName("hostname", escape: false);
                     writer.WriteValue(hostname);
@@ -90,16 +95,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                 writer.WritePropertyName("message", escape: false);
                 writer.WriteValue(_message);
 
-                writer.WritePropertyName("status", escape: false);
-                writer.WriteValue("info");
-
-                string env = string.Empty;
+                var env = formatter.Env;
+                var service = formatter.Service;
                 if (_span is { } span)
                 {
-                    env = span.GetTag(Tags.Env) ?? string.Empty;
+                    if (span.GetTag(Tags.Env) is { } spanEnv)
+                    {
+                        env = spanEnv;
+                    }
 
-                    writer.WritePropertyName("service", escape: false);
-                    writer.WriteValue(span.ServiceName);
+                    if (!string.IsNullOrEmpty(span.ServiceName))
+                    {
+                        service = span.ServiceName;
+                    }
 
                     writer.WritePropertyName("dd.trace_id", escape: false);
                     writer.WriteValue($"{span.TraceId}");
@@ -126,10 +134,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                     }
                 }
 
+                writer.WritePropertyName("service", escape: false);
+                writer.WriteValue(service);
+
                 // spaces are not allowed inside ddtags
                 env = env.Replace(" ", string.Empty);
+                env = env.Replace(":", string.Empty);
+
+                var ddtags = $"env:{env},datadog.product:citest";
+                if (formatter.GlobalTags is { Length: > 0 } globalTags)
+                {
+                    ddtags += "," + globalTags;
+                }
+
                 writer.WritePropertyName("ddtags", escape: false);
-                writer.WriteValue($"env:{env},datadog.product:citest");
+                writer.WriteValue(ddtags);
 
                 writer.WriteEndObject();
             }
