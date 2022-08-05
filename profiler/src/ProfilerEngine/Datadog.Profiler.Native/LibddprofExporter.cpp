@@ -18,6 +18,10 @@
 #include <string.h>
 #include <time.h>
 
+#ifndef _WINDOWS
+#include <filesystem>
+#endif
+
 #include "shared/src/native-src/dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 
