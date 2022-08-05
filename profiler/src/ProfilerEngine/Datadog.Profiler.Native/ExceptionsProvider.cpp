@@ -3,6 +3,7 @@
 
 #include "ExceptionsProvider.h"
 
+#include "COMHelpers.h"
 #include "FrameStore.h"
 #include "HResultConverter.h"
 #include "Log.h"
@@ -10,15 +11,6 @@
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
-#define INVOKE(x)                                                                                             \
-    {                                                                                                         \
-        HRESULT hr = x;                                                                                       \
-        if (FAILED(hr))                                                                                       \
-        {                                                                                                     \
-            Log::Warn("Profiler call failed with result ", HResultConverter::ToStringWithCode(hr), ": ", #x); \
-            return false;                                                                                     \
-        }                                                                                                     \
-    }
 
 ExceptionsProvider::ExceptionsProvider(
     ICorProfilerInfo4* pCorProfilerInfo,
@@ -177,27 +169,10 @@ bool ExceptionsProvider::GetExceptionType(ClassID classId, std::string& exceptio
         }
     }
 
-    ModuleID moduleId;
-    mdTypeDef typeDefToken;
-
-    INVOKE(_pCorProfilerInfo->GetClassIDInfo(classId, &moduleId, &typeDefToken))
-
-    ComPtr<IMetaDataImport2> metadataImport;
-
-    INVOKE(_pCorProfilerInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(metadataImport.GetAddressOf())))
-
-    ULONG nameCharCount = 0;
-
-    INVOKE(metadataImport->GetTypeDefProps(typeDefToken, nullptr, 0, &nameCharCount, nullptr, nullptr))
-
-    const auto buffer = std::make_unique<WCHAR[]>(nameCharCount);
-
-    INVOKE(metadataImport->GetTypeDefProps(typeDefToken, buffer.get(), nameCharCount, &nameCharCount, nullptr, nullptr))
-
-    const auto pBuffer = buffer.get();
-
-    // Convert from UTF16 to UTF8
-    exceptionType = shared::ToString(pBuffer, nameCharCount - 1);
+    if (!_pFrameStore->GetTypeName(classId, exceptionType))
+    {
+        return false;
+    }
 
     {
         std::lock_guard lock(_exceptionTypesLock);

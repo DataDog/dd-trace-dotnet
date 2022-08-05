@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "AllocationsProvider.h"
+#include "COMHelpers.h"
 #include "HResultConverter.h"
 #include "IManagedThreadList.h"
 #include "IFrameStore.h"
@@ -12,16 +13,6 @@
 #include "OsSpecificApi.h"
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
-
-#define CALL(x)                                                                                               \
-    {                                                                                                         \
-        HRESULT hr = x;                                                                                       \
-        if (FAILED(hr))                                                                                       \
-        {                                                                                                     \
-            Log::Warn("Profiler call failed with result ", HResultConverter::ToStringWithCode(hr), ": ", #x); \
-            return;                                                                                           \
-        }                                                                                                     \
-    }
 
 
 AllocationsProvider::AllocationsProvider(
@@ -34,12 +25,14 @@ AllocationsProvider::AllocationsProvider(
     :
     CollectorBase<RawAllocationSample>("AllocationsProvider", pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo(pCorProfilerInfo),
-    _pManagedThreadList(pManagedThreadList)
+    _pManagedThreadList(pManagedThreadList),
+    _pFrameStore(pFrameStore)
 {
 }
 
 
 void AllocationsProvider::OnAllocation(uint32_t allocationKind,
+                                       ClassID classId,
                                        const WCHAR* typeName,
                                        uintptr_t address,
                                        uint64_t objectSize)
@@ -71,7 +64,13 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     rawSample.ThreadInfo = threadInfo;
     threadInfo->AddRef();
     rawSample.AllocationSize = objectSize;
-    rawSample.AllocationClass = std::move(shared::ToString(shared::WSTRING(typeName)));
+
+    // The provided type name contains the metadata-based `xx syntax for generics instead of <>
+    // So rely on the frame store to get a C#-like representation like what is done for frames
+    if (!_pFrameStore->GetTypeName(classId, rawSample.AllocationClass))
+    {
+        rawSample.AllocationClass = std::move(shared::ToString(shared::WSTRING(typeName)));
+    }
 
     Add(std::move(rawSample));
 }

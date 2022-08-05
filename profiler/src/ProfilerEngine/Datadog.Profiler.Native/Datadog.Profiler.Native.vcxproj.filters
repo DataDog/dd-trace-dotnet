@@ -212,7 +212,6 @@
     <ClInclude Include="ISamplesCollector.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
-    <ClInclude Include="SamplesCollector.h" />
     <ClInclude Include="ClrEventsParser.h">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClInclude>
@@ -224,6 +223,12 @@
     </ClInclude>
     <ClInclude Include="IAllocationsListener.h">
       <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="SamplesCollector.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="COMHelpers.h">
+      <Filter>Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

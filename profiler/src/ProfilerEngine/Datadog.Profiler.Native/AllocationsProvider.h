@@ -27,6 +27,7 @@ public:
                         IAppDomainStore* pAppDomainStore,
                         IRuntimeIdStore* pRuntimeIdStore);
     void OnAllocation(uint32_t allocationKind,
+                      ClassID classId,
                       const WCHAR* TypeName,
                       uintptr_t Address,
                       uint64_t ObjectSize) override;
@@ -34,4 +35,5 @@ public:
 private:
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
+    IFrameStore* _pFrameStore;
 };
