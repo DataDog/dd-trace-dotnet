@@ -436,6 +436,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("code_hotspots_enabled");
                     writer.WriteValue(Profiler.Instance.ContextTracker.IsEnabled);
 
+                    writer.WritePropertyName("wcf_obfuscation_enabled");
+                    writer.WriteValue(instanceSettings.WcfObfuscationEnabled);
+
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }
