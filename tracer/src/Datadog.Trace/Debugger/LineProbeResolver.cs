@@ -56,7 +56,7 @@ namespace Datadog.Trace.Debugger
             }
             catch (Exception e)
             {
-                Log.Warning(e, $"Failed to retrieve documents from PDB for {loadedAssembly.Location}");
+                Log.Warning(e, "Failed to retrieve documents from PDB for {AssemblyLocation}", loadedAssembly.Location);
             }
 
             return null;
@@ -131,44 +131,28 @@ namespace Datadog.Trace.Debugger
             location = null;
             if (!TryFindAssemblyContainingFile(probe.Where.SourceFile, out var filePathFromPdb, out var assembly))
             {
-                Log.Information("Source file location for probe {ProbeId} was not found, possibly because the relevant assembly was not yet loaded.", probe.Id);
-                return new LineProbeResolveResult(LiveProbeResolveStatus.Unbound);
+                return new LineProbeResolveResult(LiveProbeResolveStatus.Unbound, "Source file location for probe was not found, possibly because the relevant assembly was not yet loaded.");
             }
 
             using var pdbReader = DatadogPdbReader.CreatePdbReader(assembly);
             if (pdbReader == null)
             {
-                var message = $"Failed to read from PDB for probe ID {probe.Id}";
-                Log.Information(message);
-
-                return new LineProbeResolveResult(LiveProbeResolveStatus.Error, message);
+                return new LineProbeResolveResult(LiveProbeResolveStatus.Error, $"Failed to read from PDB");
             }
 
             if (probe.Where.Lines?.Length != 1 || !int.TryParse(probe.Where.Lines[0], out var lineNum))
             {
-                var message = $"Failed to parse line number for Line Probe {probe.Id}. " +
-                              $"The Lines collection contains {PrintContents(probe.Where.Lines)}.";
-                Log.Warning(message);
-
-                return new LineProbeResolveResult(LiveProbeResolveStatus.Error, message);
+                return new LineProbeResolveResult(LiveProbeResolveStatus.Error, $"Failed to parse line number.");
             }
 
             var method = pdbReader.GetContainingMethodAndOffset(filePathFromPdb, lineNum, column: null, out var bytecodeOffset);
             if (bytecodeOffset.HasValue == false)
             {
-                var message = $"Probe location did not map out to a valid bytecode offset for probe id {probe.Id}";
-                Log.Warning(message);
-                return new LineProbeResolveResult(LiveProbeResolveStatus.Error, message);
+                return new LineProbeResolveResult(LiveProbeResolveStatus.Error, "Probe location did not map out to a valid bytecode offset");
             }
 
             location = new BoundLineProbeLocation(probe, assembly.ManifestModule.ModuleVersionId, method.Token, bytecodeOffset.Value, lineNum);
             return new LineProbeResolveResult(LiveProbeResolveStatus.Bound);
-
-            string PrintContents<T>(T[] array)
-            {
-                const string separator = ", ";
-                return array == null ? "null" : $"[{string.Join(separator, array)}]";
-            }
         }
 
         public void OnDomainUnloaded()
