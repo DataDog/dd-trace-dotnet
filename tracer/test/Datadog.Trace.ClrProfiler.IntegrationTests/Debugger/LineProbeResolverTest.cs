@@ -52,6 +52,24 @@ public class LineProbeResolverTest
         (loc1.MethodToken, loc1.BytecodeOffset).Should().Be((loc2.MethodToken, loc2.BytecodeOffset));
     }
 
+    [Theory]
+    [InlineData(@"D:\build_agent\yada\yada\src\MyProject\MyFile.cs")]
+    [InlineData(@"/usr/opt/build_agent/yada/yada/src/MyProject/MyFile.cs")]
+    public void TestSlashDirectionIsPreserved(string originalPath)
+    {
+        // The FilePathLookup is used look up file paths that were originally extracted from the PDB, and we
+        // use the result of the lookup to then query the PDB and find the bytecode offset at a given line number.
+        // Therefore, the result should preserve the exact original file path that was in the PDB, regardless of
+        // whether the search string is using backslash or forward-slash.
+
+        var lookup = new LineProbeResolver.FilePathLookup();
+
+        lookup.InsertPath(originalPath);
+
+        Assert.Equal(originalPath, lookup.FindPathThatEndsWith(@"src\MyProject\MyFile.cs"));
+        Assert.Equal(originalPath, lookup.FindPathThatEndsWith(@"src/MyProject/MyFile.cs"));
+    }
+
     [Fact]
     public void OutOfBoundsLineProbeReturnsAnError()
     {

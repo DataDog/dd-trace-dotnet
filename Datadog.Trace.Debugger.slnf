@@ -14,7 +14,9 @@
       "tracer\\test\\Datadog.Trace.Tests\\Datadog.Trace.Tests.csproj",
       "tracer\\test\\test-applications\\debugger\\Samples.Probes\\Samples.Probes.csproj",
       "tracer\\build\\_build\\_build.csproj",
-      "tracer\\src\\Datadog.Trace.Tools.Analyzers\\Datadog.Trace.Tools.Analyzers.csproj"
+      "tracer\\src\\Datadog.Trace.Tools.Analyzers\\Datadog.Trace.Tools.Analyzers.csproj",
+      "tracer\\src\\Datadog.InstrumentedAssemblyGenerator\\Datadog.InstrumentedAssemblyGenerator.csproj",
+      "tracer\\src\\Datadog.InstrumentedAssemblyVerification\\Datadog.InstrumentedAssemblyVerification.csproj"
     ]
   }
 }
