@@ -14,6 +14,8 @@ namespace CallTargetNativeTest
     {
         private static MemoryStream mStream = new();
         private static StreamWriter sWriter = new(mStream);
+        private static NativeCallTargetDefinition[] definitions;
+        private static string definitionsId;
 
         static void Main(string[] args)
         {
@@ -101,7 +103,9 @@ namespace CallTargetNativeTest
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsGenericParentType<>.WithOutArguments).FullName, "VoidMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(StringAndIntOutVoidIntegration).FullName));
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsGenericParentType<>.WithOutArguments).FullName, "VoidMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericOutModificationVoidIntegration).FullName));
 
-            NativeMethods.InitializeProfiler(Guid.NewGuid().ToString("N"), definitionsList.ToArray());
+            definitionsId = Guid.NewGuid().ToString("N");
+            definitions = definitionsList.ToArray();
+            EnableDefinitions();
 
             NativeMethods.AddDerivedInstrumentations(Guid.NewGuid().ToString("N"), new NativeCallTargetDefinition[]
             {
@@ -121,7 +125,18 @@ namespace CallTargetNativeTest
                 new(TargetAssembly, typeof(ArgumentsGenericParentType<>.AbstractClass).FullName, "OtherMethod", new[] { "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop0ArgumentsVoidIntegration).FullName),
                 new(TargetAssembly, typeof(ArgumentsGenericParentType<>.NonAbstractClass).FullName, "VoidMethod", new[] { "_", "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop1ArgumentsVoidIntegration).FullName),
             });
+
         }
+
+        static void EnableDefinitions()
+        {
+            NativeMethods.InitializeProfiler(definitionsId, definitions);
+        }
+        static void DisableDefinitions()
+        {
+            NativeMethods.UninitializeProfiler(definitionsId, definitions);
+        }
+
 
         static void RunTests(string[] args)
         {
@@ -301,6 +316,15 @@ namespace CallTargetNativeTest
                         // GenericParentAbstractMethod();
                         break;
                     }
+                case "oneclick":
+                    {
+                        WithOutArguments();
+                        DisableDefinitions();
+                        WithOutArguments(false);
+                        EnableDefinitions();
+                        WithOutArguments();
+                        break;
+                    }
                 default:
                     Console.WriteLine("Run with the profiler and use a number from 0-9/withref/without/abstract/all as an argument.");
                     return;
@@ -312,7 +336,7 @@ namespace CallTargetNativeTest
 #endif
         }
 
-        private static void RunMethod(Action action)
+        private static void RunMethod(Action action, bool checkInstrumented = true)
         {
             var cOut = Console.Out;
             Console.SetOut(sWriter);
@@ -320,13 +344,24 @@ namespace CallTargetNativeTest
             sWriter.Flush();
             var str = Encoding.UTF8.GetString(mStream.GetBuffer(), 0, (int)mStream.Length);
             mStream.SetLength(0);
-            if (string.IsNullOrEmpty(str))
+            if (checkInstrumented)
             {
-                throw new Exception("The profiler is not connected or is not compiled as DEBUG with the DD_CTARGET_TESTMODE=True environment variable.");
+                if (string.IsNullOrEmpty(str))
+                {
+                    throw new Exception("The profiler is not connected or is not compiled as DEBUG with the DD_CTARGET_TESTMODE=True environment variable.");
+                }
+                if (!str.Contains("ProfilerOK: BeginMethod") || !str.Contains("ProfilerOK: EndMethod"))
+                {
+                    throw new Exception("Profiler didn't return a valid ProfilerOK: BeginMethod string.");
+                }
             }
-            if (!str.Contains("ProfilerOK: BeginMethod") || !str.Contains("ProfilerOK: EndMethod"))
+            else 
             {
-                throw new Exception("Profiler didn't return a valid ProfilerOK: BeginMethod string.");
+                if (!string.IsNullOrEmpty(str))
+                {
+                    throw new Exception("Profiler instrumented disabled function.");
+                }
+                str = "OK: Not instrumented";
             }
             if (!string.IsNullOrEmpty(str))
             {
