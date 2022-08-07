@@ -201,6 +201,17 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
 }
 
 template <class RejitRequestDefinition>
+ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRevertForLoadedModules(
+    const std::vector<ModuleID>& modules, const std::vector<RejitRequestDefinition>& definitions,
+    bool enqueueInSameThread)
+{
+    std::vector<MethodIdentifier> rejitRequests{};
+    const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests);
+    RequestRevert(rejitRequests, enqueueInSameThread);
+    return rejitCount;
+}
+
+template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::RequestRejit(std::vector<MethodIdentifier>& rejitRequests, bool enqueueInSameThread)
 {
     if (!rejitRequests.empty())
@@ -356,6 +367,44 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRejitForLoadedModu
                                     promise = promise]() mutable {
         // Process modules for rejit
         const auto rejitCount = RequestRejitForLoadedModules(modules, definitions, true);
+
+        // Resolve promise
+        if (promise != nullptr)
+        {
+            promise->set_value(rejitCount);
+        }
+    };
+
+    // Enqueue
+    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+}
+
+template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRevertForLoadedModules(
+    const std::vector<ModuleID>& modulesVector, const std::vector<RejitRequestDefinition>& definitions,
+    std::promise<ULONG>* promise)
+{
+    if (m_rejit_handler->IsShutdownRequested())
+    {
+        if (promise != nullptr)
+        {
+            promise->set_value(0);
+        }
+
+        return;
+    }
+
+    if (modulesVector.size() == 0 || definitions.size() == 0)
+    {
+        return;
+    }
+
+    Logger::Debug("RejitHandler::EnqueueRequestRevertForLoadedModules");
+
+    std::function<void()> action = [=, modules = std::move(modulesVector), definitions = std::move(definitions),
+                                    promise = promise]() mutable {
+        // Process modules for rejit
+        const auto rejitCount = RequestRevertForLoadedModules(modules, definitions, true);
 
         // Resolve promise
         if (promise != nullptr)

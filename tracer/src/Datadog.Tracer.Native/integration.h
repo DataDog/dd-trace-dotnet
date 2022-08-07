@@ -326,6 +326,14 @@ struct IntegrationDefinition
     {
     }
 
+    IntegrationDefinition(const IntegrationDefinition& other) :
+        target_method(other.target_method),
+        integration_type(other.integration_type),
+        is_derived(other.is_derived),
+        is_exact_signature_match(other.is_exact_signature_match)
+    {
+    }
+
     IntegrationDefinition(MethodReference target_method, TypeReference integration_type, bool isDerived,
                           bool is_exact_signature_match) :
         target_method(target_method),
@@ -340,6 +348,8 @@ struct IntegrationDefinition
         return target_method == other.target_method && integration_type == other.integration_type &&
                is_derived == other.is_derived && is_exact_signature_match == other.is_exact_signature_match;
     }
+    
+    IntegrationDefinition& operator=(IntegrationDefinition const&) = default;
 };
 
 typedef struct _CallTargetDefinition

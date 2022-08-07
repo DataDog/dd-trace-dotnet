@@ -54,7 +54,15 @@ public:
                                        const std::vector<RejitRequestDefinition>& requests,
                                        bool enqueueInSameThread = false);
 
+    ULONG RequestRevertForLoadedModules(const std::vector<ModuleID>& modules,
+                                       const std::vector<RejitRequestDefinition>& requests,
+                                       bool enqueueInSameThread = false);
+
     void EnqueueRequestRejitForLoadedModules(const std::vector<ModuleID>& modulesVector,
+                                             const std::vector<RejitRequestDefinition>& requests,
+                                             std::promise<ULONG>* promise);
+
+    void EnqueueRequestRevertForLoadedModules(const std::vector<ModuleID>& modulesVector,
                                              const std::vector<RejitRequestDefinition>& requests,
                                              std::promise<ULONG>* promise);
 
