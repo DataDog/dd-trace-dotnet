@@ -68,6 +68,7 @@ public class LineProbeResolverTest
 
         Assert.Equal(originalPath, lookup.FindPathThatEndsWith(@"src\MyProject\MyFile.cs"));
         Assert.Equal(originalPath, lookup.FindPathThatEndsWith(@"src/MyProject/MyFile.cs"));
+        Assert.Equal(originalPath, lookup.FindPathThatEndsWith(@"src/MyProject\MyFile.cs"));
     }
 
     [Fact]
