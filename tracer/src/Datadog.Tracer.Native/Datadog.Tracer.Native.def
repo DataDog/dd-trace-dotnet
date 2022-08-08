@@ -6,7 +6,7 @@ EXPORTS
     IsProfilerAttached
     GetAssemblyAndSymbolsBytes
     InitializeProfiler
-    UninitializeProfiler
+    RemoveCallTargetDefinitions
     EnableByRefInstrumentation
     EnableCallTargetStateByRef
     AddDerivedInstrumentations

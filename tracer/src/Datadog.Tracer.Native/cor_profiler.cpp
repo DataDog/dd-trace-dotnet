@@ -1545,7 +1545,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
 
                 // wait and get the value from the future<int>
                 const auto& numReJITs = future.get();
-                Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+                Logger::Debug("Total number of Revert Requested: ", numReJITs);
             }
         }
 
