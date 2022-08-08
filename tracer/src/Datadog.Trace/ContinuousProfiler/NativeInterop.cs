@@ -29,6 +29,7 @@ namespace Datadog.Trace.ContinuousProfiler
             NativeMethods.SetApplicationInfoForAppDomain(runtimeId, serviceName, environment, version);
         }
 
+        // These methods are rewritten by the native tracer to use the correct paths
         private static class NativeMethods
         {
             [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "GetNativeProfilerIsReadyPtr")]
