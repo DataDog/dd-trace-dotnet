@@ -13,19 +13,15 @@ internal readonly struct SamplingDecision
 
     public readonly int? Mechanism;
 
-    public readonly double? Rate;
-
-    public SamplingDecision(int priority, int? mechanism = null, double? rate = null)
+    public SamplingDecision(int priority, int? mechanism = null)
     {
         Priority = priority;
         Mechanism = mechanism;
-        Rate = rate;
     }
 
-    public void Deconstruct(out int priority, out int? mechanism, out double? rate)
+    public void Deconstruct(out int priority, out int? mechanism)
     {
         priority = Priority;
         mechanism = Mechanism;
-        rate = Rate;
     }
 }

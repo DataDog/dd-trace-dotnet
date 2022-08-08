@@ -40,14 +40,13 @@ namespace Datadog.Trace.ExtensionMethods
         /// <param name="span">A span that belongs to the trace.</param>
         /// <param name="priority">The new sampling priority for the trace.</param>
         /// <param name="mechanism">The new sampling mechanism for the trace.</param>
-        /// <param name="rate">Optional. The sampling rate, if used.</param>
-        internal static void SetTraceSamplingDecision(this ISpan span, int priority, int? mechanism = null, float? rate = null)
+        internal static void SetTraceSamplingDecision(this ISpan span, int priority, int? mechanism = null)
         {
             if (span == null) { ThrowHelper.ThrowArgumentNullException(nameof(span)); }
 
             if (span.Context is SpanContext { TraceContext: { } traceContext })
             {
-                traceContext.SetSamplingDecision(priority, mechanism, rate);
+                traceContext.SetSamplingDecision(priority, mechanism);
             }
         }
 

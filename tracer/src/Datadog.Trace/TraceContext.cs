@@ -153,7 +153,7 @@ namespace Datadog.Trace
             }
         }
 
-        public void SetSamplingDecision(int? priority, int? mechanism = null, double? rate = null, bool notifyDistributedTracer = true)
+        public void SetSamplingDecision(int? priority, int? mechanism = null, bool notifyDistributedTracer = true)
         {
             if (priority == null)
             {
@@ -162,7 +162,7 @@ namespace Datadog.Trace
             }
             else
             {
-                var decision = new SamplingDecision(priority.Value, mechanism, rate);
+                var decision = new SamplingDecision(priority.Value, mechanism);
                 SetSamplingDecision(decision, notifyDistributedTracer);
             }
         }
