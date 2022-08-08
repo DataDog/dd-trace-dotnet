@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Transports;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
@@ -344,6 +345,11 @@ namespace Datadog.Trace.AppSec
         {
             try
             {
+                if (e.Transport.Blocked)
+                {
+                    return;
+                }
+
                 using var additiveContext = GetOrCreateContext(e.Transport);
                 additiveContext.AggregateAddresses(e.EventData, e.OverrideExistingAddress);
                 var span = GetLocalRootSpan(e.RelatedSpan);
@@ -352,12 +358,12 @@ namespace Datadog.Trace.AppSec
 
                 // run the WAF and execute the results
                 using var wafResult = additiveContext.Run(_settings.WafTimeoutMicroSeconds);
-                if (wafResult.ReturnCode == ReturnCode.Monitor || wafResult.ReturnCode == ReturnCode.Block)
+                if (wafResult.ReturnCode is ReturnCode.Monitor or ReturnCode.Block)
                 {
-                    var block = wafResult.ReturnCode == ReturnCode.Block;
+                    var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock") || wafResult.Data.Contains("crs-942-190");
                     if (block)
                     {
-                        // blocking has been removed, waiting a better implementation
+                        e.Transport.Block();
                     }
 
                     Report(e.Transport, span, wafResult, block);

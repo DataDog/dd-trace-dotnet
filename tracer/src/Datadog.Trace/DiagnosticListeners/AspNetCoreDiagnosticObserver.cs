@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -112,7 +113,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
                 else if (ReferenceEquals(eventName, _hostingUnhandledExceptionEventKey) ||
-                    ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
+                         ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
                 {
                     OnHostingUnhandledException(arg);
                     return;
@@ -502,17 +503,17 @@ namespace Datadog.Trace.DiagnosticListeners
             IDictionary<string, string> routeValues = actionDescriptor.RouteValues;
 
             string controllerName = routeValues.TryGetValue("controller", out controllerName)
-                ? controllerName?.ToLowerInvariant()
-                : null;
+                                        ? controllerName?.ToLowerInvariant()
+                                        : null;
             string actionName = routeValues.TryGetValue("action", out actionName)
-                ? actionName?.ToLowerInvariant()
-                : null;
+                                    ? actionName?.ToLowerInvariant()
+                                    : null;
             string areaName = routeValues.TryGetValue("area", out areaName)
-                ? areaName?.ToLowerInvariant()
-                : null;
+                                  ? areaName?.ToLowerInvariant()
+                                  : null;
             string pagePath = routeValues.TryGetValue("page", out pagePath)
-                ? pagePath?.ToLowerInvariant()
-                : null;
+                                  ? pagePath?.ToLowerInvariant()
+                                  : null;
             string aspNetRoute = trackingFeature.Route;
             string resourceName = trackingFeature.ResourceName;
 
@@ -609,19 +610,23 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (shouldSecure)
                 {
-                    httpContext.Response.OnStarting(() =>
-                    {
-                        // we subscribe here because in OnHostingHttpRequestInStop or HostingEndRequest it's too late,
-                        // the waf is already disposed by the registerfordispose callback
-                        security.InstrumentationGateway.RaiseEndRequest(httpContext, request, span);
-                        return System.Threading.Tasks.Task.CompletedTask;
-                    });
+                    httpContext.Response.OnStarting(
+                       (o) =>
+                       {
+                           var httpResponse = o as HttpResponse;
+                           // we subscribe here because in OnHostingHttpRequestInStop or HostingEndRequest it's too late,
+                           // the waf is already disposed by the registerfordispose callback
+                           security.InstrumentationGateway.RaiseEndRequest(httpContext, request, span);
+                           return Task.CompletedTask;
+                       },
+                       httpContext.Response);
 
-                    httpContext.Response.OnCompleted(() =>
-                    {
-                        security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, span);
-                        return System.Threading.Tasks.Task.CompletedTask;
-                    });
+                    httpContext.Response.OnCompleted(
+                       () =>
+                       {
+                           security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, span);
+                           return System.Threading.Tasks.Task.CompletedTask;
+                       });
                 }
             }
         }
@@ -726,8 +731,8 @@ namespace Datadog.Trace.DiagnosticListeners
                 // the whole route later
                 object raw;
                 string controllerName = routeValues.TryGetValue("controller", out raw)
-                                        ? raw as string
-                                        : null;
+                                            ? raw as string
+                                            : null;
                 string actionName = routeValues.TryGetValue("action", out raw)
                                         ? raw as string
                                         : null;
@@ -874,6 +879,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 var isMissingHttpStatusCode = !span.HasHttpStatusCode();
                 var httpRequest = arg.DuckCast<HttpRequestInStopStruct>();
                 HttpContext httpContext = httpRequest.HttpContext;
+
                 if (string.IsNullOrEmpty(span.ResourceName) || isMissingHttpStatusCode)
                 {
                     if (string.IsNullOrEmpty(span.ResourceName))
@@ -944,6 +950,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public HttpContext HttpContext;
+
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public Exception Exception;
         }

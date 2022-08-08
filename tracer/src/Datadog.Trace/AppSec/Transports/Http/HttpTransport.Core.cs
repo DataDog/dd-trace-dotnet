@@ -5,6 +5,8 @@
 
 #if !NETFRAMEWORK
 using System;
+using System.Net;
+using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Microsoft.AspNetCore.Http;
@@ -18,6 +20,8 @@ namespace Datadog.Trace.AppSec.Transports.Http
         public HttpTransport(HttpContext context) => _context = context;
 
         public bool IsSecureConnection => _context.Request.IsHttps;
+
+        public bool Blocked => _context.Items["blocked"] != null;
 
         public Func<string, string> GetHeader => key => _context.Request.Headers[key];
 
@@ -39,6 +43,21 @@ namespace Datadog.Trace.AppSec.Transports.Http
         public IHeadersCollection GetResponseHeaders()
         {
             return new HeadersCollectionAdapter(_context.Response.Headers);
+        }
+
+        public void Block()
+        {
+            var httpResponse = _context.Response;
+            httpResponse.StatusCode = 403;
+            httpResponse.ContentType = "text/html";
+            httpResponse.WriteAsync(SecurityConstants.AttackBlockedHtml).Wait();
+            var method = httpResponse.GetType().GetMethod("CompleteAsync");
+            if (method != null)
+            {
+                var t = (Task)method.Invoke(httpResponse, null);
+                t.ConfigureAwait(false);
+                t.Wait();
+            }
         }
     }
 }

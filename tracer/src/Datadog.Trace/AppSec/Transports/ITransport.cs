@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 
@@ -12,6 +13,8 @@ namespace Datadog.Trace.AppSec.Transports
     internal interface ITransport
     {
         bool IsSecureConnection { get; }
+
+        bool Blocked { get; }
 
         Func<string, string> GetHeader { get; }
 
@@ -22,5 +25,7 @@ namespace Datadog.Trace.AppSec.Transports
         IHeadersCollection GetRequestHeaders();
 
         IHeadersCollection GetResponseHeaders();
+
+        void Block();
     }
 }

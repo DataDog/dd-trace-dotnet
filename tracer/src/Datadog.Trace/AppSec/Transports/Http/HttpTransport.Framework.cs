@@ -6,6 +6,7 @@
 #if NETFRAMEWORK
 using System;
 using System.Collections.Specialized;
+using System.Threading.Tasks;
 using System.Web;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
@@ -21,6 +22,8 @@ namespace Datadog.Trace.AppSec.Transports.Http
         private bool _canReadHttpResponseHeaders = true;
 
         public HttpTransport(HttpContext context) => _context = context;
+
+        public bool Blocked => false;
 
         public bool IsSecureConnection => _context.Request.IsSecureConnection;
 
@@ -60,6 +63,11 @@ namespace Datadog.Trace.AppSec.Transports.Http
             }
 
             return new NameValueHeadersCollection(new NameValueCollection());
+        }
+
+        public void Block()
+        {
+            // todo
         }
     }
 }
