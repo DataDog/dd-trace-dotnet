@@ -12,9 +12,6 @@ namespace Datadog.Trace.Tagging
 {
     internal class TraceTagCollection
     {
-        // used when tag list is null because "new List<KeyValuePair<string, string>>.Enumerator" returns an invalid enumerator.
-        private static readonly List<KeyValuePair<string, string>>.Enumerator EmptyEnumerator = new List<KeyValuePair<string, string>>(0).GetEnumerator();
-
         private readonly object _listLock = new();
 
         private List<KeyValuePair<string, string>>? _tags;
