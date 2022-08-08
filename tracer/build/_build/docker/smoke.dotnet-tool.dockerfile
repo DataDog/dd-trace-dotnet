@@ -28,6 +28,7 @@ RUN mkdir -p /opt/datadog \
 # Set the optional env vars
 ENV DD_PROFILING_ENABLED=1
 ENV DD_APPSEC_ENABLED=1
+ENV DD_TRACE_DEBUG=1
 ENV ASPNETCORE_URLS=http://localhost:5000
 
 # Copy the app across
