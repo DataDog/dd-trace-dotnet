@@ -24,7 +24,14 @@ const char* const RuntimeIdStore::NativeLoaderFilename = "Datadog.Trace.ClrProfi
 bool RuntimeIdStore::Start()
 {
     // the native loader is always available in the same directory
+#ifdef _WINDOWS
     auto nativeLoaderFilename = NativeLoaderFilename;
+#else
+    auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
+    // the native loader is in the parent directory
+    auto nativeLoaderPath = currentModulePath.parent_path() / NativeLoaderFilename;
+    auto nativeLoaderFilename = nativeLoaderPath.string();
+#endif
     _instance = LoadDynamicLibrary(nativeLoaderFilename);
 
     if (_instance == nullptr)

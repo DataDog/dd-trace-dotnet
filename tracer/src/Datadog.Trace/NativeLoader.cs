@@ -59,7 +59,7 @@ namespace Datadog.Trace
 
         private static class NativeMethods
         {
-            [DllImport("Datadog.AutoInstrumentation.NativeLoader", CallingConvention = CallingConvention.StdCall, EntryPoint = "GetCurrentAppDomainRuntimeId")]
+            [DllImport("Datadog.Trace.ClrProfiler.Native", CallingConvention = CallingConvention.StdCall, EntryPoint = "GetCurrentAppDomainRuntimeId")]
             public static extern IntPtr GetRuntimeIdFromNative();
         }
     }
