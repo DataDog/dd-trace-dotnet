@@ -25,13 +25,14 @@ namespace Datadog.Trace.ExtensionMethods
         /// </summary>
         /// <param name="span">A span that belongs to the trace.</param>
         /// <param name="samplingPriority">The new sampling priority for the trace.</param>
-        /// <remarks>
-        /// This public method is for SDK users only (aka custom instrumentation).
-        /// Internal Datadog calls should use SetTraceSamplingDecision(this ISpan, SamplingPriority, SamplingMechanism).
-        /// </remarks>
         public static void SetTraceSamplingPriority(this ISpan span, SamplingPriority samplingPriority)
         {
-            SetTraceSamplingDecision(span, (int)samplingPriority, SamplingMechanism.Manual);
+            if (span == null) { ThrowHelper.ThrowArgumentNullException(nameof(span)); }
+
+            if (span.Context is SpanContext { TraceContext: { } traceContext })
+            {
+                traceContext.SetSamplingPriority((int)samplingPriority, SamplingMechanism.Manual);
+            }
         }
 
         /// <summary>

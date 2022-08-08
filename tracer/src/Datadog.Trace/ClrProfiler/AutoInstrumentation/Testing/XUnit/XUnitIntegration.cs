@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;
-            span.SetTraceSamplingDecision(SamplingPriorityValues.AutoKeep);
+            span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
             span.ResourceName = $"{testSuite}.{testName}";
             span.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
             span.SetTag(TestTags.Bundle, testBundle);

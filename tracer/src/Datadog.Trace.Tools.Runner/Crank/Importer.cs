@@ -104,7 +104,7 @@ namespace Datadog.Trace.Tools.Runner.Crank
 
                         Span span = tracer.StartSpan("crank.test", startTime: minTimeStamp, serviceName: "crank");
 
-                        span.SetTraceSamplingDecision(SamplingPriorityValues.AutoKeep);
+                        span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
                         span.Type = SpanTypes.Test;
                         span.ResourceName = $"{fileName}/{jobItem.Key}";
                         CIEnvironmentValues.Instance.DecorateSpan(span);

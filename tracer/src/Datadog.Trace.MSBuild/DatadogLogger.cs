@@ -107,7 +107,7 @@ namespace Datadog.Trace.MSBuild
 
                 _buildSpan = _tracer.StartSpan(BuildTags.BuildOperationName);
                 _buildSpan.SetMetric(Tags.Analytics, 1.0d);
-                _buildSpan.SetTraceSamplingDecision(SamplingPriorityValues.AutoKeep);
+                _buildSpan.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
 
                 _buildSpan.Type = SpanTypes.Build;
                 _buildSpan.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
@@ -184,7 +184,7 @@ namespace Datadog.Trace.MSBuild
                     projectSpan.ServiceName = projectName;
                 }
 
-                projectSpan.SetTraceSamplingDecision(SamplingPriorityValues.AutoKeep);
+                projectSpan.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
                 projectSpan.Type = SpanTypes.Build;
 
                 string targetFramework = null;
