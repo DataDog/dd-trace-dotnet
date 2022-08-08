@@ -74,11 +74,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
                 span.SetHeaderTags(requestMetadataWrapper, tracer.Settings.GrpcTags, GrpcCommon.RequestMetadataTagPrefix);
                 scope = tracer.ActivateSpan(span);
+                var traceContext = span.Context.TraceContext;
 
-                if (setSamplingPriority && existingSpanContext?.SamplingPriority is not null)
+                if (setSamplingPriority && existingSpanContext?.SamplingPriority is not null && traceContext != null)
                 {
-                    // TODO: figure out SamplingMechanism, do we need to propagate it here?
-                    span.SetTraceSamplingDecision(existingSpanContext.SamplingPriority.Value);
+                    traceContext.SetSamplingPriority(existingSpanContext.SamplingPriority);
+
+                    // copy propagated tags
+                    var traceTags = TagPropagation.ParseHeader(existingSpanContext.PropagatedTags);
+
+                    foreach (var tag in traceTags.ToArray())
+                    {
+                        traceContext.Tags.SetTag(tag.Key, tag.Value);
+                    }
                 }
 
                 GrpcCommon.RecordFinalStatus(span, receivedStatus.StatusCode, receivedStatus.Detail, receivedStatus.DebugException);
@@ -209,11 +217,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             span.Type = SpanTypes.Grpc;
             span.ResourceName = methodFullName;
 
-            if (span.Context.TraceContext.SamplingDecision == null)
+            if (span.Context.TraceContext.SamplingPriority == null && tracer.TracerManager.Sampler != null)
             {
                 // If we don't add the span to the trace context, then we need to manually call the sampler
-                var samplingDecision = tracer.TracerManager.Sampler?.MakeSamplingDecision(span);
-                span.Context.TraceContext.SetSamplingDecision(samplingDecision);
+                var (samplingPriority, samplingMechanism) = tracer.TracerManager.Sampler.MakeSamplingDecision(span);
+                span.Context.TraceContext.SetSamplingPriority(samplingPriority, samplingMechanism);
             }
 
             return span;

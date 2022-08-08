@@ -25,7 +25,7 @@ namespace Datadog.Trace.Propagators
                 carrierSetter.Set(carrier, HttpHeaderNames.Origin, context.Origin);
             }
 
-            var samplingPriority = context.TraceContext?.SamplingDecision?.Priority ?? context.SamplingPriority;
+            var samplingPriority = context.TraceContext?.SamplingPriority ?? context.SamplingPriority;
 
             if (samplingPriority != null)
             {

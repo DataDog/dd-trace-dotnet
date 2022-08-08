@@ -361,7 +361,7 @@ namespace Datadog.Trace
                     traceContext = new TraceContext(this, traceTags);
 
                     var samplingPriority = parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority();
-                    traceContext.SetSamplingDecision(samplingPriority);
+                    traceContext.SetSamplingPriority(samplingPriority);
                 }
             }
             else
@@ -370,7 +370,7 @@ namespace Datadog.Trace
                 var samplingPriority = DistributedTracer.Instance.GetSamplingPriority();
 
                 traceContext = new TraceContext(this, tags: null);
-                traceContext.SetSamplingDecision(samplingPriority);
+                traceContext.SetSamplingPriority(samplingPriority);
 
                 if (traceId == null)
                 {

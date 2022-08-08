@@ -94,14 +94,17 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             if (samplingPriority == null)
             {
                 Serverless.Debug("samplingPriority not found");
-                span.Context.TraceContext?.SetSamplingDecision(tracer.TracerManager.Sampler?.MakeSamplingDecision(span));
+
+                if (tracer.TracerManager.Sampler != null)
+                {
+                    var (priority, mechanism) = tracer.TracerManager.Sampler.MakeSamplingDecision(span);
+                    span.Context.TraceContext?.SetSamplingPriority(priority, mechanism);
+                }
             }
             else
             {
                 Serverless.Debug($"setting the placeholder sampling priority to = {samplingPriority}");
-
-                // TODO: figure out SamplingMechanism, do we need to propagate it here?
-                span.Context.TraceContext?.SetSamplingDecision(Convert.ToInt32(samplingPriority), notifyDistributedTracer: false);
+                span.Context.TraceContext?.SetSamplingPriority(Convert.ToInt32(samplingPriority), notifyDistributedTracer: false);
             }
 
             return tracer.TracerManager.ScopeManager.Activate(span, false);

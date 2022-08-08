@@ -10,6 +10,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 {
@@ -55,10 +56,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
                     if (scope != null)
                     {
-                        if (setSamplingPriority)
+                        var traceContext = scope.Span.Context.TraceContext;
+
+                        if (setSamplingPriority && traceContext != null)
                         {
-                            // TODO: figure out SamplingMechanism, do we need to propagate it here?
-                            scope.Span.SetTraceSamplingDecision(spanContext.SamplingPriority.Value);
+                            traceContext.SetSamplingPriority(spanContext.SamplingPriority);
+
+                            // copy propagated tags
+                            var traceTags = TagPropagation.ParseHeader(spanContext.PropagatedTags);
+
+                            foreach (var tag in traceTags.ToArray())
+                            {
+                                traceContext.Tags.SetTag(tag.Key, tag.Value);
+                            }
                         }
 
                         // add distributed tracing headers to the HTTP request

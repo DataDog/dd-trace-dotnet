@@ -12,6 +12,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 {
@@ -78,11 +79,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                     if (scope is not null)
                     {
                         var span = scope.Span;
+                        var traceContext = span.Context.TraceContext;
 
-                        if (setSamplingPriority)
+                        if (setSamplingPriority && traceContext != null)
                         {
-                            // TODO: figure out SamplingMechanism, do we need to propagate it here?
-                            span.SetTraceSamplingDecision(existingSpanContext.SamplingPriority.Value);
+                            traceContext.SetSamplingPriority(existingSpanContext.SamplingPriority);
+
+                            // copy propagated tags
+                            var traceTags = TagPropagation.ParseHeader(existingSpanContext.PropagatedTags);
+
+                            foreach (var tag in traceTags.ToArray())
+                            {
+                                traceContext.Tags.SetTag(tag.Key, tag.Value);
+                            }
                         }
 
                         if (returnValue is HttpWebResponse response)

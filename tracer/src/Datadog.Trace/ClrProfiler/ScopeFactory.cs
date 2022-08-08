@@ -114,11 +114,11 @@ namespace Datadog.Trace.ClrProfiler
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
 
-                if (!addToTraceContext && span.Context.TraceContext.SamplingDecision == null)
+                if (!addToTraceContext && span.Context.TraceContext.SamplingPriority == null && tracer.TracerManager.Sampler != null)
                 {
                     // If we don't add the span to the trace context, then we need to manually call the sampler
-                    var samplingDecision = tracer.TracerManager.Sampler?.MakeSamplingDecision(span);
-                    span.Context.TraceContext.SetSamplingDecision(samplingDecision);
+                    var (samplingPriority, samplingMechanism) = tracer.TracerManager.Sampler.MakeSamplingDecision(span);
+                    span.Context.TraceContext.SetSamplingPriority(samplingPriority, samplingMechanism);
                 }
             }
             catch (Exception ex)

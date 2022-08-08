@@ -44,9 +44,9 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                 request.Headers.Set(HttpHeaderNames.TraceId, scope.Span.TraceId.ToString());
                 request.Headers.Set(HttpHeaderNames.SpanId, scope.Span.SpanId.ToString());
 
-                if (scope.Span.Context.TraceContext?.SamplingDecision is { } samplingDecision)
+                if (scope.Span.Context.TraceContext?.SamplingPriority is { } samplingPriority)
                 {
-                    request.Headers.Set(HttpHeaderNames.SamplingPriority, samplingDecision.Priority.ToString());
+                    request.Headers.Set(HttpHeaderNames.SamplingPriority, samplingPriority.ToString());
                 }
             }
 

@@ -46,7 +46,7 @@ namespace Datadog.Trace.ExtensionMethods
 
             if (span.Context is SpanContext { TraceContext: { } traceContext })
             {
-                traceContext.SetSamplingDecision(priority, mechanism);
+                traceContext.SetSamplingPriority(priority, mechanism);
             }
         }
 

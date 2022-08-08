@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests
             scope.Should().NotBeNull();
             scope.Span.TraceId.ToString().Should().Be("1234");
             scope.Span.SpanId.ToString().Should().NotBeNull();
-            scope.Span.Context.TraceContext.SamplingDecision?.Priority.Should().Be(1);
+            scope.Span.Context.TraceContext.SamplingPriority.Should().Be(1);
         }
 
         [Fact]
@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tests
             scope.Should().NotBeNull();
             scope.Span.TraceId.ToString().Should().NotBeNull();
             scope.Span.SpanId.ToString().Should().NotBeNull();
-            scope.Span.Context.TraceContext.SamplingDecision?.Priority.Should().Be(-1);
+            scope.Span.Context.TraceContext.SamplingPriority.Should().Be(-1);
         }
 
         [Fact]
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tests
             scope.Should().NotBeNull();
             scope.Span.TraceId.ToString().Should().Be("1234");
             scope.Span.SpanId.ToString().Should().NotBeNull();
-            scope.Span.Context.TraceContext.SamplingDecision?.Priority.Should().Be(-1);
+            scope.Span.Context.TraceContext.SamplingPriority.Should().Be(-1);
         }
 
         [Fact]
@@ -63,7 +63,7 @@ namespace Datadog.Trace.Tests
             scope.Should().NotBeNull();
             scope.Span.TraceId.ToString().Should().NotBeNull();
             scope.Span.SpanId.ToString().Should().NotBeNull();
-            scope.Span.Context.TraceContext.SamplingDecision?.Priority.Should().Be(1);
+            scope.Span.Context.TraceContext.SamplingPriority.Should().Be(1);
         }
 
         [Fact]
