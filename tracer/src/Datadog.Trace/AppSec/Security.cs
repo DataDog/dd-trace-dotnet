@@ -11,7 +11,6 @@ using Datadog.Trace.AppSec.Transports;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -280,7 +279,7 @@ namespace Datadog.Trace.AppSec
         {
             span.SetTag(Tags.AppSecEvent, "true");
             var resultData = result.Data;
-            SetTraceSamplingDecision(span);
+            SetTraceSamplingPriority(span);
 
             LogMatchesIfDebugEnabled(resultData, blocked);
 
@@ -299,7 +298,7 @@ namespace Datadog.Trace.AppSec
             AddHeaderTags(span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
         }
 
-        private void SetTraceSamplingDecision(Span span)
+        private void SetTraceSamplingPriority(Span span)
         {
             if (!_settings.KeepTraces)
             {
