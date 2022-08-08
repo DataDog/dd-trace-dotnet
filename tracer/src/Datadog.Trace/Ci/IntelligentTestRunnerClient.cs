@@ -32,6 +32,8 @@ internal class IntelligentTestRunnerClient
     private const int MaxRetries = 3;
     private const int MaxPackFileSizeInMb = 3;
 
+    private const string CommitType = "commit";
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntelligentTestRunnerClient));
     private static readonly Regex ShaRegex = new Regex("[0-9a-f]+", RegexOptions.Compiled);
 
@@ -99,6 +101,61 @@ internal class IntelligentTestRunnerClient
         return await SendObjectsPackFileAsync(localCommits[0], remoteCommitsData).ConfigureAwait(false);
     }
 
+    public async Task GetSkippeableTestsAsync()
+    {
+        Log.Debug("ITR: Getting skippeable tests...");
+        var framework = FrameworkDescription.Instance;
+        var skippeableUrl = new UriBuilder(_skippeableTestsUrl);
+        var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
+        var currentSha = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse HEAD", _workingDirectory)).ConfigureAwait(false);
+        currentSha = currentSha.Replace("\n", string.Empty);
+        skippeableUrl.Query = $"repository_url={HttpUtility.UrlEncode(repository)}&" +
+                              $"sha={currentSha}&" +
+                              $"{CommonTags.OSArchitecture}={HttpUtility.UrlEncode(framework.OSArchitecture)}&" +
+                              $"{CommonTags.OSPlatform}={HttpUtility.UrlEncode(framework.OSPlatform)}&" +
+                              $"{CommonTags.OSVersion}={HttpUtility.UrlEncode(Environment.OSVersion.VersionString)}&" +
+                              $"{CommonTags.RuntimeName}={HttpUtility.UrlEncode(framework.Name)}&" +
+                              $"{CommonTags.RuntimeVersion}={HttpUtility.UrlEncode(framework.ProductVersion)}&" +
+                              $"{CommonTags.RuntimeArchitecture}={HttpUtility.UrlEncode(framework.ProcessArchitecture)}";
+        Log.Warning("ITR: {url}", skippeableUrl.Uri.ToString());
+        var request = _apiRequestFactory.Create(skippeableUrl.Uri);
+        request.AddHeader(ApiKeyHeader, _settings.ApiKey);
+        request.AddHeader(ApplicationKeyHeader, _settings.ApplicationKey);
+        var responseContent = File.ReadAllText("/Users/tony.redondo/skipresponse.json");
+        /*
+        var response = await request.GetAsync().ConfigureAwait(false);
+        var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+        if (response.StatusCode is < 200 or >= 300)
+        {
+            if (true)
+            {
+                Log.Error<int, string>("Failed to submit events with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
+            }
+
+            throw new WebException($"Status: {response.StatusCode}, Content: {responseContent}");
+        }
+        */
+        Log.Warning("ITR: {response}", responseContent);
+        var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<TestAttributes>>>(responseContent);
+        if (deserializedResult.Data is null)
+        {
+            return;
+        }
+
+        Log.Warning<int>("ITR: Data length {length}", deserializedResult.Data.Length);
+        if (deserializedResult.Data.Length > 0)
+        {
+            var data0 = deserializedResult.Data[0];
+            Log.Warning("ITR: Data[0].Id = {id}", data0.Id);
+            Log.Warning("ITR: Data[0].Attributes.Name = {name}", data0.Attributes.Name);
+            Log.Warning("ITR: Data[0].Attributes.Suite = {suite}", data0.Attributes.Suite);
+            Log.Warning("ITR: Data[0].Attributes.RawParameters = {params}", data0.Attributes.RawParameters);
+            Log.Warning("ITR: Data[0].Attributes.Configuration.Count = {cfgCount}", data0.Attributes.Configuration?.Count);
+            var parameters = data0.Attributes.GetParameters();
+            Log.Warning("ITR: Data[0].Attributes.Parameters.Count = {argCount}", parameters?.Arguments?.Count);
+        }
+    }
+
     private async Task<string[]> SearchCommitAsync(string[]? localCommits)
     {
         if (localCommits is null)
@@ -108,14 +165,15 @@ internal class IntelligentTestRunnerClient
 
         Log.Debug("ITR: Searching commits...");
 
-        var commitRequests = new CommitRequest[localCommits.Length];
+        var commitRequests = new Data<object>[localCommits.Length];
         for (var i = 0; i < localCommits.Length; i++)
         {
-            commitRequests[i] = new CommitRequest(localCommits[i]);
+            commitRequests[i] = new Data<object>(localCommits[i], CommitType, default);
         }
 
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-        var jsonPushedSha = JsonConvert.SerializeObject(new DataArrayEnvelopeWithMeta<CommitRequest>(commitRequests, repository));
+        var jsonPushedSha = JsonConvert.SerializeObject(new DataArrayEnvelopeWithMeta<Data<object>>(commitRequests, repository));
+        Log.Debug("ITR: JSON RQ = {json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 
         return await WithRetries(InternalSearchCommitAsync, jsonPushedShaBytes, MaxRetries).ConfigureAwait(false);
@@ -144,7 +202,8 @@ internal class IntelligentTestRunnerClient
                 throw new WebException($"Status: {response.StatusCode}, Content: {responseContent}");
             }
 
-            var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<CommitResponse>>(responseContent);
+            Log.Debug("ITR: JSON RS = {json}", responseContent);
+            var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<object>>>(responseContent);
             if (deserializedResult.Data is null)
             {
                 return Array.Empty<string>();
@@ -180,7 +239,8 @@ internal class IntelligentTestRunnerClient
         }
 
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-        var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelopeWithMeta<CommitRequest>(new CommitRequest(commitSha), repository));
+        var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelopeWithMeta<Data<object>>(new Data<object>(commitSha, CommitType, default), repository));
+        Log.Debug("ITR: JSON RQ = {json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 
         long totalUploadSize = 0;
@@ -410,30 +470,50 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-    private class CommitRequest
+    private readonly struct Data<T>
     {
-        public CommitRequest(string id)
+        [JsonProperty("id")]
+        public readonly string Id;
+
+        [JsonProperty("type")]
+        public readonly string Type;
+
+        [JsonProperty("attributes", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        public readonly T Attributes;
+
+        public Data(string id, string type, T attributes)
         {
             Id = id;
-            Type = "commit";
+            Type = type;
+            Attributes = attributes;
         }
-
-        [JsonProperty("id")]
-        public string Id { get; }
-
-        [JsonProperty("type")]
-        public string Type { get; }
     }
 
-    private class CommitResponse
+    private readonly struct TestAttributes
     {
-        [JsonProperty("id")]
-        public string? Id { get; set; }
+        [JsonProperty("name")]
+        public readonly string Name;
 
-        [JsonProperty("type")]
-        public string? Type { get; set; }
+        [JsonProperty("suite")]
+        public readonly string Suite;
 
-        [JsonProperty("attributes")]
-        public object? Attributes { get; set; }
+        [JsonProperty("parameters")]
+        public readonly string RawParameters;
+
+        [JsonProperty("configuration")]
+        public readonly Dictionary<string, object> Configuration;
+
+        public TestAttributes(string name, string suite, string parameters, Dictionary<string, object> configuration)
+        {
+            Name = name;
+            Suite = suite;
+            RawParameters = parameters;
+            Configuration = configuration;
+        }
+
+        public TestParameters GetParameters()
+        {
+            return JsonConvert.DeserializeObject<TestParameters>(RawParameters);
+        }
     }
 }
