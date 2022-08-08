@@ -37,23 +37,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             }
             else
             {
-                List<string> attributesToRemove = null;
-
                 // Make sure we do not propagate any other datadog header here in the rare cases where users would have added them manually
                 foreach (var attribute in carrier.MessageAttributes.Keys)
                 {
                     if (attribute is string attributeName && attributeName.StartsWith("x-datadog", StringComparison.OrdinalIgnoreCase))
                     {
-                        attributesToRemove ??= new List<string>();
-                        attributesToRemove.Add(attributeName);
-                    }
-                }
-
-                if (attributesToRemove != null)
-                {
-                    foreach (var attribute in attributesToRemove)
-                    {
-                        carrier.MessageAttributes.Remove(attribute);
+                        carrier.MessageAttributes.Remove(attributeName);
                     }
                 }
             }
