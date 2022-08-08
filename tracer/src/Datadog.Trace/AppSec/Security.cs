@@ -252,7 +252,7 @@ namespace Datadog.Trace.AppSec
                 }
                 else
                 {
-                    NativeMethods.UninitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                    NativeMethods.RemoveCallTargetDefinitions(payload.DefinitionsId, payload.Definitions);
                 }
 
                 foreach (var def in payload.Definitions)

@@ -6,7 +6,6 @@ EXPORTS
     IsProfilerAttached
     GetAssemblyAndSymbolsBytes
     InitializeProfiler
-    UninitializeProfiler
     EnableByRefInstrumentation
     EnableCallTargetStateByRef
     AddDerivedInstrumentations
@@ -14,3 +13,4 @@ EXPORTS
     InitializeTraceMethods
     InstrumentProbes
     GetProbesStatuses
+    RemoveCallTargetDefinitions

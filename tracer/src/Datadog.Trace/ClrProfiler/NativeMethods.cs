@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        public static void UninitializeProfiler(string id, NativeCallTargetDefinition[] methodArrays)
+        public static void RemoveCallTargetDefinitions(string id, NativeCallTargetDefinition[] methodArrays)
         {
             if (methodArrays is null || methodArrays.Length == 0)
             {
@@ -49,11 +49,11 @@ namespace Datadog.Trace.ClrProfiler
 
             if (IsWindows)
             {
-                Windows.UninitializeProfiler(id, methodArrays, methodArrays.Length);
+                Windows.RemoveCallTargetDefinitions(id, methodArrays, methodArrays.Length);
             }
             else
             {
-                NonWindows.UninitializeProfiler(id, methodArrays, methodArrays.Length);
+                NonWindows.RemoveCallTargetDefinitions(id, methodArrays, methodArrays.Length);
             }
         }
 
@@ -147,7 +147,7 @@ namespace Datadog.Trace.ClrProfiler
             public static extern void InitializeProfiler([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
             [DllImport("Datadog.Tracer.Native.dll")]
-            public static extern void UninitializeProfiler([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
+            public static extern void RemoveCallTargetDefinitions([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
             [DllImport("Datadog.Tracer.Native.dll")]
             public static extern void EnableByRefInstrumentation();
@@ -176,7 +176,7 @@ namespace Datadog.Trace.ClrProfiler
             public static extern void InitializeProfiler([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
             [DllImport("Datadog.Tracer.Native")]
-            public static extern void UninitializeProfiler([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
+            public static extern void RemoveCallTargetDefinitions([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern void EnableByRefInstrumentation();

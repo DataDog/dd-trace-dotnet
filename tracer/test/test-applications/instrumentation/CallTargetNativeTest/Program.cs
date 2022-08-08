@@ -134,7 +134,7 @@ namespace CallTargetNativeTest
         }
         static void DisableDefinitions()
         {
-            NativeMethods.UninitializeProfiler(definitionsId, definitions);
+            NativeMethods.RemoveCallTargetDefinitions(definitionsId, definitions);
         }
 
 
@@ -316,7 +316,7 @@ namespace CallTargetNativeTest
                         // GenericParentAbstractMethod();
                         break;
                     }
-                case "oneclick":
+                case "remove":
                     {
                         WithOutArguments();
                         DisableDefinitions();

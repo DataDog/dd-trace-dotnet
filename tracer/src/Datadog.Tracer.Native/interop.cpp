@@ -28,7 +28,7 @@ EXTERN_C VOID STDAPICALLTYPE InitializeProfiler(WCHAR* id, trace::CallTargetDefi
     return trace::profiler->InitializeProfiler(id, items, size);
 }
 
-EXTERN_C VOID STDAPICALLTYPE UninitializeProfiler(WCHAR* id, trace::CallTargetDefinition* items, int size)
+EXTERN_C VOID STDAPICALLTYPE RemoveCallTargetDefinitions(WCHAR* id, trace::CallTargetDefinition* items, int size)
 {
     return trace::profiler->InitializeProfiler(id, items, size, false);
 }
