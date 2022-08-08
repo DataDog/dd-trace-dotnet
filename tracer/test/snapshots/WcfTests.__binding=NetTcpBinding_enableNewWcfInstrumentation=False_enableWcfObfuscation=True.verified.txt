@@ -3,7 +3,7 @@
     TraceId: Id_1,
     SpanId: Id_2,
     Name: wcf.request,
-    Resource: WcfSample/ICalculator/ServerSyncAdd,
+    Resource: /WcfSample/?/CalculatorService,
     Service: Samples.Wcf,
     Type: web,
     Tags: {
@@ -28,7 +28,7 @@
     TraceId: Id_3,
     SpanId: Id_4,
     Name: wcf.request,
-    Resource: /WcfSample/?/CalculatorService,
+    Resource: WcfSample/ICalculator/ServerSyncAdd,
     Service: Samples.Wcf,
     Type: web,
     Tags: {
