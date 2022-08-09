@@ -175,8 +175,6 @@ namespace Datadog.Trace.Tests
         [InlineData(false)]
         public void ChunksSentAfterRootSpanShouldContainAASMetadataAndSamplingPriority(bool inAASContext)
         {
-            const int partialFlushThreshold = 3;
-
             Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.ThreadInstance.CreateNew()), DateTimeOffset.UtcNow);
 
             var tracer = new Mock<IDatadogTracer>();
@@ -185,8 +183,7 @@ namespace Datadog.Trace.Tests
             {
                 Exporter = new Trace.Configuration.ExporterSettings()
                 {
-                    PartialFlushEnabled = true,
-                    PartialFlushMinSpans = partialFlushThreshold
+                    PartialFlushEnabled = false,
                 }
             }.Build());
 
@@ -200,18 +197,12 @@ namespace Datadog.Trace.Tests
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
 
             var rootSpan = CreateSpan();
-
             traceContext.AddSpan(rootSpan);
 
-            for (int i = 0; i < partialFlushThreshold - 1; i++)
-            {
-                var span = CreateSpan();
-                traceContext.AddSpan(span);
-                traceContext.CloseSpan(span);
-            }
+            var span = CreateSpan();
+            traceContext.AddSpan(span);
+            traceContext.CloseSpan(span);
 
-            // Closing the root span brings the number of closed spans to the threshold
-            // but a full flush should be triggered rather than a partial, because every span in the trace has been closed
             traceContext.CloseSpan(rootSpan);
 
             spans.Value.Should().NotBeNullOrEmpty("a full flush should have been triggered");
