@@ -157,7 +157,8 @@ namespace Datadog.Trace.Debugger
         [JsonExtensionData]
         private IDictionary<string, JToken> _additionalData = new Dictionary<string, JToken>();
 
-        public CapturedValue Fields { get; set; }
+        [JsonIgnore]
+        public CapturedValue[] Fields { get; set; }
 
         [JsonIgnore]
         public CapturedValue[] Arguments { get; set; }

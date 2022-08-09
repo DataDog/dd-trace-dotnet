@@ -384,6 +384,7 @@ public class ProbesTests : TestHelper, IDisposable
         SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "3");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DiagnosticsInterval, "1");
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000");
     }
 
     private void SetProbeConfiguration(ProbeConfiguration probeConfiguration)
