@@ -118,6 +118,19 @@ namespace Datadog.Trace.Tagging
             return null;
         }
 
+        public void SetTags(TraceTagCollection? tags)
+        {
+            if (tags == null || tags.Count == 0)
+            {
+                return;
+            }
+
+            foreach (var tag in tags.ToArray())
+            {
+                SetTag(tag.Key, tag.Value);
+            }
+        }
+
         /// <summary>
         /// Constructs a string that can be used for horizontal propagation using the "x-datadog-tags" header
         /// in a "key1=value1,key2=value2" format. This header should only include tags with the "_dd.p.*" prefix.

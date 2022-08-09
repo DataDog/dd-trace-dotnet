@@ -82,11 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
                     // copy propagated tags
                     var traceTags = TagPropagation.ParseHeader(existingSpanContext.PropagatedTags);
-
-                    foreach (var tag in traceTags.ToArray())
-                    {
-                        traceContext.Tags.SetTag(tag.Key, tag.Value);
-                    }
+                    traceContext.Tags.SetTags(traceTags);
                 }
 
                 GrpcCommon.RecordFinalStatus(span, receivedStatus.StatusCode, receivedStatus.Detail, receivedStatus.DebugException);
