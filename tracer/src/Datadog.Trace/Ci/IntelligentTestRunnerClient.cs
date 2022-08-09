@@ -33,6 +33,7 @@ internal class IntelligentTestRunnerClient
     private const int MaxPackFileSizeInMb = 3;
 
     private const string CommitType = "commit";
+    private const string TestParamsType = "test_params";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntelligentTestRunnerClient));
     private static readonly Regex ShaRegex = new Regex("[0-9a-f]+", RegexOptions.Compiled);
@@ -78,6 +79,19 @@ internal class IntelligentTestRunnerClient
                 host: "api." + _settings.Site,
                 port: 443,
                 pathValue: "api/v2/git/repository/packfile").Uri;
+
+            _skippeableTestsUrl = new UriBuilder(
+                scheme: "https",
+                host: "api." + _settings.Site,
+                port: 443,
+                pathValue: $"api/v2/ci/environment/{HttpUtility.UrlEncode(environment)}/service/{HttpUtility.UrlEncode(serviceName)}/tests/skippable").Uri;
+            /*
+            _skippeableTestsUrl = new UriBuilder(
+                scheme: "https",
+                host: "itr-api-ci-app-backend.us1.staging.dog",
+                port: 443,
+                pathValue: $"api/v2/ci/environment/{HttpUtility.UrlEncode(environment)}/service/{HttpUtility.UrlEncode(serviceName)}/tests/skippable").Uri;
+            */
         }
     }
 
@@ -101,58 +115,66 @@ internal class IntelligentTestRunnerClient
         return await SendObjectsPackFileAsync(localCommits[0], remoteCommitsData).ConfigureAwait(false);
     }
 
-    public async Task GetSkippeableTestsAsync()
+    public async Task<SkippeableTest[]> GetSkippeableTestsAsync()
     {
         Log.Debug("ITR: Getting skippeable tests...");
         var framework = FrameworkDescription.Instance;
-        var skippeableUrl = new UriBuilder(_skippeableTestsUrl);
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var currentSha = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse HEAD", _workingDirectory)).ConfigureAwait(false);
         currentSha = currentSha.Replace("\n", string.Empty);
-        skippeableUrl.Query = $"repository_url={HttpUtility.UrlEncode(repository)}&" +
-                              $"sha={currentSha}&" +
-                              $"{CommonTags.OSArchitecture}={HttpUtility.UrlEncode(framework.OSArchitecture)}&" +
-                              $"{CommonTags.OSPlatform}={HttpUtility.UrlEncode(framework.OSPlatform)}&" +
-                              $"{CommonTags.OSVersion}={HttpUtility.UrlEncode(Environment.OSVersion.VersionString)}&" +
-                              $"{CommonTags.RuntimeName}={HttpUtility.UrlEncode(framework.Name)}&" +
-                              $"{CommonTags.RuntimeVersion}={HttpUtility.UrlEncode(framework.ProductVersion)}&" +
-                              $"{CommonTags.RuntimeArchitecture}={HttpUtility.UrlEncode(framework.ProcessArchitecture)}";
-        Log.Warning("ITR: {url}", skippeableUrl.Uri.ToString());
-        var request = _apiRequestFactory.Create(skippeableUrl.Uri);
-        request.AddHeader(ApiKeyHeader, _settings.ApiKey);
-        request.AddHeader(ApplicationKeyHeader, _settings.ApplicationKey);
-        var responseContent = File.ReadAllText("/Users/tony.redondo/skipresponse.json");
-        /*
-        var response = await request.GetAsync().ConfigureAwait(false);
-        var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-        if (response.StatusCode is < 200 or >= 300)
+        var query = new DataEnvelope<Data<SkippeableTestsQuery>>(
+            new Data<SkippeableTestsQuery>(
+                default,
+                TestParamsType,
+                new SkippeableTestsQuery(
+                    repository,
+                    currentSha,
+                    new SkippeableTestsConfigurations(
+                        framework.OSPlatform,
+                        Environment.OSVersion.VersionString,
+                        framework.OSArchitecture,
+                        framework.Name,
+                        framework.ProductVersion,
+                        framework.ProcessArchitecture))),
+            default);
+        var jsonQuery = JsonConvert.SerializeObject(query);
+        var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
+        Log.Debug("ITR: JSON RQ = {json}", jsonQuery);
+
+        return await WithRetries(InternalGetSkippeableTestsAsync, jsonQueryBytes, MaxRetries).ConfigureAwait(false);
+
+        async Task<SkippeableTest[]> InternalGetSkippeableTestsAsync(byte[] state, bool finalTry)
         {
-            if (true)
+            var request = _apiRequestFactory.Create(_skippeableTestsUrl);
+            request.AddHeader(ApiKeyHeader, _settings.ApiKey);
+            request.AddHeader(ApplicationKeyHeader, _settings.ApplicationKey);
+            Log.Debug("ITR: Searching skippeable tests from: {url}", _skippeableTestsUrl.ToString());
+            var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+            var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+            if (response.StatusCode is < 200 or >= 300)
             {
-                Log.Error<int, string>("Failed to submit events with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
+                if (finalTry)
+                {
+                    Log.Error<int, string>("Failed to get skippeable tests with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
+                }
+
+                throw new WebException($"Status: {response.StatusCode}, Content: {responseContent}");
             }
 
-            throw new WebException($"Status: {response.StatusCode}, Content: {responseContent}");
-        }
-        */
-        Log.Warning("ITR: {response}", responseContent);
-        var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<TestAttributes>>>(responseContent);
-        if (deserializedResult.Data is null)
-        {
-            return;
-        }
+            Log.Debug("ITR: JSON RS = {json}", responseContent);
+            var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<SkippeableTest>>>(responseContent);
+            if (deserializedResult.Data is null)
+            {
+                return null;
+            }
 
-        Log.Warning<int>("ITR: Data length {length}", deserializedResult.Data.Length);
-        if (deserializedResult.Data.Length > 0)
-        {
-            var data0 = deserializedResult.Data[0];
-            Log.Warning("ITR: Data[0].Id = {id}", data0.Id);
-            Log.Warning("ITR: Data[0].Attributes.Name = {name}", data0.Attributes.Name);
-            Log.Warning("ITR: Data[0].Attributes.Suite = {suite}", data0.Attributes.Suite);
-            Log.Warning("ITR: Data[0].Attributes.RawParameters = {params}", data0.Attributes.RawParameters);
-            Log.Warning("ITR: Data[0].Attributes.Configuration.Count = {cfgCount}", data0.Attributes.Configuration?.Count);
-            var parameters = data0.Attributes.GetParameters();
-            Log.Warning("ITR: Data[0].Attributes.Parameters.Count = {argCount}", parameters?.Arguments?.Count);
+            var testAttributes = new SkippeableTest[deserializedResult.Data.Length];
+            for (var i = 0; i < deserializedResult.Data.Length; i++)
+            {
+                testAttributes[i] = deserializedResult.Data[i].Attributes;
+            }
+
+            return testAttributes;
         }
     }
 
@@ -172,7 +194,7 @@ internal class IntelligentTestRunnerClient
         }
 
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-        var jsonPushedSha = JsonConvert.SerializeObject(new DataArrayEnvelopeWithMeta<Data<object>>(commitRequests, repository));
+        var jsonPushedSha = JsonConvert.SerializeObject(new DataArrayEnvelope<Data<object>>(commitRequests, repository));
         Log.Debug("ITR: JSON RQ = {json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 
@@ -239,7 +261,7 @@ internal class IntelligentTestRunnerClient
         }
 
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-        var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelopeWithMeta<Data<object>>(new Data<object>(commitSha, CommitType, default), repository));
+        var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, default), repository));
         Log.Debug("ITR: JSON RQ = {json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 
@@ -401,7 +423,7 @@ internal class IntelligentTestRunnerClient
                 continue;
             }
 
-            Log.Debug("Successfully sent intelligent test runner data");
+            Log.Debug("Request was completed successfully.");
             return response;
         }
     }
@@ -418,41 +440,30 @@ internal class IntelligentTestRunnerClient
         return gitOutput.Replace("\n", string.Empty);
     }
 
-    private readonly struct DataArrayEnvelope<T>
-    {
-        [JsonProperty("data")]
-        public readonly T[] Data;
-
-        public DataArrayEnvelope(T[] data)
-        {
-            Data = data;
-        }
-    }
-
-    private readonly struct DataEnvelopeWithMeta<T>
+    private readonly struct DataEnvelope<T>
     {
         [JsonProperty("data")]
         public readonly T Data;
 
-        [JsonProperty("meta")]
+        [JsonProperty("meta", DefaultValueHandling = DefaultValueHandling.Ignore)]
         public readonly Metadata Meta;
 
-        public DataEnvelopeWithMeta(T data, string repositoryUrl)
+        public DataEnvelope(T data, string repositoryUrl)
         {
             Data = data;
             Meta = new Metadata(repositoryUrl);
         }
     }
 
-    private readonly struct DataArrayEnvelopeWithMeta<T>
+    private readonly struct DataArrayEnvelope<T>
     {
         [JsonProperty("data")]
         public readonly T[] Data;
 
-        [JsonProperty("meta")]
+        [JsonProperty("meta", DefaultValueHandling = DefaultValueHandling.Ignore)]
         public readonly Metadata Meta;
 
-        public DataArrayEnvelopeWithMeta(T[] data, string repositoryUrl)
+        public DataArrayEnvelope(T[] data, string repositoryUrl)
         {
             Data = data;
             Meta = new Metadata(repositoryUrl);
@@ -472,7 +483,7 @@ internal class IntelligentTestRunnerClient
 
     private readonly struct Data<T>
     {
-        [JsonProperty("id")]
+        [JsonProperty("id", DefaultValueHandling = DefaultValueHandling.Ignore)]
         public readonly string Id;
 
         [JsonProperty("type")]
@@ -489,31 +500,53 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-    private readonly struct TestAttributes
+    private readonly struct SkippeableTestsQuery
     {
-        [JsonProperty("name")]
-        public readonly string Name;
+        [JsonProperty("repository_url")]
+        public readonly string RepositoryUrl;
 
-        [JsonProperty("suite")]
-        public readonly string Suite;
+        [JsonProperty("sha")]
+        public readonly string Sha;
 
-        [JsonProperty("parameters")]
-        public readonly string RawParameters;
+        [JsonProperty("configurations")]
+        public readonly SkippeableTestsConfigurations Configurations;
 
-        [JsonProperty("configuration")]
-        public readonly Dictionary<string, object> Configuration;
-
-        public TestAttributes(string name, string suite, string parameters, Dictionary<string, object> configuration)
+        public SkippeableTestsQuery(string repositoryUrl, string sha, SkippeableTestsConfigurations configurations)
         {
-            Name = name;
-            Suite = suite;
-            RawParameters = parameters;
-            Configuration = configuration;
+            RepositoryUrl = repositoryUrl;
+            Sha = sha;
+            Configurations = configurations;
         }
+    }
 
-        public TestParameters GetParameters()
+    private readonly struct SkippeableTestsConfigurations
+    {
+        [JsonProperty(CommonTags.OSPlatform)]
+        public readonly string OSPlatform;
+
+        [JsonProperty(CommonTags.OSVersion)]
+        public readonly string OSVersion;
+
+        [JsonProperty(CommonTags.OSArchitecture)]
+        public readonly string OSArchitecture;
+
+        [JsonProperty(CommonTags.RuntimeName)]
+        public readonly string RuntimeName;
+
+        [JsonProperty(CommonTags.RuntimeVersion)]
+        public readonly string RuntimeVersion;
+
+        [JsonProperty(CommonTags.RuntimeArchitecture)]
+        public readonly string RuntimeArchitecture;
+
+        public SkippeableTestsConfigurations(string osPlatform, string osVersion, string osArchitecture, string runtimeName, string runtimeVersion, string runtimeArchitecture)
         {
-            return JsonConvert.DeserializeObject<TestParameters>(RawParameters);
+            OSPlatform = osPlatform;
+            OSVersion = osVersion;
+            OSArchitecture = osArchitecture;
+            RuntimeName = runtimeName;
+            RuntimeVersion = runtimeVersion;
+            RuntimeArchitecture = runtimeArchitecture;
         }
     }
 }

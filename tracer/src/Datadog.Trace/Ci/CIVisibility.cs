@@ -66,17 +66,33 @@ namespace Datadog.Trace.Ci
                 tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
             }
 
-            // Update and upload git tree metadata.
-            if (_settings.GitUploadEnabled)
-            {
-                Log.Information("Update and uploading git tree metadata.");
-                var tskItrUpdate = UploadGitMetadataAsync();
-                LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
-            }
-
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
             TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings));
+            _ = Tracer.Instance;
+
+            // Intelligent Test Runner
+            if (_settings.IntelligentTestRunnerEnabled)
+            {
+                Log.Information("ITR: Getting skippeable tests.");
+                var context = SynchronizationContext.Current;
+                try
+                {
+                    SynchronizationContext.SetSynchronizationContext(null);
+                    GetIntelligentTestRunnerSkippeableTestsAsync().GetAwaiter().GetResult();
+                }
+                finally
+                {
+                    SynchronizationContext.SetSynchronizationContext(context);
+                }
+            }
+            else if (_settings.GitUploadEnabled)
+            {
+                // Update and upload git tree metadata.
+                Log.Information("ITR: Update and uploading git tree metadata.");
+                var tskItrUpdate = UploadGitMetadataAsync();
+                LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
+            }
 
             static async Task UploadGitMetadataAsync()
             {
@@ -88,6 +104,32 @@ namespace Datadog.Trace.Ci
                 catch (Exception ex)
                 {
                     Log.Error(ex, "ITR: Error uploading repository git metadata.");
+                }
+            }
+
+            static async Task GetIntelligentTestRunnerSkippeableTestsAsync()
+            {
+                try
+                {
+                    var itrClient = new ITRClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
+                    await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                    var skippeableTests = await itrClient.GetSkippeableTestsAsync().ConfigureAwait(false);
+
+                    Log.Warning<int>("ITR: SkippeableTests = {length}", skippeableTests?.Length ?? -1);
+                    if (skippeableTests?.Length > 0)
+                    {
+                        var test0 = skippeableTests[0];
+                        Log.Warning("ITR: Data[0].Attributes.Name = {name}", test0.Name);
+                        Log.Warning("ITR: Data[0].Attributes.Suite = {suite}", test0.Suite);
+                        Log.Warning("ITR: Data[0].Attributes.RawParameters = {params}", test0.RawParameters);
+                        Log.Warning("ITR: Data[0].Attributes.Configuration.Count = {cfgCount}", test0.Configuration?.Count);
+                        var parameters = test0.GetParameters();
+                        Log.Warning("ITR: Data[0].Attributes.Parameters.Count = {argCount}", parameters?.Arguments?.Count);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "ITR: Error getting skippeable tests.");
                 }
             }
         }
@@ -148,7 +190,7 @@ namespace Datadog.Trace.Ci
         internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings)
         {
             IApiRequestFactory factory = null;
-            TimeSpan agentlessTimeout = TimeSpan.FromSeconds(15);
+            TimeSpan agentlessTimeout = TimeSpan.FromSeconds(25);
 
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
@@ -243,7 +285,6 @@ namespace Datadog.Trace.Ci
             // Try to autodetect based in the domain name.
             var domainName = AppDomain.CurrentDomain.FriendlyName ?? string.Empty;
             if (domainName.StartsWith("testhost", StringComparison.Ordinal) ||
-                domainName.StartsWith("vstest", StringComparison.Ordinal) ||
                 domainName.StartsWith("xunit", StringComparison.Ordinal) ||
                 domainName.StartsWith("nunit", StringComparison.Ordinal) ||
                 domainName.StartsWith("MSBuild", StringComparison.Ordinal))

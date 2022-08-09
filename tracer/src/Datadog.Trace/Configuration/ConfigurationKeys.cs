@@ -381,6 +381,12 @@ namespace Datadog.Trace.Configuration
             /// Default Value is false (disabled)
             /// </summary>
             public const string GitUploadEnabled = "DD_CIVISIBILITY_GIT_UPLOAD_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Intelligent Test Runner in CI Visibility
+            /// Default Value is false (disabled)
+            /// </summary>
+            public const string IntelligentTestRunnerEnabled = "DD_CIVISIBILITY_ITR_ENABLED";
         }
 
         /// <summary>
