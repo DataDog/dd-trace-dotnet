@@ -3,16 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.ComponentModel;
-using System.Text;
-using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Ci.Logging.DirectSubmission;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Logging.DirectSubmission.Formatting;
-using Datadog.Trace.Logging.DirectSubmission.Sink;
-using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
@@ -52,106 +46,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                 return CallTargetState.GetDefault();
             }
 
-            var span = tracer.ActiveScope?.Span as Span;
-            tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new XUnitLogEvent(output, span));
+            if (tracer.ActiveScope?.Span is { } span)
+            {
+                tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("xunit", "info", output, span));
+            }
+
             return CallTargetState.GetDefault();
-        }
-
-        private class XUnitLogEvent : DatadogLogEvent
-        {
-            private readonly string _message;
-            private readonly Span _span;
-
-            public XUnitLogEvent(string message, Span span)
-            {
-                _message = message;
-                _span = span;
-            }
-
-            public override void Format(StringBuilder sb, LogFormatter formatter)
-            {
-                using var writer = LogFormatter.GetJsonWriter(sb);
-
-                // Based on JsonFormatter
-                writer.WriteStartObject();
-
-                writer.WritePropertyName("ddsource", escape: false);
-                writer.WriteValue("xunit");
-
-                if (formatter.Settings.Host is { } formatterHost)
-                {
-                    writer.WritePropertyName("hostname", escape: false);
-                    writer.WriteValue(formatterHost);
-                }
-                else if (HostMetadata.Instance.Hostname is { } hostname)
-                {
-                    writer.WritePropertyName("hostname", escape: false);
-                    writer.WriteValue(hostname);
-                }
-
-                writer.WritePropertyName("timestamp", escape: false);
-                writer.WriteValue(DateTimeOffset.UtcNow.ToUnixTimeNanoseconds() / 1_000_000);
-
-                writer.WritePropertyName("message", escape: false);
-                writer.WriteValue(_message);
-
-                var env = formatter.Env;
-                var service = formatter.Service;
-                if (_span is { } span)
-                {
-                    if (span.GetTag(Tags.Env) is { } spanEnv)
-                    {
-                        env = spanEnv;
-                    }
-
-                    if (!string.IsNullOrEmpty(span.ServiceName))
-                    {
-                        service = span.ServiceName;
-                    }
-
-                    writer.WritePropertyName("dd.trace_id", escape: false);
-                    writer.WriteValue($"{span.TraceId}");
-
-                    writer.WritePropertyName("dd.span_id", escape: false);
-                    writer.WriteValue($"{span.SpanId}");
-
-                    if (span.GetTag(TestTags.Suite) is { } suite)
-                    {
-                        writer.WritePropertyName(TestTags.Suite, escape: false);
-                        writer.WriteValue(suite);
-                    }
-
-                    if (span.GetTag(TestTags.Name) is { } name)
-                    {
-                        writer.WritePropertyName(TestTags.Name, escape: false);
-                        writer.WriteValue(name);
-                    }
-
-                    if (span.GetTag(TestTags.Bundle) is { } bundle)
-                    {
-                        writer.WritePropertyName(TestTags.Bundle, escape: false);
-                        writer.WriteValue(bundle);
-                    }
-                }
-
-                writer.WritePropertyName("service", escape: false);
-                writer.WriteValue(service);
-
-                // spaces are not allowed inside ddtags
-                env = env.Replace(" ", string.Empty);
-                env = env.Replace(":", string.Empty);
-
-                var ddtags = $"env:{env},datadog.product:citest";
-                if (formatter.GlobalTags is { Length: > 0 } globalTags)
-                {
-                    ddtags += "," + globalTags;
-                }
-
-                writer.WritePropertyName("ddtags", escape: false);
-                writer.WriteValue(ddtags);
-
-                writer.WriteEndObject();
-            }
         }
     }
 }

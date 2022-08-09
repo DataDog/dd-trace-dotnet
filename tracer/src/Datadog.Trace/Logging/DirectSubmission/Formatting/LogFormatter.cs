@@ -8,6 +8,8 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Formatting
@@ -34,7 +36,6 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             string env,
             string version)
         {
-            Settings = settings;
             _source = string.IsNullOrEmpty(settings.Source) ? null : settings.Source;
             _service = string.IsNullOrEmpty(serviceName) ? null : serviceName;
             _host = string.IsNullOrEmpty(settings.Host) ? null : settings.Host;
@@ -44,14 +45,6 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
         }
 
         internal delegate LogPropertyRenderingDetails FormatDelegate<T>(JsonTextWriter writer, in T state);
-
-        internal ImmutableDirectLogSubmissionSettings Settings { get; private set; }
-
-        internal string? Service => _service;
-
-        internal string? Env => _env;
-
-        internal string? GlobalTags => _globalTags;
 
         internal static bool IsSourceProperty(string? propertyName) =>
             string.Equals(propertyName, SourcePropertyName, StringComparison.OrdinalIgnoreCase);
@@ -243,6 +236,92 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
                 writer.WritePropertyName(TagsPropertyName, escape: false);
                 writer.WriteValue(_globalTags);
             }
+
+            writer.WriteEndObject();
+        }
+
+        internal void FormatCIVisibilityLog(StringBuilder sb, string source, string? logLevel, string message, ISpan? span)
+        {
+            using var writer = GetJsonWriter(sb);
+
+            // Based on JsonFormatter
+            writer.WriteStartObject();
+
+            writer.WritePropertyName("ddsource", escape: false);
+            writer.WriteValue(source);
+
+            if (_host is not null)
+            {
+                writer.WritePropertyName("hostname", escape: false);
+                writer.WriteValue(_host);
+            }
+
+            writer.WritePropertyName("timestamp", escape: false);
+            writer.WriteValue(DateTimeOffset.UtcNow.ToUnixTimeNanoseconds() / 1_000_000);
+
+            if (logLevel is not null)
+            {
+                writer.WritePropertyName("status", escape: false);
+                writer.WriteValue(logLevel);
+            }
+
+            writer.WritePropertyName("message", escape: false);
+            writer.WriteValue(message);
+
+            var env = _env ?? string.Empty;
+            var service = _service;
+            if (span is not null)
+            {
+                if (span.GetTag(Tags.Env) is { } spanEnv)
+                {
+                    env = spanEnv;
+                }
+
+                if (!string.IsNullOrEmpty(span.ServiceName))
+                {
+                    service = span.ServiceName;
+                }
+
+                writer.WritePropertyName("dd.trace_id", escape: false);
+                writer.WriteValue($"{span.TraceId}");
+
+                writer.WritePropertyName("dd.span_id", escape: false);
+                writer.WriteValue($"{span.SpanId}");
+
+                if (span.GetTag(TestTags.Suite) is { } suite)
+                {
+                    writer.WritePropertyName(TestTags.Suite, escape: false);
+                    writer.WriteValue(suite);
+                }
+
+                if (span.GetTag(TestTags.Name) is { } name)
+                {
+                    writer.WritePropertyName(TestTags.Name, escape: false);
+                    writer.WriteValue(name);
+                }
+
+                if (span.GetTag(TestTags.Bundle) is { } bundle)
+                {
+                    writer.WritePropertyName(TestTags.Bundle, escape: false);
+                    writer.WriteValue(bundle);
+                }
+            }
+
+            writer.WritePropertyName("service", escape: false);
+            writer.WriteValue(service);
+
+            // spaces are not allowed inside ddtags
+            env = env.Replace(" ", string.Empty);
+            env = env.Replace(":", string.Empty);
+
+            var ddtags = $"env:{env},datadog.product:citest";
+            if (_globalTags is { Length: > 0 } globalTags)
+            {
+                ddtags += "," + globalTags;
+            }
+
+            writer.WritePropertyName("ddtags", escape: false);
+            writer.WriteValue(ddtags);
 
             writer.WriteEndObject();
         }
