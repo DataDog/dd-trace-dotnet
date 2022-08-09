@@ -30,6 +30,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
         private readonly string? _env;
         private readonly string? _version;
 
+        private string? _ciVisibilityDdTags;
+
         public LogFormatter(
             ImmutableDirectLogSubmissionSettings settings,
             string serviceName,
@@ -269,12 +271,19 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             writer.WriteValue(message);
 
             var env = _env ?? string.Empty;
+            var ddTags = _ciVisibilityDdTags;
+            if (ddTags is null)
+            {
+                ddTags = GetCIVisiblityDDTagsString(env);
+                _ciVisibilityDdTags = ddTags;
+            }
+
             var service = _service;
             if (span is not null)
             {
-                if (span.GetTag(Tags.Env) is { } spanEnv)
+                if (span.GetTag(Tags.Env) is { } spanEnv && spanEnv != env)
                 {
-                    env = spanEnv;
+                    ddTags = GetCIVisiblityDDTagsString(spanEnv);
                 }
 
                 if (!string.IsNullOrEmpty(span.ServiceName))
@@ -310,20 +319,25 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             writer.WritePropertyName("service", escape: false);
             writer.WriteValue(service);
 
-            // spaces are not allowed inside ddtags
-            env = env.Replace(" ", string.Empty);
-            env = env.Replace(":", string.Empty);
+            writer.WritePropertyName("ddtags", escape: false);
+            writer.WriteValue(ddTags);
 
-            var ddtags = $"env:{env},datadog.product:citest";
+            writer.WriteEndObject();
+        }
+
+        private string GetCIVisiblityDDTagsString(string environment)
+        {
+            // spaces are not allowed inside ddtags
+            environment = environment.Replace(" ", string.Empty);
+            environment = environment.Replace(":", string.Empty);
+
+            var ddtags = $"env:{environment},datadog.product:citest";
             if (_globalTags is { Length: > 0 } globalTags)
             {
                 ddtags += "," + globalTags;
             }
 
-            writer.WritePropertyName("ddtags", escape: false);
-            writer.WriteValue(ddtags);
-
-            writer.WriteEndObject();
+            return ddtags;
         }
     }
 }
