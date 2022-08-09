@@ -37,14 +37,33 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             }
             else
             {
+
+#if NETCOREAPP2_1
+                List<string> attributesToRemove = null;
+#endif
                 // Make sure we do not propagate any other datadog header here in the rare cases where users would have added them manually
                 foreach (var attribute in carrier.MessageAttributes.Keys)
                 {
                     if (attribute is string attributeName && attributeName.StartsWith("x-datadog", StringComparison.OrdinalIgnoreCase))
                     {
-                        carrier.MessageAttributes.Remove(attributeName);
+#if NETCOREAPP2_1
+                        attributesToRemove ??= new List<string>();
+                        attributesToRemove.Add(attributeName)
+#else
+                        carrier.MessageAttributes.Remove(attribute);
+#endif
                     }
                 }
+
+#if NETCOREAPP2_1
+                if (attributesToRemove != null)
+                {
+                    foreach (var attribute in attributesToRemove)
+                    {
+                        carrier.MessageAttributes.Remove(attribute);
+                    }
+                }
+#endif
             }
 
             // SQS allows a maximum of 10 message attributes: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-message-metadata.html#sqs-message-attributes
