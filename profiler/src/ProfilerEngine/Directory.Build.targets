@@ -43,47 +43,30 @@
         </PropertyGroup>
 
         <PropertyGroup>
-            <!--
-            Note that the top-level Directory.Build.props defines a property "ConfigBasedRelativeOutputPath" that
-            combines $(Configuration) with the Platform moniker just like below. However we cannot use it, because
-            it uses the Platform moniker of the current build, whereas here we need all the different relevant Platform monikers.
-            So, if we ever renamed a platform moniker (it happened in the past), we would need to update the lines below accordingly.
-            -->
-            <NativeWindowsX86DeployFilesSrcDir>$(BaseOutputPath)\$(Configuration)-x86\profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows</NativeWindowsX86DeployFilesSrcDir>
-            <NativeWindowsX64DeployFilesSrcDir>$(BaseOutputPath)\$(Configuration)-x64\profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows</NativeWindowsX64DeployFilesSrcDir>
-
-            <NativeLinuxX86DeployFilesSrcDir>$(BaseOutputPath)\$(Configuration)-x86\profiler\src\ProfilerEngine\Datadog.Profiler.Native.Linux</NativeLinuxX86DeployFilesSrcDir>
-            <NativeLinuxX64DeployFilesSrcDir>$(BaseOutputPath)\$(Configuration)-x64\profiler\src\ProfilerEngine\Datadog.Profiler.Native.Linux</NativeLinuxX64DeployFilesSrcDir>
+            <NativeWindowsDeployFilesSrcDir>$(BaseOutputPath)\$(ConfigBasedRelativeOutputPath)\profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows</NativeWindowsDeployFilesSrcDir>
+            <NativeLinuxDeployFilesSrcDir>$(BaseOutputPath)\$(ConfigBasedRelativeOutputPath)\profiler\src\ProfilerEngine\Datadog.Profiler.Native.Linux</NativeLinuxDeployFilesSrcDir>
 
         </PropertyGroup>
 
         <ItemGroup>
-            <NativeX86DeployFiles Include="$(NativeWindowsX86DeployFilesSrcDir)\*.dll" />
-            <NativeX86DeployFiles Include="$(NativeWindowsX86DeployFilesSrcDir)\*.pdb" />
-            <NativeX86DeployFiles Include="$(NativeLinuxX86DeployFilesSrcDir)\*.so" />
-
-            <NativeX64DeployFiles Include="$(NativeWindowsX64DeployFilesSrcDir)\*.dll" />
-            <NativeX64DeployFiles Include="$(NativeWindowsX64DeployFilesSrcDir)\*.pdb" />
-            <NativeX64DeployFiles Include="$(NativeLinuxX64DeployFilesSrcDir)\*.so" />
+            <NativeDeployFiles Include="$(NativeWindowsDeployFilesSrcDir)\*.dll" />
+            <NativeDeployFiles Include="$(NativeWindowsDeployFilesSrcDir)\*.pdb" />
+            <NativeDeployFiles Include="$(NativeLinuxDeployFilesSrcDir)\*.so" />
 
             <AdditionalDeployFiles Include="$(MSBuildThisFileDirectory)\DeployResources\DDProf-SetEnv.bat"/>
             <AdditionalDeployFiles Include="$(MSBuildThisFileDirectory)\DeployResources\DDProf-SetEnv.sh"/>
 
-            <AllDeployFiles Include="@(NativeX86DeployFiles)" />
-            <AllDeployFiles Include="@(NativeX64DeployFiles)" />
+            <AllDeployFiles Include="@(NativeDeployFiles)" />
             <AllDeployFiles Include="@(AdditionalDeployFiles)" />
 
         </ItemGroup>
 
         <!-- Debug messages. Uncomment as needed. -->
         <!--
-        <Message Text="[PrepareDeployDirectory] NativeWindowsX86DeployFilesSrcDir: '$(NativeWindowsX86DeployFilesSrcDir)'" Importance="high" />
-        <Message Text="[PrepareDeployDirectory] NativeWindowsX64DeployFilesSrcDir: '$(NativeWindowsX64DeployFilesSrcDir)'" Importance="high" />
-        <Message Text="[PrepareDeployDirectory] NativeLinuxX86DeployFilesSrcDir: '$(NativeLinuxX86DeployFilesSrcDir)'" Importance="high" />
-        <Message Text="[PrepareDeployDirectory] NativeLinuxX64DeployFilesSrcDir: '$(NativeLinuxX64DeployFilesSrcDir)'" Importance="high" />
+        <Message Text="[PrepareDeployDirectory] NativeWindowsDeployFilesSrcDir: '$(NativeWindowsDeployFilesSrcDir)'" Importance="high" />
+        <Message Text="[PrepareDeployDirectory] NativeLinuxDeployFilesSrcDir: '$(NativeLinuxDeployFilesSrcDir)'" Importance="high" />
 
-        <Message Text="[PrepareDeployDirectory] NativeX86DeployFiles:       '%(NativeX86DeployFiles.Identity)'" Importance="high" />
-        <Message Text="[PrepareDeployDirectory] NativeX64DeployFiles:       '%(NativeX64DeployFiles.Identity)'" Importance="high" />
+        <Message Text="[PrepareDeployDirectory] NativeDeployFiles:       '%(NativeDeployFiles.Identity)'" Importance="high" />
 
         <Message Text="[PrepareDeployDirectory] AllDeployFiles:             '%(AllDeployFiles.Identity)'" Importance="high" />
         -->
