@@ -49,12 +49,12 @@ namespace Datadog.Trace.AppSec.Transports.Http
 
         public void WriteBlockedResponse()
         {
+            _context.Items["block"] = true;
             var httpResponse = _context.Response;
             httpResponse.Clear();
             httpResponse.StatusCode = 403;
             httpResponse.ContentType = "text/html";
             httpResponse.WriteAsync(SecurityConstants.AttackBlockedHtml).Wait();
-            _context.Items["block"] = true;
             _completeAsync ??= httpResponse.GetType().GetMethod("CompleteAsync");
             if (_completeAsync != null)
             {

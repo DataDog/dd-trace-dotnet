@@ -709,14 +709,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 var request = httpContext.Request.DuckCast<HttpRequestStruct>();
                 RouteValueDictionary routeValues = request.RouteValues;
-
-                var security = CurrentSecurity;
-                var shouldSecure = security.Settings.Enabled;
-                if (shouldSecure)
-                {
-                    security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span, routeValues);
-                }
-
                 // No need to ToLowerInvariant() these strings, as we lower case
                 // the whole route later
                 object raw;
@@ -753,7 +745,13 @@ namespace Datadog.Trace.DiagnosticListeners
                     span.SetTag(Tags.HttpRoute, normalizedRoute);
                 }
 
-                security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext);
+                var security = CurrentSecurity;
+                var shouldSecure = security.Settings.Enabled;
+                if (shouldSecure)
+                {
+                    security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span, routeValues);
+                    security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext);
+                }
             }
         }
 
