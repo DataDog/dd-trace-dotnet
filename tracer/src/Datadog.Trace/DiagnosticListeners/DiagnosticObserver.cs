@@ -53,6 +53,11 @@ namespace Datadog.Trace.DiagnosticListeners
             catch (Exception ex)
             {
                 Log.Error(ex, "Event Exception: {EventName}", value.Key);
+                if (ex is Datadog.Trace.AppSec.BlockException)
+                {
+                    throw;
+                }
+
 #if DEBUG
                 // In debug mode we allow exceptions to be catch in the test suite
                 throw;
