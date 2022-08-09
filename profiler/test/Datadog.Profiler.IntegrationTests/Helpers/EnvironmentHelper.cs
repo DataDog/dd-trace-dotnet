@@ -334,7 +334,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return _framework.StartsWith("netcore", StringComparison.Ordinal) ||
                    !_framework.StartsWith("net4", StringComparison.Ordinal);
         }
-        
         private static bool IsRunningInCi() =>
             // This environment variable is set in the CI (Github / AzDo)
             !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("MonitoringHomeDirectory"));

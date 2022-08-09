@@ -10,7 +10,7 @@
     <?if $(var.Win64) = yes ?>
     <ComponentGroup Id="Tracer.Files.Native.64" Directory="INSTALLFOLDER.win_x64">
       <Component Win64="yes">
-        <File Id="Datadog.Trace.ClrProfiler.Native"
+        <File Id="Datadog.Tracer.Native"
               Source="$(var.MonitoringHomeDirectory)\win-x64\Datadog.Tracer.Native.dll"
               Checksum="yes">
         </File>
@@ -26,8 +26,8 @@
 
     <!-- Always install the 32-bit binaries, even for the 64-bit installer -->
     <ComponentGroup Id="Tracer.Files.Native.32" Directory="INSTALLFOLDER.win_x86">
-      <Component Win64="$(var.Win64)" Id="Datadog.Trace.ClrProfiler.Native.32">
-        <File Id="Datadog.Trace.ClrProfiler.Native.32"
+      <Component Win64="$(var.Win64)" Id="Datadog.Tracer.Native.32">
+        <File Id="Datadog.Tracer.Native.32"
               Source="$(var.MonitoringHomeDirectory)\win-x86\Datadog.Tracer.Native.dll"
               Checksum="yes">
         </File>

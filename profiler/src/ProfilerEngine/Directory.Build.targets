@@ -36,8 +36,8 @@
           <!-- 64bit, $(PlatformShortName) == to x64. But on Linux, $(PlatformShortName) == x86_64.                        -->
           <DDPlatform Condition=" '$(PlatformShortName)' != '' AND $([MSBuild]::IsOSPlatform('Windows'))">win-$(PlatformShortName)</DDPlatform>
           <DDPlatform Condition=" '$(PlatformShortName)' == '' AND $([MSBuild]::IsOSPlatform('Windows'))">win-unknown</DDPlatform>
-          <DDPlatform Condition=" '$(Platform)' != '' AND $([MSBuild]::IsOSPlatform('Linux')) ">linux-$(PlatformShortName)</DDPlatform>
-          <DDPlatform Condition=" '$(Platform)' == '' AND $([MSBuild]::IsOSPlatform('Linux')) ">win-unknown</DDPlatform>
+          <DDPlatform Condition=" '$(Platform)' != '' AND $([MSBuild]::IsOSPlatform('Linux')) ">linux-$(Platform)</DDPlatform>
+          <DDPlatform Condition=" '$(Platform)' == '' AND $([MSBuild]::IsOSPlatform('Linux')) ">linux-unknown</DDPlatform>
           
           <DeployDirectoryBase >$(TopLevelDeployDirectoryBase)\$(DDPlatform)</DeployDirectoryBase>
         </PropertyGroup>

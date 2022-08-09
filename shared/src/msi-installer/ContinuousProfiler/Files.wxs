@@ -10,7 +10,7 @@
     <?if $(var.Win64) = yes ?>
     <ComponentGroup Id="ContinuousProfiler.Files.Native.64" Directory="INSTALLFOLDER.win_x64">
       <Component Win64="yes">
-        <File Id="Datadog.AutoInstrumentation.Profiler.Native.x64.dll"
+        <File Id="Datadog.Profiler.Native"
               Source="$(var.MonitoringHomeDirectory)\win-x64\Datadog.Profiler.Native.dll"
               Checksum="yes">
         </File>
@@ -21,7 +21,7 @@
     <!-- Always install the 32-bit binaries, even for the 64-bit installer -->
     <ComponentGroup Id="ContinuousProfiler.Files.Native.32" Directory="INSTALLFOLDER.win_x86">
       <Component Win64="$(var.Win64)">
-        <File Id="Datadog.AutoInstrumentation.Profiler.Native.x86.dll"
+        <File Id="Datadog.Profiler.Native.32"
               Source="$(var.MonitoringHomeDirectory)\win-x86\Datadog.Profiler.Native.dll"
               Checksum="yes">
         </File>

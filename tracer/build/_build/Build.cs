@@ -116,7 +116,6 @@ partial class Build : NukeBuild
             DistributionHomeDirectory.GlobFiles("**").Where(x => !x.ToString().Contains("readme.txt")).ForEach(x => DeleteFile(x));
             EnsureCleanDirectory(MonitoringHomeDirectory);
             EnsureCleanDirectory(OutputDirectory);
-            EnsureCleanDirectory(MonitoringHomeDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
             EnsureCleanDirectory(NativeProfilerProject.Directory / "build");
             EnsureCleanDirectory(NativeProfilerProject.Directory / "deps");
