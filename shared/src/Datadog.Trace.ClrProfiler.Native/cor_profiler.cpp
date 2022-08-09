@@ -174,6 +174,9 @@ namespace datadog::shared::nativeloader
             info5 = nullptr;
         }
 
+        m_info = info5 != nullptr ? info5 : info4;
+        m_this = this;
+
         // Gets the initial value for the event mask
         DWORD mask_low = 0;
         DWORD mask_hi = 0;
@@ -354,11 +357,7 @@ namespace datadog::shared::nativeloader
         {
             Log::Warn("CorProfiler::Initialize: Error setting the event mask.");
             return E_FAIL;
-        }
-
-        m_info = info5 != nullptr ? info5 : info4;
-
-        m_this = this;
+        }               
 
         return S_OK;
     }
