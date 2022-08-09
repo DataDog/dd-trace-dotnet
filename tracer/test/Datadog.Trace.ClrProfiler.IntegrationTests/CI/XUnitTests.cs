@@ -13,6 +13,7 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -44,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
                 SetEnvironmentVariable("DD_DUMP_ILREWRITE_ENABLED", "1");
 
-                using var logsIntake = new MockLogsIntake();
+                using var logsIntake = new MockLogsIntakeForCiVisibility();
                 EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.XUnit), nameof(XUnitTests));
                 SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
 
@@ -343,6 +344,45 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
             // Check the error message
             AssertTargetSpanEqual(targetSpan, Tags.ErrorMsg, new DivideByZeroException().Message);
+        }
+
+        private class MockLogsIntakeForCiVisibility : MockLogsIntake<MockLogsIntakeForCiVisibility.Log>
+        {
+            public class Log
+            {
+                [JsonProperty("ddsource")]
+                public string Source { get; set; }
+
+                [JsonProperty("hostname")]
+                public string Hostname { get; set; }
+
+                [JsonProperty("timestamp")]
+                public long Timestamp { get; set; }
+
+                [JsonProperty("message")]
+                public string Message { get; set; }
+
+                [JsonProperty("status")]
+                public string Status { get; set; }
+
+                [JsonProperty("service")]
+                public string Service { get; set; }
+
+                [JsonProperty("dd.trace_id")]
+                public string TraceId { get; set; }
+
+                [JsonProperty(TestTags.Suite)]
+                public string TestSuite { get; set; }
+
+                [JsonProperty(TestTags.Name)]
+                public string TestName { get; set; }
+
+                [JsonProperty(TestTags.Bundle)]
+                public string TestBundle { get; set; }
+
+                [JsonProperty("ddtags")]
+                public string Tags { get; set; }
+            }
         }
     }
 }

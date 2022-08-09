@@ -3,14 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.ComponentModel;
-using System.Text;
+using Datadog.Trace.Ci.Logging.DirectSubmission;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Logging.DirectSubmission;
-using Datadog.Trace.Logging.DirectSubmission.Formatting;
-using Datadog.Trace.Logging.DirectSubmission.Sink;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
@@ -50,61 +46,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                 return CallTargetState.GetDefault();
             }
 
-            var span = tracer.ActiveScope?.Span as Span;
-            tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new XUnitLogEvent(output, span));
+            if (tracer.ActiveScope?.Span is { } span)
+            {
+                tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("xunit", "info", output, span));
+            }
+
             return CallTargetState.GetDefault();
-        }
-
-        private class XUnitLogEvent : DatadogLogEvent
-        {
-            private readonly string _message;
-            private readonly Context? _context;
-
-            public XUnitLogEvent(string message, Span span)
-            {
-                _message = message;
-                _context = span is null ? null : new Context(span.TraceId, span.SpanId, span.Context.Origin);
-            }
-
-            public override void Format(StringBuilder sb, LogFormatter formatter)
-            {
-                formatter.FormatLog<Context?>(
-                    sb,
-                    _context,
-                    DateTime.UtcNow,
-                    _message,
-                    eventId: null,
-                    logLevel: DirectSubmissionLogLevelExtensions.Information,
-                    exception: null,
-                    (JsonTextWriter writer, in Context? state) =>
-                    {
-                        if (state.HasValue)
-                        {
-                            writer.WritePropertyName("dd.trace_id");
-                            writer.WriteValue($"{state.Value.TraceId}");
-                            writer.WritePropertyName("dd.span_id");
-                            writer.WriteValue($"{state.Value.SpanId}");
-                            writer.WritePropertyName("_dd.origin");
-                            writer.WriteValue($"{state.Value.Origin}");
-                        }
-
-                        return default;
-                    });
-            }
-
-            private readonly struct Context
-            {
-                public readonly ulong TraceId;
-                public readonly ulong SpanId;
-                public readonly string Origin;
-
-                public Context(ulong traceId, ulong spanId, string origin)
-                {
-                    TraceId = traceId;
-                    SpanId = spanId;
-                    Origin = origin;
-                }
-            }
         }
     }
 }
