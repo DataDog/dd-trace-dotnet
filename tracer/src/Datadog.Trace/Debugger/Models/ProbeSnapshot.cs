@@ -102,23 +102,7 @@ namespace Datadog.Trace.Debugger
         {
             if (_additionalData.TryGetValue("fields", out var fields))
             {
-                Fields = fields.Children<JProperty>().Select(c =>
-                {
-                    var jsonObject = c.Children().FirstOrDefault();
-                    if (jsonObject == null)
-                    {
-                        return default;
-                    }
-
-                    if (jsonObject.Type == JTokenType.String)
-                    {
-                        return new CapturedValue { Name = c.Name, Value = jsonObject.ToString() };
-                    }
-
-                    var co = jsonObject.ToObject<CapturedValue>();
-                    co.Name = c.Name;
-                    return co;
-                }).ToArray();
+                Fields = SnapshotSerializationHelpers.ToCapturedValue(fields);
             }
         }
 
@@ -173,23 +157,42 @@ namespace Datadog.Trace.Debugger
         {
             if (_additionalData.TryGetValue("arguments", out var arguments))
             {
-                Arguments = arguments.Children<JProperty>().Select(c =>
-                {
-                    var co = c.Children().First().ToObject<CapturedValue>();
-                    co.Name = c.Name;
-                    return co;
-                }).ToArray();
+                Arguments = SnapshotSerializationHelpers.ToCapturedValue(arguments);
             }
 
             if (_additionalData.TryGetValue("locals", out var locals))
             {
-                Locals = locals.Children<JProperty>().Select(c =>
-                {
-                    var co = c.Children().First().ToObject<CapturedValue>();
-                    co.Name = c.Name;
-                    return co;
-                }).ToArray();
+                Locals = SnapshotSerializationHelpers.ToCapturedValue(locals);
             }
+
+            if (_additionalData.TryGetValue("token", out var fields))
+            {
+                Fields = SnapshotSerializationHelpers.ToCapturedValue(fields);
+            }
+        }
+    }
+
+    internal static class SnapshotSerializationHelpers
+    {
+        public static CapturedValue[] ToCapturedValue(JToken token)
+        {
+            return token.Children<JProperty>().Select(c =>
+            {
+                var jsonObject = c.Children().FirstOrDefault();
+                if (jsonObject == null)
+                {
+                    return default;
+                }
+
+                if (jsonObject.Type == JTokenType.String)
+                {
+                    return new CapturedValue { Name = c.Name, Value = jsonObject.ToString() };
+                }
+
+                var co = jsonObject.ToObject<CapturedValue>();
+                co.Name = c.Name;
+                return co;
+            }).ToArray();
         }
     }
 }
