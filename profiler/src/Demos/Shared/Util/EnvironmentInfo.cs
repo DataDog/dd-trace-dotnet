@@ -103,6 +103,7 @@ namespace Datadog.Demos.Util
             str.AppendLine("        DD_LOADER_REWRITE_MSCORLIB_ENABLED:           " + (Environment.GetEnvironmentVariable("DD_LOADER_REWRITE_MSCORLIB_ENABLED") ?? "null"));
             str.AppendLine();
             str.AppendLine("        COMPlus_EnableDiagnostics:                    " + (Environment.GetEnvironmentVariable("COMPlus_EnableDiagnostics") ?? "null"));
+            str.AppendLine("        LD_PRELOAD:                                   " + (Environment.GetEnvironmentVariable("LD_PRELOAD") ?? "null"));
             str.AppendLine();
 
             str.AppendLine("    RuntimeEnvironmentInfo:");

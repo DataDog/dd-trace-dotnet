@@ -609,8 +609,6 @@ partial class Build
             linkLocation = continuousProfilerDir / FileNames.ProfilerLinuxApiWrapper;
             HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
 
-            // TODO: Do we need to link the libddwaf, or is it ok being next to the tracer dll?
-            
             // Copy the loader.conf to the root folder, this is required for when the "root" native loader is used,
             // It needs to include the architecture in the paths to the native dlls
             //
@@ -1801,24 +1799,6 @@ partial class Build
                              .Add($"DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.StrongNameKey=\"{strongNameKeyPath}\"")
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Exclude=\"[*]Datadog.Trace.Vendors.*,[Datadog.Trace]System.*,[Datadog.Trace]Mono.*\",")
                              .Add("DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Include=\"[Datadog.Trace.ClrProfiler.*]*,[Datadog.Trace]*,[Datadog.Trace.AspNet]*\""));
-    }
-
-    private void ExtractDebugInfoAndStripSymbols(AbsolutePath sourceDir)
-    {
-        var files = sourceDir.GlobFiles("linux-*/*.so");
-
-        foreach (var file in files)
-        {
-            var outputDir = SymbolsDirectory / new FileInfo(file).Directory!.Name;
-            EnsureExistingDirectory(outputDir);
-            var outputFile = outputDir / Path.GetFileNameWithoutExtension(file);
-
-            Logger.Info($"Extracting debug symbol for {file} to {outputFile}.debug");
-            ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {outputFile}.debug");    
-
-            Logger.Info($"Stripping out unneeded information from {file}");
-            StripBinary.Value(arguments: $"--strip-unneeded {file}");
-        }
     }
 
     protected override void OnTargetStart(string target)
