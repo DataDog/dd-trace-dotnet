@@ -337,7 +337,7 @@ bool convert_to(shared::WSTRING const& s, double& result)
     }
 
     // Based on tests, numbers such as "0.1.2" are converted into 0.1 without error
-    return (errno == 0);
+    return (errno != ERANGE);
 }
 
 template <typename T>
