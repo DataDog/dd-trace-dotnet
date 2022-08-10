@@ -18,10 +18,6 @@
 #include <string.h>
 #include <time.h>
 
-#ifndef _WINDOWS
-#include <filesystem>
-#endif
-
 #include "shared/src/native-src/dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 
@@ -150,11 +146,11 @@ ddprof_ffi_EndpointV3 LibddprofExporter::CreateEndpoint(IConfiguration* configur
     {
         // Agent mode
 
-#if _WINDOWS        
+#if _WINDOWS
         bool useDefaultDomainSocket = false;
 #else
-        std::error_code ec; // std::filesystem::exists might throw if no error_code parameter is provided
-        bool useDefaultDomainSocket = std::filesystem::exists("/var/run/datadog/apm.socket", ec);
+        std::error_code ec; // fs::exists might throw if no error_code parameter is provided
+        bool useDefaultDomainSocket = fs::exists("/var/run/datadog/apm.socket", ec);
 #endif
 
         if (useDefaultDomainSocket)
