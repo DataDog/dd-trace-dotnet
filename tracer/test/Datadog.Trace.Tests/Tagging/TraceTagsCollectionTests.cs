@@ -100,6 +100,7 @@ public class TraceTagsCollectionTests
     public void SetTag()
     {
         var tags = new TraceTagCollection();
+        tags.Count.Should().Be(0);
 
         // distributed tag is set...
         tags.SetTag("_dd.p.key1", "value1");
@@ -126,16 +127,43 @@ public class TraceTagsCollectionTests
     public void SetTag_MultipleTimes()
     {
         var tags = new TraceTagCollection();
-        tags.SetTag("_dd.p.key1", "value1");
+        tags.Count.Should().Be(0);
+
+        tags.SetTag("_dd.p.key1", "value1").Should().BeTrue();
         tags.Count.Should().Be(1);
 
-        tags.SetTag("_dd.p.key1", "value1");
+        var header1 = tags.ToPropagationHeader(MaxHeaderLength);
+        header1.Should().Be("_dd.p.key1=value1");
+
+        // no-op
+        tags.SetTag("_dd.p.key1", "value1").Should().BeFalse();
+        tags.Count.Should().Be(1);
+        tags.GetTag("_dd.p.key1").Should().Be("value1");
+        tags.ToPropagationHeader(MaxHeaderLength).Should().BeSameAs(header1); // returns cached instance
+
+        // update tag value
+        tags.SetTag("_dd.p.key1", "value2").Should().BeTrue();
         tags.Count.Should().Be(1);
 
-        var value1 = tags.GetTag("_dd.p.key1");
-        value1.Should().Be("value1");
+        tags.GetTag("_dd.p.key1").Should().Be("value2");
+        tags.ToPropagationHeader(MaxHeaderLength).Should().Be("_dd.p.key1=value2");
+    }
 
-        var header = tags.ToPropagationHeader(MaxHeaderLength);
-        header.Should().Be("_dd.p.key1=value1");
+    [Fact]
+    public void TryAddTag()
+    {
+        var tags = new TraceTagCollection();
+        tags.Count.Should().Be(0);
+
+        // add new tag
+        tags.TryAddTag("_dd.p.key1", "value1").Should().BeTrue();
+        tags.Count.Should().Be(1);
+
+        // should not add or update
+        tags.TryAddTag("_dd.p.key1", "value2").Should().BeFalse();
+        tags.Count.Should().Be(1);
+
+        tags.GetTag("_dd.p.key1").Should().Be("value1");
+        tags.ToPropagationHeader(MaxHeaderLength).Should().Be("_dd.p.key1=value1");
     }
 }

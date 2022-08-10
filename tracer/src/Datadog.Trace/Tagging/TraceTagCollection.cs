@@ -29,7 +29,41 @@ namespace Datadog.Trace.Tagging
         /// </summary>
         public int Count => _tags?.Count ?? 0;
 
-        public void SetTag(string name, string? value, bool replaceIfExists = true)
+        /// <summary>
+        /// Adds a new tag to the collection.
+        /// If the tag already exists, is not modified.
+        /// </summary>
+        /// <param name="name">The name of the tag.</param>
+        /// <param name="value">The value of the tag.</param>
+        /// <returns><c>true</c> if the tag is added to the collection, <c>false</c> otherwise.</returns>
+        public bool TryAddTag(string name, string value)
+        {
+            if (value == null!)
+            {
+                return false;
+            }
+
+            return SetTag(name, value, replaceIfExists: false);
+        }
+
+        /// <summary>
+        /// Adds a new tag to the collection if it doesn't already exists,
+        /// or updates the tag with a new value if it already exists.
+        /// If the tag value is <c>null</c>, the tag is not added to the collection,
+        /// and its previous value is removed if found.
+        /// </summary>
+        /// <param name="name">The name of the tag.</param>
+        /// <param name="value">The value of the tag.</param>
+        /// <returns>
+        /// <c>true</c> if the collection is modified by adding, updating, or removing a tag,
+        /// <c>false</c> otherwise.
+        /// </returns>
+        public bool SetTag(string name, string? value)
+        {
+            return SetTag(name, value, replaceIfExists: true);
+        }
+
+        private bool SetTag(string name, string? value, bool replaceIfExists)
         {
             if (name is null)
             {
@@ -60,8 +94,11 @@ namespace Datadog.Trace.Tagging
                                     {
                                         _cachedPropagationHeader = null;
                                     }
+
+                                    return true;
                                 }
-                                else if (!string.Equals(_tags[i].Value, value, StringComparison.Ordinal))
+
+                                if (!string.Equals(_tags[i].Value, value, StringComparison.Ordinal))
                                 {
                                     // tag already exists with different value, replace it
                                     _tags[i] = new(name, value);
@@ -71,13 +108,13 @@ namespace Datadog.Trace.Tagging
                                     {
                                         _cachedPropagationHeader = null;
                                     }
-                                }
 
-                                return;
+                                    return true;
+                                }
                             }
 
                             // tag exists but replaceIfExists is false, don't modify anything
-                            return;
+                            return false;
                         }
                     }
                 }
@@ -95,7 +132,12 @@ namespace Datadog.Trace.Tagging
                     {
                         _cachedPropagationHeader = null;
                     }
+
+                    return true;
                 }
+
+                // tag not found and value == null so tag was not added
+                return false;
             }
         }
 

@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Globalization;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
@@ -217,7 +218,7 @@ namespace Datadog.Trace
             // * don't set the tag if sampling mechanism is unknown
             if (samplingMechanism is { } mechanism)
             {
-                span.Context.TraceContext?.Tags.SetTag(Trace.Tags.Propagated.DecisionMaker, $"-{mechanism}", replaceIfExists: false);
+                span.Context.TraceContext?.Tags.TryAddTag(Trace.Tags.Propagated.DecisionMaker, $"-{mechanism.ToString(CultureInfo.InvariantCulture)}");
             }
         }
 
