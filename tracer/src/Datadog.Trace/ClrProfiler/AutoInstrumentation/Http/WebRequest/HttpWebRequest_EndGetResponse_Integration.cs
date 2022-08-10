@@ -78,25 +78,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
                     if (scope is not null)
                     {
-                        var span = scope.Span;
-                        var traceContext = span.Context.TraceContext;
-
-                        if (setSamplingPriority && traceContext != null)
+                        if (setSamplingPriority)
                         {
-                            traceContext.SetSamplingPriority(existingSpanContext.SamplingPriority);
-
-                            // copy propagated tags
-                            var traceTags = TagPropagation.ParseHeader(existingSpanContext.PropagatedTags);
-
-                            foreach (var tag in traceTags.ToArray())
-                            {
-                                traceContext.Tags.SetTag(tag.Key, tag.Value);
-                            }
+                            scope.Span.Context.TraceContext.SetSamplingPriority(existingSpanContext.SamplingPriority.Value);
                         }
 
                         if (returnValue is HttpWebResponse response)
                         {
-                            span.SetHttpStatusCode((int)response.StatusCode, isServer: false, Tracer.Instance.Settings);
+                            scope.Span.SetHttpStatusCode((int)response.StatusCode, isServer: false, Tracer.Instance.Settings);
                         }
 
                         scope.DisposeWithException(exception);

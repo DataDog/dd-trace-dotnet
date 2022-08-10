@@ -74,15 +74,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
                 span.SetHeaderTags(requestMetadataWrapper, tracer.Settings.GrpcTags, GrpcCommon.RequestMetadataTagPrefix);
                 scope = tracer.ActivateSpan(span);
-                var traceContext = span.Context.TraceContext;
 
-                if (setSamplingPriority && existingSpanContext?.SamplingPriority is not null && traceContext != null)
+                if (setSamplingPriority && existingSpanContext?.SamplingPriority is not null)
                 {
-                    traceContext.SetSamplingPriority(existingSpanContext.SamplingPriority);
-
-                    // copy propagated tags
-                    var traceTags = TagPropagation.ParseHeader(existingSpanContext.PropagatedTags);
-                    traceContext.Tags.SetTags(traceTags);
+                    span.Context.TraceContext.SetSamplingPriority(existingSpanContext.SamplingPriority);
                 }
 
                 GrpcCommon.RecordFinalStatus(span, receivedStatus.StatusCode, receivedStatus.Detail, receivedStatus.DebugException);

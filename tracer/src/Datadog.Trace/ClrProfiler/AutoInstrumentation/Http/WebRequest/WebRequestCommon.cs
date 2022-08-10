@@ -56,19 +56,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
                     if (scope != null)
                     {
-                        var traceContext = scope.Span.Context.TraceContext;
-
-                        if (setSamplingPriority && traceContext != null)
+                        if (setSamplingPriority)
                         {
-                            traceContext.SetSamplingPriority(spanContext.SamplingPriority);
-
-                            // copy propagated tags
-                            var traceTags = TagPropagation.ParseHeader(spanContext.PropagatedTags);
-
-                            foreach (var tag in traceTags.ToArray())
-                            {
-                                traceContext.Tags.SetTag(tag.Key, tag.Value);
-                            }
+                            scope.Span.Context.TraceContext.SetSamplingPriority(spanContext.SamplingPriority.Value);
                         }
 
                         // add distributed tracing headers to the HTTP request
