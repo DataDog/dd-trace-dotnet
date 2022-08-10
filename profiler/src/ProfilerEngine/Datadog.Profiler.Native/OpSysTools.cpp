@@ -333,7 +333,7 @@ std::string OpSysTools::GetProcessName()
 #endif
 }
 
-bool OpSysTools::IsSafeToStartProfiler()
+bool OpSysTools::IsSafeToStartProfiler(double coresThreshold)
 {
 #ifdef _WINDOWS
     // Today we do not have any specific check before starting the profiler on Windows.
@@ -367,20 +367,20 @@ bool OpSysTools::IsSafeToStartProfiler()
         return false;
     }
 
-   double cpuLimit;
+    double cpuLimit;
 
     if (CGroup::GetCpuLimit(&cpuLimit))
     {
-        Log::Info("CPU limit is ", cpuLimit);
+        Log::Info("CPU limit is ", cpuLimit, " with ", coresThreshold, " threshold");
 
-        if (cpuLimit < 1)
+        if (cpuLimit < coresThreshold)
         {
             Log::Warn("The CPU limit is too low for the profiler to work properly.");
             return false;
-        }        
+        }
     }
 
     return true;
-    
+
 #endif
 }

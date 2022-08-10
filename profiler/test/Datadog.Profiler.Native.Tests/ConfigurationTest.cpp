@@ -332,3 +332,17 @@ TEST(ConfigurationTest, CheckUserTagsWhenVariableIsSetWithIncompleteTag)
     auto configuration = Configuration{};
     EXPECT_THAT(configuration.GetUserTags(), ::testing::ContainerEq(tags{{"foo", "bar"}, {"foobar", "barbar"}, {"lab1", ""}}));
 }
+
+TEST(ConfigurationTest, CheckDefaultMinimumCoresThresholdWhenInvalidValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CoreMinimumOverride, WStr("invalid"));
+    auto configuration = Configuration{};
+    ASSERT_EQ(configuration.MinimumCores(), 1.0);
+}
+
+TEST(ConfigurationTest, CheckMinimumCoresThresholdWhenVariableIsSet)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CoreMinimumOverride, WStr("0.5"));
+    auto configuration = Configuration{};
+    ASSERT_EQ(configuration.MinimumCores(), 0.5);
+}

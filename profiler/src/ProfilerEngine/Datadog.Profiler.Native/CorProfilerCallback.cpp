@@ -598,10 +598,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     ConfigureDebugLog();
 
-
-    if (!OpSysTools::IsSafeToStartProfiler())
+    double coresThreshold = _pConfiguration->MinimumCores();
+    if (!OpSysTools::IsSafeToStartProfiler(coresThreshold))
     {
-        Log::Warn("It's not safe to start the profiler. See previous log messages for more info.");
+        Log::Warn("It is not safe to start the profiler. See previous log messages for more info.");
         return E_FAIL;
     }
 
