@@ -715,6 +715,7 @@ services:
         # - RUNTIME_IMAGE=
         # - PUBLISH_FRAMEWORK=
         # - RELATIVE_PROFILER_PATH=
+        # - RELATIVE_API_WRAPPER_PATH=
     image: dd-trace-dotnet/${dockerTag:-not-set}-nuget-tester
     volumes:
     - ./:/project
