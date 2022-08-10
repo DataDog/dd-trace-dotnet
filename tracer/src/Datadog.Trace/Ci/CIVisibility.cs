@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -23,6 +24,8 @@ namespace Datadog.Trace.Ci
         private static readonly CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
         private static int _firstInitialization = 1;
         private static Lazy<bool> _enabledLazy = new Lazy<bool>(() => InternalEnabled(), true);
+        private static Dictionary<string, IList<SkippeableTest>> _skippeableTestsBySuite;
+
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
 
         public static bool Enabled => _enabledLazy.Value;
@@ -79,7 +82,23 @@ namespace Datadog.Trace.Ci
                 try
                 {
                     SynchronizationContext.SetSynchronizationContext(null);
-                    GetIntelligentTestRunnerSkippeableTestsAsync().GetAwaiter().GetResult();
+                    var skippeableTestsBySuite = new Dictionary<string, IList<SkippeableTest>>();
+                    var skippeableTests = GetIntelligentTestRunnerSkippeableTestsAsync().GetAwaiter().GetResult();
+                    if (skippeableTests is not null)
+                    {
+                        foreach (var item in skippeableTests)
+                        {
+                            if (!skippeableTestsBySuite.TryGetValue(item.Suite, out var lstTests))
+                            {
+                                lstTests = new List<SkippeableTest>();
+                                skippeableTestsBySuite[item.Suite] = lstTests;
+                            }
+
+                            lstTests.Add(item);
+                        }
+                    }
+
+                    _skippeableTestsBySuite = skippeableTestsBySuite;
                 }
                 finally
                 {
@@ -107,7 +126,7 @@ namespace Datadog.Trace.Ci
                 }
             }
 
-            static async Task GetIntelligentTestRunnerSkippeableTestsAsync()
+            static async Task<SkippeableTest[]> GetIntelligentTestRunnerSkippeableTestsAsync()
             {
                 try
                 {
@@ -126,11 +145,15 @@ namespace Datadog.Trace.Ci
                         var parameters = test0.GetParameters();
                         Log.Warning("ITR: Data[0].Attributes.Parameters.Count = {argCount}", parameters?.Arguments?.Count);
                     }
+
+                    return skippeableTests;
                 }
                 catch (Exception ex)
                 {
                     Log.Error(ex, "ITR: Error getting skippeable tests.");
                 }
+
+                return null;
             }
         }
 
@@ -156,6 +179,17 @@ namespace Datadog.Trace.Ci
                     Log.Error("Timeout occurred when flushing spans.");
                 }
             }
+        }
+
+        internal static IList<SkippeableTest> GetSkippeableTestsFromSuite(string suite)
+        {
+            if (_skippeableTestsBySuite is { } skippeableTestBySuite &&
+                skippeableTestBySuite.TryGetValue(suite, out var testsInSuite))
+            {
+                return testsInSuite;
+            }
+
+            return Array.Empty<SkippeableTest>();
         }
 
         internal static string GetServiceNameFromRepository(string repository)
