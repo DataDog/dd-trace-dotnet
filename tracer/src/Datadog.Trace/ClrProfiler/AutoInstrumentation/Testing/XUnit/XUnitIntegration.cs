@@ -137,5 +137,56 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                 Common.StopCoverage(scope.Span);
             }
         }
+
+        internal static bool ShouldSkip(ref TestRunnerStruct runnerInstance)
+        {
+            string testSuite = runnerInstance.TestClass.ToString();
+            string testName = runnerInstance.TestMethod.Name;
+
+            var skippeableTests = CIVisibility.GetSkippeableTestsFromSuite(testSuite);
+            if (skippeableTests.Count > 0)
+            {
+                foreach (var skippeableTest in skippeableTests)
+                {
+                    if (skippeableTest.Name == testName)
+                    {
+                        object[] testMethodArguments = runnerInstance.TestMethodArguments;
+                        var parameters = skippeableTest.GetParameters();
+
+                        // Same test name and no parameters
+                        if ((parameters.Arguments is null || parameters.Arguments.Count == 0) &&
+                            (testMethodArguments is null || testMethodArguments.Length == 0))
+                        {
+                            return true;
+                        }
+
+                        if (parameters.Arguments is not null)
+                        {
+                            ParameterInfo[] methodParameters = runnerInstance.TestMethod.GetParameters();
+                            bool matchSignature = true;
+                            for (var i = 0; i < methodParameters.Length; i++)
+                            {
+                                var targetValue = "(default)";
+                                if (i < testMethodArguments.Length)
+                                {
+                                    targetValue = Common.GetParametersValueData(testMethodArguments[i]);
+                                }
+
+                                if (!parameters.Arguments.TryGetValue(methodParameters[i].Name, out var argValue) ||
+                                    (string)argValue != targetValue)
+                                {
+                                    matchSignature = false;
+                                    break;
+                                }
+                            }
+
+                            return matchSignature;
+                        }
+                    }
+                }
+            }
+
+            return false;
+        }
     }
 }
