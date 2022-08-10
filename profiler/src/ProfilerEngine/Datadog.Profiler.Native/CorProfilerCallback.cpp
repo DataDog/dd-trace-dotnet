@@ -598,6 +598,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     ConfigureDebugLog();
 
+    _pConfiguration = std::make_unique<Configuration>();
+
     double coresThreshold = _pConfiguration->MinimumCores();
     if (!OpSysTools::IsSafeToStartProfiler(coresThreshold))
     {
@@ -627,8 +629,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         Log::Error("An error occurred while obtaining the ICorProfilerInfo interface from the CLR: 0x", std::hex, hr, std::dec, ".");
         return E_FAIL;
     }
-
-    _pConfiguration = std::make_unique<Configuration>();
 
     // Log some more important environment info:
     USHORT major = 0;
