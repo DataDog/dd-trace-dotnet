@@ -104,16 +104,43 @@ namespace Samples.AWS.SQS
         private static async Task SendMessagesWithInjectedHeadersAsync(AmazonSQSClient sqsClient)
         {
             // Send one message, receive it, and parse it for its headers
-            await sqsClient.SendMessageAsync(_singleQueueUrl, "SendMessageAsync_SendMessageRequest");
+            // Add a bunch of datadog tags to validate that we remove them
+            var commonMessageAttributes = new Dictionary<string, MessageAttributeValue>()
+            {
+                { "x-datadog-1", new MessageAttributeValue(){ DataType = "String", StringValue = "value1" } },
+                { "x-datadog-2", new MessageAttributeValue(){ DataType = "String", StringValue = "value2" } },
+                { "x-datadog-3", new MessageAttributeValue(){ DataType = "String", StringValue = "value3" } },
+                { "x-datadog-4", new MessageAttributeValue(){ DataType = "String", StringValue = "value4" } },
+                { "x-datadog-5", new MessageAttributeValue(){ DataType = "String", StringValue = "value5" } },
+                { "x-datadog-6", new MessageAttributeValue(){ DataType = "String", StringValue = "value6" } },
+                { "x-datadog-7", new MessageAttributeValue(){ DataType = "String", StringValue = "value7" } },
+                { "x-datadog-8", new MessageAttributeValue(){ DataType = "String", StringValue = "value8" } },
+                { "x-datadog-9", new MessageAttributeValue(){ DataType = "String", StringValue = "value9" } },
+                { "x-datadog-10", new MessageAttributeValue(){ DataType = "String", StringValue = "value10" } },
+            };
+
+            // Send one message, receive it, and parse it for its headers
+            var sendRequest = new SendMessageRequest()
+            {
+                QueueUrl = _singleQueueUrl,
+                MessageBody = "SendMessageAsync_SendMessageRequest",
+                MessageAttributes = commonMessageAttributes
+            };
+
+            // Send a message with the SendMessageRequest argument
+            await sqsClient.SendMessageAsync(sendRequest);
 
             var receiveMessageRequest = new ReceiveMessageRequest()
             {
                 QueueUrl = _singleQueueUrl,
                 MessageAttributeNames = new List<string>() { ".*" }
             };
+
             var receiveMessageResponse1 = await sqsClient.ReceiveMessageAsync(receiveMessageRequest);
             await sqsClient.DeleteMessageAsync(_singleQueueUrl, receiveMessageResponse1.Messages.First().ReceiptHandle);
+
             Common.AssertDistributedTracingHeaders(receiveMessageResponse1.Messages);
+            Common.AssertNoXDatadogTracingHeaders(receiveMessageResponse1.Messages);
 
             // Send a batch of messages, receive them, and parse them for headers
             var sendMessageBatchRequest = new SendMessageBatchRequest
@@ -137,7 +164,9 @@ namespace Samples.AWS.SQS
             var receiveMessageBatchResponse1 = await sqsClient.ReceiveMessageAsync(receiveMessageBatchRequest);
 
             await sqsClient.DeleteMessageBatchAsync(_singleQueueUrl, receiveMessageResponse1.Messages.Select(m => new DeleteMessageBatchRequestEntry(m.MessageId, m.ReceiptHandle)).ToList());
+
             Common.AssertDistributedTracingHeaders(receiveMessageBatchResponse1.Messages);
+            Common.AssertNoXDatadogTracingHeaders(receiveMessageResponse1.Messages);
         }
 
         private static async Task SendMessagesWithoutInjectedHeadersAsync(AmazonSQSClient sqsClient)
