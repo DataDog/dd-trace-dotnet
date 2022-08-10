@@ -104,14 +104,8 @@ partial class Build
         {
             var envVars = new Dictionary<string,string>(new ProcessStartInfo().Environment);
 
-            // Override environment variables
-            envVars["COR_ENABLE_PROFILING"] = "1";
-            envVars["COR_PROFILER"] = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
-            envVars["COR_PROFILER_PATH_64"] = MonitoringHomeDirectory / "win-x64" / "Datadog.Trace.ClrProfiler.Native.dll";
-            envVars["COR_PROFILER_PATH_32"] = MonitoringHomeDirectory / "win-x86" / "Datadog.Trace.ClrProfiler.Native.dll";
-            envVars["DD_DOTNET_TRACER_HOME"] = MonitoringHomeDirectory;
-
-            envVars.AddExtraEnvVariables(ExtraEnvVars);
+            AddTracerEnvironmentVariables(envVars);
+            AddExtraEnvVariables(envVars, ExtraEnvVars);
 
             Logger.Info($"Running sample '{SampleName}' in IIS Express");
             IisExpress.Value(
@@ -126,8 +120,8 @@ partial class Build
         .Executes(() => {
 
             var envVars = new Dictionary<string, string> { { "ASPNETCORE_URLS", "http://*:5003" } };
-            envVars.AddTracerEnvironmentVariables(MonitoringHomeDirectory);
-            envVars.AddExtraEnvVariables(ExtraEnvVars);
+            AddTracerEnvironmentVariables(envVars);
+            AddExtraEnvVariables(envVars, ExtraEnvVars);
 
             string project = Solution.GetProject(SampleName)?.Path;
             if (project is not null)
