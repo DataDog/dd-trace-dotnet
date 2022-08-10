@@ -37,6 +37,7 @@ ARG RELATIVE_PROFILER_PATH
 RUN [Environment]::SetEnvironmentVariable('CORECLR_PROFILER_PATH',  $env:RELATIVE_PROFILER_PATH, [EnvironmentVariableTarget]::Machine);
 # Set the required env vars
 ENV CORECLR_ENABLE_PROFILING=1 \
+    DD_TRACE_DEBUG=1 \
     DD_APPSEC_ENABLED=1 \
     CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8} \
     DD_DOTNET_TRACER_HOME="c:\app\datadog" \

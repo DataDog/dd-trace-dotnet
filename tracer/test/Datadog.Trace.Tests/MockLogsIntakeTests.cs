@@ -26,7 +26,7 @@ namespace Datadog.Trace.Tests
             var serialized = "[{\"@t\":\"2021-09-28T14:47:02.6486114Z\",\"@m\":\"[ExcludeMessage]Building pipeline\",\"@i\":\"c5676978\",\"ddsource\":\"csharp\",\"service\":\"LogsInjection.ILogger\",\"host\":\"integration_ilogger_tests\",\"dd.env\":\"integration_tests\",\"dd.version\":\"1.0.0\",\"dd.trace_id\":\"8172771144023044714\",\"dd.span_id\":\"870590545642546651\"}]";
             using var ms = new MemoryStream(Encoding.UTF8.GetBytes(serialized));
 
-            var logs = MockLogsIntake.Log.DeserializeFromStream(ms);
+            var logs = MockLogsIntake.DeserializeFromStream(ms);
 
             logs.Should().NotBeNull();
             var log = logs.Should().ContainSingle().Subject;
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tests
             var serialized = $"[{log1},{log2}]";
             using var ms = new MemoryStream(Encoding.UTF8.GetBytes(serialized));
 
-            var logs = MockLogsIntake.Log.DeserializeFromStream(ms);
+            var logs = MockLogsIntake.DeserializeFromStream(ms);
 
             logs.Should().NotBeNull();
             logs.Should().HaveCount(2);
