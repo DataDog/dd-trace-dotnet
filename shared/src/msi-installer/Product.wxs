@@ -41,7 +41,6 @@
       <ComponentGroupRef Id="Shared.EnvironmentVariables.IIS"/>
       <ComponentGroupRef Id="Shared.Files" />
       <ComponentGroupRef Id="Shared.Files.NativeLoader.32"/> <!-- 32-bit native files are always included, even in 64-bit builds -->
-      <ComponentGroupRef Id="Shared.Files.LoaderConf.32"/> <!-- 32-bit native files are always included, even in 64-bit builds -->
 
       <ComponentGroupRef Id="ContinuousProfiler.EnvironmentVariables.Machine"/>
       <ComponentGroupRef Id="ContinuousProfiler.Files"/>
@@ -97,22 +96,6 @@
           </Directory>
         </Directory>
       </Directory>
-
-      <!-- For the 64-bit installer, also install the 32-bit profiler -->
-      <?if $(var.Win64) = yes ?>
-      <Directory Id="ProgramFilesFolder">
-        <!-- "C:\Program Files (x86)" -->
-        <Directory Id="ProgramFilesFolder.Datadog.32" Name="$(var.Company)">
-          <!-- ".\Datadog" -->
-          <Directory Id="INSTALLFOLDER.32" Name="$(var.BaseProductName)">
-            <!-- ".\.NET Tracer" -->
-            <Directory Id="INSTALLFOLDER.32.win_x86" Name="win-x86">
-              <!-- ".\win-x86" -->
-            </Directory>
-          </Directory>
-        </Directory>
-      </Directory>
-      <?endif ?>
 
       <Directory Id="CommonAppDataFolder">
         <!-- "C:\ProgramData" -->

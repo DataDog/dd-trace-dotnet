@@ -16,43 +16,26 @@
         <File Id="Datadog.Trace.ClrProfiler.Native"
               Source="$(var.MonitoringHomeDirectory)\win-x64\Datadog.Trace.ClrProfiler.Native.dll"
               Checksum="yes">
-          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
         </File>
 
-      </Component>
-    </ComponentGroup>
-
-    <!-- For the 64-bit installer, also install the 32-bit binaries -->
-    <ComponentGroup Id="Shared.Files.NativeLoader.32" Directory="INSTALLFOLDER.32.win_x86">
-      <Component Win64="no" Id="Datadog.AutoInstrumentation.NativeLoader.x86.dll">
-        <File Id="Datadog.Trace.ClrProfiler.Native.32"
-              Source="$(var.MonitoringHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
-              Checksum="yes">
-          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
-        </File>
-      </Component>
-    </ComponentGroup>
-
-    <?else ?>
-
-    <!-- note that for the 32-bit build, we need to install into INSTALLFOLDER instead of INSTALLFOLDER.32 -->
-    <ComponentGroup Id="Shared.Files.NativeLoader.32" Directory="INSTALLFOLDER.win_x86">
-      <Component Win64="no">
-        <File Id="Datadog.Trace.ClrProfiler.Native.32"
-              Source="$(var.MonitoringHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
-              Checksum="yes">
-          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
-        </File>
       </Component>
     </ComponentGroup>
 
     <?endif ?>
 
-    <!-- The 32-bit loader.conf needs to sit next to the tracer and profiler dlls-->
-    <ComponentGroup Id="Shared.Files.LoaderConf.32" Directory="INSTALLFOLDER.win_x86">
-      <Component Win64="$(var.Win64)" Id="loader.conf.x86" >
+    <!-- Always install the 32-bit binaries, even for the 64-bit installer -->
+    <ComponentGroup Id="Shared.Files.NativeLoader.32" Directory="INSTALLFOLDER.win_x86">
+      <Component Win64="$(var.Win64)">
         <File Id="loader.conf.x86" Source="$(var.MonitoringHomeDirectory)\win-x86\loader.conf" />
       </Component>
+      <Component Win64="$(var.Win64)">
+        <File Id="Datadog.Trace.ClrProfiler.Native.32"
+              Source="$(var.MonitoringHomeDirectory)\win-x86\Datadog.Trace.ClrProfiler.Native.dll"
+              Checksum="yes">
+          <Class Id="$(var.ProfilerCLSID)" Context="InprocServer32" ThreadingModel="both" Description="$(var.ProductNamePlatformAgnostic)"/>
+        </File>
+      </Component>
     </ComponentGroup>
+
   </Fragment>
 </Wix>

@@ -7,10 +7,15 @@
     <ComponentGroup Id="Shared.EnvironmentVariables.Machine" Directory="INSTALLFOLDER">
       <Component Id="EnvironmentVariablesShared" Guid="{C314A305-9C24-4E46-9ECF-E5EEA703BDEA}" Win64="$(var.Win64)">
         <CreateFolder/>
+        <Environment Id="COR_PROFILER" Name="COR_PROFILER" Action="set" Permanent="no" System="yes" Value="$(var.ProfilerCLSID)" Part="all" />
+        <Environment Id="CORECLR_PROFILER" Name="CORECLR_PROFILER" Action="set" Permanent="no" System="yes" Value="$(var.ProfilerCLSID)" Part="all" />
+  
+        <Environment Id="COR_PROFILER_PATH_32" Name="COR_PROFILER_PATH_32" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]win-x86\Datadog.Trace.ClrProfiler.Native.dll" Part="all" />
+        <Environment Id="CORECLR_PROFILER_PATH_32" Name="CORECLR_PROFILER_PATH_32" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]win-x86\Datadog.Trace.ClrProfiler.Native.dll" Part="all" />
+  
         <?if $(var.Win64) = yes ?>
-          <Environment Id="DD_NATIVELOADER_CONFIGFILE" Name="DD_NATIVELOADER_CONFIGFILE" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]win-x64\loader.conf" Part="all" />
-        <?else ?>
-          <Environment Id="DD_NATIVELOADER_CONFIGFILE" Name="DD_NATIVELOADER_CONFIGFILE" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]win-x86\loader.conf" Part="all" />
+          <Environment Id="COR_PROFILER_PATH_64" Name="COR_PROFILER_PATH_64" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]win-x64\Datadog.Trace.ClrProfiler.Native.dll" Part="all" />
+          <Environment Id="CORECLR_PROFILER_PATH_64" Name="CORECLR_PROFILER_PATH_64" Action="set" Permanent="no" System="yes" Value="[INSTALLFOLDER]win-x64\Datadog.Trace.ClrProfiler.Native.dll" Part="all" />
         <?endif ?>
       </Component>
     </ComponentGroup>
