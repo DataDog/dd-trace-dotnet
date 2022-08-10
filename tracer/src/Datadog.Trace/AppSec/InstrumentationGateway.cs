@@ -10,6 +10,7 @@ using System.Web;
 using System.Web.Routing;
 #endif
 using Datadog.Trace.AppSec.Transports.Http;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -32,7 +33,7 @@ namespace Datadog.Trace.AppSec
 
         public event EventHandler<InstrumentationGatewayEventArgs> LastChanceToWriteTags;
 
-        public event EventHandler<Datadog.Trace.AppSec.Transports.ITransport> BlockingOpportunity;
+        public event EventHandler<InstrumentationGatewayBlockingEventArgs> BlockingOpportunity;
 
         public void RaiseRequestStart(HttpContext context, HttpRequest request, Span relatedSpan)
         {
@@ -97,18 +98,13 @@ namespace Datadog.Trace.AppSec
                 LogAddressIfDebugEnabled(eventData);
                 eventHandler.Invoke(this, new InstrumentationGatewaySecurityEventArgs(eventData, transport, relatedSpan, eraseExistingAddress));
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not BlockException)
             {
-                if (ex is BlockException)
-                {
-                    throw;
-                }
-
                 Log.Error(ex, "DDAS-0004-00: AppSec failed to process request.");
             }
         }
 
-        internal void RaiseBlockingOpportunity(HttpContext context)
+        internal void RaiseBlockingOpportunity(HttpContext context, Scope scope, ImmutableTracerSettings tracerSettings, Action<InstrumentationGatewayBlockingEventArgs> doBeforeActualBlocking = null)
         {
             if (BlockingOpportunity == null)
             {
@@ -116,7 +112,7 @@ namespace Datadog.Trace.AppSec
             }
 
             var transport = new HttpTransport(context);
-            BlockingOpportunity.Invoke(this, transport);
+            BlockingOpportunity.Invoke(this, new InstrumentationGatewayBlockingEventArgs(context, scope, tracerSettings, doBeforeActualBlocking));
         }
     }
 }

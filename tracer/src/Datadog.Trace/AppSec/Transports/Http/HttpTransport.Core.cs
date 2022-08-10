@@ -65,14 +65,6 @@ namespace Datadog.Trace.AppSec.Transports.Http
 
             // throw new BlockException(); cant do it here because it s too early we break the tracer, we wont go to unhandled exception in the observer
         }
-
-        public void StopRequestMovingFurther()
-        {
-            if (_context.Items.Keys.Contains("block"))
-            {
-                throw new BlockException();
-            }
-        }
     }
 }
 #endif

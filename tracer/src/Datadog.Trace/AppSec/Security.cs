@@ -279,6 +279,11 @@ namespace Datadog.Trace.AppSec
         private void Report(ITransport transport, Span span, IResult result, bool blocked)
         {
             span.SetTag(Tags.AppSecEvent, "true");
+            if (blocked)
+            {
+                span.SetTag(Tags.AppSecBlocked, "true");
+            }
+
             var resultData = result.Data;
             SetTraceSamplingPriority(span);
 
@@ -339,7 +344,14 @@ namespace Datadog.Trace.AppSec
             context.AggregateAddresses(e.EventData, e.OverrideExistingAddress);
         }
 
-        private void MightStopRequest(object sender, ITransport transport) => transport.StopRequestMovingFurther();
+        private void MightStopRequest(object sender, InstrumentationGatewayBlockingEventArgs args)
+        {
+            if (args.Context.Items["block"] != null)
+            {
+                args.InvokeDoBeforeBlocking();
+                throw new BlockException();
+            }
+        }
 
         // NOTE: This method disposes of the WAF context, so it should be run once,
         // and only once, at the end of the request.
@@ -371,13 +383,8 @@ namespace Datadog.Trace.AppSec
                     Report(e.Transport, span, wafResult, block);
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not BlockException)
             {
-                if (ex is BlockException)
-                {
-                    throw;
-                }
-
                 Log.Error(ex, "Call into the security module failed");
             }
         }
@@ -404,6 +411,7 @@ namespace Datadog.Trace.AppSec
                 _instrumentationGateway.PathParamsAvailable -= AggregateAddressesInContext;
                 _instrumentationGateway.BodyAvailable -= AggregateAddressesInContext;
                 _instrumentationGateway.EndRequest -= RunWaf;
+                _instrumentationGateway.BlockingOpportunity -= MightStopRequest;
 
 #if NETFRAMEWORK
                 if (_usingIntegratedPipeline)

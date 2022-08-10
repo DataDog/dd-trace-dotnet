@@ -38,19 +38,15 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DD_APPSEC_ENABLED": "true",
-        "DD_APPSEC_BLOCKING_ENABLED": "true",
-
-        "COR_ENABLE_PROFILING": "1",
-        "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
-        "COR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer\\win-$(Platform)\\Datadog.Trace.ClrProfiler.Native.dll",
-
+        "DD_APPSEC_RULES": "custom-ruleset.json",
+        "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer",
         "CORECLR_ENABLE_PROFILING": "1",
         "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
-        "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer\\win-$(Platform)\\Datadog.Trace.ClrProfiler.Native.dll",
-
-        "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer",
+        "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\Datadog.AutoInstrumentation.NativeLoader.$(Platform).dll",
         "DD_VERSION": "1.0.0",
-        "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server"
+        "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server",
+        "DD_TRACE_DEBUG": "0",
+        "DD_ENV": "asm-samples"
       }
     }
   }

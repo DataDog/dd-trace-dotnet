@@ -48,7 +48,7 @@ namespace Samples.Security.AspNetCore2
                 builder.Run(async context =>
                 {
                     await context.Response.WriteAsync("Shutting down");
-                    _ = Task.Run(() => builder.ApplicationServices.GetService<IApplicationLifetime>().StopApplication());
+                    //_ = Task.Run(() => builder.ApplicationServices.GetService<IApplicationLifetime>().StopApplication());
                 });
             });
 

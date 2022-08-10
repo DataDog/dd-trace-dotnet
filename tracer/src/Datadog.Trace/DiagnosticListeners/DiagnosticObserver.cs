@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.DiagnosticListeners
@@ -50,13 +51,9 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 OnNext(value.Key, value.Value);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not BlockException)
             {
                 Log.Error(ex, "Event Exception: {EventName}", value.Key);
-                if (ex is Datadog.Trace.AppSec.BlockException)
-                {
-                    throw;
-                }
 
 #if DEBUG
                 // In debug mode we allow exceptions to be catch in the test suite

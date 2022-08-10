@@ -18,8 +18,6 @@ namespace Datadog.Trace.AppSec.Transports
 
         Func<string, string> GetHeader { get; }
 
-        void StopRequestMovingFurther();
-
         IContext GetAdditiveContext();
 
         void SetAdditiveContext(IContext additiveContext);
