@@ -116,7 +116,7 @@ The Instrumentation Verification process is divided into three main steps:
     * **(A)** Create a minimal reproduction scenario for the faulty instrumentation and run it through the verification tool as described in the `Usage` section of this document.
     * **(B)** Open the instrumented assembly in JetBrains dotPeek and use the [Export to Project](https://www.jetbrains.com/help/decompiler/Exporting_Assembly_to_Project.html) feature to create a .csproj for the instrumented assembly.
     * **(C)** Compile the .csproj that was generated in step B using the same version of the C# compiler as the one used in step A. 
-      * **NOTE:** if you're lucky, at this stage the C# compiler may issues an error on the instrumented code, in which case you've already struck gold as the error will likely pinpoint the exact problem in the instrumentation, and you likely won't need to proceed to the next step.
+      * **NOTE:** if you're lucky, at this stage the C# compiler may issue an error on the instrumented code, in which case you've already struck gold as the error will likely pinpoint the exact problem in the instrumentation, and you likely won't need to proceed to the next step.
     * **(D)** Perform a diff of the IL bytecode or the decompiled C# output of your instrumented method between the instrumented assembly you generated in step A and the “round tripped” assembly you generated in step C. Any differences you find might be vital clues for understanding why the instrumentation is failing.
 
 
