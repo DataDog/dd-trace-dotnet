@@ -74,7 +74,7 @@ namespace Datadog.Trace.Ci
             // Intelligent Test Runner
             if (_settings.IntelligentTestRunnerEnabled)
             {
-                Log.Information("ITR: Getting skippeable tests.");
+                Log.Information("ITR: Update and uploading git tree metadata and getting skippeable tests.");
                 var context = SynchronizationContext.Current;
                 try
                 {

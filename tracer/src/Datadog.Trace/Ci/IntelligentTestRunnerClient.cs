@@ -108,9 +108,11 @@ internal class IntelligentTestRunnerClient
         var localCommits = gitOutput.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
         if (localCommits.Length == 0)
         {
+            Log.Debug("ITR: Local commits not found. (since 1 month ago)");
             return 0;
         }
 
+        Log.Debug<int>("ITR: Local commits = {count}", localCommits.Length);
         var remoteCommitsData = await SearchCommitAsync(localCommits).ConfigureAwait(false);
         return await SendObjectsPackFileAsync(localCommits[0], remoteCommitsData).ConfigureAwait(false);
     }
@@ -151,7 +153,7 @@ internal class IntelligentTestRunnerClient
             Log.Debug("ITR: Searching skippeable tests from: {url}", _skippeableTestsUrl.ToString());
             var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-            if (response.StatusCode is < 200 or >= 300)
+            if (response.StatusCode is < 200 or >= 300 && response.StatusCode != 404)
             {
                 if (finalTry)
                 {
