@@ -4,9 +4,12 @@
 // </copyright>
 
 using System;
+using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -63,9 +66,30 @@ namespace Datadog.Trace.Ci
                 tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
             }
 
+            // Update and upload git tree metadata.
+            if (_settings.GitUploadEnabled)
+            {
+                Log.Information("Update and uploading git tree metadata.");
+                var tskItrUpdate = UploadGitMetadataAsync();
+                LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
+            }
+
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
             TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings));
+
+            static async Task UploadGitMetadataAsync()
+            {
+                try
+                {
+                    var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
+                    await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "ITR: Error uploading repository git metadata.");
+                }
+            }
         }
 
         internal static void FlushSpans()
@@ -119,6 +143,49 @@ namespace Datadog.Trace.Ci
             }
 
             return string.Empty;
+        }
+
+        internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings)
+        {
+            IApiRequestFactory factory = null;
+            TimeSpan agentlessTimeout = TimeSpan.FromSeconds(15);
+
+#if NETCOREAPP
+            Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
+            factory = new HttpClientRequestFactory(settings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: agentlessTimeout);
+#else
+            Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
+            factory = new ApiWebRequestFactory(settings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: agentlessTimeout);
+#endif
+
+            if (!string.IsNullOrWhiteSpace(_settings.ProxyHttps))
+            {
+                var proxyHttpsUriBuilder = new UriBuilder(_settings.ProxyHttps);
+
+                var userName = proxyHttpsUriBuilder.UserName;
+                var password = proxyHttpsUriBuilder.Password;
+
+                proxyHttpsUriBuilder.UserName = string.Empty;
+                proxyHttpsUriBuilder.Password = string.Empty;
+
+                if (proxyHttpsUriBuilder.Scheme == "https")
+                {
+                    // HTTPS proxy is not supported by .NET BCL
+                    Log.Error($"HTTPS proxy is not supported. ({proxyHttpsUriBuilder})");
+                    return factory;
+                }
+
+                NetworkCredential credential = null;
+                if (!string.IsNullOrWhiteSpace(userName))
+                {
+                    credential = new NetworkCredential(userName, password);
+                }
+
+                Log.Information("Setting proxy to: {ProxyHttps}", proxyHttpsUriBuilder.Uri.ToString());
+                factory.SetProxy(new WebProxy(proxyHttpsUriBuilder.Uri, true, _settings.ProxyNoProxy, credential), credential);
+            }
+
+            return factory;
         }
 
         private static async Task InternalFlushAsync()
