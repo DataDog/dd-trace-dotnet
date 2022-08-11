@@ -32,6 +32,6 @@ internal readonly struct SkippeableTest
 
     public TestParameters GetParameters()
     {
-        return JsonConvert.DeserializeObject<TestParameters>(RawParameters);
+        return string.IsNullOrWhiteSpace(RawParameters) ? null : JsonConvert.DeserializeObject<TestParameters>(RawParameters);
     }
 }

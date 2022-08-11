@@ -24,7 +24,7 @@ namespace Datadog.Trace.Ci
         private static readonly CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
         private static int _firstInitialization = 1;
         private static Lazy<bool> _enabledLazy = new Lazy<bool>(() => InternalEnabled(), true);
-        private static Dictionary<string, IList<SkippeableTest>> _skippeableTestsBySuite;
+        private static Dictionary<string, Dictionary<string, IList<SkippeableTest>>> _skippeableTestsBySuiteAndName;
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
 
@@ -82,23 +82,29 @@ namespace Datadog.Trace.Ci
                 try
                 {
                     SynchronizationContext.SetSynchronizationContext(null);
-                    var skippeableTestsBySuite = new Dictionary<string, IList<SkippeableTest>>();
+                    var skippeableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippeableTest>>>();
                     var skippeableTests = GetIntelligentTestRunnerSkippeableTestsAsync().GetAwaiter().GetResult();
                     if (skippeableTests is not null)
                     {
                         foreach (var item in skippeableTests)
                         {
-                            if (!skippeableTestsBySuite.TryGetValue(item.Suite, out var lstTests))
+                            if (!skippeableTestsBySuiteAndName.TryGetValue(item.Suite, out var suite))
                             {
-                                lstTests = new List<SkippeableTest>();
-                                skippeableTestsBySuite[item.Suite] = lstTests;
+                                suite = new Dictionary<string, IList<SkippeableTest>>();
+                                skippeableTestsBySuiteAndName[item.Suite] = suite;
                             }
 
-                            lstTests.Add(item);
+                            if (!suite.TryGetValue(item.Name, out var name))
+                            {
+                                name = new List<SkippeableTest>();
+                                suite[item.Name] = name;
+                            }
+
+                            name.Add(item);
                         }
                     }
 
-                    _skippeableTestsBySuite = skippeableTestsBySuite;
+                    _skippeableTestsBySuiteAndName = skippeableTestsBySuiteAndName;
                 }
                 finally
                 {
@@ -133,19 +139,7 @@ namespace Datadog.Trace.Ci
                     var itrClient = new ITRClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
                     await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
                     var skippeableTests = await itrClient.GetSkippeableTestsAsync().ConfigureAwait(false);
-
-                    Log.Warning<int>("ITR: SkippeableTests = {length}", skippeableTests?.Length ?? -1);
-                    if (skippeableTests?.Length > 0)
-                    {
-                        var test0 = skippeableTests[0];
-                        Log.Warning("ITR: Data[0].Attributes.Name = {name}", test0.Name);
-                        Log.Warning("ITR: Data[0].Attributes.Suite = {suite}", test0.Suite);
-                        Log.Warning("ITR: Data[0].Attributes.RawParameters = {params}", test0.RawParameters);
-                        Log.Warning("ITR: Data[0].Attributes.Configuration.Count = {cfgCount}", test0.Configuration?.Count);
-                        var parameters = test0.GetParameters();
-                        Log.Warning("ITR: Data[0].Attributes.Parameters.Count = {argCount}", parameters?.Arguments?.Count);
-                    }
-
+                    Log.Debug<int>("ITR: SkippeableTests = {length}", skippeableTests?.Length ?? -1);
                     return skippeableTests;
                 }
                 catch (Exception ex)
@@ -181,12 +175,15 @@ namespace Datadog.Trace.Ci
             }
         }
 
-        internal static IList<SkippeableTest> GetSkippeableTestsFromSuite(string suite)
+        internal static IList<SkippeableTest> GetSkippeableTestsFromSuiteAndName(string suite, string name)
         {
-            if (_skippeableTestsBySuite is { } skippeableTestBySuite &&
-                skippeableTestBySuite.TryGetValue(suite, out var testsInSuite))
+            if (_skippeableTestsBySuiteAndName is { } skippeableTestBySuite)
             {
-                return testsInSuite;
+                if (skippeableTestBySuite.TryGetValue(suite, out var testsInSuite) &&
+                    testsInSuite.TryGetValue(name, out var tests))
+                {
+                    return tests;
+                }
             }
 
             return Array.Empty<SkippeableTest>();
