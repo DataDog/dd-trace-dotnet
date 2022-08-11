@@ -59,6 +59,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 }
 
                 var content = await response.ReadAsStringAsync().ConfigureAwait(false);
+                Log.Information($"Discovery content is {content}");
+
                 ProcessDiscoveryResponse(content);
 
                 return true;
