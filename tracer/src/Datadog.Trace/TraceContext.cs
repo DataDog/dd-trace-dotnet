@@ -54,6 +54,9 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Gets the trace's sampling mechanism.
+        /// This value is only populated if this services made the sampling decision.
+        /// If the sampling decision was propagated to this service from an upstream service, we don't parse the
+        /// tag and we don't populate this value.
         /// </summary>
         public int? SamplingMechanism
         {
