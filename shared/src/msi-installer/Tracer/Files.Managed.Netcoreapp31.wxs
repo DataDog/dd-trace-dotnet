@@ -4,25 +4,25 @@
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
-    <ComponentGroup Id="Tracer.Files.Managed.Netcoreapp31" Directory="Tracer.netcoreapp3.1">
+    <ComponentGroup Id="Tracer.Files.Managed.Netcoreapp31" Directory="INSTALLFOLDER.netcoreapp3.1">
       <Component Win64="$(var.Win64)">
         <File Id="netcoreapp31_Datadog.Trace.dll"
-              Source="$(var.TracerHomeDirectory)\netcoreapp3.1\Datadog.Trace.dll"
+              Source="$(var.MonitoringHomeDirectory)\netcoreapp3.1\Datadog.Trace.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netcoreapp31_Datadog.Trace.MSBuild.dll"
-              Source="$(var.TracerHomeDirectory)\netcoreapp3.1\Datadog.Trace.MSBuild.dll"
+              Source="$(var.MonitoringHomeDirectory)\netcoreapp3.1\Datadog.Trace.MSBuild.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netcoreapp31_Datadog.Trace.MSBuild.pdb"
-              Source="$(var.TracerHomeDirectory)\netcoreapp3.1\Datadog.Trace.MSBuild.pdb"
+              Source="$(var.MonitoringHomeDirectory)\netcoreapp3.1\Datadog.Trace.MSBuild.pdb"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="netcoreapp31_Datadog.Trace.pdb"
-              Source="$(var.TracerHomeDirectory)\netcoreapp3.1\Datadog.Trace.pdb"
+              Source="$(var.MonitoringHomeDirectory)\netcoreapp3.1\Datadog.Trace.pdb"
               KeyPath="yes" Checksum="yes"/>
       </Component>
     </ComponentGroup>

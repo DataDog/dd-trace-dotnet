@@ -106,8 +106,9 @@
     <!-- In Linux case, we test against $(Platform), while on Windows case, we test against $(PlatformShortName). The reason is that for Windows, for   -->
     <!-- 64bit, $(PlatformShortName) == to x64. But on Linux, $(PlatformShortName) == x86_64. As we want the same extension on the libraries for on     -->
     <!-- both platforms, we will use $(Platform) for Linux, and $(PlatformShortName) for Windows.                                                       -->
-    <TargetName Condition=" '$(Platform)' != ''">$(ProfilerEngineNativeTarget).$(Platform)</TargetName>
-    <TargetName Condition=" '$(Platform)' == ''">$(ProfilerEngineNativeTarget).UnspecifiedPlatform</TargetName>
+    <TargetName>$(ProfilerEngineNativeTarget)</TargetName>
+    <DeployDirectoryBase Condition=" '$(Platform)' != ''">$(TopLevelDeployDirectoryBase)\linux-$(Platform)</DeployDirectoryBase>
+    <DeployDirectoryBase Condition=" '$(Platform)' == ''">$(TopLevelDeployDirectoryBase)\linux-unknown</DeployDirectoryBase>
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="..\..\dotnet-runtime-coreclr\pal\prebuilt\idl\corprof_i.cpp" />

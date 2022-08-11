@@ -34,6 +34,7 @@ ENV LD_PRELOAD=/opt/datadog/continuousprofiler/Datadog.Linux.ApiWrapper.x64.so
 ENV DD_PROFILING_ENABLED=1
 ENV DD_APPSEC_ENABLED=1
 ENV DD_TRACE_DEBUG=1
+ENV DD_PROFILING_LOG_DIR=/var/log/datadog/dotnet
 
 ENV ASPNETCORE_URLS=http://localhost:5000
 

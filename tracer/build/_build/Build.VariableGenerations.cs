@@ -435,6 +435,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-stretch-slim"),
                         },
                         relativeProfilerPath: "datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+                        relativeApiWrapperPath: "datadog/linux-x64/Datadog.Linux.ApiWrapper.x64.so",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
@@ -449,6 +450,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "29-2.1"),
                         },
                         relativeProfilerPath: "datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+                        relativeApiWrapperPath: "datadog/linux-x64/Datadog.Linux.ApiWrapper.x64.so",
                         dockerName: "andrewlock/dotnet-fedora"
                     );
 
@@ -463,6 +465,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
                         },
                         relativeProfilerPath: "datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so",
+                        relativeApiWrapperPath: "datadog/linux-musl-x64/Datadog.Linux.ApiWrapper.x64.so",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
@@ -477,6 +480,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "7-2.1"),
                         },
                         relativeProfilerPath: "datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+                        relativeApiWrapperPath: "datadog/linux-x64/Datadog.Linux.ApiWrapper.x64.so",
                         dockerName: "andrewlock/dotnet-centos"
                     );
 
@@ -491,6 +495,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "15-2.1"),
                         },
                         relativeProfilerPath: "datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+                        relativeApiWrapperPath: "datadog/linux-x64/Datadog.Linux.ApiWrapper.x64.so",
                         dockerName: "andrewlock/dotnet-opensuse"
                     );
 
@@ -514,6 +519,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
                         },
                         relativeProfilerPath: "datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so",
+                        relativeApiWrapperPath: "datadog/linux-arm64/Datadog.Linux.ApiWrapper.x64.so",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
@@ -527,6 +533,7 @@ partial class Build : NukeBuild
                     string shortName,
                     (string publishFramework, string runtimeTag)[] images,
                     string relativeProfilerPath,
+                    string relativeApiWrapperPath,
                     string dockerName
                 )
                 {
@@ -540,6 +547,7 @@ partial class Build : NukeBuild
                                 dockerTag = dockerTag,
                                 publishFramework = image.publishFramework,
                                 relativeProfilerPath = relativeProfilerPath,
+                                relativeApiWrapperPath = relativeApiWrapperPath,
                                 runtimeImage = $"{dockerName}:{image.runtimeTag}"
                             });
                     }

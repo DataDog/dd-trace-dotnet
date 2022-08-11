@@ -11,6 +11,7 @@ using Nuke.Common.Utilities.Collections;
 using static Nuke.Common.EnvironmentInfo;
 using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
+using static Nuke.Common.IO.CompressionTasks;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -44,15 +45,8 @@ partial class Build : NukeBuild
 
     [Parameter("The location to create the monitoring home directory. Default is ./shared/bin/monitoring-home ")]
     readonly AbsolutePath MonitoringHome;
-    [Parameter("The location to create the tracer home directory. Default is ./shared/bin/monitoring-home/tracer ")]
-    readonly AbsolutePath TracerHome;
-    [Parameter("The location to create the dd-trace home directory. Default is ./bin/dd-tracer-home ")]
-    readonly AbsolutePath DDTracerHome;
     [Parameter("The location to place NuGet packages and other packages. Default is ./bin/artifacts ")]
     readonly AbsolutePath Artifacts;
-
-    [Parameter("The location to the find the profiler build artifacts. Default is ./shared/bin/monitoring-home/continousprofiler")]
-    readonly AbsolutePath ProfilerHome;
 
     [Parameter("The location to restore Nuget packages (optional) ")]
     readonly AbsolutePath NugetPackageDirectory;
@@ -99,7 +93,7 @@ partial class Build : NukeBuild
             Logger.Info($"Platform: {TargetPlatform}");
             Logger.Info($"Framework: {Framework}");
             Logger.Info($"TestAllPackageVersions: {TestAllPackageVersions}");
-            Logger.Info($"TracerHomeDirectory: {TracerHomeDirectory}");
+            Logger.Info($"MonitoringHomeDirectory: {MonitoringHomeDirectory}");
             Logger.Info($"ArtifactsDirectory: {ArtifactsDirectory}");
             Logger.Info($"NugetPackageDirectory: {NugetPackageDirectory}");
             Logger.Info($"IsAlpine: {IsAlpine}");
@@ -120,9 +114,8 @@ partial class Build : NukeBuild
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             DistributionHomeDirectory.GlobFiles("**").Where(x => !x.ToString().Contains("readme.txt")).ForEach(x => DeleteFile(x));
+            EnsureCleanDirectory(MonitoringHomeDirectory);
             EnsureCleanDirectory(OutputDirectory);
-            EnsureCleanDirectory(TracerHomeDirectory);
-            EnsureCleanDirectory(DDTracerHomeDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
             EnsureCleanDirectory(NativeProfilerProject.Directory / "build");
             EnsureCleanDirectory(NativeProfilerProject.Directory / "deps");
@@ -159,8 +152,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileNativeSrc)
         .DependsOn(PublishNativeProfiler)
         .DependsOn(DownloadLibDdwaf)
-        .DependsOn(CopyLibDdwaf)
-        .DependsOn(CreateDdTracerHome);
+        .DependsOn(CopyLibDdwaf);
 
     Target BuildProfilerHome => _ => _
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
@@ -286,32 +278,23 @@ partial class Build : NukeBuild
         });
 
     Target BuildDistributionNuget => _ => _
-        // Currently requires manual copying of files into expected locations
         .Unlisted()
-        .After(CreateDistributionHome)
+        .After(CreateDistributionHome, ExtractDebugInfoLinux)
         .Executes(() =>
         {
-            // HACK fix file names while we don't yet support native loader in the NuGet
-            var homeDir = Solution.GetProject(Projects.DatadogMonitoringDistribution).Directory / "home";
-
-            foreach (var file in Directory.EnumerateFiles(homeDir, "Datadog.Tracer.Native.*", SearchOption.AllDirectories))
-            {
-                RenameFile(file, $"{Projects.NativeLoader}{Path.GetExtension(file)}");
-            }
-            
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DatadogMonitoringDistribution))
                 .EnableNoRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
+                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "distribution")
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool"));
         });
 
     Target BuildRunnerTool => _ => _
-        // Currently requires manual copying of files into expected locations
         .Unlisted()
-        .After(CreateDistributionHome)
+        .After(CreateDistributionHome, ExtractDebugInfoLinux)
         .Executes(() =>
         {
             DotNetBuild(x => x
@@ -321,16 +304,30 @@ partial class Build : NukeBuild
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
+                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "dd-trace")
                 .SetProperty("BuildStandalone", "false"));
         });
 
     Target BuildStandaloneTool => _ => _
         // Currently requires manual copying of files into expected locations
         .Unlisted()
-        .After(CreateDistributionHome)
+        .After(CreateDistributionHome, ExtractDebugInfoLinux)
         .Executes(() =>
         {
-            var runtimes = new[] { "win-x86", "win-x64", "linux-x64", "linux-musl-x64", "osx-x64", "linux-arm64" };
+            var runtimes = new[] 
+            { 
+                (rid: "win-x86", archiveFormat: ".zip"),  
+                (rid: "win-x64", archiveFormat: ".zip"),  
+                (rid: "linux-x64", archiveFormat: ".tar.gz"),  
+                (rid: "linux-musl-x64", archiveFormat: ".tar.gz"),  
+                (rid: "osx-x64", archiveFormat: ".tar.gz"),  
+                (rid: "linux-arm64", archiveFormat: ".tar.gz") 
+            }.Select(x => (x.rid, archive: ArtifactsDirectory / $"dd-trace-{x.rid}{x.archiveFormat}", output: ArtifactsDirectory / "tool" / x.rid))
+             .ToArray();
+
+            runtimes.ForEach(runtime => EnsureCleanDirectory(runtime.output));
+            runtimes.ForEach(runtime => DeleteFile(runtime.archive));
+
             DotNetPublish(x => x
                 .SetProject(Solution.GetProject(Projects.Tool))
                 // Have to do a restore currently as we're specifying specific runtime
@@ -341,8 +338,14 @@ partial class Build : NukeBuild
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
                 .SetProperty("BuildStandalone", "true")
+                .SetProperty("DebugSymbols", "False")
+                .SetProperty("DebugType", "None")
                 .CombineWith(runtimes, (c, runtime) => c
-                                .SetRuntime(runtime)));
+                                .SetProperty("PublishDir", runtime.output)
+                                .SetRuntime(runtime.rid)));
+
+            runtimes.ForEach(
+                x=> Compress(x.output, x.archive));  
         });
 
     Target RunBenchmarks => _ => _

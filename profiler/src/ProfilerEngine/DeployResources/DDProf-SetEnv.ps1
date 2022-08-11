@@ -8,14 +8,14 @@ $env:DD_DOTNET_PROFILER_HOME=$path
 $env:COR_ENABLE_PROFILING=1
 $env:COR_PROFILER='{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}'
 $env:COR_PROFILER_PATH=''
-$env:COR_PROFILER_PATH_64=$env:DD_DOTNET_PROFILER_HOME + '\Datadog.AutoInstrumentation.Profiler.Native.x64.dll'
-$env:COR_PROFILER_PATH_32=$env:DD_DOTNET_PROFILER_HOME + '\Datadog.AutoInstrumentation.Profiler.Native.x86.dll'
+$env:COR_PROFILER_PATH_64=$env:DD_DOTNET_PROFILER_HOME + '\win-x64\Datadog.Profiler.Native.dll'
+$env:COR_PROFILER_PATH_32=$env:DD_DOTNET_PROFILER_HOME + '\win-x86\Datadog.Profiler.Native.dll'
 
 $env:CORECLR_ENABLE_PROFILING=1
 $env:CORECLR_PROFILER='{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}'
 $env:CORECLR_PROFILER_PATH=''
-$env:CORECLR_PROFILER_PATH_64=$env:DD_DOTNET_PROFILER_HOME + '\Datadog.AutoInstrumentation.Profiler.Native.x64.dll'
-$env:CORECLR_PROFILER_PATH_32=$env:DD_DOTNET_PROFILER_HOME + '\Datadog.AutoInstrumentation.Profiler.Native.x86.dll'
+$env:CORECLR_PROFILER_PATH_64=$env:DD_DOTNET_PROFILER_HOME + '\win-x64\Datadog.Profiler.Native.dll'
+$env:CORECLR_PROFILER_PATH_32=$env:DD_DOTNET_PROFILER_HOME + '\win-x86\Datadog.Profiler.Native.dll'
 
 $env:COMPlus_EnableDiagnostics=1
 $env:DD_PROFILING_ENABLED=1

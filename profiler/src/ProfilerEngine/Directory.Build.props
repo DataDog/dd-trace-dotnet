@@ -24,7 +24,7 @@
     <PropertyGroup Condition=" '$(MSBuildProjectExtension)' == '.vcxproj' ">
 
         <!-- Target base name to use for artifact produced by C++ project -->
-        <ProfilerEngineNativeTarget>Datadog.AutoInstrumentation.Profiler.Native</ProfilerEngineNativeTarget>
+        <ProfilerEngineNativeTarget>Datadog.Profiler.Native</ProfilerEngineNativeTarget>
     </PropertyGroup>
 
 </Project>

@@ -4,25 +4,25 @@
      xmlns:util="http://schemas.microsoft.com/wix/UtilExtension">
   <?include $(sys.CURRENTDIR)\Config.wxi?>
   <Fragment>
-    <ComponentGroup Id="Tracer.Files.Managed.Net6" Directory="Tracer.net6.0">
+    <ComponentGroup Id="Tracer.Files.Managed.Net6" Directory="INSTALLFOLDER.net6.0">
       <Component Win64="$(var.Win64)">
         <File Id="net60_Datadog.Trace.dll"
-              Source="$(var.TracerHomeDirectory)\net6.0\Datadog.Trace.dll"
+              Source="$(var.MonitoringHomeDirectory)\net6.0\Datadog.Trace.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net60_Datadog.Trace.MSBuild.dll"
-              Source="$(var.TracerHomeDirectory)\net6.0\Datadog.Trace.MSBuild.dll"
+              Source="$(var.MonitoringHomeDirectory)\net6.0\Datadog.Trace.MSBuild.dll"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net60_Datadog.Trace.MSBuild.pdb"
-              Source="$(var.TracerHomeDirectory)\net6.0\Datadog.Trace.MSBuild.pdb"
+              Source="$(var.MonitoringHomeDirectory)\net6.0\Datadog.Trace.MSBuild.pdb"
               KeyPath="yes" Checksum="yes"/>
       </Component>
       <Component Win64="$(var.Win64)">
         <File Id="net60_Datadog.Trace.pdb"
-              Source="$(var.TracerHomeDirectory)\net6.0\Datadog.Trace.pdb"
+              Source="$(var.MonitoringHomeDirectory)\net6.0\Datadog.Trace.pdb"
               KeyPath="yes" Checksum="yes"/>
       </Component>
     </ComponentGroup>

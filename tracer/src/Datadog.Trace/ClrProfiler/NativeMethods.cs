@@ -120,52 +120,54 @@ namespace Datadog.Trace.ClrProfiler
 
         // the "dll" extension is required on .NET Framework
         // and optional on .NET Core
+        // The DllImport methods are re-written by cor_profiler to have the correct vales
         private static class Windows
         {
-            [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
+            [DllImport("Datadog.Tracer.Native.dll")]
             public static extern bool IsProfilerAttached();
 
-            [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
+            [DllImport("Datadog.Tracer.Native.dll")]
             public static extern void InitializeProfiler([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
-            [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
+            [DllImport("Datadog.Tracer.Native.dll")]
             public static extern void EnableByRefInstrumentation();
 
-            [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
+            [DllImport("Datadog.Tracer.Native.dll")]
             public static extern void EnableCallTargetStateByRef();
 
-            [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
+            [DllImport("Datadog.Tracer.Native.dll")]
             public static extern void AddDerivedInstrumentations([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
-            [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
+            [DllImport("Datadog.Tracer.Native.dll")]
             public static extern void AddTraceAttributeInstrumentation([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName);
 
-            [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
+            [DllImport("Datadog.Tracer.Native.dll")]
             public static extern void InitializeTraceMethods([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName, [MarshalAs(UnmanagedType.LPWStr)] string configuration);
         }
 
         // assume .NET Core if not running on Windows
+        // The DllImport methods are re-written by cor_profiler to have the correct vales
         private static class NonWindows
         {
-            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            [DllImport("Datadog.Tracer.Native")]
             public static extern bool IsProfilerAttached();
 
-            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            [DllImport("Datadog.Tracer.Native")]
             public static extern void InitializeProfiler([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
-            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            [DllImport("Datadog.Tracer.Native")]
             public static extern void EnableByRefInstrumentation();
 
-            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            [DllImport("Datadog.Tracer.Native")]
             public static extern void EnableCallTargetStateByRef();
 
-            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            [DllImport("Datadog.Tracer.Native")]
             public static extern void AddDerivedInstrumentations([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
-            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            [DllImport("Datadog.Tracer.Native")]
             public static extern void AddTraceAttributeInstrumentation([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName);
 
-            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            [DllImport("Datadog.Tracer.Native")]
             public static extern void InitializeTraceMethods([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName, [MarshalAs(UnmanagedType.LPWStr)] string configuration);
         }
     }

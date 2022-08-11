@@ -155,13 +155,13 @@ partial class Build
         switch (ExplorationTestUseCase)
         {
             case global::ExplorationTestUseCase.Debugger:
-                envVariables.AddDebuggerEnvironmentVariables(MonitoringHomeDirectory);
+                AddDebuggerEnvironmentVariables(envVariables);
                 break;
             case global::ExplorationTestUseCase.ContinuousProfiler:
-                envVariables.AddContinuousProfilerEnvironmentVariables(MonitoringHomeDirectory);
+                AddContinuousProfilerEnvironmentVariables(envVariables);
                 break;
             case global::ExplorationTestUseCase.Tracer:
-                envVariables.AddTracerEnvironmentVariables(MonitoringHomeDirectory);
+                AddTracerEnvironmentVariables(envVariables);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(ExplorationTestUseCase), ExplorationTestUseCase, null);
