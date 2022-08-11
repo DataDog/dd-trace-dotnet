@@ -1257,6 +1257,18 @@ stages:
         baseImage: $(baseImage)
         command: "BuildProfilerLinuxIntegrationTests"
 
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "RunProfilerCpuLimitTests"
+        extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "RunProfilerCpuLimitTests"
+        extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
+
     - task: DockerCompose@0
       displayName: docker-compose run --no-deps ProfilerIntegrationTests
       inputs:

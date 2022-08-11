@@ -240,6 +240,7 @@
     <ClInclude Include="ApplicationInfo.h" />
     <ClInclude Include="ApplicationStore.h" />
     <ClInclude Include="ClrEventsParser.h" />
+    <ClInclude Include="cgroup.h" />
     <ClInclude Include="ClrLifetime.h" />
     <ClInclude Include="Configuration.h" />
     <ClInclude Include="CorProfilerCallback.h" />
@@ -309,6 +310,7 @@
     <ClCompile Include="ApplicationInfo.cpp" />
     <ClCompile Include="ApplicationStore.cpp" />
     <ClCompile Include="ClrEventsParser.cpp" />
+    <ClCompile Include="cgroup.cpp" />
     <ClCompile Include="ClrLifetime.cpp" />
     <ClCompile Include="Configuration.cpp" />
     <ClCompile Include="CorProfilerCallback.cpp" />

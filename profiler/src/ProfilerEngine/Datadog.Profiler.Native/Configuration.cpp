@@ -51,6 +51,7 @@ Configuration::Configuration()
     _serviceName = GetEnvironmentValue(EnvironmentVariables::ServiceName, OpSysTools::GetProcessName());
     _isAgentLess = GetEnvironmentValue(EnvironmentVariables::Agentless, false);
     _exceptionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ExceptionSampleLimit, 100);
+    _minimumCores = GetEnvironmentValue<double>(EnvironmentVariables::CoreMinimumOverride, 1.0);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -114,6 +115,11 @@ int32_t Configuration::ExceptionSampleLimit() const
 bool Configuration::IsAllocationProfilingEnabled() const
 {
     return _isAllocationProfilingEnabled;
+}
+
+double Configuration::MinimumCores() const
+{
+    return _minimumCores;
 }
 
 std::chrono::seconds Configuration::GetUploadInterval() const
@@ -314,6 +320,24 @@ bool convert_to(shared::WSTRING const& s, shared::WSTRING& result)
 bool convert_to(shared::WSTRING const& s, int32_t& result)
 {
     return TryParse(s, result);
+}
+
+bool convert_to(shared::WSTRING const& s, double& result)
+{
+    auto str = shared::ToString(s);
+
+    char* endPtr = nullptr;
+    const char* ptr = str.c_str();
+    result = strtod(ptr, &endPtr);
+
+    // non numeric input
+    if (ptr == endPtr)
+    {
+        return false;
+    }
+
+    // Based on tests, numbers such as "0.1.2" are converted into 0.1 without error
+    return (errno != ERANGE);
 }
 
 template <typename T>

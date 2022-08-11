@@ -69,7 +69,7 @@ public:
         return result;
     }
 
-    static bool IsSafeToStartProfiler();
+    static bool IsSafeToStartProfiler(double coresThreshold);
 
 private:
     static constexpr std::int64_t NanosecondsPerSecond = 1000000000;

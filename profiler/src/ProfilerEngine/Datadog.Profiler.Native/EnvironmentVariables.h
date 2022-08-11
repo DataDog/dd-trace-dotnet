@@ -36,6 +36,7 @@ public:
     inline static const shared::WSTRING ProfilesOutputDir           = WStr("DD_INTERNAL_PROFILING_OUTPUT_DIR");
     inline static const shared::WSTRING DevelopmentConfiguration    = WStr("DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION");
     inline static const shared::WSTRING Agentless                   = WStr("DD_PROFILING_AGENTLESS");
+    inline static const shared::WSTRING CoreMinimumOverride         = WStr("DD_PROFILING_MIN_CORES_THRESHOLD");
 
     // feature flags
     inline static const shared::WSTRING FF_LibddprofEnabled = WStr("DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED");

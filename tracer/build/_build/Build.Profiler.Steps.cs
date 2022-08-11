@@ -229,6 +229,40 @@ partial class Build
                         .SetProjectFile(project)));
         });
 
+    Target RunProfilerCpuLimitTests => _ => _
+        .After(CompileProfilerSamplesLinux)
+        .After(CompileProfilerLinuxIntegrationTests)
+        .Description("Run the profiler container tests")
+        .Requires(() => IsLinux && !IsArm64)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(ProfilerTestLogsDirectory);
+
+            var integrationTestProjects = ProfilerDirectory.GlobFiles("test/*.IntegrationTests/*.csproj")
+                                                        .Select(x => ProfilerSolution.GetProject(x))
+                                                        .ToList();
+
+            try
+            {
+                // Always x64
+                DotNetTest(config => config
+                                    .SetConfiguration(BuildConfiguration)
+                                    .SetTargetPlatform(MSBuildTargetPlatform.x64)
+                                    .EnableNoRestore()
+                                    .EnableNoBuild()
+                                    .SetFilter("(Category=CpuLimitTest)")
+                                    .SetProcessEnvironmentVariable("DD_TESTING_OUPUT_DIR", ProfilerBuildDataDirectory)
+                                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                                    .CombineWith(integrationTestProjects, (s, project) => s
+                                                                                        .EnableTrxLogOutput(ProfilerBuildDataDirectory / "results" / project.Name)
+                                                                                        .SetProjectFile(project)));
+            }
+            finally
+            {
+                CopyDumpsToBuildData();
+            }
+        });
+
     Target RunProfilerLinuxIntegrationTests => _ => _
         .After(CompileProfilerSamplesLinux)
         .After(CompileProfilerLinuxIntegrationTests)
@@ -239,24 +273,24 @@ partial class Build
             EnsureExistingDirectory(ProfilerTestLogsDirectory);
 
             var integrationTestProjects = ProfilerDirectory.GlobFiles("test/*.IntegrationTests/*.csproj")
-                .Select(x => ProfilerSolution.GetProject(x))
-                .ToList();
+                                                            .Select(x => ProfilerSolution.GetProject(x))
+                                                            .ToList();
 
             try
             {
                 // Run these ones in parallel
                 // Always x64
                 DotNetTest(config => config
-                        .SetConfiguration(BuildConfiguration)
-                        .SetTargetPlatform(MSBuildTargetPlatform.x64)
-                        .EnableNoRestore()
-                        .EnableNoBuild()
-                        .SetProcessEnvironmentVariable("DD_TESTING_OUPUT_DIR", ProfilerBuildDataDirectory)
-                        .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
-                        .CombineWith(integrationTestProjects, (s, project) => s
-                            .EnableTrxLogOutput(ProfilerBuildDataDirectory / "results" / project.Name)
-                            .SetProjectFile(project)),
-                    degreeOfParallelism: 2);
+                                    .SetConfiguration(BuildConfiguration)
+                                    .SetTargetPlatform(MSBuildTargetPlatform.x64)
+                                    .EnableNoRestore()
+                                    .EnableNoBuild()
+                                    .SetProcessEnvironmentVariable("DD_TESTING_OUPUT_DIR", ProfilerBuildDataDirectory)
+                                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                                    .CombineWith(integrationTestProjects, (s, project) => s
+                                                                                            .EnableTrxLogOutput(ProfilerBuildDataDirectory / "results" / project.Name)
+                                                                                            .SetProjectFile(project)),
+                            degreeOfParallelism: 2);
             }
             finally
             {

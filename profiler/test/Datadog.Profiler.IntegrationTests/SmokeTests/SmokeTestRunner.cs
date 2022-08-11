@@ -48,9 +48,26 @@ namespace Datadog.Profiler.SmokeTests
 
         public void RunAndCheck()
         {
-            using var agent = new MockDatadogAgent(_output);
-            _testApplicationRunner.Run(agent);
+            using var agent = Run();
             RunChecks(agent);
+        }
+
+        public MockDatadogAgent Run()
+        {
+            MockDatadogAgent agent = null;
+
+            try
+            {
+                agent = new MockDatadogAgent(_output);
+                _testApplicationRunner.Run(agent);
+            }
+            catch
+            {
+                agent?.Dispose();
+                throw;
+            }
+
+            return agent;
         }
 
         private void RunChecks(MockDatadogAgent agent)

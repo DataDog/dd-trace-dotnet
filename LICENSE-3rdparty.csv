@@ -13,5 +13,6 @@ Datadog.Tracer.Native,https://github.com/gulrak/filesystem/,MIT,"Copyright (c) 2
 Datadog.Trace.OpenTracing,https://github.com/opentracing/opentracing-csharp,MIT,Copyright 2016-2017 The OpenTracing Authors
 Datadog.Trace.OpenTracing,https://github.com/opentracing-contrib/csharp-netcore,Apache-2.0,
 Datadog.Trace.ClrProfiler.Native,https://github.com/gulrak/filesystem/,MIT,"Copyright (c) 2018, Steffen Schümann <s.schuemann@pobox.com>"
+Datadog.Profiler.Native,https://github.com/dotnet/runtime,MIT,Copyright (c) .NET Foundation and contributors. All rights reserved.
 Datadog.Profiler.Native,https://github.com/gulrak/filesystem/,MIT,"Copyright (c) 2018, Steffen Schümann <s.schuemann@pobox.com>"
 (all),https://github.com/open-telemetry/opentelemetry-dotnet-instrumentation,Apache-2.0,
