@@ -191,11 +191,21 @@ inline void WriteTextToFile(const shared::WSTRING& fileName, const shared::WSTRI
     {
         const auto instrumentedLogsDir = GetInstrumentedAssemblyGeneratorCurrentProcessFolder();
         const auto inputFolder = instrumentedLogsDir / InstrumentedAssemblyGeneratorInputFolder;
+#ifndef MACOS
         std::basic_ofstream<WCHAR> outStream;
         outStream.exceptions(std::ofstream::badbit);
         outStream.open(inputFolder / fileName, std::ios::out | std::ios_base::app);
         outStream << stringStream;
         outStream.close();
+#else
+        // TODO: std::basic_ofstream<WCHAR> is not supported in osx, so as a workaround we convert to char
+        // In the case we want to support MACOS this should be solved.
+        std::ofstream outStream;
+        outStream.exceptions(std::ofstream::badbit);
+        outStream.open(inputFolder / fileName, std::ios::out | std::ios_base::app);
+        outStream << shared::ToString(stringStream);
+        outStream.close();
+#endif
     }
     catch (const std::ofstream::failure& e)
     {
@@ -287,6 +297,9 @@ inline HRESULT WriteILChanges(ModuleID moduleId, mdMethodDef methodToken, LPCBYT
 
         auto const locals = GetLocalsTypes(metadataImport, pbNewILMethodHeader);
 
+        shared::WSTRING headerFileString;
+
+#ifndef MACOS
         shared::WSTRINGSTREAM headerFileStream;
         headerFileStream << mvid << FileNameSeparator << std::hex << methodAndTypeInfo.typeToken << FileNameSeparator
                          << std::hex << methodAndTypeInfo.token << FileNameSeparator << moduleName << FileNameSeparator
@@ -295,11 +308,59 @@ inline HRESULT WriteILChanges(ModuleID moduleId, mdMethodDef methodToken, LPCBYT
                          << FileNameSeparator << methodAndTypeInfo.methodSig.ArgumentsNames(metadataImport)
                          << FileNameSeparator << locals << FileNameSeparator << methodAndTypeInfo.methodSig.HasThis()
                          << std::endl;
+        headerFileString = headerFileStream.str();
+#else
+        // TODO: shared::WSTRINGSTREAM is not supported in osx, so as a workaround we convert to char
+        // In the case we want to support MACOS this should be solved.
+        std::stringstream headerFileStream;
+        headerFileStream << shared::ToString(mvid)
+                         << shared::ToString(FileNameSeparator)
+                         << std::hex << methodAndTypeInfo.typeToken
+                         << shared::ToString(FileNameSeparator)
+                         << std::hex << methodAndTypeInfo.token
+                         << shared::ToString(FileNameSeparator)
+                         << shared::ToString(moduleName)
+                         << shared::ToString(FileNameSeparator)
+                         << shared::ToString(methodAndTypeInfo.typeName)
+                         << shared::ToString(FileNameSeparator)
+                         << shared::ToString(methodAndTypeInfo.name)
+                         << shared::ToString(FileNameSeparator)
+                         << shared::ToString(methodAndTypeInfo.methodSig.ReturnTypeName(metadataImport))
+                         << shared::ToString(FileNameSeparator)
+                         << shared::ToString(methodAndTypeInfo.methodSig.ArgumentsNames(metadataImport))
+                         << shared::ToString(FileNameSeparator)
+                         << shared::ToString(locals)
+                         << shared::ToString(FileNameSeparator)
+                         << shared::ToString(methodAndTypeInfo.methodSig.HasThis())
+                         << std::endl;
+        headerFileString = shared::ToWSTRING(headerFileStream.str());
+#endif
 
+        shared::WSTRING fileNameString;
+
+#ifndef MACOS
         shared::WSTRINGSTREAM fileNameStream;
         fileNameStream << mvid << FileNameSeparator << std::hex << methodAndTypeInfo.typeToken << FileNameSeparator
                        << std::hex << methodAndTypeInfo.token << FileNameSeparator
                        << GetCleanedFileName(methodAndTypeInfo.name) << InstrumentedLogFileExtension;
+
+        fileNameString = fileNameStream.str();
+#else
+        // TODO: shared::WSTRINGSTREAM is not supported in osx, so as a workaround we convert to char
+        // In the case we want to support MACOS this should be solved.
+        std::stringstream fileNameStream;
+        fileNameStream << shared::ToString(mvid)
+                       << shared::ToString(FileNameSeparator)
+                       << std::hex << methodAndTypeInfo.typeToken
+                       << shared::ToString(FileNameSeparator)
+                       << std::hex << methodAndTypeInfo.token
+                       << shared::ToString(FileNameSeparator)
+                       << shared::ToString(GetCleanedFileName(methodAndTypeInfo.name))
+                       << shared::ToString(InstrumentedLogFileExtension);
+
+        fileNameString = shared::ToWSTRING(fileNameStream.str());
+#endif
+
         if (ilSize == 0)
         {
             hr = corProfilerInfo->GetILFunctionBody(moduleId, methodToken, &pbNewILMethodHeader, &ilSize);
@@ -311,8 +372,8 @@ inline HRESULT WriteILChanges(ModuleID moduleId, mdMethodDef methodToken, LPCBYT
             }
         }
 
-        WriteBytesToFile(BinaryFilePrefix + fileNameStream.str(), pbNewILMethodHeader, ilSize);
-        WriteTextToFile(TextFilePrefix + fileNameStream.str(), headerFileStream.str());
+        WriteBytesToFile(BinaryFilePrefix + fileNameString, pbNewILMethodHeader, ilSize);
+        WriteTextToFile(TextFilePrefix + fileNameString, headerFileString);
     }
     catch (const std::exception& exception)
     {

@@ -8,6 +8,8 @@ using System;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Formatting
@@ -27,6 +29,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
         private readonly string? _globalTags;
         private readonly string? _env;
         private readonly string? _version;
+
+        private string? _ciVisibilityDdTags;
 
         public LogFormatter(
             ImmutableDirectLogSubmissionSettings settings,
@@ -236,6 +240,104 @@ namespace Datadog.Trace.Logging.DirectSubmission.Formatting
             }
 
             writer.WriteEndObject();
+        }
+
+        internal void FormatCIVisibilityLog(StringBuilder sb, string source, string? logLevel, string message, ISpan? span)
+        {
+            using var writer = GetJsonWriter(sb);
+
+            // Based on JsonFormatter
+            writer.WriteStartObject();
+
+            writer.WritePropertyName("ddsource", escape: false);
+            writer.WriteValue(source);
+
+            if (_host is not null)
+            {
+                writer.WritePropertyName("hostname", escape: false);
+                writer.WriteValue(_host);
+            }
+
+            writer.WritePropertyName("timestamp", escape: false);
+            writer.WriteValue(DateTimeOffset.UtcNow.ToUnixTimeNanoseconds() / 1_000_000);
+
+            if (logLevel is not null)
+            {
+                writer.WritePropertyName("status", escape: false);
+                writer.WriteValue(logLevel);
+            }
+
+            writer.WritePropertyName("message", escape: false);
+            writer.WriteValue(message);
+
+            var env = _env ?? string.Empty;
+            var ddTags = _ciVisibilityDdTags;
+            if (ddTags is null)
+            {
+                ddTags = GetCIVisiblityDDTagsString(env);
+                _ciVisibilityDdTags = ddTags;
+            }
+
+            var service = _service;
+            if (span is not null)
+            {
+                if (span.GetTag(Tags.Env) is { } spanEnv && spanEnv != env)
+                {
+                    ddTags = GetCIVisiblityDDTagsString(spanEnv);
+                }
+
+                if (!string.IsNullOrEmpty(span.ServiceName))
+                {
+                    service = span.ServiceName;
+                }
+
+                writer.WritePropertyName("dd.trace_id", escape: false);
+                writer.WriteValue($"{span.TraceId}");
+
+                writer.WritePropertyName("dd.span_id", escape: false);
+                writer.WriteValue($"{span.SpanId}");
+
+                if (span.GetTag(TestTags.Suite) is { } suite)
+                {
+                    writer.WritePropertyName(TestTags.Suite, escape: false);
+                    writer.WriteValue(suite);
+                }
+
+                if (span.GetTag(TestTags.Name) is { } name)
+                {
+                    writer.WritePropertyName(TestTags.Name, escape: false);
+                    writer.WriteValue(name);
+                }
+
+                if (span.GetTag(TestTags.Bundle) is { } bundle)
+                {
+                    writer.WritePropertyName(TestTags.Bundle, escape: false);
+                    writer.WriteValue(bundle);
+                }
+            }
+
+            writer.WritePropertyName("service", escape: false);
+            writer.WriteValue(service);
+
+            writer.WritePropertyName("ddtags", escape: false);
+            writer.WriteValue(ddTags);
+
+            writer.WriteEndObject();
+        }
+
+        private string GetCIVisiblityDDTagsString(string environment)
+        {
+            // spaces are not allowed inside ddtags
+            environment = environment.Replace(" ", string.Empty);
+            environment = environment.Replace(":", string.Empty);
+
+            var ddtags = $"env:{environment},datadog.product:citest";
+            if (_globalTags is { Length: > 0 } globalTags)
+            {
+                ddtags += "," + globalTags;
+            }
+
+            return ddtags;
         }
     }
 }

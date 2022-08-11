@@ -674,7 +674,11 @@ partial class Build : NukeBuild
                 {
                     var dockerName = "mcr.microsoft.com/dotnet/aspnet";
 
-                    var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
+                    var platforms = new(MSBuildTargetPlatform platform, bool enable32Bit)[] { 
+                        (MSBuildTargetPlatform.x64, false), 
+                        (MSBuildTargetPlatform.x64, true), 
+                        (MSBuildTargetPlatform.x86, true)
+                    };
                     var runtimeImages = new (string publishFramework, string runtimeTag)[]
                     {
                         (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2019"),
@@ -684,8 +688,8 @@ partial class Build : NukeBuild
                     var matrix = (
                                      from platform in platforms
                                      from image in runtimeImages
-                                     let dockerTag = $"{platform}_{image.runtimeTag.Replace('.', '_')}"
-                                     let channel32Bit = platform == MSBuildTargetPlatform.x86
+                                     let dockerTag = $"{platform.platform}_{image.runtimeTag.Replace('.', '_')}_{(platform.enable32Bit ? "32bit" : "64bit")}"
+                                     let channel32Bit = platform.enable32Bit
                                                                        ? (image.publishFramework == TargetFramework.NET6_0 ? "6.0" : "5.0")
                                                                        : string.Empty
                                      select new
@@ -693,7 +697,7 @@ partial class Build : NukeBuild
                                          dockerTag = dockerTag,
                                          publishFramework = image.publishFramework,
                                          runtimeImage = $"{dockerName}:{image.runtimeTag}",
-                                         targetPlatform = platform,
+                                         targetPlatform = platform.platform,
                                          channel32Bit = channel32Bit,
                                      }).ToDictionary(x=>x.dockerTag, x => x);
 

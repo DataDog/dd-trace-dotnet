@@ -449,7 +449,6 @@ stages:
       artifact: linux-profiler-home-arm64
 
 - stage: package_arm64
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [master_commit_id, build_arm64_tracer, build_arm64_profiler]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
@@ -521,7 +520,7 @@ stages:
         masterCommitId: $(masterCommitId)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: ./tracer/build.sh BuildTracerHome
+    - script: ./tracer/build.sh BuildTracerHome BuildNativeLoader
       displayName: Build tracer home
 
     - publish: $(tracerHome)
@@ -2285,8 +2284,8 @@ stages:
   dependsOn: [package_linux, package_arm64, build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    # By default all throughput tests happen on release or master branches only. Overridable by setting 'run_extended_throughput_tests' to true
-    runExtendedThroughputTests: $[or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_extended_throughput_tests, 'true'))]
+    # By default all throughput tests happen on release or master branches only, or when running a benchmarks only build. Overridable by setting 'run_extended_throughput_tests' to true
+    runExtendedThroughputTests: $[or(eq(variables.isMainOrReleaseBranch, 'true'), not(eq(variables['isBenchmarksOnlyBuild'], 'False')), eq(variables.run_extended_throughput_tests, 'true'))]
   pool: Throughput
   jobs:
   - template: steps/update-github-status-jobs.yml
