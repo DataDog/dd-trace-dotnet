@@ -50,10 +50,10 @@ target_include_directories(${TEST_EXECUTABLE_NAME}
     PUBLIC ${googletest_SOURCE_DIR}/googlemock/include
 )
 
-add_dependencies(${TEST_EXECUTABLE_NAME} fmt gmock gtest Datadog.AutoInstrumentation.Profiler.Native.static.x64)
+add_dependencies(${TEST_EXECUTABLE_NAME} fmt gmock gtest Datadog.Profiler.Native.static)
 
 target_link_libraries(${TEST_EXECUTABLE_NAME}
-  Datadog.AutoInstrumentation.Profiler.Native.static.x64
+  Datadog.Profiler.Native.static
   fmt-lib
   gtest_main
   gmock_main

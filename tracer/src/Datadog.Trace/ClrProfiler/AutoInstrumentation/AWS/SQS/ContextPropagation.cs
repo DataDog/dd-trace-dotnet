@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using Datadog.Trace.Propagators;
 
@@ -32,6 +34,36 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             if (carrier.MessageAttributes == null)
             {
                 carrier.MessageAttributes = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributes();
+            }
+            else
+            {
+                // In .NET Fx and Net Core 2.1, removing an element while iterating on keys throws.
+#if !NETCOREAPP2_1_OR_GREATER
+                List<string> attributesToRemove = null;
+#endif
+                // Make sure we do not propagate any other datadog header here in the rare cases where users would have added them manually
+                foreach (var attribute in carrier.MessageAttributes.Keys)
+                {
+                    if (attribute is string attributeName && attributeName.StartsWith("x-datadog", StringComparison.OrdinalIgnoreCase))
+                    {
+#if !NETCOREAPP2_1_OR_GREATER
+                        attributesToRemove ??= new List<string>();
+                        attributesToRemove.Add(attributeName);
+#else
+                        carrier.MessageAttributes.Remove(attribute);
+#endif
+                    }
+                }
+
+#if !NETCOREAPP2_1_OR_GREATER
+                if (attributesToRemove != null)
+                {
+                    foreach (var attribute in attributesToRemove)
+                    {
+                        carrier.MessageAttributes.Remove(attribute);
+                    }
+                }
+#endif
             }
 
             // SQS allows a maximum of 10 message attributes: https://docs.aws.amazon.com/AWSSimpleQueueService/latest/SQSDeveloperGuide/sqs-message-metadata.html#sqs-message-attributes

@@ -14,6 +14,10 @@ parameters:
   - name: command
     type: string
 
+  - name: extraArgs
+    type: string
+    default: ''
+
 steps:
 - ${{ if eq(parameters.build, true) }}:
   - script: |
@@ -29,7 +33,6 @@ steps:
     docker run --rm \
         --mount type=bind,source="$(System.DefaultWorkingDirectory)",target=/project \
         --env NugetPackageDirectory=/project/$(relativeNugetPackageDirectory) \
-        --env tracerHome=/project/$(relativeTracerHome) \
         --env artifacts=/project/$(relativeArtifacts) \
         --env DD_CLR_ENABLE_NGEN=$(DD_CLR_ENABLE_NGEN) \
         --env DD_INSTRUMENTATION_TELEMETRY_ENABLED \
@@ -38,6 +41,7 @@ steps:
         --env TestAllPackageVersions=$(TestAllPackageVersions) \
         --env IncludeMinorPackageVersions=$(IncludeMinorPackageVersions) \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
+        ${{ parameters.extraArgs }} \
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
   displayName: Run '${{ parameters.command }}' in Docker

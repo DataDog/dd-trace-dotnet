@@ -144,15 +144,18 @@ partial class Build
         .After(CompileProfilerNativeSrc)
         .Executes(() =>
         {
-            var source = ProfilerOutputDirectory / "DDProf-Deploy" / "Datadog.AutoInstrumentation.Profiler.Native.x64.so";
-            var dest = ProfilerHomeDirectory;
-            Logger.Info($"Copying file '{source}' to 'file {dest}'");
-            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+            var (arch, ext) = GetUnixArchitectureAndExtension();
+            var sourceDir = ProfilerOutputDirectory / "DDProf-Deploy";
+            EnsureExistingDirectory(MonitoringHomeDirectory / arch);
+            EnsureExistingDirectory(SymbolsDirectory / arch);
 
-            source = ProfilerOutputDirectory / "DDProf-Deploy" / "Datadog.Linux.ApiWrapper.x64.so";
-            dest = ProfilerHomeDirectory;
-            Logger.Info($"Copying file '{source}' to 'file {dest}'");
-            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+            var files = new[] { "Datadog.Profiler.Native.so", "Datadog.Linux.ApiWrapper.x64.so" };
+            foreach (var file in files)
+            {
+                var source = sourceDir / file;
+                var dest = MonitoringHomeDirectory / arch / file;
+                CopyFile(source, dest, FileExistsPolicy.Overwrite);
+            }
         });
 
     Target PublishProfilerWindows => _ => _
@@ -163,11 +166,12 @@ partial class Build
         {
             foreach (var architecture in ArchitecturesForPlatform)
             {
-                var source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.AutoInstrumentation.Profiler.Native.{architecture}.dll";
-                var dest = ProfilerHomeDirectory;
+                var sourceDir = ProfilerOutputDirectory / "DDProf-Deploy" / $"win-{architecture}"; 
+                var source = sourceDir / "Datadog.Profiler.Native.dll";
+                var dest = MonitoringHomeDirectory / $"win-{architecture}";
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
-                source = ProfilerOutputDirectory / "DDProf-Deploy" / $"Datadog.AutoInstrumentation.Profiler.Native.{architecture}.pdb";
+                source = sourceDir / "Datadog.Profiler.Native.pdb";
                 dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
                 CopyFile(source, dest, FileExistsPolicy.Overwrite);
             }
@@ -225,6 +229,40 @@ partial class Build
                         .SetProjectFile(project)));
         });
 
+    Target RunProfilerCpuLimitTests => _ => _
+        .After(CompileProfilerSamplesLinux)
+        .After(CompileProfilerLinuxIntegrationTests)
+        .Description("Run the profiler container tests")
+        .Requires(() => IsLinux && !IsArm64)
+        .Executes(() =>
+        {
+            EnsureExistingDirectory(ProfilerTestLogsDirectory);
+
+            var integrationTestProjects = ProfilerDirectory.GlobFiles("test/*.IntegrationTests/*.csproj")
+                                                        .Select(x => ProfilerSolution.GetProject(x))
+                                                        .ToList();
+
+            try
+            {
+                // Always x64
+                DotNetTest(config => config
+                                    .SetConfiguration(BuildConfiguration)
+                                    .SetTargetPlatform(MSBuildTargetPlatform.x64)
+                                    .EnableNoRestore()
+                                    .EnableNoBuild()
+                                    .SetFilter("(Category=CpuLimitTest)")
+                                    .SetProcessEnvironmentVariable("DD_TESTING_OUPUT_DIR", ProfilerBuildDataDirectory)
+                                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                                    .CombineWith(integrationTestProjects, (s, project) => s
+                                                                                        .EnableTrxLogOutput(ProfilerBuildDataDirectory / "results" / project.Name)
+                                                                                        .SetProjectFile(project)));
+            }
+            finally
+            {
+                CopyDumpsToBuildData();
+            }
+        });
+
     Target RunProfilerLinuxIntegrationTests => _ => _
         .After(CompileProfilerSamplesLinux)
         .After(CompileProfilerLinuxIntegrationTests)
@@ -235,24 +273,24 @@ partial class Build
             EnsureExistingDirectory(ProfilerTestLogsDirectory);
 
             var integrationTestProjects = ProfilerDirectory.GlobFiles("test/*.IntegrationTests/*.csproj")
-                .Select(x => ProfilerSolution.GetProject(x))
-                .ToList();
+                                                            .Select(x => ProfilerSolution.GetProject(x))
+                                                            .ToList();
 
             try
             {
                 // Run these ones in parallel
                 // Always x64
                 DotNetTest(config => config
-                        .SetConfiguration(BuildConfiguration)
-                        .SetTargetPlatform(MSBuildTargetPlatform.x64)
-                        .EnableNoRestore()
-                        .EnableNoBuild()
-                        .SetProcessEnvironmentVariable("DD_TESTING_OUPUT_DIR", ProfilerBuildDataDirectory)
-                        .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
-                        .CombineWith(integrationTestProjects, (s, project) => s
-                            .EnableTrxLogOutput(ProfilerBuildDataDirectory / "results" / project.Name)
-                            .SetProjectFile(project)),
-                    degreeOfParallelism: 2);
+                                    .SetConfiguration(BuildConfiguration)
+                                    .SetTargetPlatform(MSBuildTargetPlatform.x64)
+                                    .EnableNoRestore()
+                                    .EnableNoBuild()
+                                    .SetProcessEnvironmentVariable("DD_TESTING_OUPUT_DIR", ProfilerBuildDataDirectory)
+                                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                                    .CombineWith(integrationTestProjects, (s, project) => s
+                                                                                            .EnableTrxLogOutput(ProfilerBuildDataDirectory / "results" / project.Name)
+                                                                                            .SetProjectFile(project)),
+                            degreeOfParallelism: 2);
             }
             finally
             {

@@ -10,7 +10,7 @@
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NoWarn>NU5100;NU5128</NoWarn>
-    <PackageOutputPath>bin\$(Configuration)\packages</PackageOutputPath>
+    <PackageOutputPath Condition="'$(PackageOutputPath)' == '' ">bin\$(Configuration)\packages</PackageOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

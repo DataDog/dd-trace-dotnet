@@ -263,25 +263,14 @@ jobs:
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v2
 
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v1.0.2
-
-      - name: Build Native profiler and tests (x64-${{matrix.configuration}})
-        run: msbuild /property:Configuration=${{matrix.configuration}} /property:Platform=x64 /property:DeployToMonitoringHome=True profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj
-
-      - name: Build Native profiler and tests (x86-${{matrix.configuration}})
-        run: msbuild /property:Configuration=${{matrix.configuration}} /property:Platform=x86 /property:DeployToMonitoringHome=True profiler\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Datadog.Profiler.Native.Windows.WithTests.proj
+      - name: Build Monitoring home
+        run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader BuildProfilerHome CompileProfilerNativeTestsWindows --build-configuration ${{matrix.configuration}}
 
       - name: Run Native Unit tests (x64-${{matrix.configuration}})
-        shell: bash
-        run: ./.github/scripts/run-native-unit-tests.sh profiler/test ${{matrix.configuration}} x64
+        run: .\tracer\build.cmd RunProfilerNativeUnitTestsWindows --build-configuration ${{matrix.configuration}} --TargetPlatform x64
 
       - name: Run Native Unit tests (x86-${{matrix.configuration}})
-        shell: bash
-        run: ./.github/scripts/run-native-unit-tests.sh profiler/test ${{matrix.configuration}} x86
-
-      - name: Build Monitoring home
-        run: .\tracer\build.cmd BuildTracerHome BuildNativeLoader --build-configuration ${{matrix.configuration}}
+        run: .\tracer\build.cmd RunProfilerNativeUnitTestsWindows --build-configuration ${{matrix.configuration}} --TargetPlatform x86
 
       - name: Publish artifact monitoring-home
         uses: actions/upload-artifact@v2
@@ -556,8 +545,8 @@ jobs:
           echo "DD_TRACE_ENABLED=0" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "COR_ENABLE_PROFILING=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "COR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-          echo "COR_PROFILER_PATH=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home/Datadog.AutoInstrumentation.NativeLoader.${{ matrix.platform }}.dll)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
-          echo "DD_DOTNET_PROFILER_HOME=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home/ContinuousProfiler)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "COR_PROFILER_PATH=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home/win-${{ matrix.platform }}/Datadog.Trace.ClrProfiler.Native.dll)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_DOTNET_PROFILER_HOME=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Run Computer01 for 2min
         shell: cmd

@@ -20,6 +20,42 @@ extern "C"
             {
                 // Initialize once for each new process.
                 // Return FALSE to fail DLL load.
+                
+                constexpr const bool IsLogDebugEnabledDefault = false;
+                bool isLogDebugEnabled;
+
+                shared::WSTRING isLogDebugEnabledStr = shared::GetEnvironmentValue(EnvironmentVariables::DebugLogEnabled);
+
+                // no environment variable set
+                if (isLogDebugEnabledStr.empty())
+                {
+                    Log::Info("No \"", EnvironmentVariables::DebugLogEnabled, "\" environment variable has been found.",
+                              " Enable debug log = ", IsLogDebugEnabledDefault, " (default).");
+
+                    isLogDebugEnabled = IsLogDebugEnabledDefault;
+                }
+                else
+                {
+                    if (!shared::TryParseBooleanEnvironmentValue(isLogDebugEnabledStr, isLogDebugEnabled))
+                    {
+                        // invalid value for environment variable
+                        Log::Info("Non boolean value \"", isLogDebugEnabledStr, "\" for \"",
+                                  EnvironmentVariables::DebugLogEnabled, "\" environment variable.",
+                                  " Enable debug log = ", IsLogDebugEnabledDefault, " (default).");
+
+                        isLogDebugEnabled = IsLogDebugEnabledDefault;
+                    }
+                    else
+                    {
+                        // take environment variable into account
+                        Log::Info("Enable debug log = ", isLogDebugEnabled, " from (", EnvironmentVariables::DebugLogEnabled, " environment variable)");
+                    }
+                }
+
+                if (isLogDebugEnabled)
+                {
+                    Log::EnableDebug();
+                }
 
                 Log::Debug("DllMain: DLL_PROCESS_ATTACH");
                 Log::Debug("DllMain: Pointer size: ", 8 * sizeof(void*), " bits.");

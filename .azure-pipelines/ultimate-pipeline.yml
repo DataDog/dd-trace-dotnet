@@ -90,11 +90,7 @@ schedules:
 variables:
   buildConfiguration: Release
   dotnetCoreSdkLatestVersion: 6.0.100
-  relativeTracerHome: /shared/bin/monitoring-home/tracer
   relativeArtifacts: /tracer/src/bin/artifacts
-  tracerHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/tracer
-  profilerHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/continuousprofiler
-  profilerSrcDirectory: $(System.DefaultWorkingDirectory)/../dd-continuous-profiler-dotnet
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
   symbols: $(System.DefaultWorkingDirectory)/tracer/bin/symbols
@@ -202,13 +198,10 @@ stages:
         masterCommitId: $(masterCommitId)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: tracer\build.cmd BuildTracerHome
+    - script: tracer\build.cmd BuildTracerHome BuildNativeLoader
       displayName: Build tracer home
 
-    - script: tracer\build.cmd BuildNativeLoader
-      displayName: Build monitoring home
-
-    - publish: $(tracerHome)
+    - publish: $(monitoringHome)
       displayName: Upload Windows tracer home directory
       artifact: windows-tracer-home
 
@@ -237,9 +230,13 @@ stages:
     - script: tracer\build.cmd BuildProfilerHome
       displayName: Build profiler home
 
-    - publish: $(System.DefaultWorkingDirectory)/profiler/_build/DDProf-Deploy
+    - publish: $(monitoringHome)
       displayName: Upload Windows profiler home directory
       artifact: windows-profiler-home
+
+    - publish: $(symbols)
+      displayName: Upload Windows profiler symbols
+      artifact: windows-profiler-symbols
 
 - stage: build_linux_tracer
   dependsOn: [master_commit_id]
@@ -271,15 +268,19 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "Clean BuildTracerHome"
+        command: "Clean BuildTracerHome BuildNativeLoader ExtractDebugInfoLinux"
 
-    - publish: $(tracerHome)
+    - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
       artifact: linux-tracer-home-$(baseImage)
 
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the build
       artifact: build-linux-$(baseImage)-working-directory
+
+    - publish: $(symbols)
+      displayName: Upload linux tracer symbols
+      artifact: linux-tracer-symbols-$(baseImage)
 
 - stage: build_linux_profiler
   dependsOn: [master_commit_id]
@@ -311,15 +312,19 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "Clean BuildProfilerHome"
+        command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
 
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build
       displayName: Uploading linux profiler output build folder
       artifact: linux-profiler-binaries-$(baseImage)
 
-    - publish: $(profilerHome)
+    - publish: $(monitoringHome)
       displayName: Uploading linux profiler home artifact
       artifact: linux-profiler-home-$(baseImage)
+
+    - publish: $(symbols)
+      displayName: Upload linux profiler symbols
+      artifact: linux-profiler-symbols-$(baseImage)
 
 - stage: package_linux
   dependsOn: [master_commit_id, build_linux_tracer, build_linux_profiler]
@@ -351,30 +356,26 @@ stages:
       displayName: Download tracer linux native binary
       inputs:
         artifact: linux-tracer-home-$(baseImage)
-        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/
+        path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download profiler linux native binary
       inputs:
         artifact: linux-profiler-home-$(baseImage)
-        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/continuousprofiler
+        path: $(monitoringHome)
 
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "BuildNativeLoader ZipMonitoringHome"
+        command: "ZipMonitoringHome"
 
     - publish: $(artifacts)/linux-x64
       displayName: Upload linux-x64 packages
       artifact: linux-packages-$(baseImage)
 
-    - publish: $(symbols)
-      displayName: Upload linux-x64 symbols
-      artifact: linux-symbols-$(baseImage)
-
-    - publish: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+    - publish: $(monitoringHome)
       displayName: Upload linux-x64 monitoring home
       artifact: linux-monitoring-home-$(baseImage)
 
@@ -403,15 +404,19 @@ stages:
         build: true
         target: builder
         baseImage: debian
-        command: "Clean BuildTracerHome"
+        command: "Clean BuildTracerHome BuildNativeLoader ExtractDebugInfoLinux"
 
-    - publish: $(tracerHome)
+    - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
       artifact: linux-tracer-home-arm64
 
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the build
       artifact: build-linux-arm64-working-directory
+
+    - publish: $(symbols)
+      displayName: Upload linux tracer symbols
+      artifact: linux-tracer-symbols-arm64
 
 - stage: build_arm64_profiler
   dependsOn: [master_commit_id]
@@ -438,15 +443,19 @@ stages:
         build: true
         target: builder
         baseImage: debian
-        command: "Clean BuildProfilerHome"
+        command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
 
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build
       displayName: Uploading linux profiler output build folder
       artifact: linux-profiler-binaries-arm64
 
-    - publish: $(profilerHome)
+    - publish: $(monitoringHome)
       displayName: Uploading linux profiler home artifact
       artifact: linux-profiler-home-arm64
+
+    - publish: $(symbols)
+      displayName: Upload linux profiler symbols
+      artifact: linux-profiler-symbols-arm64
 
 - stage: package_arm64
   dependsOn: [master_commit_id, build_arm64_tracer, build_arm64_profiler]
@@ -472,30 +481,26 @@ stages:
       displayName: Download tracer arm64 native binary
       inputs:
         artifact: linux-tracer-home-arm64
-        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/
+        path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download profiler arm64 native binary
       inputs:
         artifact: linux-profiler-home-arm64
-        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/continuousprofiler
+        path: $(monitoringHome)
 
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
         baseImage: debian
-        command: "BuildNativeLoader ZipMonitoringHome"
+        command: "ZipMonitoringHome"
 
     - publish: $(artifacts)/linux-arm64
       displayName: Upload arm64 packages
       artifact: linux-packages-arm64
 
-    - publish: $(symbols)
-      displayName: Upload arm64 symbols
-      artifact: linux-symbols-arm64
-
-    - publish: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+    - publish: $(monitoringHome)
       displayName: Upload arm64 monitoring home
       artifact: linux-monitoring-home-arm64
 
@@ -523,7 +528,7 @@ stages:
     - script: ./tracer/build.sh BuildTracerHome BuildNativeLoader
       displayName: Build tracer home
 
-    - publish: $(tracerHome)
+    - publish: $(monitoringHome)
       displayName: Uploading macos profiler artifact
       artifact: macos-tracer-home
 
@@ -555,7 +560,7 @@ stages:
         displayName: Download windows profiler home
         inputs:
           artifact: windows-profiler-home
-          path: $(profilerHome)
+          path: $(monitoringHome)
 
       - script: tracer\build.cmd PackageTracerHome
         displayName: Build MSI and Tracer home
@@ -1079,7 +1084,7 @@ stages:
       displayName: Download linux monitoring home
       inputs:
         artifact: linux-monitoring-home-$(baseImage)
-        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+        path: $(monitoringHome)
 
     - task: DockerCompose@0
       displayName: docker-compose run --no-deps IntegrationTests
@@ -1153,7 +1158,7 @@ stages:
       displayName: Download linux monitoring home
       inputs:
         artifact: linux-monitoring-home-$(baseImage)
-        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+        path: $(monitoringHome)
 
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests
@@ -1242,7 +1247,7 @@ stages:
       displayName: Download linux monitoring home
       inputs:
         artifact: linux-monitoring-home-$(baseImage)
-        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+        path: $(monitoringHome)
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -1251,6 +1256,18 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildProfilerLinuxIntegrationTests"
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "RunProfilerCpuLimitTests"
+        extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "RunProfilerCpuLimitTests"
+        extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
 
     - task: DockerCompose@0
       displayName: docker-compose run --no-deps ProfilerIntegrationTests
@@ -1319,7 +1336,7 @@ stages:
           displayName: Download arm64 monitoring home
           inputs:
             artifact: linux-monitoring-home-arm64
-            path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+            path: $(monitoringHome)
 
         - task: DockerCompose@0
           displayName: docker-compose run --no-deps IntegrationTests
@@ -1386,7 +1403,7 @@ stages:
           displayName: Download arm64 monitoring home
           inputs:
             artifact: linux-monitoring-home-arm64
-            path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+            path: $(monitoringHome)
 
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) IntegrationTests.ARM64
@@ -1726,128 +1743,110 @@ stages:
     - template: steps/install-latest-dotnet-sdk.yml
     - template: steps/restore-working-directory.yml
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download windows tracer home
-      inputs:
-        artifact: windows-tracer-home
-        path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux shell scripts
-      inputs:
-        artifact: linux-tracer-home-centos7
-        patterns: "*.sh"
-        path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home
-
+    # Download everything to monitoring home
+    # BuildDistributionNuget moves everything to the required folders
     - task: DownloadPipelineArtifact@2
       displayName: Download linux tracer home
       inputs:
         artifact: linux-tracer-home-centos7
-        patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/linux-x64
+        patterns: |
+          **/*.so
+          **/loader.conf
+        path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download alpine tracer home
       inputs:
         artifact: linux-tracer-home-alpine
-        patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/linux-musl-x64
+        patterns:  |
+          **/*.so
+          **/loader.conf
+        path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download arm64 tracer home
       inputs:
         artifact: linux-tracer-home-arm64
-        patterns: "**/*.so"
-        path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/linux-arm64
+        patterns:  |
+          **/*.so
+          **/loader.conf
+        path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download osx tracer home
       inputs:
         artifact: macos-tracer-home
-        patterns: "**/*.dylib"
-        path: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/home/osx-x64
+        patterns:  |
+          **/*.dylib
+          **/loader.conf
+        path: $(monitoringHome)
 
-    - script: tracer\build.cmd BuildDistributionNuget --skip
-      displayName: Build BuildDistributionNuget package
-
-    - script: tracer\build.cmd BuildRunnerTool --skip
-      displayName: Build Runner tool
-
-    - script: tracer\build.cmd BuildStandaloneTool --skip
-      displayName: Build Standalone tool
-
-    - task: DeleteFiles@1
-      displayName: 'Remove unneeded files'
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows profiler home
       inputs:
-        Contents: |
-          $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Tool/!(*.nupkg)
-          $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x64/home*
-          $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x86/home*
-          $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-x64/home*
-          $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-musl-x64/home*
-          $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-arm64/home*
-          $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/osx-x64/home*
+        artifact: windows-profiler-home
+        patterns: "**/*.dll"
+        path: $(monitoringHome)
 
-    - task: ArchiveFiles@2
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux profiler home
       inputs:
-        rootFolderOrFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x64/dd-trace.exe
-        includeRootFolder: false
-        archiveType: 'zip'
-        archiveFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x64/dd-trace-win-x64.zip
+        artifact: linux-profiler-home-centos7
+        patterns:  |
+          **/*.so
+          **/loader.conf
+        path: $(monitoringHome)
 
-    - task: ArchiveFiles@2
+    - task: DownloadPipelineArtifact@2
+      displayName: Download alpine profiler home
       inputs:
-        rootFolderOrFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-x64/dd-trace
-        includeRootFolder: false
-        archiveType: 'tar'
-        tarCompression: 'gz'
-        archiveFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-x64/dd-trace-linux-x64.tar.gz
+        artifact: linux-profiler-home-alpine
+        patterns:  |
+          **/*.so
+          **/loader.conf
+        path: $(monitoringHome)
 
-    - task: ArchiveFiles@2
+    - task: DownloadPipelineArtifact@2
+      displayName: Download arm64 profiler home
       inputs:
-        rootFolderOrFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-musl-x64/dd-trace
-        includeRootFolder: false
-        archiveType: 'tar'
-        tarCompression: 'gz'
-        archiveFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-musl-x64/dd-trace-linux-musl-x64.tar.gz
+        artifact: linux-profiler-home-arm64
+        patterns:  |
+          **/*.so
+          **/loader.conf
+        path: $(monitoringHome)
 
-    - task: ArchiveFiles@2
-      inputs:
-        rootFolderOrFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-arm64/dd-trace
-        includeRootFolder: false
-        archiveType: 'tar'
-        tarCompression: 'gz'
-        archiveFile: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-arm64/dd-trace-linux-arm64.tar.gz
+    - script: tracer\build.cmd CreateDistributionHome BuildDistributionNuget BuildRunnerTool BuildStandaloneTool
+      displayName: Build Distribution NuGet and runner tools
 
-    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Monitoring.Distribution/bin/$(buildConfiguration)/packages
-      displayName: Publish Distribution package
+    - publish: $(artifacts)/nuget/distribution
+      displayName: Uploading Distribution package
       artifact: distribution-nuget-package
 
-    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Tool
+    - publish: $(artifacts)/nuget/dd-trace
       displayName: Uploading runner dotnet tool artifact
       artifact: runner-dotnet-tool
 
-    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x64
+    - publish: $(artifacts)/dd-trace-win-x64.zip
       displayName: Uploading runner standalone win-x64 artifact
       artifact: runner-standalone-win-x64
 
-    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/win-x86
+    - publish: $(artifacts)/dd-trace-win-x86.zip
       displayName: Uploading runner standalone win-x86 artifact
       artifact: runner-standalone-win-x86
 
-    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-x64
+    - publish: $(artifacts)/dd-trace-linux-x64.tar.gz
       displayName: Uploading runner standalone linux-x64 artifact
       artifact: runner-standalone-linux-x64
 
-    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-musl-x64
+    - publish: $(artifacts)/dd-trace-linux-musl-x64.tar.gz
       displayName: Uploading runner standalone linux-musl-x64 artifact
       artifact: runner-standalone-linux-musl-x64
 
-    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/linux-arm64
+    - publish: $(artifacts)/dd-trace-linux-arm64.tar.gz
       displayName: Uploading runner standalone linux-arm64 artifact
       artifact: runner-standalone-linux-arm64
 
-    - publish: $(System.DefaultWorkingDirectory)/tracer/src/Datadog.Trace.Tools.Runner/bin/$(buildConfiguration)/Console/publish/osx-x64
+    - publish: $(artifacts)/dd-trace-osx-x64.tar.gz
       displayName: Uploading runner standalone osx-x64 artifact
       artifact: runner-standalone-osx-x64
 
@@ -1897,8 +1896,14 @@ stages:
       displayName: Download standalone runner
       inputs:
         artifact: runner-standalone-win-$(targetPlatform)
-        path: $(runnerStandalone)
-
+        path: $(Agent.TempDirectory)/runner
+    
+    - task: ExtractFiles@1
+      inputs:
+        archiveFilePatterns: '$(Agent.TempDirectory)/runner/*.zip'
+        destinationFolder: $(runnerStandalone)
+        cleanDestinationFolder: false
+        
     - script: tracer\build.cmd BuildAndRunToolArtifactTests --ToolSource $(runnerTool)
       displayName: Build and Test tool
 
@@ -1968,9 +1973,16 @@ stages:
       displayName: Download standalone runner
       inputs:
         artifact: runner-standalone-$(artifactSuffix)
-        path: $(runnerStandalone)
+        path: $(Agent.TempDirectory)/runner
 
+    - task: ExtractFiles@1
+      inputs:
+        archiveFilePatterns: '$(Agent.TempDirectory)/runner/*.tar.gz'
+        destinationFolder: $(runnerStandalone)
+        cleanDestinationFolder: false
+        
     - script: |
+        ls $(runnerStandalone)
         chmod +x $(runnerStandalone)/dd-trace
       displayName: chmod
 
@@ -2142,21 +2154,39 @@ stages:
 
         # Linux symbols
         - task: DownloadPipelineArtifact@2
-          displayName: Download linux Alpine symbols
+          displayName: Download linux profiler Alpine symbols
           inputs:
-            artifact: linux-symbols-alpine
+            artifact: linux-profiler-symbols-alpine
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
   
         - task: DownloadPipelineArtifact@2
-          displayName: Download linux CentOS7 symbols
+          displayName: Download linux profiler CentOS7 symbols
           inputs:
-            artifact: linux-symbols-centos7
+            artifact: linux-profiler-symbols-centos7
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
   
         - task: DownloadPipelineArtifact@2
-          displayName: Download linux Arm64 symbols
+          displayName: Download linux profiler Arm64 symbols
           inputs:
-            artifact: linux-symbols-arm64
+            artifact: linux-profiler-symbols-arm64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux tracer Alpine symbols
+          inputs:
+            artifact: linux-tracer-symbols-alpine
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
+  
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux tracer CentOS7 symbols
+          inputs:
+            artifact: linux-tracer-symbols-centos7
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
+  
+        - task: DownloadPipelineArtifact@2
+          displayName: Download linux tracer Arm64 symbols
+          inputs:
+            artifact: linux-tracer-symbols-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
 
         - bash: |
@@ -2295,9 +2325,9 @@ stages:
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
 
     - script: |
-        test ! -s "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
-        test ! -s "tracer/tracer-home-linux/tracer/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/tracer/Datadog.Tracer.Native.so does not exist" && exit 1
-        test ! -s "tracer/tracer-home-linux/libddwaf.so" && echo "tracer/tracer-home-linux/libddwaf.so does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
         ./run.sh "linux" "$(runExtendedThroughputTests)"
@@ -2322,9 +2352,8 @@ stages:
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-win
 
     - script: |
-        # currently the test _doesn't_ use the native loader
-        mv tracer/tracer-home-win/win-x64/Datadog.Tracer.Native.dll tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll 
-        test ! -s "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
+        test ! -s "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Trace.ClrProfiler.Native.dll (native loader) does not exist" && exit 1
+        test ! -s "tracer/tracer-home-win/win-x64/Datadog.Tracer.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Tracer.Native.dll does not exist" && exit 1
         test ! -s "tracer/tracer-home-win/win-x64/ddwaf.dll" && echo "tracer/tracer-home-win/win-x64/ddwaf.dll does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
@@ -2350,8 +2379,9 @@ stages:
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux-arm64
 
     - script: |
-        test ! -s "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
-        test ! -s "tracer/tracer-home-linux-arm64/tracer/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux-arm64/tracer/Datadog.Tracer.Native.so does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Tracer.Native.so does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/libddwaf.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/libddwaf.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
         ./run.sh "linux_arm64" "$(runExtendedThroughputTests)"
@@ -2388,9 +2418,9 @@ stages:
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
 
     - script: |
-        test ! -s "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
-        test ! -s "tracer/tracer-home-linux/tracer/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/tracer/Datadog.Tracer.Native.so does not exist" && exit 1
-        test ! -s "tracer/tracer-home-linux/libddwaf.so" && echo "tracer/tracer-home-linux/libddwaf.so does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
+        test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run-appsec.sh
         ./run-appsec.sh "linux"
@@ -2479,7 +2509,7 @@ stages:
       displayName: Download windows native binary
       inputs:
         artifact: windows-tracer-home
-        path: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home/tracer
+        path: $(monitoringHome)
       retryCountOnTaskFailure: 5
 
     - task: DotNetCoreCLI@2
@@ -2683,6 +2713,7 @@ stages:
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
+          --build-arg RELATIVE_APIWRAPPER_PATH="$(relativeApiWrapperPath)" \
           nuget-smoke-tests
       env:
         dockerTag: $(dockerTag)

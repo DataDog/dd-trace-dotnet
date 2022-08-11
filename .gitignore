@@ -322,9 +322,11 @@ BenchmarkDotNet.Artifacts/
 tracer/deploy/linux/
 tracer/deploy/AzureAppServices/
 !tracer/build/artifacts
-
-# profiler build files
+tracer/src/Datadog.Monitoring.Distribution/home
+!tracer/src/Datadog.Monitoring.Distribution/home/**/*.txt
 build_data
+
+# native tracer build files
 tracer/src/Datadog.Tracer.Native/build/
 tracer/src/Datadog.Tracer.Native/deps/
 tracer/src/Datadog.Tracer.Native/CMakeFiles/
@@ -333,6 +335,8 @@ tracer/src/Datadog.Tracer.Native/Makefile
 tracer/src/Datadog.Tracer.Native/CMakeCache.txt
 tracer/src/Datadog.Tracer.Native/cmake_install.cmake
 !tracer/src/Datadog.Tracer.Native/lib/**
+
+# shared loader build files
 shared/src/Datadog.Trace.ClrProfiler.Native/build/
 shared/src/Datadog.Trace.ClrProfiler.Native/deps/
 shared/src/Datadog.Trace.ClrProfiler.Native/CMakeFiles/
@@ -342,6 +346,8 @@ shared/src/Datadog.Trace.ClrProfiler.Native/CMakeCache.txt
 shared/src/Datadog.Trace.ClrProfiler.Native/cmake_install.cmake
 shared/src/Datadog.Trace.ClrProfiler.Native/cmake-build-debug/
 !shared/src/Datadog.Trace.ClrProfiler.Native/lib/**
+
+#profiler build files
 profiler/_build/
 
 .ionide/

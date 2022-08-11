@@ -42,6 +42,7 @@ public:
     bool IsExceptionProfilingEnabled() const override;
     int32_t ExceptionSampleLimit() const override;
     bool IsAllocationProfilingEnabled() const override;
+    double MinimumCores() const override;
 
 private:
     static tags ExtractUserTags();
@@ -91,4 +92,5 @@ private:
     bool _isNativeFrameEnabled;
     bool _isAgentLess;
     int32_t _exceptionSampleLimit;
+    double _minimumCores;
 };

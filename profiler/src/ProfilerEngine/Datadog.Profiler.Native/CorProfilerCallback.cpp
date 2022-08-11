@@ -13,6 +13,8 @@
 #ifdef _WINDOWS
 #include <VersionHelpers.h>
 #include <windows.h>
+#else
+#include "cgroup.h"
 #endif
 
 #include "AllocationsProvider.h"
@@ -55,9 +57,9 @@ Error("unknown platform");
 #endif
 
 #ifdef BIT64
-#define PROFILER_LIBRARY_BINARY_FILE_NAME WStr("Datadog.AutoInstrumentation.Profiler.Native.x64" LIBRARY_FILE_EXTENSION)
+#define PROFILER_LIBRARY_BINARY_FILE_NAME WStr("Datadog.Profiler.Native" LIBRARY_FILE_EXTENSION)
 #else
-#define PROFILER_LIBRARY_BINARY_FILE_NAME WStr("Datadog.AutoInstrumentation.Profiler.Native.x86" LIBRARY_FILE_EXTENSION)
+#define PROFILER_LIBRARY_BINARY_FILE_NAME WStr("Datadog.Profiler.Native" LIBRARY_FILE_EXTENSION)
 #endif
 
 // Static helpers
@@ -77,6 +79,10 @@ CorProfilerCallback::CorProfilerCallback()
     _this = this;
 
     _pClrLifetime = std::make_unique<ClrLifetime>(&_isInitialized);
+
+#ifndef _WINDOWS
+    CGroup::Initialize();
+#endif
 }
 
 // Cleanup
@@ -85,6 +91,10 @@ CorProfilerCallback::~CorProfilerCallback()
     DisposeInternal();
 
     _this = nullptr;
+
+#ifndef _WINDOWS
+    CGroup::Cleanup();
+#endif
 }
 
 bool CorProfilerCallback::InitializeServices()
@@ -588,10 +598,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     ConfigureDebugLog();
 
+    _pConfiguration = std::make_unique<Configuration>();
 
-    if (!OpSysTools::IsSafeToStartProfiler())
+    double coresThreshold = _pConfiguration->MinimumCores();
+    if (!OpSysTools::IsSafeToStartProfiler(coresThreshold))
     {
-        Log::Warn("It's not safe to start the profiler. See previous log messages for more info.");
+        Log::Warn("It is not safe to start the profiler. See previous log messages for more info.");
         return E_FAIL;
     }
 
@@ -617,8 +629,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         Log::Error("An error occurred while obtaining the ICorProfilerInfo interface from the CLR: 0x", std::hex, hr, std::dec, ".");
         return E_FAIL;
     }
-
-    _pConfiguration = std::make_unique<Configuration>();
 
     // Log some more important environment info:
     USHORT major = 0;
