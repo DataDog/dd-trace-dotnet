@@ -285,7 +285,9 @@ namespace Datadog.Trace
 
                 case Keys.SamplingPriority:
                 case HttpHeaderNames.SamplingPriority:
-                    value = SamplingPriority?.ToString(invariant);
+                    // return the value from TraceContext if available
+                    var samplingPriority = TraceContext?.SamplingPriority ?? SamplingPriority;
+                    value = samplingPriority?.ToString(invariant);
                     return true;
 
                 case Keys.Origin:
@@ -302,7 +304,8 @@ namespace Datadog.Trace
                     return true;
 
                 case Keys.PropagatedTags:
-                    value = PropagatedTags;
+                    // return the value from TraceContext if available
+                    value = TraceContext?.Tags.ToPropagationHeader() ?? PropagatedTags;
                     return true;
 
                 default:
