@@ -12,6 +12,8 @@ using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -91,6 +93,7 @@ namespace Datadog.Trace.AppSec
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
                 _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
                 _waf = waf;
+                LifetimeManager.Instance.AddShutdownTask(RunShutdown);
 
                 UpdateStatus();
             }
@@ -190,10 +193,6 @@ namespace Datadog.Trace.AppSec
                 Log.Debug("Sending CallTarget AppSec integration definitions to native library.");
                 var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.AppSec);
                 NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-                foreach (var def in payload.Definitions)
-                {
-                    def.Dispose();
-                }
 
                 Log.Information<int>("The profiler has been initialized with {count} AppSec definitions.", payload.Definitions.Length);
             }
@@ -213,11 +212,6 @@ namespace Datadog.Trace.AppSec
                 else
                 {
                     NativeMethods.RemoveCallTargetDefinitions(payload.DefinitionsId, payload.Definitions);
-                }
-
-                foreach (var def in payload.Definitions)
-                {
-                    def.Dispose();
                 }
 
                 Log.Information<int>("The profiler has been initialized with {count} AppSec derived definitions.", payload.Definitions.Length);
@@ -276,7 +270,6 @@ namespace Datadog.Trace.AppSec
                         AddAppsecSpecificInstrumentations();
 
                         _instrumentationGateway.EndRequest += ReportWafInitInfoOnce;
-                        LifetimeManager.Instance.AddShutdownTask(RunShutdown);
                         _rateLimiter = _rateLimiter ?? new AppSecRateLimiter(_settings.TraceRateLimit);
                     }
                     else
