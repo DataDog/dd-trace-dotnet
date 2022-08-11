@@ -156,7 +156,7 @@ partial class Build
                 foreach (var diff in diffCounts)
                 {
                     markdown.AppendLine($"{diff.Value} occurrences of : ");
-                    markdown.AppendLine("```");
+                    markdown.AppendLine("```diff");
                     markdown.AppendLine(diff.Key);
                     markdown.Append("```").AppendLine();
                 }
