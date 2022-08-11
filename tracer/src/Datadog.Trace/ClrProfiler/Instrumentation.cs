@@ -107,10 +107,6 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Debug("Sending CallTarget integration definitions to native library.");
                 var payload = InstrumentationDefinitions.GetAllDefinitions();
                 NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-                foreach (var def in payload.Definitions)
-                {
-                    def.Dispose();
-                }
 
                 Log.Information<int>("The profiler has been initialized with {count} definitions.", payload.Definitions.Length);
             }
@@ -133,10 +129,6 @@ namespace Datadog.Trace.ClrProfiler
                 Log.Debug("Sending CallTarget derived integration definitions to native library.");
                 var payload = InstrumentationDefinitions.GetDerivedDefinitions();
                 NativeMethods.AddDerivedInstrumentations(payload.DefinitionsId, payload.Definitions);
-                foreach (var def in payload.Definitions)
-                {
-                    def.Dispose();
-                }
 
                 Log.Information<int>("The profiler has been initialized with {count} derived definitions.", payload.Definitions.Length);
             }
@@ -181,7 +173,14 @@ namespace Datadog.Trace.ClrProfiler
                 }
             }
 
+            LifetimeManager.Instance.AddShutdownTask(RunShutdown);
+
             Log.Debug("Initialization finished.");
+        }
+
+        private static void RunShutdown()
+        {
+            InstrumentationDefinitions.Dispose();
         }
 
         internal static void InitializeNoNativeParts()

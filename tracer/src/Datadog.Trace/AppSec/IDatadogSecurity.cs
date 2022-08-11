@@ -16,5 +16,7 @@ namespace Datadog.Trace.AppSec
         InstrumentationGateway InstrumentationGateway { get; }
 
         SecuritySettings Settings { get; }
+
+        void ProcessControlCommand(object obj);
     }
 }
