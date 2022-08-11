@@ -22,6 +22,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Serverless));
 
+        private static NativeCallTargetDefinition[] callTargetDefinitions = null;
+
         internal static void InitIfNeeded()
         {
             if (IsRunningInLambda(ExtensionFullPath))
@@ -29,10 +31,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
                 Debug("Sending CallTarget serverless integration definitions to native library.");
                 var serverlessDefinitions = GetServerlessDefinitions();
                 NativeMethods.InitializeProfiler(DefinitionsId, serverlessDefinitions);
-                foreach (var def in serverlessDefinitions)
-                {
-                    def.Dispose();
-                }
 
                 Debug("The profiler has been initialized with serverless definitions, count = " + serverlessDefinitions.Length);
             }
@@ -48,15 +46,20 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
         {
             try
             {
-                LambdaHandler handler = new LambdaHandler(EnvironmentHelpers.GetEnvironmentVariable(HandlerEnvName));
-                var assemblyName = typeof(InstrumentationDefinitions).Assembly.FullName;
-                var paramCount = handler.ParamTypeArray.Length;
-
-                var integrationType = GetIntegrationType(handler.ParamTypeArray[0], paramCount);
-                return new NativeCallTargetDefinition[]
+                if (callTargetDefinitions == null)
                 {
-                    new(handler.GetAssembly(), handler.GetFullType(), handler.GetMethodName(), handler.ParamTypeArray, 0, 0, 0, 65535, 65535, 65535, assemblyName, integrationType)
-                };
+                    LambdaHandler handler = new LambdaHandler(EnvironmentHelpers.GetEnvironmentVariable(HandlerEnvName));
+                    var assemblyName = typeof(InstrumentationDefinitions).Assembly.FullName;
+                    var paramCount = handler.ParamTypeArray.Length;
+
+                    var integrationType = GetIntegrationType(handler.ParamTypeArray[0], paramCount);
+                    callTargetDefinitions = new NativeCallTargetDefinition[]
+                    {
+                        new(handler.GetAssembly(), handler.GetFullType(), handler.GetMethodName(), handler.ParamTypeArray, 0, 0, 0, 65535, 65535, 65535, assemblyName, integrationType)
+                    };
+                }
+
+                return callTargetDefinitions;
             }
             catch (Exception ex)
             {
