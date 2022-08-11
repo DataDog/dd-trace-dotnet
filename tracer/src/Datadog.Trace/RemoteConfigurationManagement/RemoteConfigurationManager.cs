@@ -226,13 +226,13 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
             var product = _products[productGroup.Key];
 
             product.AssignConfigs(configurations);
-            foreach (var config in product.AppliedConfigurations)
-            {
-                if (!configsToVerify.ContainsKey(config.Key))
-                {
-                    product.AppliedConfigurations.Remove(config.Key);
-                }
-            }
+            // foreach (var config in product.AppliedConfigurations)
+            // {
+            //    if (!configsToVerify.ContainsKey(config.Key))
+            //    {
+            //        product.AppliedConfigurations.Remove(config.Key);
+            //    }
+            // }
 
             foreach (var config in configurations)
             {
