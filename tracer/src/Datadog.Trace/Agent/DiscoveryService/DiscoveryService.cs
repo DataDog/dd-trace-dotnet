@@ -49,6 +49,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
         {
             try
             {
+                // todo polling
                 var uri = _apiRequestFactory.GetEndpoint("info");
                 var api = _apiRequestFactory.Create(uri);
                 using var response = await api.GetAsync().ConfigureAwait(false);
@@ -59,8 +60,6 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 }
 
                 var content = await response.ReadAsStringAsync().ConfigureAwait(false);
-                Log.Information($"Discovery content is {content}");
-
                 ProcessDiscoveryResponse(content);
 
                 return true;
@@ -83,10 +82,11 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 return;
             }
 
-            ConfigurationEndpoint = SupportedConfigurationEndpoints
-               .FirstOrDefault(
-                    supportedEndpoint => discoveredEndpoints.Any(
-                        endpoint => endpoint.Trim('/').Equals(supportedEndpoint, StringComparison.OrdinalIgnoreCase)));
+            ConfigurationEndpoint = "v0.7/config";
+               // SupportedConfigurationEndpoints
+               // .FirstOrDefault(
+               //     supportedEndpoint => discoveredEndpoints.Any(
+               //         endpoint => endpoint.Trim('/').Equals(supportedEndpoint, StringComparison.OrdinalIgnoreCase)));
 
             DebuggerEndpoint = SupportedDebuggerEndpoints
                .FirstOrDefault(

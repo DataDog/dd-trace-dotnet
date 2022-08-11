@@ -105,20 +105,17 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
             _isPollingStarted = true;
         }
 
-        if (string.IsNullOrEmpty(_discoveryService.ConfigurationEndpoint))
-        {
-            Log.Warning("Remote Configuration management is not enabled");
-            return;
-        }
-
         LifetimeManager.Instance.AddShutdownTask(OnShutdown);
 
         while (!_cancellationSource.IsCancellationRequested)
         {
             try
             {
-                _lastPollError = null;
-                Poll();
+                if (!string.IsNullOrEmpty(_discoveryService.ConfigurationEndpoint))
+                {
+                    _lastPollError = null;
+                    Poll();
+                }
             }
             catch (Exception e)
             {
