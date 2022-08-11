@@ -642,7 +642,7 @@ namespace Datadog.Trace.DiagnosticListeners
                        });
 
                     security.InstrumentationGateway.RaiseRequestStart(httpContext, request, span);
-                    // Should we get rid of the Instrumentation Gateway, it s been making the code very cumbersome and hard to follow and an event driven model doesnt seem adapted here cause we need to get a return value from the security component to know here that we need to flush the span after blocking, hence the cumbersome action (last param here), binding parameters to avoid capturing local variables but so hard to read. It would be simpler to just call the security component with the current data, get the return, flush the span and throw if needed. 
+                    // Should we get rid of the Instrumentation Gateway, it s been making the code very cumbersome and hard to follow and an event driven model doesnt seem adapted here cause we need to get a return value from the security component to know here that we need to flush the span after blocking, hence the cumbersome action (last param here), binding parameters to avoid capturing local variables but so hard to read. It would be simpler to just call the security component with the current data, get the return, flush the span and throw if needed.
                     security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, (args) => DoBeforeRequestStops(args.Context, args.Scope, args.TracerSettings));
                 }
             }

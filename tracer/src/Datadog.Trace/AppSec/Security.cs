@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.AppSec.Transports;
+using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ClrProfiler;
@@ -348,6 +349,7 @@ namespace Datadog.Trace.AppSec
         {
             if (args.Context.Items["block"] != null)
             {
+                AddResponseHeaderTags(new HttpTransport(args.Context), args.Scope.Span);
                 args.InvokeDoBeforeBlocking();
                 throw new BlockException();
             }
