@@ -1,7 +1,8 @@
-// <copyright file="ITRClient.cs" company="Datadog">
+// <copyright file="IntelligentTestRunnerClient.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -16,7 +17,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -26,16 +26,15 @@ namespace Datadog.Trace.Ci;
 /// <summary>
 /// Intelligent Test Runner Client
 /// </summary>
-internal class ITRClient
+internal class IntelligentTestRunnerClient
 {
     private const string ApiKeyHeader = "dd-api-key";
     private const int MaxRetries = 3;
     private const int MaxPackFileSizeInMb = 3;
 
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ITRClient));
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntelligentTestRunnerClient));
     private static readonly Regex ShaRegex = new Regex("[0-9a-f]+", RegexOptions.Compiled);
 
-    private readonly GlobalSettings _globalSettings;
     private readonly CIVisibilitySettings _settings;
     private readonly string _workingDirectory;
     private readonly IApiRequestFactory _apiRequestFactory;
@@ -43,9 +42,8 @@ internal class ITRClient
     private readonly Uri _packFileUrl;
     private readonly Task<string> _getRepositoryUrlTask;
 
-    public ITRClient(string workingDirectory, CIVisibilitySettings settings = null)
+    public IntelligentTestRunnerClient(string workingDirectory, CIVisibilitySettings? settings = null)
     {
-        _globalSettings = GlobalSettings.FromDefaultSources();
         _settings = settings ?? CIVisibility.Settings;
 
         _workingDirectory = workingDirectory;
@@ -85,6 +83,12 @@ internal class ITRClient
     {
         Log.Debug("ITR: Uploading Repository Changes...");
         var gitOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "log --format=%H -n 1000 --since=\"1 month ago\"", _workingDirectory)).ConfigureAwait(false);
+        if (gitOutput is null)
+        {
+            Log.Warning("ITR: 'git log...' command is null");
+            return 0;
+        }
+
         var localCommits = gitOutput.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
         if (localCommits.Length == 0)
         {
@@ -95,11 +99,11 @@ internal class ITRClient
         return await SendObjectsPackFileAsync(localCommits[0], remoteCommitsData).ConfigureAwait(false);
     }
 
-    private async Task<string[]> SearchCommitAsync(string[] localCommits)
+    private async Task<string[]> SearchCommitAsync(string[]? localCommits)
     {
         if (localCommits is null)
         {
-            return null;
+            return Array.Empty<string>();
         }
 
         Log.Debug("ITR: Searching commits...");
@@ -121,7 +125,7 @@ internal class ITRClient
             var request = _apiRequestFactory.Create(_searchCommitsUrl);
             request.AddHeader(ApiKeyHeader, _settings.ApiKey);
             Log.Debug("ITR: Searching commits from: {url}", _searchCommitsUrl.ToString());
-            var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+            using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
             if (response.StatusCode is < 200 or >= 300)
             {
@@ -143,31 +147,34 @@ internal class ITRClient
             var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<CommitResponse>>(responseContent);
             if (deserializedResult.Data is null)
             {
-                return null;
+                return Array.Empty<string>();
             }
 
             var stringArray = new string[deserializedResult.Data.Length];
             for (var i = 0; i < deserializedResult.Data.Length; i++)
             {
                 var value = deserializedResult.Data[i].Id;
-                if (ShaRegex.Matches(value).Count != 1)
+                if (value is not null)
                 {
-                    ThrowHelper.ThrowException($"The value '{value}' is not a valid Sha.");
-                }
+                    if (ShaRegex.Matches(value).Count != 1)
+                    {
+                        ThrowHelper.ThrowException($"The value '{value}' is not a valid Sha.");
+                    }
 
-                stringArray[i] = deserializedResult.Data[i].Id;
+                    stringArray[i] = value;
+                }
             }
 
             return stringArray;
         }
     }
 
-    public async Task<long> SendObjectsPackFileAsync(string commitSha, string[] commitsExceptions)
+    public async Task<long> SendObjectsPackFileAsync(string commitSha, string[]? commitsToExclude)
     {
         Log.Debug("ITR: Packing and sending delta of commits and tree objects...");
 
-        var packFiles = await GetObjectsPackFileFromWorkingDirectoryAsync(commitsExceptions).ConfigureAwait(false);
-        if (packFiles is null)
+        var packFiles = await GetObjectsPackFileFromWorkingDirectoryAsync(commitsToExclude).ConfigureAwait(false);
+        if (packFiles.Length == 0)
         {
             return 0;
         }
@@ -188,9 +195,9 @@ internal class ITRClient
             {
                 File.Delete(packFile);
             }
-            catch
+            catch (Exception ex)
             {
-                // .
+                Log.Warning(ex, "ITR: Error deleting pack file: '{packFile}'", packFile);
             }
         }
 
@@ -204,7 +211,7 @@ internal class ITRClient
             var multipartRequest = (IMultipartApiRequest)request;
 
             using var fileStream = File.Open(packFile, FileMode.Open, FileAccess.Read, FileShare.Read);
-            var response = await multipartRequest.PostAsync(
+            using var response = await multipartRequest.PostAsync(
                 new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
                 new MultipartFormItem("packfile", "application/octet-stream", null, fileStream))
             .ConfigureAwait(false);
@@ -230,29 +237,35 @@ internal class ITRClient
         }
     }
 
-    private async Task<string[]> GetObjectsPackFileFromWorkingDirectoryAsync(string[] commitsExceptions)
+    private async Task<string[]> GetObjectsPackFileFromWorkingDirectoryAsync(string[]? commitsToExclude)
     {
         Log.Debug("ITR: Getting objects...");
-        commitsExceptions ??= Array.Empty<string>();
-        var temporalPath = Path.GetTempFileName();
+        commitsToExclude ??= Array.Empty<string>();
+        var temporaryPath = Path.GetTempFileName();
 
-        var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" HEAD " + string.Join(" ", commitsExceptions.Select(c => "^" + c));
+        var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" HEAD " + string.Join(" ", commitsToExclude.Select(c => "^" + c));
         var getObjects = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getObjectsArguments, _workingDirectory)).ConfigureAwait(false);
         if (string.IsNullOrEmpty(getObjects))
         {
             // If not objects has been returned we skip the pack + upload.
             Log.Debug("ITR: No objects were returned from the git rev-list command.");
-            return null;
+            return Array.Empty<string>();
         }
 
         Log.Debug("ITR: Packing objects...");
-        var getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m  {temporalPath}";
+        var getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m  {temporaryPath}";
         var packObjectsResult = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getPacksArguments, _workingDirectory), getObjects).ConfigureAwait(false);
+        if (packObjectsResult is null)
+        {
+            Log.Warning("ITR: 'git pack-objects...' command is null");
+            return Array.Empty<string>();
+        }
+
         var packObjectsSha = packObjectsResult.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
 
         // We try to return an array with the path in the same order as has been returned by the git command.
-        var tempFolder = Path.GetDirectoryName(temporalPath) ?? string.Empty;
-        var tempFile = Path.GetFileName(temporalPath);
+        var tempFolder = Path.GetDirectoryName(temporaryPath) ?? string.Empty;
+        var tempFile = Path.GetFileName(temporaryPath);
         var lstFiles = new List<string>(packObjectsSha.Length);
         foreach (var pObjSha in packObjectsSha)
         {
@@ -260,6 +273,10 @@ internal class ITRClient
             if (File.Exists(file))
             {
                 lstFiles.Add(file);
+            }
+            else
+            {
+                Log.Warning("ITR: The file '{packFile}' doesn't exist.", file);
             }
         }
 
@@ -273,44 +290,32 @@ internal class ITRClient
 
         while (true)
         {
-            T response = default;
-            bool success = false;
-            ExceptionDispatchInfo exceptionDispatchInfo = null;
+            T response = default!;
+            ExceptionDispatchInfo? exceptionDispatchInfo = null;
             bool isFinalTry = retryCount >= numOfRetries;
 
             try
             {
                 response = await sendDelegate(state, isFinalTry).ConfigureAwait(false);
-                success = true;
             }
             catch (Exception ex)
             {
                 exceptionDispatchInfo = ExceptionDispatchInfo.Capture(ex);
-
-                if (_globalSettings.DebugEnabled)
-                {
-                    if (ex.InnerException is InvalidOperationException ioe)
-                    {
-                        Log.Error(ex, "An error occurred while sending data to the Intelligent Test Runner");
-                        return default;
-                    }
-                }
             }
 
             // Error handling block
-            if (!success)
+            if (exceptionDispatchInfo is not null)
             {
                 if (isFinalTry)
                 {
                     // stop retrying
                     Log.Error<int>(exceptionDispatchInfo.SourceException, "An error occurred while sending intelligent test runner data after {Retries} retries.", retryCount);
-                    exceptionDispatchInfo?.Throw();
-                    return default;
+                    exceptionDispatchInfo.Throw();
                 }
 
                 // Before retry delay
                 bool isSocketException = false;
-                Exception innerException = exceptionDispatchInfo.SourceException;
+                Exception? innerException = exceptionDispatchInfo.SourceException;
 
                 while (innerException != null)
                 {
@@ -344,6 +349,12 @@ internal class ITRClient
     private async Task<string> GetRepositoryUrlAsync()
     {
         var gitOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "config --get remote.origin.url", _workingDirectory)).ConfigureAwait(false);
+        if (gitOutput is null)
+        {
+            Log.Warning("ITR: 'git config --get remote.origin.url' command is null");
+            return string.Empty;
+        }
+
         return gitOutput.Replace("\n", string.Empty);
     }
 
@@ -417,12 +428,12 @@ internal class ITRClient
     private class CommitResponse
     {
         [JsonProperty("id")]
-        public string Id { get; set; }
+        public string? Id { get; set; }
 
         [JsonProperty("type")]
-        public string Type { get; set; }
+        public string? Type { get; set; }
 
         [JsonProperty("attributes")]
-        public object Attributes { get; set; }
+        public object? Attributes { get; set; }
     }
 }

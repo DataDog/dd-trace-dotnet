@@ -82,7 +82,7 @@ namespace Datadog.Trace.Ci
             {
                 try
                 {
-                    var itrClient = new ITRClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
+                    var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
                     await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
                 }
                 catch (Exception ex)

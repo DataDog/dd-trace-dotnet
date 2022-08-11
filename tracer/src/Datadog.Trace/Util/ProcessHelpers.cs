@@ -2,11 +2,12 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 
@@ -83,7 +84,7 @@ namespace Datadog.Trace.Util
         /// <param name="command">Command to run</param>
         /// <param name="input">Standard input content</param>
         /// <returns>Task with the content of the standard output</returns>
-        public static async Task<string> RunCommandAsync(Command command, string input = null)
+        public static async Task<string?> RunCommandAsync(Command command, string? input = null)
         {
             Log.Debug("Running command: {command} {args}", command.Cmd, command.Arguments);
             var processStartInfo = GetProcessStartInfo(command);
@@ -105,47 +106,22 @@ namespace Datadog.Trace.Util
                 processInfo.StandardInput.Close();
             }
 
-            string output = null;
+            var sb = new StringBuilder();
             while (!processInfo.HasExited)
             {
-                output += await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
-                await Task.Delay(1).ConfigureAwait(false);
+                sb.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
+                await Task.Delay(15).ConfigureAwait(false);
             }
 
-            output += await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
-            return output;
+            sb.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
+            return sb.ToString();
         }
 
         private static ProcessStartInfo GetProcessStartInfo(Command command)
         {
-            ProcessStartInfo processStartInfo = null;
-#if NETFRAMEWORK
-            if (Environment.OSVersion.Platform != PlatformID.Unix && Environment.OSVersion.Platform != PlatformID.MacOSX)
-#else
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-#endif
-            {
-                if (command.UseShell)
-                {
-                    processStartInfo = new ProcessStartInfo("cmd.exe", $"/C {command.Cmd} {command.Arguments}");
-                }
-                else
-                {
-                    processStartInfo = new ProcessStartInfo(command.Cmd, command.Arguments);
-                }
-            }
-            else
-            {
-                if (command.UseShell)
-                {
-                    processStartInfo = new ProcessStartInfo("sh", $"-c \"{command.Cmd} {command.Arguments}\"");
-                }
-                else
-                {
-                    processStartInfo = new ProcessStartInfo(command.Cmd, command.Arguments);
-                }
-            }
-
+            var processStartInfo = command.Arguments is null ?
+                                       new ProcessStartInfo(command.Cmd) :
+                                       new ProcessStartInfo(command.Cmd, command.Arguments);
             processStartInfo.CreateNoWindow = true;
             processStartInfo.UseShellExecute = false;
             processStartInfo.RedirectStandardOutput = true;
@@ -161,16 +137,14 @@ namespace Datadog.Trace.Util
         public readonly struct Command
         {
             public readonly string Cmd;
-            public readonly string Arguments;
-            public readonly string WorkingDirectory;
-            public readonly bool UseShell;
+            public readonly string? Arguments;
+            public readonly string? WorkingDirectory;
 
-            public Command(string cmd, string arguments = null, string workingDirectory = null, bool useShell = false)
+            public Command(string cmd, string? arguments = null, string? workingDirectory = null)
             {
                 Cmd = cmd;
                 Arguments = arguments;
                 WorkingDirectory = workingDirectory;
-                UseShell = useShell;
             }
         }
     }
