@@ -13,6 +13,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement;
 
@@ -151,10 +152,14 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
         lock (_instanceLock)
         {
             var request = BuildRequest();
+            Log.Information($"RCM Sending: {JsonConvert.SerializeObject(request)}");
+
             var response = _remoteConfigurationApi.GetConfigs(request).Result;
 
             if (response?.Targets?.Signed != null)
             {
+                Log.Information($"RCM Received: {JsonConvert.SerializeObject(response)}");
+
                 ProcessResponse(response);
                 _targetsVersion = response.Targets.Signed.Version;
             }
