@@ -1515,189 +1515,230 @@ partial class Build
                new(@".*System.Threading.ThreadAbortException: Thread was being aborted\.", RegexOptions.Compiled),
            };
 
-           var logDirectory = BuildDataDirectory / "logs";
-           if (DirectoryExists(logDirectory))
-           {
-               // Should we care about warnings too?
-               var managedErrors = logDirectory.GlobFiles("**/dotnet-tracer-managed-*")
-                                               .SelectMany(ParseManagedLogFiles)
-                                               .Where(x => x.Level >= LogLevel.Error)
-                                               .Where(IsNewError)
-                                               .ToList();
-
-               var nativeTracerErrors = logDirectory.GlobFiles("**/dotnet-tracer-native-*")
-                                               .SelectMany(ParseNativeTracerLogFiles)
-                                               .Where(x => x.Level >= LogLevel.Error)
-                                               .Where(IsNewError)
-                                               .ToList();
-
-               var nativeProfilerErrors = logDirectory.GlobFiles("**/DD-DotNet-Profiler-Native-*")
-                                               .SelectMany(ParseNativeProfilerLogFiles)
-                                               .Where(x => x.Level >= LogLevel.Error)
-                                               .Where(IsNewError)
-                                               .ToList();
-
-               if (managedErrors.Count == 0 && nativeTracerErrors.Count == 0 && nativeProfilerErrors.Count == 0)
-               {
-                   Logger.Info("No errors found in managed or native logs");
-                   return;
-               }
-
-               Logger.Warn("Found the following errors in log files:");
-               var allErrors = managedErrors
-                              .Concat(nativeTracerErrors)
-                              .Concat(nativeProfilerErrors)
-                              .GroupBy(x => x.FileName);
-
-               foreach (var erroredFile in allErrors)
-               {
-                   Logger.Error($"Found errors in log file '{erroredFile.Key}':");
-                   foreach (var error in erroredFile)
-                   {
-                       Logger.Error($"{error.Timestamp:hh:mm:ss} [{error.Level}] {error.Message}");
-                   }
-               }
-
-               ExitCode = 1;
-           }
-
-           bool IsNewError(ParsedLogLine logLine)
-           {
-               foreach (var pattern in knownPatterns)
-               {
-                   if (pattern.IsMatch(logLine.Message))
-                   {
-                       return false;
-                   }
-               }
-
-               return true;
-           }
-
-           static List<ParsedLogLine> ParseManagedLogFiles(AbsolutePath logFile)
-           {
-               var regex = new Regex(@"^(\d\d\d\d\-\d\d\-\d\d\W\d\d\:\d\d\:\d\d\.\d\d\d\W\+\d\d\:\d\d)\W\[(.*?)\]\W(.*)", RegexOptions.Compiled);
-               var allLines = File.ReadAllLines(logFile);
-               var allLogs = new List<ParsedLogLine>(allLines.Length);
-               ParsedLogLine currentLine = null;
-
-               foreach (var line in allLines)
-               {
-                   if (string.IsNullOrWhiteSpace(line))
-                   {
-                       continue;
-                   }
-                   var match = regex.Match(line);
-
-                   if (match.Success)
-                   {
-                       if (currentLine is not null)
-                       {
-                           allLogs.Add(currentLine);
-                       }
-
-                       try
-                       {
-                           // start of a new log line
-                           var timestamp = DateTimeOffset.Parse(match.Groups[1].Value);
-                           var level = ParseManagedLogLevel(match.Groups[2].Value);
-                           var message = match.Groups[3].Value;
-                           currentLine = new ParsedLogLine(timestamp, level, message, logFile);
-                       }
-                       catch (Exception ex)
-                       {
-                           Logger.Info($"Error parsing line: '{line}. {ex}");
-                       }
-                   }
-                   else
-                   {
-                       if (currentLine is null)
-                       {
-                           Logger.Warn("Incomplete log line: " + line);
-                       }
-                       else
-                       {
-                           currentLine = currentLine with { Message = $"{currentLine.Message}{Environment.NewLine}{line}" };
-                       }
-                   }
-               }
-
-               return allLogs;
-           }
-
-           static List<ParsedLogLine> ParseNativeTracerLogFiles(AbsolutePath logFile)
-           {
-               var regex = new Regex(@"^(\d\d\/\d\d\/\d\d\W\d\d\:\d\d\:\d\d\.\d\d\d\W\w\w)\W\[.*?\]\W\[(.*?)\](.*)", RegexOptions.Compiled);
-               return ParseNativeLogs(regex, "MM/dd/yy hh:mm:ss.fff tt", logFile);
-           }
-
-           static List<ParsedLogLine> ParseNativeProfilerLogFiles(AbsolutePath logFile)
-           {
-               var regex = new Regex(@"^\[(\d\d\d\d-\d\d-\d\d\W\d\d\:\d\d\:\d\d\.\d\d\d)\W\|\W([^ ]+)\W[^\]]+\W(.*)", RegexOptions.Compiled);
-               return ParseNativeLogs(regex, "yyyy-MM-dd H:mm:ss.fff", logFile);
-           }
-
-           static List<ParsedLogLine> ParseNativeLogs(Regex regex, string dateFormat, AbsolutePath logFile)
-           {
-               var allLines = File.ReadAllLines(logFile);
-               var allLogs = new List<ParsedLogLine>(allLines.Length);
-
-               foreach (var line in allLines)
-               {
-                   if (string.IsNullOrWhiteSpace(line))
-                   {
-                       continue;
-                   }
-                   var match = regex.Match(line);
-                   if (match.Success)
-                   {
-                       try
-                       {
-                           // native logs are on one line
-                           var timestamp = DateTimeOffset.ParseExact(match.Groups[1].Value, dateFormat, null);
-                           var level = ParseNativeLogLevel(match.Groups[2].Value);
-                           var message = match.Groups[3].Value;
-                           var currentLine = new ParsedLogLine(timestamp, level, message, logFile);
-                           allLogs.Add(currentLine);
-                       }
-                       catch (Exception ex)
-                       {
-                           Logger.Info($"Error parsing line: '{line}. {ex}");
-                       }
-                   }
-                   else
-                   {
-                       Logger.Warn("Incomplete log line: " + line);
-                   }
-               }
-
-               return allLogs;
-           }
-
-           static LogLevel ParseManagedLogLevel(string value)
-               => value switch
-               {
-                   "VRB" => LogLevel.Trace,
-                   "DBG" => LogLevel.Trace,
-                   "INF" => LogLevel.Normal,
-                   "WRN" => LogLevel.Warning,
-                   "ERR" => LogLevel.Error,
-                   _ => LogLevel.Normal, // Concurrency issues can sometimes garble this so ignore it
-               };
-
-           static LogLevel ParseNativeLogLevel(string value)
-               => value switch
-               {
-                   "trace" => LogLevel.Trace,
-                   "debug" => LogLevel.Trace,
-                   "info" => LogLevel.Normal,
-                   "warning" => LogLevel.Warning,
-                   "error" => LogLevel.Error,
-                   _ => LogLevel.Normal, // Concurrency issues can sometimes garble this so ignore it
-               };
-
-           Logger.Info($"Skipping log parsing, directory '{logDirectory}' not found");
+           CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error);
        });
+
+    Target CheckSmokeTestsForErrors => _ => _
+       .Unlisted()
+       .Description("Reads the logs from build_data and checks for error lines in the smoke test logs")
+       .Executes(() =>
+       {
+           var knownPatterns = new List<Regex>();
+           
+           if (IsAlpine)
+           {
+               // AppSec complains about not loading initially on alpine, but can be ignored
+               knownPatterns.Add(new(@".*'dddlopen' dddlerror returned: Library linux-vdso\.so\.1 is not already loaded", RegexOptions.Compiled));
+           }
+
+           if (IsArm64)
+           {
+               // Profiler is not yet supported on Arm64
+               knownPatterns.Add(new(@".*Profiler is deactivated because it runs on an unsupported architecture", RegexOptions.Compiled));
+           }
+
+           CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
+       });
+
+    private void CheckLogsForErrors(List<Regex> knownPatterns, bool allFilesMustExist, LogLevel minLogLevel)
+    {
+        var logDirectory = BuildDataDirectory / "logs";
+        if (!DirectoryExists(logDirectory))
+        {
+            Logger.Info($"Skipping log parsing, directory '{logDirectory}' not found");
+            if (allFilesMustExist)
+            {
+                ExitCode = 1;
+                return;
+            }
+        }
+
+        var managedFiles = logDirectory.GlobFiles("**/dotnet-tracer-managed-*");
+        var managedErrors = managedFiles
+                           .SelectMany(ParseManagedLogFiles)
+                           .Where(x => x.Level >= minLogLevel)
+                           .Where(IsNewError)
+                           .ToList();
+
+        var nativeTracerFiles = logDirectory.GlobFiles("**/dotnet-tracer-native-*");
+        var nativeTracerErrors = nativeTracerFiles
+                                .SelectMany(ParseNativeTracerLogFiles)
+                                .Where(x => x.Level >= minLogLevel)
+                                .Where(IsNewError)
+                                .ToList();
+
+        var nativeProfilerFiles = logDirectory.GlobFiles("**/DD-DotNet-Profiler-Native-*");
+        var nativeProfilerErrors = nativeProfilerFiles
+                                  .SelectMany(ParseNativeProfilerLogFiles)
+                                  .Where(x => x.Level >= minLogLevel)
+                                  .Where(IsNewError)
+                                  .ToList();
+
+        var hasRequiredFiles = !allFilesMustExist
+                            || (managedFiles.Count > 0
+                             && nativeTracerFiles.Count > 0
+                             && nativeProfilerFiles.Count > 0);
+
+        if (hasRequiredFiles && managedErrors.Count == 0 && nativeTracerErrors.Count == 0 && nativeProfilerErrors.Count == 0)
+        {
+            Logger.Info("No errors found in managed or native logs");
+            return;
+        }
+
+        Logger.Warn("Found the following errors in log files:");
+        var allErrors = managedErrors
+                       .Concat(nativeTracerErrors)
+                       .Concat(nativeProfilerErrors)
+                       .GroupBy(x => x.FileName);
+
+        foreach (var erroredFile in allErrors)
+        {
+            Logger.Error($"Found errors in log file '{erroredFile.Key}':");
+            foreach (var error in erroredFile)
+            {
+                Logger.Error($"{error.Timestamp:hh:mm:ss} [{error.Level}] {error.Message}");
+            }
+        }
+
+        ExitCode = 1;
+
+        bool IsNewError(ParsedLogLine logLine)
+        {
+            foreach (var pattern in knownPatterns)
+            {
+                if (pattern.IsMatch(logLine.Message))
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        static List<ParsedLogLine> ParseManagedLogFiles(AbsolutePath logFile)
+        {
+            var regex = new Regex(@"^(\d\d\d\d\-\d\d\-\d\d\W\d\d\:\d\d\:\d\d\.\d\d\d\W\+\d\d\:\d\d)\W\[(.*?)\]\W(.*)", RegexOptions.Compiled);
+            var allLines = File.ReadAllLines(logFile);
+            var allLogs = new List<ParsedLogLine>(allLines.Length);
+            ParsedLogLine currentLine = null;
+
+            foreach (var line in allLines)
+            {
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
+
+                var match = regex.Match(line);
+
+                if (match.Success)
+                {
+                    if (currentLine is not null)
+                    {
+                        allLogs.Add(currentLine);
+                    }
+
+                    try
+                    {
+                        // start of a new log line
+                        var timestamp = DateTimeOffset.Parse(match.Groups[1].Value);
+                        var level = ParseManagedLogLevel(match.Groups[2].Value);
+                        var message = match.Groups[3].Value;
+                        currentLine = new ParsedLogLine(timestamp, level, message, logFile);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Info($"Error parsing line: '{line}. {ex}");
+                    }
+                }
+                else
+                {
+                    if (currentLine is null)
+                    {
+                        Logger.Warn("Incomplete log line: " + line);
+                    }
+                    else
+                    {
+                        currentLine = currentLine with { Message = $"{currentLine.Message}{Environment.NewLine}{line}" };
+                    }
+                }
+            }
+
+            return allLogs;
+        }
+
+        static List<ParsedLogLine> ParseNativeTracerLogFiles(AbsolutePath logFile)
+        {
+            var regex = new Regex(@"^(\d\d\/\d\d\/\d\d\W\d\d\:\d\d\:\d\d\.\d\d\d\W\w\w)\W\[.*?\]\W\[(.*?)\](.*)", RegexOptions.Compiled);
+            return ParseNativeLogs(regex, "MM/dd/yy hh:mm:ss.fff tt", logFile);
+        }
+
+        static List<ParsedLogLine> ParseNativeProfilerLogFiles(AbsolutePath logFile)
+        {
+            var regex = new Regex(@"^\[(\d\d\d\d-\d\d-\d\d\W\d\d\:\d\d\:\d\d\.\d\d\d)\W\|\W([^ ]+)\W[^\]]+\W(.*)", RegexOptions.Compiled);
+            return ParseNativeLogs(regex, "yyyy-MM-dd H:mm:ss.fff", logFile);
+        }
+
+        static List<ParsedLogLine> ParseNativeLogs(Regex regex, string dateFormat, AbsolutePath logFile)
+        {
+            var allLines = File.ReadAllLines(logFile);
+            var allLogs = new List<ParsedLogLine>(allLines.Length);
+
+            foreach (var line in allLines)
+            {
+                if (string.IsNullOrWhiteSpace(line))
+                {
+                    continue;
+                }
+
+                var match = regex.Match(line);
+                if (match.Success)
+                {
+                    try
+                    {
+                        // native logs are on one line
+                        var timestamp = DateTimeOffset.ParseExact(match.Groups[1].Value, dateFormat, null);
+                        var level = ParseNativeLogLevel(match.Groups[2].Value);
+                        var message = match.Groups[3].Value;
+                        var currentLine = new ParsedLogLine(timestamp, level, message, logFile);
+                        allLogs.Add(currentLine);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Info($"Error parsing line: '{line}. {ex}");
+                    }
+                }
+                else
+                {
+                    Logger.Warn("Incomplete log line: " + line);
+                }
+            }
+
+            return allLogs;
+        }
+
+        static LogLevel ParseManagedLogLevel(string value)
+            => value switch
+            {
+                "VRB" => LogLevel.Trace,
+                "DBG" => LogLevel.Trace,
+                "INF" => LogLevel.Normal,
+                "WRN" => LogLevel.Warning,
+                "ERR" => LogLevel.Error,
+                _ => LogLevel.Normal, // Concurrency issues can sometimes garble this so ignore it
+            };
+
+        static LogLevel ParseNativeLogLevel(string value)
+            => value switch
+            {
+                "trace" => LogLevel.Trace,
+                "debug" => LogLevel.Trace,
+                "info" => LogLevel.Normal,
+                "warning" => LogLevel.Warning,
+                "error" => LogLevel.Error,
+                _ => LogLevel.Normal, // Concurrency issues can sometimes garble this so ignore it
+            };
+    }
 
     private void MakeGrpcToolsExecutable()
     {
