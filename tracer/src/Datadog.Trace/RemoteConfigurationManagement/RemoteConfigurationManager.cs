@@ -111,7 +111,10 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
         {
             try
             {
-                if (!string.IsNullOrEmpty(_discoveryService.ConfigurationEndpoint))
+                var isRcmEnabled = !string.IsNullOrEmpty(_discoveryService.ConfigurationEndpoint);
+                var isProductRegistered = _products.Any();
+
+                if (isRcmEnabled && isProductRegistered)
                 {
                     _lastPollError = null;
                     Poll();
