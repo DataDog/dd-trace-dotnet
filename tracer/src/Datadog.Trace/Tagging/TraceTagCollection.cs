@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Tagging
 {
@@ -42,10 +43,12 @@ namespace Datadog.Trace.Tagging
         /// <param name="name">The name of the tag.</param>
         /// <param name="value">The value of the tag.</param>
         /// <returns><c>true</c> if the tag is added to the collection, <c>false</c> otherwise.</returns>
-        public bool TryAddTag(string name, string value)
+        public bool TryAddTag(string name, string? value)
         {
-            if (value == null!)
+            if (value == null)
             {
+                // if tag exists we won't change it, and if it doesn't exist we won't add it,
+                // so nothing to do here
                 return false;
             }
 
@@ -71,9 +74,9 @@ namespace Datadog.Trace.Tagging
 
         private bool SetTag(string name, string? value, bool replaceIfExists)
         {
-            if (name is null)
+            if (name == null!)
             {
-                throw new ArgumentNullException(nameof(name));
+                ThrowHelper.ThrowArgumentNullException(nameof(name));
             }
 
             var isPropagated = name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase);
