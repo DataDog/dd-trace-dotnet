@@ -527,6 +527,16 @@ bool ShouldRewriteProfilerMaps()
 
 std::string GetNativeLoaderFilePath()
 {
+    // should be set by native loader
+    shared::WSTRING nativeLoaderPath = shared::GetEnvironmentValue(WStr("DD_INTERNAL_NATIVE_LOADER_PATH"));
+    if (!nativeLoaderPath.empty())
+    {
+        return shared::ToString(nativeLoaderPath);
+    }
+
+    // variable not set - try to infer the location instead
+    Logger::Debug("DD_INTERNAL_NATIVE_LOADER_PATH variable not found. Inferring native loader path");
+
     auto native_loader_filename =
 #ifdef LINUX
         "Datadog.Trace.ClrProfiler.Native.so";

@@ -79,6 +79,12 @@ namespace datadog::shared::nativeloader
 
     void DynamicDispatcherImpl::LoadConfiguration(fs::path&& configFilePath)
     {
+        ::shared::WSTRING nativeLoaderPath = ::shared::GetCurrentModuleFileName();
+        ::shared::WSTRING nativeLoaderPathKey = WStr("DD_INTERNAL_NATIVE_LOADER_PATH");
+        Log::Debug("DynamicDispatcherImpl::LoadConfiguration:  Setting environment variable: ", nativeLoaderPathKey, "=", nativeLoaderPath);
+        bool nativeLoaderEnvSet = ::shared::SetEnvironmentValue(nativeLoaderPathKey, nativeLoaderPath);
+        Log::Debug("DynamicDispatcherImpl::LoadConfiguration: SetEnvironmentValue result: ", nativeLoaderEnvSet);
+        
         if (!fs::exists(configFilePath))
         {
             Log::Warn("DynamicDispatcherImpl::LoadConfiguration: Configuration file doesn't exist.");

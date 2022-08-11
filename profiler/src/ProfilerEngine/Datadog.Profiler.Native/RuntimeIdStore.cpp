@@ -23,16 +23,28 @@ const char* const RuntimeIdStore::NativeLoaderFilename = "Datadog.Trace.ClrProfi
 
 bool RuntimeIdStore::Start()
 {
-    // the native loader is always available in the same directory
+    // should be set by native loader
+    shared::WSTRING nativeLoaderPath = shared::GetEnvironmentValue(WStr("DD_INTERNAL_NATIVE_LOADER_PATH"));
+    if (!nativeLoaderPath.empty())
+    {
+        _instance = LoadDynamicLibrary(shared::ToString(nativeLoaderPath));
+    }
+    else
+    {    // variable not set - try to infer the location instead
+        Log::Debug("DD_INTERNAL_NATIVE_LOADER_PATH variable not found. Inferring native loader path");
+
+        // the native loader is always available in the same directory
 #ifdef _WINDOWS
-    auto nativeLoaderFilename = NativeLoaderFilename;
+        auto nativeLoaderFilename = NativeLoaderFilename;
 #else
-    auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
-    // the native loader is in the parent directory
-    auto nativeLoaderPath = currentModulePath.parent_path() / NativeLoaderFilename;
-    auto nativeLoaderFilename = nativeLoaderPath.string();
+        auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
+        // the native loader is in the parent directory
+        auto nativeLoaderPath = currentModulePath.parent_path() / NativeLoaderFilename;
+        auto nativeLoaderFilename = nativeLoaderPath.string();
 #endif
-    _instance = LoadDynamicLibrary(nativeLoaderFilename);
+        _instance = LoadDynamicLibrary(nativeLoaderFilename);
+    }
+
 
     if (_instance == nullptr)
     {
