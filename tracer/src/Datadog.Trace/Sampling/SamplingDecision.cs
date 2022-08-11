@@ -13,7 +13,7 @@ internal readonly struct SamplingDecision
 
     public readonly int? Mechanism;
 
-    public SamplingDecision(int priority, int? mechanism = null)
+    public SamplingDecision(int priority, int? mechanism)
     {
         Priority = priority;
         Mechanism = mechanism;
