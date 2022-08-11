@@ -2724,6 +2724,68 @@ stages:
         baseImage: alpine
         command: "CheckBuildLogsForErrors"
 
+- stage: dotnet_tool_nuget_smoke_tests_linux
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
+  dependsOn: [dotnet_tool, generate_variables, master_commit_id]
+  variables:
+    masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [linux]
+
+  - job: linux
+    timeoutInMinutes: 10 # should take ~5 mins
+    strategy:
+      matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_nuget_installer_linux_smoke_tests_matrix'] ]
+    variables:
+      smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
+    pool:
+      vmImage: ubuntu-18.04
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download tool runner-dotnet-tool
+      inputs:
+        artifact: runner-dotnet-tool
+        path: $(smokeTestAppDir)/artifacts
+
+    - script: |
+        mkdir -p tracer/build_data/snapshots
+        mkdir -p tracer/build_data/logs
+      displayName: create test data directories
+
+    - script: |
+        docker-compose -p ddtrace_$(Build.BuildNumber) build \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          dotnet-tool-nuget-smoke-tests
+      env:
+        dockerTag: $(dockerTag)
+      displayName: docker-compose build  dotnet-tool-nuget-smoke-tests
+      retryCountOnTaskFailure: 3
+
+    - template: steps/run-snapshot-test.yml
+      parameters:
+        target: 'dotnet-tool-nuget-smoke-tests'
+        snapshotPrefix: "smoke_test"
+
+    - publish: tracer/build_data
+      artifact: dotnet-tool-nuget-smoke-test-logs_$(dockerTag)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: alpine
+        command: "CheckBuildLogsForErrors"
+
 - stage: dotnet_tool_smoke_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
   dependsOn: [dotnet_tool, generate_variables, master_commit_id]
