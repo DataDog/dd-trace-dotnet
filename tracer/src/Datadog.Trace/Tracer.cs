@@ -357,7 +357,7 @@ namespace Datadog.Trace
                 {
                     // if traceContext is null, parent was extracted from propagation headers.
                     // start a new trace and keep the sampling priority and trace tags.
-                    var traceTags = TagPropagation.ParseHeader(parentSpanContext.PropagatedTags);
+                    var traceTags = TagPropagation.ParseHeader(parentSpanContext.PropagatedTags, Settings.TagPropagationHeaderMaxLength);
                     traceContext = new TraceContext(this, traceTags);
 
                     var samplingPriority = parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority();

@@ -6,7 +6,6 @@
 #nullable enable
 
 using System.Globalization;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Propagators
 {
@@ -44,10 +43,9 @@ namespace Datadog.Trace.Propagators
 #pragma warning restore SA1118 // Parameter should not span multiple lines
             }
 
-            var propagationHeaderMaxLength = context.TraceContext?.Tracer.Settings.TagPropagationHeaderMaxLength ?? TagPropagation.OutgoingPropagationHeaderMaxLength;
-            var propagatedTraceTags = context.TraceContext?.Tags.ToPropagationHeader(propagationHeaderMaxLength) ?? context.PropagatedTags;
+            var propagatedTraceTags = context.TraceContext?.Tags.ToPropagationHeader();
 
-            if (!string.IsNullOrEmpty(propagatedTraceTags))
+            if (propagatedTraceTags != null)
             {
                 carrierSetter.Set(carrier, HttpHeaderNames.PropagatedTags, propagatedTraceTags);
             }

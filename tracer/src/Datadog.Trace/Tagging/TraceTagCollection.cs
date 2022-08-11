@@ -13,13 +13,19 @@ namespace Datadog.Trace.Tagging
     internal class TraceTagCollection
     {
         private readonly object _listLock = new();
+        private readonly int _outgoingHeaderMaxLength;
 
         private List<KeyValuePair<string, string>>? _tags;
-
         private string? _cachedPropagationHeader;
 
-        public TraceTagCollection(List<KeyValuePair<string, string>>? tags = null, string? cachedPropagationHeader = null)
+        public TraceTagCollection(int outgoingHeaderMaxLength)
+            : this(outgoingHeaderMaxLength, null, null)
         {
+        }
+
+        public TraceTagCollection(int outgoingHeaderMaxLength, List<KeyValuePair<string, string>>? tags, string? cachedPropagationHeader)
+        {
+            _outgoingHeaderMaxLength = outgoingHeaderMaxLength;
             _tags = tags;
             _cachedPropagationHeader = cachedPropagationHeader;
         }
@@ -179,9 +185,9 @@ namespace Datadog.Trace.Tagging
         /// The returned string is cached and reused if no relevant tags are changed between calls.
         /// </summary>
         /// <returns>A string that can be used for horizontal propagation using the "x-datadog-tags" header.</returns>
-        public string ToPropagationHeader(int maxLength)
+        public string ToPropagationHeader()
         {
-            return _cachedPropagationHeader ??= TagPropagation.ToHeader(this, maxLength);
+            return _cachedPropagationHeader ??= TagPropagation.ToHeader(this, _outgoingHeaderMaxLength);
         }
 
         public KeyValuePair<string, string>[] ToArray()

@@ -25,12 +25,11 @@ namespace Datadog.Trace
 
         private int _openSpans;
         private int? _samplingPriority;
-        private int? _samplingMechanism;
 
         public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
         {
             Tracer = tracer;
-            Tags = tags ?? new TraceTagCollection();
+            Tags = tags ?? new TraceTagCollection(tracer.Settings.TagPropagationHeaderMaxLength);
         }
 
         public Span RootSpan { get; private set; }

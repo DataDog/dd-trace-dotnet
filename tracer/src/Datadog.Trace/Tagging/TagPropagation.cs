@@ -50,14 +50,15 @@ internal static class TagPropagation
     /// Propagated tags require the an "_dd.p.*" prefix, so any other tags are ignored.
     /// </summary>
     /// <param name="propagationHeader">The header value to parse.</param>
+    /// <param name="outgoingHeaderMaxLength">The maximum length of outgoing header values. Used when <see cref="ToHeader"/> is called.</param>
     /// <returns>
     /// A <see cref="TraceTagCollection"/> containing the valid tags parsed from the specified header value, if any.
     /// </returns>
-    public static TraceTagCollection ParseHeader(string? propagationHeader)
+    public static TraceTagCollection ParseHeader(string? propagationHeader, int outgoingHeaderMaxLength)
     {
         if (string.IsNullOrEmpty(propagationHeader))
         {
-            return new TraceTagCollection();
+            return new TraceTagCollection(outgoingHeaderMaxLength);
         }
 
         List<KeyValuePair<string, string>> traceTags;
@@ -67,7 +68,7 @@ internal static class TagPropagation
             Log.Debug<int, int>("Incoming tag propagation header is too long. Length: {0}, Maximum: {1}.", propagationHeader.Length, IncomingPropagationHeaderMaxLength);
 
             traceTags = new List<KeyValuePair<string, string>>(1) { new(Tags.TagPropagationError, PropagationErrorTagValues.ExtractMaxSize) };
-            return new TraceTagCollection(traceTags);
+            return new TraceTagCollection(outgoingHeaderMaxLength, traceTags, cachedPropagationHeader: null);
         }
 
         var headerTags = propagationHeader.Split(TagPairSeparators, StringSplitOptions.RemoveEmptyEntries);
@@ -124,7 +125,7 @@ internal static class TagPropagation
             cachedHeader = null;
         }
 
-        return traceTags.Count > 0 ? new TraceTagCollection(traceTags, cachedHeader) : new TraceTagCollection();
+        return traceTags.Count > 0 ? new TraceTagCollection(outgoingHeaderMaxLength, traceTags, cachedHeader) : new TraceTagCollection(outgoingHeaderMaxLength);
     }
 
     /// <summary>
