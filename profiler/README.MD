@@ -1,12 +1,12 @@
 # dd-trace-dotnet/profiler
 
-This folder contains the source code for the Datadog .NET APM Profiler. The .NET Profiler runs in your application process and collects managed threads callstacks.
+This folder contains the source code for the Datadog .NET APM Profiler. The .NET Profiler runs in your application process to collect managed threads callstacks related to wall time, CPU consumption, and exceptions.
 
 ## Installation and usage
 
 ### Getting started
 
-Configure the Datadog Agent for APM [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core#configure-the-datadog-agent-for-apm). To install and enable the .NET Profiler follow [the steps as described in our documentation](https://docs.datadoghq.com/tracing/profiler/enabling/dotnet/?tab=internetinformationservicesiis#installation).
+Configure the Datadog Agent for APM [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core#configure-the-datadog-agent-for-apm). To install and enable the .NET Profiler follow [the steps as described in our documentation](https://docs.datadoghq.com/profiler/enabling/dotnet).
 
 ## Development
 
@@ -15,7 +15,7 @@ You can develop the profiler on various environments.
 ### Windows
 
 #### Setup and minimum requirements
-- [Visual Studio 2019](https://visualstudio.microsoft.com/downloads/)
+- [Visual Studio 2019/2022](https://visualstudio.microsoft.com/downloads/)
   - Workloads
     - Desktop development with C++
     - .NET desktop development
@@ -27,11 +27,7 @@ You can develop the profiler on various environments.
 
 #### Building in Visual Studio
 
-In order to build the profiler library, you need first to build the `Managed Loader` :
-
-Open the solution `dd-trace-dotnet\shared\src\managed-lib\ManagedLoader\ManagedLoader.sln` and build the `Datadog.AutoInstrumentation.ManagedLoader` project.
-
-Now, you can open the solution `dd-trace-dotnet\profiler\src\ProfilerEngine\Datadog.AutoInstrumentation.Profiler.sln` and build the projects `Datadog.Profiler.Managed` (C#) and `Datadog.Profiler.Native.Windows` (C++).
+Open the solution `dd-trace-dotnet\Datadog.Profiler.sln` and build the projects `Datadog.Profiler.Native.Windows` (C++).
 
 ### Linux
 
@@ -50,21 +46,7 @@ To build C++ projects
 - git
 
 #### Building from the command line
-1. Build C# projects
-
-- Managed loader
-```bash
-cd dd-trace-dotnet/shared/src/managed-lib/ManagedLoader/Datadog.AutoInstrumentation.ManagedLoader
-dotnet build Datadog.AutoInstrumentation.ManagedLoader.csproj
-```
-
-- Managed Profiler
-```bash
-cd dd-trace-dotnet/profiler/src/ProfilerEngine/Datadog.Profiler.Managed
-dotnet build Datadog.Profiler.Managed.csproj
-```
-
-2. Build C++ projects and run the unit tests
+Build C++ projects and run the unit tests
 ```bash
 CXX=clang++ CC=clang cmake -S dd-trace-dotnet -B _build
 cd _build
