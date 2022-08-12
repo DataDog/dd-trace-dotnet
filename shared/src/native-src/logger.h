@@ -114,7 +114,7 @@ std::shared_ptr<spdlog::logger> Logger::CreateInternalLogger()
     try
     {
         logger =
-            spdlog::rotating_logger_mt("Logger", Logger::GetLogPath<LoggerPolicy>(file_name_suffix), 1048576 * 5, 10);
+            spdlog::rotating_logger_mt(LoggerPolicy::file_name, Logger::GetLogPath<LoggerPolicy>(file_name_suffix), 1048576 * 5, 10);
     }
     catch (...)
     {
