@@ -69,9 +69,9 @@ namespace Datadog.Trace
                         if (span.Context.Parent is SpanContext { SamplingPriority: { } samplingPriority })
                         {
                             // this is a local root span created from a propagated context that contains a sampling priority.
-                            // any distributed tags were extracted from SpanContext.PropagatedTags and added to the TraceContext.
+                            // any distributed tags were already parsed from SpanContext.PropagatedTags and added to the TraceContext.
                             _hasRemoteParent = true;
-                            _samplingPriority = samplingPriority;
+                            SetSamplingPriority(samplingPriority);
                         }
                         else
                         {
@@ -81,19 +81,13 @@ namespace Datadog.Trace
                             // make a sampling decision early so it's ready if we need it for propagation.
                             if (Tracer.Sampler is not null)
                             {
-                                (_samplingPriority, var samplingMechanism) = Tracer.Sampler.MakeSamplingDecision(span);
-
-                                if (samplingMechanism != null)
-                                {
-                                    SetSamplingMechanismTag(samplingMechanism.Value);
-                                }
+                                var (priority, mechanism) = Tracer.Sampler.MakeSamplingDecision(span);
+                                SetSamplingPriority(priority, mechanism);
                             }
                             else
                             {
                                 // fallback to default sampling
-                                _samplingPriority = SamplingPriorityValues.AutoKeep;
-                                SetSamplingMechanismTag(SamplingMechanism.Default);
-                                SetSamplingPriority();
+                                SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.Default);
                             }
                         }
                     }
@@ -173,21 +167,38 @@ namespace Datadog.Trace
 
         public void SetSamplingPriority(int? priority, int? mechanism = null, bool notifyDistributedTracer = true)
         {
+            const string tagName = Trace.Tags.Propagated.DecisionMaker;
             _samplingPriority = priority;
 
             if (priority > 0)
             {
-                if (mechanism != null && !_hasRemoteParent)
+                if (mechanism != null)
                 {
-                    // only set tag is priority is AUTO_KEEP (1) or USER_KEEP (2),
-                    // don't set tag if mechanism is unknown (null),
-                    // and don't overwrite tag set by upstream service
-                    SetSamplingMechanismTag(mechanism.Value);
+                    // set the sampling mechanism trace tag
+                    // * only if priority is AUTO_KEEP (1) or USER_KEEP (2)
+                    // * we should not overwrite an existing value propagated from an upstream service
+                    // * don't set the tag if sampling mechanism is unknown
+                    // * the "-" prefix is a left-over separator from a previous iteration of this feature (not a typo or a negative sign)
+                    var tagValue = $"-{mechanism.Value.ToString(CultureInfo.InvariantCulture)}";
+
+                    if (_hasRemoteParent)
+                    {
+                        // set the tag is it's not already present,
+                        // but don't override a tag that was received from an upstream service
+                        Tags.TryAddTag(tagName, tagValue);
+                    }
+                    else
+                    {
+                        // this is the root service (no upstream),
+                        // so we can still change our own sampling mechanism
+                        Tags.SetTag(tagName, tagValue);
+                    }
                 }
             }
             else
             {
-                RemoveSamplingMechanismTag();
+                // remove tag if priority is AUTO_DROP (0) or USER_DROP (-1)
+                Tags.SetTag(tagName, value: null);
             }
 
             if (notifyDistributedTracer)
@@ -246,32 +257,6 @@ namespace Datadog.Trace
                 span.SetTag(Datadog.Trace.Tags.AzureAppServicesRuntime, AzureAppServices.Metadata.Runtime);
                 span.SetTag(Datadog.Trace.Tags.AzureAppServicesExtensionVersion, AzureAppServices.Metadata.SiteExtensionVersion);
             }
-        }
-
-        private void SetSamplingMechanismTag(int mechanism)
-        {
-            // set the sampling mechanism trace tag
-            // * we should not overwrite an existing value propagated from an upstream service
-            // * don't set the tag if sampling mechanism is unknown
-            // * the "-" prefix is a left-over separator from a previous iteration of this feature (not a typo or a negative sign)
-            const string tagName = Trace.Tags.Propagated.DecisionMaker;
-            var tagValue = $"-{mechanism.ToString(CultureInfo.InvariantCulture)}";
-
-            if (_hasRemoteParent)
-            {
-                // don't override a sampling mechanism received from an upstream service
-                Tags.TryAddTag(tagName, tagValue);
-            }
-            else
-            {
-                // this is the root service, so we can still change the sampling mechanism
-                Tags.SetTag(tagName, tagValue);
-            }
-        }
-
-        private void RemoveSamplingMechanismTag()
-        {
-            Tags.SetTag(Trace.Tags.Propagated.DecisionMaker, value: null);
         }
     }
 }
