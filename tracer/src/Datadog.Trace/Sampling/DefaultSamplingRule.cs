@@ -20,6 +20,7 @@ namespace Datadog.Trace.Sampling
 
         public string RuleName => "default-rule";
 
+        // note that this rule does _not_ use SamplingMechanism.Default, despite the `DefaultSamplingRule` name
         public int SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.AgentRate;
 
         /// <summary>

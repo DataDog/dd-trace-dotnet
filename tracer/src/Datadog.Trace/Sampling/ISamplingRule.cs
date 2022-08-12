@@ -14,8 +14,9 @@ namespace Datadog.Trace.Sampling
         string RuleName { get; }
 
         /// <summary>
-        /// Gets the priority.
+        /// Gets the rule priority.
         /// Higher number means higher priority.
+        /// Not related to sampling priority.
         /// </summary>
         int Priority { get; }
 
