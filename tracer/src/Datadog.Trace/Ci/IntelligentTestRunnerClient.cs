@@ -14,9 +14,12 @@ using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using System.Web;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -28,7 +31,8 @@ namespace Datadog.Trace.Ci;
 /// </summary>
 internal class IntelligentTestRunnerClient
 {
-    private const string ApiKeyHeader = "dd-api-key";
+    private const string ApiKeyHeader = "DD-API-KEY";
+    private const string ApplicationKeyHeader = "DD-APPLICATION-KEY";
     private const int MaxRetries = 3;
     private const int MaxPackFileSizeInMb = 3;
 
@@ -43,6 +47,7 @@ internal class IntelligentTestRunnerClient
     private readonly IApiRequestFactory _apiRequestFactory;
     private readonly Uri _searchCommitsUrl;
     private readonly Uri _packFileUrl;
+    private readonly Uri _skippeableTestsUrl;
     private readonly Task<string> _getRepositoryUrlTask;
 
     public IntelligentTestRunnerClient(string workingDirectory, CIVisibilitySettings? settings = null)
@@ -52,6 +57,9 @@ internal class IntelligentTestRunnerClient
         _workingDirectory = workingDirectory;
         _getRepositoryUrlTask = GetRepositoryUrlAsync();
         _apiRequestFactory = CIVisibility.GetRequestFactory(_settings.TracerSettings.Build());
+
+        var environment = _settings.TracerSettings.Environment;
+        var serviceName = _settings.TracerSettings.ServiceName;
 
         var agentlessUrl = _settings.AgentlessUrl;
         if (!string.IsNullOrWhiteSpace(agentlessUrl))
@@ -64,6 +72,11 @@ internal class IntelligentTestRunnerClient
             _packFileUrl = new UriBuilder(agentlessUrl)
             {
                 Path = "api/v2/git/repository/packfile"
+            }.Uri;
+
+            _skippeableTestsUrl = new UriBuilder(agentlessUrl)
+            {
+                Path = $"api/v2/ci/environment/{HttpUtility.UrlEncode(environment)}/service/{HttpUtility.UrlEncode(serviceName)}/tests/skippable"
             }.Uri;
         }
         else

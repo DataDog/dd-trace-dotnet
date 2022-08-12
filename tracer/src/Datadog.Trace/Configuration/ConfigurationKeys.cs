@@ -242,6 +242,11 @@ namespace Datadog.Trace.Configuration
         public const string ApiKey = "DD_API_KEY";
 
         /// <summary>
+        /// Configuration key for setting the Application key, used by the ITR.
+        /// </summary>
+        public const string ApplicationKey = "DD_APPLICATION_KEY";
+
+        /// <summary>
         /// Configuration key for setting the default Datadog destination site.
         /// Defaults to "datadoghq.com".
         /// </summary>

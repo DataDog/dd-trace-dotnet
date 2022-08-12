@@ -16,6 +16,7 @@ namespace Datadog.Trace.Ci.Configuration
             Agentless = source?.GetBool(ConfigurationKeys.CIVisibility.AgentlessEnabled) ?? false;
             Logs = source?.GetBool(ConfigurationKeys.CIVisibility.Logs) ?? false;
             ApiKey = source?.GetString(ConfigurationKeys.ApiKey);
+            ApplicationKey = source?.GetString(ConfigurationKeys.ApplicationKey);
             Site = source?.GetString(ConfigurationKeys.Site) ?? "datadoghq.com";
             AgentlessUrl = source?.GetString(ConfigurationKeys.CIVisibility.AgentlessUrl);
 
@@ -65,6 +66,11 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets the Api Key to use in Agentless mode
         /// </summary>
         public string ApiKey { get; }
+
+        /// <summary>
+        /// Gets the Application Key to use in ITR
+        /// </summary>
+        public string ApplicationKey { get; }
 
         /// <summary>
         /// Gets the Datadog site
