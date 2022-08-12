@@ -18,6 +18,9 @@ namespace Samples.AWS.Lambda
     {
         private static async Task Main(string[] args)
         {
+            Console.WriteLine($"Is Tracer Attached: {SampleHelpers.IsProfilerAttached()}");
+            Console.WriteLine($"Tracer location: {SampleHelpers.GetTracerAssemblyLocation()}");
+            
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_NO_PARAM_SYNC"));
             Thread.Sleep(1000);
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_ONE_PARAM_SYNC"));

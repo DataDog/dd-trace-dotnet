@@ -5,14 +5,12 @@ RUN mkdir -p /var/log/datadog/dotnet && \
     chmod a+rwx /var/log/datadog/dotnet
 
 # Add Tracer
-COPY ./serverlessArtifacts /opt/datadog
+COPY ./test/test-applications/integrations/Samples.AWS.Lambda/bin/artifacts/monitoring-home /opt/datadog
 
 # Add Tests
-# We include the placeholder.txt file so when we build for versions _other_ than .NET Core 3.1 this dockerfile 
-# doesn't fail to build. It's a nasty hack, but it's easier than messing with the build
-COPY ./test/test-applications/integrations/Samples.AWS.Lambda/placeholder.txt ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.dll /var/task/
-COPY ./test/test-applications/integrations/Samples.AWS.Lambda/placeholder.txt ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.deps.json /var/task/
-COPY ./test/test-applications/integrations/Samples.AWS.Lambda/placeholder.txt ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.runtimeconfig.json /var/task/
+COPY ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.dll /var/task/
+COPY ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.deps.json /var/task/
+COPY ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.runtimeconfig.json /var/task/
 
 ENV DD_LOG_LEVEL="DEBUG"
 ENV DD_TRACE_ENABLED=true
