@@ -19,8 +19,8 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -58,8 +58,8 @@ internal class IntelligentTestRunnerClient
         _getRepositoryUrlTask = GetRepositoryUrlAsync();
         _apiRequestFactory = CIVisibility.GetRequestFactory(_settings.TracerSettings.Build());
 
-        var environment = _settings.TracerSettings.Environment;
-        var serviceName = _settings.TracerSettings.ServiceName;
+        var environment = TraceUtil.NormalizeTag(_settings.TracerSettings.Environment ?? string.Empty);
+        var serviceName = NormalizerTraceProcessor.NormalizeService(_settings.TracerSettings.ServiceName);
 
         var agentlessUrl = _settings.AgentlessUrl;
         if (!string.IsNullOrWhiteSpace(agentlessUrl))
