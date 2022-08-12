@@ -1,6 +1,6 @@
 # dd-trace-dotnet/profiler
 
-This folder contains the source code for the Datadog .NET APM Profiler. The .NET Profiler runs in your application process to collect managed threads callstacks related to wall time, CPU consumption, and exceptions.
+This folder contains the source code for the Datadog .NET APM Profiler. The .NET Profiler runs in your application process to collect managed threads call stacks related to wall time, CPU consumption, and exceptions.
 
 ## Installation and usage
 
@@ -29,6 +29,15 @@ You can develop the profiler on various environments.
 
 Open the solution `dd-trace-dotnet\Datadog.Profiler.sln` and build the projects `Datadog.Profiler.Native.Windows` (C++).
 
+#### Building with script
+Go to the Tracer folder and use the NUKE build.cmd script
+
+```cmd
+..\tracer\build.cmd BuildProfilerHome BuildNativeLoader
+```
+
+Note: build Release binaries by default; use `--buildConfiguration Debug` for debug build
+
 ### Linux
 
 #### Minimun requirements
@@ -46,10 +55,18 @@ To build C++ projects
 - git
 
 #### Building from the command line
-Build C++ projects and run the unit tests
+Go to the Tracer folder and use the NUKE build.cmd script
+
+```bash
+../tracer/build.sh BuildProfilerHome BuildNativeLoader
+```
+
+You could also use the following to Build C++ projects and run the unit tests
 ```bash
 CXX=clang++ CC=clang cmake -S dd-trace-dotnet -B _build
 cd _build
-make
+make -j
 ctest
 ```
+
+Note: the clang compiler often find errors that are not seen by Visual Studio
