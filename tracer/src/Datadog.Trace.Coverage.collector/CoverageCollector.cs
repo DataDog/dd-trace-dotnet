@@ -28,7 +28,6 @@ namespace Datadog.Trace.Coverage.Collector
         private DataCollectorLogger? _logger;
         private DataCollectionEvents? _events;
         private CIVisibilitySettings? _ciVisibilitySettings;
-        private DateTime _dateTime = DateTime.Now;
         private string? _tracerHome;
 
         private static void Copy(string sourceDirectory, string targetDirectory)
@@ -256,7 +255,19 @@ namespace Datadog.Trace.Coverage.Collector
 
         private void BackupFolder(string folder)
         {
-            var destinationFolder = Path.Combine(folder, _dateTime.ToString("yyyyMMddHHmmss"));
+            var destinationFolder = Path.Combine(folder, "coverage_backup_folder");
+            try
+            {
+                if (Directory.Exists(destinationFolder))
+                {
+                    Directory.Delete(destinationFolder, true);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex);
+            }
+
             _logger?.Debug($"Backup folder: {destinationFolder}");
             Copy(folder, destinationFolder);
         }
