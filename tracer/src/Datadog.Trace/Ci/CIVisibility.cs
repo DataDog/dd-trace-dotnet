@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -24,7 +25,7 @@ namespace Datadog.Trace.Ci
         private static readonly CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
         private static int _firstInitialization = 1;
         private static Lazy<bool> _enabledLazy = new Lazy<bool>(() => InternalEnabled(), true);
-        private static Dictionary<string, Dictionary<string, IList<SkippeableTest>>> _skippeableTestsBySuiteAndName;
+        private static Dictionary<string, Dictionary<string, IList<SkippeableTest>>>? _skippeableTestsBySuiteAndName;
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
 
@@ -34,7 +35,7 @@ namespace Datadog.Trace.Ci
 
         public static CIVisibilitySettings Settings => _settings;
 
-        public static CITracerManager Manager
+        public static CITracerManager? Manager
         {
             get
             {
@@ -139,7 +140,7 @@ namespace Datadog.Trace.Ci
                     var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
                     await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
                     var skippeableTests = await itrClient.GetSkippeableTestsAsync().ConfigureAwait(false);
-                    Log.Debug<int>("ITR: SkippeableTests = {length}", skippeableTests?.Length ?? -1);
+                    Log.Debug<int>("ITR: SkippeableTests = {length}", skippeableTests.Length);
                     return skippeableTests;
                 }
                 catch (Exception ex)
@@ -147,7 +148,7 @@ namespace Datadog.Trace.Ci
                     Log.Error(ex, "ITR: Error getting skippeable tests.");
                 }
 
-                return null;
+                return Array.Empty<SkippeableTest>();
             }
         }
 
@@ -220,7 +221,7 @@ namespace Datadog.Trace.Ci
 
         internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings)
         {
-            IApiRequestFactory factory = null;
+            IApiRequestFactory? factory = null;
             TimeSpan agentlessTimeout = TimeSpan.FromSeconds(25);
 
 #if NETCOREAPP
@@ -248,7 +249,7 @@ namespace Datadog.Trace.Ci
                     return factory;
                 }
 
-                NetworkCredential credential = null;
+                NetworkCredential? credential = null;
                 if (!string.IsNullOrWhiteSpace(userName))
                 {
                     credential = new NetworkCredential(userName, password);

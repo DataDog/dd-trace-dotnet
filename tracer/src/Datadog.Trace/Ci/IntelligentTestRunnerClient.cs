@@ -98,13 +98,6 @@ internal class IntelligentTestRunnerClient
                 host: "api." + _settings.Site,
                 port: 443,
                 pathValue: $"api/v2/ci/environment/{HttpUtility.UrlEncode(environment)}/service/{HttpUtility.UrlEncode(serviceName)}/tests/skippable").Uri;
-            /*
-            _skippeableTestsUrl = new UriBuilder(
-                scheme: "https",
-                host: "itr-api-ci-app-backend.us1.staging.dog",
-                port: 443,
-                pathValue: $"api/v2/ci/environment/{HttpUtility.UrlEncode(environment)}/service/{HttpUtility.UrlEncode(serviceName)}/tests/skippable").Uri;
-            */
         }
     }
 

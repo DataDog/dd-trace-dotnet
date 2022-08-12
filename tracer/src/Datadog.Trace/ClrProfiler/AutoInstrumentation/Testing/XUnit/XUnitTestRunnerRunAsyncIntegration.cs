@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -44,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                 }
 
                 // Skip test support
-                if (runnerInstance.SkipReason != null)
+                if (runnerInstance.SkipReason != null && instance is not null)
                 {
                     XUnitIntegration.CreateScope(ref runnerInstance, instance.GetType());
                 }

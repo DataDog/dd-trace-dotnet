@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -10,7 +11,6 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Pdb;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
@@ -21,9 +21,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
         internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
-        internal static Scope CreateScope(ref TestRunnerStruct runnerInstance, Type targetType)
+        internal static Scope? CreateScope(ref TestRunnerStruct runnerInstance, Type targetType)
         {
-            string testBundle = runnerInstance.TestClass.Assembly?.GetName().Name;
+            string testBundle = runnerInstance.TestClass.Assembly.GetName().Name ?? string.Empty;
             string testSuite = runnerInstance.TestClass.ToString();
             string testName = runnerInstance.TestMethod.Name;
 
@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             span.SetTag(TestTags.Suite, testSuite);
             span.SetTag(TestTags.Name, testName);
             span.SetTag(TestTags.Framework, testFramework);
-            span.SetTag(TestTags.FrameworkVersion, targetType.Assembly?.GetName().Version.ToString());
+            span.SetTag(TestTags.FrameworkVersion, targetType.Assembly.GetName().Version?.ToString() ?? string.Empty);
             span.SetTag(TestTags.Type, TestTags.TypeTest);
 
             var framework = FrameworkDescription.Instance;
