@@ -1535,6 +1535,9 @@ partial class Build
            {
                // Profiler is not yet supported on Arm64
                knownPatterns.Add(new(@".*Profiler is deactivated because it runs on an unsupported architecture", RegexOptions.Compiled));
+               knownPatterns.Add(new(@".*Error getting IClassFactory from: .*/Datadog\.Profiler\.Native\.so", RegexOptions.Compiled));
+               knownPatterns.Add(new(@".*DynamicDispatcherImpl::LoadClassFactory: Error trying to load continuous profiler class factory.*", RegexOptions.Compiled));
+               knownPatterns.Add(new(@".*Error loading all cor profiler class factories\.", RegexOptions.Compiled));
            }
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
@@ -1574,12 +1577,24 @@ partial class Build
                                   .Where(IsNewError)
                                   .ToList();
 
+        var nativeLoaderFiles = logDirectory.GlobFiles("**/dotnet-native-loader-*");
+        var nativeLoaderErrors = nativeLoaderFiles
+                                  .SelectMany(ParseNativeProfilerLogFiles) // native loader has same format as profiler
+                                  .Where(x => x.Level >= minLogLevel)
+                                  .Where(IsNewError)
+                                  .ToList();
+
         var hasRequiredFiles = !allFilesMustExist
                             || (managedFiles.Count > 0
                              && nativeTracerFiles.Count > 0
-                             && nativeProfilerFiles.Count > 0);
+                             && nativeProfilerFiles.Count > 0
+                             && nativeLoaderFiles.Count > 0);
 
-        if (hasRequiredFiles && managedErrors.Count == 0 && nativeTracerErrors.Count == 0 && nativeProfilerErrors.Count == 0)
+        if (hasRequiredFiles 
+         && managedErrors.Count == 0 
+         && nativeTracerErrors.Count == 0 
+         && nativeProfilerErrors.Count == 0
+         && nativeLoaderErrors.Count == 0)
         {
             Logger.Info("No errors found in managed or native logs");
             return;
@@ -1589,10 +1604,12 @@ partial class Build
         var allErrors = managedErrors
                        .Concat(nativeTracerErrors)
                        .Concat(nativeProfilerErrors)
+                       .Concat(nativeLoaderErrors)
                        .GroupBy(x => x.FileName);
 
         foreach (var erroredFile in allErrors)
         {
+            Logger.Info();
             Logger.Error($"Found errors in log file '{erroredFile.Key}':");
             foreach (var error in erroredFile)
             {
