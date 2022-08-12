@@ -123,6 +123,12 @@ internal class IntelligentTestRunnerClient
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var currentSha = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse HEAD", _workingDirectory)).ConfigureAwait(false);
+        if (currentSha is null)
+        {
+            Log.Warning("ITR: 'git rev-parse HEAD' command is null");
+            return Array.Empty<SkippeableTest>();
+        }
+
         currentSha = currentSha.Replace("\n", string.Empty);
         var query = new DataEnvelope<Data<SkippeableTestsQuery>>(
             new Data<SkippeableTestsQuery>(
@@ -190,7 +196,7 @@ internal class IntelligentTestRunnerClient
             var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<SkippeableTest>>>(responseContent);
             if (deserializedResult.Data is null)
             {
-                return null;
+                return Array.Empty<SkippeableTest>();
             }
 
             var testAttributes = new SkippeableTest[deserializedResult.Data.Length];
@@ -471,12 +477,12 @@ internal class IntelligentTestRunnerClient
         public readonly T Data;
 
         [JsonProperty("meta", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public readonly Metadata Meta;
+        public readonly Metadata? Meta;
 
-        public DataEnvelope(T data, string repositoryUrl)
+        public DataEnvelope(T data, string? repositoryUrl)
         {
             Data = data;
-            Meta = new Metadata(repositoryUrl);
+            Meta = repositoryUrl is null ? default(Metadata?) : new Metadata(repositoryUrl);
         }
     }
 
@@ -486,12 +492,12 @@ internal class IntelligentTestRunnerClient
         public readonly T[] Data;
 
         [JsonProperty("meta", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public readonly Metadata Meta;
+        public readonly Metadata? Meta;
 
-        public DataArrayEnvelope(T[] data, string repositoryUrl)
+        public DataArrayEnvelope(T[] data, string? repositoryUrl)
         {
             Data = data;
-            Meta = new Metadata(repositoryUrl);
+            Meta = repositoryUrl is null ? default(Metadata?) : new Metadata(repositoryUrl);
         }
     }
 
@@ -509,15 +515,15 @@ internal class IntelligentTestRunnerClient
     private readonly struct Data<T>
     {
         [JsonProperty("id", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public readonly string Id;
+        public readonly string? Id;
 
         [JsonProperty("type")]
         public readonly string Type;
 
         [JsonProperty("attributes", DefaultValueHandling = DefaultValueHandling.Ignore)]
-        public readonly T Attributes;
+        public readonly T? Attributes;
 
-        public Data(string id, string type, T attributes)
+        public Data(string? id, string type, T? attributes)
         {
             Id = id;
             Type = type;

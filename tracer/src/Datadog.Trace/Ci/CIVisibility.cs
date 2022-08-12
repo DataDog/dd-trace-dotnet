@@ -136,7 +136,7 @@ namespace Datadog.Trace.Ci
             {
                 try
                 {
-                    var itrClient = new ITRClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
+                    var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
                     await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
                     var skippeableTests = await itrClient.GetSkippeableTestsAsync().ConfigureAwait(false);
                     Log.Debug<int>("ITR: SkippeableTests = {length}", skippeableTests?.Length ?? -1);
