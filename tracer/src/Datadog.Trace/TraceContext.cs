@@ -177,8 +177,11 @@ namespace Datadog.Trace
 
             if (priority > 0)
             {
-                if (mechanism != null)
+                if (mechanism != null && !_hasRemoteParent)
                 {
+                    // only set tag is priority is AUTO_KEEP (1) or USER_KEEP (2),
+                    // don't set tag if mechanism is unknown (null),
+                    // and don't overwrite tag set by upstream service
                     SetSamplingMechanismTag(mechanism.Value);
                 }
             }
