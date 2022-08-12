@@ -2,9 +2,7 @@
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -48,15 +46,12 @@ namespace Receive
                             var spanCreationSettings = new SpanCreationSettings() {Parent = parentContext};
 
                             // Create child spans
-                            using (var scope = Tracer.Instance.StartActive("child.span", spanCreationSettings)
-                            {
-                                Console.WriteLine("You can safely add t");
-                                Console.WriteLine("     Active TraceId: {0}", scope.Span.TraceId);
-                                Console.WriteLine("     Active SpanId: {0}", scope.Span.SpanId);
+                            using var scope = Tracer.Instance.StartActive("child.span", spanCreationSettings);
+                            Console.WriteLine("     Active TraceId: {0}", scope.Span.TraceId);
+                            Console.WriteLine("     Active SpanId: {0}", scope.Span.SpanId);
                                 
-                                // Do work inside the Datadog trace
-                                Thread.Sleep(1000);
-                            }
+                            // Do work inside the Datadog trace
+                            Thread.Sleep(1000);
                         }
                     };
 
