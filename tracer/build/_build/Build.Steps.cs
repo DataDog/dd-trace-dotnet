@@ -71,7 +71,7 @@ partial class Build
     {
         "win-x86", "win-x64"
     };
-    Project NativeProfilerProject => Solution.GetProject(Projects.ClrProfilerNative);
+    Project NativeTracerProject => Solution.GetProject(Projects.ClrProfilerNative);
     Project NativeLoaderProject => Solution.GetProject(Projects.NativeLoader);
 
     [LazyPathExecutable(name: "cmake")] readonly Lazy<Tool> CMake;
@@ -188,11 +188,11 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var buildDirectory = NativeProfilerProject.Directory / "build";
+            var buildDirectory = NativeTracerProject.Directory / "build";
             EnsureExistingDirectory(buildDirectory);
 
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {buildDirectory} -S {NativeProfilerProject.Directory} -DCMAKE_BUILD_TYPE=Release");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {buildDirectory} -S {NativeTracerProject.Directory} -DCMAKE_BUILD_TYPE=Release");
             CMake.Value(
                 arguments: $"--build {buildDirectory} --parallel");
         });
@@ -203,7 +203,7 @@ partial class Build
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {
-            var sourceDirectory = NativeProfilerProject.Directory;
+            var sourceDirectory = NativeTracerProject.Directory;
             var buildDirectory = sourceDirectory / "build";
             EnsureExistingDirectory(buildDirectory);
 
@@ -375,7 +375,7 @@ partial class Build
             }
         });
 
-    Target PublishManagedProfiler => _ => _
+    Target PublishManagedTracer => _ => _
         .Unlisted()
         .After(CompileManagedSrc)
         .Executes(() =>
@@ -399,53 +399,53 @@ partial class Build
     Target PublishNativeSymbolsWindows => _ => _
       .Unlisted()
       .OnlyWhenStatic(() => IsWin)
-      .After(CompileNativeSrc, PublishManagedProfiler)
+      .After(CompileNativeSrc, PublishManagedTracer)
       .Executes(() =>
        {
            foreach (var architecture in ArchitecturesForPlatform)
            {
-               var source = NativeProfilerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
-                            $"{NativeProfilerProject.Name}.pdb";
+               var source = NativeTracerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
+                            $"{NativeTracerProject.Name}.pdb";
                var dest = SymbolsDirectory / $"win-{architecture}" / Path.GetFileName(source);
                CopyFile(source, dest, FileExistsPolicy.Overwrite);
            }
        });
 
-    Target PublishNativeProfilerWindows => _ => _
+    Target PublishNativeTracerWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
-        .After(CompileNativeSrc, PublishManagedProfiler)
+        .After(CompileNativeSrc, PublishManagedTracer)
         .Executes(() =>
         {
             foreach (var architecture in ArchitecturesForPlatform)
             {
                 // Copy native tracer assets
-                var source = NativeProfilerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
-                             $"{NativeProfilerProject.Name}.dll";
+                var source = NativeTracerProject.Directory / "bin" / BuildConfiguration / architecture.ToString() /
+                             $"{NativeTracerProject.Name}.dll";
                 var dest = MonitoringHomeDirectory / $"win-{architecture}";
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
             }
         });
 
-    Target PublishNativeProfilerUnix => _ => _
+    Target PublishNativeTracerUnix => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsLinux || IsOsx)
-        .After(CompileNativeSrc, PublishManagedProfiler)
+        .After(CompileNativeSrc, PublishManagedTracer)
         .Executes(() =>
         {
             var (arch, extension) = GetUnixArchitectureAndExtension();
             
             // Copy Native file
             CopyFileToDirectory(
-                NativeProfilerProject.Directory / "build" / "bin" / $"{NativeProfilerProject.Name}.{extension}",
+                NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
                 MonitoringHomeDirectory / arch,
                 FileExistsPolicy.Overwrite);
         });
 
-    Target PublishNativeProfiler => _ => _
+    Target PublishNativeTracer => _ => _
         .Unlisted()
-        .DependsOn(PublishNativeProfilerWindows)
-        .DependsOn(PublishNativeProfilerUnix);
+        .DependsOn(PublishNativeTracerWindows)
+        .DependsOn(PublishNativeTracerUnix);
 
     Target BuildMsi => _ => _
         .Unlisted()

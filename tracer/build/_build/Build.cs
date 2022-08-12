@@ -117,8 +117,8 @@ partial class Build : NukeBuild
             EnsureCleanDirectory(MonitoringHomeDirectory);
             EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
-            EnsureCleanDirectory(NativeProfilerProject.Directory / "build");
-            EnsureCleanDirectory(NativeProfilerProject.Directory / "deps");
+            EnsureCleanDirectory(NativeTracerProject.Directory / "build");
+            EnsureCleanDirectory(NativeTracerProject.Directory / "deps");
             EnsureCleanDirectory(BuildDataDirectory);
             EnsureCleanDirectory(ExplorationTestsDirectory);
             DeleteFile(WindowsTracerHomeZip);
@@ -148,9 +148,9 @@ partial class Build : NukeBuild
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(Restore)
         .DependsOn(CompileManagedSrc)
-        .DependsOn(PublishManagedProfiler)
+        .DependsOn(PublishManagedTracer)
         .DependsOn(CompileNativeSrc)
-        .DependsOn(PublishNativeProfiler)
+        .DependsOn(PublishNativeTracer)
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
         .DependsOn(BuildNativeLoader);

@@ -160,7 +160,7 @@ partial class Build
 
     Target GeneratePackageVersions => _ => _
        .Description("Regenerate the PackageVersions props and .cs files")
-       .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedProfiler)
+       .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedTracer)
        .Executes(async () =>
        {
            var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
