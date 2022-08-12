@@ -9,6 +9,13 @@ namespace Datadog.Trace.Sampling;
 
 internal readonly struct SamplingDecision
 {
+    /// <summary>
+    /// The default sampling decision used when there is no sampler available
+    /// or no sampling rules match. For example, this value is used if the tracer has not yet
+    /// received any sampling rates from agent and there are no configured sampling rates.
+    /// </summary>
+    public static SamplingDecision Default = new(SamplingPriorityValues.AutoKeep, SamplingMechanism.Default);
+
     public readonly int Priority;
 
     public readonly int? Mechanism;

@@ -79,16 +79,8 @@ namespace Datadog.Trace
                             _hasRemoteParent = false;
 
                             // make a sampling decision early so it's ready if we need it for propagation.
-                            if (Tracer.Sampler is not null)
-                            {
-                                var (priority, mechanism) = Tracer.Sampler.MakeSamplingDecision(span);
-                                SetSamplingPriority(priority, mechanism);
-                            }
-                            else
-                            {
-                                // fallback to default sampling
-                                SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.Default);
-                            }
+                            var samplingDecision = Tracer.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
+                            SetSamplingPriority(samplingDecision);
                         }
                     }
                 }
@@ -165,6 +157,11 @@ namespace Datadog.Trace
             }
         }
 
+        public void SetSamplingPriority(SamplingDecision decision, bool notifyDistributedTracer = true)
+        {
+            SetSamplingPriority(decision.Priority, decision.Mechanism, notifyDistributedTracer);
+        }
+
         public void SetSamplingPriority(int? priority, int? mechanism = null, bool notifyDistributedTracer = true)
         {
             const string tagName = Trace.Tags.Propagated.DecisionMaker;
@@ -195,7 +192,7 @@ namespace Datadog.Trace
                     }
                 }
             }
-            else
+            else if (priority <= 0)
             {
                 // remove tag if priority is AUTO_DROP (0) or USER_DROP (-1)
                 Tags.SetTag(tagName, value: null);

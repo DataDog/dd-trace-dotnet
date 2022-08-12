@@ -117,17 +117,9 @@ namespace Datadog.Trace.ClrProfiler
 
                 if (!addToTraceContext && span.Context.TraceContext.SamplingPriority == null)
                 {
-                    if (tracer.TracerManager.Sampler == null)
-                    {
-                        // make the default sampling decision
-                        span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.Default);
-                    }
-                    else
-                    {
-                        // If we don't add the span to the trace context, then we need to manually call the sampler
-                        var (samplingPriority, samplingMechanism) = tracer.TracerManager.Sampler.MakeSamplingDecision(span);
-                        span.Context.TraceContext.SetSamplingPriority(samplingPriority, samplingMechanism);
-                    }
+                    // If we don't add the span to the trace context, then we need to manually call the sampler
+                    var samplingDecision = tracer.TracerManager.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
+                    span.Context.TraceContext.SetSamplingPriority(samplingDecision);
                 }
             }
             catch (Exception ex)
