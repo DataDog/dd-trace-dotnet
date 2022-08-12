@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tagging
         /// </summary>
         /// <param name="name">The name of the tag.</param>
         /// <param name="value">The value of the tag.</param>
-        /// <returns><c>true</c> if the tag is added to the collection, <c>false</c> otherwise.</returns>
+        /// <returns><see langword="true"/> if the tag is added to the collection, <see langword="false"/> otherwise.</returns>
         public bool TryAddTag(string name, string? value)
         {
             if (value == null)
@@ -58,14 +58,14 @@ namespace Datadog.Trace.Tagging
         /// <summary>
         /// Adds a new tag to the collection if it doesn't already exists,
         /// or updates the tag with a new value if it already exists.
-        /// If the tag value is <c>null</c>, the tag is not added to the collection,
+        /// If the tag value is <see langword="null"/>, the tag is not added to the collection,
         /// and its previous value is removed if found.
         /// </summary>
         /// <param name="name">The name of the tag.</param>
         /// <param name="value">The value of the tag.</param>
         /// <returns>
-        /// <c>true</c> if the collection is modified by adding, updating, or removing a tag,
-        /// <c>false</c> otherwise.
+        /// <see langword="true"/> if the collection is modified by adding, updating, or removing a tag,
+        /// <see langword="false"/> otherwise.
         /// </returns>
         public bool SetTag(string name, string? value)
         {
