@@ -166,4 +166,34 @@ public class TraceTagsCollectionTests
         tags.GetTag("_dd.p.key1").Should().Be("value1");
         tags.ToPropagationHeader().Should().Be("_dd.p.key1=value1");
     }
+
+    [Fact]
+    public void RemoveTag()
+    {
+        var tags = new TraceTagCollection(MaxHeaderLength);
+        tags.TryAddTag("_dd.p.key1", "value1");
+        tags.TryAddTag("_dd.p.key2", "value2");
+        tags.Count.Should().Be(2);
+        tags.ToPropagationHeader().Should().Be("_dd.p.key1=value1,_dd.p.key2=value2");
+
+        // tag not found
+        tags.RemoveTag("wrong").Should().BeFalse();
+        tags.Count.Should().Be(2);
+
+        // remove one tag
+        tags.GetTag("_dd.p.key1").Should().Be("value1");
+        tags.RemoveTag("_dd.p.key1").Should().BeTrue();
+        tags.RemoveTag("_dd.p.key1").Should().BeFalse();
+        tags.GetTag("_dd.p.key1").Should().BeNull();
+        tags.Count.Should().Be(1);
+        tags.ToPropagationHeader().Should().Be("_dd.p.key2=value2");
+
+        // remove last tag
+        tags.GetTag("_dd.p.key2").Should().Be("value2");
+        tags.RemoveTag("_dd.p.key2").Should().BeTrue();
+        tags.RemoveTag("_dd.p.key2").Should().BeFalse();
+        tags.GetTag("_dd.p.key2").Should().BeNull();
+        tags.Count.Should().Be(0);
+        tags.ToPropagationHeader().Should().Be(string.Empty);
+    }
 }

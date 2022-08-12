@@ -43,9 +43,9 @@ namespace Datadog.Trace.Tagging
         /// <param name="name">The name of the tag.</param>
         /// <param name="value">The value of the tag.</param>
         /// <returns><see langword="true"/> if the tag is added to the collection, <see langword="false"/> otherwise.</returns>
-        public bool TryAddTag(string name, string? value)
+        public bool TryAddTag(string name, string value)
         {
-            if (value == null)
+            if (value == null!)
             {
                 // if tag exists we won't change it, and if it doesn't exist we won't add it,
                 // so nothing to do here
@@ -79,6 +79,11 @@ namespace Datadog.Trace.Tagging
                 ThrowHelper.ThrowArgumentNullException(nameof(name));
             }
 
+            if (value == null)
+            {
+                return RemoveTag(name);
+            }
+
             var isPropagated = name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase);
 
             lock (_listLock)
@@ -93,20 +98,6 @@ namespace Datadog.Trace.Tagging
                             // found the tag
                             if (replaceIfExists)
                             {
-                                if (value == null)
-                                {
-                                    // tag already exists, remove it
-                                    _tags.RemoveAt(i);
-
-                                    // clear the cached header
-                                    if (isPropagated)
-                                    {
-                                        _cachedPropagationHeader = null;
-                                    }
-
-                                    return true;
-                                }
-
                                 if (!string.Equals(_tags[i].Value, value, StringComparison.Ordinal))
                                 {
                                     // tag already exists with different value, replace it
@@ -129,29 +120,65 @@ namespace Datadog.Trace.Tagging
                 }
 
                 // tag not found
-                if (value != null)
+
+                // delay creating the List<T> as long as possible
+                _tags ??= new List<KeyValuePair<string, string>>(1);
+
+                // add new tag
+                _tags.Add(new(name, value));
+
+                // clear the cached header if we added a propagated tag
+                if (isPropagated)
                 {
-                    // delay creating the List<T> as long as possible
-                    _tags ??= new List<KeyValuePair<string, string>>(1);
-
-                    _tags.Add(new(name, value));
-
-                    // clear the cached header if we added a propagated tag
-                    if (isPropagated)
-                    {
-                        _cachedPropagationHeader = null;
-                    }
-
-                    return true;
+                    _cachedPropagationHeader = null;
                 }
 
-                // tag not found and value == null so tag was not added
-                return false;
+                return true;
             }
+        }
+
+        public bool RemoveTag(string name)
+        {
+            if (name == null!)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(name));
+            }
+
+            var isPropagated = name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase);
+
+            if (_tags?.Count > 0)
+            {
+                lock (_listLock)
+                {
+                    for (int i = 0; i < _tags.Count; i++)
+                    {
+                        if (string.Equals(_tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
+                        {
+                            _tags.RemoveAt(i);
+
+                            // clear the cached header
+                            if (isPropagated)
+                            {
+                                _cachedPropagationHeader = null;
+                            }
+
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            // tag not found
+            return false;
         }
 
         public string? GetTag(string name)
         {
+            if (name == null!)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(name));
+            }
+
             if (_tags?.Count > 0)
             {
                 lock (_listLock)
@@ -171,14 +198,12 @@ namespace Datadog.Trace.Tagging
 
         public void SetTags(TraceTagCollection? tags)
         {
-            if (tags == null || tags.Count == 0)
+            if (tags?.Count > 0)
             {
-                return;
-            }
-
-            foreach (var tag in tags.ToArray())
-            {
-                SetTag(tag.Key, tag.Value);
+                foreach (var tag in tags.ToArray())
+                {
+                    SetTag(tag.Key, tag.Value);
+                }
             }
         }
 

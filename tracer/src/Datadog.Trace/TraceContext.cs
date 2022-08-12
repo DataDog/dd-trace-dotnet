@@ -182,7 +182,7 @@ namespace Datadog.Trace
             else if (priority <= 0)
             {
                 // remove tag if priority is AUTO_DROP (0) or USER_DROP (-1)
-                Tags.SetTag(tagName, value: null);
+                Tags.RemoveTag(tagName);
             }
 
             if (notifyDistributedTracer)
