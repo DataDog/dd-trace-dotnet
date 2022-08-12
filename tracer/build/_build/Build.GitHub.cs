@@ -340,7 +340,7 @@ partial class Build
 
     Target OutputCurrentVersionToGitHub => _ => _
        .Unlisted()
-       .After(UpdateVersion, UpdateMsiContents)
+       .After(UpdateVersion)
        .Requires(() => Version)
        .Executes(() =>
         {
@@ -386,7 +386,7 @@ partial class Build
     Target VerifyChangedFilesFromVersionBump => _ => _
        .Unlisted()
        .Description("Verifies that the expected files were changed")
-       .After(UpdateVersion, UpdateMsiContents, UpdateChangeLog)
+       .After(UpdateVersion, UpdateChangeLog)
        .Executes(() =>
         {
             var expectedFileChanges = new List<string>
