@@ -39,7 +39,7 @@ namespace Receive
                         Console.WriteLine(" [x] Received.");
                         Console.WriteLine("     Message: {0}", message);
 
-                        // extract the context to this message as it has been lost when enqueuing
+                        // extract the context from the message
                         var messageHeaders = ea.BasicProperties?.Headers;
                         if (messageHeaders != null)
                         {
@@ -48,9 +48,14 @@ namespace Receive
                             var spanCreationSettings = new SpanCreationSettings() {Parent = parentContext};
 
                             // Create child spans
-                            using var scope = Tracer.Instance.StartActive("child.span", spanCreationSettings);
+                            using (var scope = Tracer.Instance.StartActive("child.span", spanCreationSettings)
                             {
                                 Console.WriteLine("You can safely add t");
+                                Console.WriteLine("     Active TraceId: {0}", scope.Span.TraceId);
+                                Console.WriteLine("     Active SpanId: {0}", scope.Span.SpanId);
+                                
+                                // Do work inside the Datadog trace
+                                Thread.Sleep(1000);
                             }
                         }
                     };
@@ -70,9 +75,6 @@ namespace Receive
 
         static IEnumerable<string> GetHeaderValues(IDictionary<string, object> headers, string name)
         {
-            if (headers == null)
-                return Enumerable.Empty<string>();
-
             if (headers.TryGetValue(name, out object value) && value is byte[] bytes)
             {
                 return new[] {Encoding.UTF8.GetString(bytes)};
