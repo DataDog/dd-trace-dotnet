@@ -190,6 +190,12 @@ namespace PrepareRelease
                 SynchronizeVersion(
                     "samples/AutomaticTraceIdInjection/SerilogExample/SerilogExample.csproj",
                     DatadogTraceNugetDependencyVersionReplace);
+                SynchronizeVersion(
+                    "samples/RabbitMQ.DistributedTracing/Send/Send.csproj",
+                    DatadogTraceNugetDependencyVersionReplace);
+                SynchronizeVersion(
+                    "samples/RabbitMQ.DistributedTracing/Receive/Receive.csproj",
+                    DatadogTraceNugetDependencyVersionReplace);
 
                 // Dockerfile updates
                 SynchronizeVersion(

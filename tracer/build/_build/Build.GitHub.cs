@@ -428,6 +428,8 @@ partial class Build
                 "tracer/samples/AutomaticTraceIdInjection/NLog45Example/NLog45Example.csproj",
                 "tracer/samples/AutomaticTraceIdInjection/NLog46Example/NLog46Example.csproj",
                 "tracer/samples/AutomaticTraceIdInjection/SerilogExample/SerilogExample.csproj",
+                "tracer/samples/RabbitMQ.DistributedTracing/Send/Send.csproj",
+                "tracer/samples/RabbitMQ.DistributedTracing/Receive/Receive.csproj",
                 "tracer/samples/ConsoleApp/Alpine3.10.dockerfile",
                 "tracer/samples/ConsoleApp/Alpine3.9.dockerfile",
                 "tracer/samples/ConsoleApp/Debian.dockerfile",

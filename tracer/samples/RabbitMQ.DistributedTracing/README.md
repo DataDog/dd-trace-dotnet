@@ -1,11 +1,5 @@
 # RabbitMQ Instrumentation
-Currently, the .NET Tracer does not have out-of-the-box automatic instrumentation for the RabbitMQ .NET SDK. This means if your .NET application publishes/consumes a RabbitMQ message and you would like to propagate/consume the Datadog trace context, you must do so manually by adding/removing the Datadog headers. This sample follows the ["Hello World" C# tutorial](https://www.rabbitmq.com/tutorials/tutorial-one-dotnet.html) provided by RabbitMQ and modifies it in the following ways:
-
-1. The sender begins a Datadog trace before publishing a message
-1. The sender injects the trace context into the published message before sending
-1. The receiver extracts the trace context from the consumed message
-1. The receiver starts a new Datadog trace that is now properly connected to the original trace
-
+Currently, the .NET Tracer does have out-of-the-box automatic instrumentation for the RabbitMQ .NET SDK which means you should automatically get producer and consumer spans in your traces. That said, depending on how you consume the message locally, consumer children could be disconnected from the consumer span. This can happen for instance when you (or the library you use) consume the messages in a loop filling a local queue that your code would dequeue. In that case, we provide an API to manually extract the distributed context for you to pass to the child span.
 ## Setup
 ### Application setup
 This sample contains two .NET Core applications: `Send` and `Receive`. Open two terminals. First, run the consumer:
