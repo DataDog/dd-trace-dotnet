@@ -93,6 +93,7 @@ namespace Datadog.Trace
                                 // fallback to default sampling
                                 _samplingPriority = SamplingPriorityValues.AutoKeep;
                                 SetSamplingMechanismTag(SamplingMechanism.Default);
+                                SetSamplingPriority();
                             }
                         }
                     }
@@ -155,11 +156,8 @@ namespace Datadog.Trace
 
             if (shouldPropagateMetadata)
             {
-                if (spansToWrite.Array != null)
-                {
-                    // any span can contain the tags
-                    DecorateWithAASMetadata(spansToWrite.Array[0]);
-                }
+                // any span can contain the tags
+                DecorateWithAASMetadata(spansToWrite.Array![0]);
 
                 if (_samplingPriority != null)
                 {
@@ -218,13 +216,10 @@ namespace Datadog.Trace
             // The agent looks for the sampling priority on the first span that has no parent
             // Finding those spans is not trivial, so instead we apply the priority to every span
 
-            if (spans.Array != null)
+            // Using a for loop to avoid the boxing allocation on ArraySegment.GetEnumerator
+            for (int i = 0; i < spans.Count; i++)
             {
-                // Using a for loop to avoid the boxing allocation on ArraySegment.GetEnumerator
-                for (int i = 0; i < spans.Count; i++)
-                {
-                    AddSamplingPriorityTags(spans.Array[i + spans.Offset], samplingPriority);
-                }
+                AddSamplingPriorityTags(spans.Array![i + spans.Offset], samplingPriority);
             }
         }
 
