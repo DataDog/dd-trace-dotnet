@@ -161,8 +161,8 @@ partial class Build
                     markdown.Append("```").AppendLine();
                 }
 
-                Console.WriteLine(markdown.ToString());
-                // await PostCommentToPullRequest(PullRequestNumber.Value, markdown.ToString());
+                // Console.WriteLine(markdown.ToString());
+                await PostCommentToPullRequest(PullRequestNumber.Value, markdown.ToString());
 
                 void RecordChange(StringBuilder diffsInFile, Dictionary<string, int> diffCounts)
                 {
