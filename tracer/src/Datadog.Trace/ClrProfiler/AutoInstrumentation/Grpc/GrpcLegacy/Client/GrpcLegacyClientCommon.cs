@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
                 if (setSamplingPriority && existingSpanContext?.SamplingPriority is not null)
                 {
-                    span.Context.TraceContext.SetSamplingPriority(existingSpanContext.SamplingPriority);
+                    span.Context.TraceContext?.SetSamplingPriority(existingSpanContext.SamplingPriority);
                 }
 
                 GrpcCommon.RecordFinalStatus(span, receivedStatus.StatusCode, receivedStatus.Detail, receivedStatus.DebugException);
