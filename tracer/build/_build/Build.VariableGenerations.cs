@@ -240,6 +240,8 @@ partial class Build : NukeBuild
                 GenerateLinuxDotnetToolSmokeTestsMatrix();
                 GenerateLinuxDotnetToolSmokeTestsArm64Matrix();
 
+                GenerateLinuxDotnetToolNugetSmokeTestsMatrix();
+
                 // msi smoke tests
                 GenerateWindowsMsiSmokeTestsMatrix();
                 
@@ -653,6 +655,39 @@ partial class Build : NukeBuild
                     Logger.Info($"Installer smoke tests dotnet-tool matrix Arm64");
                     Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetVariable("dotnet_tool_installer_smoke_tests_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                }
+
+                void GenerateLinuxDotnetToolNugetSmokeTestsMatrix()
+                {
+                    var matrix = new Dictionary<string, object>();
+
+                    AddToDotNetToolSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye"),
+                        },
+                        platformSuffix: "linux-x64",
+                        dockerName: "mcr.microsoft.com/dotnet/sdk"
+                    );
+
+                    AddToDotNetToolSmokeTestsMatrix(
+                        matrix,
+                        "alpine",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.16"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.15"),
+                        },
+                        platformSuffix: "linux-musl-x64",
+                        dockerName: "mcr.microsoft.com/dotnet/sdk"
+                    );
+
+                    Logger.Info($"Installer smoke tests dotnet-tool NuGet matrix Linux");
+                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetVariable("dotnet_tool_nuget_installer_linux_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
                 void AddToDotNetToolSmokeTestsMatrix(
