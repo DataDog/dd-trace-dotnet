@@ -17,7 +17,7 @@
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer",
         "CORECLR_ENABLE_PROFILING": "1",
         "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
-        "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer\\win-$(Platform)\\Datadog.Trace.ClrProfiler.Native.dll",
+        "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer\\win-$(Platform)\\Datadog.Trace.Native.dll",
         "DD_VERSION": "1.0.0",
         "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server"
       },
@@ -30,17 +30,18 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development",
         "DD_APPSEC_ENABLED": "true",
+        "DD_APPSEC_RULES": "custom-ruleset.json",
         "DD_APPSEC_BLOCKING_ENABLED": "true",
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer",
         "CORECLR_ENABLE_PROFILING": "1",
         "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
-        "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer\\win-$(Platform)\\Datadog.Trace.ClrProfiler.Native.dll",
-        // "DD_TRACE_TRANSPORT": "DATADOG-NAMED-PIPES",
-        // "DD_TRACE_PIPE_NAME": "datadogtrace-95EE571C-2583-4754-ABF4-5732F91F1C94",
+        "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\Datadog.AutoInstrumentation.NativeLoader.$(Platform).dll",
         "DD_VERSION": "1.0.0",
         "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server",
         "DD_TRACE_DEBUG": "0",
-        "DD_APPSEC_IPHEADER": "globalip-address"
+        "DD_APPSEC_IPHEADER": "globalip-address",
+        "DD_ENV": "asm-samples"
+
       },
       "Logging": {
         "LogLevel": {

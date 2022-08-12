@@ -18,6 +18,8 @@ namespace Datadog.Trace.AppSec.Transports
 
         Func<string, string> GetHeader { get; }
 
+        void StopRequestMovingFurther();
+
         IContext GetAdditiveContext();
 
         void SetAdditiveContext(IContext additiveContext);
@@ -26,6 +28,6 @@ namespace Datadog.Trace.AppSec.Transports
 
         IHeadersCollection GetResponseHeaders();
 
-        void Block();
+        void WriteBlockedResponse();
     }
 }

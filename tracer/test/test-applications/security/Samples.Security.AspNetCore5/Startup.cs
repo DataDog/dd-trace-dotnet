@@ -28,7 +28,7 @@ namespace Samples.Security.AspNetCore5
             {
                 DatabaseHelper.CreateAndFeedDatabase(Configuration.GetConnectionString("DefaultConnection"));
             }
-            services.AddRazorPages(); 
+            services.AddRazorPages();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -46,7 +46,7 @@ namespace Samples.Security.AspNetCore5
             }
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-            
+
             app.UseRouting();
 
             app.UseAuthorization();
@@ -60,7 +60,7 @@ namespace Samples.Security.AspNetCore5
                     _ = Task.Run(() => builder.ApplicationServices.GetService<IHostApplicationLifetime>().StopApplication());
                 });
             });
-
+           
             app.UseEndpoints(endpoints =>
             {
                 endpoints.RegisterEndpointsRouting();

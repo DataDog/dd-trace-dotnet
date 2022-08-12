@@ -15,13 +15,15 @@ namespace Datadog.Trace.AppSec.Transports.Http
 {
     internal class HttpTransport : ITransport
     {
+        private static System.Reflection.MethodInfo _completeAsync;
+
         private readonly HttpContext _context;
 
         public HttpTransport(HttpContext context) => _context = context;
 
         public bool IsSecureConnection => _context.Request.IsHttps;
 
-        public bool Blocked => _context.Items["blocked"] != null;
+        public bool Blocked => _context.Items["block"] != null;
 
         public Func<string, string> GetHeader => key => _context.Request.Headers[key];
 
@@ -45,18 +47,30 @@ namespace Datadog.Trace.AppSec.Transports.Http
             return new HeadersCollectionAdapter(_context.Response.Headers);
         }
 
-        public void Block()
+        public void WriteBlockedResponse()
         {
             var httpResponse = _context.Response;
+            httpResponse.Clear();
             httpResponse.StatusCode = 403;
             httpResponse.ContentType = "text/html";
             httpResponse.WriteAsync(SecurityConstants.AttackBlockedHtml).Wait();
-            var method = httpResponse.GetType().GetMethod("CompleteAsync");
-            if (method != null)
+            _context.Items["block"] = true;
+            _completeAsync ??= httpResponse.GetType().GetMethod("CompleteAsync");
+            if (_completeAsync != null)
             {
-                var t = (Task)method.Invoke(httpResponse, null);
+                var t = (Task)_completeAsync.Invoke(httpResponse, null);
                 t.ConfigureAwait(false);
                 t.Wait();
+            }
+
+            // throw new BlockException(); cant do it here because it s too early we break the tracer, we wont go to unhandled exception in the observer
+        }
+
+        public void StopRequestMovingFurther()
+        {
+            if (_context.Items.Keys.Contains("block"))
+            {
+                throw new BlockException();
             }
         }
     }

@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
-using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Transports;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
@@ -101,6 +100,7 @@ namespace Datadog.Trace.AppSec
                         _instrumentationGateway.EndRequest += RunWaf;
                         _instrumentationGateway.PathParamsAvailable += AggregateAddressesInContext;
                         _instrumentationGateway.BodyAvailable += AggregateAddressesInContext;
+                        _instrumentationGateway.BlockingOpportunity += MightStopRequest;
 #if NETFRAMEWORK
                         try
                         {
@@ -339,6 +339,8 @@ namespace Datadog.Trace.AppSec
             context.AggregateAddresses(e.EventData, e.OverrideExistingAddress);
         }
 
+        private void MightStopRequest(object sender, ITransport transport) => transport.StopRequestMovingFurther();
+
         // NOTE: This method disposes of the WAF context, so it should be run once,
         // and only once, at the end of the request.
         private void RunWaf(object sender, InstrumentationGatewaySecurityEventArgs e)
@@ -363,7 +365,7 @@ namespace Datadog.Trace.AppSec
                     var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock") || wafResult.Data.Contains("crs-942-190");
                     if (block)
                     {
-                        e.Transport.Block();
+                        e.Transport.WriteBlockedResponse();
                     }
 
                     Report(e.Transport, span, wafResult, block);
@@ -371,6 +373,11 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
+                if (ex is BlockException)
+                {
+                    throw;
+                }
+
                 Log.Error(ex, "Call into the security module failed");
             }
         }

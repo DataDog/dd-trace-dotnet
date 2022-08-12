@@ -32,7 +32,9 @@ namespace Datadog.Trace.AppSec
 
         public event EventHandler<InstrumentationGatewayEventArgs> LastChanceToWriteTags;
 
-        public void RaiseEndRequest(HttpContext context, HttpRequest request, Span relatedSpan)
+        public event EventHandler<Datadog.Trace.AppSec.Transports.ITransport> BlockingOpportunity;
+
+        public void RaiseRequestStart(HttpContext context, HttpRequest request, Span relatedSpan)
         {
             var getEventData = () =>
             {
@@ -97,8 +99,24 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex)
             {
+                if (ex is BlockException)
+                {
+                    throw;
+                }
+
                 Log.Error(ex, "DDAS-0004-00: AppSec failed to process request.");
             }
+        }
+
+        internal void RaiseBlockingOpportunity(HttpContext context)
+        {
+            if (BlockingOpportunity == null)
+            {
+                return;
+            }
+
+            var transport = new HttpTransport(context);
+            BlockingOpportunity.Invoke(this, transport);
         }
     }
 }

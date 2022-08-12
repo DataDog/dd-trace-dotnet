@@ -180,7 +180,6 @@ namespace Datadog.Trace.DiagnosticListeners
         protected override void OnNext(string eventName, object arg)
         {
             var lastChar = eventName[eventName.Length - 1];
-
             if (lastChar == 't')
             {
                 if (ReferenceEquals(eventName, _hostingHttpRequestInStartEventKey))
@@ -610,23 +609,14 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 if (shouldSecure)
                 {
-                    httpContext.Response.OnStarting(
-                       (o) =>
-                       {
-                           var httpResponse = o as HttpResponse;
-                           // we subscribe here because in OnHostingHttpRequestInStop or HostingEndRequest it's too late,
-                           // the waf is already disposed by the registerfordispose callback
-                           security.InstrumentationGateway.RaiseEndRequest(httpContext, request, span);
-                           return Task.CompletedTask;
-                       },
-                       httpContext.Response);
-
                     httpContext.Response.OnCompleted(
                        () =>
                        {
                            security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, span);
-                           return System.Threading.Tasks.Task.CompletedTask;
+                           return Task.CompletedTask;
                        });
+
+                    security.InstrumentationGateway.RaiseRequestStart(httpContext, request, span);
                 }
             }
         }
@@ -762,6 +752,8 @@ namespace Datadog.Trace.DiagnosticListeners
                     tags.AspNetCoreRoute = normalizedRoute;
                     span.SetTag(Tags.HttpRoute, normalizedRoute);
                 }
+
+                security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext);
             }
         }
 
@@ -923,7 +915,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 if (security.Settings.Enabled)
                 {
                     var httpContext = unhandledStruct.HttpContext;
-                    security.InstrumentationGateway.RaiseEndRequest(httpContext, httpContext.Request, span);
+                    security.InstrumentationGateway.RaiseRequestStart(httpContext, httpContext.Request, span);
                 }
 
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
