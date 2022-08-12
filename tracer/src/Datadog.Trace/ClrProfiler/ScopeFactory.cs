@@ -7,6 +7,7 @@ using System;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -114,11 +115,19 @@ namespace Datadog.Trace.ClrProfiler
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
 
-                if (!addToTraceContext && span.Context.TraceContext.SamplingPriority == null && tracer.TracerManager.Sampler != null)
+                if (!addToTraceContext && span.Context.TraceContext.SamplingPriority == null)
                 {
-                    // If we don't add the span to the trace context, then we need to manually call the sampler
-                    var (samplingPriority, samplingMechanism) = tracer.TracerManager.Sampler.MakeSamplingDecision(span);
-                    span.Context.TraceContext.SetSamplingPriority(samplingPriority, samplingMechanism);
+                    if (tracer.TracerManager.Sampler == null)
+                    {
+                        // make the default sampling decision
+                        span.Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoKeep, SamplingMechanism.Default);
+                    }
+                    else
+                    {
+                        // If we don't add the span to the trace context, then we need to manually call the sampler
+                        var (samplingPriority, samplingMechanism) = tracer.TracerManager.Sampler.MakeSamplingDecision(span);
+                        span.Context.TraceContext.SetSamplingPriority(samplingPriority, samplingMechanism);
+                    }
                 }
             }
             catch (Exception ex)
