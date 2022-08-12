@@ -27,7 +27,7 @@ namespace Datadog.Trace.ExtensionMethods
         /// <param name="samplingPriority">The new sampling priority for the trace.</param>
         /// <remarks>
         /// This public extension method is meant for external users only. Internal Datadog calls should
-        /// use <see cref="TraceContext.SetSamplingPriority"/> directly instead.</remarks>
+        /// use the methods on <see cref="TraceContext"/> instead.</remarks>
         public static void SetTraceSamplingPriority(this ISpan span, SamplingPriority samplingPriority)
         {
             if (span == null) { ThrowHelper.ThrowArgumentNullException(nameof(span)); }
