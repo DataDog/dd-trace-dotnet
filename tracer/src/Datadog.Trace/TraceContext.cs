@@ -25,7 +25,6 @@ namespace Datadog.Trace
 
         private int _openSpans;
         private int? _samplingPriority;
-        private bool _hasRemoteParent;
 
         public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
         {
@@ -70,14 +69,11 @@ namespace Datadog.Trace
                         {
                             // this is a local root span created from a propagated context that contains a sampling priority.
                             // any distributed tags were already parsed from SpanContext.PropagatedTags and added to the TraceContext.
-                            _hasRemoteParent = true;
                             SetSamplingPriority(samplingPriority);
                         }
                         else
                         {
                             // this is a local root span with no upstream service.
-                            _hasRemoteParent = false;
-
                             // make a sampling decision early so it's ready if we need it for propagation.
                             var samplingDecision = Tracer.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
                             SetSamplingPriority(samplingDecision);
@@ -164,33 +160,24 @@ namespace Datadog.Trace
 
         public void SetSamplingPriority(int? priority, int? mechanism = null, bool notifyDistributedTracer = true)
         {
-            const string tagName = Trace.Tags.Propagated.DecisionMaker;
+            if (priority == null)
+            {
+                return;
+            }
+
             _samplingPriority = priority;
 
-            if (priority > 0)
-            {
-                if (mechanism != null)
-                {
-                    // set the sampling mechanism trace tag
-                    // * only if priority is AUTO_KEEP (1) or USER_KEEP (2)
-                    // * we should not overwrite an existing value propagated from an upstream service
-                    // * don't set the tag if sampling mechanism is unknown
-                    // * the "-" prefix is a left-over separator from a previous iteration of this feature (not a typo or a negative sign)
-                    var tagValue = $"-{mechanism.Value.ToString(CultureInfo.InvariantCulture)}";
+            const string tagName = Trace.Tags.Propagated.DecisionMaker;
 
-                    if (_hasRemoteParent)
-                    {
-                        // set the tag is it's not already present,
-                        // but don't override a tag that was received from an upstream service
-                        Tags.TryAddTag(tagName, tagValue);
-                    }
-                    else
-                    {
-                        // this is the root service (no upstream),
-                        // so we can still change our own sampling mechanism
-                        Tags.SetTag(tagName, tagValue);
-                    }
-                }
+            if (priority > 0 && mechanism != null)
+            {
+                // set the sampling mechanism trace tag
+                // * only set tag if priority is AUTO_KEEP (1) or USER_KEEP (2)
+                // * do not overwrite an existing value
+                // * don't set tag if sampling mechanism is unknown (null)
+                // * the "-" prefix is a left-over separator from a previous iteration of this feature (not a typo or a negative sign)
+                var tagValue = $"-{mechanism.Value.ToString(CultureInfo.InvariantCulture)}";
+                Tags.TryAddTag(tagName, tagValue);
             }
             else if (priority <= 0)
             {
