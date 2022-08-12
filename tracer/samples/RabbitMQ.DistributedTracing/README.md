@@ -1,5 +1,6 @@
 # RabbitMQ Instrumentation
-Currently, the .NET Tracer does have out-of-the-box automatic instrumentation for the RabbitMQ .NET SDK which means you should automatically get producer and consumer spans in your traces. That said, depending on how you consume the message locally, consumer children could be disconnected from the consumer span. This can happen for instance when you (or the library you use) consume the messages in a loop filling a local queue that your code would dequeue. In that case, we provide an API to manually extract the distributed context for you to pass to the child span.
+Currently, the .NET Tracer does have out-of-the-box automatic instrumentation for the RabbitMQ .NET SDK which means you should automatically get producer and consumer spans in your traces. That said, the consumer span is short lived. Indeed the `BasicGet` integration creates a scope but immediately disposes it. Indeed, depending how you consume the message locally, consumer children could be disconnected from the consumer span (this can happen for instance when you (or the library you use) consume the messages in a loop filling a local queue that your code would dequeue). That is why, we provide an API to manually extract the distributed context for you to pass to the child span.
+
 ## Setup
 ### Application setup
 This sample contains two .NET Core applications: `Send` and `Receive`. Open two terminals. First, run the consumer:
