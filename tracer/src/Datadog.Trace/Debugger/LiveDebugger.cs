@@ -164,21 +164,19 @@ namespace Datadog.Trace.Debugger
                     {
                         case ProbeLocationType.Line:
                             var lineProbeResult = _lineProbeResolver.TryResolveLineProbe(probe, out var location);
-
                             var status = lineProbeResult.Status;
                             var message = lineProbeResult.Message;
 
+                            Log.Information("Finished resolving line probe for ProbeID {ProbeID}. Result was '{Status}'. Message was: '{Message}'", probe.Id, status);
                             switch (status)
                             {
                                 case LiveProbeResolveStatus.Bound:
                                     lineProbes.Add(new NativeLineProbeDefinition(location.ProbeDefinition.Id, location.MVID, location.MethodToken, (int)(location.BytecodeOffset), location.LineNumber, location.ProbeDefinition.Where.SourceFile));
                                     break;
                                 case LiveProbeResolveStatus.Unbound:
-                                    Log.Information(message);
                                     _unboundProbes.Add(probe);
                                     break;
                                 case LiveProbeResolveStatus.Error:
-                                    Log.Error(message);
                                     AddErrorProbeStatus(probe.Id, errorMessage: message);
                                     break;
                             }
@@ -282,7 +280,7 @@ namespace Datadog.Trace.Debugger
 
 internal record BoundLineProbeLocation
 {
-    public BoundLineProbeLocation(ProbeDefinition probe, Guid mvid, int methodToken, int? bytecodeOffset, int lineNumber)
+    public BoundLineProbeLocation(ProbeDefinition probe, Guid mvid, int methodToken, int bytecodeOffset, int lineNumber)
     {
         ProbeDefinition = probe;
         MVID = mvid;
@@ -297,7 +295,7 @@ internal record BoundLineProbeLocation
 
     public int MethodToken { get; set; }
 
-    public int? BytecodeOffset { get; set; }
+    public int BytecodeOffset { get; set; }
 
     public int LineNumber { get; set; }
 }
