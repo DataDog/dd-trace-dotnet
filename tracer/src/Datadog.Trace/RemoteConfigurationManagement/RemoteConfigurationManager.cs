@@ -219,8 +219,10 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
                 Log.Warning($"Failed to apply remote configurations {e.Message}");
             }
 
-            SyncCacheConfigurations(product, configurations);
+            CacheAppliedConfigurations(product, configurations);
         }
+
+        RemoveUnappliedConfigurations();
 
         IEnumerable<RemoteConfiguration> GetChangedConfigurations()
         {
@@ -252,16 +254,8 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
             }
         }
 
-        void SyncCacheConfigurations(Product product, List<RemoteConfiguration> configurations)
+        void CacheAppliedConfigurations(Product product, List<RemoteConfiguration> configurations)
         {
-            foreach (var config in product.AppliedConfigurations)
-            {
-                if (!configsToApply.ContainsKey(config.Key))
-                {
-                    product.AppliedConfigurations.Remove(config.Key);
-                }
-            }
-
             foreach (var config in configurations)
             {
                 var remoteConfigurationCache = new RemoteConfigurationCache(config.Path, config.Length, config.Hashes, config.Version);
@@ -273,6 +267,20 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
                 else
                 {
                     product.AppliedConfigurations.Add(config.Path.Path, remoteConfigurationCache);
+                }
+            }
+        }
+
+        void RemoveUnappliedConfigurations()
+        {
+            foreach (var product in _products.Values)
+            {
+                foreach (var appliedConfiguration in product.AppliedConfigurations)
+                {
+                    if (!configsToApply.ContainsKey(appliedConfiguration.Key))
+                    {
+                        product.AppliedConfigurations.Remove(appliedConfiguration.Key);
+                    }
                 }
             }
         }
