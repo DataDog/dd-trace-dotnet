@@ -6,31 +6,32 @@
 using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol;
-
-internal class RcmClientState
+namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
-    public RcmClientState(int rootVersion, int targetsVersion, List<RcmConfigState> configStates, bool hasError, string error)
+    internal class RcmClientState
     {
-        RootVersion = rootVersion;
-        TargetsVersion = targetsVersion;
-        ConfigStates = configStates;
-        HasError = hasError;
-        Error = error;
+        public RcmClientState(int rootVersion, int targetsVersion, List<RcmConfigState> configStates, bool hasError, string error)
+        {
+            RootVersion = rootVersion;
+            TargetsVersion = targetsVersion;
+            ConfigStates = configStates;
+            HasError = hasError;
+            Error = error;
+        }
+
+        [JsonProperty("root_version")]
+        public int RootVersion { get; }
+
+        [JsonProperty("targets_version")]
+        public int TargetsVersion { get; }
+
+        [JsonProperty("config_states")]
+        public List<RcmConfigState> ConfigStates { get; }
+
+        [JsonProperty("has_error")]
+        public bool HasError { get; }
+
+        [JsonProperty("error")]
+        public string Error { get; }
     }
-
-    [JsonProperty("root_version")]
-    public int RootVersion { get; }
-
-    [JsonProperty("targets_version")]
-    public int TargetsVersion { get; }
-
-    [JsonProperty("config_states")]
-    public List<RcmConfigState> ConfigStates { get; }
-
-    [JsonProperty("has_error")]
-    public bool HasError { get; }
-
-    [JsonProperty("error")]
-    public string Error { get; }
 }

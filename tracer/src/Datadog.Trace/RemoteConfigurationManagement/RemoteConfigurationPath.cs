@@ -5,36 +5,37 @@
 
 using System.Text.RegularExpressions;
 
-namespace Datadog.Trace.RemoteConfigurationManagement;
-
-internal record RemoteConfigurationPath
+namespace Datadog.Trace.RemoteConfigurationManagement
 {
-    private static readonly Regex PathRegex = new Regex("^(datadog/\\d+|employee)/([^/]+)/([^/]+)/[^/]+$", RegexOptions.Compiled);
-
-    private RemoteConfigurationPath(string path, string product, string id)
+    internal record RemoteConfigurationPath
     {
-        Path = path;
-        Product = product;
-        Id = id;
-    }
+        private static readonly Regex PathRegex = new Regex("^(datadog/\\d+|employee)/([^/]+)/([^/]+)/[^/]+$", RegexOptions.Compiled);
 
-    public string Path { get; }
-
-    public string Product { get; }
-
-    public string Id { get; }
-
-    public static RemoteConfigurationPath FromPath(string path)
-    {
-        var matcher = PathRegex.Match(path);
-        if (!matcher.Success)
+        private RemoteConfigurationPath(string path, string product, string id)
         {
-            throw new RemoteConfigurationException($"Error parsing path: {path}");
+            Path = path;
+            Product = product;
+            Id = id;
         }
 
-        var product = matcher.Groups[2].Value;
-        var id = matcher.Groups[3].Value;
+        public string Path { get; }
 
-        return new RemoteConfigurationPath(path, product, id);
+        public string Product { get; }
+
+        public string Id { get; }
+
+        public static RemoteConfigurationPath FromPath(string path)
+        {
+            var matcher = PathRegex.Match(path);
+            if (!matcher.Success)
+            {
+                throw new RemoteConfigurationException($"Error parsing path: {path}");
+            }
+
+            var product = matcher.Groups[2].Value;
+            var id = matcher.Groups[3].Value;
+
+            return new RemoteConfigurationPath(path, product, id);
+        }
     }
 }

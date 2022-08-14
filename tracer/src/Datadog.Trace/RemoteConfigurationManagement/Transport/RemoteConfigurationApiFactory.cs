@@ -6,15 +6,16 @@
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Transport;
-
-internal class RemoteConfigurationApiFactory
+namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 {
-    public static IRemoteConfigurationApi Create(RemoteConfigurationSettings remoteConfigurationSettings, IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
+    internal class RemoteConfigurationApiFactory
     {
-        return
-            string.IsNullOrWhiteSpace(remoteConfigurationSettings.FilePath)
-                ? RemoteConfigurationApi.Create(apiRequestFactory, discoveryService)
-                : RemoteConfigurationFileApi.Create(remoteConfigurationSettings);
+        public static IRemoteConfigurationApi Create(RemoteConfigurationSettings remoteConfigurationSettings, IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
+        {
+            return
+                string.IsNullOrWhiteSpace(remoteConfigurationSettings.FilePath)
+                    ? RemoteConfigurationApi.Create(apiRequestFactory, discoveryService)
+                    : RemoteConfigurationFileApi.Create(remoteConfigurationSettings);
+        }
     }
 }

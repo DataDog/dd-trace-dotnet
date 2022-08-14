@@ -8,27 +8,28 @@ using System.Text;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Json;
-
-internal class TufRootBase64Converter : JsonConverter<TufRoot>
+namespace Datadog.Trace.RemoteConfigurationManagement.Json
 {
-    public override TufRoot ReadJson(JsonReader reader, Type objectType, TufRoot existingValue, bool hasExistingValue, JsonSerializer serializer)
+    internal class TufRootBase64Converter : JsonConverter<TufRoot>
     {
-        if (reader.Value == null || reader.ValueType != typeof(string))
+        public override TufRoot ReadJson(JsonReader reader, Type objectType, TufRoot existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
-            return null;
+            if (reader.Value == null || reader.ValueType != typeof(string))
+            {
+                return null;
+            }
+
+            var contentDecode = Encoding.UTF8.GetString(Convert.FromBase64String((string)reader.Value));
+
+            var obj = JsonConvert.DeserializeObject<TufRoot>(contentDecode);
+
+            return obj;
         }
 
-        var contentDecode = Encoding.UTF8.GetString(Convert.FromBase64String((string)reader.Value));
-
-        var obj = JsonConvert.DeserializeObject<TufRoot>(contentDecode);
-
-        return obj;
-    }
-
-    public override void WriteJson(JsonWriter writer, TufRoot value, JsonSerializer serializer)
-    {
-        var encodedContent = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(value)));
-        writer.WriteValue(encodedContent);
+        public override void WriteJson(JsonWriter writer, TufRoot value, JsonSerializer serializer)
+        {
+            var encodedContent = Convert.ToBase64String(Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(value)));
+            writer.WriteValue(encodedContent);
+        }
     }
 }

@@ -5,23 +5,24 @@
 
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol;
-
-internal class RcmConfigState
+namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
-    public RcmConfigState(string id, int version, string product)
+    internal class RcmConfigState
     {
-        Id = id;
-        Version = version;
-        Product = product;
+        public RcmConfigState(string id, int version, string product)
+        {
+            Id = id;
+            Version = version;
+            Product = product;
+        }
+
+        [JsonProperty("id")]
+        public string Id { get; }
+
+        [JsonProperty("version")]
+        public int Version { get; }
+
+        [JsonProperty("product")]
+        public string Product { get; }
     }
-
-    [JsonProperty("id")]
-    public string Id { get; }
-
-    [JsonProperty("version")]
-    public int Version { get; }
-
-    [JsonProperty("product")]
-    public string Product { get; }
 }

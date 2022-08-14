@@ -5,13 +5,14 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
-
-internal class Signed
+namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf
 {
-    public Dictionary<string, Target> Targets { get; set; } = new();
+    internal class Signed
+    {
+        public Dictionary<string, Target> Targets { get; set; } = new();
 
-    public int Version { get; set; }
+        public int Version { get; set; }
 
-    public TargetsCustom Custom { get; set; }
+        public TargetsCustom Custom { get; set; }
+    }
 }

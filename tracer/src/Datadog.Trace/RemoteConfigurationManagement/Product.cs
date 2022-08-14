@@ -6,24 +6,25 @@
 using System;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.RemoteConfigurationManagement;
-
-internal class Product
+namespace Datadog.Trace.RemoteConfigurationManagement
 {
-    public Product(string name)
+    internal class Product
     {
-        Name = name;
-        AppliedConfigurations = new Dictionary<string, RemoteConfigurationCache>();
-    }
+        public Product(string name)
+        {
+            Name = name;
+            AppliedConfigurations = new Dictionary<string, RemoteConfigurationCache>();
+        }
 
-    public event EventHandler<ProductConfigChangedEventArgs> ConfigChanged;
+        public event EventHandler<ProductConfigChangedEventArgs> ConfigChanged;
 
-    public string Name { get; }
+        public string Name { get; }
 
-    public Dictionary<string, RemoteConfigurationCache> AppliedConfigurations { get; }
+        public Dictionary<string, RemoteConfigurationCache> AppliedConfigurations { get; }
 
-    public void AssignConfigs(List<RemoteConfiguration> changedConfigs)
-    {
-        ConfigChanged?.Invoke(this, new ProductConfigChangedEventArgs(Name, changedConfigs));
+        public void AssignConfigs(List<RemoteConfiguration> changedConfigs)
+        {
+            ConfigChanged?.Invoke(this, new ProductConfigChangedEventArgs(Name, changedConfigs));
+        }
     }
 }

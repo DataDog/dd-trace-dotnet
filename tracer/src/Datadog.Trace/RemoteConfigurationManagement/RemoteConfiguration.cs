@@ -7,88 +7,89 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Datadog.Trace.RemoteConfigurationManagement;
-
-internal class RemoteConfiguration : IEquatable<RemoteConfiguration>
+namespace Datadog.Trace.RemoteConfigurationManagement
 {
-    public RemoteConfiguration(
-        RemoteConfigurationPath path,
-        byte[] contents,
-        int length,
-        Dictionary<string, string> hashes,
-        int version)
+    internal class RemoteConfiguration : IEquatable<RemoteConfiguration>
     {
-        Path = path;
-        Contents = contents;
-        Length = length;
-        Hashes = hashes;
-        Version = version;
-    }
-
-    public RemoteConfigurationPath Path { get; }
-
-    public byte[] Contents { get; }
-
-    public int Length { get; }
-
-    public Dictionary<string, string> Hashes { get; }
-
-    public int Version { get; }
-
-    public override bool Equals(object o)
-    {
-        if (ReferenceEquals(null, o))
+        public RemoteConfiguration(
+            RemoteConfigurationPath path,
+            byte[] contents,
+            int length,
+            Dictionary<string, string> hashes,
+            int version)
         {
-            return false;
+            Path = path;
+            Contents = contents;
+            Length = length;
+            Hashes = hashes;
+            Version = version;
         }
 
-        if (ReferenceEquals(this, o))
+        public RemoteConfigurationPath Path { get; }
+
+        public byte[] Contents { get; }
+
+        public int Length { get; }
+
+        public Dictionary<string, string> Hashes { get; }
+
+        public int Version { get; }
+
+        public override bool Equals(object o)
         {
-            return true;
+            if (ReferenceEquals(null, o))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, o))
+            {
+                return true;
+            }
+
+            if (o.GetType() != this.GetType())
+            {
+                return false;
+            }
+
+            return Equals((RemoteConfiguration)o);
         }
 
-        if (o.GetType() != this.GetType())
+        public bool Equals(RemoteConfiguration other)
         {
-            return false;
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
+            return
+                Path == other.Path &&
+                Version == other.Version &&
+                Length == other.Length &&
+                ByteArrayCompare(Contents, other.Contents) &&
+                DictionaryContentEquals(Hashes, other.Hashes);
         }
 
-        return Equals((RemoteConfiguration)o);
-    }
-
-    public bool Equals(RemoteConfiguration other)
-    {
-        if (ReferenceEquals(null, other))
+        // because https://stackoverflow.com/a/48599119
+        private static bool ByteArrayCompare(byte[] a1, byte[] a2)
         {
-            return false;
+            return a1.SequenceEqual(a2);
         }
 
-        if (ReferenceEquals(this, other))
+        public static bool DictionaryContentEquals(Dictionary<string, string> dictionary, Dictionary<string, string> otherDictionary)
         {
-            return true;
+            return (otherDictionary ?? new Dictionary<string, string>())
+               .SequenceEqual(dictionary ?? new Dictionary<string, string>());
         }
 
-        return
-            Path == other.Path &&
-            Version == other.Version &&
-            Length == other.Length &&
-            ByteArrayCompare(Contents, other.Contents) &&
-            DictionaryContentEquals(Hashes, other.Hashes);
-    }
-
-    // because https://stackoverflow.com/a/48599119
-    private static bool ByteArrayCompare(byte[] a1, byte[] a2)
-    {
-        return a1.SequenceEqual(a2);
-    }
-
-    public static bool DictionaryContentEquals(Dictionary<string, string> dictionary, Dictionary<string, string> otherDictionary)
-    {
-        return (otherDictionary ?? new Dictionary<string, string>())
-            .SequenceEqual(dictionary ?? new Dictionary<string, string>());
-    }
-
-    public override int GetHashCode()
-    {
-        return HashCode.Combine(Path, Contents, Length, Hashes, Version);
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Path, Contents, Length, Hashes, Version);
+        }
     }
 }

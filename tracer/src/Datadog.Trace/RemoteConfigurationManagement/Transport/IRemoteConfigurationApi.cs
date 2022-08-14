@@ -6,9 +6,10 @@
 using System.Threading.Tasks;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Transport;
-
-internal interface IRemoteConfigurationApi
+namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 {
-    Task<GetRcmResponse> GetConfigs(GetRcmRequest request);
+    internal interface IRemoteConfigurationApi
+    {
+        Task<GetRcmResponse> GetConfigs(GetRcmRequest request);
+    }
 }

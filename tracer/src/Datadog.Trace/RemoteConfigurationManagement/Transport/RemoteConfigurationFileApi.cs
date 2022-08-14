@@ -8,27 +8,28 @@ using System.Threading.Tasks;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Transport;
-
-internal class RemoteConfigurationFileApi : IRemoteConfigurationApi
+namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 {
-    private readonly string _filePath;
-
-    private RemoteConfigurationFileApi(string filePath)
+    internal class RemoteConfigurationFileApi : IRemoteConfigurationApi
     {
-        _filePath = filePath;
-    }
+        private readonly string _filePath;
 
-    public static RemoteConfigurationFileApi Create(RemoteConfigurationSettings settings)
-    {
-        return new RemoteConfigurationFileApi(settings.FilePath);
-    }
+        private RemoteConfigurationFileApi(string filePath)
+        {
+            _filePath = filePath;
+        }
 
-    public Task<GetRcmResponse> GetConfigs(GetRcmRequest request)
-    {
-        var content = File.ReadAllText(_filePath);
-        var config = JsonConvert.DeserializeObject<GetRcmResponse>(content);
+        public static RemoteConfigurationFileApi Create(RemoteConfigurationSettings settings)
+        {
+            return new RemoteConfigurationFileApi(settings.FilePath);
+        }
 
-        return Task.FromResult(config);
+        public Task<GetRcmResponse> GetConfigs(GetRcmRequest request)
+        {
+            var content = File.ReadAllText(_filePath);
+            var config = JsonConvert.DeserializeObject<GetRcmResponse>(content);
+
+            return Task.FromResult(config);
+        }
     }
 }

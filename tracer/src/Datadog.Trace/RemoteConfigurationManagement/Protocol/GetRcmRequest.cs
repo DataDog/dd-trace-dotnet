@@ -7,19 +7,20 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol;
-
-internal class GetRcmRequest
+namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
-    public GetRcmRequest(RcmClient client, List<RcmCachedTargetFile> cachedTargetFiles)
+    internal class GetRcmRequest
     {
-        Client = client;
-        CachedTargetFiles = cachedTargetFiles.Any() ? cachedTargetFiles : null;
+        public GetRcmRequest(RcmClient client, List<RcmCachedTargetFile> cachedTargetFiles)
+        {
+            Client = client;
+            CachedTargetFiles = cachedTargetFiles.Any() ? cachedTargetFiles : null;
+        }
+
+        [JsonProperty("client")]
+        public RcmClient Client { get; }
+
+        [JsonProperty("cached_target_files")]
+        public List<RcmCachedTargetFile> CachedTargetFiles { get; }
     }
-
-    [JsonProperty("client")]
-    public RcmClient Client { get; }
-
-    [JsonProperty("cached_target_files")]
-    public List<RcmCachedTargetFile> CachedTargetFiles { get; }
 }

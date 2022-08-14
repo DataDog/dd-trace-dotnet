@@ -6,13 +6,14 @@
 using System;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol;
-
-internal class RcmFile
+namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
-    [JsonProperty("path")]
-    public string Path { get; set; } = string.Empty;
+    internal class RcmFile
+    {
+        [JsonProperty("path")]
+        public string Path { get; set; } = string.Empty;
 
-    [JsonProperty("raw")]
-    public byte[] Raw { get; set; } = Array.Empty<byte>();
+        [JsonProperty("raw")]
+        public byte[] Raw { get; set; } = Array.Empty<byte>();
+    }
 }

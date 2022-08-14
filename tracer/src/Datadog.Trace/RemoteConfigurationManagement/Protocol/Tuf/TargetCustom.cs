@@ -5,11 +5,12 @@
 
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
-
-// @JsonIgnoreProperties(ignoreUnknown = true)
-internal class TargetCustom
+namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf
 {
-    [JsonProperty("v")]
-    public int V { get; set; }
+    // @JsonIgnoreProperties(ignoreUnknown = true)
+    internal class TargetCustom
+    {
+        [JsonProperty("v")]
+        public int V { get; set; }
+    }
 }

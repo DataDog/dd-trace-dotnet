@@ -5,10 +5,11 @@
 
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
-
-internal class TufRoot
+namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf
 {
-    [JsonProperty("signed")]
-    public Signed Signed { get; set; }
+    internal class TufRoot
+    {
+        [JsonProperty("signed")]
+        public Signed Signed { get; set; }
+    }
 }

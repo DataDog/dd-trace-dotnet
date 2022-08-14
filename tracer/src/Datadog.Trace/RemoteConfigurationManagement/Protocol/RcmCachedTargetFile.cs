@@ -6,23 +6,24 @@
 using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol;
-
-internal class RcmCachedTargetFile
+namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
-    public RcmCachedTargetFile(string path, int length, List<RcmCachedTargetFileHash> hashes)
+    internal class RcmCachedTargetFile
     {
-        Path = path;
-        Length = length;
-        Hashes = hashes;
+        public RcmCachedTargetFile(string path, int length, List<RcmCachedTargetFileHash> hashes)
+        {
+            Path = path;
+            Length = length;
+            Hashes = hashes;
+        }
+
+        [JsonProperty("path")]
+        public string Path { get; }
+
+        [JsonProperty("length")]
+        public int Length { get; }
+
+        [JsonProperty("hashes")]
+        public List<RcmCachedTargetFileHash> Hashes { get; }
     }
-
-    [JsonProperty("path")]
-    public string Path { get; }
-
-    [JsonProperty("length")]
-    public int Length { get; }
-
-    [JsonProperty("hashes")]
-    public List<RcmCachedTargetFileHash> Hashes { get; }
 }

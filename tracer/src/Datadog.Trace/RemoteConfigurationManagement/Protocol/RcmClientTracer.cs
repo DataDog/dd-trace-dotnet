@@ -5,37 +5,38 @@
 
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol;
-
-internal class RcmClientTracer
+namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
-    public const string LanguageDotnet = "dotnet";
-
-    public RcmClientTracer(string runtimeId, string tracerVersion, string service, string env, string appVersion)
+    internal class RcmClientTracer
     {
-        RuntimeId = runtimeId;
-        Language = LanguageDotnet;
-        TracerVersion = tracerVersion;
-        Service = service;
-        Env = env;
-        AppVersion = appVersion;
+        public const string LanguageDotnet = "dotnet";
+
+        public RcmClientTracer(string runtimeId, string tracerVersion, string service, string env, string appVersion)
+        {
+            RuntimeId = runtimeId;
+            Language = LanguageDotnet;
+            TracerVersion = tracerVersion;
+            Service = service;
+            Env = env;
+            AppVersion = appVersion;
+        }
+
+        [JsonProperty("runtime_id")]
+        public string RuntimeId { get; }
+
+        [JsonProperty("language")]
+        public string Language { get; }
+
+        [JsonProperty("tracer_version")]
+        public string TracerVersion { get; }
+
+        [JsonProperty("service")]
+        public string Service { get; }
+
+        [JsonProperty("env")]
+        public string Env { get; }
+
+        [JsonProperty("app_version")]
+        public string AppVersion { get; }
     }
-
-    [JsonProperty("runtime_id")]
-    public string RuntimeId { get; }
-
-    [JsonProperty("language")]
-    public string Language { get; }
-
-    [JsonProperty("tracer_version")]
-    public string TracerVersion { get; }
-
-    [JsonProperty("service")]
-    public string Service { get; }
-
-    [JsonProperty("env")]
-    public string Env { get; }
-
-    [JsonProperty("app_version")]
-    public string AppVersion { get; }
 }

@@ -6,16 +6,17 @@
 using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
-
-internal class Target
+namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf
 {
-    [JsonProperty("custom")]
-    public TargetCustom Custom { get; set; } = new();
+    internal class Target
+    {
+        [JsonProperty("custom")]
+        public TargetCustom Custom { get; set; } = new();
 
-    [JsonProperty("hashes")]
-    public Dictionary<string, string> Hashes { get; set; } = new();
+        [JsonProperty("hashes")]
+        public Dictionary<string, string> Hashes { get; set; } = new();
 
-    [JsonProperty("length")]
-    public int Length { get; set; }
+        [JsonProperty("length")]
+        public int Length { get; set; }
+    }
 }

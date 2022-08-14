@@ -5,19 +5,20 @@
 
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol;
-
-internal class RcmCachedTargetFileHash
+namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
-    public RcmCachedTargetFileHash(string algorithm, string hash)
+    internal class RcmCachedTargetFileHash
     {
-        Algorithm = algorithm;
-        Hash = hash;
+        public RcmCachedTargetFileHash(string algorithm, string hash)
+        {
+            Algorithm = algorithm;
+            Hash = hash;
+        }
+
+        [JsonProperty("algorithm")]
+        public string Algorithm { get; }
+
+        [JsonProperty("hash")]
+        public string Hash { get; }
     }
-
-    [JsonProperty("algorithm")]
-    public string Algorithm { get; }
-
-    [JsonProperty("hash")]
-    public string Hash { get; }
 }

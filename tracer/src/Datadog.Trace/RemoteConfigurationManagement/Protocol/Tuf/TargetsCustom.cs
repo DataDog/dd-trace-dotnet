@@ -5,10 +5,11 @@
 
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
-
-internal class TargetsCustom
+namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf
 {
-    [JsonProperty("opaque_backend_state")]
-    public string OpaqueBackendState { get; set; }
+    internal class TargetsCustom
+    {
+        [JsonProperty("opaque_backend_state")]
+        public string OpaqueBackendState { get; set; }
+    }
 }

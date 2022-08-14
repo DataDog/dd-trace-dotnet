@@ -6,31 +6,32 @@
 using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol;
-
-internal class RcmClient
+namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
-    public RcmClient(string id, List<string> products, RcmClientTracer clientTracer, RcmClientState state)
+    internal class RcmClient
     {
-        Id = id;
-        Products = products;
-        IsTracer = true;
-        ClientTracer = clientTracer;
-        State = state;
+        public RcmClient(string id, List<string> products, RcmClientTracer clientTracer, RcmClientState state)
+        {
+            Id = id;
+            Products = products;
+            IsTracer = true;
+            ClientTracer = clientTracer;
+            State = state;
+        }
+
+        [JsonProperty("state")]
+        public RcmClientState State { get; }
+
+        [JsonProperty("id")]
+        public string Id { get; }
+
+        [JsonProperty("products")]
+        public List<string> Products { get; }
+
+        [JsonProperty("is_tracer")]
+        public bool IsTracer { get; }
+
+        [JsonProperty("client_tracer")]
+        public RcmClientTracer ClientTracer { get; }
     }
-
-    [JsonProperty("state")]
-    public RcmClientState State { get; }
-
-    [JsonProperty("id")]
-    public string Id { get; }
-
-    [JsonProperty("products")]
-    public List<string> Products { get; }
-
-    [JsonProperty("is_tracer")]
-    public bool IsTracer { get; }
-
-    [JsonProperty("client_tracer")]
-    public RcmClientTracer ClientTracer { get; }
 }

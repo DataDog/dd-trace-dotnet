@@ -8,17 +8,18 @@ using Datadog.Trace.RemoteConfigurationManagement.Json;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Protocol;
-
-internal class GetRcmResponse
+namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
-    [JsonConverter(typeof(TufRootBase64Converter))]
-    [JsonProperty("targets")]
-    public TufRoot Targets { get; set; }
+    internal class GetRcmResponse
+    {
+        [JsonConverter(typeof(TufRootBase64Converter))]
+        [JsonProperty("targets")]
+        public TufRoot Targets { get; set; }
 
-    [JsonProperty("client_configs")]
-    public List<string> ClientConfigs { get; set; } = new();
+        [JsonProperty("client_configs")]
+        public List<string> ClientConfigs { get; set; } = new();
 
-    [JsonProperty("target_files")]
-    public List<RcmFile> TargetFiles { get; set; } = new();
+        [JsonProperty("target_files")]
+        public List<RcmFile> TargetFiles { get; set; } = new();
+    }
 }

@@ -6,17 +6,18 @@
 using System;
 using System.Collections.Generic;
 
-namespace Datadog.Trace.RemoteConfigurationManagement;
-
-internal class ProductConfigChangedEventArgs : EventArgs
+namespace Datadog.Trace.RemoteConfigurationManagement
 {
-    public ProductConfigChangedEventArgs(string name, IReadOnlyList<RemoteConfiguration> newConfigs)
+    internal class ProductConfigChangedEventArgs : EventArgs
     {
-        Name = name;
-        NewConfigs = newConfigs;
+        public ProductConfigChangedEventArgs(string name, IReadOnlyList<RemoteConfiguration> newConfigs)
+        {
+            Name = name;
+            NewConfigs = newConfigs;
+        }
+
+        public string Name { get; }
+
+        public IReadOnlyList<RemoteConfiguration> NewConfigs { get; }
     }
-
-    public string Name { get; }
-
-    public IReadOnlyList<RemoteConfiguration> NewConfigs { get; }
 }

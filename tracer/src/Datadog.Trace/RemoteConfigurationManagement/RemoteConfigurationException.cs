@@ -5,12 +5,13 @@
 
 using System;
 
-namespace Datadog.Trace.RemoteConfigurationManagement;
-
-internal class RemoteConfigurationException : Exception
+namespace Datadog.Trace.RemoteConfigurationManagement
 {
-    public RemoteConfigurationException(string message)
-        : base(message)
+    internal class RemoteConfigurationException : Exception
     {
+        public RemoteConfigurationException(string message)
+            : base(message)
+        {
+        }
     }
 }

@@ -6,56 +6,57 @@
 using System;
 using Datadog.Trace.Configuration;
 
-namespace Datadog.Trace.RemoteConfigurationManagement;
-
-internal class RemoteConfigurationSettings
+namespace Datadog.Trace.RemoteConfigurationManagement
 {
-    private const int DefaultPollIntervalMilliseconds = 5000;
-
-    public RemoteConfigurationSettings()
-        : this(configurationSource: null)
+    internal class RemoteConfigurationSettings
     {
-    }
+        private const int DefaultPollIntervalMilliseconds = 5000;
 
-    public RemoteConfigurationSettings(IConfigurationSource configurationSource)
-    {
-        Id = Guid.NewGuid().ToString();
-        RuntimeId = Util.RuntimeId.Get();
-        TracerVersion = TracerConstants.AssemblyVersion;
-        Environment = configurationSource?.GetString(ConfigurationKeys.Environment);
-        AppVersion = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
-        FilePath = configurationSource?.GetString(ConfigurationKeys.Rcm.FilePath);
+        public RemoteConfigurationSettings()
+            : this(configurationSource: null)
+        {
+        }
 
-        var pollInterval = configurationSource?.GetInt32(ConfigurationKeys.Rcm.PollInterval);
-        pollInterval =
-            pollInterval is null or <= 0 or > 5000
-                ? DefaultPollIntervalMilliseconds
-                : pollInterval.Value;
+        public RemoteConfigurationSettings(IConfigurationSource configurationSource)
+        {
+            Id = Guid.NewGuid().ToString();
+            RuntimeId = Util.RuntimeId.Get();
+            TracerVersion = TracerConstants.AssemblyVersion;
+            Environment = configurationSource?.GetString(ConfigurationKeys.Environment);
+            AppVersion = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
+            FilePath = configurationSource?.GetString(ConfigurationKeys.Rcm.FilePath);
 
-        PollInterval = TimeSpan.FromMilliseconds(pollInterval.Value);
-    }
+            var pollInterval = configurationSource?.GetInt32(ConfigurationKeys.Rcm.PollInterval);
+            pollInterval =
+                pollInterval is null or <= 0 or > 5000
+                    ? DefaultPollIntervalMilliseconds
+                    : pollInterval.Value;
 
-    public string Id { get; }
+            PollInterval = TimeSpan.FromMilliseconds(pollInterval.Value);
+        }
 
-    public string RuntimeId { get; }
+        public string Id { get; }
 
-    public string TracerVersion { get; }
+        public string RuntimeId { get; }
 
-    public string Environment { get; }
+        public string TracerVersion { get; }
 
-    public string AppVersion { get; }
+        public string Environment { get; }
 
-    public TimeSpan PollInterval { get; }
+        public string AppVersion { get; }
 
-    public string FilePath { get; set; }
+        public TimeSpan PollInterval { get; }
 
-    public static RemoteConfigurationSettings FromSource(IConfigurationSource source)
-    {
-        return new RemoteConfigurationSettings(source);
-    }
+        public string FilePath { get; set; }
 
-    public static RemoteConfigurationSettings FromDefaultSource()
-    {
-        return FromSource(GlobalSettings.CreateDefaultConfigurationSource());
+        public static RemoteConfigurationSettings FromSource(IConfigurationSource source)
+        {
+            return new RemoteConfigurationSettings(source);
+        }
+
+        public static RemoteConfigurationSettings FromDefaultSource()
+        {
+            return FromSource(GlobalSettings.CreateDefaultConfigurationSource());
+        }
     }
 }

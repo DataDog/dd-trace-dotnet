@@ -5,23 +5,24 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.RemoteConfigurationManagement;
-
-internal class RemoteConfigurationCache
+namespace Datadog.Trace.RemoteConfigurationManagement
 {
-    public RemoteConfigurationCache(RemoteConfigurationPath path, int length, Dictionary<string, string> hashes, int version)
+    internal class RemoteConfigurationCache
     {
-        Path = path;
-        Length = length;
-        Hashes = hashes;
-        Version = version;
+        public RemoteConfigurationCache(RemoteConfigurationPath path, int length, Dictionary<string, string> hashes, int version)
+        {
+            Path = path;
+            Length = length;
+            Hashes = hashes;
+            Version = version;
+        }
+
+        public RemoteConfigurationPath Path { get; }
+
+        public int Length { get; }
+
+        public Dictionary<string, string> Hashes { get; }
+
+        public int Version { get; }
     }
-
-    public RemoteConfigurationPath Path { get; }
-
-    public int Length { get; }
-
-    public Dictionary<string, string> Hashes { get; }
-
-    public int Version { get; }
 }

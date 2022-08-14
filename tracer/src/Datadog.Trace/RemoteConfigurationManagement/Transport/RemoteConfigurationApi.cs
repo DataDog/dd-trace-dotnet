@@ -12,43 +12,44 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
-namespace Datadog.Trace.RemoteConfigurationManagement.Transport;
-
-internal class RemoteConfigurationApi : IRemoteConfigurationApi
+namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 {
-    private readonly IApiRequestFactory _apiRequestFactory;
-    private readonly IDiscoveryService _discoveryService;
-
-    private RemoteConfigurationApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
+    internal class RemoteConfigurationApi : IRemoteConfigurationApi
     {
-        _apiRequestFactory = apiRequestFactory;
-        _discoveryService = discoveryService;
-    }
+        private readonly IApiRequestFactory _apiRequestFactory;
+        private readonly IDiscoveryService _discoveryService;
 
-    public static RemoteConfigurationApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
-    {
-        return new RemoteConfigurationApi(apiRequestFactory, discoveryService);
-    }
-
-    public async Task<GetRcmResponse> GetConfigs(GetRcmRequest request)
-    {
-        var uri = _apiRequestFactory.GetEndpoint(_discoveryService.ConfigurationEndpoint);
-        var apiRequest = _apiRequestFactory.Create(uri);
-
-        var requestContent = JsonConvert.SerializeObject(request);
-        var bytes = Encoding.UTF8.GetBytes(requestContent);
-        var payload = new ArraySegment<byte>(bytes);
-
-        var apiResponse = await apiRequest.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);
-        var isRcmDisabled = apiResponse.StatusCode == 404;
-        if (isRcmDisabled)
+        private RemoteConfigurationApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
         {
-            return null;
+            _apiRequestFactory = apiRequestFactory;
+            _discoveryService = discoveryService;
         }
 
-        var responseContent = await apiResponse.ReadAsStringAsync().ConfigureAwait(false);
-        var response = JsonConvert.DeserializeObject<GetRcmResponse>(responseContent);
+        public static RemoteConfigurationApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
+        {
+            return new RemoteConfigurationApi(apiRequestFactory, discoveryService);
+        }
 
-        return response;
+        public async Task<GetRcmResponse> GetConfigs(GetRcmRequest request)
+        {
+            var uri = _apiRequestFactory.GetEndpoint(_discoveryService.ConfigurationEndpoint);
+            var apiRequest = _apiRequestFactory.Create(uri);
+
+            var requestContent = JsonConvert.SerializeObject(request);
+            var bytes = Encoding.UTF8.GetBytes(requestContent);
+            var payload = new ArraySegment<byte>(bytes);
+
+            var apiResponse = await apiRequest.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);
+            var isRcmDisabled = apiResponse.StatusCode == 404;
+            if (isRcmDisabled)
+            {
+                return null;
+            }
+
+            var responseContent = await apiResponse.ReadAsStringAsync().ConfigureAwait(false);
+            var response = JsonConvert.DeserializeObject<GetRcmResponse>(responseContent);
+
+            return response;
+        }
     }
 }
