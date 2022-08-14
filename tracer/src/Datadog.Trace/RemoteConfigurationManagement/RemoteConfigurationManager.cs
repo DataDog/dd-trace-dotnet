@@ -157,7 +157,7 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
             var response = _remoteConfigurationApi.GetConfigs(request).Result;
             Log.Information($"RCM Received: {JsonConvert.SerializeObject(response)}");
             Log.Information($"RCM Received targets: {JsonConvert.SerializeObject(response?.Targets)}");
-            Log.Information($"RCM Received signed: {JsonConvert.SerializeObject(response?.Targets?.Signed)}");
+            Log.Information($"RCM Received target files: {JsonConvert.SerializeObject(response?.TargetFiles)}");
 
             if (response?.Targets?.Signed != null)
             {
@@ -222,7 +222,7 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
             CacheAppliedConfigurations(product, configurations);
         }
 
-        RemoveUnappliedConfigurations();
+        UncacheRemovedConfigurations();
 
         IEnumerable<RemoteConfiguration> GetChangedConfigurations()
         {
@@ -271,7 +271,7 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
             }
         }
 
-        void RemoveUnappliedConfigurations()
+        void UncacheRemovedConfigurations()
         {
             foreach (var product in _products.Values)
             {
