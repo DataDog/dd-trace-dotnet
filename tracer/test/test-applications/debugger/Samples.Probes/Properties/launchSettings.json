@@ -10,7 +10,7 @@
         "COR_ENABLE_PROFILING": "1",
         "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
         "CORECLR_ENABLE_PROFILING": "1",
-        "DD_INTERNAL_DEBUGGER_ENABLED": "1",
+        "DD_DEBUGGER_ENABLED": "1",
         "DD_SERVICE": "debugger-demo-dotnet-omer",
         "DD_API_KEY": "ff4c923c7419048b75b86a888a3d33b9",
 

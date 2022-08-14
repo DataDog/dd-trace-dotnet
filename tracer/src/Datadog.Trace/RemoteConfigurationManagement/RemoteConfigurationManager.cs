@@ -13,14 +13,13 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Transport;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement;
 
 internal class RemoteConfigurationManager : IRemoteConfigurationManager
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationManager));
-    private static readonly object GlobalLock = new();
+    private static readonly SemaphoreSlim SemaphoreSlim = new(1, 1);
 
     private readonly string _id;
     private readonly string _runtimeId;
@@ -34,7 +33,6 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
 
     private readonly CancellationTokenSource _cancellationSource;
     private readonly ConcurrentDictionary<string, Product> _products;
-    private readonly object _instanceLock = new();
 
     private int _rootVersion;
     private int _targetsVersion;
@@ -77,53 +75,53 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
         RemoteConfigurationSettings settings,
         string serviceName)
     {
-        lock (GlobalLock)
+        SemaphoreSlim.Wait();
+
+        try
         {
-            return
-                Instance ??= new RemoteConfigurationManager(
-                    discoveryService,
-                    remoteConfigurationApi,
-                    id: settings.Id,
-                    runtimeId: settings.RuntimeId,
-                    tracerVersion: settings.TracerVersion,
-                    service: serviceName,
-                    env: settings.Environment,
-                    appVersion: settings.AppVersion,
-                    pollInterval: settings.PollInterval);
+            Instance ??= new RemoteConfigurationManager(
+                discoveryService,
+                remoteConfigurationApi,
+                id: settings.Id,
+                runtimeId: settings.RuntimeId,
+                tracerVersion: settings.TracerVersion,
+                service: serviceName,
+                env: settings.Environment,
+                appVersion: settings.AppVersion,
+                pollInterval: settings.PollInterval);
         }
+        finally
+        {
+            SemaphoreSlim.Release();
+        }
+
+        return Instance;
     }
 
     public async Task StartPollingAsync()
     {
-        lock (GlobalLock)
-        {
-            if (_isPollingStarted)
-            {
-                Log.Warning("Remote Configuration management polling is already started.");
-                return;
-            }
+        await SemaphoreSlim.WaitAsync().ConfigureAwait(false);
 
-            _isPollingStarted = true;
+        if (_isPollingStarted)
+        {
+            Log.Warning("Remote Configuration management polling is already started.");
+            return;
         }
 
+        _isPollingStarted = true;
         LifetimeManager.Instance.AddShutdownTask(OnShutdown);
+
+        SemaphoreSlim.Release();
 
         while (!_cancellationSource.IsCancellationRequested)
         {
-            try
-            {
-                var isRcmEnabled = !string.IsNullOrEmpty(_discoveryService.ConfigurationEndpoint);
-                var isProductRegistered = _products.Any();
+            var isRcmEnabled = !string.IsNullOrEmpty(_discoveryService.ConfigurationEndpoint);
+            var isProductRegistered = _products.Any();
 
-                if (isRcmEnabled && isProductRegistered)
-                {
-                    Poll();
-                    _lastPollError = null;
-                }
-            }
-            catch (Exception e)
+            if (isRcmEnabled && isProductRegistered)
             {
-                _lastPollError = e.Message;
+                await Poll().ConfigureAwait(false);
+                _lastPollError = null;
             }
 
             try
@@ -147,29 +145,28 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
         _products.TryRemove(productName, out _);
     }
 
-    private void Poll()
+    private async Task Poll()
     {
-        lock (_instanceLock)
+        await SemaphoreSlim.WaitAsync().ConfigureAwait(false);
+
+        try
         {
             var request = BuildRequest();
-            Log.Information($"RCM Sending: {JsonConvert.SerializeObject(request)}");
-
             var response = _remoteConfigurationApi.GetConfigs(request).Result;
-            Log.Information($"RCM Received: {JsonConvert.SerializeObject(response)}");
-            Log.Information($"RCM Received targets: {JsonConvert.SerializeObject(response?.Targets)}");
-            Log.Information($"RCM Received target files: {JsonConvert.SerializeObject(response?.TargetFiles)}");
 
             if (response?.Targets?.Signed != null)
             {
-                Log.Information($"RCM Processing response: {_targetsVersion}");
-
                 ProcessResponse(response);
-                Log.Information($"RCM Version before: {_targetsVersion}");
-
                 _targetsVersion = response.Targets.Signed.Version;
-
-                Log.Information($"RCM Version after: {_targetsVersion}");
             }
+        }
+        catch (Exception e)
+        {
+            _lastPollError = e.Message;
+        }
+        finally
+        {
+            SemaphoreSlim.Release();
         }
     }
 
@@ -215,13 +212,12 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
             try
             {
                 product.AssignConfigs(configurations);
+                CacheAppliedConfigurations(product, configurations);
             }
             catch (Exception e)
             {
                 Log.Warning($"Failed to apply remote configurations {e.Message}");
             }
-
-            CacheAppliedConfigurations(product, configurations);
         }
 
         UncacheRemovedConfigurations();
