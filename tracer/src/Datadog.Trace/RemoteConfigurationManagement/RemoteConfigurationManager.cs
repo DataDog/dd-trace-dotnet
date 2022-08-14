@@ -155,13 +155,16 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
             Log.Information($"RCM Sending: {JsonConvert.SerializeObject(request)}");
 
             var response = _remoteConfigurationApi.GetConfigs(request).Result;
+            Log.Information($"RCM Received: {JsonConvert.SerializeObject(response)}");
 
             if (response?.Targets?.Signed != null)
             {
-                Log.Information($"RCM Received: {JsonConvert.SerializeObject(response)}");
-
                 ProcessResponse(response);
+                Log.Information($"RCM Version before: {_targetsVersion}");
+
                 _targetsVersion = response.Targets.Signed.Version;
+
+                Log.Information($"RCM Version after: {_targetsVersion}");
             }
         }
     }
