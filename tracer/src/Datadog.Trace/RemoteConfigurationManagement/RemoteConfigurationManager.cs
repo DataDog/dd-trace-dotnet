@@ -199,13 +199,15 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
 
     private void ProcessResponse(GetRcmResponse response)
     {
-        var configsToApply = (response.TargetFiles ?? Enumerable.Empty<RcmFile>()).ToDictionary(f => f.Path, f => f);
-        var configsToVerify = response.Targets.Signed.Targets;
+        var actualConfigPath =
+            response.ClientConfigs
+                    .Select(RemoteConfigurationPath.FromPath)
+                    .ToDictionary(path => path.Path);
 
-        var changedConfigurations = GetChangedConfigurations();
-        var configsByProduct = changedConfigurations.GroupBy(config => config.Path.Product);
+        var changedConfigurationsByProduct = GetChangedConfigurations()
+           .GroupBy(config => config.Path.Product);
 
-        foreach (var productGroup in configsByProduct)
+        foreach (var productGroup in changedConfigurationsByProduct)
         {
             var configurations = productGroup.ToList();
             var product = _products[productGroup.Key];
@@ -226,31 +228,28 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
 
         IEnumerable<RemoteConfiguration> GetChangedConfigurations()
         {
-            foreach (var path in response.ClientConfigs)
+            var signed = response.Targets.Signed.Targets;
+            var targetFiles = (response.TargetFiles ?? Enumerable.Empty<RcmFile>()).ToDictionary(f => f.Path, f => f);
+
+            foreach (var kp in actualConfigPath)
             {
-                var configPath = RemoteConfigurationPath.FromPath(path);
-                if (!configsToVerify.TryGetValue(path, out var signedTarget))
+                if (!signed.TryGetValue(kp.Key, out var signedTarget))
                 {
-                    throw new RemoteConfigurationException($"Missing config {path} in targets");
+                    throw new RemoteConfigurationException($"Missing config {kp.Key} in targets");
                 }
 
-                if (!_products.TryGetValue(configPath.Product, out var product))
+                if (!_products.TryGetValue(kp.Value.Product, out var product))
                 {
-                    throw new RemoteConfigurationException($"Received config {path} for a product that was not requested");
+                    throw new RemoteConfigurationException($"Received config {kp.Key} for a product that was not requested");
                 }
 
-                var isConfigApplied = product.AppliedConfigurations.TryGetValue(path, out var appliedConfig) && appliedConfig.Hashes.SequenceEqual(signedTarget.Hashes);
+                var isConfigApplied = product.AppliedConfigurations.TryGetValue(kp.Key, out var appliedConfig) && appliedConfig.Hashes.SequenceEqual(signedTarget.Hashes);
                 if (isConfigApplied)
                 {
                     continue;
                 }
 
-                if (!configsToApply.ContainsKey(path))
-                {
-                    throw new RemoteConfigurationException($"Missing config {path} in target files");
-                }
-
-                yield return new RemoteConfiguration(configPath, configsToApply[path].Raw, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom.V);
+                yield return new RemoteConfiguration(kp.Value, targetFiles[kp.Key].Raw, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom.V);
             }
         }
 
@@ -277,7 +276,7 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
             {
                 foreach (var appliedConfiguration in product.AppliedConfigurations)
                 {
-                    if (!configsToApply.ContainsKey(appliedConfiguration.Key))
+                    if (!actualConfigPath.ContainsKey(appliedConfiguration.Key))
                     {
                         product.AppliedConfigurations.Remove(appliedConfiguration.Key);
                     }
