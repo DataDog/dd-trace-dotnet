@@ -202,36 +202,9 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
         var configsToApply = (response.TargetFiles ?? Enumerable.Empty<RcmFile>()).ToDictionary(f => f.Path, f => f);
         var configsToVerify = response.Targets.Signed.Targets;
 
-        var changedConfigurations = new List<RemoteConfiguration>();
-        foreach (var path in response.ClientConfigs)
-        {
-            var configPath = RemoteConfigurationPath.FromPath(path);
-            if (!configsToVerify.TryGetValue(path, out var signedTarget))
-            {
-                throw new RemoteConfigurationException($"Missing config {path} in targets");
-            }
-
-            if (!_products.TryGetValue(configPath.Product, out var product))
-            {
-                throw new RemoteConfigurationException($"Received config {path} for a product that was not requested");
-            }
-
-            var isConfigApplied = product.AppliedConfigurations.TryGetValue(path, out var appliedConfig) && appliedConfig.Hashes.SequenceEqual(signedTarget.Hashes);
-            if (isConfigApplied)
-            {
-                continue;
-            }
-
-            if (!configsToApply.ContainsKey(path))
-            {
-                throw new RemoteConfigurationException($"Missing config {path} in target files");
-            }
-
-            var config = new RemoteConfiguration(configPath, configsToApply[path].Raw, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom.V);
-            changedConfigurations.Add(config);
-        }
-
+        var changedConfigurations = GetChangedConfigurations();
         var configsByProduct = changedConfigurations.GroupBy(config => config.Path.Product);
+
         foreach (var productGroup in configsByProduct)
         {
             var configurations = productGroup.ToList();
@@ -246,6 +219,41 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
                 Log.Warning($"Failed to apply remote configurations {e.Message}");
             }
 
+            SyncCacheConfigurations(product, configurations);
+        }
+
+        IEnumerable<RemoteConfiguration> GetChangedConfigurations()
+        {
+            foreach (var path in response.ClientConfigs)
+            {
+                var configPath = RemoteConfigurationPath.FromPath(path);
+                if (!configsToVerify.TryGetValue(path, out var signedTarget))
+                {
+                    throw new RemoteConfigurationException($"Missing config {path} in targets");
+                }
+
+                if (!_products.TryGetValue(configPath.Product, out var product))
+                {
+                    throw new RemoteConfigurationException($"Received config {path} for a product that was not requested");
+                }
+
+                var isConfigApplied = product.AppliedConfigurations.TryGetValue(path, out var appliedConfig) && appliedConfig.Hashes.SequenceEqual(signedTarget.Hashes);
+                if (isConfigApplied)
+                {
+                    continue;
+                }
+
+                if (!configsToApply.ContainsKey(path))
+                {
+                    throw new RemoteConfigurationException($"Missing config {path} in target files");
+                }
+
+                yield return new RemoteConfiguration(configPath, configsToApply[path].Raw, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom.V);
+            }
+        }
+
+        void SyncCacheConfigurations(Product product, List<RemoteConfiguration> configurations)
+        {
             foreach (var config in product.AppliedConfigurations)
             {
                 if (!configsToApply.ContainsKey(config.Key))
@@ -256,7 +264,16 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
 
             foreach (var config in configurations)
             {
-                product.AppliedConfigurations.Add(config.Path.Path, new RemoteConfigurationCache(config.Path, config.Length, config.Hashes, config.Version));
+                var remoteConfigurationCache = new RemoteConfigurationCache(config.Path, config.Length, config.Hashes, config.Version);
+
+                if (product.AppliedConfigurations.ContainsKey(config.Path.Path))
+                {
+                    product.AppliedConfigurations[config.Path.Path] = remoteConfigurationCache;
+                }
+                else
+                {
+                    product.AppliedConfigurations.Add(config.Path.Path, remoteConfigurationCache);
+                }
             }
         }
     }
