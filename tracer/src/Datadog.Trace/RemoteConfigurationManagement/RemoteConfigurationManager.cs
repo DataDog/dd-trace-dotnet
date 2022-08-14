@@ -117,8 +117,8 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
 
                 if (isRcmEnabled && isProductRegistered)
                 {
-                    _lastPollError = null;
                     Poll();
+                    _lastPollError = null;
                 }
             }
             catch (Exception e)
@@ -237,7 +237,15 @@ internal class RemoteConfigurationManager : IRemoteConfigurationManager
             var configurations = productGroup.ToList();
             var product = _products[productGroup.Key];
 
-            product.AssignConfigs(configurations);
+            try
+            {
+                product.AssignConfigs(configurations);
+            }
+            catch (Exception e)
+            {
+                Log.Warning($"Failed to apply remote configurations {e.Message}");
+            }
+
             foreach (var config in product.AppliedConfigurations)
             {
                 if (!configsToApply.ContainsKey(config.Key))
