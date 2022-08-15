@@ -201,6 +201,14 @@ namespace Datadog.Trace.Debugger
                 _probeStatusPoller.AddProbes(addedProbes.Select(probe => probe.Id).ToArray());
                 _probeStatusPoller.RemoveProbes(removedProbes.Select(probe => probe.Id).ToArray());
 
+                foreach (var probe in addedProbes)
+                {
+                    if (probe is SnapshotProbe snapshotProbe && snapshotProbe.Sampling.HasValue)
+                    {
+                        ProbeRateLimiter.Instance.SetRate(probe.Id, (int)snapshotProbe.Sampling.Value.SnapshotsPerSecond);
+                    }
+                }
+
                 foreach (var probe in removedProbes)
                 {
                     ProbeRateLimiter.Instance.ResetRate(probe.Id);

@@ -91,7 +91,14 @@ internal static class DebuggerTestHelper
 
     private static SnapshotProbe CreateSnapshotProbe(Where where, DeterministicGuidGenerator guidGenerator)
     {
-        return new SnapshotProbe { Id = guidGenerator.New().ToString(), Language = TracerConstants.Language, Active = true, Where = where };
+        return new SnapshotProbe
+        {
+            Id = guidGenerator.New().ToString(),
+            Language = TracerConstants.Language,
+            Active = true,
+            Where = where,
+            Sampling = new Trace.Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 1000000 }
+        };
     }
 
     private static Where CreateMethodProbeWhere(MethodInfo method, MethodProbeTestDataAttribute probeTestData)
