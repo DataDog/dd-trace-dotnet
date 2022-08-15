@@ -13,9 +13,11 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.Debugger.Instrumentation;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.ProbeStatuses;
+using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Logging;
 
@@ -23,7 +25,7 @@ namespace Datadog.Trace.Debugger
 {
     internal class LiveDebugger
     {
-        private static readonly Lazy<LiveDebugger> LazyInstance = new Lazy<LiveDebugger>(Create, isThreadSafe: true);
+        private static readonly Lazy<LiveDebugger> LazyInstance = new(Create, isThreadSafe: true);
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebugger));
 
         private readonly ImmutableDebuggerSettings _settings;
@@ -54,7 +56,7 @@ namespace Datadog.Trace.Debugger
             var settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromSource(source));
             if (!settings.Enabled)
             {
-                return Create(settings, null, null, null, null, null);
+                return Create(settings, discoveryService: null, configurationPoller: null, lineProbeResolver: null, debuggerSink: null, probeStatusPoller: null);
             }
 
             var apiFactory = DebuggerTransportStrategy.Get(settings.AgentUri);
@@ -114,7 +116,7 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                var isDiscoverySuccessful = await _discoveryService.DiscoverAsync().ConfigureAwait(false);
+                var isDiscoverySuccessful = await _discoveryService.DiscoverAsync().ConfigureAwait(continueOnCapturedContext: false);
                 var isProbeConfigurationSupported = isDiscoverySuccessful && !string.IsNullOrWhiteSpace(_discoveryService.ProbeConfigurationEndpoint);
                 if (_settings.ProbeMode == ProbeMode.Agent && !isProbeConfigurationSupported)
                 {
@@ -122,7 +124,7 @@ namespace Datadog.Trace.Debugger
                     return;
                 }
 
-                await StartAsync().ConfigureAwait(false);
+                await StartAsync().ConfigureAwait(continueOnCapturedContext: false);
             }
             catch (Exception e)
             {
@@ -171,7 +173,7 @@ namespace Datadog.Trace.Debugger
                             switch (status)
                             {
                                 case LiveProbeResolveStatus.Bound:
-                                    lineProbes.Add(new NativeLineProbeDefinition(location.ProbeDefinition.Id, location.MVID, location.MethodToken, (int)(location.BytecodeOffset), location.LineNumber, location.ProbeDefinition.Where.SourceFile));
+                                    lineProbes.Add(new NativeLineProbeDefinition(location.ProbeDefinition.Id, location.MVID, location.MethodToken, (int)location.BytecodeOffset, location.LineNumber, location.ProbeDefinition.Where.SourceFile));
                                     break;
                                 case LiveProbeResolveStatus.Unbound:
                                     _unboundProbes.Add(probe);
@@ -198,6 +200,19 @@ namespace Datadog.Trace.Debugger
 
                 _probeStatusPoller.AddProbes(addedProbes.Select(probe => probe.Id).ToArray());
                 _probeStatusPoller.RemoveProbes(removedProbes.Select(probe => probe.Id).ToArray());
+
+                foreach (var probe in addedProbes)
+                {
+                    if (probe is SnapshotProbe snapshotProbe && snapshotProbe.Sampling.HasValue)
+                    {
+                        ProbeRateLimiter.Instance.SetRate(probe.Id, (int)snapshotProbe.Sampling.Value.SnapshotsPerSecond);
+                    }
+                }
+
+                foreach (var probe in removedProbes)
+                {
+                    ProbeRateLimiter.Instance.ResetRate(probe.Id);
+                }
 
                 // This log is checked in integration test
                 Log.Information("Live Debugger.InstrumentProbes: Request to instrument probes definitions completed.");

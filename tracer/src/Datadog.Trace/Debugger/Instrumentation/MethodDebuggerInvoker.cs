@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Instrumentation
@@ -36,7 +37,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static MethodDebuggerState BeginMethod_StartMarker<TTarget>(string probeId, TTarget instance, RuntimeMethodHandle methodHandle, RuntimeTypeHandle typeHandle, int methodMetadataIndex)
         {
-            if (ProbeRateLimiter.Instance.IsLimitReached)
+            if (!ProbeRateLimiter.Instance.Sample(probeId))
             {
                 return CreateInvalidatedDebuggerState();
             }
