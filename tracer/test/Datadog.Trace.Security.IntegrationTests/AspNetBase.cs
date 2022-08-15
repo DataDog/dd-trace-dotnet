@@ -109,21 +109,22 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string useragent = null)
         {
-            var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType, useragent);
+            var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType);
+            await VerifySpans(spans, settings, testInit);
+        }
 
-            settings.ModifySerialization(
-                serializationSettings =>
+        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false)
+        {
+            settings.ModifySerialization(serializationSettings =>
+            {
+                serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(sp => sp.Tags, (target, value) =>
                 {
-                    serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(
-                        sp => sp.Tags,
-                        (target, value) =>
-                        {
-                            if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
-                            {
-                                var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
-                                var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
-                                target.Tags[Tags.AppSecJson] = orderedAppSecJson;
-                            }
+                    if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
+                    {
+                        var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
+                        var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
+                        target.Tags[Tags.AppSecJson] = orderedAppSecJson;
+                    }
 
                             return VerifyHelper.ScrubStackTraceForErrors(target, target.Tags);
                         });
@@ -262,7 +263,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected virtual string GetTestName() => _testName;
 
-        private async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, string body, int numberOfAttacks, int expectedSpans, string phase, string contentType = null, string userAgent = null)
+        protected async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, string body, int numberOfAttacks, int expectedSpans, string phase, string contentType = null)
         {
             var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
             await SendRequestsAsyncNoWaitForSpans(url, body, numberOfAttacks, contentType, userAgent);
@@ -270,7 +271,18 @@ namespace Datadog.Trace.Security.IntegrationTests
             return WaitForSpans(agent, expectedSpans, phase, minDateTime, url);
         }
 
-        private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null, string userAgent = null)
+        protected async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, params string[] urls)
+        {
+            var spans = new List<MockSpan>();
+            foreach (var url in urls)
+            {
+                spans.AddRange(await SendRequestsAsync(agent, url, null, 1, 1, string.Empty, null));
+            }
+
+            return spans.ToImmutableList();
+        }
+
+        private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null)
         {
             var batchSize = 4;
             for (int x = 0; x < numberOfAttacks;)
