@@ -393,26 +393,30 @@ namespace Datadog.Trace.AppSec
 
         public void ProcessControlCommand(object arg)
         {
+            string path = string.Empty;
 #if !NETFRAMEWORK
             if (arg.TryDuckCast<DiagnosticListeners.AspNetCoreDiagnosticObserver.HttpRequestInStartStruct>(out var requestStruct))
             {
                 var httpContext = requestStruct.HttpContext;
                 var request = httpContext.Request;
-                if (request.Path == "/EnableASM")
-                {
-                    _settings.Enabled = true;
-                    UpdateStatus();
-                    return;
-                }
-
-                if (request.Path == "/DisableASM")
-                {
-                    _settings.Enabled = false;
-                    UpdateStatus();
-                    return;
-                }
+                path = request.Path;
             }
+#else
+            path = Convert.ToString(arg);
 #endif
+            if (path == "/EnableASM")
+            {
+                _settings.Enabled = true;
+                UpdateStatus();
+                return;
+            }
+
+            if (path == "/DisableASM")
+            {
+                _settings.Enabled = false;
+                UpdateStatus();
+                return;
+            }
         }
 
         private void ReportWafInitInfoOnce(object sender, InstrumentationGatewaySecurityEventArgs e)
