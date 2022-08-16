@@ -2,6 +2,7 @@
 ECHO\
 ECHO Usage:
 ECHO     DDProf-SetEnv.bat [Bit-ness] [Deploy Directory]
+ECHO Note: should be run from <github tracer root>\shared\bin\monitoring-home
 
 ECHO\
 IF "%1"=="" (
@@ -30,7 +31,7 @@ IF "%1"=="" (
 ECHO\
 IF "%2"=="" (
     ECHO Deploy Directory optional command line parameter is not specified:
-    ECHO     Use the second command line parameter to specify the DD-Prof-DotNet Alpha Deploy Directory.
+    ECHO     Use the second command line parameter to specify the DD-Prof-DotNet Deploy Directory.
     ECHO     Using default.
 
     SET DD_DEPLOY_DIRECTORY=%~dp0
