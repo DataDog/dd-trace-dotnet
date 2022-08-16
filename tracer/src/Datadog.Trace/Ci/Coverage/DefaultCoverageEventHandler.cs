@@ -6,11 +6,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Ci.Coverage.Models;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Ci.Coverage
 {
     internal sealed class DefaultCoverageEventHandler : CoverageEventHandler
     {
+        internal static readonly IDatadogLogger Log = Ci.CIVisibility.Log;
+
         protected override object OnSessionFinished(CoverageInstruction[] coverageInstructions)
         {
             if (coverageInstructions == null || coverageInstructions.Length == 0)
@@ -18,6 +21,7 @@ namespace Datadog.Trace.Ci.Coverage
                 return null;
             }
 
+            Log.Debug<int>("Number of coverage instructions: {count}", coverageInstructions.Length);
             var groupByFiles = coverageInstructions.GroupBy(i => i.FilePath).ToList();
             var coveragePayload = new CoveragePayload();
 
