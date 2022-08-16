@@ -14,14 +14,9 @@ using Datadog.Trace.Configuration;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
 {
     /// <summary>
-    /// ServiceStack.Redis.RedisNativeClient.SendReceive[T] calltarget instrumentation
-    /// <para>
-    /// 6.2.0 of ServiceStack.Redis changed the signature of SendReceive (added string parameter).
-    /// Also, 6.2.0 broke .NET Core 2.1 and .NET Core 3.0 compatibility as ServiceStack
-    /// accidentally added a dependency that claimed it was .NET Standard 2.0 compliant
-    /// but in reality wasn't.
-    /// </para>
+    /// ServiceStack.Redis.RedisNativeClient.SendReceive[T] calltarget instrumentation.
     /// </summary>
+    /// <seealso cref="RedisNativeClientSendReceiveIntegration_6_2_0"/>
     [InstrumentMethod(
         AssemblyName = "ServiceStack.Redis",
         TypeName = "ServiceStack.Redis.RedisNativeClient",
