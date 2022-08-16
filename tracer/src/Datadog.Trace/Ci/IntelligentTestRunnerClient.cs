@@ -41,6 +41,7 @@ internal class IntelligentTestRunnerClient
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntelligentTestRunnerClient));
     private static readonly Regex ShaRegex = new Regex("[0-9a-f]+", RegexOptions.Compiled);
+    private static readonly JsonSerializerSettings SerializerSettings = new() { DefaultValueHandling = DefaultValueHandling.Ignore };
 
     private readonly CIVisibilitySettings _settings;
     private readonly string _workingDirectory;
@@ -151,7 +152,7 @@ internal class IntelligentTestRunnerClient
                         framework.ProductVersion,
                         framework.ProcessArchitecture))),
             default);
-        var jsonQuery = JsonConvert.SerializeObject(query);
+        var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
         var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
         Log.Debug("ITR: JSON RQ = {json}", jsonQuery);
 
@@ -231,7 +232,7 @@ internal class IntelligentTestRunnerClient
         }
 
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-        var jsonPushedSha = JsonConvert.SerializeObject(new DataArrayEnvelope<Data<object>>(commitRequests, repository));
+        var jsonPushedSha = JsonConvert.SerializeObject(new DataArrayEnvelope<Data<object>>(commitRequests, repository), SerializerSettings);
         Log.Debug("ITR: JSON RQ = {json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 
@@ -298,7 +299,7 @@ internal class IntelligentTestRunnerClient
         }
 
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-        var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, default), repository));
+        var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, default), repository), SerializerSettings);
         Log.Debug("ITR: JSON RQ = {json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 
@@ -482,7 +483,7 @@ internal class IntelligentTestRunnerClient
         [JsonProperty("data")]
         public readonly T Data;
 
-        [JsonProperty("meta", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonProperty("meta")]
         public readonly Metadata? Meta;
 
         public DataEnvelope(T data, string? repositoryUrl)
@@ -497,7 +498,7 @@ internal class IntelligentTestRunnerClient
         [JsonProperty("data")]
         public readonly T[] Data;
 
-        [JsonProperty("meta", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonProperty("meta")]
         public readonly Metadata? Meta;
 
         public DataArrayEnvelope(T[] data, string? repositoryUrl)
@@ -520,13 +521,13 @@ internal class IntelligentTestRunnerClient
 
     private readonly struct Data<T>
     {
-        [JsonProperty("id", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonProperty("id")]
         public readonly string? Id;
 
         [JsonProperty("type")]
         public readonly string Type;
 
-        [JsonProperty("attributes", DefaultValueHandling = DefaultValueHandling.Ignore)]
+        [JsonProperty("attributes")]
         public readonly T? Attributes;
 
         public Data(string? id, string type, T? attributes)
