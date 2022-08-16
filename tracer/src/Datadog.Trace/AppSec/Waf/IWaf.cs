@@ -10,7 +10,7 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal interface IWaf : IDisposable
     {
-        public Version Version { get; }
+        public string Version { get; }
 
         public bool InitializedSuccessfully { get; }
 
