@@ -23,7 +23,8 @@ Creating a new instrumentation implementation typically uses the following proce
    3. Select your branch from the drop down
    4. Click `Variables`, set `perform_comprehensive_testing` to true. (This is false for PRs by default for speed, but ensures your new code is tested against all the specified packages initially)
    5. Select `Stages To Run`, and select only the `build*`, `unit_test*` and `integration_test*` stages. This avoids using excessive resources, and will complete your build faster
-8. Once your test branch works, create a PR!
+   6. Add the instrumentation to the list of integrations in the [dotnet-core tracing documentation](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-core/#integrations) and/or [dotnet-framework tracing documentation](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-framework/#integrations) as appropiate.
+   7. Once your test branch works, create a PR for both the `dd-trace-dotnet` and `documentation` repositories and have them reference each other!
 
 ### Instrumentation classes
 

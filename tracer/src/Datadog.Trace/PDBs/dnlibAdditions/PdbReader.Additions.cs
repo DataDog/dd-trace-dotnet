@@ -12,7 +12,7 @@ namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed
 {
     internal partial class PdbReader
     {
-        internal SymbolMethod GetContainingMethod(string documentUrl, int line, int column, out int? bytecodeOffset)
+        internal SymbolMethod GetContainingMethod(string documentUrl, int line, int? column, out int? bytecodeOffset)
         {
             var candidateSequencePoints = new List<ResolvedSequencePoint>();
             foreach (var function in functions.Values)
@@ -25,7 +25,7 @@ namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed
                     foreach (var sp in method.SequencePoints)
                     {
                         if (sp.Line <= line && sp.EndLine >= line &&
-                            sp.Column >= column && sp.EndColumn >= column)
+                            (column.HasValue == false || (sp.Column <= column && sp.EndColumn >= column)))
                         {
                             candidateSequencePoints.Add(new ResolvedSequencePoint(method, sp));
                         }
@@ -33,9 +33,18 @@ namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed
                 }
             }
 
-            var matchingSequencePoint = candidateSequencePoints.FirstOrDefault();
-            bytecodeOffset = matchingSequencePoint.SequencePoint.Offset;
-            return matchingSequencePoint.Method; // TODO - find shortest sequence point
+            candidateSequencePoints.Sort(ResolvedSequencePointComparer.Instance);
+            var matchingSequencePoint = candidateSequencePoints.LastOrDefault();
+            if (matchingSequencePoint == null)
+            {
+                bytecodeOffset = null;
+                return null;
+            }
+            else
+            {
+                bytecodeOffset = matchingSequencePoint.SequencePoint.Offset;
+                return matchingSequencePoint.Method;
+            }
         }
 
         private record ResolvedSequencePoint
@@ -49,6 +58,26 @@ namespace Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed
             public SymbolMethod Method { get; }
 
             public SymbolSequencePoint SequencePoint { get; }
+        }
+
+        private class ResolvedSequencePointComparer : IComparer<ResolvedSequencePoint>
+        {
+            public static readonly IComparer<ResolvedSequencePoint> Instance = new ResolvedSequencePointComparer();
+
+            public int Compare(ResolvedSequencePoint x, ResolvedSequencePoint y)
+            {
+                var xSp = x.SequencePoint;
+                var ySp = y.SequencePoint;
+                if (xSp.Equals(ySp))
+                {
+                    return 0;
+                }
+
+                return (xSp.Line < ySp.Line || (xSp.Line == ySp.Line && xSp.Column < ySp.Column)) &&
+                       (xSp.EndLine > ySp.EndLine || (xSp.EndLine == ySp.EndLine && xSp.EndColumn > ySp.EndColumn))
+                           ? 1
+                           : -1;
+            }
         }
     }
 }
