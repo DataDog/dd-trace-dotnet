@@ -172,7 +172,7 @@ partial class Build
                     markdown.Append("```").AppendLine();
                 }
 
-                // Console.WriteLine(markdown.ToString());
+                await HideCommentsInPullRequest(PullRequestNumber.Value, "## Snapshots difference");
                 await PostCommentToPullRequest(PullRequestNumber.Value, markdown.ToString());
 
                 void RecordChange(StringBuilder diffsInFile, Dictionary<string, int> diffCounts)
