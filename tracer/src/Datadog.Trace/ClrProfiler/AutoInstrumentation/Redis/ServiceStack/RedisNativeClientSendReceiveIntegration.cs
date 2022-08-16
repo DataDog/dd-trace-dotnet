@@ -15,7 +15,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
 {
     /// <summary>
     /// ServiceStack.Redis.RedisNativeClient.SendReceive[T] calltarget instrumentation
+    /// <para>
+    /// 6.2.0 of ServiceStack.Redis changed the signature of SendReceive (added string parameter).
+    /// Also, 6.2.0 broke .NET Core 2.1 and .NET Core 3.0 compatibility as ServiceStack
+    /// accidentally added a dependency that claimed it was .NET Standard 2.0 compliant
+    /// but in reality wasn't.
+    /// </para>
     /// </summary>
+    [InstrumentMethod(
+        AssemblyName = "ServiceStack.Redis",
+        TypeName = "ServiceStack.Redis.RedisNativeClient",
+        MethodName = "SendReceive",
+        ReturnTypeName = "T",
+        ParameterTypeNames = new[] { "System.Byte[][]", "System.Func`1[!!0]", "System.Action`1[System.Func`1[!!0]]", ClrNames.Bool, ClrNames.String },
+        MinimumVersion = "6.2.0",
+        MaximumVersion = "6.*.*",
+        IntegrationName = IntegrationName)]
     [InstrumentMethod(
         AssemblyName = "ServiceStack.Redis",
         TypeName = "ServiceStack.Redis.RedisNativeClient",
@@ -23,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
         ReturnTypeName = "T",
         ParameterTypeNames = new[] { "System.Byte[][]", "System.Func`1[!!0]", "System.Action`1[System.Func`1[!!0]]", ClrNames.Bool },
         MinimumVersion = "4.0.0",
-        MaximumVersion = "6.*.*",
+        MaximumVersion = "6.1.*",
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
