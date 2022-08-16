@@ -1,4 +1,4 @@
-// <copyright file="RedisNativeClientSendReceiveIntegration.cs" company="Datadog">
+// <copyright file="RedisNativeClientSendReceiveIntegration_6_2_0.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,9 +14,12 @@ using Datadog.Trace.Configuration;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
 {
     /// <summary>
-    /// ServiceStack.Redis.RedisNativeClient.SendReceive[T] calltarget instrumentation
+    /// ServiceStack.Redis.RedisNativeClient.SendReceive[T] calltarget instrumentation (v6.2.0+)
     /// <para>
     /// 6.2.0 of ServiceStack.Redis changed the signature of SendReceive (added string parameter).
+    /// 
+    /// See: https://github.com/ServiceStack/ServiceStack/commit/950155db0d1b358920eab307c61e334e24f1d174
+    /// 
     /// Also, 6.2.0 broke .NET Core 2.1 and .NET Core 3.0 compatibility as ServiceStack
     /// accidentally added a dependency that claimed it was .NET Standard 2.0 compliant
     /// but in reality wasn't.
@@ -27,13 +30,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
         TypeName = "ServiceStack.Redis.RedisNativeClient",
         MethodName = "SendReceive",
         ReturnTypeName = "T",
-        ParameterTypeNames = new[] { "System.Byte[][]", "System.Func`1[!!0]", "System.Action`1[System.Func`1[!!0]]", ClrNames.Bool },
-        MinimumVersion = "4.0.0",
-        MaximumVersion = "6.1.*",
+        ParameterTypeNames = new[] { "System.Byte[][]", "System.Func`1[!!0]", "System.Action`1[System.Func`1[!!0]]", ClrNames.Bool, ClrNames.String },
+        MinimumVersion = "6.2.0",
+        MaximumVersion = "6.*.*",
         IntegrationName = IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class RedisNativeClientSendReceiveIntegration
+    // ReSharper disable once InconsistentNaming
+    public class RedisNativeClientSendReceiveIntegration_6_2_0
     {
         private const string IntegrationName = nameof(Configuration.IntegrationId.ServiceStackRedis);
         private const IntegrationId IntegrationId = Configuration.IntegrationId.ServiceStackRedis;
@@ -49,8 +53,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
         /// <param name="fn">Function instance</param>
         /// <param name="completePipelineFn">Complete pipeline function instance</param>
         /// <param name="sendWithoutRead">Send without read boolean</param>
+        /// <param name="operation">The calling member name</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TFunc, TAction>(TTarget instance, byte[][] cmdWithBinaryArgs, TFunc fn, TAction completePipelineFn, bool sendWithoutRead)
+        internal static CallTargetState OnMethodBegin<TTarget, TFunc, TAction>(TTarget instance, byte[][] cmdWithBinaryArgs, TFunc fn, TAction completePipelineFn, bool sendWithoutRead, string operation)
             where TTarget : IRedisNativeClient
         {
             Scope scope = RedisHelper.CreateScope(Tracer.Instance, IntegrationId, IntegrationName, instance.Host ?? string.Empty, instance.Port.ToString(CultureInfo.InvariantCulture), GetRawCommand(cmdWithBinaryArgs));
