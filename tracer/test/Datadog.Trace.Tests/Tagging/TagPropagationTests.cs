@@ -13,8 +13,8 @@ namespace Datadog.Trace.Tests.Tagging;
 
 public class TagPropagationTests
 {
-    private const int MaxParseLength = TagPropagation.IncomingPropagationHeaderMaxLength;
-    private const int MaxInjectLength = TagPropagation.OutgoingPropagationHeaderMaxLength;
+    private const int MaxParseLength = TagPropagation.IncomingTagPropagationHeaderMaxLength;
+    private const int MaxInjectLength = TagPropagation.OutgoingTagPropagationHeaderMaxLength;
 
     [Fact]
     public void ParseHeader()

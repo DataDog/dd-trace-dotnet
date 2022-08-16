@@ -29,7 +29,7 @@ namespace Datadog.Trace
         public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
         {
             Tracer = tracer;
-            Tags = tags ?? new TraceTagCollection(tracer?.Settings?.TagPropagationHeaderMaxLength ?? TagPropagation.OutgoingPropagationHeaderMaxLength);
+            Tags = tags ?? new TraceTagCollection(tracer?.Settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
         }
 
         public Span RootSpan { get; private set; }

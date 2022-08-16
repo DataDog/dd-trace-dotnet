@@ -18,13 +18,13 @@ internal static class TagPropagation
     /// Default value for the maximum length of an outgoing propagation header ("x-datadog-tags").
     /// This value is used when injecting headers and can be overriden with DD_TRACE_X_DATADOG_TAGS_MAX_LENGTH.
     /// </summary>
-    public const int OutgoingPropagationHeaderMaxLength = 512;
+    public const int OutgoingTagPropagationHeaderMaxLength = 512;
 
     /// <summary>
     /// The maximum length of an incoming propagation header ("x-datadog-tags").
     /// This value is used when extracting headers and cannot be overriden via configuration.
     /// </summary>
-    public const int IncomingPropagationHeaderMaxLength = 512;
+    public const int IncomingTagPropagationHeaderMaxLength = 512;
 
     // tags with this prefix are propagated horizontally
     // (i.e. from upstream services and to downstream services)
@@ -63,9 +63,9 @@ internal static class TagPropagation
 
         List<KeyValuePair<string, string>> traceTags;
 
-        if (propagationHeader!.Length > IncomingPropagationHeaderMaxLength)
+        if (propagationHeader!.Length > IncomingTagPropagationHeaderMaxLength)
         {
-            Log.Debug<int, int>("Incoming tag propagation header is too long. Length: {0}, Maximum: {1}.", propagationHeader.Length, IncomingPropagationHeaderMaxLength);
+            Log.Debug<int, int>("Incoming tag propagation header is too long. Length: {0}, Maximum: {1}.", propagationHeader.Length, IncomingTagPropagationHeaderMaxLength);
 
             traceTags = new List<KeyValuePair<string, string>>(1) { new(Tags.TagPropagationError, PropagationErrorTagValues.ExtractMaxSize) };
             return new TraceTagCollection(outgoingHeaderMaxLength, traceTags, cachedPropagationHeader: null);
