@@ -45,7 +45,7 @@ namespace Datadog.Trace.Propagators
 
             var propagatedTraceTags = context.TraceContext?.Tags.ToPropagationHeader() ?? context.PropagatedTags;
 
-            if (propagatedTraceTags != null)
+            if (!string.IsNullOrEmpty(propagatedTraceTags))
             {
                 carrierSetter.Set(carrier, HttpHeaderNames.PropagatedTags, propagatedTraceTags);
             }
