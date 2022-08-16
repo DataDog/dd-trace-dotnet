@@ -43,7 +43,7 @@ namespace Datadog.Trace.Propagators
 #pragma warning restore SA1118 // Parameter should not span multiple lines
             }
 
-            var propagatedTraceTags = context.TraceContext?.Tags.ToPropagationHeader();
+            var propagatedTraceTags = context.TraceContext?.Tags.ToPropagationHeader() ?? context.PropagatedTags;
 
             if (propagatedTraceTags != null)
             {
