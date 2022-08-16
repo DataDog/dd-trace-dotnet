@@ -40,12 +40,11 @@ namespace Datadog.Trace.AppSec.Waf
 
         public InitializationResult InitializationResult => initializationResult;
 
-        public Version Version
+        public string Version
         {
             get
             {
-                var ver = wafNative.GetVersion();
-                return new Version(ver.Major, ver.Minor, ver.Patch);
+                return wafNative.GetVersion();
             }
         }
 
@@ -74,7 +73,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IContext CreateContext()
         {
-            var contextHandle = wafNative.InitContext(ruleHandle.Value, wafNative.ObjectFreeFuncPtr);
+            var contextHandle = wafNative.InitContext(ruleHandle.Value);
 
             if (contextHandle == IntPtr.Zero)
             {

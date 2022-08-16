@@ -144,7 +144,7 @@ namespace Datadog.Trace.AppSec
 
         internal SecuritySettings Settings => _settings;
 
-        internal Version DdlibWafVersion => _waf?.Version;
+        internal string DdlibWafVersion => _waf?.Version;
 
         private static void AnnotateSpan(Span span)
         {
@@ -468,7 +468,7 @@ namespace Datadog.Trace.AppSec
 
                 // run the WAF and execute the results
                 using var wafResult = additiveContext.Run(e.EventData, _settings.WafTimeoutMicroSeconds);
-                if (wafResult.ReturnCode is ReturnCode.Monitor or ReturnCode.Block)
+                if (wafResult.ReturnCode == ReturnCode.Match || wafResult.ReturnCode == ReturnCode.Block)
                 {
                     var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock");
                     if (block)

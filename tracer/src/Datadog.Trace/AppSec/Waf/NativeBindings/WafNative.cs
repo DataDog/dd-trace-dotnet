@@ -41,6 +41,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly FreeRulesetInfoDelegate _rulesetInfoFreeField;
         private readonly SetupLogCallbackDelegate _setupLogCallbackField;
 
+        private string version = null;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="WafNative"/> class.
         /// </summary>
@@ -79,7 +81,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             setupLogging(_setupLogCallbackField, level);
         }
 
-        private delegate void GetVersionDelegate(ref DdwafVersionStruct version);
+        private delegate IntPtr GetVersionDelegate();
 
         private delegate void FreeResultDelegate(ref DdwafResultStruct output);
 
@@ -87,7 +89,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate IntPtr InitDelegate(IntPtr wafRule, ref DdwafConfigStruct config, ref DdwafRuleSetInfoStruct ruleSetInfo);
 
-        private delegate IntPtr InitContextDelegate(IntPtr powerwafHandle, IntPtr objFree);
+        private delegate IntPtr InitContextDelegate(IntPtr powerwafHandle);
 
         private delegate IntPtr InitMetricsCollectorDelegate(IntPtr powerwafHandle);
 
@@ -138,16 +140,20 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal IntPtr ObjectFreeFuncPtr => _freeObjectFuncField;
 
-        internal DdwafVersionStruct GetVersion()
+        internal string GetVersion()
         {
-            DdwafVersionStruct version = default;
-            _getVersionField(ref version);
+            if (version == null)
+            {
+                var ptr = _getVersionField();
+                version = Marshal.PtrToStringAnsi(ptr);
+            }
+
             return version;
         }
 
         internal IntPtr Init(IntPtr wafRule, ref DdwafConfigStruct config, ref DdwafRuleSetInfoStruct ruleSetInfo) => _initField(wafRule, ref config, ref ruleSetInfo);
 
-        internal IntPtr InitContext(IntPtr powerwafHandle, IntPtr objFree) => _initContextField(powerwafHandle, objFree);
+        internal IntPtr InitContext(IntPtr powerwafHandle) => _initContextField(powerwafHandle);
 
         internal DDWAF_RET_CODE Run(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs) => _runField(context, newArgs, ref result, timeLeftInUs);
 

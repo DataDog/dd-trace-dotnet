@@ -15,8 +15,8 @@ namespace Datadog.Trace.AppSec.Waf
         ErrorInvalidObject = -3,
         ErrorInvalidArgument = -2,
         ErrorTimeout = -1,
-        Good = 0,
-        Monitor = 1,
+        Ok = 0,
+        Match = 1,
         Block = 2
     }
 }
