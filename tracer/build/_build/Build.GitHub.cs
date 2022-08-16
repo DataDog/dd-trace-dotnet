@@ -109,21 +109,22 @@ partial class Build
                 var changes = GitTasks.Git("diff master -- tracer/test/snapshots")
                                    .Select(f => f.Text);
 
-
                 const int minFiles = 50;
                 var nbSnapshotsModified = changes.Count(f => f.Contains("@@ "));
                 if (nbSnapshotsModified < minFiles)
                 {
                     // Dumb early exit, if we modify less than 50 files, we can review them manually
                     // Also it's certainly an addition of snapshot tests, so may not make sense to print a summary.
-                    Console.WriteLine("${nbSnapshotsModified} snapshots modified. Not doing snapshots diff for PRs modifying less than ${minFiles}.");
+                    Console.WriteLine($"{nbSnapshotsModified} snapshots modified. Not doing snapshots diff for PRs modifying less than {minFiles}.");
                     return;
                 }
 
                 const string unlinkedLinesExplicitor = "[...]";
+                var crossVersionTestsNamePattern = new [] {"VersionMismatchNewerNugetTests"};
                 var diffCounts = new Dictionary<string, int>();
                 StringBuilder diffsInFile = new();
                 var lastLineContainedAChange = false;
+                var considerUpdatingPublicFeed = false;
                 foreach (var line in changes)
                 {
                     if (line.StartsWith("@@")) // new file
@@ -145,6 +146,11 @@ partial class Build
                         diffsInFile.AppendLine(unlinkedLinesExplicitor);
                         lastLineContainedAChange = false;
                     }
+
+                    if (!considerUpdatingPublicFeed && crossVersionTestsNamePattern.Any(p => line.Contains(p)))
+                    {
+                        considerUpdatingPublicFeed = true;
+                    }
                 }
 
                 RecordChange(diffsInFile, diffCounts);
@@ -152,6 +158,11 @@ partial class Build
                 var markdown = new StringBuilder();
                 markdown.AppendLine("## Snapshots difference summary").AppendLine();
                 markdown.AppendLine("The following differences have been observed in snapshots. So diff is simplistic, so please check some files anyway while we improve it.").AppendLine();
+
+                if (considerUpdatingPublicFeed)
+                {
+                    markdown.AppendLine("**Note** that this PR updates a version mismatch test. You may need to upgrade your code in the Azure public feed");
+                }
 
                 foreach (var diff in diffCounts)
                 {
