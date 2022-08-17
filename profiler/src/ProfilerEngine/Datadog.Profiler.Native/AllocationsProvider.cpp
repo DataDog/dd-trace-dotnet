@@ -69,7 +69,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     // So rely on the frame store to get a C#-like representation like what is done for frames
     if (!_pFrameStore->GetTypeName(classId, rawSample.AllocationClass))
     {
-        rawSample.AllocationClass = std::move(shared::ToString(shared::WSTRING(typeName)));
+        rawSample.AllocationClass = shared::ToString(shared::WSTRING(typeName));
     }
 
     Add(std::move(rawSample));
