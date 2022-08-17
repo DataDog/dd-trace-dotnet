@@ -66,16 +66,6 @@ private:
         ddprof_ffi_Vec_tag _ffiTags;
     };
 
-    class ProfileAutoReset
-    {
-    public:
-        ProfileAutoReset(struct ddprof_ffi_Profile* profile);
-        ~ProfileAutoReset();
-
-    private:
-        struct ddprof_ffi_Profile* _profile;
-    };
-
     class ProfileInfo
     {
     public:
