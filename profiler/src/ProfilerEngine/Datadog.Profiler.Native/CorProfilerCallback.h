@@ -21,6 +21,7 @@
 #include "WallTimeProvider.h"
 #include "CpuTimeProvider.h"
 #include "SamplesCollector.h"
+#include "IRuntimeInfo.h"
 #include "shared/src/native-src/string.h"
 
 #include <atomic>
@@ -34,7 +35,6 @@ class IStackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
 class SamplesAggregator;
-class IRuntimeInfo;
 
 namespace shared {
 class Loader;
