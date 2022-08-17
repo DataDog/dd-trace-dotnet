@@ -4,7 +4,7 @@
   <!-- This will make sure, your assmebly and file versions, as well as your NuGet package version are managed correctly.                   -->
 
   <!-- * * * * * * * * * * * INPUTS. Update this section EVERY time the component is shipped/released! * * * * * * * * * * *                -->
-  <PropertyGroup>                                                                                                                        -->
+  <PropertyGroup>
     <ProductVersion>2.14.0</ProductVersion>
   </PropertyGroup>
   <!-- * * * * * * * * * * * END OF INPUTS.  * * * * * * * * * * *                                                                          -->
