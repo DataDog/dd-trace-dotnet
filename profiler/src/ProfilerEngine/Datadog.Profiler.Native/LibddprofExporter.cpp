@@ -131,10 +131,14 @@ LibddprofExporter::Tags LibddprofExporter::CreateTags(IConfiguration* configurat
         buffer << "core";
     }
     buffer << "-" << std::dec << runtimeInfo->GetDotnetMajorVersion() << "." << runtimeInfo->GetDotnetMinorVersion();
-    tags.Add("runtime_info", buffer.str());
+    tags.Add("runtime_version", buffer.str());
 
-    // TODO get
-    // runtime_platform (os and version, archi)
+    // runtime_platform (os and version later)
+#ifdef LINUX
+    tags.Add("runtime_os", "linux");
+#else
+    tags.Add("runtime_os", "windows");
+#endif
 
     for (auto const& [name, value] : configuration->GetUserTags())
     {
@@ -302,11 +306,6 @@ bool LibddprofExporter::Export()
             return false;
         }
 
-        // Count is incremented BEFORE creating and sending the .pprof
-        // so that it will be possible to detect "missing" profiles
-        // in the back end
-        profileInfo.exportsCount++;
-
         Tags additionalTags;
         additionalTags.Add("env", applicationInfo.Environment);
         additionalTags.Add("version", applicationInfo.Version);
@@ -314,6 +313,10 @@ bool LibddprofExporter::Export()
         additionalTags.Add("runtime-id", std::string(runtimeId));
         additionalTags.Add("profile_seq", std::to_string(profileInfo.exportsCount));
 
+        // Count is incremented BEFORE creating and sending the .pprof
+        // so that it will be possible to detect "missing" profiles
+        // in the back end
+        profileInfo.exportsCount++;
         auto* request = CreateRequest(serializedProfile, exporter, additionalTags);
         if (request != nullptr)
         {
