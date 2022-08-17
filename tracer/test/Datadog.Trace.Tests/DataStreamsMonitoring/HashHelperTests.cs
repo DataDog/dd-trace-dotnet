@@ -6,7 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
@@ -40,9 +40,10 @@ public class HashHelperTests
         }
 
         var expectedHash = FnvHash64.GenerateHash(sb.ToString(), FnvHash64.Version.V1);
-        var actual = HashHelper.CalculateNodeHash(service, env, primaryTag, sortedArgs);
+        var baseHash = HashHelper.CalculateBaseNodeHash(service, env, primaryTag);
+        var actual = HashHelper.CalculateNodeHash(baseHash, sortedArgs);
 
-        actual.Should().Be(expectedHash);
+        actual.Value.Should().Be(expectedHash);
     }
 
     [Fact]
@@ -57,8 +58,8 @@ public class HashHelperTests
         var parentHash = BitConverter.ToUInt64(bytes, startIndex: 8);
 
         var expectedHash = FnvHash64.GenerateHash(bytes, FnvHash64.Version.V1);
-        var actual = HashHelper.CalculatePathwayHash(nodeHash, parentHash);
+        var actual = HashHelper.CalculatePathwayHash(new NodeHash(nodeHash), new PathwayHash(parentHash));
 
-        actual.Should().Be(expectedHash);
+        actual.Value.Should().Be(expectedHash);
     }
 }
