@@ -26,7 +26,7 @@
 
 tags LibddprofExporter::CommonTags = {
     {"language", "dotnet"},
-    {"profiler_version", PROFILER_VERSION + std::string(".") + PROFILER_BETA_REVISION},
+    {"profiler_version", PROFILER_VERSION},
 #ifdef BIT64
     {"process_architecture", "x64"},
 #else
