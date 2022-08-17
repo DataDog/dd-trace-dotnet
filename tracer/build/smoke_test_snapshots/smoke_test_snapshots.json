@@ -51,7 +51,8 @@
         "language": "dotnet",
         "network.client.ip": "127.0.0.1",
         "runtime-id": "11c61d09-16bb-477f-87ab-4f81d656c5ca",
-        "span.kind": "server"
+        "span.kind": "server",
+        "_dd.p.dm": "-1"
       },
       "metrics": {
         "_dd.appsec.enabled": 1.0,
