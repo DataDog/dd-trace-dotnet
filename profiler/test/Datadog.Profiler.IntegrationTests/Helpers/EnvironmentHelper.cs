@@ -109,8 +109,13 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         internal string GetProfilerNativeLibraryPath()
         {
-            var profilerHome = GetProfilerHomeDirectory();
-            return Path.Combine(profilerHome, GetArchitectureSubfolder(), $"Datadog.Profiler.Native.{GetLibraryExtension()}");
+            var filename = $"Datadog.Profiler.Native.{GetLibraryExtension()}";
+            return IsRunningInCi()
+                ? Path.Combine(GetMonitoringHome(), GetArchitectureSubfolder(), filename)
+                // There is a discrepancy between where we output the artifacts on linux and on windows:
+                // Windows: <DeployDir>\win-<platform>\XXX
+                // Linux: <DeployDir>\XXX
+                : Path.Combine(GetDeployDir(), (IsRunningOnWindows() ? GetArchitectureSubfolder() : string.Empty), filename);
         }
 
         internal string GetTracerNativeLibraryPath()
@@ -267,11 +272,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             return s;
         }
-
-        private static string GetProfilerHomeDirectory()
-            => IsRunningInCi()
-                    ? Path.Combine(GetMonitoringHome(), GetArchitectureSubfolder())
-                    : GetDeployDir();
 
         private static string GetArchitectureSubfolder()
             => GetArchitectureSubfolder(IsAlpine);
