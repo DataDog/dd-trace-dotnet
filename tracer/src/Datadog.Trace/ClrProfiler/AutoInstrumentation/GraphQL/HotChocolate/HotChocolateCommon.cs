@@ -146,6 +146,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             catch (Exception ex)
             {
                 Log.Error(ex, "Error creating HotChocolate error message.");
+                Util.StringBuilderCache.Release(builder);
                 return "errors: []";
             }
 
