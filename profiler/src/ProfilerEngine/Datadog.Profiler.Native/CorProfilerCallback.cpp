@@ -512,10 +512,9 @@ void CorProfilerCallback::InspectProcessorInfo(void)
 #endif
 }
 
-void CorProfilerCallback::InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor)
+void CorProfilerCallback::InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor, COR_PRF_RUNTIME_TYPE& runtimeType)
 {
     USHORT clrInstanceId;
-    COR_PRF_RUNTIME_TYPE runtimeType;
     USHORT buildNumber;
     USHORT qfeVersion;
 
@@ -633,7 +632,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Log some more important environment info:
     USHORT major = 0;
     USHORT minor = 0;
-    CorProfilerCallback::InspectRuntimeVersion(_pCorProfilerInfo, major, minor);
+    COR_PRF_RUNTIME_TYPE runtimeType;
+    CorProfilerCallback::InspectRuntimeVersion(_pCorProfilerInfo, major, minor, runtimeType);
 
     // CLR events-based profilers need ICorProfilerInfo12 (i.e. .NET 5+) to setup the communication.
     // If no such provider is enabled, no need to trigger it.
