@@ -6,7 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
+using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DataStreamsMonitoring;
@@ -47,15 +47,16 @@ internal static class HashHelper
     {
 #if NETCOREAPP3_1_OR_GREATER
         Span<byte> bytes = stackalloc byte[16];
-        MemoryMarshal.Write(bytes, ref nodeHash);
-        MemoryMarshal.Write(bytes.Slice(8), ref parentHash);
-        return FnvHash64.GenerateHash(bytes, HashVersion);
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt64LittleEndian(bytes, nodeHash.Value);
+        System.Buffers.Binary.BinaryPrimitives.WriteUInt64LittleEndian(bytes.Slice(8), parentHash.Value);
+        return new PathwayHash(FnvHash64.GenerateHash(bytes, HashVersion));
 #else
         // annoyingly allocate-y, but meh
-        var bytes = BitConverter.GetBytes(nodeHash);
+        var bytes = new byte[8];
+        BinaryPrimitivesHelper.WriteUInt64LittleEndian(bytes, nodeHash);
         var hash = FnvHash64.GenerateHash(bytes, HashVersion);
 
-        bytes = BitConverter.GetBytes(parentHash);
+        BinaryPrimitivesHelper.WriteUInt64LittleEndian(bytes, parentHash);
         return FnvHash64.GenerateHash(bytes, HashVersion, hash);
 #endif
     }
