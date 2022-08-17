@@ -8,15 +8,15 @@
 class RuntimeInfo : public IRuntimeInfo
 {
 public:
-    RuntimeInfo(unsigned short dotnetMajor, unsigned short dotnetMinor, bool isFramework);
+    RuntimeInfo(uint16_t dotnetMajor, uint16_t dotnetMinor, bool isFramework);
 
     // Inherited via IRuntimeInfo
     virtual bool IsDotnetFramework() const override;
-    virtual unsigned short GetDotnetMajorVersion() const override;
-    virtual unsigned short GetDotnetMinorVersion() const override;
+    virtual uint16_t GetDotnetMajorVersion() const override;
+    virtual uint16_t GetDotnetMinorVersion() const override;
 
 private:
-    unsigned short _dotnetMajor;
-    unsigned short _dotnetMinor;
+    uint16_t _dotnetMajor;
+    uint16_t _dotnetMinor;
     bool _isFramework;
 };

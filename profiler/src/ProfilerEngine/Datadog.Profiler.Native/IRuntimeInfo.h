@@ -3,13 +3,15 @@
 
 #pragma once
 
+#include <cstdint>
+
 class IRuntimeInfo
 {
 public:
     virtual ~IRuntimeInfo() = default;
     virtual bool IsDotnetFramework() const = 0;
-    virtual unsigned short GetDotnetMajorVersion() const  = 0;
-    virtual unsigned short GetDotnetMinorVersion() const  = 0;
+    virtual uint16_t GetDotnetMajorVersion() const  = 0;
+    virtual uint16_t GetDotnetMinorVersion() const = 0;
 
 // TODO: add OS details when needed
 };

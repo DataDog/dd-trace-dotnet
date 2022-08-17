@@ -3,7 +3,7 @@
 
 #include "RuntimeInfo.h"
 
-RuntimeInfo::RuntimeInfo(unsigned short dotnetMajor, unsigned short dotnetMinor, bool isFramework)
+RuntimeInfo::RuntimeInfo(uint16_t dotnetMajor, uint16_t dotnetMinor, bool isFramework)
     :
     _dotnetMajor(dotnetMajor),
     _dotnetMinor(dotnetMinor),
@@ -16,12 +16,12 @@ bool RuntimeInfo::IsDotnetFramework() const
     return _isFramework;
 }
 
-unsigned short RuntimeInfo::GetDotnetMajorVersion() const
+uint16_t RuntimeInfo::GetDotnetMajorVersion() const
 {
     return _dotnetMajor;
 }
 
-unsigned short RuntimeInfo::GetDotnetMinorVersion() const
+uint16_t RuntimeInfo::GetDotnetMinorVersion() const
 {
     return _dotnetMinor;
 }
