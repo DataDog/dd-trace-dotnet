@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Amazon.SQS.Model;
 using Newtonsoft.Json;
 
@@ -38,6 +39,17 @@ namespace Samples.AWS.SQS
                 if (message.MessageAttributes.ContainsKey("_datadog"))
                 {
                     throw new Exception($"The \"_datadog\" header was found in the message, with value: {message.MessageAttributes["_datadog"].StringValue}");
+                }
+            }
+        }
+
+        public static void AssertNoXDatadogTracingHeaders(List<Message> messages)
+        {
+            foreach (var message in messages)
+            {
+                if (message.MessageAttributes.Any( a => a.Key.StartsWith("x-datadog")))
+                {
+                    throw new Exception($"A \"x-datadog\" header was found in the message, whereas they should have been removed");
                 }
             }
         }

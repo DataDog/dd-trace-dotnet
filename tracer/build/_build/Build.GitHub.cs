@@ -86,6 +86,102 @@ partial class Build
             Console.WriteLine($"PR assigned");
         });
 
+    Target SummaryOfSnapshotChanges => _ => _
+           .Unlisted()
+           .Requires(() => GitHubRepositoryName)
+           .Requires(() => GitHubToken)
+           .Requires(() => PullRequestNumber)
+           .Executes(async() =>
+            {
+                var client = GetGitHubClient();
+
+                var pr = await client.PullRequest.Get(
+                    owner: GitHubRepositoryOwner,
+                    name: GitHubRepositoryName,
+                    number: PullRequestNumber.Value);
+
+                // Fixes an issue (ambiguous argument) when we do git diff in the Action.
+                GitTasks.Git("fetch origin master:master", logOutput: false);
+
+                // This is a dumb implementation that just show the diff
+                // We could imagine getting the whole context with -U1000 and show the differences including parent name
+                // eg now we show -oldAttribute: oldValue, but we could show -tag.oldattribute: oldvalue
+                var changes = GitTasks.Git("diff master -- tracer/test/snapshots")
+                                   .Select(f => f.Text);
+
+
+                const int minFiles = 50;
+                var nbSnapshotsModified = changes.Count(f => f.Contains("@@ "));
+                if (nbSnapshotsModified < minFiles)
+                {
+                    // Dumb early exit, if we modify less than 50 files, we can review them manually
+                    // Also it's certainly an addition of snapshot tests, so may not make sense to print a summary.
+                    Console.WriteLine("${nbSnapshotsModified} snapshots modified. Not doing snapshots diff for PRs modifying less than ${minFiles}.");
+                    return;
+                }
+
+                const string unlinkedLinesExplicitor = "[...]";
+                var diffCounts = new Dictionary<string, int>();
+                StringBuilder diffsInFile = new();
+                var lastLineContainedAChange = false;
+                foreach (var line in changes)
+                {
+                    if (line.StartsWith("@@")) // new file
+                    {
+                        RecordChange(diffsInFile, diffCounts);
+                        lastLineContainedAChange = false;
+                        continue;
+                    }
+
+                    if (line.StartsWith("- ") || line.StartsWith("+ "))
+                    {
+                        diffsInFile.AppendLine(line);
+                        lastLineContainedAChange = true;
+                        continue;
+                    }
+
+                    if (lastLineContainedAChange)
+                    {
+                        diffsInFile.AppendLine(unlinkedLinesExplicitor);
+                        lastLineContainedAChange = false;
+                    }
+                }
+
+                RecordChange(diffsInFile, diffCounts);
+
+                var markdown = new StringBuilder();
+                markdown.AppendLine("## Snapshots difference summary").AppendLine();
+                markdown.AppendLine("The following differences have been observed in snapshots. So diff is simplistic, so please check some files anyway while we improve it.").AppendLine();
+
+                foreach (var diff in diffCounts)
+                {
+                    markdown.AppendLine($"{diff.Value} occurrences of : ");
+                    markdown.AppendLine("```diff");
+                    markdown.AppendLine(diff.Key);
+                    markdown.Append("```").AppendLine();
+                }
+
+                // Console.WriteLine(markdown.ToString());
+                await PostCommentToPullRequest(PullRequestNumber.Value, markdown.ToString());
+
+                void RecordChange(StringBuilder diffsInFile, Dictionary<string, int> diffCounts)
+                {
+                    var unlinkedLinesExplicitorWithNewLine = unlinkedLinesExplicitor + Environment.NewLine;
+
+                    if (diffsInFile.Length > 0)
+                    {
+                        var change = diffsInFile.ToString();
+                        if (change.EndsWith(unlinkedLinesExplicitorWithNewLine))
+                        {
+                            change = change.Substring(0, change.Length - unlinkedLinesExplicitorWithNewLine.Length);
+                        }
+                        diffCounts.TryAdd(change, 0);
+                        diffCounts[change]++;
+                        diffsInFile.Clear();
+                    }
+                }
+            });
+
     Target AssignLabelsToPullRequest => _ => _
        .Unlisted()
        .Requires(() => GitHubRepositoryName)
@@ -444,7 +540,7 @@ partial class Build
             const string buildAndTest = "Build / Test";
             const string misc = "Miscellaneous";
             const string tracer = "Tracer";
-            const string ciApp = "CI App";
+            const string ciVisibility = "CI Visibility";
             const string appSecMonitoring = "ASM";
             const string profiler = "Continuous Profiler";
             const string debugger = "Debugger";
@@ -535,7 +631,7 @@ partial class Build
                 var fixIssues = new[] { "type:bug", "type:regression", "type:cleanup" };
                 var areaLabelToComponentMap = new Dictionary<string, string>() {
                     { "area:tracer", tracer },
-                    { "area:ci-app", ciApp },
+                    { "area:ci-visibility", ciVisibility },
                     { "area:asm", appSecMonitoring },
                     { "area:profiler", profiler },
                     { "area:debugger", debugger },
@@ -580,7 +676,7 @@ partial class Build
             static int CategoryToOrder(string category) => category switch
             {
                 tracer => 0,
-                ciApp => 1,
+                ciVisibility => 1,
                 appSecMonitoring => 2,
                 profiler => 3,
                 debugger => 4,

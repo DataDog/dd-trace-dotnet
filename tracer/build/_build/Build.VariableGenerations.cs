@@ -240,6 +240,8 @@ partial class Build : NukeBuild
                 GenerateLinuxDotnetToolSmokeTestsMatrix();
                 GenerateLinuxDotnetToolSmokeTestsArm64Matrix();
 
+                GenerateLinuxDotnetToolNugetSmokeTestsMatrix();
+
                 // msi smoke tests
                 GenerateWindowsMsiSmokeTestsMatrix();
                 
@@ -435,6 +437,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-stretch-slim"),
                         },
                         relativeProfilerPath: "datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+                        relativeApiWrapperPath: "datadog/linux-x64/Datadog.Linux.ApiWrapper.x64.so",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
@@ -449,6 +452,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "29-2.1"),
                         },
                         relativeProfilerPath: "datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+                        relativeApiWrapperPath: "datadog/linux-x64/Datadog.Linux.ApiWrapper.x64.so",
                         dockerName: "andrewlock/dotnet-fedora"
                     );
 
@@ -463,6 +467,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
                         },
                         relativeProfilerPath: "datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so",
+                        relativeApiWrapperPath: "datadog/linux-musl-x64/Datadog.Linux.ApiWrapper.x64.so",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
@@ -477,6 +482,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "7-2.1"),
                         },
                         relativeProfilerPath: "datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+                        relativeApiWrapperPath: "datadog/linux-x64/Datadog.Linux.ApiWrapper.x64.so",
                         dockerName: "andrewlock/dotnet-centos"
                     );
 
@@ -491,6 +497,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "15-2.1"),
                         },
                         relativeProfilerPath: "datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+                        relativeApiWrapperPath: "datadog/linux-x64/Datadog.Linux.ApiWrapper.x64.so",
                         dockerName: "andrewlock/dotnet-opensuse"
                     );
 
@@ -514,6 +521,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
                         },
                         relativeProfilerPath: "datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so",
+                        relativeApiWrapperPath: "datadog/linux-arm64/Datadog.Linux.ApiWrapper.x64.so",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
@@ -527,6 +535,7 @@ partial class Build : NukeBuild
                     string shortName,
                     (string publishFramework, string runtimeTag)[] images,
                     string relativeProfilerPath,
+                    string relativeApiWrapperPath,
                     string dockerName
                 )
                 {
@@ -540,6 +549,7 @@ partial class Build : NukeBuild
                                 dockerTag = dockerTag,
                                 publishFramework = image.publishFramework,
                                 relativeProfilerPath = relativeProfilerPath,
+                                relativeApiWrapperPath = relativeApiWrapperPath,
                                 runtimeImage = $"{dockerName}:{image.runtimeTag}"
                             });
                     }
@@ -647,6 +657,39 @@ partial class Build : NukeBuild
                     AzurePipelines.Instance.SetVariable("dotnet_tool_installer_smoke_tests_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
+                void GenerateLinuxDotnetToolNugetSmokeTestsMatrix()
+                {
+                    var matrix = new Dictionary<string, object>();
+
+                    AddToDotNetToolSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye"),
+                        },
+                        platformSuffix: "linux-x64",
+                        dockerName: "mcr.microsoft.com/dotnet/sdk"
+                    );
+
+                    AddToDotNetToolSmokeTestsMatrix(
+                        matrix,
+                        "alpine",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.16"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.15"),
+                        },
+                        platformSuffix: "linux-musl-x64",
+                        dockerName: "mcr.microsoft.com/dotnet/sdk"
+                    );
+
+                    Logger.Info($"Installer smoke tests dotnet-tool NuGet matrix Linux");
+                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetVariable("dotnet_tool_nuget_installer_linux_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                }
+
                 void AddToDotNetToolSmokeTestsMatrix(
                     Dictionary<string, object> matrix,
                     string shortName,
@@ -674,7 +717,11 @@ partial class Build : NukeBuild
                 {
                     var dockerName = "mcr.microsoft.com/dotnet/aspnet";
 
-                    var platforms = new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86, };
+                    var platforms = new(MSBuildTargetPlatform platform, bool enable32Bit)[] { 
+                        (MSBuildTargetPlatform.x64, false), 
+                        (MSBuildTargetPlatform.x64, true), 
+                        (MSBuildTargetPlatform.x86, true)
+                    };
                     var runtimeImages = new (string publishFramework, string runtimeTag)[]
                     {
                         (publishFramework: TargetFramework.NET6_0, "6.0-windowsservercore-ltsc2019"),
@@ -684,8 +731,8 @@ partial class Build : NukeBuild
                     var matrix = (
                                      from platform in platforms
                                      from image in runtimeImages
-                                     let dockerTag = $"{platform}_{image.runtimeTag.Replace('.', '_')}"
-                                     let channel32Bit = platform == MSBuildTargetPlatform.x86
+                                     let dockerTag = $"{platform.platform}_{image.runtimeTag.Replace('.', '_')}_{(platform.enable32Bit ? "32bit" : "64bit")}"
+                                     let channel32Bit = platform.enable32Bit
                                                                        ? (image.publishFramework == TargetFramework.NET6_0 ? "6.0" : "5.0")
                                                                        : string.Empty
                                      select new
@@ -693,7 +740,7 @@ partial class Build : NukeBuild
                                          dockerTag = dockerTag,
                                          publishFramework = image.publishFramework,
                                          runtimeImage = $"{dockerName}:{image.runtimeTag}",
-                                         targetPlatform = platform,
+                                         targetPlatform = platform.platform,
                                          channel32Bit = channel32Bit,
                                      }).ToDictionary(x=>x.dockerTag, x => x);
 

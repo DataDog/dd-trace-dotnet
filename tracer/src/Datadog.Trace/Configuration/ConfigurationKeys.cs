@@ -375,6 +375,12 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for re-signing assemblies after the Code Coverage modification.
             /// </summary>
             public const string CodeCoverageSnkFile = "DD_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Uploading Git Metadata in CI Visibility
+            /// Default Value is false (disabled)
+            /// </summary>
+            public const string GitUploadEnabled = "DD_CIVISIBILITY_GIT_UPLOAD_ENABLED";
         }
 
         /// <summary>

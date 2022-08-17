@@ -19,28 +19,32 @@ Error("unknown platform");
 
 const char* const RuntimeIdStore::ServiceName = "RuntimeID Store";
 const char* const RuntimeIdStore::ExternalFunctionName = "GetRuntimeId";
-const char* const RuntimeIdStore::NativeLoaderFilename =
-#ifdef _WINDOWS
-#ifdef BIT64
-    "Datadog.AutoInstrumentation.NativeLoader.x64" LIBRARY_FILE_EXTENSION;
-#else
-    "Datadog.AutoInstrumentation.NativeLoader.x86" LIBRARY_FILE_EXTENSION;
-#endif
-#else
-    "Datadog.Trace.ClrProfiler.Native.so";
-#endif
+const char* const RuntimeIdStore::NativeLoaderFilename = "Datadog.Trace.ClrProfiler.Native" LIBRARY_FILE_EXTENSION;
 
 bool RuntimeIdStore::Start()
 {
+    // should be set by native loader
+    shared::WSTRING nativeLoaderPath = shared::GetEnvironmentValue(WStr("DD_INTERNAL_NATIVE_LOADER_PATH"));
+    if (!nativeLoaderPath.empty())
+    {
+        _instance = LoadDynamicLibrary(shared::ToString(nativeLoaderPath));
+    }
+    else
+    {    // variable not set - try to infer the location instead
+        Log::Debug("DD_INTERNAL_NATIVE_LOADER_PATH variable not found. Inferring native loader path");
+
+        // the native loader is always available in the same directory
 #ifdef _WINDOWS
-    auto nativeLoaderFilename = NativeLoaderFilename;
+        auto nativeLoaderFilename = NativeLoaderFilename;
 #else
-    auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
-    // the native loader is in the parent directory
-    auto nativeLoaderPath = currentModulePath.parent_path() / ".." / NativeLoaderFilename;
-    auto nativeLoaderFilename = nativeLoaderPath.string();
+        auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
+        // the native loader is in the parent directory
+        auto nativeLoaderPath = currentModulePath.parent_path() / NativeLoaderFilename;
+        auto nativeLoaderFilename = nativeLoaderPath.string();
 #endif
-    _instance = LoadDynamicLibrary(nativeLoaderFilename);
+        _instance = LoadDynamicLibrary(nativeLoaderFilename);
+    }
+
 
     if (_instance == nullptr)
     {

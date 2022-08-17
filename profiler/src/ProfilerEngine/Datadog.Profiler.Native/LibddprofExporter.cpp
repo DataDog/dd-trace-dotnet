@@ -144,11 +144,29 @@ ddprof_ffi_EndpointV3 LibddprofExporter::CreateEndpoint(IConfiguration* configur
     }
     else
     {
-        // agent mode
-        std::stringstream oss;
-        oss << "http://" << configuration->GetAgentHost() << ":" << configuration->GetAgentPort();
-        _agentUrl = oss.str();
+        // Agent mode
+
+#if _WINDOWS
+        bool useDefaultDomainSocket = false;
+#else
+        std::error_code ec; // fs::exists might throw if no error_code parameter is provided
+        bool useDefaultDomainSocket = fs::exists("/var/run/datadog/apm.socket", ec);
+#endif
+
+        if (useDefaultDomainSocket)
+        {
+            _agentUrl = "unix:///var/run/datadog/apm.socket";
+        }
+        else
+        {
+            // Use default HTTP endpoint
+            std::stringstream oss;
+            oss << "http://" << configuration->GetAgentHost() << ":" << configuration->GetAgentPort();
+            _agentUrl = oss.str();
+        }
     }
+
+    Log::Info("Using agent endpoint ", _agentUrl);
 
     return ddprof_ffi_EndpointV3_agent(FfiHelper::StringToCharSlice(_agentUrl));
 }

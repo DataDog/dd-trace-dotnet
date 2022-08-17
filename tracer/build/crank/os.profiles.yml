@@ -37,9 +37,9 @@ profiles:
           - "{{ linuxEndpoint }}"
         environmentVariables:
           COR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-          COR_PROFILER_PATH: "{{ linuxProfilerPath }}/{{ commit_hash }}/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so"
+          COR_PROFILER_PATH: "{{ linuxProfilerPath }}/{{ commit_hash }}/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
           CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-          CORECLR_PROFILER_PATH: "{{ linuxProfilerPath }}/{{ commit_hash }}/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so"
+          CORECLR_PROFILER_PATH: "{{ linuxProfilerPath }}/{{ commit_hash }}/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
           DD_DOTNET_TRACER_HOME: "{{ linuxProfilerPath }}/{{ commit_hash }}/tracer-home-linux"
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6
@@ -62,9 +62,9 @@ profiles:
           - "{{ linuxEndpoint }}"
         environmentVariables:
           COR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-          COR_PROFILER_PATH: "{{ linuxProfilerPath }}/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so"
+          COR_PROFILER_PATH: "{{ linuxProfilerPath }}/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
           CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-          CORECLR_PROFILER_PATH: "{{ linuxProfilerPath }}/tracer-home-linux/Datadog.Trace.ClrProfiler.Native.so"
+          CORECLR_PROFILER_PATH: "{{ linuxProfilerPath }}/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
           DD_DOTNET_TRACER_HOME: "{{ linuxProfilerPath }}/tracer-home-linux"
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6
@@ -74,7 +74,7 @@ profiles:
           requiredOperatingSystem: linux
           requiredArchitecture: x64
           buildFiles:
-          - "../../../shared/bin/monitoring-home/tracer/**;{{ linuxProfilerPath }}/tracer-home-linux"
+          - "../../../shared/bin/monitoring-home/**;{{ linuxProfilerPath }}/tracer-home-linux"
       load:
         endpoints:
           - http://{{ controllerIp }}:5985
@@ -120,9 +120,9 @@ profiles:
           - "{{ linuxArm64Endpoint }}"
         environmentVariables:
           COR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-          COR_PROFILER_PATH: "{{ linuxArm64ProfilerPath }}/{{ commit_hash }}/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
+          COR_PROFILER_PATH: "{{ linuxArm64ProfilerPath }}/{{ commit_hash }}/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
           CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-          CORECLR_PROFILER_PATH: "{{ linuxArm64ProfilerPath }}/{{ commit_hash }}/tracer-home-linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
+          CORECLR_PROFILER_PATH: "{{ linuxArm64ProfilerPath }}/{{ commit_hash }}/tracer-home-linux-arm64/linux-arm64/Datadog.Trace.ClrProfiler.Native.so"
           DD_DOTNET_TRACER_HOME: "{{ linuxArm64ProfilerPath }}/{{ commit_hash }}/tracer-home-linux-arm64"
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6

@@ -87,6 +87,8 @@ namespace Datadog.Trace.TestHelpers
             return RuntimeFrameworkDescription.Contains("core") || IsNet5();
         }
 
+        public static bool IsAlpine() => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine"));
+
         public static string GetTracerHomePath()
         {
             var tracerHomeDirectoryEnvVar = "TracerHomeDirectory";
@@ -129,16 +131,19 @@ namespace Datadog.Trace.TestHelpers
         {
             var monitoringHome = GetMonitoringHomePath();
 
-            string fileName = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform()) switch
+            var (extension, dir) = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform(), IsAlpine()) switch
             {
-                ("win", "X64")     => "Datadog.AutoInstrumentation.NativeLoader.x64.dll",
-                ("win", "X86")     => "Datadog.AutoInstrumentation.NativeLoader.x86.dll",
-                ("linux", "X64" or "Arm64") => "Datadog.Trace.ClrProfiler.Native.so",
-                ("osx", _)         => "Datadog.AutoInstrumentation.NativeLoader.dylib",
+                ("win", "X64", _) => ("dll", "win-x64"),
+                ("win", "X86", _) => ("dll", "win-x86"),
+                ("linux", "X64", false) => ("so", "linux-x64"),
+                ("linux", "X64", true) => ("so", "linux-musl-x64"),
+                ("linux", "Arm64", _) => ("so", "linux-arm64"),
+                ("osx", _, _) => ("dylib", "osx-x64"),
                 _ => throw new PlatformNotSupportedException()
             };
 
-            var path = Path.Combine(monitoringHome, fileName);
+            var fileName = $"Datadog.Trace.ClrProfiler.Native.{extension}";
+            var path = Path.Combine(monitoringHome, dir, fileName);
 
             if (!File.Exists(path))
             {

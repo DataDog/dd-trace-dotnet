@@ -56,7 +56,7 @@ namespace Datadog.Trace.Pdb
             return _symbolReader.GetMethod(mdMethod, version: 1);
         }
 
-        public SymbolMethod GetContainingMethodAndOffset(string filePath, int line, int column, out int? bytecodeOffset)
+        public SymbolMethod GetContainingMethodAndOffset(string filePath, int line, int? column, out int? bytecodeOffset)
         {
             return _symbolReader switch
             {

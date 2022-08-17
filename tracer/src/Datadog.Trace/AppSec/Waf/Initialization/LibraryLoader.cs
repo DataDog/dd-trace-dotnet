@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.AppSec.Waf.Initialization
 {
@@ -18,15 +19,16 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
         internal static IntPtr LoadAndGetHandle()
         {
-            var fd = FrameworkDescription.Create();
+            var fd = FrameworkDescription.Instance;
 
-            GetLibNameAndRuntimeId(fd, out var libName, out var runtimeId);
+            var libName = GetLibName(fd);
+            var runtimeIds = GetRuntimeIds(fd);
 
-            // libName or runtimeId being null means platform is not supported
+            // libName or runtimeIds being null means platform is not supported
             // no point attempting to load the library
-            if (libName != null && runtimeId != null)
+            if (libName != null && runtimeIds != null)
             {
-                var paths = GetDatadogNativeFolders(fd, runtimeId);
+                var paths = GetDatadogNativeFolders(fd, runtimeIds);
                 if (TryLoadLibraryFromPaths(libName, paths, out var handle))
                 {
                     return handle;
@@ -36,110 +38,87 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return IntPtr.Zero;
         }
 
-        private static List<string> GetDatadogNativeFolders(FrameworkDescription frameworkDescription, string runtimeId)
+        private static List<string> GetDatadogNativeFolders(FrameworkDescription frameworkDescription, string[] runtimeIds)
         {
             // first get anything "home folder" like
             // if running under Windows:
             // - get msi install location
             // - then get the default program files folder (because of a know issue in the installer for location of the x86 folder on a 64bit OS)
+            // if running under linux:
+            //   - may have multiple runtime IDs (e.g. musl)
             // then combine with the profiler's location
             // taking into account that these locations could be the same place
 
-            var paths = GetHomeFolders(runtimeId);
+            List<string> paths = new();
 
-            if (frameworkDescription.OSPlatform == OSPlatformName.Windows)
+            AddNativeLoaderEnginePath(paths);
+
+            foreach (var runtimeId in runtimeIds)
             {
-                var programFilesFolder = GetProgramFilesFolder();
-                paths.Add(programFilesFolder);
-
-                AddPathFromMsiSettings(paths);
+                AddHomeFolders(paths, runtimeId);
             }
 
-            var profilerFolder = GetProfilerFolder(frameworkDescription);
-            if (!string.IsNullOrWhiteSpace(profilerFolder))
+            foreach (var runtimeId in runtimeIds)
             {
-                paths.Add(profilerFolder);
-            }
-            else
-            {
-                // this is expected under Windows, but problematic under other OSs
-                Log.Debug("Couldn't find profilerFolder");
+                AddProfilerFolders(paths, frameworkDescription, runtimeId);
             }
 
             return paths.Distinct().ToList();
         }
 
-        private static void AddPathFromMsiSettings(List<string> paths)
+        private static void AddNativeLoaderEnginePath(List<string> paths)
         {
-            void AddInstallDirFromRegKey(string bitness)
-            {
-                var path = $@"SOFTWARE\Datadog\Datadog .NET Tracer {bitness}-bit";
-                var installDir = ReducedRegistryAccess.ReadLocalMachineString(path, "InstallPath");
-                if (installDir != null)
-                {
-                    paths.Add(installDir);
-                }
-            }
-
-            if (Environment.Is64BitOperatingSystem)
-            {
-                AddInstallDirFromRegKey("64");
-            }
-
-            AddInstallDirFromRegKey("32");
+            // The native loader sets this env var to say where it's loaded from, so the waf should be next to it
+            // Use this preferentially over other options
+             var value = EnvironmentHelpers.GetEnvironmentVariable("DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH");
+             if (!string.IsNullOrWhiteSpace(value))
+             {
+                 paths.Add(Path.GetDirectoryName(value));
+             }
         }
 
-        private static string GetProgramFilesFolder()
-        {
-            // should be already adapted to the type of process / OS
-            var programFilesRoot = Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles);
-
-            return Path.Combine(programFilesRoot, "Datadog", ".NET Tracer");
-        }
-
-        private static string GetProfilerFolder(FrameworkDescription frameworkDescription)
+        private static void AddProfilerFolders(List<string> paths, FrameworkDescription frameworkDescription, string runtimeId)
         {
             var profilerEnvVar =
                 frameworkDescription.IsCoreClr() ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH";
+
+            if (TryAddProfilerFolders(paths, profilerEnvVar))
+            {
+                // added the locations
+                return;
+            }
+
             var profilerEnvVarBitsExt =
                 profilerEnvVar + (Environment.Is64BitProcess ? "_64" : "_32");
 
-            var profilerPathsEnvVars = new List<string>()
+            if (!TryAddProfilerFolders(paths, profilerEnvVarBitsExt))
             {
-                profilerEnvVarBitsExt, profilerEnvVar
-            };
-
-            // it is unlikely that the security library would be in a sub folder from
-            // where the profiler lives, so just use this paths directly
-            var profilerFolders =
-                profilerPathsEnvVars
-                   .Select(Environment.GetEnvironmentVariable)
-                   .Where(x => !string.IsNullOrWhiteSpace(x))
-                   .Select(Path.GetDirectoryName)
-                   .FirstOrDefault();
-
-            return profilerFolders;
-        }
-
-        private static List<string> GetHomeFolders(string runtimeId)
-        {
-            List<string> GetRuntimeSpecificVersions(string path)
-            {
-                return new List<string>
-                       {
-                           path,
-                           Path.Combine(path, runtimeId),
-                           Path.Combine(path, runtimeId, "native"),
-                       };
+                // this is expected under Windows, but problematic under other OSs
+                Log.Debug("Couldn't find profilerFolder");
             }
 
-            var paths = new List<string>();
+            bool TryAddProfilerFolders(List<string> pathLists, string envVar)
+            {
+                var value = EnvironmentHelpers.GetEnvironmentVariable(envVar);
+                if (string.IsNullOrWhiteSpace(value))
+                {
+                    return false;
+                }
 
+                AddRuntimeSpecificLocations(pathLists, Path.GetDirectoryName(value), runtimeId);
+                return true;
+            }
+        }
+
+        private static void AddHomeFolders(List<string> paths, string runtimeId)
+        {
             // the real trace home
             var tracerHome = Environment.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
             if (!string.IsNullOrWhiteSpace(tracerHome))
             {
-                paths.Add(tracerHome);
+                // the home folder could contain the native dll directly (in legacy versions of the package),
+                // but it could also be under a runtime specific folder
+                AddRuntimeSpecificLocations(paths, tracerHome, runtimeId, includeNative: true);
             }
 
             // include the appdomain base as this will help framework samples running in IIS find the library
@@ -149,23 +128,23 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
             if (!string.IsNullOrWhiteSpace(currentDir))
             {
-                paths.Add(currentDir);
-                Log.Debug("currentDir is {CurrentDir}", currentDir);
+                Log.Debug("AppDomain location is {CurrentDir}", currentDir);
+                AddRuntimeSpecificLocations(paths, currentDir, runtimeId);
             }
             else
             {
-                Log.Debug("currentDir is null or empty");
+                Log.Debug("AppDomain location is null or empty");
             }
+        }
 
-            // the home folder could contain the native dll directly, but it could also
-            // be under a runtime specific folder
-            var allPaths =
-                paths
-                   .Distinct()
-                   .SelectMany(GetRuntimeSpecificVersions)
-                   .ToList();
-
-            return allPaths;
+        private static void AddRuntimeSpecificLocations(List<string> paths, string candidatePath, string runtimeId, bool includeNative = false)
+        {
+            paths.Add(candidatePath);
+            paths.Add(Path.Combine(candidatePath, runtimeId));
+            if (includeNative)
+            {
+                paths.Add(Path.Combine(candidatePath, runtimeId, "native"));
+            }
         }
 
         private static bool TryLoadLibraryFromPaths(string libName, List<string> paths, out IntPtr handle)
@@ -203,57 +182,24 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return success;
         }
 
-        private static void GetLibNameAndRuntimeId(FrameworkDescription frameworkDescription, out string libName, out string runtimeId)
-        {
-            string runtimeIdPart1, libPrefix, libExt;
-
-            switch (frameworkDescription.OSPlatform)
+        private static string GetLibName(FrameworkDescription fwk)
+            => fwk.OSPlatform switch
             {
-                case OSPlatformName.MacOS:
-                    runtimeIdPart1 = "osx";
-                    libPrefix = "lib";
-                    libExt = "dylib";
-                    break;
-                case OSPlatformName.Linux:
-                    runtimeIdPart1 = "linux";
-                    libPrefix = "lib";
-                    libExt = "so";
-                    break;
-                case OSPlatformName.Windows:
-                    runtimeIdPart1 = "win";
-                    libPrefix = string.Empty;
-                    libExt = "dll";
-                    break;
-                default:
-                    // unsupported platform
-                    runtimeIdPart1 = null;
-                    libPrefix = null;
-                    libExt = null;
-                    break;
-            }
+                OSPlatformName.MacOS => "libddwaf.dylib",
+                OSPlatformName.Linux => "libddwaf.so",
+                OSPlatformName.Windows => "ddwaf.dll",
+                _ => null, // unsupported
+            };
 
-            if (runtimeIdPart1 != null && libPrefix != null && libExt != null)
+        private static string[] GetRuntimeIds(FrameworkDescription fwk)
+            => fwk.OSPlatform switch
             {
-                libName = libPrefix + "ddwaf." + libExt;
-                string procArch;
-                if (frameworkDescription.ProcessArchitecture == ProcessArchitecture.Arm64)
-                {
-                    procArch = ProcessArchitecture.Arm64;
-                }
-                else
-                {
-                    procArch = Environment.Is64BitProcess ? ProcessArchitecture.X64 : ProcessArchitecture.X86;
-                }
-
-                runtimeId = $"{runtimeIdPart1}-{procArch}";
-            }
-            else
-            {
-                Log.Warning($"Unsupported platform: " + Environment.OSVersion.Platform);
-
-                libName = null;
-                runtimeId = null;
-            }
-        }
+                OSPlatformName.MacOS => new[] { $"osx-x64" },
+                OSPlatformName.Windows => new[] { $"win-{fwk.ProcessArchitecture}" },
+                OSPlatformName.Linux => fwk.ProcessArchitecture == ProcessArchitecture.Arm64
+                                            ? new[] { "linux-arm64" }
+                                            : new[] { "linux-x64", "linux-musl-x64" },
+                _ => null, // unsupported
+            };
     }
 }

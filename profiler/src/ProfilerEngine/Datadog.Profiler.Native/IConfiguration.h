@@ -39,4 +39,5 @@ public:
     virtual bool IsExceptionProfilingEnabled() const = 0;
     virtual int32_t ExceptionSampleLimit() const = 0;
     virtual bool IsAllocationProfilingEnabled() const = 0;
+    virtual double MinimumCores() const = 0;
 };

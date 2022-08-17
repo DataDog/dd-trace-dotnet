@@ -2,15 +2,21 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Text;
+using System.Threading.Tasks;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Util
 {
     internal static class ProcessHelpers
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessHelpers));
+
         /// <summary>
         /// Wrapper around <see cref="Process.GetCurrentProcess"/> and <see cref="Process.ProcessName"/>
         ///
@@ -24,10 +30,8 @@ namespace Datadog.Trace.Util
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static string GetCurrentProcessName()
         {
-            using (var currentProcess = Process.GetCurrentProcess())
-            {
-                return currentProcess.ProcessName;
-            }
+            using var currentProcess = Process.GetCurrentProcess();
+            return currentProcess.ProcessName;
         }
 
         /// <summary>
@@ -45,12 +49,10 @@ namespace Datadog.Trace.Util
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void GetCurrentProcessInformation(out string processName, out string machineName, out int processId)
         {
-            using (var currentProcess = Process.GetCurrentProcess())
-            {
-                processName = currentProcess.ProcessName;
-                machineName = currentProcess.MachineName;
-                processId = currentProcess.Id;
-            }
+            using var currentProcess = Process.GetCurrentProcess();
+            processName = currentProcess.ProcessName;
+            machineName = currentProcess.MachineName;
+            processId = currentProcess.Id;
         }
 
         /// <summary>
@@ -70,11 +72,80 @@ namespace Datadog.Trace.Util
         public static void GetCurrentProcessRuntimeMetrics(out TimeSpan userProcessorTime, out TimeSpan systemCpuTime, out int threadCount, out long privateMemorySize)
         {
             using var process = Process.GetCurrentProcess();
-
             userProcessorTime = process.UserProcessorTime;
             systemCpuTime = process.PrivilegedProcessorTime;
             threadCount = process.Threads.Count;
             privateMemorySize = process.PrivateMemorySize64;
+        }
+
+        /// <summary>
+        /// Run a command and get the standard output content as a string
+        /// </summary>
+        /// <param name="command">Command to run</param>
+        /// <param name="input">Standard input content</param>
+        /// <returns>Task with the content of the standard output</returns>
+        public static async Task<string?> RunCommandAsync(Command command, string? input = null)
+        {
+            Log.Debug("Running command: {command} {args}", command.Cmd, command.Arguments);
+            var processStartInfo = GetProcessStartInfo(command);
+            if (input is not null)
+            {
+                processStartInfo.RedirectStandardInput = true;
+            }
+
+            using var processInfo = Process.Start(processStartInfo);
+            if (processInfo is null)
+            {
+                return null;
+            }
+
+            if (input is not null)
+            {
+                await processInfo.StandardInput.WriteAsync(input).ConfigureAwait(false);
+                await processInfo.StandardInput.FlushAsync().ConfigureAwait(false);
+                processInfo.StandardInput.Close();
+            }
+
+            var sb = new StringBuilder();
+            while (!processInfo.HasExited)
+            {
+                sb.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
+                await Task.Delay(15).ConfigureAwait(false);
+            }
+
+            sb.Append(await processInfo.StandardOutput.ReadToEndAsync().ConfigureAwait(false));
+            return sb.ToString();
+        }
+
+        private static ProcessStartInfo GetProcessStartInfo(Command command)
+        {
+            var processStartInfo = command.Arguments is null ?
+                                       new ProcessStartInfo(command.Cmd) :
+                                       new ProcessStartInfo(command.Cmd, command.Arguments);
+            processStartInfo.CreateNoWindow = true;
+            processStartInfo.UseShellExecute = false;
+            processStartInfo.RedirectStandardOutput = true;
+
+            if (command.WorkingDirectory is not null)
+            {
+                processStartInfo.WorkingDirectory = command.WorkingDirectory;
+            }
+
+            return processStartInfo;
+        }
+
+        public readonly struct Command
+        {
+            public readonly string Cmd;
+            public readonly string? Arguments;
+            public readonly string? WorkingDirectory;
+
+            public Command(string cmd, string? arguments = null, string? workingDirectory = null)
+            {
+                Cmd = cmd;
+                Arguments = arguments;
+                WorkingDirectory = workingDirectory;
+            }
         }
     }
 }

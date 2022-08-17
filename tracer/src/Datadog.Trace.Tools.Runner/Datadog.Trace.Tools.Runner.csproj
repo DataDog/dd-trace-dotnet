@@ -23,7 +23,7 @@
     <When Condition="'$(BuildStandalone)' == 'true'">
       <PropertyGroup>
         <OutputPath>bin\$(Configuration)\Console</OutputPath>
-        <PublishDir>bin\$(Configuration)\Console\publish\$(RuntimeIdentifier)</PublishDir>
+        <PublishDir Condition="'$(PublishDir)' == '' ">bin\$(Configuration)\Console\publish\$(RuntimeIdentifier)</PublishDir>
         <AssemblyName>dd-trace</AssemblyName>
         <RuntimeIdentifiers>win-x64;win-x86;linux-x64;linux-musl-x64;osx-x64;linux-arm64</RuntimeIdentifiers>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -35,6 +35,16 @@
         <Content Include="..\Datadog.Monitoring.Distribution\home\**\*.*" LinkBase="home">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
           <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+        </Content>
+
+        <Content Update="..\Datadog.Monitoring.Distribution\home\**\readme.txt">
+          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+          <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+        </Content>
+        
+        <Content Update="..\Datadog.Monitoring.Distribution\home\**\*.pdb">
+          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+          <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
       </ItemGroup>
     </When>

@@ -29,9 +29,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup>
-    <!-- We want the binary output file name to contain a platform/bitness marker (e.g. ".x64").            -->
-    <TargetName Condition=" '$(PlatformShortName)' != ''">$(ProfilerEngineNativeTarget).$(PlatformShortName)</TargetName>
-    <TargetName Condition=" '$(PlatformShortName)' == ''">$(ProfilerEngineNativeTarget).UnspecifiedPlatform</TargetName>
+    <TargetName >$(ProfilerEngineNativeTarget)</TargetName>
   </PropertyGroup>
   <PropertyGroup>
     <!-- This is required when deining 'AdditionalIncludeDirectories' for 'ResourceCompile' below,          -->

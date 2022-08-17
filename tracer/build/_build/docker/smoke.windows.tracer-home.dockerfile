@@ -41,10 +41,13 @@ RUN [Environment]::SetEnvironmentVariable('CORECLR_PROFILER_PATH', 'c:\monitorin
 
 # Set the additional env vars
 ENV DD_PROFILING_ENABLED=1 \
+    DD_TRACE_DEBUG=1 \
+    DD_APPSEC_ENABLED=1 \
     CORECLR_ENABLE_PROFILING=1 \
     CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8} \
     DD_DOTNET_TRACER_HOME="c:\monitoring-home" \
     DD_TRACE_LOG_DIRECTORY="C:\logs" \
+    DD_PROFILING_LOG_DIR="C:\logs" \
     ASPNETCORE_URLS=http://localhost:5000
 
 # Copy the app across

@@ -17,6 +17,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
     public class WrapperLibraryTest
     {
         private readonly ITestOutputHelper _output;
+        private readonly string expectedErrorMessage = "*It is not safe to start the profiler. See previous log messages for more info.*";
 
         public WrapperLibraryTest(ITestOutputHelper output)
         {
@@ -39,7 +40,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
 
             var lines = File.ReadAllLines(logFile);
 
-            lines.Should().ContainMatch("*It's not safe to start the profiler. See previous log messages for more info.*");
+            lines.Should().ContainMatch(expectedErrorMessage);
         }
 
         [TestAppFact("Samples.BuggyBits")]
@@ -58,7 +59,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
 
             var lines = File.ReadAllLines(logFile);
 
-            lines.Should().ContainMatch("*It's not safe to start the profiler. See previous log messages for more info.*");
+            lines.Should().ContainMatch(expectedErrorMessage);
         }
 
         [TestAppFact("Samples.BuggyBits")]
@@ -76,7 +77,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
                 .Single(f => Path.GetFileName(f).StartsWith("DD-DotNet-Profiler-Native-"));
 
             var lines = File.ReadAllLines(logFile);
-            lines.Should().ContainMatch("*It's not safe to start the profiler. See previous log messages for more info.*");
+            lines.Should().ContainMatch(expectedErrorMessage);
         }
     }
 }

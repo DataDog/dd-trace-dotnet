@@ -51,9 +51,10 @@ namespace Datadog.Trace.Debugger.PInvoke
 
         // the "dll" extension is required on .NET Framework
         // and optional on .NET Core
+        // These methods are rewritten by the native tracer to use the correct paths
         private static partial class Windows
         {
-            [DllImport("Datadog.Trace.ClrProfiler.Native.dll")]
+            [DllImport("Datadog.Tracer.Native.dll")]
             public static extern void InstrumentProbes(
                 [In] NativeMethodProbeDefinition[] methodProbes,
                 int methodProbesLength,
@@ -62,7 +63,7 @@ namespace Datadog.Trace.Debugger.PInvoke
                 [In] NativeRemoveProbeRequest[] revertProbes,
                 int revertProbesLength);
 
-            [DllImport("Datadog.Trace.ClrProfiler.Native.dll", CharSet = CharSet.Unicode)]
+            [DllImport("Datadog.Tracer.Native.dll", CharSet = CharSet.Unicode)]
             public static extern int GetProbesStatuses(
                 [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr, SizeParamIndex = 1)] string[] probeIds,
                 int probeIdsLength,
@@ -70,9 +71,10 @@ namespace Datadog.Trace.Debugger.PInvoke
         }
 
         // assume .NET Core if not running on Windows
+        // These methods are rewritten by the native tracer to use the correct paths
         private static partial class NonWindows
         {
-            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            [DllImport("Datadog.Tracer.Native")]
             public static extern void InstrumentProbes(
                 [In] NativeMethodProbeDefinition[] methodProbes,
                 int methodProbesLength,
@@ -81,7 +83,7 @@ namespace Datadog.Trace.Debugger.PInvoke
                 [In] NativeRemoveProbeRequest[] revertProbes,
                 int revertProbesLength);
 
-            [DllImport("Datadog.Trace.ClrProfiler.Native")]
+            [DllImport("Datadog.Tracer.Native")]
             public static extern int GetProbesStatuses(
                 [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr, SizeParamIndex = 1)] string[] probeIds,
                 int probeIdsLength,

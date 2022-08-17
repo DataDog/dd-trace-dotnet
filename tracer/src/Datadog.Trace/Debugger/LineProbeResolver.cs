@@ -23,12 +23,12 @@ namespace Datadog.Trace.Debugger
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LineProbeResolver>();
 
         private readonly object _locker;
-        private readonly Dictionary<Assembly, Trie> _loadedAssemblies;
+        private readonly Dictionary<Assembly, FilePathLookup> _loadedAssemblies;
 
         private LineProbeResolver()
         {
             _locker = new object();
-            _loadedAssemblies = new Dictionary<Assembly, Trie>();
+            _loadedAssemblies = new Dictionary<Assembly, FilePathLookup>();
         }
 
         public static LineProbeResolver Create()
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Debugger
             }
             catch (Exception e)
             {
-                Log.Warning(e, $"Failed to retrieve documents from PDB for {loadedAssembly.Location}");
+                Log.Warning(e, "Failed to retrieve documents from PDB for {AssemblyLocation}", loadedAssembly.Location);
             }
 
             return null;
@@ -72,23 +72,17 @@ namespace Datadog.Trace.Debugger
             return thirdPartyStartsWith.Any(t => assemblyName.StartsWith(t));
         }
 
-        private static string GetReversePath(string documentFullPath)
-        {
-            var partsReverse = documentFullPath.Split(' ', Path.PathSeparator).Reverse();
-            return string.Join(Path.PathSeparator.ToString(), partsReverse);
-        }
-
-        private Trie GetSourceFilePathForAssembly(Assembly loadedAssembly)
+        private FilePathLookup GetSourceFilePathForAssembly(Assembly loadedAssembly)
         {
             if (_loadedAssemblies.TryGetValue(loadedAssembly, out var trie))
             {
                 return trie;
             }
 
-            return _loadedAssemblies[loadedAssembly] = CreateTrieForSourceFilePaths(loadedAssembly);
+            return _loadedAssemblies[loadedAssembly] = CreateLookupForSourceFilePaths(loadedAssembly);
         }
 
-        private Trie CreateTrieForSourceFilePaths(Assembly loadedAssembly)
+        private FilePathLookup CreateLookupForSourceFilePaths(Assembly loadedAssembly)
         {
             var documents = GetDocumentsFromPDB(loadedAssembly);
             if (documents == null)
@@ -96,70 +90,76 @@ namespace Datadog.Trace.Debugger
                 return null; // No PDB available or unsupported assembly
             }
 
-            var trie = new Trie();
+            var lookup = new FilePathLookup();
             foreach (var symbolDocument in documents)
             {
-                trie.Insert(GetReversePath(symbolDocument.URL));
+                lookup.InsertPath(symbolDocument.URL);
             }
 
-            return trie;
+            return lookup;
         }
 
-        private Assembly FindAssemblyContainingFile(string sourceFileFullPath)
+        private bool TryFindAssemblyContainingFile(string probeFilePath, out string sourceFileFullPathFromPdb, out Assembly assembly)
         {
             lock (_locker)
             {
-                foreach (var assembly in AppDomain.CurrentDomain.GetAssemblies())
+                foreach (var candidateAssembly in AppDomain.CurrentDomain.GetAssemblies())
                 {
-                    var trie = GetSourceFilePathForAssembly(assembly);
-
-                    if (trie != null && trie.ContainsPrefix(GetReversePath(sourceFileFullPath)))
+                    var lookup = GetSourceFilePathForAssembly(candidateAssembly);
+                    if (lookup == null)
                     {
-                        return assembly;
+                        continue;
+                    }
+
+                    var path = lookup.FindPathThatEndsWith(probeFilePath);
+                    if (path != null)
+                    {
+                        sourceFileFullPathFromPdb = path;
+                        assembly = candidateAssembly;
+                        return true;
                     }
                 }
             }
 
-            return null;
+            sourceFileFullPathFromPdb = null;
+            assembly = null;
+            return false;
         }
 
         public LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out BoundLineProbeLocation location)
         {
             location = null;
-            var assembly = FindAssemblyContainingFile(probe.Where.SourceFile);
-            if (assembly == null)
+            try
             {
-                var message = $"Could not find a source file location for probe {probe.Id}.";
-                Log.Information(message);
-                return new LineProbeResolveResult(LiveProbeResolveStatus.Unbound, message);
+                if (!TryFindAssemblyContainingFile(probe.Where.SourceFile, out var filePathFromPdb, out var assembly))
+                {
+                    return new LineProbeResolveResult(LiveProbeResolveStatus.Unbound, "Source file location for probe was not found, possibly because the relevant assembly was not yet loaded.");
+                }
+
+                using var pdbReader = DatadogPdbReader.CreatePdbReader(assembly);
+                if (pdbReader == null)
+                {
+                    return new LineProbeResolveResult(LiveProbeResolveStatus.Error, $"Failed to read from PDB");
+                }
+
+                if (probe.Where.Lines?.Length != 1 || !int.TryParse(probe.Where.Lines[0], out var lineNum))
+                {
+                    return new LineProbeResolveResult(LiveProbeResolveStatus.Error, $"Failed to parse line number.");
+                }
+
+                var method = pdbReader.GetContainingMethodAndOffset(filePathFromPdb, lineNum, column: null, out var bytecodeOffset);
+                if (bytecodeOffset.HasValue == false)
+                {
+                    return new LineProbeResolveResult(LiveProbeResolveStatus.Error, "Probe location did not map out to a valid bytecode offset");
+                }
+
+                location = new BoundLineProbeLocation(probe, assembly.ManifestModule.ModuleVersionId, method.Token, bytecodeOffset.Value, lineNum);
+                return new LineProbeResolveResult(LiveProbeResolveStatus.Bound);
             }
-
-            using var pdbReader = DatadogPdbReader.CreatePdbReader(assembly);
-            if (pdbReader == null)
+            catch (Exception e)
             {
-                var message = $"Failed to read from PDB for probe ID {probe.Id}";
-                Log.Information(message);
-
-                return new LineProbeResolveResult(LiveProbeResolveStatus.Error, message);
-            }
-
-            if (probe.Where.Lines?.Length != 1 || !int.TryParse(probe.Where.Lines[0], out var lineNum))
-            {
-                var message = $"Failed to parse line number for Line Probe {probe.Id}. " +
-                              $"The Lines collection contains {PrintContents(probe.Where.Lines)}.";
-                Log.Error(message);
-
-                return new LineProbeResolveResult(LiveProbeResolveStatus.Error, message);
-            }
-
-            var method = pdbReader.GetContainingMethodAndOffset(probe.Where.SourceFile, lineNum, column: 0, out var bytecodeOffset);
-            location = new BoundLineProbeLocation(probe, assembly.ManifestModule.ModuleVersionId, method.Token, bytecodeOffset, lineNum);
-            return new LineProbeResolveResult(LiveProbeResolveStatus.Bound);
-
-            string PrintContents<T>(T[] array)
-            {
-                const string separator = ", ";
-                return array == null ? "null" : $"[{string.Join(separator, array)}]";
+                Log.Error(e, "Failed to resolve line probe for ProbeID {ProbeId}", probe.Id);
+                return new LineProbeResolveResult(LiveProbeResolveStatus.Error, "An error occurred while trying to resolve probe location");
             }
         }
 
@@ -171,6 +171,41 @@ namespace Datadog.Trace.Debugger
                 {
                     _loadedAssemblies.Remove(unloadedAssembly);
                 }
+            }
+        }
+
+        internal class FilePathLookup
+        {
+            private static readonly string[] DirectorySeparatorsCrossPlatform = { @"\", @"/" };
+            private readonly Trie _trie = new();
+            private string _directoryPathSeparator;
+
+            public void InsertPath(string path)
+            {
+                // Note: We purposefully are not supporting the case where the inserted paths contains a mix of both forward and back slashes (e.g. "c:\test\some/path/file.cs")
+                // This should be fine because the inserted paths are generated by the compiler, not by humans, so we can assume that they are all consistent.
+                _directoryPathSeparator ??= DirectorySeparatorsCrossPlatform.FirstOrDefault(path.Contains);
+                _trie.Insert(GetReversePath(path));
+            }
+
+            public string FindPathThatEndsWith(string path)
+            {
+                // The trie is built from the PDB, so it will contains absolute paths such as:
+                //      "D:\build_agent\yada\yada\src\MyProject\MyFile.cs",
+                // ...whereas probeFilePath will typically be a path within the Git repo, such as:
+                //      "src/MyProject/MyFile.cs"
+                // Because we're actually interested in matching the ending of the string rather than the beginning,
+                // we reverse all strings before inserting or querying the trie, and then reverse again when we get the string out.
+                var reversePath = GetReversePath(path);
+                var match = _trie.GetStringStartingWith(reversePath);
+                return match != null ? GetReversePath(match) : null;
+            }
+
+            private string GetReversePath(string documentFullPath)
+            {
+                var partsReverse = documentFullPath.Split(DirectorySeparatorsCrossPlatform, StringSplitOptions.None).Reverse();
+                // Preserve the type of slash (back- or forward- slash) that was originally inserted.
+                return string.Join(_directoryPathSeparator ?? Path.DirectorySeparatorChar.ToString(), partsReverse);
             }
         }
     }
