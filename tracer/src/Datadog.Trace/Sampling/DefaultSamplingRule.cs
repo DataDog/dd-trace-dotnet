@@ -20,8 +20,11 @@ namespace Datadog.Trace.Sampling
 
         public string RuleName => "default-rule";
 
-        // note that this rule does _not_ use SamplingMechanism.Default, despite the `DefaultSamplingRule` name
-        public int SamplingMechanism => Datadog.Trace.Sampling.SamplingMechanism.AgentRate;
+        // if there are no rules, this normally means we haven't sent any payloads to the Agent yet (aka cold start), so the mechanism is "Default".
+        // if there are rules, there should always be at least one match (the fallback "service:,env:") and the mechanism is "AgentRate".
+        public int SamplingMechanism => _sampleRates.Count == 0 ?
+                                            Datadog.Trace.Sampling.SamplingMechanism.Default :
+                                            Datadog.Trace.Sampling.SamplingMechanism.AgentRate;
 
         /// <summary>
         /// Gets the lowest possible priority

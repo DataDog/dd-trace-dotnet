@@ -13,8 +13,7 @@ internal static class SamplingMechanism
     /// <summary>
     /// Sampling decision was made using the default mechanism. Used before the tracer
     /// receives any rates from agent and there are no rules configured.
-    /// The available sampling priorities are <see cref="SamplingPriorityValues.AutoReject"/> (0)
-    /// and <see cref="SamplingPriorityValues.AutoKeep"/> (1).
+    /// The only available sampling priority <see cref="SamplingPriorityValues.AutoKeep"/> (1).
     /// </summary>
     public const int Default = 0;
 
