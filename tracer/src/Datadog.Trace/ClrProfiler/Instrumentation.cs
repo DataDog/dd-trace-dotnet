@@ -345,6 +345,9 @@ namespace Datadog.Trace.ClrProfiler
             var rcmApi = RemoteConfigurationApiFactory.Create(rcmSettings, apiFactory, discoveryService);
 
             var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName);
+
+            configurationManager.RegisterProduct(SharedRemoteConfiguration.FeaturesProduct);
+
             var liveDebugger = LiveDebuggerFactory.Create(discoveryService, configurationManager, serviceName);
 
             Task.Run(

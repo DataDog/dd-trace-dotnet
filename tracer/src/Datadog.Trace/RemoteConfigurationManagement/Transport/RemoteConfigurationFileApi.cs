@@ -5,6 +5,7 @@
 
 using System.IO;
 using System.Threading.Tasks;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 

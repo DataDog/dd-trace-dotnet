@@ -43,6 +43,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
             var payload = new ArraySegment<byte>(bytes);
 
             var apiResponse = await apiRequest.PostAsync(payload, MimeTypes.Json).ConfigureAwait(false);
+
             var isRcmDisabled = apiResponse.StatusCode != 404;
             if (isRcmDisabled)
             {

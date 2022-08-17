@@ -663,84 +663,106 @@ namespace Datadog.Trace.TestHelpers
 
             private void HandleHttpRequests()
             {
+                Output?.WriteLine("starting HandleHttpRequests");
+
                 while (_listener.IsListening)
                 {
                     try
                     {
                         var ctx = _listener.GetContext();
-                        OnRequestReceived(ctx);
-
-                        if (Version != null)
+                        try
                         {
-                            ctx.Response.AddHeader("Datadog-Agent-Version", Version);
-                        }
+                            Output?.WriteLine("starting request: " + ctx.Request.RawUrl);
 
-                        if (TelemetryEnabled && (ctx.Request.Url?.AbsolutePath.StartsWith("/" + TelemetryConstants.AgentTelemetryEndpoint) ?? false))
-                        {
-                            // telemetry request
-                            var telemetry = MockTelemetryAgent<TelemetryData>.DeserializeResponse(ctx.Request.InputStream);
-                            Telemetry.Push(telemetry);
+                            OnRequestReceived(ctx);
 
-                            lock (this)
+                            if (Version != null)
                             {
-                                TelemetryRequestHeaders = TelemetryRequestHeaders.Add(new NameValueCollection(ctx.Request.Headers));
+                                ctx.Response.AddHeader("Datadog-Agent-Version", Version);
                             }
 
-                            ctx.Response.StatusCode = 200;
-                        }
-                        else
-                        {
-                            var buffer = Encoding.UTF8.GetBytes("{}");
+                            if (TelemetryEnabled && (ctx.Request.Url?.AbsolutePath.StartsWith("/" + TelemetryConstants.AgentTelemetryEndpoint) ?? false))
+                            {
+                                // telemetry request
+                                var telemetry = MockTelemetryAgent<TelemetryData>.DeserializeResponse(ctx.Request.InputStream);
+                                Telemetry.Push(telemetry);
 
-                            if (ctx.Request.RawUrl.EndsWith("/info"))
-                            {
-                                var endpoints = $"{{\"endpoints\":{JsonConvert.SerializeObject(DiscoveryService.AllSupportedEndpoints)}}}";
-                                buffer = Encoding.UTF8.GetBytes(endpoints);
-                            }
-                            else if (ctx.Request.RawUrl.Contains("/v0.7/config"))
-                            {
-                                using var body = ctx.Request.InputStream;
-                                using var streamReader = new StreamReader(body);
-                                var batch = streamReader.ReadToEnd();
-                                ReceiveDebuggerBatch(batch);
-                            }
-                            else if (ShouldDeserializeTraces)
-                            {
-                                if (ctx.Request.Url?.AbsolutePath == "/v0.6/stats")
+                                lock (this)
                                 {
-                                    var statsPayload = MessagePackSerializer.Deserialize<MockClientStatsPayload>(ctx.Request.InputStream);
-                                    OnStatsDeserialized(statsPayload);
+                                    TelemetryRequestHeaders = TelemetryRequestHeaders.Add(new NameValueCollection(ctx.Request.Headers));
+                                }
 
-                                    lock (this)
+                                ctx.Response.StatusCode = 200;
+                            }
+                            else
+                            {
+                                var buffer = Encoding.UTF8.GetBytes("{}");
+
+                                if (ctx.Request.RawUrl.EndsWith("/info"))
+                                {
+                                    var endpoints = $"{{\"endpoints\":{JsonConvert.SerializeObject(DiscoveryService.AllSupportedEndpoints)}}}";
+                                    buffer = Encoding.UTF8.GetBytes(endpoints);
+                                }
+                                else if (ctx.Request.RawUrl.Contains("/debugger/v1/input"))
+                                {
+                                    var endpoints = $"{{\"endpoints\":{JsonConvert.SerializeObject(DiscoveryService.AllSupportedEndpoints)}}}";
+
+                                    using var body = ctx.Request.InputStream;
+                                    using var streamReader = new StreamReader(body);
+                                    var batch = streamReader.ReadToEnd();
+                                    ReceiveDebuggerBatch(batch);
+                                }
+                                else if (ctx.Request.RawUrl.Contains("/v0.7/config"))
+                                {
+                                    using var body = ctx.Request.InputStream;
+                                    using var streamReader = new StreamReader(body);
+                                    var batch = streamReader.ReadToEnd();
+                                    ReceiveDebuggerBatch(batch);
+                                }
+                                else if (ShouldDeserializeTraces)
+                                {
+                                    if (ctx.Request.Url?.AbsolutePath == "/v0.6/stats")
                                     {
-                                        Stats = Stats.Add(statsPayload);
+                                        var statsPayload = MessagePackSerializer.Deserialize<MockClientStatsPayload>(ctx.Request.InputStream);
+                                        OnStatsDeserialized(statsPayload);
+
+                                        lock (this)
+                                        {
+                                            Stats = Stats.Add(statsPayload);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        // assume trace request
+                                        var spans = MessagePackSerializer.Deserialize<IList<IList<MockSpan>>>(ctx.Request.InputStream);
+                                        OnRequestDeserialized(spans);
+
+                                        lock (this)
+                                        {
+                                            // we only need to lock when replacing the span collection,
+                                            // not when reading it because it is immutable
+                                            Spans = Spans.AddRange(spans.SelectMany(trace => trace));
+                                            RequestHeaders = RequestHeaders.Add(new NameValueCollection(ctx.Request.Headers));
+                                        }
                                     }
                                 }
-                                else
-                                {
-                                    // assume trace request
-                                    var spans = MessagePackSerializer.Deserialize<IList<IList<MockSpan>>>(ctx.Request.InputStream);
-                                    OnRequestDeserialized(spans);
 
-                                    lock (this)
-                                    {
-                                        // we only need to lock when replacing the span collection,
-                                        // not when reading it because it is immutable
-                                        Spans = Spans.AddRange(spans.SelectMany(trace => trace));
-                                        RequestHeaders = RequestHeaders.Add(new NameValueCollection(ctx.Request.Headers));
-                                    }
-                                }
+                                ctx.Response.ContentType = "application/json";
+                                ctx.Response.ContentLength64 = buffer.LongLength;
+                                ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
                             }
 
-                            ctx.Response.ContentType = "application/json";
-                            ctx.Response.ContentLength64 = buffer.LongLength;
-                            ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
+                            // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
+                            // (Setting content-length avoids that)
                         }
-
-                        // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
-                        // (Setting content-length avoids that)
-
-                        ctx.Response.Close();
+                        catch (Exception ex)
+                        {
+                            Output?.WriteLine("error handling http request: " + ex.ToString());
+                        }
+                        finally
+                        {
+                            ctx.Response.Close();
+                        }
                     }
                     catch (HttpListenerException)
                     {

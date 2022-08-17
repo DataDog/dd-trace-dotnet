@@ -1,4 +1,4 @@
-// <copyright file="IDatadogSecurity.cs" company="Datadog">
+// <copyright file="SharedRemoteConfiguration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,13 +8,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.RemoteConfigurationManagement;
 
-namespace Datadog.Trace.AppSec
+namespace Datadog.Trace.Configuration;
+
+internal class SharedRemoteConfiguration
 {
-    internal interface IDatadogSecurity
-    {
-        InstrumentationGateway InstrumentationGateway { get; }
-
-        SecuritySettings Settings { get; }
-    }
+    public static FeaturesProduct FeaturesProduct { get; } = new();
 }

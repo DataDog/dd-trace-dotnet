@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.AppSec.Transports;
@@ -12,11 +13,13 @@ using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -97,6 +100,8 @@ namespace Datadog.Trace.AppSec
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
 
                 UpdateStatus();
+
+                SharedRemoteConfiguration.FeaturesProduct.ConfigChanged += FeaturesProductConfigChanged;
             }
             catch (Exception ex)
             {
@@ -232,6 +237,14 @@ namespace Datadog.Trace.AppSec
         public void Dispose()
         {
             _waf?.Dispose();
+        }
+
+        private void FeaturesProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
+        {
+            var featuresList = e.GetDeserializedConfigurations<Features>();
+            var features = featuresList.First();
+            _settings.Enabled = features.Asm.Enabled;
+            UpdateStatus();
         }
 
         private void UpdateStatus()
@@ -388,34 +401,6 @@ namespace Datadog.Trace.AppSec
             catch (Exception ex)
             {
                 Log.Error(ex, "Call into the security module failed");
-            }
-        }
-
-        public void ProcessControlCommand(object arg)
-        {
-            string path = string.Empty;
-#if !NETFRAMEWORK
-            if (arg.TryDuckCast<DiagnosticListeners.AspNetCoreDiagnosticObserver.HttpRequestInStartStruct>(out var requestStruct))
-            {
-                var httpContext = requestStruct.HttpContext;
-                var request = httpContext.Request;
-                path = request.Path;
-            }
-#else
-            path = Convert.ToString(arg);
-#endif
-            if (path == "/EnableASM")
-            {
-                _settings.Enabled = true;
-                UpdateStatus();
-                return;
-            }
-
-            if (path == "/DisableASM")
-            {
-                _settings.Enabled = false;
-                UpdateStatus();
-                return;
             }
         }
 
