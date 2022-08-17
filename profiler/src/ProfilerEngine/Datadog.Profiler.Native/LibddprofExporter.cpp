@@ -10,6 +10,7 @@
 #include "OpSysTools.h"
 #include "Sample.h"
 #include "dd_profiler_version.h"
+#include "IRuntimeInfo.h"
 
 #include <cassert>
 #include <fstream>
@@ -46,11 +47,15 @@ std::string const LibddprofExporter::ProfilePeriodType = "RealTime";
 
 std::string const LibddprofExporter::ProfilePeriodUnit = "Nanoseconds";
 
-LibddprofExporter::LibddprofExporter(IConfiguration* configuration, IApplicationStore* applicationStore) :
+LibddprofExporter::LibddprofExporter(
+    IConfiguration* configuration,
+    IApplicationStore* applicationStore,
+    IRuntimeInfo* runtimeInfo)
+    :
     _locationsAndLinesSize{512},
     _applicationStore{applicationStore}
 {
-    _exporterBaseTags = CreateTags(configuration);
+    _exporterBaseTags = CreateTags(configuration, runtimeInfo);
     _endpoint = CreateEndpoint(configuration);
     _pprofOutputPath = CreatePprofOutputPath(configuration);
     _locations.resize(_locationsAndLinesSize);
@@ -101,7 +106,7 @@ struct ddprof_ffi_Profile* LibddprofExporter::CreateProfile()
     return ddprof_ffi_Profile_new(sample_types, &period, nullptr);
 }
 
-LibddprofExporter::Tags LibddprofExporter::CreateTags(IConfiguration* configuration)
+LibddprofExporter::Tags LibddprofExporter::CreateTags(IConfiguration* configuration, IRuntimeInfo* runtimeInfo)
 {
     auto tags = LibddprofExporter::Tags{};
 
@@ -113,8 +118,22 @@ LibddprofExporter::Tags LibddprofExporter::CreateTags(IConfiguration* configurat
     tags.Add("process_id", ProcessId);
     tags.Add("host", configuration->GetHostname());
 
+    // runtime_version:
+    //    framework-4.8
+    //    core-6.0
+    std::stringstream buffer;
+    if (runtimeInfo->IsDotnetFramework())
+    {
+        buffer << "framework";
+    }
+    else
+    {
+        buffer << "core";
+    }
+    buffer << "-" << std::dec << runtimeInfo->GetDotnetMajorVersion() << "." << runtimeInfo->GetDotnetMinorVersion();
+    tags.Add("runtime_info", buffer.str());
+
     // TODO get
-    // runtime_version
     // runtime_platform (os and version, archi)
 
     for (auto const& [name, value] : configuration->GetUserTags())

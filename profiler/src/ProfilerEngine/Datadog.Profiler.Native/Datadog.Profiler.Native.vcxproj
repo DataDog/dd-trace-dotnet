@@ -264,6 +264,7 @@
     <ClInclude Include="IMetricsSender.h" />
     <ClInclude Include="IMetricsSenderFactory.h" />
     <ClInclude Include="IRuntimeIdStore.h" />
+    <ClInclude Include="IRuntimeInfo.h" />
     <ClInclude Include="ISamplesCollector.h" />
     <ClInclude Include="IService.h" />
     <ClInclude Include="IStackSamplerLoopManager.h" />
@@ -284,6 +285,7 @@
     <ClInclude Include="RawSample.h" />
     <ClInclude Include="RefCountingObject.h" />
     <ClInclude Include="RuntimeIdStore.h" />
+    <ClInclude Include="RuntimeInfo.h" />
     <ClInclude Include="Sample.h" />
     <ClInclude Include="SamplesCollector.h" />
     <ClInclude Include="SamplesAggregator.h" />
@@ -333,6 +335,7 @@
     <ClCompile Include="RawSample.cpp" />
     <ClCompile Include="RefCountingObject.cpp" />
     <ClCompile Include="RuntimeIdStore.cpp" />
+    <ClCompile Include="RuntimeInfo.cpp" />
     <ClCompile Include="Sample.cpp" />
     <ClCompile Include="SamplesCollector.cpp" />
     <ClCompile Include="SamplesAggregator.cpp" />

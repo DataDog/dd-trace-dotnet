@@ -34,6 +34,7 @@ class IStackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
 class SamplesAggregator;
+class IRuntimeInfo;
 
 namespace shared {
 class Loader;
@@ -212,6 +213,7 @@ private :
     std::unique_ptr<IConfiguration> _pConfiguration = nullptr;
     std::unique_ptr<IAppDomainStore> _pAppDomainStore = nullptr;
     std::unique_ptr<IFrameStore> _pFrameStore = nullptr;
+    std::unique_ptr<IRuntimeInfo> _pRuntimeInfo = nullptr;
 
 private:
     static void ConfigureDebugLog();
