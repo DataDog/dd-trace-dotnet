@@ -121,23 +121,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                         builder.AppendLine($"{tab + tab}\"message\": \"{message.Replace("\r", "\\r").Replace("\n", "\\n")}\",");
                     }
 
-                    builder.AppendLine($"{tab + tab}\"locations\": [");
-                    var locations = executionError.Locations;
-                    if (locations != null)
-                    {
-                        foreach (var location in locations)
-                        {
-                            if (location.TryDuckCast<ErrorLocationStruct>(out var locationProxy))
-                            {
-                                builder.AppendLine($"{tab + tab + tab}{{");
-                                builder.AppendLine($"{tab + tab + tab + tab}\"line\": {locationProxy.Line},");
-                                builder.AppendLine($"{tab + tab + tab + tab}\"column\": {locationProxy.Column}");
-                                builder.AppendLine($"{tab + tab + tab}}},");
-                            }
-                        }
-                    }
-
-                    builder.AppendLine($"{tab + tab}]");
+                    ConstructErrorLocationsMessage(builder, tab, executionError.Locations);
                     builder.AppendLine($"{tab}}},");
                 }
 
