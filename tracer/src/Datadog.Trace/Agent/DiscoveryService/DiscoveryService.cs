@@ -5,6 +5,7 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -22,9 +23,13 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         private readonly IApiRequestFactory _apiRequestFactory;
 
+        private CancellationTokenSource _cancellationSource;
+
         private DiscoveryService(IApiRequestFactory apiRequestFactory)
         {
             _apiRequestFactory = apiRequestFactory;
+            _cancellationSource = new CancellationTokenSource();
+            LifetimeManager.Instance.AddShutdownTask(OnShutdown);
         }
 
         public static DiscoveryService Instance { get; private set; }
@@ -47,9 +52,12 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         public async Task<bool> DiscoverAsync()
         {
-            var retries = 0;
+            // retry up to 5 times with exponential back-off
+            var retryLimit = 3;
+            var retryCount = 1;
+            var sleepDuration = 500; // in milliseconds
 
-            while (retries < 5)
+            while (!_cancellationSource.IsCancellationRequested)
             {
                 try
                 {
@@ -61,6 +69,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
                     {
                         var content = await response.ReadAsStringAsync().ConfigureAwait(false);
                         ProcessDiscoveryResponse(content);
+
+                        _cancellationSource = null;
                         return true;
                     }
 
@@ -71,8 +81,20 @@ namespace Datadog.Trace.Agent.DiscoveryService
                     Log.Warning(exception, "Failed to discover services");
                 }
 
-                retries++;
-                await Task.Delay(TimeSpan.FromSeconds(1)).ConfigureAwait(false);
+                try
+                {
+                    await Task.Delay(sleepDuration, _cancellationSource.Token).ConfigureAwait(false);
+                }
+                catch (TaskCanceledException)
+                {
+                    return false;
+                }
+
+                if (retryCount <= retryLimit)
+                {
+                    retryCount++;
+                    sleepDuration *= 2;
+                }
             }
 
             return false;
@@ -98,6 +120,11 @@ namespace Datadog.Trace.Agent.DiscoveryService
                .FirstOrDefault(
                     supportedEndpoint => discoveredEndpoints.Any(
                         endpoint => endpoint.Trim('/').Equals(supportedEndpoint, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        private void OnShutdown()
+        {
+            _cancellationSource?.Cancel();
         }
     }
 }
