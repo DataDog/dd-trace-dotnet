@@ -387,7 +387,7 @@ bool LibddprofExporter::Send(ddprof_ffi_Request* request, ddprof_ffi_ProfileExpo
 
     if (result.tag == DDPROF_FFI_SEND_RESULT_ERR)
     {
-        Log::Error("libddprof error: Failed to send profile (", std::string((const char*)(result.err.ptr), result.err.len), ")");
+        Log::Error("libddprof error: Failed to send profile (", std::string(reinterpret_cast<const char*>(result.err.ptr), result.err.len), ")");
         return false;
     }
 
