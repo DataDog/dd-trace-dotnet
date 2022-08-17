@@ -123,28 +123,39 @@ partial class Build
                 var crossVersionTestsNamePattern = new [] {"VersionMismatchNewerNugetTests"};
                 var diffCounts = new Dictionary<string, int>();
                 StringBuilder diffsInFile = new();
-                var lastLineContainedAChange = false;
                 var considerUpdatingPublicFeed = false;
+                var lastLine = string.Empty;
                 foreach (var line in changes)
                 {
-                    if (line.StartsWith("@@")) // new file
+                    if (line.StartsWith("@@ ")) // new change, not looking at files cause the changes would be too different
                     {
                         RecordChange(diffsInFile, diffCounts);
-                        lastLineContainedAChange = false;
+                        lastLine = String.Empty;
                         continue;
                     }
 
                     if (line.StartsWith("- ") || line.StartsWith("+ "))
                     {
+                        if (!string.IsNullOrEmpty(lastLine) &&
+                            lastLine[0] != line[0] &&
+                            lastLine.Trim(',').Substring(1) == line.Trim(',').Substring(1))
+                        {
+                            // The two lines are actually the same, just an additional comma on previous line
+                            // So we can remove it from the diff for better understanding?
+                            diffsInFile.Remove(diffsInFile.Length - lastLine.Length - Environment.NewLine.Length, lastLine.Length + Environment.NewLine.Length);
+                            lastLine = string.Empty;
+                            continue;
+                        }
+
                         diffsInFile.AppendLine(line);
-                        lastLineContainedAChange = true;
+                        lastLine = line;
                         continue;
                     }
 
-                    if (lastLineContainedAChange)
+                    if (!string.IsNullOrEmpty(lastLine))
                     {
                         diffsInFile.AppendLine(unlinkedLinesExplicitor);
-                        lastLineContainedAChange = false;
+                        lastLine = string.Empty;
                     }
 
                     if (!considerUpdatingPublicFeed && crossVersionTestsNamePattern.Any(p => line.Contains(p)))
@@ -172,6 +183,7 @@ partial class Build
                     markdown.Append("```").AppendLine();
                 }
 
+                // Console.WriteLine(markdown.ToString());
                 await HideCommentsInPullRequest(PullRequestNumber.Value, "## Snapshots difference");
                 await PostCommentToPullRequest(PullRequestNumber.Value, markdown.ToString());
 
