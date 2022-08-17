@@ -12,7 +12,6 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Helpers;
-using Datadog.Trace.Debugger.Instrumentation;
 using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.ProbeStatuses;
@@ -125,7 +124,7 @@ namespace Datadog.Trace.Debugger
                     return false;
                 }
 
-                await StartAsync().ConfigureAwait(false);
+                if (_settings.TransportType != TracesTransportType.Default)
                 {
                     Log.Information("Live Debugger is not currently supported when using Unix Domain Sockets or Named Pipes.");
                     return false;
