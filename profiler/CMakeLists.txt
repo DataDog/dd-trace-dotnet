@@ -90,7 +90,7 @@ add_definitions("-D_GLIBCXX_USE_CXX11_ABI=0")
 
 # Deployment directory
 
-if (BIT64)
+if (ISAMD64)
     SET(ARCH_POSTFIX "x64")
 elseif (ISARM64)
     SET(ARCH_POSTFIX "arm64")
