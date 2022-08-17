@@ -2664,7 +2664,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckBuildLogsForErrors"
+        command: "CheckSmokeTestsForErrors"
 
 - stage: nuget_installer_smoke_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -2734,7 +2734,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckBuildLogsForErrors"
+        command: "CheckSmokeTestsForErrors"
 
 - stage: dotnet_tool_nuget_smoke_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -2796,7 +2796,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckBuildLogsForErrors"
+        command: "CheckSmokeTestsForErrors"
 
 - stage: dotnet_tool_smoke_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -2862,7 +2862,7 @@ stages:
       parameters:
         build: true
         baseImage: alpine
-        command: "CheckBuildLogsForErrors"
+        command: "CheckSmokeTestsForErrors"
         
 - stage: installer_smoke_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
@@ -2921,7 +2921,7 @@ stages:
           parameters:
             build: true
             baseImage: debian
-            command: "CheckBuildLogsForErrors"
+            command: "CheckSmokeTestsForErrors"
 
 - stage: nuget_installer_smoke_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -2990,7 +2990,7 @@ stages:
       parameters:
         build: true
         baseImage: debian
-        command: "CheckBuildLogsForErrors"
+        command: "CheckSmokeTestsForErrors"
 
 - stage: dotnet_tool_smoke_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -3052,7 +3052,7 @@ stages:
       parameters:
         build: true
         baseImage: debian
-        command: "CheckBuildLogsForErrors"
+        command: "CheckSmokeTestsForErrors"
 
 - stage: nuget_installer_smoke_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -3120,8 +3120,8 @@ stages:
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
-    - script: tracer\build.cmd CheckBuildLogsForErrors
-      displayName: CheckBuildLogsForErrors
+    - script: tracer\build.cmd CheckSmokeTestsForErrors
+      displayName: CheckSmokeTestsForErrors
 
 - stage: dotnet_tool_smoke_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -3185,8 +3185,8 @@ stages:
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
-    - script: tracer\build.cmd CheckBuildLogsForErrors
-      displayName: CheckBuildLogsForErrors
+    - script: tracer\build.cmd CheckSmokeTestsForErrors
+      displayName: CheckSmokeTestsForErrors
 
 - stage: msi_installer_smoke_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
@@ -3250,8 +3250,8 @@ stages:
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
-    - script: tracer\build.cmd CheckBuildLogsForErrors
-      displayName: CheckBuildLogsForErrors
+    - script: tracer\build.cmd CheckSmokeTestsForErrors
+      displayName: CheckSmokeTestsForErrors
 
 - stage: tracer_home_smoke_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
@@ -3314,8 +3314,8 @@ stages:
       continueOnError: true
 
     - template: steps/install-latest-dotnet-sdk.yml
-    - script: tracer\build.cmd CheckBuildLogsForErrors
-      displayName: CheckBuildLogsForErrors
+    - script: tracer\build.cmd CheckSmokeTestsForErrors
+      displayName: CheckSmokeTestsForErrors
 
 - stage: trace_pipeline
   condition: eq(variables['isBenchmarksOnlyBuild'], 'False')
