@@ -4,34 +4,18 @@
   <!-- This will make sure, your assmebly and file versions, as well as your NuGet package version are managed correctly.                   -->
 
   <!-- * * * * * * * * * * * INPUTS. Update this section EVERY time the component is shipped/released! * * * * * * * * * * *                -->
-  <PropertyGroup>
-    <!-- Alpha 1.0.2                                                                                                                        -->
-    <!-- Beta 1.1.1                                                                                                                         -->
-    <!-- GA 1.2.0                                                                                                                           -->
+  <PropertyGroup>                                                                                                                        -->
     <ProductVersion>2.14.0</ProductVersion>
-    <BetaVersion>2</BetaVersion>
-
-    <!-- ProductVersionPrerelease format examples: alpha.1, alpha.2, beta.1, beta.2; EMPTY for stable releases.                             -->
-    <ProductVersionPrerelease>beta.$(BetaVersion)</ProductVersionPrerelease>
   </PropertyGroup>
   <!-- * * * * * * * * * * * END OF INPUTS.  * * * * * * * * * * *                                                                          -->
 
   <PropertyGroup>
-    <BuildTimestamp>$([System.DateTime]::UtcNow.ToString('yyyyMMddHHmmss'))</BuildTimestamp>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="$(ProductVersionPrerelease) == ''">
-    <ProductSuffix>+$(BuildTimestamp)</ProductSuffix>
-  </PropertyGroup>
-  <PropertyGroup Condition="$(ProductVersionPrerelease) != ''">
-    <!-- We also need to turn off the warning about SemVer 2 (https://docs.microsoft.com/en-us/nuget/reference/errors-and-warnings/nu5105). -->
-    <NoWarn>NU5105</NoWarn>
-    <ProductSuffix>-$(ProductVersionPrerelease)+$(BuildTimestamp)</ProductSuffix>
+    <ProductSuffix>+$([System.DateTime]::UtcNow.ToString('yyyyMMddHHmmss'))</ProductSuffix>
   </PropertyGroup>
 
   <PropertyGroup>
-    <AssemblyVersion>$(ProductVersion).$(BetaVersion)</AssemblyVersion>
-    <FileVersion>$(ProductVersion).$(BetaVersion)</FileVersion>
+    <AssemblyVersion>$(ProductVersion)</AssemblyVersion>
+    <FileVersion>$(ProductVersion)</FileVersion>
     <InformationalVersion>$(ProductVersion)$(ProductSuffix)</InformationalVersion>
 
     <!-- May need to add 'PackageVersion' here if and when we build NuGet packages. -->
