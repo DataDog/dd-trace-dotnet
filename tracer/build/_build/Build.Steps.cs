@@ -1540,6 +1540,9 @@ partial class Build
                knownPatterns.Add(new(@".*Error loading all cor profiler class factories\.", RegexOptions.Compiled));
            }
 
+            // profiler occasionally throws this if shutting down
+            knownPatterns.Add(new(@".*LinuxStackFramesCollector::CollectStackSampleImplementation: Unable to send signal .*Error code: No such process", RegexOptions.Compiled));
+
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });
 
