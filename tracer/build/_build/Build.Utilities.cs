@@ -239,6 +239,7 @@ partial class Build
 
     Target PrintSnapshotsDiff  => _ => _
       .Description("Prints snapshots differences from the current tests")
+      .AssuredAfterFailure()
       .Executes(() =>
       {
           var snapshotsDirectory = TestsDirectory / "snapshots";
