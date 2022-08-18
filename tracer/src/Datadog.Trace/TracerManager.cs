@@ -451,6 +451,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("wcf_obfuscation_enabled");
                     writer.WriteValue(instanceSettings.WcfObfuscationEnabled);
 
+                    writer.WritePropertyName("data_streams_enabled");
+                    writer.WriteValue(instanceSettings.IsDataStreamsMonitoringEnabled);
+
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }

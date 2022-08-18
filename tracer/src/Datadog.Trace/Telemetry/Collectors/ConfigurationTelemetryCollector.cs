@@ -144,6 +144,7 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.CodeHotspotsEnabled, value: _profiler?.ContextTracker.IsEnabled),
                 new(ConfigTelemetryData.StatsComputationEnabled, value: settings.StatsComputationEnabled),
                 new(ConfigTelemetryData.WcfObfuscationEnabled, value: settings.WcfObfuscationEnabled),
+                new(ConfigTelemetryData.DataStreamsMonitoringEnabled, value: settings.IsDataStreamsMonitoringEnabled),
             };
 
             if (_azureApServicesMetadata.IsRelevant)

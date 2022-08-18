@@ -516,5 +516,14 @@ namespace Datadog.Trace.Configuration
             /// </remarks>
             public const string HeaderMaxLength = "DD_TRACE_X_DATADOG_TAGS_MAX_LENGTH";
         }
+
+        internal static class DataStreamsMonitoring
+        {
+            /// <summary>
+            /// Enables data streams monitoring support
+            /// </summary>
+            /// <see cref="TracerSettings.IsDataStreamsMonitoringEnabled"/>
+            public const string Enabled = "DD_DATA_STREAMS_ENABLED";
+        }
     }
 }
