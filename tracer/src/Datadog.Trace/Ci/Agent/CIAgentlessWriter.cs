@@ -63,13 +63,11 @@ namespace Datadog.Trace.Ci.Agent
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIAgentlessWriter>();
 
         private readonly BlockingCollection<IEvent> _eventQueue;
-        private readonly AutoResetEvent _flushDelayEvent;
         private readonly Buffers[] _buffersArray;
 
         public CIAgentlessWriter(CIVisibilitySettings settings, ICIAgentlessWriterSender sender, IFormatterResolver formatterResolver = null, int? concurrency = null)
         {
             _eventQueue = new BlockingCollection<IEvent>(MaxItemsInQueue);
-            _flushDelayEvent = new AutoResetEvent(false);
 
             // Concurrency Level is a simple algorithm where we select a number between 1 and 8 depending on the number of Logical Processor Count
             // To scale the number of senders with a hard limit.
@@ -109,16 +107,15 @@ namespace Datadog.Trace.Ci.Agent
         public async Task FlushAndCloseAsync()
         {
             _eventQueue.CompleteAdding();
-            _flushDelayEvent.Set();
             foreach (var buffers in _buffersArray)
             {
+                buffers.FlushDelayEvent.Set();
                 await buffers.FlushTaskCompletionSource.Task.ConfigureAwait(false);
             }
         }
 
         public Task FlushTracesAsync()
         {
-            var wme = new WatermarkEvent();
             if (_eventQueue.IsAddingCompleted)
             {
                 return Task.CompletedTask;
@@ -126,16 +123,41 @@ namespace Datadog.Trace.Ci.Agent
 
             try
             {
-                _eventQueue.Add(wme);
+                var countdownEvent = new CountdownEvent(_buffersArray.Length);
+                var completionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+                Task.Factory.StartNew(
+                    state =>
+                    {
+                        var argsArray = (object[])state;
+                        var cev = (CountdownEvent)argsArray[0];
+                        var tcs = (TaskCompletionSource<bool>)argsArray[1];
+                        try
+                        {
+                            cev.Wait();
+                            tcs.TrySetResult(true);
+                        }
+                        catch (Exception ex)
+                        {
+                            tcs.TrySetException(ex);
+                        }
+                    },
+                    new object[] { countdownEvent, completionSource },
+                    TaskCreationOptions.DenyChildAttach);
+
+                foreach (var buffer in _buffersArray)
+                {
+                    _eventQueue.Add(new WatermarkEvent(countdownEvent));
+                    buffer.FlushDelayEvent.Set();
+                }
+
+                return completionSource.Task;
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error Writing event in a queue.");
                 return Task.FromException(ex);
             }
-
-            _flushDelayEvent.Set();
-            return wme.CompletionSource.Task;
         }
 
         public Task<bool> Ping()
@@ -167,19 +189,20 @@ namespace Datadog.Trace.Ci.Agent
             var stateArray = (object[])state;
             var writer = (CIAgentlessWriter)stateArray[0];
             var eventQueue = writer._eventQueue;
-            var flushDelayEvent = writer._flushDelayEvent;
             var buffers = (Buffers)stateArray[1];
+            var index = buffers.Index;
+            var flushDelayEvent = buffers.FlushDelayEvent;
             var ciTestCycleBuffer = buffers.CiTestCycleBuffer;
             var ciTestCycleBufferWatch = buffers.CiTestCycleBufferWatch;
             var ciCodeCoverageBuffer = buffers.CiCodeCoverageBuffer;
             var ciCodeCoverageBufferWatch = buffers.CiCodeCoverageBufferWatch;
             var completionSource = buffers.FlushTaskCompletionSource;
 
-            Log.Debug("CIAgentlessWriter:: InternalFlushEventsAsync/ Starting FlushEventsAsync loop");
+            Log.Debug("CIAgentlessWriter: InternalFlushEventsAsync/ Starting FlushEventsAsync loop");
 
             while (!eventQueue.IsCompleted)
             {
-                TaskCompletionSource<bool> watermarkCompletion = null;
+                CountdownEvent watermarkCountDown = null;
 
                 try
                 {
@@ -194,9 +217,10 @@ namespace Datadog.Trace.Ci.Agent
                         if (item is WatermarkEvent watermarkEvent)
                         {
                             // Flush operation.
-                            // We get the completion source and exit this loop
+                            // We get the countdown event and exit this loop
                             // to flush buffers (in case there's any event)
-                            watermarkCompletion = watermarkEvent.CompletionSource;
+                            watermarkCountDown = watermarkEvent.Countdown;
+                            Log.Debug<int?>("CIAgentlessWriter: Watermark detected on [Buffer: {bufferIndex}]", index);
                             break;
                         }
 
@@ -243,21 +267,27 @@ namespace Datadog.Trace.Ci.Agent
                         buffers.FlushCiCodeCoverageBufferAsync()).ConfigureAwait(false);
 
                     // If there's a flush watermark we marked as resolved.
-                    watermarkCompletion?.TrySetResult(true);
+                    if (watermarkCountDown is not null)
+                    {
+                        watermarkCountDown.Signal();
+                        Log.Debug<int?>("CIAgentlessWriter: Waiting for signals from other buffers [Buffer: {bufferIndex}]", index);
+                        watermarkCountDown.Wait();
+                        Log.Debug<int?>("CIAgentlessWriter: Signals received, continue processing.. [Buffer: {bufferIndex}]", index);
+                    }
                 }
                 catch (ThreadAbortException ex)
                 {
                     completionSource?.TrySetException(ex);
-                    watermarkCompletion?.TrySetException(ex);
+                    watermarkCountDown?.Signal();
                     throw;
                 }
                 catch (Exception ex)
                 {
-                    watermarkCompletion?.TrySetException(ex);
+                    Log.Warning(ex, "Error in CIAgentlessWriter.InternalFlushEventsAsync");
                 }
                 finally
                 {
-                    if (watermarkCompletion is null)
+                    if (watermarkCountDown is null)
                     {
                         // In case there's no flush watermark, we wait before start procesing new events.
                         flushDelayEvent.WaitOne(BatchInterval, true);
@@ -266,32 +296,35 @@ namespace Datadog.Trace.Ci.Agent
                     {
                         // Because the flush interrupts the dequeueing process we don't wait
                         // and start processing events again.
-                        watermarkCompletion = null;
+                        watermarkCountDown = null;
                     }
                 }
             }
 
             completionSource?.TrySetResult(true);
-            Log.Debug("CIAgentlessWriter:: InternalFlushEventsAsync/ Finishing FlushEventsAsync loop");
+            Log.Debug("CIAgentlessWriter: InternalFlushEventsAsync/ Finishing FlushEventsAsync loop");
         }
 
         internal class WatermarkEvent : IEvent
         {
-            public WatermarkEvent()
+            public WatermarkEvent(CountdownEvent countdownEvent)
             {
-                CompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                Countdown = countdownEvent;
             }
 
-            public TaskCompletionSource<bool> CompletionSource { get; }
+            public CountdownEvent Countdown { get; }
         }
 
         private class Buffers
         {
+            private static int _globalIndexes = 0;
             private readonly ICIAgentlessWriterSender _sender;
 
             public Buffers(ICIAgentlessWriterSender sender, CIVisibilityProtocolPayload ciTestCycleBuffer, CICodeCoveragePayload ciCodeCoverageBuffer)
             {
                 _sender = sender;
+                Index = Interlocked.Increment(ref _globalIndexes);
+                FlushDelayEvent = new AutoResetEvent(false);
                 CiTestCycleBuffer = ciTestCycleBuffer;
                 CiTestCycleBufferWatch = Stopwatch.StartNew();
                 CiCodeCoverageBuffer = ciCodeCoverageBuffer;
@@ -299,6 +332,10 @@ namespace Datadog.Trace.Ci.Agent
                 FlushTaskCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
                 FlushTask = null;
             }
+
+            public int Index { get; }
+
+            public AutoResetEvent FlushDelayEvent { get; }
 
             public CIVisibilityProtocolPayload CiTestCycleBuffer { get; }
 
