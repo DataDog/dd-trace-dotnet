@@ -6,7 +6,6 @@
     Resource: BatchExistsArray,
     Service: Samples.Aerospike-aerospike,
     Type: aerospike,
-    Trigger: a.difference.to.see.the.diff,
     Tags: {
       aerospike.key: test:myset1:mykey1;test:myset2:mykey2;test:myset3:mykey3,
       component: aerospike,
