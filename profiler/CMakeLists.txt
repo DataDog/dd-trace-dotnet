@@ -88,6 +88,25 @@ add_definitions("-D_GLIBCXX_USE_CXX11_ABI=0")
 # Output folders
 # ******************************************************
 
+# Deployment directory
+
+if (ISAMD64)
+    SET(ARCH_POSTFIX "x64")
+elseif (ISARM64)
+    SET(ARCH_POSTFIX "arm64")
+elseif (ISARM)
+    SET(ARCH_POSTFIX "arm")
+else()
+    SET(ARCH_POSTFIX "x86")
+endif()
+
+SET(ARCH_BASENAME "linux")
+if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
+    SET(ARCH_BASENAME "${ARCH_BASENAME}-musl")
+endif()
+
+SET(DEPLOY_DIR ${OUTPUT_BUILD_DIR}/DDProf-Deploy/${ARCH_BASENAME}-${ARCH_POSTFIX})
+
 # Set output folders
 SET(OUTPUT_TMP_DIR ${CMAKE_BINARY_DIR}/tmp.${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_PROCESSOR})
 SET(OUTPUT_DEPS_DIR ${CMAKE_BINARY_DIR}/deps)
