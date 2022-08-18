@@ -359,7 +359,7 @@ namespace Datadog.Trace.TestHelpers
             }
             else if (request.PathAndQuery.EndsWith("/info"))
             {
-                return(200, $"{{\"endpoints\":{JsonConvert.SerializeObject(DiscoveryService.AllSupportedEndpoints)}}}");
+                return (200, $"{{\"endpoints\":{JsonConvert.SerializeObject(DiscoveryService.AllSupportedEndpoints)}}}");
             }
             else if (request.PathAndQuery.StartsWith("/debugger/v1/input"))
             {
@@ -486,7 +486,7 @@ namespace Datadog.Trace.TestHelpers
                 }
             }
         }
-        
+
         private void HandlePotentialStatsData(MockHttpParser.MockHttpRequest request)
         {
             if (ShouldDeserializeTraces && request.ContentLength >= 1)
@@ -502,7 +502,6 @@ namespace Datadog.Trace.TestHelpers
                     {
                         Stats = Stats.Add(statsPayload);
                     }
-                    
                 }
                 catch (Exception ex)
                 {
