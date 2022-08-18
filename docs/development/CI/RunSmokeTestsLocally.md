@@ -33,6 +33,8 @@ docker-compose exec -T test-agent /usr/bin/curl --fail "http://localhost:8126/te
 # open the url in your browser to see the actual diff
 open http://localhost:8126/test/session/snapshot?test_session_token=LOCALTEST&file=/snapshots/smoke_test_snapshots
 ```
+The diff should be explained in the url opened above.
+
 
 To test and update the .NET Core 2.1 snapshots, use the following steps instead
 
@@ -55,4 +57,6 @@ docker-compose exec -T test-agent /usr/bin/curl --fail "http://localhost:8126/te
 
 # open the url in your browser to see the actual diff
 open http://localhost:8126/test/session/snapshot?test_session_token=LOCALTEST&file=/snapshots/smoke_test_snapshots_2_1
+```
+
 The diff should be explained in the url opened above.
