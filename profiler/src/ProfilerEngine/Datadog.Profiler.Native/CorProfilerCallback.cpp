@@ -394,25 +394,39 @@ ULONG STDMETHODCALLTYPE CorProfilerCallback::GetRefCount(void) const
     return refCount;
 }
 
-void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk)
+void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk, uint16_t& runtimeMajor, uint16_t& runtimeMinor)
 {
-    IUnknown* tstVerProfilerInfo;
-    if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**)&tstVerProfilerInfo))
+    runtimeMajor = 0;
+    runtimeMinor = 0;
+    IUnknown* tstVerProfilerInfo;  // ICorProfilerInfo13 will ship with .NET 7
+    if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&tstVerProfilerInfo))
     {
         _isNet46OrGreater = true;
-        Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 5.0 or later.");
+        Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 5.0 or later.");  // could be 6 too
+        tstVerProfilerInfo->Release();
+    }
+    else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**)&tstVerProfilerInfo))
+    {
+        runtimeMajor = 3;
+        runtimeMinor = 1;
+        _isNet46OrGreater = true;
+        Log::Info("ICorProfilerInfo10 available. Profiling API compatibility: .NET Core 3.1 or later.");
         tstVerProfilerInfo->Release();
     }
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo10), (void**)&tstVerProfilerInfo))
     {
+        runtimeMajor = 3;
+        runtimeMinor = 0;
         _isNet46OrGreater = true;
         Log::Info("ICorProfilerInfo10 available. Profiling API compatibility: .NET Core 3.0 or later.");
         tstVerProfilerInfo->Release();
     }
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo9), (void**)&tstVerProfilerInfo))
     {
+        runtimeMajor = 2;
+        runtimeMinor = 1;  // could also be 2.2
         _isNet46OrGreater = true;
-        Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.2 or later.");
+        Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.1 or later.");
         tstVerProfilerInfo->Release();
     }
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo8), (void**)&tstVerProfilerInfo))
@@ -612,7 +626,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     // Log some important environment info:
     CorProfilerCallback::InspectProcessorInfo();
-    CorProfilerCallback::InspectRuntimeCompatibility(corProfilerInfoUnk);
+    uint16_t runtimeMajor;
+    uint16_t runtimeMinor;
+    CorProfilerCallback::InspectRuntimeCompatibility(corProfilerInfoUnk, runtimeMajor, runtimeMinor);
 
     // Initialize _pCorProfilerInfo:
     if (corProfilerInfoUnk == nullptr)
@@ -638,6 +654,16 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     USHORT minor = 0;
     COR_PRF_RUNTIME_TYPE runtimeType;
     CorProfilerCallback::InspectRuntimeVersion(_pCorProfilerInfo, major, minor, runtimeType);
+
+    // for .NET Core 2.1, 3.0 and 3.1, from https://github.com/dotnet/runtime/issues/11555#issuecomment-727037353,
+    // it is needed to check ICorProfilerInfo11 for 3.1, 10 for 3.0 and 9 for 2.1 since major and minor will be 4.0
+    // from GetRuntimeInformation
+    if ((runtimeType == COR_PRF_CORE_CLR) && (major == 4))
+    {
+        major = runtimeMajor;
+        minor = runtimeMinor;
+    }
+
     _pRuntimeInfo = std::make_unique<RuntimeInfo>(major, minor, (runtimeType == COR_PRF_DESKTOP_CLR));
 
     // CLR events-based profilers need ICorProfilerInfo12 (i.e. .NET 5+) to setup the communication.

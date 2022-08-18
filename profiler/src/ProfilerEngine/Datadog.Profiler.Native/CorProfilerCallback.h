@@ -217,7 +217,7 @@ private :
 
 private:
     static void ConfigureDebugLog();
-    static void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk);
+    static void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk, uint16_t& runtimeMajor, uint16_t& runtimeMinor);
     static void InspectProcessorInfo();
     static void InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor, COR_PRF_RUNTIME_TYPE& runtimeType);
     static const char* SysInfoProcessorArchitectureToStr(WORD wProcArch);
