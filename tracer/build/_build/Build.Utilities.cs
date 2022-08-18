@@ -223,14 +223,6 @@ partial class Build
             new SetAllVersions.Source(TracerDirectory, NewVersion, NewIsPrerelease.Value!).Run();
         });
 
-    Target UpdateMsiContents => _ => _
-       .Description("Update the contents of the MSI")
-       .DependsOn(Clean, BuildTracerHome)
-       .Executes(() =>
-        {
-            SyncMsiContent.Run(SharedDirectory, MonitoringHomeDirectory);
-        });
-
     Target UpdateSnapshots => _ => _
         .Description("Updates verified snapshots files with received ones")
         .Executes(ReplaceReceivedFilesInSnapshots);
