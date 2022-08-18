@@ -165,7 +165,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             // We set 8 threads of concurrency and a batch interval of 10 seconds to avoid the autoflush.
             var agentlessWriter = new CIAgentlessWriter(settings, sender.Object, concurrency: 8, batchInterval: 10_000);
             var lstPayloads = new List<byte[]>();
-            
+
             const int numSpans = 2_000;
 
             sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.CIVisibilityProtocolPayload>()))
