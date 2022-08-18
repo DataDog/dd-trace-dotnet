@@ -158,6 +158,50 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         }
 
         [Fact]
+        public async Task ConcurrencyFlushTest()
+        {
+            var settings = CIVisibility.Settings;
+            var sender = new Mock<ICIAgentlessWriterSender>();
+            // We set 8 threads of concurrency and a batch interval of 10 seconds to avoid the autoflush.
+            var agentlessWriter = new CIAgentlessWriter(settings, sender.Object, concurrency: 8, batchInterval: 10_000);
+            var lstPayloads = new List<byte[]>();
+            
+            const int numSpans = 2_000;
+
+            sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.CIVisibilityProtocolPayload>()))
+                  .Returns<Ci.Agent.Payloads.CIVisibilityProtocolPayload>(async payload =>
+                   {
+                       lock (lstPayloads)
+                       {
+                           lstPayloads.Add(payload.ToArray());
+                       }
+
+                       await Task.Delay(150).ConfigureAwait(false);
+                   });
+
+            for (ulong i = 0; i < numSpans; i++)
+            {
+                var span = new Span(new SpanContext(i, i), DateTimeOffset.UtcNow);
+                agentlessWriter.WriteEvent(new SpanEvent(span));
+            }
+
+            lock (lstPayloads)
+            {
+                // We assert that the total spans has not been flushed yet
+                Assert.NotEqual(numSpans, lstPayloads.Count);
+            }
+
+            // We force flush
+            await agentlessWriter.FlushTracesAsync().ConfigureAwait(false);
+
+            lock (lstPayloads)
+            {
+                // We assert that the total spans has been flushed after the FlushTraces class
+                Assert.Equal(numSpans, lstPayloads.Count);
+            }
+        }
+
+        [Fact]
         public void EventsBufferTest()
         {
             int headerSize = Ci.Agent.Payloads.EventsBuffer<Ci.IEvent>.HeaderSize;

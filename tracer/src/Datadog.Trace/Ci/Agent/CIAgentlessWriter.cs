@@ -57,17 +57,25 @@ namespace Datadog.Trace.Ci.Agent
      */
     internal sealed class CIAgentlessWriter : IEventWriter
     {
-        private const int BatchInterval = 1000;
-        private const int MaxItemsInQueue = 2500;
+        private const int DefaultBatchInterval = 1000;
+        private const int DefaultMaxItemsInQueue = 2500;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIAgentlessWriter>();
 
         private readonly BlockingCollection<IEvent> _eventQueue;
         private readonly Buffers[] _buffersArray;
+        private readonly int _batchInterval;
 
-        public CIAgentlessWriter(CIVisibilitySettings settings, ICIAgentlessWriterSender sender, IFormatterResolver formatterResolver = null, int? concurrency = null)
+        public CIAgentlessWriter(
+            CIVisibilitySettings settings,
+            ICIAgentlessWriterSender sender,
+            IFormatterResolver formatterResolver = null,
+            int? concurrency = null,
+            int batchInterval = DefaultBatchInterval,
+            int maxItemsInQueue = DefaultMaxItemsInQueue)
         {
-            _eventQueue = new BlockingCollection<IEvent>(MaxItemsInQueue);
+            _eventQueue = new BlockingCollection<IEvent>(maxItemsInQueue);
+            _batchInterval = batchInterval;
 
             // Concurrency Level is a simple algorithm where we select a number between 1 and 8 depending on the number of Logical Processor Count
             // To scale the number of senders with a hard limit.
@@ -188,6 +196,7 @@ namespace Datadog.Trace.Ci.Agent
         {
             var stateArray = (object[])state;
             var writer = (CIAgentlessWriter)stateArray[0];
+            var batchInterval = writer._batchInterval;
             var eventQueue = writer._eventQueue;
             var buffers = (Buffers)stateArray[1];
             var index = buffers.Index;
@@ -228,8 +237,8 @@ namespace Datadog.Trace.Ci.Agent
                         // Force a flush by time (When the queue was never empty in a complete BatchInterval period)
                         // ***
                         await Task.WhenAll(
-                            buffers.FlushCiTestCycleBufferWhenTimeElapsedAsync(BatchInterval),
-                            buffers.FlushCiCodeCoverageBufferWhenTimeElapsedAsync(BatchInterval)).ConfigureAwait(false);
+                            buffers.FlushCiTestCycleBufferWhenTimeElapsedAsync(batchInterval),
+                            buffers.FlushCiCodeCoverageBufferWhenTimeElapsedAsync(batchInterval)).ConfigureAwait(false);
 
                         // ***
                         // Add the item to the right buffer, and flush the buffer in case is needed.
@@ -290,7 +299,7 @@ namespace Datadog.Trace.Ci.Agent
                     if (watermarkCountDown is null)
                     {
                         // In case there's no flush watermark, we wait before start procesing new events.
-                        flushDelayEvent.WaitOne(BatchInterval, true);
+                        flushDelayEvent.WaitOne(batchInterval, true);
                     }
                     else
                     {
