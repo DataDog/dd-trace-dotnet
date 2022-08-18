@@ -293,6 +293,15 @@ namespace Datadog.Trace.Ci.Agent
                 catch (Exception ex)
                 {
                     Log.Warning(ex, "Error in CIAgentlessWriter.InternalFlushEventsAsync");
+
+                    // If there's a flush watermark we marked as resolved.
+                    if (watermarkCountDown is not null)
+                    {
+                        watermarkCountDown.Signal();
+                        Log.Debug<int?>("CIAgentlessWriter: Waiting for signals from other buffers [Buffer: {bufferIndex}]", index);
+                        watermarkCountDown.Wait();
+                        Log.Debug<int?>("CIAgentlessWriter: Signals received, continue processing.. [Buffer: {bufferIndex}]", index);
+                    }
                 }
                 finally
                 {
@@ -300,12 +309,6 @@ namespace Datadog.Trace.Ci.Agent
                     {
                         // In case there's no flush watermark, we wait before start procesing new events.
                         flushDelayEvent.WaitOne(batchInterval, true);
-                    }
-                    else
-                    {
-                        // Because the flush interrupts the dequeueing process we don't wait
-                        // and start processing events again.
-                        watermarkCountDown = null;
                     }
                 }
             }
