@@ -164,7 +164,7 @@ namespace Datadog.Trace.TestHelpers
             public static MockHttpRequest Create(HttpListenerRequest request)
             {
                 var headers = new HttpHeaders(request.Headers.Count);
-                
+
                 foreach (var key in request.Headers.AllKeys)
                 foreach (var value in request.Headers.GetValues(key))
                 {
@@ -179,7 +179,7 @@ namespace Datadog.Trace.TestHelpers
                     ContentLength = request.ContentLength64,
                     Body = new StreamContent(request.InputStream, request.ContentLength64),
                 };
-            } 
+            }
         }
     }
 }
