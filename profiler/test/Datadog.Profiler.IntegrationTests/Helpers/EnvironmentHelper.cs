@@ -109,13 +109,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         internal string GetProfilerNativeLibraryPath()
         {
-            var filename = $"Datadog.Profiler.Native.{GetLibraryExtension()}";
-            return IsRunningInCi()
-                ? Path.Combine(GetMonitoringHome(), GetArchitectureSubfolder(), filename)
-                // There is a discrepancy between where we output the artifacts on linux and on windows:
-                // Windows: <DeployDir>\win-<platform>\XXX
-                // Linux: <DeployDir>\XXX
-                : Path.Combine(GetDeployDir(), (IsRunningOnWindows() ? GetArchitectureSubfolder() : string.Empty), filename);
+            // When running locally, we want to run with a local build of the compiler.
+            // So we need to look in the deploy directory
+            var profilerHome = IsRunningInCi() ? GetMonitoringHome() : GetDeployDir();
+            return Path.Combine(profilerHome, GetArchitectureSubfolder(), $"Datadog.Profiler.Native.{GetLibraryExtension()}");
         }
 
         internal string GetTracerNativeLibraryPath()
@@ -309,9 +306,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         private string GetLinuxApiWrapperPath()
         {
             var filename = "Datadog.Linux.ApiWrapper.x64.so";
-            return IsRunningInCi()
-                ? Path.Combine(GetMonitoringHome(), GetArchitectureSubfolder(), filename)
-                : Path.Combine(GetDeployDir(), filename);
+            var deployDir = IsRunningInCi() ? GetMonitoringHome() : GetDeployDir();
+            return Path.Combine(deployDir, GetArchitectureSubfolder(), filename);
         }
 
         private string GetNativeDllExtension()
