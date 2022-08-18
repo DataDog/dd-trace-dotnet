@@ -15,7 +15,7 @@ namespace Datadog.Trace.TestHelpers
 #if NETFRAMEWORK
             var publish = new System.EnterpriseServices.Internal.Publish();
 
-            var targetFolder = CustomTestFramework.GetProfilerTargetFolder();
+            var targetFolder = CustomTestFramework.GetMonitoringHomeTargetFrameworkFolder();
 
             foreach (var file in Directory.GetFiles(targetFolder, "*.dll"))
             {
@@ -29,7 +29,7 @@ namespace Datadog.Trace.TestHelpers
 #if NETFRAMEWORK
             var publish = new System.EnterpriseServices.Internal.Publish();
 
-            var targetFolder = CustomTestFramework.GetProfilerTargetFolder();
+            var targetFolder = CustomTestFramework.GetMonitoringHomeTargetFrameworkFolder();
 
             foreach (var file in Directory.GetFiles(targetFolder, "*.dll"))
             {

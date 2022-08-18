@@ -117,8 +117,8 @@ partial class Build : NukeBuild
             EnsureCleanDirectory(MonitoringHomeDirectory);
             EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
-            EnsureCleanDirectory(NativeProfilerProject.Directory / "build");
-            EnsureCleanDirectory(NativeProfilerProject.Directory / "deps");
+            EnsureCleanDirectory(NativeTracerProject.Directory / "build");
+            EnsureCleanDirectory(NativeTracerProject.Directory / "deps");
             EnsureCleanDirectory(BuildDataDirectory);
             EnsureCleanDirectory(ExplorationTestsDirectory);
             DeleteFile(WindowsTracerHomeZip);
@@ -148,11 +148,12 @@ partial class Build : NukeBuild
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(Restore)
         .DependsOn(CompileManagedSrc)
-        .DependsOn(PublishManagedProfiler)
+        .DependsOn(PublishManagedTracer)
         .DependsOn(CompileNativeSrc)
-        .DependsOn(PublishNativeProfiler)
+        .DependsOn(PublishNativeTracer)
         .DependsOn(DownloadLibDdwaf)
-        .DependsOn(CopyLibDdwaf);
+        .DependsOn(CopyLibDdwaf)
+        .DependsOn(BuildNativeLoader);
 
     Target BuildProfilerHome => _ => _
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
@@ -198,7 +199,6 @@ partial class Build : NukeBuild
         .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(CompileSamplesWindows)
         .DependsOn(CompileIntegrationTests)
-        .DependsOn(BuildNativeLoader)
         .DependsOn(BuildRunnerTool);
 
     Target BuildAspNetIntegrationTests => _ => _
@@ -209,8 +209,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(CreatePlatformlessSymlinks)
         .DependsOn(PublishIisSamples)
-        .DependsOn(CompileIntegrationTests)
-        .DependsOn(BuildNativeLoader);
+        .DependsOn(CompileIntegrationTests);
 
     Target BuildWindowsRegressionTests => _ => _
         .Unlisted()
@@ -221,8 +220,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileRegressionDependencyLibs)
         .DependsOn(CompileRegressionSamples)
         .DependsOn(CompileFrameworkReproductions)
-        .DependsOn(CompileIntegrationTests)
-        .DependsOn(BuildNativeLoader);
+        .DependsOn(CompileIntegrationTests);
 
     Target BuildAndRunWindowsIntegrationTests => _ => _
         .Requires(() => IsWin)
