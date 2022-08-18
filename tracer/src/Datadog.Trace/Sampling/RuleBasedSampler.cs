@@ -83,9 +83,9 @@ namespace Datadog.Trace.Sampling
 
             var priority = mechanism switch
                            {
-                               // default sampling rule based on sampling rates from agent response.
+                               // default sampling rule based on sampling rates from agent response or from a cold start.
                                // if sampling decision was made automatically without any input from user, use AutoKeep/AutoReject.
-                               SamplingMechanism.AgentRate => sample ? SamplingPriorityValues.AutoKeep : SamplingPriorityValues.AutoReject,
+                               SamplingMechanism.AgentRate or SamplingMechanism.Default => sample ? SamplingPriorityValues.AutoKeep : SamplingPriorityValues.AutoReject,
 
                                // sampling rule based on user configuration (DD_TRACE_SAMPLE_RATE, DD_TRACE_SAMPLING_RULES).
                                // if user influenced sampling decision in any way (manually, rules, rates, etc), use UserKeep/UserReject.
