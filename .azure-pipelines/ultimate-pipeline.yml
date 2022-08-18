@@ -864,10 +864,6 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-    - script: tracer\build.cmd PrintSnapshotsDiff
-      condition: succeededOrFailed()
-      displayName: Output summary of snapshot changes
-
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
 
@@ -922,10 +918,6 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-    - script: tracer\build.cmd PrintSnapshotsDiff
-      condition: succeededOrFailed()
-      displayName: Output summary of snapshot changes
-
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
 
@@ -968,10 +960,6 @@ stages:
       artifact: integration_tests_windows_iis_security_snapshots_$(targetPlatform)_$(framework)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
-
-    - script: tracer\build.cmd PrintSnapshotsDiff
-      condition: succeededOrFailed()
-      displayName: Output summary of snapshot changes
 
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
@@ -1050,10 +1038,6 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-    - script: tracer\build.cmd PrintSnapshotsDiff
-      condition: succeededOrFailed()
-      displayName: Output summary of snapshot changes
-
     - script: tracer\build.cmd CheckBuildLogsForErrors
       displayName: Check logs for errors
 
@@ -1129,12 +1113,6 @@ stages:
       artifact: integration_tests_linux_snapshots_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        baseImage: $(baseImage)
-        command: "PrintSnapshotsDiff"
-        condition: "succeededOrFailed()"
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -1225,12 +1203,6 @@ stages:
       artifact: integration_tests_linux_docker_snapshots_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
-
-    - template: steps/run-in-docker.yml
-      parameters:
-        baseImage: $(baseImage)
-        command: "PrintSnapshotsDiff"
-        condition: "succeededOrFailed()"
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -1397,12 +1369,6 @@ stages:
         - template: steps/run-in-docker.yml
           parameters:
             baseImage: $(baseImage)
-            command: "PrintSnapshotsDiff"
-            condition: "succeededOrFailed()"
-
-        - template: steps/run-in-docker.yml
-          parameters:
-            baseImage: $(baseImage)
             command: "CheckBuildLogsForErrors"
 
     - job: DockerTest
@@ -1487,7 +1453,7 @@ stages:
         - template: steps/run-in-docker.yml
           parameters:
             baseImage: $(baseImage)
-            command: "CheckBuildLogsForErrors PrintSnapshotsDiff"
+            command: "CheckBuildLogsForErrors"
 
 - stage: exploration_tests_windows
   condition: >

@@ -18,10 +18,6 @@ parameters:
     type: string
     default: ''
 
-  - name: condition
-    type: string
-    default: 'succeeded()'
-
 steps:
 - ${{ if eq(parameters.build, true) }}:
   - script: |
@@ -49,5 +45,3 @@ steps:
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
   displayName: Run '${{ parameters.command }}' in Docker
-  condition: ${{ parameters.condition }}
-
