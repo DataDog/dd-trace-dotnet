@@ -350,7 +350,35 @@ namespace Datadog.Trace.TestHelpers
             MetricsReceived?.Invoke(this, new EventArgs<string>(stats));
         }
 
-        private protected void HandlePotentialTraces(MockHttpParser.MockHttpRequest request)
+        private protected (int StatusCode, string Response) HandleHttpRequest(MockHttpParser.MockHttpRequest request)
+        {
+            if (TelemetryEnabled && request.PathAndQuery.StartsWith("/" + TelemetryConstants.AgentTelemetryEndpoint))
+            {
+                HandlePotentialTelemetryData(request);
+                return (200, "{}");
+            }
+            else if (request.PathAndQuery.EndsWith("/info"))
+            {
+                return(200, $"{{\"endpoints\":{JsonConvert.SerializeObject(DiscoveryService.AllSupportedEndpoints)}}}");
+            }
+            else if (request.PathAndQuery.StartsWith("/debugger/v1/input"))
+            {
+                HandlePotentialDebuggerData(request);
+                return (200, "{}");
+            }
+            else if (request.PathAndQuery.StartsWith("/v0.6/stats"))
+            {
+                HandlePotentialStatsData(request);
+                return (200, "{}");
+            }
+            else
+            {
+                HandlePotentialTraces(request);
+                return (200, "{}");
+            }
+        }
+
+        private void HandlePotentialTraces(MockHttpParser.MockHttpRequest request)
         {
             if (ShouldDeserializeTraces && request.ContentLength >= 1)
             {
@@ -384,6 +412,7 @@ namespace Datadog.Trace.TestHelpers
                     {
                         // Accept call is likely interrupted by a dispose
                         // Swallow the exception and let the test finish
+                        return;
                     }
 
                     throw;
@@ -391,7 +420,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private protected void HandlePotentialTelemetryData(MockHttpParser.MockHttpRequest request)
+        private void HandlePotentialTelemetryData(MockHttpParser.MockHttpRequest request)
         {
             if (request.ContentLength >= 1)
             {
@@ -422,6 +451,68 @@ namespace Datadog.Trace.TestHelpers
                     {
                         // Accept call is likely interrupted by a dispose
                         // Swallow the exception and let the test finish
+                        return;
+                    }
+
+                    throw;
+                }
+            }
+        }
+
+        private void HandlePotentialDebuggerData(MockHttpParser.MockHttpRequest request)
+        {
+            if (request.ContentLength >= 1)
+            {
+                try
+                {
+                    var body = ReadStreamBody(request);
+                    using var stream = new MemoryStream(body);
+                    using var streamReader = new StreamReader(stream);
+                    var batch = streamReader.ReadToEnd();
+                    ReceiveDebuggerBatch(batch);
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message.ToLowerInvariant();
+
+                    if (message.Contains("beyond the end of the stream"))
+                    {
+                        // Accept call is likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                        return;
+                    }
+
+                    throw;
+                }
+            }
+        }
+        
+        private void HandlePotentialStatsData(MockHttpParser.MockHttpRequest request)
+        {
+            if (ShouldDeserializeTraces && request.ContentLength >= 1)
+            {
+                try
+                {
+                    var body = ReadStreamBody(request);
+
+                    var statsPayload = MessagePackSerializer.Deserialize<MockClientStatsPayload>(body);
+                    OnStatsDeserialized(statsPayload);
+
+                    lock (this)
+                    {
+                        Stats = Stats.Add(statsPayload);
+                    }
+                    
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message.ToLowerInvariant();
+
+                    if (message.Contains("beyond the end of the stream"))
+                    {
+                        // Accept call is likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                        return;
                     }
 
                     throw;
@@ -675,67 +766,12 @@ namespace Datadog.Trace.TestHelpers
                             ctx.Response.AddHeader("Datadog-Agent-Version", Version);
                         }
 
-                        if (TelemetryEnabled && (ctx.Request.Url?.AbsolutePath.StartsWith("/" + TelemetryConstants.AgentTelemetryEndpoint) ?? false))
-                        {
-                            // telemetry request
-                            var telemetry = MockTelemetryAgent<TelemetryData>.DeserializeResponse(ctx.Request.InputStream);
-                            Telemetry.Push(telemetry);
-
-                            lock (this)
-                            {
-                                TelemetryRequestHeaders = TelemetryRequestHeaders.Add(new NameValueCollection(ctx.Request.Headers));
-                            }
-
-                            ctx.Response.StatusCode = 200;
-                        }
-                        else
-                        {
-                            var buffer = Encoding.UTF8.GetBytes("{}");
-
-                            if (ctx.Request.RawUrl.EndsWith("/info"))
-                            {
-                                var endpoints = $"{{\"endpoints\":{JsonConvert.SerializeObject(DiscoveryService.AllSupportedEndpoints)}}}";
-                                buffer = Encoding.UTF8.GetBytes(endpoints);
-                            }
-                            else if (ctx.Request.RawUrl.Contains("/debugger/v1/input"))
-                            {
-                                using var body = ctx.Request.InputStream;
-                                using var streamReader = new StreamReader(body);
-                                var batch = streamReader.ReadToEnd();
-                                ReceiveDebuggerBatch(batch);
-                            }
-                            else if (ShouldDeserializeTraces)
-                            {
-                                if (ctx.Request.Url?.AbsolutePath == "/v0.6/stats")
-                                {
-                                    var statsPayload = MessagePackSerializer.Deserialize<MockClientStatsPayload>(ctx.Request.InputStream);
-                                    OnStatsDeserialized(statsPayload);
-
-                                    lock (this)
-                                    {
-                                        Stats = Stats.Add(statsPayload);
-                                    }
-                                }
-                                else
-                                {
-                                    // assume trace request
-                                    var spans = MessagePackSerializer.Deserialize<IList<IList<MockSpan>>>(ctx.Request.InputStream);
-                                    OnRequestDeserialized(spans);
-
-                                    lock (this)
-                                    {
-                                        // we only need to lock when replacing the span collection,
-                                        // not when reading it because it is immutable
-                                        Spans = Spans.AddRange(spans.SelectMany(trace => trace));
-                                        RequestHeaders = RequestHeaders.Add(new NameValueCollection(ctx.Request.Headers));
-                                    }
-                                }
-                            }
-
-                            ctx.Response.ContentType = "application/json";
-                            ctx.Response.ContentLength64 = buffer.LongLength;
-                            ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
-                        }
+                        var (statusCode, response) = HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request));
+                        var buffer = Encoding.UTF8.GetBytes(response);
+                        ctx.Response.StatusCode = statusCode;
+                        ctx.Response.ContentType = "application/json";
+                        ctx.Response.ContentLength64 = buffer.LongLength;
+                        ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
 
                         // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
                         // (Setting content-length avoids that)
@@ -872,16 +908,9 @@ namespace Datadog.Trace.TestHelpers
             private async Task HandleNamedPipeTraces(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
             {
                 var request = await MockHttpParser.ReadRequest(namedPipeServerStream);
-                if (TelemetryEnabled && request.PathAndQuery.StartsWith("/" + TelemetryConstants.AgentTelemetryEndpoint))
-                {
-                    HandlePotentialTelemetryData(request);
-                }
-                else
-                {
-                    HandlePotentialTraces(request);
-                }
+                var (_, response) = HandleHttpRequest(request);
 
-                var responseBytes = GetResponseBytes(body: "{}");
+                var responseBytes = GetResponseBytes(body: response);
                 await namedPipeServerStream.WriteAsync(responseBytes, offset: 0, count: responseBytes.Length);
             }
 
@@ -1096,16 +1125,9 @@ namespace Datadog.Trace.TestHelpers
                         using var stream = new NetworkStream(handler);
 
                         var request = await MockHttpParser.ReadRequest(stream);
-                        if (TelemetryEnabled && request.PathAndQuery.StartsWith("/" + TelemetryConstants.AgentTelemetryEndpoint))
-                        {
-                            HandlePotentialTelemetryData(request);
-                        }
-                        else
-                        {
-                            HandlePotentialTraces(request);
-                        }
+                        var (_, response) = HandleHttpRequest(request);
 
-                        await stream.WriteAsync(GetResponseBytes(body: "{}"));
+                        await stream.WriteAsync(GetResponseBytes(body: response));
 
                         handler.Shutdown(SocketShutdown.Both);
                     }

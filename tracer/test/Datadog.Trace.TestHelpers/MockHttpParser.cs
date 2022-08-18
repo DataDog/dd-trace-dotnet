@@ -5,6 +5,8 @@
 
 using System;
 using System.IO;
+using System.Linq;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.HttpOverStreams;
@@ -158,6 +160,26 @@ namespace Datadog.Trace.TestHelpers
             public long ContentLength { get; set; }
 
             public StreamContent Body { get; set; }
+
+            public static MockHttpRequest Create(HttpListenerRequest request)
+            {
+                var headers = new HttpHeaders(request.Headers.Count);
+                
+                foreach (var key in request.Headers.AllKeys)
+                foreach (var value in request.Headers.GetValues(key))
+                {
+                    headers.Add(key, value);
+                }
+
+                return new MockHttpRequest
+                {
+                    Headers = headers,
+                    Method = request.HttpMethod,
+                    PathAndQuery = request.Url?.PathAndQuery,
+                    ContentLength = request.ContentLength64,
+                    Body = new StreamContent(request.InputStream, request.ContentLength64),
+                };
+            } 
         }
     }
 }
