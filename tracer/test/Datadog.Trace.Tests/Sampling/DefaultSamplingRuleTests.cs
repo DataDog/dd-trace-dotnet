@@ -15,7 +15,7 @@ namespace Datadog.Trace.Tests.Sampling
     {
         [Theory]
         // Value returned by the agent per default
-        [InlineData("service:,env:", "hello", "world", 1f)]
+        [InlineData("service:,env:", "hello", "world", 0.5f)]
         // Does not match
         [InlineData("service:nope,env:nope", "hello", "world", 1f)]
         // Nominal case
