@@ -74,6 +74,8 @@ namespace Datadog.Trace.Ci
 
         public CodeOwners CodeOwners { get; private set; }
 
+        public Dictionary<string, string> VariablesToBypass { get; private set; }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void SetTagIfNotNullOrEmpty(Span span, string key, string value)
         {
@@ -153,6 +155,10 @@ namespace Datadog.Trace.Ci
             SetTagIfNotNullOrEmpty(span, CommonTags.GitCommitCommitterDate, CommitterDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
             SetTagIfNotNullOrEmpty(span, CommonTags.GitCommitMessage, Message);
             SetTagIfNotNullOrEmpty(span, CommonTags.BuildSourceRoot, SourceRoot);
+            if (VariablesToBypass is { } variablesToBypass)
+            {
+                span.SetTag(CommonTags.CiEnvVars, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(variablesToBypass));
+            }
         }
 
         public string MakeRelativePathFromSourceRoot(string absolutePath, bool useOSSeparator = true)
@@ -223,14 +229,29 @@ namespace Datadog.Trace.Ci
             else if (EnvironmentHelpers.GetEnvironmentVariable("CIRCLECI") != null)
             {
                 SetupCircleCiEnvironment();
+                VariablesToBypass = new Dictionary<string, string>
+                {
+                    ["CIRCLE_WORKFLOW_ID"] = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_WORKFLOW_ID"),
+                    ["CIRCLE_BUILD_NUM"] = EnvironmentHelpers.GetEnvironmentVariable("CIRCLE_BUILD_NUM"),
+                };
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable("JENKINS_URL") != null)
             {
                 SetupJenkinsEnvironment();
+                VariablesToBypass = new Dictionary<string, string>
+                {
+                    ["DD_CUSTOM_TRACE_ID"] = EnvironmentHelpers.GetEnvironmentVariable("DD_CUSTOM_TRACE_ID"),
+                };
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable("GITLAB_CI") != null)
             {
                 SetupGitlabEnvironment();
+                VariablesToBypass = new Dictionary<string, string>
+                {
+                    ["CI_PROJECT_URL"] = EnvironmentHelpers.GetEnvironmentVariable("CI_PROJECT_URL"),
+                    ["CI_PIPELINE_ID"] = EnvironmentHelpers.GetEnvironmentVariable("CI_PIPELINE_ID"),
+                    ["CI_JOB_ID"] = EnvironmentHelpers.GetEnvironmentVariable("CI_JOB_ID"),
+                };
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR") != null)
             {
@@ -247,6 +268,13 @@ namespace Datadog.Trace.Ci
             else if (EnvironmentHelpers.GetEnvironmentVariable("GITHUB_SHA") != null)
             {
                 SetupGithubActionsEnvironment();
+                VariablesToBypass = new Dictionary<string, string>
+                {
+                    ["GITHUB_SERVER_URL"] = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_SERVER_URL"),
+                    ["GITHUB_REPOSITORY"] = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_REPOSITORY"),
+                    ["GITHUB_RUN_ID"] = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_RUN_ID"),
+                    ["GITHUB_RUN_ATTEMPT"] = EnvironmentHelpers.GetEnvironmentVariable("GITHUB_RUN_ATTEMPT"),
+                };
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable("TEAMCITY_VERSION") != null)
             {
@@ -255,6 +283,11 @@ namespace Datadog.Trace.Ci
             else if (EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE") != null)
             {
                 SetupBuildkiteEnvironment();
+                VariablesToBypass = new Dictionary<string, string>
+                {
+                    ["BUILDKITE_BUILD_ID"] = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_ID"),
+                    ["BUILDKITE_JOB_ID"] = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_JOB_ID"),
+                };
             }
             else if (EnvironmentHelpers.GetEnvironmentVariable("BITRISE_BUILD_SLUG") != null)
             {

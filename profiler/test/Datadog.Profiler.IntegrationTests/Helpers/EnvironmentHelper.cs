@@ -109,8 +109,13 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         internal string GetProfilerNativeLibraryPath()
         {
-            var profilerHome = GetMonitoringHome();
-            return Path.Combine(profilerHome, GetArchitectureSubfolder(), $"Datadog.Profiler.Native.{GetLibraryExtension()}");
+            var filename = $"Datadog.Profiler.Native.{GetLibraryExtension()}";
+            return IsRunningInCi()
+                ? Path.Combine(GetMonitoringHome(), GetArchitectureSubfolder(), filename)
+                // There is a discrepancy between where we output the artifacts on linux and on windows:
+                // Windows: <DeployDir>\win-<platform>\XXX
+                // Linux: <DeployDir>\XXX
+                : Path.Combine(GetDeployDir(), (IsRunningOnWindows() ? GetArchitectureSubfolder() : string.Empty), filename);
         }
 
         internal string GetTracerNativeLibraryPath()
@@ -268,6 +273,21 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return s;
         }
 
+        private static string GetArchitectureSubfolder()
+            => GetArchitectureSubfolder(IsAlpine);
+
+        private static string GetArchitectureSubfolder(bool isAlpine)
+            => (GetOS(), GetPlatform(), isAlpine) switch
+            {
+                ("win", "x64", _) => "win-x64",
+                ("win", "x86", _) => "win-x86",
+                ("linux", "x64", false) => "linux-x64",
+                ("linux", "x64", true) => "linux-musl-x64",
+                ("linux", "Arm64", _) => "linux-arm64",
+                ("osx", _, _) => "osx-x64",
+                _ => throw new PlatformNotSupportedException()
+            };
+
         private string GetNativeLoaderPath()
         {
             if (!IsRunningInCi())
@@ -278,7 +298,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 return GetOS() switch
                 {
                     "linux" => Path.Combine(binFolder, "Datadog.Trace.ClrProfiler.Native.so"),
-                    "win" => Path.Combine(GetConfiguration(), GetPlatform(), "Datadog.Trace.ClrProfiler.Native.dll"),
+                    "win" => Path.Combine(binFolder, GetConfiguration(), GetPlatform(), "Datadog.Trace.ClrProfiler.Native.dll"),
                     _ => throw new PlatformNotSupportedException(),
                 };
             }
@@ -293,21 +313,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 ? Path.Combine(GetMonitoringHome(), GetArchitectureSubfolder(), filename)
                 : Path.Combine(GetDeployDir(), filename);
         }
-
-        private string GetArchitectureSubfolder()
-            => GetArchitectureSubfolder(IsAlpine);
-
-        private string GetArchitectureSubfolder(bool isAlpine)
-            => (GetOS(), GetPlatform(), isAlpine) switch
-            {
-                ("win", "x64", _) => "win-x64",
-                ("win", "x86", _) => "win-x86",
-                ("linux", "x64", false) => "linux-x64",
-                ("linux", "x64", true) => "linux-musl-x64",
-                ("linux", "Arm64", _) => "linux-arm64",
-                ("osx", _, _) => "osx-x64",
-                _ => throw new PlatformNotSupportedException()
-            };
 
         private string GetNativeDllExtension()
             => GetOS() switch

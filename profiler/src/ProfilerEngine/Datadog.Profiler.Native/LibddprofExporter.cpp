@@ -4,6 +4,7 @@
 #include "LibddprofExporter.h"
 
 #include "FfiHelper.h"
+#include "ScopeFinalizer.h"
 #include "IApplicationStore.h"
 #include "IMetricsSender.h"
 #include "Log.h"
@@ -25,7 +26,7 @@
 
 tags LibddprofExporter::CommonTags = {
     {"language", "dotnet"},
-    {"profiler_version", PROFILER_VERSION + std::string(".") + PROFILER_BETA_REVISION},
+    {"profiler_version", PROFILER_VERSION},
 #ifdef BIT64
     {"process_architecture", "x64"},
 #else
@@ -262,7 +263,8 @@ bool LibddprofExporter::Export()
         // reset the samples count
         profileInfo.samplesCount = 0;
         auto* profile = profileInfo.profile;
-        auto profileAutoReset = ProfileAutoReset{profile};
+        on_leave { ddprof_ffi_Profile_reset(profile, nullptr); };
+
         auto serializedProfile = SerializedProfile{profile};
         if (!serializedProfile.IsValid())
         {
@@ -381,17 +383,19 @@ bool LibddprofExporter::Send(ddprof_ffi_Request* request, ddprof_ffi_ProfileExpo
 
     auto result = ddprof_ffi_ProfileExporterV3_send(exporter, request, nullptr);
 
+    on_leave { ddprof_ffi_SendResult_drop(result); };
+
     if (result.tag == DDPROF_FFI_SEND_RESULT_ERR)
     {
-        // There is an overflow issue when using the error buffer from rust
-        // Log::Error("libddprof error: Failed to send profile (", result.failure.ptr, ")");
-        Log::Error("libddprof error: Failed to send profile.");
+        Log::Error("libddprof error: Failed to send profile (", std::string(reinterpret_cast<const char*>(result.err.ptr), result.err.len), ")"); // NOLINT
         return false;
     }
 
     // Although we expect only 200, this range represents successful sends
     auto isSuccess = result.http_response.code >= 200 && result.http_response.code < 300;
     Log::Info("The profile was sent. Success?", std::boolalpha, isSuccess, std::noboolalpha, ", Http code: ", result.http_response.code);
+
+
     return isSuccess;
 }
 
@@ -498,20 +502,6 @@ void LibddprofExporter::Tags::Add(std::string const& labelName, std::string cons
 const ddprof_ffi_Vec_tag* LibddprofExporter::Tags::GetFfiTags() const
 {
     return &_ffiTags;
-}
-
-//
-// LibddprofExporter::Profile class
-//
-
-LibddprofExporter::ProfileAutoReset::ProfileAutoReset(struct ddprof_ffi_Profile* profile) :
-    _profile{profile}
-{
-}
-
-LibddprofExporter::ProfileAutoReset::~ProfileAutoReset()
-{
-    ddprof_ffi_Profile_reset(_profile, nullptr);
 }
 
 //

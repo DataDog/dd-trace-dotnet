@@ -4,6 +4,10 @@
 #pragma once
 #include <functional>
 
+struct DeferDummy
+{
+};
+
 template <class T>
 struct FinalizerInvocationWrapper
 {
@@ -56,8 +60,14 @@ private:
     bool _isEnabled;
 };
 
-template <class T>
-inline FinalizerInvocationWrapper<T> CreateScopeFinalizer(T&& finalizerCallback)
+template <class F>
+FinalizerInvocationWrapper<F> operator*(DeferDummy, F&& f)
 {
-    return FinalizerInvocationWrapper(std::move(finalizerCallback));
+    return FinalizerInvocationWrapper<F>{std::forward<F>(f)};
 }
+
+
+#define DEFER_(LINE) zz_defer##LINE
+#define DEFER(LINE) DEFER_(LINE)
+#define on_leave \
+    const auto& DEFER(__COUNTER__) = DeferDummy{}* [&]()

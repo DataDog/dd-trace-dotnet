@@ -2,6 +2,7 @@
 ECHO\
 ECHO Usage:
 ECHO     DDProf-SetEnv.bat [Bit-ness] [Deploy Directory]
+ECHO Note: should be run from <github tracer root>\shared\bin\monitoring-home
 
 ECHO\
 IF "%1"=="" (
@@ -30,29 +31,29 @@ IF "%1"=="" (
 ECHO\
 IF "%2"=="" (
     ECHO Deploy Directory optional command line parameter is not specified:
-    ECHO     Use the second command line parameter to specify the DD-Prof-DotNet Alpha Deploy Directory.
+    ECHO     Use the second command line parameter to specify the DD-Prof-DotNet Deploy Directory.
     ECHO     Using default.
 
-    SET DD_DOTNET_PROFILER_HOME=%~dp0
+    SET DD_DEPLOY_DIRECTORY=%~dp0
 ) ELSE (
-    SET DD_DOTNET_PROFILER_HOME=%2
+    SET DD_DEPLOY_DIRECTORY=%2
 
     ECHO Deploy Directory specified.
 )
 
 SET COR_ENABLE_PROFILING=1
 SET COR_PROFILER={BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}
-SET COR_PROFILER_PATH_64=%DD_DOTNET_PROFILER_HOME%\win-x64\Datadog.Profiler.Native.dll
-SET COR_PROFILER_PATH_32=%DD_DOTNET_PROFILER_HOME%\win-x86\Datadog.Profiler.Native.dll
+SET COR_PROFILER_PATH_64=%DD_DEPLOY_DIRECTORY%\win-x64\Datadog.Profiler.Native.dll
+SET COR_PROFILER_PATH_32=%DD_DEPLOY_DIRECTORY%\win-x86\Datadog.Profiler.Native.dll
 
 SET CORECLR_ENABLE_PROFILING=1
 SET CORECLR_PROFILER={BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}
-SET CORECLR_PROFILER_PATH_64=%DD_DOTNET_PROFILER_HOME%\win-x64\Datadog.Profiler.Native.dll
-SET CORECLR_PROFILER_PATH_32=%DD_DOTNET_PROFILER_HOME%\win-x86\Datadog.Profiler.Native.dll
+SET CORECLR_PROFILER_PATH_64=%DD_DEPLOY_DIRECTORY%\win-x64\Datadog.Profiler.Native.dll
+SET CORECLR_PROFILER_PATH_32=%DD_DEPLOY_DIRECTORY%\win-x86\Datadog.Profiler.Native.dll
 
 IF DEFINED DD_DOTNET_CONTINUOUS_PROFILER_BITNESS (
-    SET COR_PROFILER_PATH=%DD_DOTNET_PROFILER_HOME%\win-%DD_DOTNET_CONTINUOUS_PROFILER_BITNESS%\Datadog.Profiler.Native.dll
-    SET CORECLR_PROFILER_PATH=%DD_DOTNET_PROFILER_HOME%\win-%DD_DOTNET_CONTINUOUS_PROFILER_BITNESS%\Datadog.Profiler.Native.dll
+    SET COR_PROFILER_PATH=%DD_DEPLOY_DIRECTORY%\win-%DD_DOTNET_CONTINUOUS_PROFILER_BITNESS%\Datadog.Profiler.Native.dll
+    SET CORECLR_PROFILER_PATH=%DD_DEPLOY_DIRECTORY%\win-%DD_DOTNET_CONTINUOUS_PROFILER_BITNESS%\Datadog.Profiler.Native.dll
 ) ELSE (
     SET COR_PROFILER_PATH=
     SET CORECLR_PROFILER_PATH=
@@ -62,7 +63,7 @@ SET COMPlus_EnableDiagnostics=1
 SET DD_PROFILING_ENABLED=1
 
 ECHO\
-ECHO DD_DOTNET_PROFILER_HOME=%DD_DOTNET_PROFILER_HOME%
+ECHO DD_DEPLOY_DIRECTORY=%DD_DEPLOY_DIRECTORY%
 ECHO\
 ECHO COR_ENABLE_PROFILING=%COR_ENABLE_PROFILING%
 ECHO COR_PROFILER=%COR_PROFILER%

@@ -87,8 +87,6 @@ namespace Datadog.Demos.WcfService.Client
             Console.WriteLine("        COR_PROFILER_PATH_32:      " + (Environment.GetEnvironmentVariable("COR_PROFILER_PATH_32") ?? "null"));
             Console.WriteLine("        COR_PROFILER_PATH:         " + (Environment.GetEnvironmentVariable("COR_PROFILER_PATH") ?? "null"));
             Console.WriteLine();
-            Console.WriteLine("        DD_DOTNET_PROFILER_HOME:   " + (Environment.GetEnvironmentVariable("DD_DOTNET_PROFILER_HOME") ?? "null"));
-            Console.WriteLine();
             Console.WriteLine("        COMPlus_EnableDiagnostics: " + (Environment.GetEnvironmentVariable("COMPlus_EnableDiagnostics") ?? "null"));
             Console.WriteLine();
 

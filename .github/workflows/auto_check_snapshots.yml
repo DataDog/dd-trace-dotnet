@@ -1,4 +1,4 @@
-name: Label PRs
+name: Check snapshots
 
 on:
 - pull_request

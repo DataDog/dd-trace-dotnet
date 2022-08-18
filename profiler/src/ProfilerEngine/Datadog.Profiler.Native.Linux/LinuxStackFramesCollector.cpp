@@ -122,10 +122,8 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
                    s_signalToSend, " to thread with osThreadId=", osThreadId, ".");
 #endif
         s_pInstanceCurrentlyStackWalking = this;
-        auto scopeFinalizer = CreateScopeFinalizer(
-            [] {
-                s_pInstanceCurrentlyStackWalking = nullptr;
-            });
+
+        on_leave { s_pInstanceCurrentlyStackWalking = nullptr; };
 
         _stackWalkFinished = false;
 
