@@ -14,6 +14,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -58,6 +59,7 @@ namespace Datadog.Trace
             DirectLogSubmissionManager directLogSubmission,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
+            DataStreamsManager dataStreamsManager,
             string defaultServiceName,
             ITraceProcessor[] traceProcessors = null)
         {
@@ -68,6 +70,7 @@ namespace Datadog.Trace
             Statsd = statsd;
             RuntimeMetrics = runtimeMetricsWriter;
             DefaultServiceName = defaultServiceName;
+            DataStreamsManager = dataStreamsManager;
             DirectLogSubmission = directLogSubmission;
             Telemetry = telemetry;
             DiscoveryService = discoveryService;
@@ -136,6 +139,8 @@ namespace Datadog.Trace
         public ITelemetryController Telemetry { get; }
 
         public IDiscoveryService DiscoveryService { get; }
+
+        public DataStreamsManager DataStreamsManager { get; }
 
         private RuntimeMetricsWriter RuntimeMetrics { get; }
 
@@ -228,10 +233,17 @@ namespace Datadog.Trace
                     await oldManager.DiscoveryService.DisposeAsync().ConfigureAwait(false);
                 }
 
+                var dataStreamsReplaced = false;
+                if (oldManager.DataStreamsManager != newManager.DataStreamsManager && oldManager.DataStreamsManager is not null)
+                {
+                    dataStreamsReplaced = true;
+                    await oldManager.DataStreamsManager.DisposeAsync().ConfigureAwait(false);
+                }
+
                 Log.Information(
                     exception: null,
-                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Telemetry: {TelemetryReplaced}, Discovery: {DiscoveryReplaced}",
-                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, telemetryReplaced, discoveryReplaced });
+                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Telemetry: {TelemetryReplaced}, Discovery: {DiscoveryReplaced}, DataStreamsManager: {DataStreamsManagerReplaced}",
+                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, telemetryReplaced, discoveryReplaced, dataStreamsReplaced });
             }
             catch (Exception ex)
             {
@@ -523,9 +535,12 @@ namespace Datadog.Trace
                     var telemetryTask = _instance.Telemetry?.DisposeAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing DiscoveryService.");
                     var discoveryService = _instance.DiscoveryService?.DisposeAsync() ?? Task.CompletedTask;
+                    Log.Debug("Disposing Data streams.");
+                    var dataStreamsTask = _instance.DataStreamsManager?.DisposeAsync() ?? Task.CompletedTask;
 
                     Log.Debug("Waiting for disposals.");
-                    await Task.WhenAll(flushTracesTask, logSubmissionTask, telemetryTask, discoveryService).ConfigureAwait(false);
+                    await Task.WhenAll(flushTracesTask, logSubmissionTask, telemetryTask, discoveryService, dataStreamsTask).ConfigureAwait(false);
+                    Log.Debug("Finished waiting for disposals.");
                 }
             }
             catch (Exception ex)
