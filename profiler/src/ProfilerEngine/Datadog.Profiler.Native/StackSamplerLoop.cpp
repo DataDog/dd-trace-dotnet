@@ -307,10 +307,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             // Notify the loop manager that we are starting a stack collection, and set up a finalizer to notify the manager when we finsih it.
             // This will enable the manager to monitor if this collection freezes due to a deadlock.
 
-            auto scopeFinalizer = CreateScopeFinalizer(
-                [this] {
-                    _pManager->NotifyIterationFinished();
-                });
+            on_leave { _pManager->NotifyIterationFinished(); };
 
             // On Windows, we will now suspend the target thread.
             // On Linux, if we use signals, the suspension may be a no-op since signal handlers do not use explicit suspension.
@@ -337,7 +334,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             // Perform the stack walk according to bitness, OS, platform, sync/async stack-walking, etc..:
             {
                 // We rely on RAII to call NotifyCollectionEnd when we get out this scope.
-                auto endCollectionScope = CreateScopeFinalizer([this] { _pManager->NotifyCollectionEnd(); });
+                on_leave { _pManager->NotifyCollectionEnd(); };
 
                 _pManager->NotifyCollectionStart();
                 pStackSnapshotResult = _pStackFramesCollector->CollectStackSample(pThreadInfo, &hrCollectStack);

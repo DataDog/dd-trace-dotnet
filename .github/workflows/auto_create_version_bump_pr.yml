@@ -55,7 +55,7 @@ jobs:
         id: versions
 
       - name: "Bump Version"
-        run: .\tracer\build.ps1 UpdateVersion UpdateMsiContents
+        run: .\tracer\build.ps1 UpdateVersion
         env:
           NewVersion: ${{ steps.versions.outputs.version }}
           NewIsPrerelease: ${{ steps.versions.outputs.isprerelease }}

@@ -25,7 +25,7 @@ namespace Datadog.Trace.TestHelpers
         public CustomTestFramework(IMessageSink messageSink, Type typeTestedAssembly)
             : this(messageSink)
         {
-            var targetPath = GetProfilerTargetFolder();
+            var targetPath = GetMonitoringHomeTargetFrameworkFolder();
 
             if (targetPath != null)
             {
@@ -45,9 +45,9 @@ namespace Datadog.Trace.TestHelpers
             throw new DirectoryNotFoundException(message);
         }
 
-        internal static string GetProfilerTargetFolder()
+        internal static string GetMonitoringHomeTargetFrameworkFolder()
         {
-            var tracerHome = EnvironmentHelper.GetTracerHomePath();
+            var tracerHome = EnvironmentHelper.GetMonitoringHomePath();
             var targetFrameworkDirectory = EnvironmentTools.GetTracerTargetFrameworkDirectory();
 
             var finalDirectory = Path.Combine(tracerHome, targetFrameworkDirectory);
