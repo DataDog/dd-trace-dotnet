@@ -14,9 +14,11 @@ public:
     virtual bool IsDotnetFramework() const override;
     virtual uint16_t GetDotnetMajorVersion() const override;
     virtual uint16_t GetDotnetMinorVersion() const override;
+    virtual std::string GetOs() const override;
 
 private:
     uint16_t _dotnetMajor;
     uint16_t _dotnetMinor;
     bool _isFramework;
+    std::string _os;
 };

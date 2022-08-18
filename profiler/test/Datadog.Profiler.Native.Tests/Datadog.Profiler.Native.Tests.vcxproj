@@ -55,6 +55,7 @@
     <ClCompile Include="ProfilerMockedInterface.cpp" />
     <ClCompile Include="RuntimeIdStoreHelper.cpp" />
     <ClCompile Include="RuntimeIdTest.cpp" />
+    <ClCompile Include="RuntimeInfoHelper.cpp" />
     <ClCompile Include="SamplesCollectorTest.cpp" />
     <ClCompile Include="SamplesProviderTest.cpp" />
     <ClCompile Include="SamplesAggregatorTest.cpp" />
@@ -70,6 +71,7 @@
     <ClInclude Include="FrameStoreHelper.h" />
     <ClInclude Include="ProfilerMockedInterface.h" />
     <ClInclude Include="RuntimeIdStoreHelper.h" />
+    <ClInclude Include="RuntimeInfoHelper.h" />
     <ClInclude Include="ThreadsCpuManagerHelper.h" />
   </ItemGroup>
   <ItemGroup>

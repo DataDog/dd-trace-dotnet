@@ -133,12 +133,12 @@ LibddprofExporter::Tags LibddprofExporter::CreateTags(IConfiguration* configurat
     buffer << "-" << std::dec << runtimeInfo->GetDotnetMajorVersion() << "." << runtimeInfo->GetDotnetMinorVersion();
     tags.Add("runtime_version", buffer.str());
 
+    // list of enabled profilers
+    std::string profilersTag = GetEnabledProfilersTag(configuration);
+    tags.Add("profiler_list", profilersTag);
+
     // runtime_platform (os and version later)
-#ifdef LINUX
-    tags.Add("runtime_os", "linux");
-#else
-    tags.Add("runtime_os", "windows");
-#endif
+    tags.Add("runtime_os", runtimeInfo->GetOs());
 
     for (auto const& [name, value] : configuration->GetUserTags())
     {
@@ -147,6 +147,56 @@ LibddprofExporter::Tags LibddprofExporter::CreateTags(IConfiguration* configurat
 
     return tags;
 }
+
+std::string LibddprofExporter::GetEnabledProfilersTag(IConfiguration* configuration)
+{
+    const char* separator = "_";  // ',' are not allowed and +/SPACE would be transformed into '_' anyway
+    std::stringstream buffer;
+    bool emptyList = true;
+
+    if (configuration->IsWallTimeProfilingEnabled())
+    {
+        buffer << "walltime";
+        emptyList = false;
+    }
+    if (configuration->IsCpuProfilingEnabled())
+    {
+        if (!emptyList)
+        {
+            buffer << separator;
+        }
+        buffer << "cpu";
+        emptyList = false;
+    }
+    if (configuration->IsExceptionProfilingEnabled())
+    {
+        if (!emptyList)
+        {
+            buffer << separator;
+        }
+        buffer << "exceptions";
+        emptyList = false;
+    }
+    if (configuration->IsAllocationProfilingEnabled())
+    {
+        if (!emptyList)
+        {
+            buffer << separator;
+        }
+        buffer << "allocations";
+        emptyList = false;
+    }
+
+    if (emptyList)
+    {
+        return "";
+    }
+    else
+    {
+        return buffer.str();
+    }
+}
+
 
 ddprof_ffi_EndpointV3 LibddprofExporter::CreateEndpoint(IConfiguration* configuration)
 {

@@ -5,6 +5,11 @@
 
 RuntimeInfo::RuntimeInfo(uint16_t dotnetMajor, uint16_t dotnetMinor, bool isFramework)
     :
+#ifdef LINUX
+    _os("linux"),
+#else
+    _os("windows"),
+#endif
     _dotnetMajor(dotnetMajor),
     _dotnetMinor(dotnetMinor),
     _isFramework(isFramework)
@@ -24,4 +29,9 @@ uint16_t RuntimeInfo::GetDotnetMajorVersion() const
 uint16_t RuntimeInfo::GetDotnetMinorVersion() const
 {
     return _dotnetMinor;
+}
+
+std::string RuntimeInfo::GetOs() const
+{
+    return _os;
 }

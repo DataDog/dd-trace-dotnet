@@ -4,6 +4,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 class IRuntimeInfo
 {
@@ -12,6 +13,7 @@ public:
     virtual bool IsDotnetFramework() const = 0;
     virtual uint16_t GetDotnetMajorVersion() const  = 0;
     virtual uint16_t GetDotnetMinorVersion() const = 0;
+    virtual std::string GetOs() const = 0;
 
 // TODO: add OS details when needed
 };

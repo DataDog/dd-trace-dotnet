@@ -91,6 +91,7 @@ private:
     };
 
     static Tags CreateTags(IConfiguration* configuration, IRuntimeInfo* runtimeInfo);
+
     static ddprof_ffi_ProfileExporterV3* CreateExporter(const ddprof_ffi_Vec_tag* tags, ddprof_ffi_EndpointV3 endpoint);
     static ddprof_ffi_Profile* CreateProfile();
 
@@ -127,4 +128,7 @@ private:
     ddprof_ffi_EndpointV3 _endpoint;
     Tags _exporterBaseTags;
     IApplicationStore* const _applicationStore;
+
+public:  // for tests
+    static std::string GetEnabledProfilersTag(IConfiguration* configuration);
 };
