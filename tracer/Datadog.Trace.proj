@@ -2,7 +2,6 @@
   <PropertyGroup>
     <BuildInParallel Condition="'$(BuildInParallel)' == ''">true</BuildInParallel>
     <Configuration Condition="'$(Configuration)' == ''">Debug</Configuration>
-    <TracerHomeDirectory Condition="'$(TracerHomeDirectory)' == ''">$(MSBuildThisFileDirectory)src\bin\windows-tracer-home</TracerHomeDirectory>
   </PropertyGroup>
 
   <ItemGroup>
