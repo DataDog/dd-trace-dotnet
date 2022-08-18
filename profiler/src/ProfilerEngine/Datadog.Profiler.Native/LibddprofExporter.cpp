@@ -187,14 +187,7 @@ std::string LibddprofExporter::GetEnabledProfilersTag(IConfiguration* configurat
         emptyList = false;
     }
 
-    if (emptyList)
-    {
-        return "";
-    }
-    else
-    {
-        return buffer.str();
-    }
+    return buffer.str();
 }
 
 
