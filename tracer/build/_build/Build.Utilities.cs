@@ -297,6 +297,11 @@ partial class Build
                 continue;
             }
 
+            if (fileName.Contains("VersionMismatchNewerNugetTests"))
+            {
+                Logger.Warn("Updated snapshots contain a version mismatch test. You may need to upgrade your code in the Azure public feed.");
+            }
+
             var trimmedName = fileName.Substring(0, fileName.Length - suffixLength);
             var dest = Path.Combine(snapshotsDirectory, $"{trimmedName}verified{Path.GetExtension(source)}");
             MoveFile(source, dest, FileExistsPolicy.Overwrite, createDirectories: true);
