@@ -350,31 +350,31 @@ namespace Datadog.Trace.TestHelpers
             MetricsReceived?.Invoke(this, new EventArgs<string>(stats));
         }
 
-        private protected (int StatusCode, string Response) HandleHttpRequest(MockHttpParser.MockHttpRequest request)
+        private protected string HandleHttpRequest(MockHttpParser.MockHttpRequest request)
         {
             if (TelemetryEnabled && request.PathAndQuery.StartsWith("/" + TelemetryConstants.AgentTelemetryEndpoint))
             {
                 HandlePotentialTelemetryData(request);
-                return (200, "{}");
+                return "{}";
             }
             else if (request.PathAndQuery.EndsWith("/info"))
             {
-                return (200, $"{{\"endpoints\":{JsonConvert.SerializeObject(DiscoveryService.AllSupportedEndpoints)}}}");
+                return $"{{\"endpoints\":{JsonConvert.SerializeObject(DiscoveryService.AllSupportedEndpoints)}}}";
             }
             else if (request.PathAndQuery.StartsWith("/debugger/v1/input"))
             {
                 HandlePotentialDebuggerData(request);
-                return (200, "{}");
+                return "{}";
             }
             else if (request.PathAndQuery.StartsWith("/v0.6/stats"))
             {
                 HandlePotentialStatsData(request);
-                return (200, "{}");
+                return "{}";
             }
             else
             {
                 HandlePotentialTraces(request);
-                return (200, "{}");
+                return "{}";
             }
         }
 
@@ -765,9 +765,8 @@ namespace Datadog.Trace.TestHelpers
                             ctx.Response.AddHeader("Datadog-Agent-Version", Version);
                         }
 
-                        var (statusCode, response) = HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request));
+                        var response = HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request));
                         var buffer = Encoding.UTF8.GetBytes(response);
-                        ctx.Response.StatusCode = statusCode;
                         ctx.Response.ContentType = "application/json";
                         ctx.Response.ContentLength64 = buffer.LongLength;
                         ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
@@ -907,7 +906,7 @@ namespace Datadog.Trace.TestHelpers
             private async Task HandleNamedPipeTraces(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
             {
                 var request = await MockHttpParser.ReadRequest(namedPipeServerStream);
-                var (_, response) = HandleHttpRequest(request);
+                var response = HandleHttpRequest(request);
 
                 var responseBytes = GetResponseBytes(body: response);
                 await namedPipeServerStream.WriteAsync(responseBytes, offset: 0, count: responseBytes.Length);
@@ -1124,7 +1123,7 @@ namespace Datadog.Trace.TestHelpers
                         using var stream = new NetworkStream(handler);
 
                         var request = await MockHttpParser.ReadRequest(stream);
-                        var (_, response) = HandleHttpRequest(request);
+                        var response = HandleHttpRequest(request);
 
                         await stream.WriteAsync(GetResponseBytes(body: response));
 
