@@ -16,13 +16,13 @@ namespace Datadog.Trace.Sampling
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DefaultSamplingRule>();
 
         private Dictionary<SampleRateKey, float> _sampleRates = new();
-        private float _defaultSamplingRate = 1;
+        private float? _defaultSamplingRate;
 
         public string RuleName => "default-rule";
 
         // if there are no rules, this normally means we haven't sent any payloads to the Agent yet (aka cold start), so the mechanism is "Default".
         // if there are rules, there should always be at least one match (the fallback "service:,env:") and the mechanism is "AgentRate".
-        public int SamplingMechanism => _sampleRates.Count == 0 ?
+        public int SamplingMechanism => _sampleRates.Count == 0 && _defaultSamplingRate == null ?
                                             Datadog.Trace.Sampling.SamplingMechanism.Default :
                                             Datadog.Trace.Sampling.SamplingMechanism.AgentRate;
 
@@ -39,11 +39,15 @@ namespace Datadog.Trace.Sampling
         public float GetSamplingRate(Span span)
         {
             Log.Debug("Using the default sampling logic");
+            float defaultRate;
 
             if (_sampleRates.Count == 0)
             {
-                span.SetMetric(Metrics.SamplingAgentDecision, 1); // Keep it to ease investigations
-                return 1;
+                // either we don't have sampling rate from the agent yet (cold start),
+                // or the only rate we received is for "service:,env:", which is not added to _sampleRates
+                defaultRate = _defaultSamplingRate ?? 1;
+                span.SetMetric(Metrics.SamplingAgentDecision, defaultRate); // Keep it to ease investigations
+                return defaultRate;
             }
 
             string env;
@@ -68,8 +72,10 @@ namespace Datadog.Trace.Sampling
             }
 
             Log.Debug("Could not establish sample rate for trace {TraceId}. Using default rate instead: {rate}", span.TraceId, _defaultSamplingRate);
-            span.SetMetric(Metrics.SamplingAgentDecision, _defaultSamplingRate);
-            return _defaultSamplingRate;
+
+            defaultRate = _defaultSamplingRate ?? 1;
+            span.SetMetric(Metrics.SamplingAgentDecision, defaultRate);
+            return defaultRate;
         }
 
         public void SetDefaultSampleRates(IReadOnlyDictionary<string, float> sampleRates)
