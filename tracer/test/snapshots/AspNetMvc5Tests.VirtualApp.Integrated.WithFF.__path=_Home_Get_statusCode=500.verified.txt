@@ -29,7 +29,7 @@ at System.Web.Mvc.ActionDescriptor.ExtractParameterFromDictionary(ParameterInfo 
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,

@@ -13,7 +13,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -37,7 +37,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -61,7 +61,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -85,7 +85,7 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -136,7 +136,7 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -160,7 +160,7 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -186,7 +186,7 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -212,7 +212,7 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -237,7 +237,7 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -263,7 +263,7 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -307,7 +307,7 @@ errors: [
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,

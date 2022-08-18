@@ -9,7 +9,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -42,7 +42,7 @@
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -76,7 +76,7 @@
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -95,7 +95,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -128,7 +128,7 @@
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -162,7 +162,7 @@
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -181,7 +181,7 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -220,7 +220,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -256,7 +256,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -275,7 +275,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -314,7 +314,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -350,7 +350,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -369,7 +369,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -408,7 +408,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -444,7 +444,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -463,7 +463,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -502,7 +502,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -538,7 +538,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -557,7 +557,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -596,7 +596,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -632,7 +632,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -651,7 +651,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -690,7 +690,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -726,7 +726,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -745,7 +745,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -784,7 +784,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -820,7 +820,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -839,7 +839,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -878,7 +878,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -914,7 +914,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -933,7 +933,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -966,7 +966,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -1000,7 +1000,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -1019,7 +1019,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -1052,7 +1052,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -1086,7 +1086,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -1105,7 +1105,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -1138,7 +1138,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -1172,7 +1172,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -1191,7 +1191,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -1225,7 +1225,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.status.code: 4,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -1261,7 +1261,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -1280,7 +1280,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -1314,7 +1314,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       grpc.status.code: 4,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -1350,7 +1350,7 @@ Grpc.Core.Internal.CoreErrorDetailException: {"created":"@00000000000.000000000"
       runtime-id: Guid_1,
       servermeta: other-server-value,
       span.kind: server,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
