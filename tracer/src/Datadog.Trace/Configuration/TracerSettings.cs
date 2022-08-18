@@ -8,7 +8,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-using Datadog.Trace.Debugger;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
@@ -226,6 +225,10 @@ namespace Datadog.Trace.Configuration
                     PropagationStyleInject = PropagationStyleInject.Concat(nameof(Propagators.ContextPropagators.Names.W3C));
                 }
             }
+
+            IsDataStreamsMonitoringEnabled = source?.GetBool(ConfigurationKeys.DataStreamsMonitoring.Enabled) ??
+                                        // default value
+                                        false;
         }
 
         /// <summary>
@@ -496,6 +499,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the activity listener is enabled or not.
         /// </summary>
         internal bool IsActivityListenerEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether data streams monitoring is enabled or not.
+        /// </summary>
+        internal bool IsDataStreamsMonitoringEnabled { get; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
