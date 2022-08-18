@@ -3,9 +3,9 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.SmokeTests
 {
-    internal class AsyncInstanceMethod : IAsyncRun
+    internal class AsyncStaticMethod : IAsyncRun
     {
-        private const string ClassName = "AsyncInstanceMethod";
+        private const string ClassName = "AsyncStaticMethod";
 
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         public async Task RunAsync()
@@ -15,7 +15,7 @@ namespace Samples.Probes.SmokeTests
 
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         [MethodProbeTestData]
-        public async Task<string> Method(string input)
+        public static async Task<string> Method(string input)
         {
             var output = input + ".";
             await Task.Delay(20);

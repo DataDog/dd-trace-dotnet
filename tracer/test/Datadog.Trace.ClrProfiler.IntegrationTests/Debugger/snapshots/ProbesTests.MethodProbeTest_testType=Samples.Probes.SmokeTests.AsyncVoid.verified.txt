@@ -27,8 +27,8 @@
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": "MoveNext",
-            "type": "Samples.Probes.SmokeTests.AsyncVoid+<VoidTaskMethod>d__1"
+            "method": "VoidTaskMethod",
+            "type": "Samples.Probes.SmokeTests.AsyncVoid"
           }
         },
         "stack": [],
@@ -36,8 +36,8 @@
       }
     },
     "logger": {
-      "method": "MoveNext",
-      "name": "Samples.Probes.SmokeTests.AsyncVoid+<VoidTaskMethod>d__1",
+      "method": "VoidTaskMethod",
+      "name": "Samples.Probes.SmokeTests.AsyncVoid",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -80,27 +80,17 @@
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": "MoveNext",
-            "type": "Samples.Probes.SmokeTests.AsyncVoid+<VoidMethod>d__2"
+            "method": "VoidMethod",
+            "type": "Samples.Probes.SmokeTests.AsyncVoid"
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncVoid.VoidMethod",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "AsyncVoid.cs",
-            "function": "Samples.Probes.SmokeTests.AsyncVoid+<>c__DisplayClass1_0.<VoidTaskMethod>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": [],
         "timestamp": "ScrubbedValue"
       }
     },
     "logger": {
-      "method": "MoveNext",
-      "name": "Samples.Probes.SmokeTests.AsyncVoid+<VoidMethod>d__2",
+      "method": "VoidMethod",
+      "name": "Samples.Probes.SmokeTests.AsyncVoid",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"

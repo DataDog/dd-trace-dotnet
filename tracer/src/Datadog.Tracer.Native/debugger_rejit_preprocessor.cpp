@@ -172,29 +172,6 @@ void DebuggerRejitPreprocessor::EnqueuePreprocessLineProbes(const std::vector<Mo
     m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
 }
 
-mdTypeRef DebuggerRejitPreprocessor::GetIAsyncStateMachineToken(ModuleMetadata* moduleMetadata)
-{
-    mdTypeRef iasyncStateMachineTypeRef = mdTypeRefNil;
-    moduleMetadata->GetDebuggerTokens()->EnsureCorLibTokens();
-    auto corlibAssemblyRefToken = moduleMetadata->GetDebuggerTokens()->GetCorLibAssemblyRef();
-    if (corlibAssemblyRefToken == mdTokenNil)
-    {
-        Logger::Warn("Could not get CorLib assembly ref token.");
-        return iasyncStateMachineTypeRef;
-    }
-
-    auto hr = moduleMetadata->metadata_emit->DefineTypeRefByName(
-        corlibAssemblyRefToken, L"System.Runtime.CompilerServices.IAsyncStateMachine", &iasyncStateMachineTypeRef);
-
-    if (FAILED(hr))
-    {
-        Logger::Warn("Failed to get IAsyncStateMachine token.");
-        return mdTypeRefNil;
-    }
-    
-    return iasyncStateMachineTypeRef;
-}
-
 void DebuggerRejitPreprocessor::ProcessTypesForRejit(
     std::vector<MethodIdentifier>& rejitRequests, const ModuleInfo& moduleInfo, ComPtr<IMetaDataImport2> metadataImport,
     ComPtr<IMetaDataEmit2> metadataEmit, ComPtr<IMetaDataAssemblyImport> assemblyImport,
@@ -284,31 +261,41 @@ void DebuggerRejitPreprocessor::EnqueueNewMethod(const MethodProbeDefinition& de
                                                  ComPtr<IMetaDataImport2>& metadataImport,
                                                  ComPtr<IMetaDataEmit2>& metadataEmit, const ModuleInfo& moduleInfo,
                                                  mdTypeDef typeDef, std::vector<MethodIdentifier>& rejitRequests,
-                                                 unsigned methodDef, FunctionInfo functionInfo,
+                                                 unsigned methodDef, const FunctionInfo& functionInfo,
                                                  RejitHandlerModule* moduleHandler)
 {
-    const auto [newMethodDef, newFunctionInfo] = DebuggerRejitPreprocessor::TransformKickOffToMoveNext(
-        metadataImport, metadataEmit, moduleHandler, typeDef, methodDef, functionInfo);
-    RejitPreprocessor::EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests,
-                                        newMethodDef, newFunctionInfo, moduleHandler);
-}
-
-std::tuple<mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::TransformKickOffToMoveNext(
-    const ComPtr<IMetaDataImport2>& metadataImport, const ComPtr<IMetaDataEmit2>& metadataEmit,
-    RejitHandlerModule* moduleHandler, mdTypeDef typeDef, mdMethodDef methodDef, const FunctionInfo& functionInfo) const
-{
-    // an alternative way is to use CustomAttributeParser
-
-    const auto iasyncStateMachineTypeRef = DebuggerRejitPreprocessor::GetIAsyncStateMachineToken(moduleHandler->GetModuleMetadata());
-    if (iasyncStateMachineTypeRef == mdTypeRefNil)
+    auto [hr, newMethodDef, newFunctionInfo] = 
+        PickMethodToRejit(metadataImport, metadataEmit, typeDef, methodDef, functionInfo);
+    if (hr != S_OK)
     {
-        Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: IAsyncStateMachine type ref token is mdTypeRefNil");
-        return {methodDef, functionInfo};
+        return;
     }
 
-    auto generatedTypeName = WStr("<") + functionInfo.name + WStr(">");
-    mdMethodDef moveNextMethod = mdMethodDefNil;
-    mdTypeDef nestedAsyncClassOrStruct = mdTypeDefNil;
+    RejitPreprocessor::EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, newMethodDef, newFunctionInfo, moduleHandler);
+
+    Logger::Debug("    * Enqueue for ReJIT [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
+                     ", AppDomainId=", moduleHandler->GetModuleMetadata()->app_domain_id,
+                     ", Assembly=", moduleHandler->GetModuleMetadata()->assemblyName, ", Type=", newFunctionInfo.type.name,
+                     ", Method=", newFunctionInfo.name, "(", newFunctionInfo.method_signature.NumberOfArguments(), " params), Signature=", newFunctionInfo.signature.str(), "]");
+}
+
+HRESULT DebuggerRejitPreprocessor::GetMoveNextMethodFromKickOffMethod(const ComPtr<IMetaDataImport2>& metadataImport, mdTypeDef typeDef, mdMethodDef methodDef, 
+                                                                      const FunctionInfo& function, mdMethodDef& moveNextMethod, mdTypeDef& nestedAsyncClassOrStruct) const
+{
+    // TODO: We might consider rewriting this code using CustomAttributeParser [AsyncStateMachine(typeof(<X>d__1))]
+
+    moveNextMethod = mdMethodDefNil;
+    nestedAsyncClassOrStruct = mdTypeDefNil;
+    bool hasAsyncAttribute;
+    auto hr = HasAsyncStateMachineAttribute(metadataImport, methodDef, hasAsyncAttribute);
+    IfFailRet(hr);
+
+    if (!hasAsyncAttribute)
+    {
+        return hr;
+    }
+
+    const auto generatedTypeName = ToWSTRING("<") + function.name + ToWSTRING(">");
     const auto typeDefEnum = EnumTypeDefs(metadataImport);
     auto typeDefIterator = typeDefEnum.begin();
     for (; typeDefIterator != typeDefEnum.end(); typeDefIterator = ++typeDefIterator)
@@ -316,13 +303,14 @@ std::tuple<mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::TransformKickOf
         nestedAsyncClassOrStruct = *typeDefIterator;
         const auto typeInfo = GetTypeInfo(metadataImport, nestedAsyncClassOrStruct);
 
+        // search for a state machine compiler generated type
         if (!StartsWith(shared::ToString(typeInfo.name), ToString(generatedTypeName)))
         {
             // not a compiler generated type
             continue;
         }
 
-        // if it is a nested type and the parent is our type
+        // check if it is a nested type and the parent is our type
         mdTypeDef parentType;
         if (metadataImport->GetNestedClassProps(nestedAsyncClassOrStruct, &parentType) != S_OK || parentType != typeDef)
         {
@@ -330,17 +318,25 @@ std::tuple<mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::TransformKickOf
             continue;
         }
 
+        bool isImplementStateMAchineInterface;
         // check if the nested type implement the IAsyncStateMachine interface
-        auto hr = DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine(metadataImport, nestedAsyncClassOrStruct);
-
-        if (hr == S_OK)
+        hr = DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine(metadataImport, nestedAsyncClassOrStruct, isImplementStateMAchineInterface);
+        if (FAILED(hr))
         {
-            // only one MoveNext exist in the state machine so no need to include signature
-            COR_SIGNATURE* moveNextSig{};
-            if (FAILED(metadataImport->FindMethod(nestedAsyncClassOrStruct, WStr("MoveNext"), moveNextSig,
-                0, &moveNextMethod)))
+            Logger::Error("DebuggerRejitPreprocessor::GetMoveNextMethodFromKickOffMethod: failed in call to DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine");
+            return  hr;
+        }
+
+        if (isImplementStateMAchineInterface)
+        {
+            // only one method called "MoveNext" exists in the state machine so no need to include the signature
+            const COR_SIGNATURE* moveNextSig{};
+            hr = metadataImport->FindMethod(nestedAsyncClassOrStruct, WStr("MoveNext"), moveNextSig,
+                                            0, &moveNextMethod);
+            if (FAILED(hr))
             {
-                Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: failed to find the MoveNext method");
+                Logger::Error("DebuggerRejitPreprocessor::GetMoveNextMethodFromKickOffMethod: failed to call metadataImport->FindMethod for MoveNext method");
+                return  hr;
             }
         }
 
@@ -350,42 +346,74 @@ std::tuple<mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::TransformKickOf
             break;
         }
     }
+    return S_OK;
+}
 
-    if (moveNextMethod == mdMethodDefNil)
-    {
-        return {methodDef, functionInfo};
-    }
-
+std::tuple<HRESULT, mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::TransformKickOffToMoveNext(
+                                                    const ComPtr<IMetaDataImport2>& metadataImport, const ComPtr<IMetaDataEmit2>& metadataEmit,
+                                                    mdMethodDef moveNextMethod, mdTypeDef nestedAsyncClassOrStruct)
+{
     // this is an async method and we found the generated nested state machine type,
-    // define a new field in the state machine object to indicate if we are in the first entry to MoveNext method
-    BYTE field_signature[] = {IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_BOOLEAN};
+    // define a new boolean field in the state machine object to indicate whether we have already entered the MoveNext method
+    // (if we have, it means we are re-entering the method as a continuation in a subsequent `await` operation, 
+    // and should not capture the method parameter values as we do the first time around).
+    constexpr BYTE fieldSignature[] = {IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_BOOLEAN};
     mdFieldDef isFirstEntry = mdFieldDefNil;
-    auto hr = metadataEmit->DefineField(nestedAsyncClassOrStruct, managed_profiler_debugger_is_first_entry_field_name.c_str(), fdPrivate, field_signature,
-                                        sizeof(field_signature), 0, nullptr, 0, &isFirstEntry);
+    auto hr = metadataEmit->DefineField(nestedAsyncClassOrStruct, managed_profiler_debugger_is_first_entry_field_name.c_str(), fdPrivate, fieldSignature,
+                                   sizeof(fieldSignature), 0, nullptr, 0, &isFirstEntry);
     if (FAILED(hr))
     {
-        Logger::Warn("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: DefineField _isFirstEntry failed");
-        return {methodDef, functionInfo};
+        Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: DefineField _isFirstEntry failed");
+        return {hr, mdMethodDefNil, FunctionInfo()};
     }
 
     // save the MoveNext method and create a function info for it
     auto caller = GetFunctionInfo(metadataImport, moveNextMethod);
     if (!caller.IsValid())
     {
-        Logger::Warn("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: The caller for the methoddef: ",
-                     shared::TokenStr(&methodDef), " is not valid!");
-        return {methodDef, functionInfo};
+        Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: The caller for the methoddef: ",
+                      shared::TokenStr(&moveNextMethod), " is not valid!");
+        return {E_FAIL, mdMethodDefNil, FunctionInfo()};
     }
 
     hr = caller.method_signature.TryParse();
     if (FAILED(hr))
     {
-        Logger::Warn("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: The method signature: ",
-                     caller.method_signature.str(), " cannot be parsed.");
-        return {methodDef, functionInfo};
+        Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: The method signature: ",
+                      caller.method_signature.str(), " cannot be parsed.");
+        return {hr, mdMethodDefNil, FunctionInfo()};
     }
 
-    return {moveNextMethod, FunctionInfo(caller)};
+    return {S_OK, moveNextMethod, FunctionInfo(caller)};
+}
+
+/**
+ * \brief In certain cases, the method that we have in our hand (methodDef, typeDef and functionInfo) is not what we need to instrument,
+ * e.g. in async method we have the kickoff method but we need to instrument the MoveNext method,
+ * In the future, this may be applicable to other cases (e.g. if the user is trying to instrument an abstract method,
+ * we should actually instrument the methods that override and implement it, etc etc).
+ */
+std::tuple<HRESULT, mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::PickMethodToRejit(const ComPtr<IMetaDataImport2>& metadataImport,
+                                                                                            const ComPtr<IMetaDataEmit2>& metadataEmit,
+                                                                                            mdTypeDef typeDef, mdMethodDef methodDef,
+                                                                                            const FunctionInfo& functionInfo) const
+{
+    mdMethodDef moveNextMethod;
+    mdTypeDef nestedAsyncClassOrStruct;
+    HRESULT hr = GetMoveNextMethodFromKickOffMethod(metadataImport, typeDef, methodDef, functionInfo, moveNextMethod, nestedAsyncClassOrStruct);
+    if (FAILED(hr))
+    {
+        Logger::Error("DebuggerRejitPreprocessor::TransformMethodToRejit: GetMoveNextMethodFromKickOffMethod method failed");
+        return {hr, mdMethodDefNil, FunctionInfo()};
+    }
+
+    if (moveNextMethod == mdMethodDefNil)
+    {
+        Logger::Info("DebuggerRejitPreprocessor::TransformMethodToRejit: MoveNextMethod didn't found. Assuming it's a non-async method");
+        return {S_OK, methodDef, functionInfo};
+    }
+
+    return TransformKickOffToMoveNext(metadataImport, metadataEmit, moveNextMethod, nestedAsyncClassOrStruct);
 }
 
 bool DebuggerRejitPreprocessor::ShouldSkipModule(const ModuleInfo& moduleInfo, const MethodProbeDefinition& methodProbe)

@@ -47,8 +47,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
                 return;
             }
 
-            // TODO: Add parent type (declaring type) to be able to identify two nested types with the same name -- see MetadataNameParser.Parse
-            // https://datadoghq.atlassian.net/browse/DEBUG-1029
+            // TODO: Add parent type (declaring type) to be able to identify two nested types with the same name (internal ticket id 1029) -- see also MetadataNameParser.Parse
             foreach (var tokensAndName in module.TokensAndNames)
             {
                 switch (tokensAndName.Key.Table)
@@ -100,10 +99,8 @@ namespace Datadog.InstrumentedAssemblyGenerator
 
                     case MetadataTable.Field:
                     {
-                        //TODO: should be SingleOrDefault but for now we don't have here the info about the parent type so we can find more than one type,
-                        // we choose the first one just to make it work.
-                        // https://datadoghq.atlassian.net/browse/DEBUG-1029
-                        //var typeToAddField = OriginalModule.GetTypes().SingleOrDefault(t =>
+                        // TODO: Add parent type (declaring type) to be able to identify two nested types with the same name (internal ticket id 1029) -- see also MetadataNameParser.Parse
+                        // For now we choose the first one just to make it work.
                         var typeToAddField = OriginalModule.GetTypes().FirstOrDefault(t =>
                                                         t.Name.String.Equals(tokensAndName.Value.Type, StringComparison.InvariantCultureIgnoreCase));
                         typeToAddField?.Fields.Add(

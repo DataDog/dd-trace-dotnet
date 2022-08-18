@@ -15,17 +15,20 @@ namespace Datadog.Trace.Debugger.Instrumentation
     internal readonly record struct MethodMetadataInfo
     {
         public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, Type type, MethodBase method)
-            : this(parameterNames, localVariableNames, null, type, method)
+            : this(parameterNames, localVariableNames, null, null, type, method, null, null)
         {
         }
 
-        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, AsyncHelper.FieldInfoNameSanitized[] asyncMethodHoistedLocals, Type type, MethodBase method)
+        public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, AsyncHelper.FieldInfoNameSanitized[] asyncMethodHoistedLocals, FieldInfo[] asyncMethodHoistedArguments, Type type, MethodBase method, Type kickoffType, MethodBase kickoffMethod)
         {
             ParameterNames = parameterNames;
             LocalVariableNames = localVariableNames;
             AsyncMethodHoistedLocals = asyncMethodHoistedLocals;
+            AsyncMethodHoistedArguments = asyncMethodHoistedArguments;
             DeclaringType = type;
             Method = method;
+            KickoffInvocationTargetType = kickoffType;
+            KickoffMethod = kickoffMethod;
         }
 
         public string[] ParameterNames { get; }
@@ -37,10 +40,15 @@ namespace Datadog.Trace.Debugger.Instrumentation
         public string[] LocalVariableNames { get; }
 
         /// <summary>
-        /// Gets the names and the values of the async method's local variable from the hoist object - i.e. the state machine.
-        /// May contains fields that they not locals in the kick off method, ATM we skip only the `builder`, `state` and `this` fields
+        /// Gets the locals of the async method's from the heap-allocated object that holds them - i.e. the state machine.
+        /// May contains fields that are not locals in the async kick-off method, ATM we skip all fields that starts with <see cref="AsyncHelper.StateMachineFieldsNamePrefix"/>>
         /// </summary>
         public AsyncHelper.FieldInfoNameSanitized[] AsyncMethodHoistedLocals { get; }
+
+        /// <summary>
+        /// Gets the arguments of the async method's from the heap-allocated object that holds them - i.e. the state machine.
+        /// </summary>
+        public FieldInfo[] AsyncMethodHoistedArguments { get; }
 
         /// <summary>
         /// Gets the declaring type of the instrumented method
@@ -51,5 +59,15 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// Gets the method base of the instrumented method
         /// </summary>
         public MethodBase Method { get;  }
+
+        /// <summary>
+        /// Gets the type that represents the "this" object of the async kick-off method (i.e. original method)
+        /// </summary>
+        public Type KickoffInvocationTargetType { get; }
+
+        /// <summary>
+        /// Gets the type that represents the kickoff method of the state machine MoveNext (i.e. original method)
+        /// </summary>
+        public MethodBase KickoffMethod { get; }
     }
 }

@@ -12,14 +12,19 @@
               "input": {
                 "fields": null,
                 "type": "String",
-                "value": "AsyncInstanceMethod.RunAsync"
+                "value": ".RunAsync"
+              },
+              "obj": {
+                "fields": null,
+                "type": "String",
+                "value": "AsyncWithGenericMethod"
               }
             },
             "fields": {
               "ClassName": {
                 "fields": null,
                 "type": "String",
-                "value": "AsyncInstanceMethod"
+                "value": "AsyncWithGenericMethod"
               }
             }
           },
@@ -28,26 +33,31 @@
               "input": {
                 "fields": null,
                 "type": "String",
-                "value": "AsyncInstanceMethod.RunAsync"
+                "value": ".RunAsync"
+              },
+              "obj": {
+                "fields": null,
+                "type": "String",
+                "value": "AsyncWithGenericMethod"
               }
             },
             "fields": {
               "ClassName": {
                 "fields": null,
                 "type": "String",
-                "value": "AsyncInstanceMethod"
+                "value": "AsyncWithGenericMethod"
               }
             },
             "locals": {
               "@return": {
                 "fields": null,
                 "type": "String",
-                "value": "AsyncInstanceMethod.RunAsync.Method"
+                "value": "AsyncWithGenericMethod.RunAsync.Method"
               },
               "output": {
                 "fields": null,
                 "type": "String",
-                "value": "AsyncInstanceMethod.RunAsync."
+                "value": "AsyncWithGenericMethod.RunAsync."
               }
             }
           }
@@ -59,7 +69,7 @@
           "id": "ScrubbedValue",
           "location": {
             "method": "Method",
-            "type": "Samples.Probes.SmokeTests.AsyncInstanceMethod"
+            "type": "Samples.Probes.SmokeTests.AsyncGenericMethod"
           }
         },
         "stack": [],
@@ -68,12 +78,12 @@
     },
     "logger": {
       "method": "Method",
-      "name": "Samples.Probes.SmokeTests.AsyncInstanceMethod",
+      "name": "Samples.Probes.SmokeTests.AsyncGenericMethod",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncInstanceMethod+<Method>d__2.MoveNext(input=AsyncInstanceMethod.RunAsync): AsyncInstanceMethod.RunAsync.Method\r\n@return=AsyncInstanceMethod.RunAsync.Method, output=AsyncInstanceMethod.RunAsync.",
+    "message": "AsyncGenericMethod+<Method>d__2`1.MoveNext(input=.RunAsync, obj=AsyncWithGenericMethod): AsyncWithGenericMethod.RunAsync.Method\r\n@return=AsyncWithGenericMethod.RunAsync.Method, output=AsyncWithGenericMethod.RunAsync.",
     "service": "Unknown"
   }
 ]

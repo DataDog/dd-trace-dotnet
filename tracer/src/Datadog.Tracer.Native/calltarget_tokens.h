@@ -35,6 +35,7 @@ private:
     mdMemberRef callTargetReturnVoidTypeGetDefault = mdMemberRefNil;
     mdMemberRef getDefaultMemberRef = mdMemberRefNil;
 
+    HRESULT EnsureCorLibTokens();
     mdTypeRef GetTargetStateTypeRef();
     mdTypeRef GetTargetVoidReturnTypeRef();
     mdMemberRef GetCallTargetStateDefaultMemberRef();
@@ -81,8 +82,6 @@ public:
     mdTypeRef GetRuntimeMethodHandleTypeRef();
     mdAssemblyRef GetCorLibAssemblyRef();
     mdToken GetCurrentTypeRef(const TypeInfo* currentType, bool& isValueType);
-
-    HRESULT EnsureCorLibTokens();
 
     HRESULT ModifyLocalSigAndInitialize(void* rewriterWrapperPtr, TypeSignature* methodReturnType,
                                         ULONG* callTargetStateIndex, ULONG* exceptionIndex,

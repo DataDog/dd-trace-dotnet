@@ -34,9 +34,6 @@ const WSTRING skip_assemblies[]{WStr("mscorlib"),
                                 WStr("Datadog.AutoInstrumentation.ManagedLoader"),
                                 WStr("ISymWrapper"),
                                 WStr("Datadog.Trace")};
-
-const shared::WSTRING debugger_iasync_state_machine_name = WStr("System.Runtime.CompilerServices.IAsyncStateMachine");
-
 }
 
 #endif // DEBUGGER_CONSTANTS_H

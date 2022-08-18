@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.SmokeTests
 {
-    internal class AsyncVoid: IAsyncRun
+    internal class AsyncVoid : IAsyncRun
     {
         public async Task RunAsync()
         {
@@ -25,9 +25,9 @@ namespace Samples.Probes.SmokeTests
         {
             try
             {
-                await Task.CompletedTask;
+                await Task.Delay(20);
                 var methodName = nameof(VoidTaskMethod);
-                await Task.Run(() => {VoidMethod(methodName);});
+                await Task.Run(() => { VoidMethod(methodName); });
             }
             catch (AccessViolationException e)
             {
@@ -40,7 +40,7 @@ namespace Samples.Probes.SmokeTests
         [MethodProbeTestData]
         private async void VoidMethod(string caller)
         {
-            await Task.CompletedTask;
+            await Task.Delay(20);
             Console.WriteLine($"{nameof(VoidMethod)} is called from {caller}");
         }
     }

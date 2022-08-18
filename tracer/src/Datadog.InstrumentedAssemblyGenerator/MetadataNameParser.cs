@@ -19,8 +19,7 @@ internal class MetadataNameParser
 {
     internal static MetadataMember Parse(Token token, string name)
     {
-        // TODO: Add parent type (declaring type) to be able to identify two nested types with the same name -- see ProfilerMetadataImporter.ImportInstrumentedAssemblyMetadata
-        // https://datadoghq.atlassian.net/browse/DEBUG-1029
+        // TODO: Add parent type (declaring type) to be able to identify two nested types with the same name (internal ticket id 1029) -- see also ProfilerMetadataImporter.ImportInstrumentedAssemblyMetadata
         switch (token.Table)
         {
             case MetadataTable.MethodSpec:

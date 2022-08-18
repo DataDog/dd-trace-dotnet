@@ -14,7 +14,7 @@ using Xunit;
 
 namespace Datadog.Trace.TestHelpers;
 
-public static class InstrumentationVerification
+internal static class InstrumentationVerification
 {
     /// <summary>
     /// Configuration key for enabling or disabling the instrumentation verification.

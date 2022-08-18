@@ -69,7 +69,7 @@ HRESULT DebuggerTokens::WriteLogArgOrLocal(void* rewriterWrapperPtr, const TypeS
 
         // DebuggerState
         signature[offset++] = ELEMENT_TYPE_BYREF;
-        signature[offset++] = probeType == AsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
+        signature[offset++] = probeType == MethodProbeInAsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
 
@@ -343,16 +343,16 @@ HRESULT DebuggerTokens::CreateBeginMethodStartMarkerRefSignature(ProbeType probe
     unsigned runtimeTypeHandleBuffer;
     auto runtimeTypeHandleSize = CorSigCompressToken(runtimeTypeHandleRef, &runtimeTypeHandleBuffer);
 
-    unsigned long signatureLength = (probeType == AsyncMethod ? 12 : 10) + callTargetStateSize + runtimeMethodHandleSize + runtimeTypeHandleSize;
+    unsigned long signatureLength = (probeType == MethodProbeInAsyncMethod ? 12 : 10) + callTargetStateSize + runtimeMethodHandleSize + runtimeTypeHandleSize;
 
     COR_SIGNATURE signature[signatureBufferSize];
     unsigned offset = 0;
 
     signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
     signature[offset++] = 0x01; // generic arguments count
-    signature[offset++] = probeType == AsyncMethod ? 0x06 : 0x05; // arguments count
+    signature[offset++] = probeType == MethodProbeInAsyncMethod ? 0x06 : 0x05; // arguments count
 
-    signature[offset++] = probeType == AsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
+    signature[offset++] = probeType == MethodProbeInAsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
     memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
     offset += callTargetStateSize;
 
@@ -374,7 +374,7 @@ HRESULT DebuggerTokens::CreateBeginMethodStartMarkerRefSignature(ProbeType probe
     signature[offset++] = ELEMENT_TYPE_I4; // methodMetadataIndex
 
     WSTRING methodName;
-    if (probeType == AsyncMethod)
+    if (probeType == MethodProbeInAsyncMethod)
     {
         methodName = managed_profiler_debugger_begin_async_method_name;
         signature[offset++] = ELEMENT_TYPE_BYREF;
@@ -589,7 +589,7 @@ HRESULT DebuggerTokens::CreateEndMethodStartMarkerRefSignature(ProbeType probeTy
 
     signature[offset++] = ELEMENT_TYPE_BYREF;
 
-    signature[offset++] = probeType == AsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
+    signature[offset++] = probeType == MethodProbeInAsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
     memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
     offset += callTargetStateSize;
 
@@ -636,7 +636,7 @@ HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeIn
 
         // DebuggerState
         signature[offset++] = ELEMENT_TYPE_BYREF;
-        signature[offset++] = probeType == AsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
+        signature[offset++] = probeType == MethodProbeInAsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
 
@@ -731,7 +731,7 @@ HRESULT DebuggerTokens::WriteBeginOrEndMethod_EndMarker(void* rewriterWrapperPtr
 
         // DebuggerState
         signature[offset++] = ELEMENT_TYPE_BYREF;
-        signature[offset++] = probeType == AsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
+        signature[offset++] = probeType == MethodProbeInAsyncMethod ? ELEMENT_TYPE_CLASS : ELEMENT_TYPE_VALUETYPE;
         memcpy(&signature[offset], &callTargetStateBuffer, callTargetStateSize);
         offset += callTargetStateSize;
 

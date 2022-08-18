@@ -23,7 +23,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueNewMethod(const RejitRequ
     const mdTypeDef typeDef, 
     std::vector<MethodIdentifier>& rejitRequests, 
     unsigned methodDef,
-    FunctionInfo functionInfo, 
+    const FunctionInfo& functionInfo, 
     RejitHandlerModule* moduleHandler)
 {
     RejitHandlerModuleMethodCreatorFunc creator = [=, request = definition, functionInfo = functionInfo](
@@ -173,11 +173,6 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
 
         EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, methodDef,
                          functionInfo, moduleHandler);
-
-        Logger::Debug("    * Enqueue for ReJIT [ModuleId=", moduleInfo.id, ", MethodDef=", shared::TokenStr(&methodDef),
-                      ", AppDomainId=", moduleHandler->GetModuleMetadata()->app_domain_id,
-                      ", Assembly=", moduleHandler->GetModuleMetadata()->assemblyName, ", Type=", caller.type.name,
-                      ", Method=", caller.name, "(", numOfArgs, " params), Signature=", caller.signature.str(), "]");
     }
 }
 

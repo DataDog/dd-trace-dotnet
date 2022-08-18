@@ -12,14 +12,14 @@
               "input": {
                 "fields": null,
                 "type": "String",
-                "value": "AsyncInstanceMethod.RunAsync"
+                "value": "AsyncStaticMethod.RunAsync"
               }
             },
             "fields": {
               "ClassName": {
                 "fields": null,
                 "type": "String",
-                "value": "AsyncInstanceMethod"
+                "value": "AsyncStaticMethod"
               }
             }
           },
@@ -28,26 +28,26 @@
               "input": {
                 "fields": null,
                 "type": "String",
-                "value": "AsyncInstanceMethod.RunAsync"
+                "value": "AsyncStaticMethod.RunAsync"
               }
             },
             "fields": {
               "ClassName": {
                 "fields": null,
                 "type": "String",
-                "value": "AsyncInstanceMethod"
+                "value": "AsyncStaticMethod"
               }
             },
             "locals": {
               "@return": {
                 "fields": null,
                 "type": "String",
-                "value": "AsyncInstanceMethod.RunAsync.Method"
+                "value": "AsyncStaticMethod.RunAsync.Method"
               },
               "output": {
                 "fields": null,
                 "type": "String",
-                "value": "AsyncInstanceMethod.RunAsync."
+                "value": "AsyncStaticMethod.RunAsync."
               }
             }
           }
@@ -59,7 +59,7 @@
           "id": "ScrubbedValue",
           "location": {
             "method": "Method",
-            "type": "Samples.Probes.SmokeTests.AsyncInstanceMethod"
+            "type": "Samples.Probes.SmokeTests.AsyncStaticMethod"
           }
         },
         "stack": [],
@@ -68,12 +68,12 @@
     },
     "logger": {
       "method": "Method",
-      "name": "Samples.Probes.SmokeTests.AsyncInstanceMethod",
+      "name": "Samples.Probes.SmokeTests.AsyncStaticMethod",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncInstanceMethod+<Method>d__2.MoveNext(input=AsyncInstanceMethod.RunAsync): AsyncInstanceMethod.RunAsync.Method\r\n@return=AsyncInstanceMethod.RunAsync.Method, output=AsyncInstanceMethod.RunAsync.",
+    "message": "AsyncStaticMethod+<Method>d__2.MoveNext(input=AsyncStaticMethod.RunAsync): AsyncStaticMethod.RunAsync.Method\r\n@return=AsyncStaticMethod.RunAsync.Method, output=AsyncStaticMethod.RunAsync.",
     "service": "Unknown"
   }
 ]

@@ -27,8 +27,8 @@
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": "MoveNext",
-            "type": "Samples.Probes.SmokeTests.AsyncMethodInsideTaskRun+<RunInsideTask>d__1"
+            "method": "RunInsideTask",
+            "type": "Samples.Probes.SmokeTests.AsyncMethodInsideTaskRun"
           }
         },
         "stack": [],
@@ -36,8 +36,8 @@
       }
     },
     "logger": {
-      "method": "MoveNext",
-      "name": "Samples.Probes.SmokeTests.AsyncMethodInsideTaskRun+<RunInsideTask>d__1",
+      "method": "RunInsideTask",
+      "name": "Samples.Probes.SmokeTests.AsyncMethodInsideTaskRun",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -97,26 +97,17 @@
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": "MoveNext",
-            "type": "Samples.Probes.SmokeTests.AsyncMethodInsideTaskRun+<Method>d__2"
+            "method": "Method",
+            "type": "Samples.Probes.SmokeTests.AsyncMethodInsideTaskRun"
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncMethodInsideTaskRun.Method",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncMethodInsideTaskRun.<RunInsideTask>b__1_0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": [],
         "timestamp": "ScrubbedValue"
       }
     },
     "logger": {
-      "method": "MoveNext",
-      "name": "Samples.Probes.SmokeTests.AsyncMethodInsideTaskRun+<Method>d__2",
+      "method": "Method",
+      "name": "Samples.Probes.SmokeTests.AsyncMethodInsideTaskRun",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"

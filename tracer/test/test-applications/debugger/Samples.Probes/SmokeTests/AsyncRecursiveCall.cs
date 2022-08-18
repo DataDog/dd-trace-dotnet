@@ -12,14 +12,15 @@ namespace Samples.Probes.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        [MethodProbeTestData(expectedNumberOfSnapshots:2)]
+        [MethodProbeTestData(expectedNumberOfSnapshots:3)]
         public async Task<int> Recursive(int i)
         {
-            if (i == 1)
+            if (i == 2)
             {
                 return i + 1;
             }
 
+            await Task.Delay(20);
             return await Recursive(++i);
         }
     }

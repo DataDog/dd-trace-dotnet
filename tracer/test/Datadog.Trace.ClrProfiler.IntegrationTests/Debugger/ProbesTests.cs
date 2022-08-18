@@ -418,7 +418,7 @@ public class ProbesTests : TestHelper, IDisposable
     {
         SetEnvironmentVariable(ConfigurationKeys.ServiceName, EnvironmentHelper.SampleName);
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
-
+        /* SetEnvironmentVariable("DD_DUMP_ILREWRITE_ENABLED", "1");
         SetEnvironmentVariable(InstrumentationVerification.InstrumentationVerificationEnabled, "1");
         SetEnvironmentVariable(InstrumentationVerification.UseNativeLoader, "1");
         SetEnvironmentVariable(Configuration.ConfigurationKeys.LogDirectory, EnvironmentHelper.LogDirectory); */

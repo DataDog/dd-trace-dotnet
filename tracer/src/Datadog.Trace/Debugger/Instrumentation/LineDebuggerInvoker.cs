@@ -63,8 +63,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            var localNamesFromPdb = state.MethodMetadataInfo.LocalVariableNames;
-            if (!MethodDebuggerInvoker.TryGetLocalName(index, localNamesFromPdb, out var localName))
+            var localVariableNames = state.MethodMetadataInfo.LocalVariableNames;
+            if (!MethodDebuggerInvoker.TryGetLocalName(index, localVariableNames, out var localName))
             {
                 return;
             }

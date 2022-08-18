@@ -50,7 +50,7 @@ protected:
     virtual void EnqueueNewMethod(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
                           ComPtr<IMetaDataEmit2>& metadataEmit, const ModuleInfo& moduleInfo, mdTypeDef typeDef,
                           std::vector<MethodIdentifier>& rejitRequests, unsigned methodDef,
-                          FunctionInfo functionInfo, RejitHandlerModule* moduleHandler);
+                          const FunctionInfo& functionInfo, RejitHandlerModule* moduleHandler);
 
 public:
     RejitPreprocessor(std::shared_ptr<RejitHandler> rejit_handler, std::shared_ptr<RejitWorkOffloader> work_offloader);

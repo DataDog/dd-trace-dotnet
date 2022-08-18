@@ -58,35 +58,17 @@
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": "MoveNext",
-            "type": "Samples.Probes.SmokeTests.AsyncCallChain+<Async1>d__2"
+            "method": "Async1",
+            "type": "Samples.Probes.SmokeTests.AsyncCallChain"
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncCallChain.Async1",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncCallChain.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": [],
         "timestamp": "ScrubbedValue"
       }
     },
     "logger": {
-      "method": "MoveNext",
-      "name": "Samples.Probes.SmokeTests.AsyncCallChain+<Async1>d__2",
+      "method": "Async1",
+      "name": "Samples.Probes.SmokeTests.AsyncCallChain",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -148,39 +130,17 @@
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": "MoveNext",
-            "type": "Samples.Probes.SmokeTests.AsyncCallChain+<Async2>d__3"
+            "method": "Async2",
+            "type": "Samples.Probes.SmokeTests.AsyncCallChain"
           }
         },
-        "stack": [
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncCallChain.Async2",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncCallChain.Async1",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Samples.Probes.SmokeTests.AsyncCallChain.RunAsync",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "function": "Program.RunTest",
-            "lineNumber": "ScrubbedValue"
-          },
-          {
-            "fileName": "Program.cs",
-            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
-            "lineNumber": "ScrubbedValue"
-          }
-        ],
+        "stack": [],
         "timestamp": "ScrubbedValue"
       }
     },
     "logger": {
-      "method": "MoveNext",
-      "name": "Samples.Probes.SmokeTests.AsyncCallChain+<Async2>d__3",
+      "method": "Async2",
+      "name": "Samples.Probes.SmokeTests.AsyncCallChain",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Debugger.Snapshots;
@@ -14,6 +15,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
     /// Live debugger async execution state
     /// It must be a class type because we have a cycle reference to parent state
     /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class AsyncMethodDebuggerState
     {
         /// <summary>
@@ -68,7 +71,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         internal DateTimeOffset? StartTime { get; set; }
 
         /// <summary>
-        /// Gets or sets the Id of the probe
+        /// Gets or sets the method probe ID
         /// </summary>
         internal string ProbeId { get; set; }
 
@@ -83,16 +86,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// We can save it in some cases as TTarget but because we use it in serialization as boxed object anyway, we save it as object here
         /// </summary>
         public object MoveNextInvocationTarget { get; set; }
-
-        /// <summary>
-        /// Gets or sets the type that represents the "this" object of the async kick-off method (i.e. original method)
-        /// </summary>
-        public Type KickoffInvocationTargetType { get; set; }
-
-        /// <summary>
-        /// Gets or sets the type that represents the kickoff method of the state machine MoveNext (i.e. original method)
-        /// </summary>
-        public MethodBase KickoffMethod { get; set; }
 
         /// <summary>
         /// Gets or sets the MethodMetadataIndex

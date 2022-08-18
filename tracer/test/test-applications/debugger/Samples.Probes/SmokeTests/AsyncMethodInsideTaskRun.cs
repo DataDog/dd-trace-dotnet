@@ -28,8 +28,8 @@ namespace Samples.Probes.SmokeTests
         [MethodProbeTestData]
         public async Task<string> Method(string seed)
         {
-            await Task.CompletedTask;
             string result = seed + " ";
+            await Task.Delay(20);
             for (int i = 0; i < 5; i++)
             {
                 result += i;

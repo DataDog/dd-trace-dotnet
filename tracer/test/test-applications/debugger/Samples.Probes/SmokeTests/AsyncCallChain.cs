@@ -27,7 +27,7 @@ namespace Samples.Probes.SmokeTests
         [MethodProbeTestData]
         public async Task<int> Async2(int chain)
         {
-            await Task.CompletedTask;
+            await Task.Delay(20);
             chain++;
             return chain;
         }

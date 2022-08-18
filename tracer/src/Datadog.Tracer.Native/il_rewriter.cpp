@@ -756,6 +756,19 @@ bool ILRewriter::IsLoadLocalDirectInstruction(unsigned opcode)
     }
 }
 
+bool ILRewriter::GetLocalIndexFromOpcode(const ILInstr* pInstr)
+{
+    // get the index of the local that represent by the opcode or the operand of the instruction
+    const auto localIndex =
+        pInstr->m_pPrev->m_opcode == CEE_LDLOC
+    ? pInstr->m_pPrev->m_Arg16
+    : pInstr->m_pPrev->m_opcode == CEE_LDLOC_S
+    ? pInstr->m_pPrev->m_Arg8
+    : pInstr->m_pPrev->m_opcode - 6 /*6 because all the shortcuts to ldloc is the local index + 6*/;
+
+    return localIndex;
+}
+
 bool ILRewriter::IsLoadConstantInstruction(unsigned opcode)
 {
     switch (opcode)
