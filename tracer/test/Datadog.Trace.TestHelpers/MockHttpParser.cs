@@ -166,9 +166,11 @@ namespace Datadog.Trace.TestHelpers
                 var headers = new HttpHeaders(request.Headers.Count);
 
                 foreach (var key in request.Headers.AllKeys)
-                foreach (var value in request.Headers.GetValues(key))
                 {
-                    headers.Add(key, value);
+                    foreach (var value in request.Headers.GetValues(key))
+                    {
+                        headers.Add(key, value);
+                    }
                 }
 
                 return new MockHttpRequest
