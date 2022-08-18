@@ -41,6 +41,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.KafkaTombstone)]
         public string Tombstone { get; set; }
 
+        [Tag(Trace.Tags.KafkaConsumerGroup)]
+        public string ConsumerGroup { get; set; }
+
         [Metric(Trace.Metrics.MessageQueueTimeMs)]
         public double? MessageQueueTimeMs { get; set; }
     }
