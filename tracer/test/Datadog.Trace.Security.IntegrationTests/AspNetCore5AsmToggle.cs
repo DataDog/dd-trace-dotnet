@@ -32,7 +32,15 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestSecurityToggling(bool enableSecurity)
         {
+            var rcmFile = Path.Combine(EnvironmentHelper.GetSampleProjectDirectory(), "rcm_config.json");
+            if (File.Exists(rcmFile))
+            {
+                File.Delete(rcmFile);
+            }
+
             SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "500");
+            SetEnvironmentVariable(ConfigurationKeys.Rcm.FilePath, rcmFile);
+
             var url = "/Health/?[$slice]=value";
             var agent = await RunOnSelfHosted(enableSecurity);
             var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity);
