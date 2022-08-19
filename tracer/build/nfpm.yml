@@ -1,9 +1,9 @@
 # base nfpm config file
 # This file is used as a base for nfpm packaging
-name: "foo"
-arch: "amd64"
+name: "$DD_PACKAGE_NAME"
+arch: "$DD_GO_ARCH"
 platform: "linux"
-version: ${Version}
+version: "$DD_VERSION"
 section: "default"
 maintainer: "Datadog"
 description: |

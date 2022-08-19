@@ -588,14 +588,19 @@ partial class Build
             var assetsDirectory = TemporaryDirectory / arch;
             EnsureCleanDirectory(assetsDirectory);
             CopyDirectoryRecursively(MonitoringHomeDirectory, assetsDirectory, DirectoryExistsPolicy.Merge);
+            const string packagePrefix = "datadog-dotnet-apm";
 
             // create the arch-specific nfpm.yml config file from the base version
             var nfpmContents = File.ReadAllText(BuildDirectory / "nfpm.yml");
             var nfpmConfigPath = TemporaryDirectory / $"nfpm-{arch}.yml";
             Logger.Info("Created nfpm config file at " + nfpmConfigPath);
+            var goArch = IsArm64 ? "arm64" : "amd64";
             File.WriteAllText(
                 path: nfpmConfigPath,
-                contents: nfpmContents.Replace("$DD_ARCHITECTURE", arch));
+                contents: nfpmContents
+                   .Replace("$DD_VERSION", Version)
+                   .Replace("$DD_PACKAGE_NAME", packagePrefix)
+                   .Replace("$DD_GO_ARCH", goArch));
             
             // For back-compat reasons, we must always have the Datadog.ClrProfiler.Native.so file in the root folder
             // as it's set in the COR_PROFILER_PATH etc env var
@@ -642,7 +647,7 @@ partial class Build
             // We always tar
             var packageName = (RuntimeInformation.ProcessArchitecture, IsAlpine) switch
             {
-                (Architecture.X64, false) => $"datadog-dotnet-apm-{Version}.tar.gz",
+                (Architecture.X64, false) => $"{packagePrefix}-{Version}.tar.gz",
                 (Architecture.X64, true) => $"datadog-dotnet-apm-{Version}-musl.tar.gz",
                 (var a, false) => $"datadog-dotnet-apm-{Version}.{a.ToString().ToLower()}.tar.gz",
                 (var a, true) => $"datadog-dotnet-apm-{Version}-musl.{a.ToString().ToLower()}.tar.gz",
