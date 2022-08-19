@@ -1794,7 +1794,7 @@ partial class Build
 
         if (!IsWin)
         {
-            Chmod.Value.Invoke($"+x {zipFile}");
+            Chmod.Value.Invoke($"+x {NfpmToolPath}");
         }
     }
     private void MakeGrpcToolsExecutable()
