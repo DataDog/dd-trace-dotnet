@@ -46,9 +46,7 @@ RUN yum update -y \
         sudo \
         gawk
 
-# Install newer version of fpm and specific versions of:
-# - dotenv
-# - git: Stay on 1.11.0 because 1.12.0 (released on August 18, 2022) adds a new dependency on addressable, which adds a new dependency on public_suffix, which adds a new requirement of Ruby version >= 2.3
+# Install newer version of fpm and specific version of dotenv 
 RUN echo "gem: --no-document --no-rdoc --no-ri" > ~/.gemrc && \
     gem install --version 1.12.2 --user-install ffi && \
     gem install --version 1.6.0 --user-install git && \
@@ -56,7 +54,6 @@ RUN echo "gem: --no-document --no-rdoc --no-ri" > ~/.gemrc && \
     gem install --version 3.2.3  --user-install rexml && \
     gem install backports -v 3.21.0 && \
     gem install --version 2.7.6 dotenv && \
-    gem install --version 1.11.0 git && \
     gem install fpm
 
 
