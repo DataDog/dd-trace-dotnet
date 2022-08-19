@@ -9,33 +9,5 @@ maintainer: "Datadog"
 description: |
   Datadog AutoInstrumentation Library
 contents:
-- src: ./createLogPath.sh
-  dst: /opt/datadog/createLogPath.sh
-- src: ./netstandard2.0/
-  dst: /opt/datadog/netstandard2.0/
-- src: ./netcoreapp3.1/
-  dst: /opt/datadog/netcoreapp3.1/
-- src: ./net6.0/
-  dst: /opt/datadog/net6.0/
-- src: ./$DD_ARCHITECTURE/
-  dst: /opt/datadog/$DD_ARCHITECTURE/
-# Copy the loader.conf to the root folder, this is required for when the "root" native loader is used,
-# // It needs to include the architecture in the paths to the native dlls
-- src: ./loader.conf
-  dst: /opt/datadog/loader.conf
-# For back-compat reasons, we must always have the Datadog.ClrProfiler.Native.so file in the root folder
-# as it's set in the COR_PROFILER_PATH etc env var
-# so create a symlink to avoid bloating package sizes
-- src: ./$DD_ARCHITECTURE/Datadog.Trace.ClrProfiler.Native.so
-  dst: /opt/datadog/Datadog.Trace.ClrProfiler.Native.so
-  type: symlink
-# For back-compat reasons, we have to keep the libddwaf.so file in the root folder
-# because the way AppSec probes the paths won't find the linux-musl-x64 target currently
-- src: ./$DD_ARCHITECTURE/libddwaf.so
-  dst: /opt/datadog/libddwaf.so
-  type: symlink
-# we must always have the Datadog.Linux.ApiWrapper.x64.so file in the continuousprofiler subfolder
-# as it's set in the LD_PRELOAD env var
-- src: ./$DD_ARCHITECTURE/Datadog.Linux.ApiWrapper.x64.so
-  dst: /opt/datadog/continuousprofiler/Datadog.Linux.ApiWrapper.x64.so
-  type: symlink
+- src: ./
+  dst: /opt/datadog/
