@@ -1756,19 +1756,20 @@ partial class Build
 
         // download the 2.17.0 release of nfpm for the current platform 
         using var httpClient = new HttpClient();
-        var filename = (IsWin, IsOsx, IsLinux, IsArm64) switch
+        var (extension, filename) = (IsWin, IsOsx, IsLinux, IsArm64) switch
         {
-            (true, _, _, false) => "nfpm_2.17.0_Windows_x86_64.zip",
-            (true, _, _, true) => "nfpm_2.17.0_Windows_arm64.zip",
-            (_, true, _, false) => "nfpm_2.17.0_Darwin_x86_64.tar.gz",
-            (_, true, _, true) => "nfpm_2.17.0_Darwin_arm64.tar.gz",
-            (_, _, true, false) => "nfpm_2.17.0_Linux_x86_64.tar.gz",
-            (_, _, true, true) => "nfpm_2.17.0_Linux_arm64.tar.gz",
+            (true, _, _, false) => ("zip", "nfpm_2.17.0_Windows_x86_64.zip"),
+            (true, _, _, true) => ("zip", "nfpm_2.17.0_Windows_arm64.zip"),
+            (_, true, _, false) => ("tar.gz", "nfpm_2.17.0_Darwin_x86_64.tar.gz"),
+            (_, true, _, true) => ("tar.gz", "nfpm_2.17.0_Darwin_arm64.tar.gz"),
+            (_, _, true, false) => ("tar.gz", "nfpm_2.17.0_Linux_x86_64.tar.gz"),
+            (_, _, true, true) => ("tar.gz", "nfpm_2.17.0_Linux_arm64.tar.gz"),
             _ => throw new InvalidOperationException("Unsupported platform"),
         };
 
         var url = "https://github.com/goreleaser/nfpm/releases/download/v2.17.0/" + filename;
 
+        Logger.Info($"Downloading {url}...");
         var response = await httpClient.GetAsync(url);
                 
         if (!response.IsSuccessStatusCode)
@@ -1776,7 +1777,6 @@ partial class Build
             throw new Exception($"Error downloading nfpm from {url}: {response.StatusCode}:{response.ReasonPhrase}");
         }
 
-        var extension = Path.GetExtension(filename);
         var zipPath = TemporaryDirectory / "download";
         var nfpmToolDirectory = Path.GetDirectoryName(NfpmToolPath);
         EnsureExistingDirectory(zipPath);
