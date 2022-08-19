@@ -1781,13 +1781,14 @@ partial class Build
         var nfpmToolDirectory = Path.GetDirectoryName(NfpmToolPath);
         EnsureExistingDirectory(zipPath);
         EnsureExistingDirectory(nfpmToolDirectory);
-                
-        await using (Stream file = File.Create(zipPath / $"nfpm{extension}"))
+
+        var zipFile = zipPath / $"nfpm.{extension}";
+        await using (Stream file = File.Create(zipFile))
         {
             await response.Content.CopyToAsync(file);
         }
                 
-        Uncompress(zipPath / $"nfpm{extension}", nfpmToolDirectory);
+        Uncompress(zipFile, nfpmToolDirectory);
     }
     private void MakeGrpcToolsExecutable()
     {
