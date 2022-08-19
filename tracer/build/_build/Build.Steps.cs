@@ -645,9 +645,9 @@ Description: .NET Tracer for Datadog APM";
 
                 File.WriteAllText(path: controlDir / "control", controlFileContents);
 
-                DpkgDeb.Value($"--build --root-owner-group {binaryDirectory} {outputDir}");
+                // should use --root-owner-group but apparently the version in centos doesn't have it
+                DpkgDeb.Value($"--build {binaryDirectory} {outputDir}");
             }
-            
 
             void CopyAssets(AbsolutePath assetsDirectory)
             {
