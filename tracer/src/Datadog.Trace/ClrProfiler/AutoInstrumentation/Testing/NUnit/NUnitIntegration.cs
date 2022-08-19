@@ -20,6 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
     {
         internal const string IntegrationName = nameof(Configuration.IntegrationId.NUnit);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.NUnit;
+        internal const string SkipReasonKey = "_SKIPREASON";
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NUnitIntegration));
 
         internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
@@ -93,10 +94,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             if (testMethodProperties != null)
             {
                 Dictionary<string, List<string>> traits = new Dictionary<string, List<string>>();
-                skipReason = (string)testMethodProperties.Get("_SKIPREASON");
+                skipReason = (string)testMethodProperties.Get(SkipReasonKey);
                 foreach (var key in testMethodProperties.Keys)
                 {
-                    if (key == "_SKIPREASON" || key == "_JOINTYPE")
+                    if (key == SkipReasonKey || key == "_JOINTYPE")
                     {
                         continue;
                     }
@@ -207,6 +208,58 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                     Common.StopCoverage(span);
                 }
             }
+        }
+
+        internal static bool ShouldSkip(ITest currentTest)
+        {
+            MethodInfo testMethod = currentTest.Method.MethodInfo;
+            string testName = testMethod.Name;
+            string testSuite = testMethod.DeclaringType?.FullName;
+
+            var skippeableTests = CIVisibility.GetSkippeableTestsFromSuiteAndName(testSuite, testName);
+            if (skippeableTests.Count > 0)
+            {
+                object[] testMethodArguments = currentTest.Arguments;
+                foreach (var skippeableTest in skippeableTests)
+                {
+                    var parameters = skippeableTest.GetParameters();
+
+                    // Same test name and no parameters
+                    if ((parameters?.Arguments is null || parameters?.Arguments.Count == 0) &&
+                        (testMethodArguments is null || testMethodArguments.Length == 0))
+                    {
+                        return true;
+                    }
+
+                    if (parameters?.Arguments is not null)
+                    {
+                        ParameterInfo[] methodParameters = testMethod.GetParameters();
+                        bool matchSignature = true;
+                        for (var i = 0; i < methodParameters.Length; i++)
+                        {
+                            var targetValue = "(default)";
+                            if (i < testMethodArguments.Length)
+                            {
+                                targetValue = Common.GetParametersValueData(testMethodArguments[i]);
+                            }
+
+                            if (!parameters.Arguments.TryGetValue(methodParameters[i].Name, out var argValue) ||
+                                (string)argValue != targetValue)
+                            {
+                                matchSignature = false;
+                                break;
+                            }
+                        }
+
+                        if (matchSignature)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+
+            return false;
         }
     }
 }

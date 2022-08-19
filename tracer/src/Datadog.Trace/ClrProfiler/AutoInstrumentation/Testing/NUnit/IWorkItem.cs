@@ -11,6 +11,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
     internal interface IWorkItem
     {
         /// <summary>
+        /// Gets the test being executed by the work item
+        /// </summary>
+        ITest Test { get; }
+
+        /// <summary>
         /// Gets the test result
         /// </summary>
         ITestResult Result { get; }
