@@ -357,12 +357,22 @@ stages:
       inputs:
         artifact: linux-tracer-home-$(baseImage)
         path: $(monitoringHome)
+        source: specific
+        project: dd-trace-dotnet
+        pipeline: 54
+        runVersion: specific
+        runId: 109419
 
     - task: DownloadPipelineArtifact@2
       displayName: Download profiler linux native binary
       inputs:
         artifact: linux-profiler-home-$(baseImage)
         path: $(monitoringHome)
+        source: specific
+        project: dd-trace-dotnet
+        pipeline: 54
+        runVersion: specific
+        runId: 109419
 
     - template: steps/run-in-docker.yml
       parameters:
