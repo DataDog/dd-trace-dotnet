@@ -173,6 +173,62 @@ namespace Datadog.Trace.Tests
         [Theory]
         [InlineData(true)]
         [InlineData(false)]
+        public void ChunksSentAfterRootSpanShouldContainAASMetadataAndSamplingPriority(bool inAASContext)
+        {
+            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.ThreadInstance.CreateNew()), DateTimeOffset.UtcNow);
+
+            var tracer = new Mock<IDatadogTracer>();
+
+            tracer.Setup(t => t.Settings).Returns(new Trace.Configuration.TracerSettings
+            {
+                Exporter = new Trace.Configuration.ExporterSettings()
+                {
+                    PartialFlushEnabled = false,
+                }
+            }.Build());
+
+            ArraySegment<Span>? spans = null;
+
+            tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
+                  .Callback<ArraySegment<Span>>(s => spans = s);
+
+            SetAASContext(inAASContext);
+            var traceContext = new TraceContext(tracer.Object);
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
+
+            var rootSpan = CreateSpan();
+            traceContext.AddSpan(rootSpan);
+
+            var span = CreateSpan();
+            traceContext.AddSpan(span);
+            traceContext.CloseSpan(span);
+
+            traceContext.CloseSpan(rootSpan);
+
+            spans.Value.Should().NotBeNullOrEmpty("a full flush should have been triggered");
+            rootSpan.GetMetric(Metrics.SamplingPriority).Should().Be(SamplingPriorityValues.UserKeep, "priority should be assigned to the root span");
+            spans.Value.Should().OnlyContain(s => s == rootSpan || s.GetMetric(Metrics.SamplingPriority) == null, "only the root span should have a priority");
+
+            CheckAASDecoration(inAASContext, spans);
+
+            // Now test the case where a span gets opened when the root has been sent (It can happen)
+            spans = null;
+            var newSpan = CreateSpan();
+            var aSecondSpan = CreateSpan();
+            traceContext.AddSpan(newSpan);
+            traceContext.AddSpan(aSecondSpan);
+            traceContext.CloseSpan(aSecondSpan);
+            traceContext.CloseSpan(newSpan);
+
+            spans.Value.Should().NotBeNullOrEmpty("a full flush should have been triggered containing the new span");
+
+            CheckAASDecoration(inAASContext, spans);
+            spans.Value.Should().OnlyContain(s => (int)s.GetMetric(Metrics.SamplingPriority) == SamplingPriorityValues.UserKeep, "all spans should have a priority");
+        }
+
+        [Theory]
+        [InlineData(true)]
+        [InlineData(false)]
         public void PartialFlushShouldPropagateMetadata(bool inAASContext)
         {
             const int partialFlushThreshold = 2;
@@ -195,15 +251,7 @@ namespace Datadog.Trace.Tests
             tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
                   .Callback<ArraySegment<Span>>(s => spans = s);
 
-            var vars = Environment.GetEnvironmentVariables();
-
-            if (inAASContext)
-            {
-                vars.Add(AzureAppServices.AzureAppServicesContextKey, "true");
-                vars.Add(AzureAppServices.ResourceGroupKey, "ThisIsAResourceGroup");
-                vars.Add(Datadog.Trace.Configuration.ConfigurationKeys.ApiKey, "xxx");
-                AzureAppServices.Metadata = new AzureAppServices(vars);
-            }
+            SetAASContext(inAASContext);
 
             var traceContext = new TraceContext(tracer.Object);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
@@ -225,13 +273,36 @@ namespace Datadog.Trace.Tests
 
             spans.Value.Should().OnlyContain(s => (int)s.GetMetric(Metrics.SamplingPriority) == SamplingPriorityValues.UserKeep);
 
+            CheckAASDecoration(inAASContext, spans);
+        }
+
+        private void CheckAASDecoration(bool inAASContext, ArraySegment<Span>? spans)
+        {
             if (inAASContext)
             {
-                spans.Value.Array[0].GetTag(Tags.AzureAppServicesResourceGroup).Should().NotBeNull();
+                // only one span should contain the aas metadata
+                spans.Value.Should().ContainSingle(s => s.GetTag(Tags.AzureAppServicesResourceGroup) != null);
             }
             else
             {
-                spans.Value.Array[0].GetTag(Tags.AzureAppServicesResourceGroup).Should().BeNull();
+                spans.Value.Should().OnlyContain(s => s.GetTag(Tags.AzureAppServicesResourceGroup) == null);
+            }
+        }
+
+        private void SetAASContext(bool inAASContext)
+        {
+            var vars = Environment.GetEnvironmentVariables();
+
+            if (!inAASContext)
+            {
+                AzureAppServices.Metadata = new AzureAppServices(vars);
+            }
+            else
+            {
+                vars.Add(AzureAppServices.AzureAppServicesContextKey, "true");
+                vars.Add(AzureAppServices.ResourceGroupKey, "ThisIsAResourceGroup");
+                vars.Add(Datadog.Trace.Configuration.ConfigurationKeys.ApiKey, "xxx");
+                AzureAppServices.Metadata = new AzureAppServices(vars);
             }
         }
     }
