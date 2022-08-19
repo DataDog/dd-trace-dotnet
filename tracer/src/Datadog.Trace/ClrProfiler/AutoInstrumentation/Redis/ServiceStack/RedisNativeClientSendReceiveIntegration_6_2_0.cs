@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
         MethodName = "SendReceive",
         ReturnTypeName = "T",
         ParameterTypeNames = new[] { "System.Byte[][]", "System.Func`1[!!0]", "System.Action`1[System.Func`1[!!0]]", ClrNames.Bool, ClrNames.String },
-        MinimumVersion = "6.2.0",
+        MinimumVersion = "6.0.0",
         MaximumVersion = "6.*.*",
         IntegrationName = IntegrationName)]
     [Browsable(false)]
