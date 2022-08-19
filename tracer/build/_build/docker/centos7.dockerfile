@@ -17,7 +17,8 @@ ENV \
     NUGET_XMLDOC_MODE=skip
 
 RUN yum update -y \
-    && yum install -y centos-release-scl \
+    && yum install -y centos-release-scl epel-release \
+    && yum repolist \
     && yum install -y\
         git \
         procps \
@@ -26,9 +27,7 @@ RUN yum update -y \
         gcc \
         build-essential \
         rpm \
-        ruby \
-        ruby-devel \
-        rubygems \
+        dpkg-dev \
         uuid-dev \
         autoconf \
         libtool \
