@@ -1791,6 +1791,11 @@ partial class Build
         }
                 
         Uncompress(zipFile, nfpmToolDirectory);
+
+        if (!IsWin)
+        {
+            Chmod.Value.Invoke($"+x {zipFile}");
+        }
     }
     private void MakeGrpcToolsExecutable()
     {
