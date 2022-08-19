@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -76,13 +78,13 @@ partial class Build
 
     [LazyPathExecutable(name: "cmake")] readonly Lazy<Tool> CMake;
     [LazyPathExecutable(name: "make")] readonly Lazy<Tool> Make;
-    [LazyPathExecutable(name: "fpm")] readonly Lazy<Tool> Fpm;
-    [LazyPathExecutable(name: "gzip")] readonly Lazy<Tool> GZip;
+    [LazyPathExecutable(name: "tar")] readonly Lazy<Tool> Tar;
     [LazyPathExecutable(name: "cmd")] readonly Lazy<Tool> Cmd;
     [LazyPathExecutable(name: "chmod")] readonly Lazy<Tool> Chmod;
     [LazyPathExecutable(name: "objcopy")] readonly Lazy<Tool> ExtractDebugInfo;
     [LazyPathExecutable(name: "strip")] readonly Lazy<Tool> StripBinary;
     [LazyPathExecutable(name: "ln")] readonly Lazy<Tool> HardLinkUtil;
+    AbsolutePath NfpmToolPath => TemporaryDirectory / "nfpm" / (IsWin ? "nfpm.exe" : "nfpm");
 
     IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform =>
         Equals(TargetPlatform, MSBuildTargetPlatform.x64)
@@ -91,8 +93,6 @@ partial class Build
 
     bool IsArm64 => RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
     string LinuxArchitectureIdentifier => IsArm64 ? "arm64" : TargetPlatform.ToString();
-
-    IEnumerable<string> LinuxPackageTypes => IsAlpine ? new[] { "tar" } : new[] { "deb", "rpm", "tar" };
 
     IEnumerable<Project> ProjectsToPack => new[]
     {
@@ -574,10 +574,11 @@ partial class Build
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
         .OnlyWhenStatic(() => IsLinux)
         .Requires(() => Version)
-        .Executes(() =>
+        .Executes(async () =>
         {
-            var fpm = Fpm.Value;
-            var gzip = GZip.Value;
+            await EnsureNfpm();
+            var nfpm = ToolResolver.GetLocalTool(NfpmToolPath);
+            var tar = Tar.Value;
             var chmod = Chmod.Value;
 
             // For legacy back-compat reasons, we _must_ add certain files to their expected locations
@@ -587,6 +588,13 @@ partial class Build
             var assetsDirectory = TemporaryDirectory / arch;
             EnsureCleanDirectory(assetsDirectory);
             CopyDirectoryRecursively(MonitoringHomeDirectory, assetsDirectory, DirectoryExistsPolicy.Merge);
+
+            // create the arch-specific nfpm.yml config file from the base version
+            var nfpmContents = File.ReadAllText(BuildDirectory / "nfpm.yml");
+            var nfpmConfigPath = TemporaryDirectory / $"nfpm-{arch}.yml";
+            File.WriteAllText(
+                path: nfpmConfigPath,
+                contents: nfpmContents.Replace("$DD_ARCHITECTURE", arch));
             
             // For back-compat reasons, we must always have the Datadog.ClrProfiler.Native.so file in the root folder
             // as it's set in the COR_PROFILER_PATH etc env var
@@ -630,46 +638,25 @@ partial class Build
             var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
             EnsureCleanDirectory(workingDirectory);
 
-            const string packageName = "datadog-dotnet-apm";
-            foreach (var packageType in LinuxPackageTypes)
+            // We always tar
+            var packageName = (RuntimeInformation.ProcessArchitecture, IsAlpine) switch
             {
-                var args = new List<string>()
-                {
-                    "-f",
-                    "-s dir",
-                    $"-t {packageType}",
-                    $"-n {packageName}",
-                    $"-v {Version}",
-                    packageType == "tar" ? "" : "--prefix /opt/datadog",
-                    $"--chdir {assetsDirectory}",
-                    "createLogPath.sh",
-                    "netstandard2.0/",
-                    "netcoreapp3.1/",
-                    "net6.0/",
-                    "Datadog.Trace.ClrProfiler.Native.so",
-                    "libddwaf.so",
-                    "continuousprofiler/",
-                    "loader.conf",
-                    $"{arch}/",
-                };
+                (Architecture.X64, false) => $"datadog-dotnet-apm-{Version}",
+                (Architecture.X64, true) => $"datadog-dotnet-apm-{Version}-musl",
+                (var a, false) => $"datadog-dotnet-apm-{Version}.{a.ToString().ToLower()}",
+                (var a, true) => $"datadog-dotnet-apm-{Version}-musl.{a.ToString().ToLower()}",
+            };
 
-                var arguments = string.Join(" ", args);
-                fpm(arguments, workingDirectory: workingDirectory);
+            tar($"-czf {packageName}.tar.gz .", workingDirectory);
+
+            if (!IsAlpine)
+            {
+                var envVars = new Dictionary<string,string>(new ProcessStartInfo().Environment);
+                envVars.Add("Version", Version);
+
+                nfpm($"package -p deb -f '{nfpmConfigPath}'", workingDirectory: workingDirectory, environmentVariables: envVars);
+                nfpm($"package -p rpm -f '{nfpmConfigPath}'", workingDirectory: workingDirectory, environmentVariables: envVars);
             }
-
-            gzip($"-f {packageName}.tar", workingDirectory: workingDirectory);
-
-            var suffix = RuntimeInformation.ProcessArchitecture == Architecture.X64
-                ? string.Empty
-                : $".{RuntimeInformation.ProcessArchitecture.ToString().ToLower()}";
-
-            var versionedName = IsAlpine
-                ? $"{packageName}-{Version}-musl{suffix}.tar.gz"
-                : $"{packageName}-{Version}{suffix}.tar.gz";
-
-            RenameFile(
-                workingDirectory / $"{packageName}.tar.gz",
-                workingDirectory / versionedName);
         });
 
 
@@ -1760,6 +1747,48 @@ partial class Build
             };
     }
 
+    private async Task EnsureNfpm()
+    {
+        if (File.Exists(NfpmToolPath))
+        {
+            return;
+        }
+
+        // download the 2.17.0 release of nfpm for the current platform 
+        using var httpClient = new HttpClient();
+        var filename = (IsWin, IsOsx, IsLinux, IsArm64) switch
+        {
+            (true, _, _, false) => "nfpm_2.17.0_Windows_x86_64.zip",
+            (true, _, _, true) => "nfpm_2.17.0_Windows_arm64.zip",
+            (_, true, _, false) => "nfpm_2.17.0_Darwin_x86_64.tar.gz",
+            (_, true, _, true) => "nfpm_2.17.0_Darwin_arm64.tar.gz",
+            (_, _, true, false) => "nfpm_2.17.0_Linux_x86_64.tar.gz",
+            (_, _, true, true) => "nfpm_2.17.0_Linux_arm64.tar.gz",
+            _ => throw new InvalidOperationException("Unsupported platform"),
+        };
+
+        var url = "https://github.com/goreleaser/nfpm/releases/download/v2.17.0/" + filename;
+
+        var response = await httpClient.GetAsync(url);
+                
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new Exception($"Error downloading nfpm from {url}: {response.StatusCode}:{response.ReasonPhrase}");
+        }
+
+        var extension = Path.GetExtension(filename);
+        var zipPath = TemporaryDirectory / "download";
+        var nfpmToolDirectory = Path.GetDirectoryName(NfpmToolPath);
+        EnsureExistingDirectory(zipPath);
+        EnsureExistingDirectory(nfpmToolDirectory);
+                
+        await using (Stream file = File.Create(zipPath / $"nfpm{extension}"))
+        {
+            await response.Content.CopyToAsync(file);
+        }
+                
+        Uncompress(zipPath / $"nfpm{extension}", nfpmToolDirectory);
+    }
     private void MakeGrpcToolsExecutable()
     {
         var packageDirectory = NugetPackageDirectory;
