@@ -599,6 +599,7 @@ partial class Build
                 path: nfpmConfigPath,
                 contents: nfpmContents
                    .Replace("$DD_VERSION", Version)
+                   .Replace("$DD_ARCHITECTURE", arch)
                    .Replace("$DD_PACKAGE_NAME", packagePrefix)
                    .Replace("$DD_GO_ARCH", goArch));
             
@@ -658,11 +659,8 @@ partial class Build
 
             if (!IsAlpine)
             {
-                var envVars = new Dictionary<string,string>(new ProcessStartInfo().Environment);
-                envVars.Add("Version", Version);
-
-                nfpm($"package -p deb -f {nfpmConfigPath} -t {outputDir}", workingDirectory: assetsDirectory, environmentVariables: envVars);
-                nfpm($"package -p rpm -f {nfpmConfigPath} -t {outputDir}", workingDirectory: assetsDirectory, environmentVariables: envVars);
+                nfpm($"package -p deb -f {nfpmConfigPath} -t {outputDir}", workingDirectory: assetsDirectory);
+                nfpm($"package -p rpm -f {nfpmConfigPath} -t {outputDir}", workingDirectory: assetsDirectory);
             }
         });
 
