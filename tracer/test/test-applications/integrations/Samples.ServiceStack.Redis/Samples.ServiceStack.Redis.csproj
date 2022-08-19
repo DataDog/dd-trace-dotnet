@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">5.2.0</ApiVersion>
+    <TargetFrameworks>net461;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">6.2.0</ApiVersion>
     <RequiresDockerDependency>true</RequiresDockerDependency>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
