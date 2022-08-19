@@ -14,7 +14,8 @@ namespace Samples.ExceptionGenerator
     {
         ExceptionsProfilerTest = 1,
         ParallelExceptions = 2,
-        Sampling = 3
+        Sampling = 3,
+        GenericExceptions = 4,
     }
 
     public class Program
@@ -63,6 +64,11 @@ namespace Samples.ExceptionGenerator
                             // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
                             Console.WriteLine(" ########### Sleeping for 20 seconds");
                             Thread.Sleep(20_000);
+                            break;
+
+                        case Scenario.GenericExceptions:
+                            new GenericExceptionsScenario().Run();
+                            Console.WriteLine(" ########### Generating generic exceptions...");
                             break;
 
                         default:
