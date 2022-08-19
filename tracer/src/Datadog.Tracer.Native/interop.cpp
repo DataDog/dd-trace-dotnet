@@ -73,6 +73,11 @@ EXTERN_C int STDAPICALLTYPE GetProbesStatuses(WCHAR** probeIds, int probeIdsLeng
     return trace::profiler->GetProbesStatuses(probeIds, probeIdsLength, probeStatuses);
 }
 
+EXTERN_C VOID STDAPICALLTYPE DisableTracerCLRProfiler()
+{
+    return trace::profiler->DisableTracerCLRProfiler();
+}
+
 #ifndef _WIN32
 EXTERN_C void *dddlopen (const char *__file, int __mode)
 {

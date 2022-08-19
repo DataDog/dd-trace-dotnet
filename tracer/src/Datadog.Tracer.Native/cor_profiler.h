@@ -175,6 +175,11 @@ public:
                    debugger::DebuggerRemoveProbesDefinition* revertProbes, int revertProbesLength) const;
     int GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses);
 
+    //
+    // Disable profiler
+    //
+    void DisableTracerCLRProfiler();
+    
     friend class debugger::DebuggerProbesInstrumentationRequester;
     friend class debugger::DebuggerMethodRewriter;
     friend class TracerMethodRewriter;
