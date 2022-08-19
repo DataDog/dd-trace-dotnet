@@ -233,8 +233,6 @@ public class ProbesTests : TestHelper, IDisposable
 
     public void Dispose()
     {
-        Output?.WriteLine("Cleaning a test");
-
         try
         {
             if (File.Exists(probesDefinitionPath))
