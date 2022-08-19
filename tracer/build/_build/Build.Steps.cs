@@ -84,7 +84,7 @@ partial class Build
     [LazyPathExecutable(name: "objcopy")] readonly Lazy<Tool> ExtractDebugInfo;
     [LazyPathExecutable(name: "strip")] readonly Lazy<Tool> StripBinary;
     [LazyPathExecutable(name: "ln")] readonly Lazy<Tool> HardLinkUtil;
-    AbsolutePath NfpmToolPath => TemporaryDirectory / "nfpm" / (IsWin ? "nfpm.exe" : "nfpm");
+    [LazyPathExecutable(name: "dpkg-deb")] readonly Lazy<Tool> DpkgDeb;
 
     IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform =>
         Equals(TargetPlatform, MSBuildTargetPlatform.x64)
@@ -576,91 +576,126 @@ partial class Build
         .Requires(() => Version)
         .Executes(async () =>
         {
-            await EnsureNfpm();
-            var nfpm = ToolResolver.GetLocalTool(NfpmToolPath);
-            var tar = Tar.Value;
-            var chmod = Chmod.Value;
-
-            // For legacy back-compat reasons, we _must_ add certain files to their expected locations
-            // in the linux packages, as customers may have environment variables pointing to them
-            // we do this work in the temp folder to avoid "messing" with the artifacts directory
-            var (arch, ext) = GetUnixArchitectureAndExtension();
-            var assetsDirectory = TemporaryDirectory / arch;
-            EnsureCleanDirectory(assetsDirectory);
-            CopyDirectoryRecursively(MonitoringHomeDirectory, assetsDirectory, DirectoryExistsPolicy.Merge);
             const string packagePrefix = "datadog-dotnet-apm";
 
-            // create the arch-specific nfpm.yml config file from the base version
-            var nfpmContents = File.ReadAllText(BuildDirectory / "nfpm.yml");
-            var nfpmConfigPath = TemporaryDirectory / $"nfpm-{arch}.yml";
-            Logger.Info("Created nfpm config file at " + nfpmConfigPath);
-            var goArch = IsArm64 ? "arm64" : "amd64";
-            File.WriteAllText(
-                path: nfpmConfigPath,
-                contents: nfpmContents
-                   .Replace("$DD_VERSION", Version)
-                   .Replace("$DD_ARCHITECTURE", arch)
-                   .Replace("$DD_PACKAGE_NAME", packagePrefix)
-                   .Replace("$DD_GO_ARCH", goArch));
-            
-            // For back-compat reasons, we must always have the Datadog.ClrProfiler.Native.so file in the root folder
-            // as it's set in the COR_PROFILER_PATH etc env var
-            // so create a symlink to avoid bloating package sizes
-            var archSpecificFile = assetsDirectory / arch / $"{FileNames.NativeLoader}.{ext}";
-            var linkLocation = assetsDirectory / $"{FileNames.NativeLoader}.{ext}";
-            HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
-            
-            // For back-compat reasons, we have to keep the libddwaf.so file in the root folder
-            // because the way AppSec probes the paths won't find the linux-musl-x64 target currently
-            archSpecificFile = assetsDirectory / arch / FileNames.AppSecLinuxWaf;
-            linkLocation = assetsDirectory / FileNames.AppSecLinuxWaf;
-            HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
-            
-            // we must always have the Datadog.Linux.ApiWrapper.x64.so file in the continuousprofiler subfolder
-            // as it's set in the LD_PRELOAD env var
-            var continuousProfilerDir = assetsDirectory / "continuousprofiler"; 
-            EnsureExistingDirectory(continuousProfilerDir);
-            archSpecificFile = assetsDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
-            linkLocation = continuousProfilerDir / FileNames.ProfilerLinuxApiWrapper;
-            HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
+            var (arch, ext) = GetUnixArchitectureAndExtension();
 
-            // Copy the loader.conf to the root folder, this is required for when the "root" native loader is used,
-            // It needs to include the architecture in the paths to the native dlls
-            //
-            // The regex replaces (for example):
-            //      PROFILER;{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A};linux-x64;./Datadog.Profiler.Native.so
-            // with (adds folder prefix):
-            //      PROFILER;{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A};linux-x64;./linux-x64/Datadog.Profiler.Native.so
-            var loaderConfContents = File.ReadAllText(MonitoringHomeDirectory / arch / FileNames.LoaderConf);
-            loaderConfContents = Regex.Replace(
-                input: loaderConfContents,
-                pattern: @";(linux-.*?);\.\/Datadog\.",
-                replacement:$@";$1;./{arch}/Datadog.");
-            File.WriteAllText(assetsDirectory / FileNames.LoaderConf, contents: loaderConfContents);
+            var outDir = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
+            EnsureCleanDirectory(outDir);
 
-            // Copy createLogPath.sh script and set the permissions 
-            CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, assetsDirectory);
-            chmod.Invoke($"+x {assetsDirectory / FileNames.CreateLogPathScript}");
-
-            var outputDir = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
-            EnsureCleanDirectory(outputDir);
+            var baseDir = TemporaryDirectory / arch;
 
             // We always tar
-            var packageName = (RuntimeInformation.ProcessArchitecture, IsAlpine) switch
-            {
-                (Architecture.X64, false) => $"{packagePrefix}-{Version}.tar.gz",
-                (Architecture.X64, true) => $"datadog-dotnet-apm-{Version}-musl.tar.gz",
-                (var a, false) => $"datadog-dotnet-apm-{Version}.{a.ToString().ToLower()}.tar.gz",
-                (var a, true) => $"datadog-dotnet-apm-{Version}-musl.{a.ToString().ToLower()}.tar.gz",
-            };
-
-            // can't output to the same directory as you're packing, so put it directly in ArtifactsDirectory then move
-            tar($"-czf {outputDir / packageName} .", workingDirectory: assetsDirectory);
+            BuildTar(baseDir, outDir);
 
             if (!IsAlpine)
             {
-                nfpm($"package -p deb -f {nfpmConfigPath} -t {outputDir}", workingDirectory: assetsDirectory);
-                nfpm($"package -p rpm -f {nfpmConfigPath} -t {outputDir}", workingDirectory: assetsDirectory);
+                BuildDeb(baseDir, outDir);
+                // TODO: Build rpm
+            }
+
+            void BuildTar(AbsolutePath assetsDirectory, AbsolutePath outputDir)
+            {
+                EnsureCleanDirectory(assetsDirectory);
+                CopyAssets(assetsDirectory);
+                
+                var tar = Tar.Value;
+                var packageName = (RuntimeInformation.ProcessArchitecture, IsAlpine) switch
+                {
+                    (Architecture.X64, false) => $"{packagePrefix}-{Version}.tar.gz",
+                    (Architecture.X64, true) => $"{packagePrefix}-{Version}-musl.tar.gz",
+                    (var a, false) => $"{packagePrefix}-{Version}.{a.ToString().ToLower()}.tar.gz",
+                    (var a, true) => $"{packagePrefix}-{Version}-musl.{a.ToString().ToLower()}.tar.gz",
+                };
+
+                // can't output to the same directory as you're packing, so put it directly in ArtifactsDirectory then move
+                tar($"-czf {outputDir / packageName} .", workingDirectory: assetsDirectory);
+            }
+
+            void BuildDeb(AbsolutePath assetsBase, AbsolutePath outputDir)
+            {
+                var debArch = RuntimeInformation.ProcessArchitecture switch
+                {
+                    Architecture.X64 => "amd64",
+                    Architecture.Arm64 => "arm64",
+                    var a => throw new InvalidOperationException("Unknown architecture for Deb: " + a),
+                };
+                var packageName = $"{packagePrefix}_{Version}_{debArch}";
+
+                EnsureCleanDirectory(assetsBase);
+                var binaryDirectory = assetsBase / packageName;
+                // The path here controls the name of the package, and the location of the files 
+                var assetsDirectory = binaryDirectory / "opt" / "datadog"; 
+                EnsureExistingDirectory(assetsDirectory);
+                CopyAssets(assetsDirectory);
+                
+                // Create the control file
+                var controlDir = binaryDirectory / "DEBIAN";
+                EnsureExistingDirectory(controlDir);
+                var controlFileContents = $@"Package: {packagePrefix}
+Version: {Version}
+License: MIT
+Vendor: none
+Architecture: {debArch}
+Maintainer: Datadog
+Section: default
+Priority: extra
+Homepage: https://github.com/DataDog/dd-trace-dotnet
+Description: .NET Tracer for Datadog APM";
+
+                File.WriteAllText(path: controlDir / "control", controlFileContents);
+
+                DpkgDeb.Value($"--build -root-owner-group {binaryDirectory} {outputDir}");
+            }
+            
+
+            void CopyAssets(AbsolutePath assetsDirectory)
+            {
+                // For legacy back-compat reasons, we _must_ add certain files to their expected locations
+                // in the linux packages, as customers may have environment variables pointing to them
+                // we do this work in the temp folder to avoid "messing" with the artifacts directory
+                var chmod = Chmod.Value;
+                EnsureCleanDirectory(assetsDirectory);
+                CopyDirectoryRecursively(MonitoringHomeDirectory, assetsDirectory, DirectoryExistsPolicy.Merge);
+
+                // For back-compat reasons, we must always have the Datadog.ClrProfiler.Native.so file in the root folder
+                // as it's set in the COR_PROFILER_PATH etc env var
+                // so create a symlink to avoid bloating package sizes
+                var archSpecificFile = assetsDirectory / arch / $"{FileNames.NativeLoader}.{ext}";
+                var linkLocation = assetsDirectory / $"{FileNames.NativeLoader}.{ext}";
+                HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
+                
+                // For back-compat reasons, we have to keep the libddwaf.so file in the root folder
+                // because the way AppSec probes the paths won't find the linux-musl-x64 target currently
+                archSpecificFile = assetsDirectory / arch / FileNames.AppSecLinuxWaf;
+                linkLocation = assetsDirectory / FileNames.AppSecLinuxWaf;
+                HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
+                
+                // we must always have the Datadog.Linux.ApiWrapper.x64.so file in the continuousprofiler subfolder
+                // as it's set in the LD_PRELOAD env var
+                var continuousProfilerDir = assetsDirectory / "continuousprofiler"; 
+                EnsureExistingDirectory(continuousProfilerDir);
+                archSpecificFile = assetsDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
+                linkLocation = continuousProfilerDir / FileNames.ProfilerLinuxApiWrapper;
+                HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
+
+                // Copy the loader.conf to the root folder, this is required for when the "root" native loader is used,
+                // It needs to include the architecture in the paths to the native dlls
+                //
+                // The regex replaces (for example):
+                //      PROFILER;{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A};linux-x64;./Datadog.Profiler.Native.so
+                // with (adds folder prefix):
+                //      PROFILER;{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A};linux-x64;./linux-x64/Datadog.Profiler.Native.so
+                var loaderConfContents = File.ReadAllText(MonitoringHomeDirectory / arch / FileNames.LoaderConf);
+                loaderConfContents = Regex.Replace(
+                    input: loaderConfContents,
+                    pattern: @";(linux-.*?);\.\/Datadog\.",
+                    replacement:$@";$1;./{arch}/Datadog.");
+                File.WriteAllText(assetsDirectory / FileNames.LoaderConf, contents: loaderConfContents);
+
+                // Copy createLogPath.sh script and set the permissions 
+                CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, assetsDirectory);
+                chmod.Invoke($"+x {assetsDirectory / FileNames.CreateLogPathScript}");
             }
         });
 
@@ -1752,54 +1787,6 @@ partial class Build
             };
     }
 
-    private async Task EnsureNfpm()
-    {
-        if (File.Exists(NfpmToolPath))
-        {
-            return;
-        }
-
-        // download the 2.17.0 release of nfpm for the current platform 
-        using var httpClient = new HttpClient();
-        var (extension, filename) = (IsWin, IsOsx, IsLinux, IsArm64) switch
-        {
-            (true, _, _, false) => ("zip", "nfpm_2.17.0_Windows_x86_64.zip"),
-            (true, _, _, true) => ("zip", "nfpm_2.17.0_Windows_arm64.zip"),
-            (_, true, _, false) => ("tar.gz", "nfpm_2.17.0_Darwin_x86_64.tar.gz"),
-            (_, true, _, true) => ("tar.gz", "nfpm_2.17.0_Darwin_arm64.tar.gz"),
-            (_, _, true, false) => ("tar.gz", "nfpm_2.17.0_Linux_x86_64.tar.gz"),
-            (_, _, true, true) => ("tar.gz", "nfpm_2.17.0_Linux_arm64.tar.gz"),
-            _ => throw new InvalidOperationException("Unsupported platform"),
-        };
-
-        var url = "https://github.com/goreleaser/nfpm/releases/download/v2.17.0/" + filename;
-
-        Logger.Info($"Downloading {url}...");
-        var response = await httpClient.GetAsync(url);
-                
-        if (!response.IsSuccessStatusCode)
-        {
-            throw new Exception($"Error downloading nfpm from {url}: {response.StatusCode}:{response.ReasonPhrase}");
-        }
-
-        var zipPath = TemporaryDirectory / "download";
-        var nfpmToolDirectory = Path.GetDirectoryName(NfpmToolPath);
-        EnsureExistingDirectory(zipPath);
-        EnsureExistingDirectory(nfpmToolDirectory);
-
-        var zipFile = zipPath / $"nfpm.{extension}";
-        await using (Stream file = File.Create(zipFile))
-        {
-            await response.Content.CopyToAsync(file);
-        }
-                
-        Uncompress(zipFile, nfpmToolDirectory);
-
-        if (!IsWin)
-        {
-            Chmod.Value.Invoke($"+x {NfpmToolPath}");
-        }
-    }
     private void MakeGrpcToolsExecutable()
     {
         var packageDirectory = NugetPackageDirectory;
