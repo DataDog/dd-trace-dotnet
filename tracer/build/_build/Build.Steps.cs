@@ -645,7 +645,7 @@ Description: .NET Tracer for Datadog APM";
 
                 File.WriteAllText(path: controlDir / "control", controlFileContents);
 
-                DpkgDeb.Value($"--build -root-owner-group {binaryDirectory} {outputDir}");
+                DpkgDeb.Value($"--build --root-owner-group {binaryDirectory} {outputDir}");
             }
             
 
