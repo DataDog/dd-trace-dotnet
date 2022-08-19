@@ -19,9 +19,7 @@ RUN apk update \
         automake \
         xz-dev \
         gdb \
-        musl-dbg \
-    && gem install --version 2.7.6 dotenv \
-    && gem install --no-document fpm
+        musl-dbg
 
 ENV IsAlpine=true
 

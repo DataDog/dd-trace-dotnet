@@ -38,8 +38,6 @@ RUN apt-get update \
         libtool \
         liblzma-dev \
         gdb \
-    && gem install --version 2.7.6 dotenv \
-    && gem install --no-document fpm \
     && rm -rf /var/lib/apt/lists/*
 
 # Install the .NET SDK
