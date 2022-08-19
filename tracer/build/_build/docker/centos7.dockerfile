@@ -54,7 +54,7 @@ RUN echo "gem: --no-document --no-rdoc --no-ri" > ~/.gemrc && \
     gem install --version 3.2.3  --user-install rexml && \
     gem install backports -v 3.21.0 && \
     gem install --version 2.7.6 dotenv && \
-    gem install -V --minimal-deps fpm
+    gem install --minimal-deps fpm
 
 
 # Install the .NET SDK
