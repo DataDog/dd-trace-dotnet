@@ -7,6 +7,7 @@
     },
     "ExceptionGenerator+Profiler": {
       "commandName": "Executable",
+      "commandLineArgs": "--scenario 4",
       "executablePath": "$(BaseOutputPath)\\$(ConfigBasedRelativeOutputPath)\\profiler\\src\\Demos\\Samples.ExceptionGenerator\\$(TargetFramework)\\Samples.ExceptionGenerator.exe",
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "1",
@@ -24,7 +25,7 @@
         "DD_PROFILING_ENABLED": "1",
         "DD_PROFILING_CPU_ENABLED": "1",
         "DD_PROFILING_EXCEPTION_ENABLED": "1",
-        "DD_INTERNAL_PROFILING_OUTPUT_DIR": "$(PROGRAMDATA)\\Datadog-APM\\Pprof-files\\DotNet"
+        "DD_INTERNAL_PROFILING_OUTPUT_DIR": "$(PROGRAMDATA)\\Datadog-APM\\Pprof-files\\DotNet",
 
         "DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION": "true",
       },

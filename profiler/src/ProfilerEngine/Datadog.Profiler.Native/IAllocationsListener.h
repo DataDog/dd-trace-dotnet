@@ -10,6 +10,7 @@ class IAllocationsListener
 {
 public:
     virtual void OnAllocation(uint32_t allocationKind,
+                              ClassID classId,
                               const WCHAR* TypeName,
                               uintptr_t Address,
                               uint64_t ObjectSize) = 0;

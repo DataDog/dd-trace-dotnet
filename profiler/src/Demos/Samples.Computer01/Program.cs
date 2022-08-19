@@ -21,7 +21,8 @@ namespace Samples.Computer01
         FibonacciComputation,
         Sleep,
         Async,
-        Iterator
+        Iterator,
+        GenericsAllocation
     }
 
     public class Program
@@ -40,7 +41,11 @@ namespace Samples.Computer01
             // 6: start n threads sleeping
             // 7: start n threads doing async calls with CPU consumption along the way
             // 8: start n threads doing iterator calls in constructors
-            Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} [--service] [--iterations <number of iterations to execute>] [--scenario <0=all 1=computer 2=generics 3=wall time 4=pi computation>] [--timeout <duration in seconds> | --run-infinitely]");
+            // 9: start n threads allocating array of Generic<int> in LOH
+            Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} " +
+            $"[--service] [--iterations <number of iterations to execute>] " +
+            $"[--scenario <0=all 1=computer 2=generics 3=wall time 4=pi computation 5=compute fibonacci 6=n sleeping threads 7=async calls 8=iterator calls 9=allocate array of Generic<int>>] " +
+            $"[--timeout <duration in seconds> | --run-infinitely]");
             Console.WriteLine();
 
             EnvironmentInfo.PrintDescriptionToConsole();
