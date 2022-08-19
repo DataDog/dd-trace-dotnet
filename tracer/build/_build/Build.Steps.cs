@@ -636,8 +636,8 @@ partial class Build
             CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, assetsDirectory);
             chmod.Invoke($"+x {assetsDirectory / FileNames.CreateLogPathScript}");
 
-            var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
-            EnsureCleanDirectory(workingDirectory);
+            var outputDir = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
+            EnsureCleanDirectory(outputDir);
 
             // We always tar
             var packageName = (RuntimeInformation.ProcessArchitecture, IsAlpine) switch
@@ -649,16 +649,15 @@ partial class Build
             };
 
             // can't output to the same directory as you're packing, so put it directly in ArtifactsDirectory then move
-            tar($"-czf ../{packageName} .", workingDirectory);
-            MoveFile(ArtifactsDirectory / packageName, workingDirectory / packageName);
+            tar($"-czf {outputDir / packageName} .", workingDirectory: assetsDirectory);
 
             if (!IsAlpine)
             {
                 var envVars = new Dictionary<string,string>(new ProcessStartInfo().Environment);
                 envVars.Add("Version", Version);
 
-                nfpm($"package -p deb -f '{nfpmConfigPath}'", workingDirectory: workingDirectory, environmentVariables: envVars);
-                nfpm($"package -p rpm -f '{nfpmConfigPath}'", workingDirectory: workingDirectory, environmentVariables: envVars);
+                nfpm($"package -p deb -f {nfpmConfigPath}", workingDirectory: assetsDirectory, environmentVariables: envVars);
+                nfpm($"package -p rpm -f {nfpmConfigPath}", workingDirectory: assetsDirectory, environmentVariables: envVars);
             }
         });
 
