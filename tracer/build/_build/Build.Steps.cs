@@ -656,8 +656,8 @@ partial class Build
                 var envVars = new Dictionary<string,string>(new ProcessStartInfo().Environment);
                 envVars.Add("Version", Version);
 
-                nfpm($"package -p deb -f {nfpmConfigPath}", workingDirectory: assetsDirectory, environmentVariables: envVars);
-                nfpm($"package -p rpm -f {nfpmConfigPath}", workingDirectory: assetsDirectory, environmentVariables: envVars);
+                nfpm($"package -p deb -f {nfpmConfigPath} -t {outputDir}", workingDirectory: assetsDirectory, environmentVariables: envVars);
+                nfpm($"package -p rpm -f {nfpmConfigPath} -t {outputDir}", workingDirectory: assetsDirectory, environmentVariables: envVars);
             }
         });
 
