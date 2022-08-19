@@ -592,6 +592,7 @@ partial class Build
             // create the arch-specific nfpm.yml config file from the base version
             var nfpmContents = File.ReadAllText(BuildDirectory / "nfpm.yml");
             var nfpmConfigPath = TemporaryDirectory / $"nfpm-{arch}.yml";
+            Logger.Info("Created nfpm config file at " + nfpmConfigPath);
             File.WriteAllText(
                 path: nfpmConfigPath,
                 contents: nfpmContents.Replace("$DD_ARCHITECTURE", arch));
