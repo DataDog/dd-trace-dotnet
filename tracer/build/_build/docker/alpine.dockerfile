@@ -18,7 +18,9 @@ RUN apk update \
         libtool \
         automake \
         xz-dev \
-    && gem install --no-document fpm
+    && gem install --version 1.6.0 --user-install git \
+    && gem install --version 2.7.6 dotenv \
+    && gem install --minimal-deps --no-document fpm
 
 ENV IsAlpine=true
 
