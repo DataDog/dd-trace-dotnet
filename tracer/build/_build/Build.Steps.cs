@@ -641,13 +641,15 @@ partial class Build
             // We always tar
             var packageName = (RuntimeInformation.ProcessArchitecture, IsAlpine) switch
             {
-                (Architecture.X64, false) => $"datadog-dotnet-apm-{Version}",
-                (Architecture.X64, true) => $"datadog-dotnet-apm-{Version}-musl",
-                (var a, false) => $"datadog-dotnet-apm-{Version}.{a.ToString().ToLower()}",
-                (var a, true) => $"datadog-dotnet-apm-{Version}-musl.{a.ToString().ToLower()}",
+                (Architecture.X64, false) => $"datadog-dotnet-apm-{Version}.tar.gz",
+                (Architecture.X64, true) => $"datadog-dotnet-apm-{Version}-musl.tar.gz",
+                (var a, false) => $"datadog-dotnet-apm-{Version}.{a.ToString().ToLower()}.tar.gz",
+                (var a, true) => $"datadog-dotnet-apm-{Version}-musl.{a.ToString().ToLower()}.tar.gz",
             };
 
-            tar($"-czf {packageName}.tar.gz .", workingDirectory);
+            // can't output to the same directory as you're packing, so put it directly in ArtifactsDirectory then move
+            tar($"-czf ../{packageName} .", workingDirectory);
+            MoveFile(ArtifactsDirectory / packageName, workingDirectory / packageName);
 
             if (!IsAlpine)
             {
