@@ -18,8 +18,8 @@
 
     <!-- Integration: AerospikeClient -->
     <!-- Assembly: AerospikeClient -->
-    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/5.2.1 -->
-    <PackageReference Include="Aerospike.Client" Version="5.2.1" />
+    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/5.2.2 -->
+    <PackageReference Include="Aerospike.Client" Version="5.2.2" />
 
     <!-- Integration: System.Web.Mvc -->
     <!-- Assembly: System.Web.Mvc -->
@@ -53,7 +53,7 @@
 
     <!-- Integration: GraphQL -->
     <!-- Assembly: GraphQL -->
-    <!-- Latest package https://www.nuget.org/packages/GraphQL/5.3.3 -->
+    <!-- Latest package https://www.nuget.org/packages/GraphQL/7.0.1 -->
     <PackageReference Include="GraphQL" Version="5.3.3" />
 
     <!-- Integration: GraphQL.SystemReactive -->

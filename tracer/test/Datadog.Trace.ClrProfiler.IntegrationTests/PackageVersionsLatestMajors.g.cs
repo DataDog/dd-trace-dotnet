@@ -797,23 +797,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
 #if NETCOREAPP2_1
                 new object[] { "4.2.7" },
-                new object[] { "5.2.1" },
+                new object[] { "5.2.2" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "4.2.7" },
-                new object[] { "5.2.1" },
+                new object[] { "5.2.2" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "4.2.7" },
-                new object[] { "5.2.1" },
+                new object[] { "5.2.2" },
 #endif
 #if NET5_0
                 new object[] { "4.2.7" },
-                new object[] { "5.2.1" },
+                new object[] { "5.2.2" },
 #endif
 #if NET6_0
                 new object[] { "4.2.7" },
-                new object[] { "5.2.1" },
+                new object[] { "5.2.2" },
 #endif
 #endif
               };
