@@ -641,7 +641,8 @@ Maintainer: Datadog
 Section: default
 Priority: extra
 Homepage: https://github.com/DataDog/dd-trace-dotnet
-Description: .NET Tracer for Datadog APM";
+Description: .NET Tracer for Datadog APM
+";
 
                 File.WriteAllText(path: controlDir / "control", controlFileContents);
 
