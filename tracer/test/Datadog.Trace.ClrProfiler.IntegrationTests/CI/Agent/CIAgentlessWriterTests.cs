@@ -14,6 +14,8 @@ using Datadog.Trace.Ci.Coverage.Models;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Vendors.MessagePack;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Moq;
 using Xunit;
 
@@ -188,7 +190,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             lock (lstPayloads)
             {
                 // We assert that the total spans has not been flushed yet
-                Assert.NotEqual(numSpans, lstPayloads.Count);
+                Assert.NotEqual(numSpans, GetNumberOfSpans(lstPayloads));
             }
 
             // We force flush
@@ -197,7 +199,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             lock (lstPayloads)
             {
                 // We assert that the total spans has been flushed after the FlushTraces class
-                Assert.Equal(numSpans, lstPayloads.Count);
+                Assert.Equal(numSpans, GetNumberOfSpans(lstPayloads));
+            }
+
+            static int GetNumberOfSpans(List<byte[]> payloads)
+            {
+                int spans = 0;
+                foreach (var payload in payloads)
+                {
+                    var payloadInJson = MessagePackSerializer.ToJson(payload);
+                    var payloadObject = JsonConvert.DeserializeObject(payloadInJson);
+                    spans += ((JObject)payloadObject)["events"].Count();
+                }
+
+                return spans;
             }
         }
 
