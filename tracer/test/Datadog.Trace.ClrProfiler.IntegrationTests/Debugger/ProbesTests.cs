@@ -26,11 +26,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger;
 [CollectionDefinition(nameof(ProbesTests), DisableParallelization = true)]
 [Collection(nameof(ProbesTests))]
 [UsesVerify]
-public class ProbesTests : TestHelper
+public class ProbesTests : TestHelper, IDisposable
 {
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
     private const string ProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument probes definitions completed.";
     private const string ProbesDefinitionFileName = "probes_definition.json";
+
+    // We are not using a temp file here, but rather writing it directly to the debugger sample project,
+    // so that if a test fails, we will be able to simply hit F5 to debug the same probe
+    // configuration (launchsettings.json references the same file).
+    private readonly string probesDefinitionPath;
+
     private readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };
     private readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber", "thread_name", "thread_id" };
 
@@ -38,6 +44,7 @@ public class ProbesTests : TestHelper
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
     {
         SetServiceVersion("1.0.0");
+        probesDefinitionPath = Path.Combine(EnvironmentHelper.GetSampleProjectDirectory(), ProbesDefinitionFileName);
     }
 
     public static IEnumerable<object[]> ProbeTests()
@@ -224,6 +231,23 @@ public class ProbesTests : TestHelper
         }
     }
 
+    public void Dispose()
+    {
+        Output?.WriteLine("Cleaning a test");
+
+        try
+        {
+            if (File.Exists(probesDefinitionPath))
+            {
+                File.Delete(probesDefinitionPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            Output?.WriteLine("ProbesTests.Cleanup - failed to clean prob file between tests: " + ex);
+        }
+    }
+
     private async Task ApproveSnapshots(string[] snapshots, Type testType, bool isMultiPhase, int phaseNumber)
     {
         await ApproveOnDisk(snapshots, testType, isMultiPhase, phaseNumber, "snapshots");
@@ -356,24 +380,18 @@ public class ProbesTests : TestHelper
     private void SetDebuggerEnvironment()
     {
         var probeConfiguration = DebuggerTestHelper.CreateProbeDefinition(Array.Empty<SnapshotProbe>());
-        var path = SetProbeConfiguration(probeConfiguration);
+        SetProbeConfiguration(probeConfiguration);
 
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.ProbeFile, path);
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.ProbeFile, probesDefinitionPath);
         SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "3");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DiagnosticsInterval, "1");
     }
 
-    private string SetProbeConfiguration(ProbeConfiguration probeConfiguration)
+    private void SetProbeConfiguration(ProbeConfiguration probeConfiguration)
     {
         var json = JsonConvert.SerializeObject(probeConfiguration, Formatting.Indented);
-
-        // We are not using a temp file here, but rather writing it directly to the debugger sample project,
-        // so that if a test fails, we will be able to simply hit F5 to debug the same probe
-        // configuration (launchsettings.json references the same file).
-        var path = Path.Combine(EnvironmentHelper.GetSampleProjectDirectory(), ProbesDefinitionFileName);
-        File.WriteAllText(path, json);
-        return path;
+        File.WriteAllText(probesDefinitionPath, json);
     }
 
     private MockTracerAgent GetMockAgent()
