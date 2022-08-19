@@ -26,6 +26,7 @@ namespace Samples.Computer01
         private SleepManager _sleepManager;
         private AsyncComputation _asyncComputation;
         private IteratorComputation _iteratorComputation;
+        private GenericsAllocation _genericsAllocation;
 
         public void StartService(Scenario scenario, int nbThreads)
         {
@@ -77,6 +78,10 @@ namespace Samples.Computer01
                     StartIteratorComputation(nbThreads);
                     break;
 
+                case Scenario.GenericsAllocation:
+                    StartGenericsAllocation(nbThreads);
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
             }
@@ -125,6 +130,10 @@ namespace Samples.Computer01
 
                 case Scenario.Iterator:
                     StopIteratorComputation();
+                    break;
+
+                case Scenario.GenericsAllocation:
+                    StopGenericsAllocation();
                     break;
             }
         }
@@ -177,6 +186,10 @@ namespace Samples.Computer01
 
                     case Scenario.Iterator:
                         RunIteratorComputation(nbThreads);
+                        break;
+
+                    case Scenario.GenericsAllocation:
+                        RunGenericsAllocation(nbThreads);
                         break;
 
                     default:
@@ -243,6 +256,12 @@ namespace Samples.Computer01
             _iteratorComputation.Start();
         }
 
+        private void StartGenericsAllocation(int nbThreads)
+        {
+            _genericsAllocation = new GenericsAllocation(nbThreads);
+            _genericsAllocation.Start();
+        }
+
         private void StopComputer()
         {
             using (_computer)
@@ -297,6 +316,11 @@ namespace Samples.Computer01
             _iteratorComputation.Stop();
         }
 
+        private void StopGenericsAllocation()
+        {
+            _genericsAllocation.Stop();
+        }
+
         private void RunComputer()
         {
             using (var computer = new Computer<byte, KeyValuePair<char, KeyValuePair<int, KeyValuePair<float, object>>>>())
@@ -345,6 +369,12 @@ namespace Samples.Computer01
         {
             var computation = new AsyncComputation(nbThreads);
             computation.Run();
+        }
+
+        private void RunGenericsAllocation(int nbThreads)
+        {
+            var allocations = new GenericsAllocation(nbThreads);
+            allocations.Run();
         }
 
         public class MySpecialClassA
