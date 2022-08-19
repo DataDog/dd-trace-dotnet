@@ -12,6 +12,7 @@
 #include "Sample.h"
 #include "dd_profiler_version.h"
 #include "IRuntimeInfo.h"
+#include "IEnabledProfilers.h"
 
 #include <cassert>
 #include <fstream>
@@ -51,12 +52,13 @@ std::string const LibddprofExporter::ProfilePeriodUnit = "Nanoseconds";
 LibddprofExporter::LibddprofExporter(
     IConfiguration* configuration,
     IApplicationStore* applicationStore,
-    IRuntimeInfo* runtimeInfo)
+    IRuntimeInfo* runtimeInfo,
+    IEnabledProfilers* enabledProfilers)
     :
     _locationsAndLinesSize{512},
     _applicationStore{applicationStore}
 {
-    _exporterBaseTags = CreateTags(configuration, runtimeInfo);
+    _exporterBaseTags = CreateTags(configuration, runtimeInfo, enabledProfilers);
     _endpoint = CreateEndpoint(configuration);
     _pprofOutputPath = CreatePprofOutputPath(configuration);
     _locations.resize(_locationsAndLinesSize);
@@ -107,7 +109,10 @@ struct ddprof_ffi_Profile* LibddprofExporter::CreateProfile()
     return ddprof_ffi_Profile_new(sample_types, &period, nullptr);
 }
 
-LibddprofExporter::Tags LibddprofExporter::CreateTags(IConfiguration* configuration, IRuntimeInfo* runtimeInfo)
+LibddprofExporter::Tags LibddprofExporter::CreateTags(
+    IConfiguration* configuration,
+    IRuntimeInfo* runtimeInfo,
+    IEnabledProfilers* enabledProfilers)
 {
     auto tags = LibddprofExporter::Tags{};
 
@@ -135,7 +140,7 @@ LibddprofExporter::Tags LibddprofExporter::CreateTags(IConfiguration* configurat
     tags.Add("runtime_version", buffer.str());
 
     // list of enabled profilers
-    std::string profilersTag = GetEnabledProfilersTag(configuration);
+    std::string profilersTag = GetEnabledProfilersTag(enabledProfilers);
     tags.Add("profiler_list", profilersTag);
 
     // runtime_platform (os and version later)
@@ -149,18 +154,18 @@ LibddprofExporter::Tags LibddprofExporter::CreateTags(IConfiguration* configurat
     return tags;
 }
 
-std::string LibddprofExporter::GetEnabledProfilersTag(IConfiguration* configuration)
+std::string LibddprofExporter::GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers)
 {
     const char* separator = "_";  // ',' are not allowed and +/SPACE would be transformed into '_' anyway
     std::stringstream buffer;
     bool emptyList = true;
 
-    if (configuration->IsWallTimeProfilingEnabled())
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::WallTime))
     {
         buffer << "walltime";
         emptyList = false;
     }
-    if (configuration->IsCpuProfilingEnabled())
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::Cpu))
     {
         if (!emptyList)
         {
@@ -169,7 +174,7 @@ std::string LibddprofExporter::GetEnabledProfilersTag(IConfiguration* configurat
         buffer << "cpu";
         emptyList = false;
     }
-    if (configuration->IsExceptionProfilingEnabled())
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::Exceptions))
     {
         if (!emptyList)
         {
@@ -178,7 +183,7 @@ std::string LibddprofExporter::GetEnabledProfilersTag(IConfiguration* configurat
         buffer << "exceptions";
         emptyList = false;
     }
-    if (configuration->IsAllocationProfilingEnabled())
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::Allocations))
     {
         if (!emptyList)
         {

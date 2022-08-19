@@ -234,6 +234,15 @@
     <ClInclude Include="RuntimeInfo.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="EnabledProfilers.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="IEnabledProfilers.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="EnumHelpers.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -360,6 +369,9 @@
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="RuntimeInfo.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="EnabledProfilers.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>

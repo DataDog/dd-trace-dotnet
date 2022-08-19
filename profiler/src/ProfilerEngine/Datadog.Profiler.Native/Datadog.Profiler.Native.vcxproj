@@ -234,6 +234,8 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AdaptiveSampler.h" />
+    <ClInclude Include="EnabledProfilers.h" />
+    <ClInclude Include="EnumHelpers.h" />
     <ClInclude Include="IAllocationsListener.h" />
     <ClInclude Include="AllocationsProvider.h" />
     <ClInclude Include="AppDomainStore.h" />
@@ -257,6 +259,7 @@
     <ClInclude Include="IAppDomainStore.h" />
     <ClInclude Include="IApplicationStore.h" />
     <ClInclude Include="ICollector.h" />
+    <ClInclude Include="IEnabledProfilers.h" />
     <ClInclude Include="IFrameStore.h" />
     <ClInclude Include="HResultConverter.h" />
     <ClInclude Include="IClrLifetime.h" />
@@ -319,6 +322,7 @@
     <ClCompile Include="CorProfilerCallbackFactory.cpp" />
     <ClCompile Include="CpuTimeProvider.cpp" />
     <ClCompile Include="DogstatsdService.cpp" />
+    <ClCompile Include="EnabledProfilers.cpp" />
     <ClCompile Include="ExceptionSampler.cpp" />
     <ClCompile Include="ExceptionsProvider.cpp" />
     <ClCompile Include="FfiHelper.cpp" />

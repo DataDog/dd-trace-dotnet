@@ -41,6 +41,7 @@
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
 #include "RuntimeInfo.h"
+#include "EnabledProfilers.h"
 
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/pal.h"
@@ -135,7 +136,6 @@ bool CorProfilerCallback::InitializeServices()
             pRuntimeIdStore);
     }
 
-
     // _pCorProfilerInfoEvents must have been set for any CLR events-based profiler to work
     if (_pCorProfilerInfoEvents != nullptr)
     {
@@ -154,6 +154,9 @@ bool CorProfilerCallback::InitializeServices()
         _pClrEventsParser = std::make_unique<ClrEventsParser>(_pCorProfilerInfoEvents, _pAllocationsProvider);
     }
 
+    // compute enabled profilers based on configuration and receivable CLR events
+    _pEnabledProfilers = std::make_unique<EnabledProfilers>(_pConfiguration.get(), _pCorProfilerInfoEvents != nullptr);
+
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
         _pConfiguration.get(),
@@ -171,7 +174,8 @@ bool CorProfilerCallback::InitializeServices()
     _pExporter = std::make_unique<LibddprofExporter>(
         _pConfiguration.get(),
         _pApplicationStore,
-        _pRuntimeInfo.get());
+        _pRuntimeInfo.get(),
+        _pEnabledProfilers.get());
 
     _pSamplesCollector = RegisterService<SamplesCollector>(_pThreadsCpuManager);
 
