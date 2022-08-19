@@ -25,6 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("ServiceStack.Redis", output)
         {
             SetServiceVersion("1.0.0");
+            EnableDebugMode();
         }
 
         [SkippableTheory]
