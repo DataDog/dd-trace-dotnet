@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                 if (XUnitIntegration.ShouldSkip(ref runnerInstance) && instance.TryDuckCast<ITestRunnerSkippeable>(out var skippeableRunnerInstance))
                 {
                     Common.Log.Debug("ITR: Test skipped: {class}.{name}", runnerInstance.TestClass.FullName, runnerInstance.TestMethod.Name);
-                    skippeableRunnerInstance.SkipReason = $"Skipped by the Intelligent Test Runner";
+                    skippeableRunnerInstance.SkipReason = "Skipped by the Intelligent Test Runner";
                 }
 
                 // Skip test support

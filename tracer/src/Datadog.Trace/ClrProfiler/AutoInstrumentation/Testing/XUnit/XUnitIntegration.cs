@@ -138,9 +138,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             var skippeableTests = CIVisibility.GetSkippeableTestsFromSuiteAndName(testSuite, testName);
             if (skippeableTests.Count > 0)
             {
+                object[] testMethodArguments = runnerInstance.TestMethodArguments;
                 foreach (var skippeableTest in skippeableTests)
                 {
-                    object[] testMethodArguments = runnerInstance.TestMethodArguments;
                     var parameters = skippeableTest.GetParameters();
 
                     // Same test name and no parameters
