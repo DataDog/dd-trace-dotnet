@@ -88,8 +88,8 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         public bool ShouldDeserializeTraces { get; set; } = true;
 
-        public static TcpUdpAgent Create(int port = 8126, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null, bool useTelemetry = false)
-            => new TcpUdpAgent(port, retries, useStatsd, doNotBindPorts, requestedStatsDPort, useTelemetry);
+        public static TcpUdpAgent Create(ITestOutputHelper output, int port = 8126, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null, bool useTelemetry = false)
+            => new TcpUdpAgent(port, retries, useStatsd, doNotBindPorts, requestedStatsDPort, useTelemetry) { Output = output };
 
 #if NETCOREAPP3_1_OR_GREATER
         public static UdsAgent Create(UnixDomainSocketConfig config) => new UdsAgent(config);
@@ -758,23 +758,32 @@ namespace Datadog.Trace.TestHelpers
                     try
                     {
                         var ctx = _listener.GetContext();
-                        OnRequestReceived(ctx);
-
-                        if (Version != null)
+                        try
                         {
-                            ctx.Response.AddHeader("Datadog-Agent-Version", Version);
+                            OnRequestReceived(ctx);
+
+                            if (Version != null)
+                            {
+                                ctx.Response.AddHeader("Datadog-Agent-Version", Version);
+                            }
+
+                            var response = HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request));
+                            var buffer = Encoding.UTF8.GetBytes(response);
+                            ctx.Response.ContentType = "application/json";
+                            ctx.Response.ContentLength64 = buffer.LongLength;
+                            ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
                         }
+                        catch (Exception ex)
+                        {
+                            Output?.WriteLine("[HandleHttpRequests]Error processing web request" + ex);
+                        }
+                        finally
+                        {
+                            // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
+                            // (Setting content-length avoids that)
 
-                        var response = HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request));
-                        var buffer = Encoding.UTF8.GetBytes(response);
-                        ctx.Response.ContentType = "application/json";
-                        ctx.Response.ContentLength64 = buffer.LongLength;
-                        ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
-
-                        // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
-                        // (Setting content-length avoids that)
-
-                        ctx.Response.Close();
+                            ctx.Response.Close();
+                        }
                     }
                     catch (HttpListenerException)
                     {

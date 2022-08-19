@@ -29,7 +29,7 @@ namespace Datadog.Trace.IntegrationTests
             string actualContainerId = null;
             var agentPort = TcpPortProvider.GetOpenPort();
 
-            using (var agent = MockTracerAgent.Create(agentPort))
+            using (var agent = MockTracerAgent.Create(_output, agentPort))
             {
                 agent.RequestReceived += (sender, args) =>
                 {

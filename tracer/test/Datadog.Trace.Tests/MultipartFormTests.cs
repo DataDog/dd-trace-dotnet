@@ -28,7 +28,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public async Task ApiWebRequestMultipartTest()
         {
-            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
+            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
             agent.ShouldDeserializeTraces = false;
             string requestBody = null;
             agent.RequestReceived += (sender, args) =>
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public async Task ApiWebRequestValidationTest()
         {
-            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
+            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
             agent.ShouldDeserializeTraces = false;
             string requestBody = null;
             agent.RequestReceived += (sender, args) =>
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public async Task HttpClientRequestMultipartTest()
         {
-            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
+            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
             agent.ShouldDeserializeTraces = false;
             string requestBody = null;
             agent.RequestReceived += (sender, args) =>
