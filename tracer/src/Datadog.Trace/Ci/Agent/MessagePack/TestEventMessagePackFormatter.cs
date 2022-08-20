@@ -14,7 +14,6 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         {
             if (value is null)
             {
-                Log.Warning("TestEventMessagePackFormatter: TestEvent is null");
                 return 0;
             }
 
