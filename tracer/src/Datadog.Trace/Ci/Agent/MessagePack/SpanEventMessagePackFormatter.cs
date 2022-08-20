@@ -14,6 +14,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         {
             if (value is null)
             {
+                Log.Warning("SpanEventMessagePackFormatter: SpanEvent is null");
                 return 0;
             }
 
