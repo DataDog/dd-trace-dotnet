@@ -17,4 +17,5 @@ public:
     //  - module name
     //  - frame text
     virtual std::tuple<bool, std::string, std::string> GetFrame(uintptr_t instructionPointer) = 0;
+    virtual bool GetTypeName(ClassID classId, std::string& name) = 0;
 };

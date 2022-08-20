@@ -42,7 +42,7 @@ namespace Datadog.Trace.TestHelpers
             _samplesDirectory = samplesDirectory ?? Path.Combine("test", "test-applications", "integrations");
             _targetFramework = Assembly.GetAssembly(anchorType).GetCustomAttribute<TargetFrameworkAttribute>();
             _output = output;
-            TracerHome = GetTracerHomePath();
+            MonitoringHome = GetMonitoringHomePath();
             LogDirectory = DatadogLogging.GetLogDirectory();
 
             var parts = _targetFramework.FrameworkName.Split(',');
@@ -73,7 +73,7 @@ namespace Datadog.Trace.TestHelpers
 
         public string LogDirectory { get; }
 
-        public string TracerHome { get; }
+        public string MonitoringHome { get; }
 
         public string FullSampleName => $"{_appNamePrepend}{SampleName}";
 
@@ -89,42 +89,34 @@ namespace Datadog.Trace.TestHelpers
 
         public static bool IsAlpine() => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("IsAlpine"));
 
-        public static string GetTracerHomePath()
+        public static string GetMonitoringHomePath()
         {
-            var tracerHomeDirectoryEnvVar = "TracerHomeDirectory";
-            var tracerHome = Environment.GetEnvironmentVariable(tracerHomeDirectoryEnvVar);
-            if (string.IsNullOrEmpty(tracerHome))
+            var monitoringHomeDirectoryEnvVar = "MonitoringHomeDirectory";
+            var monitoringHome = Environment.GetEnvironmentVariable(monitoringHomeDirectoryEnvVar);
+            if (!string.IsNullOrEmpty(monitoringHome))
             {
                 // default
-                return Path.Combine(
-                    GetMonitoringHomePath(),
-                    "tracer");
+                monitoringHome = Path.Combine(
+                    EnvironmentTools.GetSolutionDirectory(),
+                    "shared",
+                    "bin",
+                    "monitoring-home");
             }
 
-            if (!Directory.Exists(tracerHome))
+            if (!Directory.Exists(monitoringHome))
             {
-                throw new InvalidOperationException($"{tracerHomeDirectoryEnvVar} was set to '{tracerHome}', but directory does not exist");
+                throw new InvalidOperationException($"{monitoringHomeDirectoryEnvVar} was set to '{monitoringHome}', but directory does not exist");
             }
 
             // basic verification
             var tfmDirectory = EnvironmentTools.GetTracerTargetFrameworkDirectory();
-            var dllLocation = Path.Combine(tracerHome, tfmDirectory);
+            var dllLocation = Path.Combine(monitoringHome, tfmDirectory);
             if (!Directory.Exists(dllLocation))
             {
-                throw new InvalidOperationException($"{tracerHomeDirectoryEnvVar} was set to '{tracerHome}', but location does not contain expected folder '{tfmDirectory}'");
+                throw new InvalidOperationException($"{monitoringHomeDirectoryEnvVar} was set to '{monitoringHome}', but location does not contain expected folder '{tfmDirectory}'");
             }
 
-            return tracerHome;
-        }
-
-        public static string GetMonitoringHomePath()
-        {
-            // default
-            return Path.Combine(
-                EnvironmentTools.GetSolutionDirectory(),
-                "shared",
-                "bin",
-                "monitoring-home");
+            return monitoringHome;
         }
 
         public static string GetNativeLoaderPath()
@@ -195,7 +187,7 @@ namespace Datadog.Trace.TestHelpers
             string externalRulesFile = null)
         {
             string profilerEnabled = AutomaticInstrumentationEnabled ? "1" : "0";
-            environmentVariables["DD_DOTNET_TRACER_HOME"] = TracerHome;
+            environmentVariables["DD_DOTNET_TRACER_HOME"] = MonitoringHome;
 
             // Everything should be using the native loader now
             var nativeLoaderPath = GetNativeLoaderPath();

@@ -75,6 +75,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             }
         }
 
+        internal static void DecorateSpanWithRuntimeAndCiInformation(Span span)
+        {
+            // CI Environment variables data
+            CIEnvironmentValues.Instance.DecorateSpan(span);
+
+            // Runtime information
+            var framework = FrameworkDescription.Instance;
+            span.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
+            span.SetTag(CommonTags.RuntimeName, framework.Name);
+            span.SetTag(CommonTags.RuntimeVersion, framework.ProductVersion);
+            span.SetTag(CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
+            span.SetTag(CommonTags.OSArchitecture, framework.OSArchitecture);
+            span.SetTag(CommonTags.OSPlatform, framework.OSPlatform);
+            span.SetTag(CommonTags.OSVersion, Environment.OSVersion.VersionString);
+        }
+
         internal static void StartCoverage()
         {
             Ci.Coverage.CoverageReporter.Handler.StartSession();

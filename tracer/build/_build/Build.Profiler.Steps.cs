@@ -145,7 +145,7 @@ partial class Build
         .Executes(() =>
         {
             var (arch, ext) = GetUnixArchitectureAndExtension();
-            var sourceDir = ProfilerOutputDirectory / "DDProf-Deploy";
+            var sourceDir = ProfilerOutputDirectory / "DDProf-Deploy" / arch;
             EnsureExistingDirectory(MonitoringHomeDirectory / arch);
             EnsureExistingDirectory(SymbolsDirectory / arch);
 
@@ -166,7 +166,7 @@ partial class Build
         {
             foreach (var architecture in ArchitecturesForPlatform)
             {
-                var sourceDir = ProfilerOutputDirectory / "DDProf-Deploy" / $"win-{architecture}"; 
+                var sourceDir = ProfilerOutputDirectory / "DDProf-Deploy" / $"win-{architecture}";
                 var source = sourceDir / "Datadog.Profiler.Native.dll";
                 var dest = MonitoringHomeDirectory / $"win-{architecture}";
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);

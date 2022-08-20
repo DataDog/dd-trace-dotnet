@@ -1007,7 +1007,7 @@ partial class Build
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetProcessEnvironmentVariable("TracerHomeDirectory", MonitoringHomeDirectory)
+                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
                     .When(CodeCoverage, ConfigureCodeCoverage)
@@ -1027,7 +1027,7 @@ partial class Build
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True")
-                    .SetProcessEnvironmentVariable("TracerHomeDirectory", MonitoringHomeDirectory)
+                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
@@ -1064,7 +1064,7 @@ partial class Build
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "Category=Smoke&LoadFromGAC!=True")
-                    .SetProcessEnvironmentVariable("TracerHomeDirectory", MonitoringHomeDirectory)
+                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
@@ -1110,7 +1110,7 @@ partial class Build
                                 .EnableNoRestore()
                                 .EnableNoBuild()
                                 .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True")
-                                .SetProcessEnvironmentVariable("TracerHomeDirectory", MonitoringHomeDirectory)
+                                .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                                 .SetLogsDirectory(TestLogsDirectory)
                                 .When(CodeCoverage, ConfigureCodeCoverage)
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
@@ -1144,7 +1144,7 @@ partial class Build
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFilter(Filter ?? "(RunOnWindows=True)&MSI=True")
-                    .SetProcessEnvironmentVariable("TracerHomeDirectory", MonitoringHomeDirectory)
+                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(resultsDirectory)
@@ -1403,7 +1403,7 @@ partial class Build
                         .SetFramework(Framework)
                         //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                         .SetFilter(filter)
-                        .SetProcessEnvironmentVariable("TracerHomeDirectory", MonitoringHomeDirectory)
+                        .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                         .SetLogsDirectory(TestLogsDirectory)
                         .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                         .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
@@ -1423,7 +1423,7 @@ partial class Build
                     .SetFramework(Framework)
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .SetFilter(filter)
-                    .SetProcessEnvironmentVariable("TracerHomeDirectory", MonitoringHomeDirectory)
+                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(IncludeMinorPackageVersions, o => o.SetProperty("IncludeMinorPackageVersions", "true"))
@@ -1491,7 +1491,7 @@ partial class Build
                 .SetConfiguration(BuildConfiguration)
                 .EnableNoRestore()
                 .EnableNoBuild()
-                .SetProcessEnvironmentVariable("TracerHomeDirectory", MonitoringHomeDirectory)
+                .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                 .SetProcessEnvironmentVariable("ToolInstallDirectory", ToolInstallDirectory)
                 .SetLogsDirectory(TestLogsDirectory)
                 .EnableTrxLogOutput(GetResultsDirectory(project)));
@@ -1539,6 +1539,9 @@ partial class Build
                knownPatterns.Add(new(@".*DynamicDispatcherImpl::LoadClassFactory: Error trying to load continuous profiler class factory.*", RegexOptions.Compiled));
                knownPatterns.Add(new(@".*Error loading all cor profiler class factories\.", RegexOptions.Compiled));
            }
+
+            // profiler occasionally throws this if shutting down
+            knownPatterns.Add(new(@".*LinuxStackFramesCollector::CollectStackSampleImplementation: Unable to send signal .*Error code: No such process", RegexOptions.Compiled));
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });

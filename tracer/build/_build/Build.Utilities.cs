@@ -223,14 +223,6 @@ partial class Build
             new SetAllVersions.Source(TracerDirectory, NewVersion, NewIsPrerelease.Value!).Run();
         });
 
-    Target UpdateMsiContents => _ => _
-       .Description("Update the contents of the MSI")
-       .DependsOn(Clean, BuildTracerHome)
-       .Executes(() =>
-        {
-            SyncMsiContent.Run(SharedDirectory, MonitoringHomeDirectory);
-        });
-
     Target UpdateSnapshots => _ => _
         .Description("Updates verified snapshots files with received ones")
         .Executes(ReplaceReceivedFilesInSnapshots);
@@ -295,6 +287,11 @@ partial class Build
             {
                 Logger.Warn($"Skipping file '{source}' as filename did not end with 'received'");
                 continue;
+            }
+
+            if (fileName.Contains("VersionMismatchNewerNugetTests"))
+            {
+                Logger.Warn("Updated snapshots contain a version mismatch test. You may need to upgrade your code in the Azure public feed.");
             }
 
             var trimmedName = fileName.Substring(0, fileName.Length - suffixLength);

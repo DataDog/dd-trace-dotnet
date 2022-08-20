@@ -42,7 +42,6 @@ namespace Datadog.Trace
         public void Close(Scope scope)
         {
             var current = Active;
-            var isRootSpan = scope.Parent == null;
 
             if (current == null || current != scope)
             {

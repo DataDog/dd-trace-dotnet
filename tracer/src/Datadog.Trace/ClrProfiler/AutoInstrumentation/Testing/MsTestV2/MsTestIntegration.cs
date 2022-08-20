@@ -52,16 +52,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             span.SetTag(TestTags.Framework, testFramework);
             span.SetTag(TestTags.FrameworkVersion, type.Assembly?.GetName().Version.ToString());
             span.SetTag(TestTags.Type, TestTags.TypeTest);
-            CIEnvironmentValues.Instance.DecorateSpan(span);
-
-            var framework = FrameworkDescription.Instance;
-            span.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
-            span.SetTag(CommonTags.RuntimeName, framework.Name);
-            span.SetTag(CommonTags.RuntimeVersion, framework.ProductVersion);
-            span.SetTag(CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
-            span.SetTag(CommonTags.OSArchitecture, framework.OSArchitecture);
-            span.SetTag(CommonTags.OSPlatform, framework.OSPlatform);
-            span.SetTag(CommonTags.OSVersion, Environment.OSVersion.VersionString);
 
             // Get test parameters
             ParameterInfo[] methodParameters = testMethod.GetParameters();
@@ -92,6 +82,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             {
                 span.SetTag(TestTags.Traits, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(testTraits));
             }
+
+            // CI Environment Variables and Runtime information
+            Common.DecorateSpanWithRuntimeAndCiInformation(span);
 
             // Test code and code owners
             Common.DecorateSpanWithSourceAndCodeOwners(span, testMethod);

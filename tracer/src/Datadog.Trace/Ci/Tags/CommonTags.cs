@@ -149,5 +149,10 @@ namespace Datadog.Trace.Ci.Tags
         /// Library Version
         /// </summary>
         public const string LibraryVersion = "library_version";
+
+        /// <summary>
+        /// Environment variables from CI
+        /// </summary>
+        public const string CiEnvVars = "_dd.ci.env_vars";
     }
 }

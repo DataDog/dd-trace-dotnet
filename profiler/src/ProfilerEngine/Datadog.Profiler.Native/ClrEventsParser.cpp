@@ -114,7 +114,7 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
             return;
         }
 
-        _pAllocationListener->OnAllocation(payload.AllocationKind, payload.TypeName, payload.Address, payload.ObjectSize);
+        _pAllocationListener->OnAllocation(payload.AllocationKind, payload.TypeId, payload.TypeName, payload.Address, payload.ObjectSize);
     }
 }
 

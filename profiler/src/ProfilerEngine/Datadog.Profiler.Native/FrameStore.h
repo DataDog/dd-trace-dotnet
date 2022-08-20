@@ -33,6 +33,7 @@ public:
 
 public :
     std::tuple<bool, std::string, std::string> GetFrame(uintptr_t instructionPointer) override;
+    bool GetTypeName(ClassID classId, std::string& name) override;
 
 private:
     bool GetFunctionInfo(
@@ -50,7 +51,16 @@ private:
         ULONG32 genericParametersCount,
         ClassID* genericParameters
         );
-    bool GetTypeDesc(IMetaDataImport2* pMetadataImport, ClassID classId, ModuleID moduleId, mdTypeDef mdTokenType, TypeDesc& typeDesc);
+    bool GetTypeDesc(
+        IMetaDataImport2* pMetadataImport,
+        ClassID classId,
+        ModuleID moduleId,
+        mdTypeDef mdTokenType,
+        TypeDesc& typeDesc,
+        bool isEncoded
+        );
+    bool GetTypeDesc(ClassID classId, TypeDesc& typeDesc, bool isEncoded);
+    bool GetCachedTypeDesc(ClassID classId, TypeDesc& typeDesc);
     std::pair <std::string, std::string> GetManagedFrame(FunctionID functionId);
     std::pair <std::string, std::string> GetNativeFrame(uintptr_t instructionPointer);
 
@@ -61,14 +71,19 @@ private:  // global helpers
     static void FixTrailingGeneric(WCHAR* name);
     static std::string GetTypeNameFromMetadata(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType);
     static std::pair<std::string, std::string> GetTypeWithNamespace(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType);
-    static std::string FormatGenericTypeParameters(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType);
-    static std::string FormatGenericParameters(ICorProfilerInfo4* pInfo, ULONG32 numGenericTypeArgs, ClassID* genericTypeArgs);
+    static std::string FormatGenericTypeParameters(IMetaDataImport2* pMetadata, mdTypeDef mdTokenType, bool isEncoded);
+    static std::string FormatGenericParameters(
+        ICorProfilerInfo4* pInfo,
+        ULONG32 numGenericTypeArgs,
+        ClassID* genericTypeArgs,
+        bool isEncoded);
     static std::pair<std::string, std::string> GetManagedTypeName(
         ICorProfilerInfo4* pInfo,
         IMetaDataImport2* pMetadata,
         ModuleID moduleId,
         ClassID classId,
-        mdTypeDef mdTokenType
+        mdTypeDef mdTokenType,
+        bool isEncoded
         );
     static std::pair<std::string, mdTypeDef> GetMethodNameFromMetadata(
         IMetaDataImport2* pMetadataImport,

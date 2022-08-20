@@ -109,41 +109,58 @@ partial class Build
                 var changes = GitTasks.Git("diff master -- tracer/test/snapshots")
                                    .Select(f => f.Text);
 
-
                 const int minFiles = 50;
                 var nbSnapshotsModified = changes.Count(f => f.Contains("@@ "));
                 if (nbSnapshotsModified < minFiles)
                 {
                     // Dumb early exit, if we modify less than 50 files, we can review them manually
                     // Also it's certainly an addition of snapshot tests, so may not make sense to print a summary.
-                    Console.WriteLine("${nbSnapshotsModified} snapshots modified. Not doing snapshots diff for PRs modifying less than ${minFiles}.");
+                    Console.WriteLine($"{nbSnapshotsModified} snapshots modified. Not doing snapshots diff for PRs modifying less than {minFiles}.");
                     return;
                 }
 
                 const string unlinkedLinesExplicitor = "[...]";
+                var crossVersionTestsNamePattern = new [] {"VersionMismatchNewerNugetTests"};
                 var diffCounts = new Dictionary<string, int>();
                 StringBuilder diffsInFile = new();
-                var lastLineContainedAChange = false;
+                var considerUpdatingPublicFeed = false;
+                var lastLine = string.Empty;
                 foreach (var line in changes)
                 {
-                    if (line.StartsWith("@@")) // new file
+                    if (line.StartsWith("@@ ")) // new change, not looking at files cause the changes would be too different
                     {
                         RecordChange(diffsInFile, diffCounts);
-                        lastLineContainedAChange = false;
+                        lastLine = String.Empty;
                         continue;
                     }
 
                     if (line.StartsWith("- ") || line.StartsWith("+ "))
                     {
+                        if (!string.IsNullOrEmpty(lastLine) &&
+                            lastLine[0] != line[0] &&
+                            lastLine.Trim(',').Substring(1) == line.Trim(',').Substring(1))
+                        {
+                            // The two lines are actually the same, just an additional comma on previous line
+                            // So we can remove it from the diff for better understanding?
+                            diffsInFile.Remove(diffsInFile.Length - lastLine.Length - Environment.NewLine.Length, lastLine.Length + Environment.NewLine.Length);
+                            lastLine = string.Empty;
+                            continue;
+                        }
+
                         diffsInFile.AppendLine(line);
-                        lastLineContainedAChange = true;
+                        lastLine = line;
                         continue;
                     }
 
-                    if (lastLineContainedAChange)
+                    if (!string.IsNullOrEmpty(lastLine))
                     {
                         diffsInFile.AppendLine(unlinkedLinesExplicitor);
-                        lastLineContainedAChange = false;
+                        lastLine = string.Empty;
+                    }
+
+                    if (!considerUpdatingPublicFeed && crossVersionTestsNamePattern.Any(p => line.Contains(p)))
+                    {
+                        considerUpdatingPublicFeed = true;
                     }
                 }
 
@@ -152,6 +169,11 @@ partial class Build
                 var markdown = new StringBuilder();
                 markdown.AppendLine("## Snapshots difference summary").AppendLine();
                 markdown.AppendLine("The following differences have been observed in snapshots. So diff is simplistic, so please check some files anyway while we improve it.").AppendLine();
+
+                if (considerUpdatingPublicFeed)
+                {
+                    markdown.AppendLine("**Note** that this PR updates a version mismatch test. You may need to upgrade your code in the Azure public feed");
+                }
 
                 foreach (var diff in diffCounts)
                 {
@@ -162,6 +184,7 @@ partial class Build
                 }
 
                 // Console.WriteLine(markdown.ToString());
+                await HideCommentsInPullRequest(PullRequestNumber.Value, "## Snapshots difference");
                 await PostCommentToPullRequest(PullRequestNumber.Value, markdown.ToString());
 
                 void RecordChange(StringBuilder diffsInFile, Dictionary<string, int> diffCounts)
@@ -340,7 +363,7 @@ partial class Build
 
     Target OutputCurrentVersionToGitHub => _ => _
        .Unlisted()
-       .After(UpdateVersion, UpdateMsiContents)
+       .After(UpdateVersion)
        .Requires(() => Version)
        .Executes(() =>
         {
@@ -386,7 +409,7 @@ partial class Build
     Target VerifyChangedFilesFromVersionBump => _ => _
        .Unlisted()
        .Description("Verifies that the expected files were changed")
-       .After(UpdateVersion, UpdateMsiContents, UpdateChangeLog)
+       .After(UpdateVersion, UpdateChangeLog)
        .Executes(() =>
         {
             var expectedFileChanges = new List<string>

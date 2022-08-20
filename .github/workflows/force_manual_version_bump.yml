@@ -32,7 +32,7 @@ jobs:
 
       - name: "Bump Version"
         id: versions
-        run: .\tracer\build.ps1 UpdateVersion UpdateMsiContents OutputCurrentVersionToGitHub
+        run: .\tracer\build.ps1 UpdateVersion OutputCurrentVersionToGitHub
 
       - name: "Verify Changes"
         id: changes
