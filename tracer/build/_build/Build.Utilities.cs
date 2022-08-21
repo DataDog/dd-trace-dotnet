@@ -7,6 +7,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Threading.Tasks;
 using Amazon.SimpleSystemsManagement.Model;
 using DiffMatchPatch;
 using GenerateSpanDocumentation;
@@ -298,6 +299,7 @@ partial class Build
                              project: AzureDevopsProjectId,
                              buildId: buildNumber);
 
+            var listTasks = new List<Task>();
             foreach(var artifact in artifacts)
             {
                 if (!artifact.Name.Contains("snapshots"))
@@ -308,17 +310,22 @@ partial class Build
                 var extractLocation = Path.Combine((AbsolutePath)Path.GetTempPath(), artifact.Name);
                 var snapshotsDirectory = TestsDirectory / "snapshots";
 
-                await DownloadAzureArtifact((AbsolutePath)Path.GetTempPath(), artifact, AzureDevopsToken);
+                listTasks.Add(Task.Run(async () =>
+                {
+                    await DownloadAzureArtifact((AbsolutePath)Path.GetTempPath(), artifact, AzureDevopsToken);
 
-                CopyDirectoryRecursively(
-                    source: extractLocation,
-                    target: snapshotsDirectory,
-                    DirectoryExistsPolicy.Merge,
-                    FileExistsPolicy.Skip,
-                    excludeFile: file => !Path.GetFileNameWithoutExtension(file.FullName).EndsWith(".received"));
+                    CopyDirectoryRecursively(
+                        source: extractLocation,
+                        target: snapshotsDirectory,
+                        DirectoryExistsPolicy.Merge,
+                        FileExistsPolicy.Skip,
+                        excludeFile: file => !Path.GetFileNameWithoutExtension(file.FullName).EndsWith(".received"));
 
-                DeleteDirectory(extractLocation);
+                    DeleteDirectory(extractLocation);
+                }));
             }
+
+            Task.WaitAll(listTasks.ToArray());
 
             ReplaceReceivedFilesInSnapshots();
       });
