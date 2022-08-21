@@ -102,7 +102,7 @@
       "version": "2"
     },
     "message": "OverloadAndSimpleNameTest.Method(a=-2147483648)",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -217,7 +217,7 @@
       "version": "2"
     },
     "message": "OverloadAndSimpleNameTest.Method(a=-2147483648, b=2147483647)",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -627,7 +627,7 @@
       "version": "2"
     },
     "message": "Method(a=Person, b=Person): Person\r\n@return=Person, isEqual=False",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -707,7 +707,7 @@
       "version": "2"
     },
     "message": "Method(a=Marty McFly): OuterType+OverloadAndSimpleNameTest.Method[Marty McFly]\r\n@return=OuterType+OverloadAndSimpleNameTest.Method[Marty McFly]",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -883,7 +883,7 @@
       "version": "2"
     },
     "message": "OverloadAndSimpleNameTest.Method(adr=Address): Address\r\n@return=Address",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -963,7 +963,7 @@
       "version": "2"
     },
     "message": "OuterType+OverloadAndSimpleNameTest.Method(c=@): Spicing.Things.Down.OuterType+OverloadAndSimpleNameTest.Method.@\r\n@return=Spicing.Things.Down.OuterType+OverloadAndSimpleNameTest.Method.@",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -1043,7 +1043,7 @@
       "version": "2"
     },
     "message": "OverloadAndSimpleNameTest.Method(c=@): Spicing.Things.Up.OverloadAndSimpleNameTest.Method.@\r\n@return=Spicing.Things.Up.OverloadAndSimpleNameTest.Method.@",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -1155,7 +1155,7 @@
       "version": "2"
     },
     "message": "OverloadAndSimpleNameTest.Method(c=@)\r\nlocal=Method@",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -1235,6 +1235,6 @@
       "version": "2"
     },
     "message": "OverloadAndSimpleNameTest.Method(callerName=First Call)\r\na=13",
-    "service": "Unknown"
+    "service": "Probes"
   }
 ]

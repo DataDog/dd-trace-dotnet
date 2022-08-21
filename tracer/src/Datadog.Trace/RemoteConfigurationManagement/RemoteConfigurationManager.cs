@@ -43,9 +43,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             RcmClientTracer rcmTracer,
             TimeSpan pollInterval)
         {
-            _rcmTracer = rcmTracer;
             _discoveryService = discoveryService;
             _remoteConfigurationApi = remoteConfigurationApi;
+            _rcmTracer = rcmTracer;
             _pollInterval = pollInterval;
             _id = id;
 

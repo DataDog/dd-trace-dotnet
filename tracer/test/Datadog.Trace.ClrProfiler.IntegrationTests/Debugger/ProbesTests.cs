@@ -10,10 +10,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations.Models;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Samples.Probes;
 using Samples.Probes.SmokeTests;
@@ -77,7 +80,7 @@ public class ProbesTests : TestHelper, IDisposable
         using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
         using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
 
-        SetProbeConfiguration(DebuggerTestHelper.CreateProbeDefinition(probes.Select(p => p.Probe).ToArray()));
+        SetProbeConfiguration(probes.Select(p => p.Probe).ToArray());
         await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
 
         await sample.RunCodeSample();
@@ -93,8 +96,7 @@ public class ProbesTests : TestHelper, IDisposable
             await ApproveStatuses(statuses, testType, isMultiPhase: true, phaseNumber: 1);
             agent.ClearProbeStatuses();
 
-            var emptyDefinition = DebuggerTestHelper.CreateProbeDefinition(Array.Empty<SnapshotProbe>());
-            SetProbeConfiguration(emptyDefinition);
+            SetProbeConfiguration(Array.Empty<SnapshotProbe>());
             await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
             Assert.True(await agent.WaitForNoSnapshots(6000), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
         }
@@ -119,7 +121,7 @@ public class ProbesTests : TestHelper, IDisposable
         using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
         using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
 
-        SetProbeConfiguration(DebuggerTestHelper.CreateProbeDefinition(probes.Select(p => p.Probe).ToArray()));
+        SetProbeConfiguration(probes.Select(p => p.Probe).ToArray());
         await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
 
         await sample.RunCodeSample();
@@ -205,8 +207,7 @@ public class ProbesTests : TestHelper, IDisposable
 
         async Task RunPhase(SnapshotProbe[] snapshotProbes, ProbeAttributeBase[] probeData, bool isMultiPhase = false, int phaseNumber = 1)
         {
-            var definition = DebuggerTestHelper.CreateProbeDefinition(snapshotProbes);
-            SetProbeConfiguration(definition);
+            SetProbeConfiguration(snapshotProbes);
             await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
 
             await sample.RunCodeSample();
@@ -379,23 +380,29 @@ public class ProbesTests : TestHelper, IDisposable
 
     private void SetDebuggerEnvironment()
     {
-        var probeConfiguration = DebuggerTestHelper.CreateProbeDefinition(Array.Empty<SnapshotProbe>());
-        SetProbeConfiguration(probeConfiguration);
+        SetEnvironmentVariable(ConfigurationKeys.ServiceName, EnvironmentHelper.SampleName);
+        SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
 
-        SetEnvironmentVariable(ConfigurationKeys.Debugger.ProbeFile, probesDefinitionPath);
+        SetEnvironmentVariable(ConfigurationKeys.Rcm.FilePath, _rcmPath);
         SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "3");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DiagnosticsInterval, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000");
+        SetProbeConfiguration(Array.Empty<SnapshotProbe>());
     }
 
-    private void SetProbeConfiguration(ProbeConfiguration probeConfiguration)
+    private void SetProbeConfiguration(SnapshotProbe[] snapshotProbes)
     {
-        var json = JsonConvert.SerializeObject(probeConfiguration, Formatting.Indented);
-        File.WriteAllText(probesDefinitionPath, json);
+        var probeConfiguration = new ProbeConfiguration { Id = Guid.Empty.ToString(), SnapshotProbes = snapshotProbes };
+        var configurations = new List<(object Config, string Id)>
+        {
+            new(probeConfiguration, EnvironmentHelper.SampleName.ToUUID())
+        };
+
+        SetRcmConfiguration(configurations);
     }
 
-    private void SetRcmConfiguration(IEnumerable<(object Config, string Id)> configurations, string productName)
+    private void SetRcmConfiguration(IEnumerable<(object Config, string Id)> configurations)
     {
         var targetFiles = new List<RcmFile>();
         var targets = new Dictionary<string, Target>();
@@ -403,7 +410,7 @@ public class ProbesTests : TestHelper, IDisposable
 
         foreach (var configuration in configurations)
         {
-            var path = $"datadog/2/{productName}/{configuration.Id}/config";
+            var path = $"datadog/2/{LiveDebuggerProduct.ProductName}/{configuration.Id}/config";
             var content = JsonConvert.SerializeObject(configuration.Config);
 
             clientConfigs.Add(path);

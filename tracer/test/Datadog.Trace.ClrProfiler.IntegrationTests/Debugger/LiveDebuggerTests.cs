@@ -35,7 +35,6 @@ public class LiveDebuggerTests : TestHelper
         SetServiceVersion("1.0.0");
     }
 
-    [Fact(Skip = "Live Debugger is temporarily disabled.")]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
@@ -45,7 +44,6 @@ public class LiveDebuggerTests : TestHelper
         await RunTest();
     }
 
-    [Fact(Skip = "Live Debugger is temporarily disabled.")]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
@@ -75,7 +73,6 @@ public class LiveDebuggerTests : TestHelper
         {
             var memoryAssertions = MemoryAssertions.CaptureSnapshotToAssertOn(sample);
 
-            memoryAssertions.NoObjectsExist<ConfigurationPoller>();
             memoryAssertions.NoObjectsExist<DebuggerSink>();
             memoryAssertions.NoObjectsExist<LineProbeResolver>();
         }

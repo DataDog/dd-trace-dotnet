@@ -21,7 +21,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Json
 
             var contentDecode = Encoding.UTF8.GetString(Convert.FromBase64String((string)reader.Value));
 
-            return JsonConvert.DeserializeObject<TufRoot>(contentDecode);
+            var obj = JsonConvert.DeserializeObject<TufRoot>(contentDecode);
+
+            return obj;
         }
 
         public override void WriteJson(JsonWriter writer, TufRoot value, JsonSerializer serializer)
