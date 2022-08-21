@@ -16,7 +16,7 @@
         "http.url": "http://localhost:5000/api/values",
         "runtime-id": "11c61d09-16bb-477f-87ab-4f81d656c5ca",
         "span.kind": "client",
-        "_dd.p.dm": "-1"
+        "_dd.p.dm": "-0"
       },
       "metrics": {
         "_dd.agent_psr": 1.0,

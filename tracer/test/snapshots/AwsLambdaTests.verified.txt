@@ -21,7 +21,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
       http.url: http://localhost/function/HandlerNoParamAsync,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -52,7 +52,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
       http.url: http://localhost/function/HandlerNoParamSync,
       runtime-id: Guid_2,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -113,7 +113,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
       http.url: http://localhost/function/HandlerNoParamVoid,
       runtime-id: Guid_4,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -144,7 +144,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
       http.url: http://localhost/function/HandlerOneParamAsync,
       runtime-id: Guid_5,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -175,7 +175,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
       http.url: http://localhost/function/HandlerOneParamSync,
       runtime-id: Guid_6,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -236,7 +236,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
       http.url: http://localhost/function/HandlerOneParamVoid,
       runtime-id: Guid_8,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -267,7 +267,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
       http.url: http://localhost/function/HandlerTwoParamsAsync,
       runtime-id: Guid_9,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -298,7 +298,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
       http.url: http://localhost/function/HandlerTwoParamsSync,
       runtime-id: Guid_10,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -359,7 +359,7 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
       http.url: http://localhost/function/HandlerTwoParamsVoid,
       runtime-id: Guid_12,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,

@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -12,7 +12,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -35,7 +35,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -58,7 +58,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -81,7 +81,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -107,7 +107,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -133,7 +133,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -159,7 +159,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -185,7 +185,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -210,7 +210,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -236,7 +236,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -262,7 +262,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -288,7 +288,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -314,7 +314,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -340,7 +340,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -366,7 +366,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -392,7 +392,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -418,7 +418,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -444,7 +444,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -470,7 +470,7 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -1
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
