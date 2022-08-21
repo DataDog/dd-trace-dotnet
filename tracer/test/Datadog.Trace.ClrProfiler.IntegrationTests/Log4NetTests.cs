@@ -159,7 +159,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.Log4Net), hostName);
 
             var agentPort = TcpPortProvider.GetOpenPort();
-            using var agent = MockTracerAgent.Create(agentPort);
+            using var agent = MockTracerAgent.Create(Output, agentPort);
             using var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
 
             Assert.True(processResult.ExitCode >= 0, $"Process exited with code {processResult.ExitCode} and exception: {processResult.StandardError}");
