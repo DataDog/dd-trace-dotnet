@@ -3,14 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.IntegrationTests.Debugger.Assertions;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
-using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.TestHelpers;
 using Samples.Probes;
