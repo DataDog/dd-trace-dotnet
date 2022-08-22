@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <cstddef>
 #include "EnumHelpers.h"
 
 ENUM_FLAGS(RuntimeProfiler, size_t)
