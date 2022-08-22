@@ -27,7 +27,7 @@ namespace Datadog.Trace.AppSec
 
         public event EventHandler<InstrumentationGatewaySecurityEventArgs> PathParamsAvailable;
 
-        public event EventHandler<InstrumentationGatewaySecurityEventArgs> EndRequest;
+        public event EventHandler<InstrumentationGatewaySecurityEventArgs> StartRequest;
 
         public event EventHandler<InstrumentationGatewaySecurityEventArgs> BodyAvailable;
 
@@ -44,7 +44,7 @@ namespace Datadog.Trace.AppSec
                 return eventData;
             };
 
-            RaiseEvent(context, relatedSpan, getEventData, EndRequest);
+            RaiseEvent(context, relatedSpan, getEventData, StartRequest);
         }
 
         public void RaisePathParamsAvailable(HttpContext context, Span relatedSpan, IDictionary<string, object> pathParams, bool eraseExistingAddress = true) => RaiseEvent(context, relatedSpan, () => new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } }, PathParamsAvailable, eraseExistingAddress);
@@ -111,7 +111,6 @@ namespace Datadog.Trace.AppSec
                 return;
             }
 
-            var transport = new HttpTransport(context);
             BlockingOpportunity.Invoke(this, new InstrumentationGatewayBlockingEventArgs(context, scope, tracerSettings, doBeforeActualBlocking));
         }
     }

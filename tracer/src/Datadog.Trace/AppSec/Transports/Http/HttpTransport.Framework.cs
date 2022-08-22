@@ -65,9 +65,15 @@ namespace Datadog.Trace.AppSec.Transports.Http
             return new NameValueHeadersCollection(new NameValueCollection());
         }
 
-        public void WriteBlockedResponse()
+        public void WriteBlockedResponse(string templateJson, string templateHtml)
         {
             // todo
+        }
+
+        public void DisposeContextInTheEnd()
+        {
+            // todo to check
+            _context.DisposeOnPipelineCompleted(GetAdditiveContext());
         }
 
         public void StopRequestMovingFurther()

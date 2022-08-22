@@ -5,7 +5,6 @@
 
 #if !NETFRAMEWORK
 using System;
-using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
@@ -47,14 +46,23 @@ namespace Datadog.Trace.AppSec.Transports.Http
             return new HeadersCollectionAdapter(_context.Response.Headers);
         }
 
-        public void WriteBlockedResponse()
+        public void WriteBlockedResponse(string templateJson, string templateHtml)
         {
             _context.Items["block"] = true;
             var httpResponse = _context.Response;
             httpResponse.Clear();
             httpResponse.StatusCode = 403;
-            httpResponse.ContentType = "text/html";
-            httpResponse.WriteAsync(SecurityConstants.AttackBlockedHtml).Wait();
+            if (_context.Request.Headers["Accept"] == "application/json")
+            {
+                httpResponse.WriteAsync(templateJson).Wait();
+                httpResponse.ContentType = "application/json";
+            }
+            else
+            {
+                httpResponse.WriteAsync(templateHtml).Wait();
+                httpResponse.ContentType = "text/html";
+            }
+
             _completeAsync ??= httpResponse.GetType().GetMethod("CompleteAsync");
             if (_completeAsync != null)
             {
@@ -62,8 +70,12 @@ namespace Datadog.Trace.AppSec.Transports.Http
                 t.ConfigureAwait(false);
                 t.Wait();
             }
+        }
 
-            // throw new BlockException(); cant do it here because it s too early we break the tracer, we wont go to unhandled exception in the observer
+        public void DisposeContextInTheEnd()
+        {
+            var context = GetAdditiveContext();
+            _context.Response.RegisterForDispose(context);
         }
     }
 }

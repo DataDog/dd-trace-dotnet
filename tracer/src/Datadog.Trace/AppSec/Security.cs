@@ -18,6 +18,7 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.AppSec
 {
@@ -70,10 +71,7 @@ namespace Datadog.Trace.AppSec
 
             ResponseHeaders = new()
             {
-                { "content-length", string.Empty },
-                { "content-type", string.Empty },
-                { "Content-Encoding", string.Empty },
-                { "Content-Language", string.Empty },
+                { "content-length", string.Empty }, { "content-type", string.Empty }, { "Content-Encoding", string.Empty }, { "Content-Language", string.Empty },
             };
         }
 
@@ -85,7 +83,7 @@ namespace Datadog.Trace.AppSec
         {
         }
 
-        private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IWaf waf = null)
+        private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IWaf waf = null, IDogStatsd statsd = null)
         {
             try
             {
@@ -98,9 +96,10 @@ namespace Datadog.Trace.AppSec
                     _waf = waf ?? Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules);
                     if (_waf?.InitializedSuccessfully ?? false)
                     {
-                        _instrumentationGateway.EndRequest += RunWaf;
-                        _instrumentationGateway.PathParamsAvailable += AggregateAddressesInContext;
-                        _instrumentationGateway.BodyAvailable += AggregateAddressesInContext;
+                        _instrumentationGateway.StartRequest += RunWafAndReact;
+                        _instrumentationGateway.StartRequest += RegisterForDispose;
+                        _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
+                        _instrumentationGateway.BodyAvailable += RunWafAndReact;
                         _instrumentationGateway.BlockingOpportunity += MightStopRequest;
 #if NETFRAMEWORK
                         try
@@ -127,7 +126,7 @@ namespace Datadog.Trace.AppSec
                         _settings.Enabled = false;
                     }
 
-                    _instrumentationGateway.EndRequest += ReportWafInitInfoOnce;
+                    _instrumentationGateway.StartRequest += ReportWafInitInfoOnce;
                     LifetimeManager.Instance.AddShutdownTask(RunShutdown);
                     _rateLimiter = new AppSecRateLimiter(_settings.TraceRateLimit);
                 }
@@ -261,6 +260,11 @@ namespace Datadog.Trace.AppSec
             }
         }
 
+        private static void RegisterForDispose(object sender, InstrumentationGatewaySecurityEventArgs e)
+        {
+            e.Transport.DisposeContextInTheEnd();
+        }
+
         /// <summary>
         /// Frees resources
         /// </summary>
@@ -339,12 +343,6 @@ namespace Datadog.Trace.AppSec
             return additiveContext;
         }
 
-        private void AggregateAddressesInContext(object sender, InstrumentationGatewaySecurityEventArgs e)
-        {
-            var context = GetOrCreateContext(e.Transport);
-            context.AggregateAddresses(e.EventData, e.OverrideExistingAddress);
-        }
-
         private void MightStopRequest(object sender, InstrumentationGatewayBlockingEventArgs args)
         {
             if (args.Context.Items["block"] != null)
@@ -355,9 +353,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        // NOTE: This method disposes of the WAF context, so it should be run once,
-        // and only once, at the end of the request.
-        private void RunWaf(object sender, InstrumentationGatewaySecurityEventArgs e)
+        private void RunWafAndReact(object sender, InstrumentationGatewaySecurityEventArgs e)
         {
             try
             {
@@ -366,20 +362,19 @@ namespace Datadog.Trace.AppSec
                     return;
                 }
 
-                using var additiveContext = GetOrCreateContext(e.Transport);
-                additiveContext.AggregateAddresses(e.EventData, e.OverrideExistingAddress);
+                var additiveContext = GetOrCreateContext(e.Transport);
                 var span = GetLocalRootSpan(e.RelatedSpan);
 
                 AnnotateSpan(span);
 
                 // run the WAF and execute the results
-                using var wafResult = additiveContext.Run(_settings.WafTimeoutMicroSeconds);
+                using var wafResult = additiveContext.Run(e.EventData, _settings.WafTimeoutMicroSeconds);
                 if (wafResult.ReturnCode is ReturnCode.Monitor or ReturnCode.Block)
                 {
-                    var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock") || wafResult.Data.Contains("crs-942-190");
+                    var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock");
                     if (block)
                     {
-                        e.Transport.WriteBlockedResponse();
+                        e.Transport.WriteBlockedResponse(_settings.BlockedJsonTemplate, _settings.BlockedHtmlTemplate);
                     }
 
                     Report(e.Transport, span, wafResult, block);
@@ -393,7 +388,7 @@ namespace Datadog.Trace.AppSec
 
         private void ReportWafInitInfoOnce(object sender, InstrumentationGatewaySecurityEventArgs e)
         {
-            _instrumentationGateway.EndRequest -= ReportWafInitInfoOnce;
+            _instrumentationGateway.StartRequest -= ReportWafInitInfoOnce;
             var span = e.RelatedSpan.Context.TraceContext.RootSpan ?? e.RelatedSpan;
             span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             span.SetMetric(Metrics.AppSecWafInitRulesLoaded, _waf.InitializationResult.LoadedRules);
@@ -410,9 +405,10 @@ namespace Datadog.Trace.AppSec
         {
             if (_instrumentationGateway != null)
             {
-                _instrumentationGateway.PathParamsAvailable -= AggregateAddressesInContext;
-                _instrumentationGateway.BodyAvailable -= AggregateAddressesInContext;
-                _instrumentationGateway.EndRequest -= RunWaf;
+                _instrumentationGateway.PathParamsAvailable -= RunWafAndReact;
+                _instrumentationGateway.BodyAvailable -= RunWafAndReact;
+                _instrumentationGateway.StartRequest -= RunWafAndReact;
+                _instrumentationGateway.StartRequest -= RegisterForDispose;
                 _instrumentationGateway.BlockingOpportunity -= MightStopRequest;
 
 #if NETFRAMEWORK

@@ -26,6 +26,8 @@ namespace Datadog.Trace.AppSec.Transports
 
         IHeadersCollection GetResponseHeaders();
 
-        void WriteBlockedResponse();
+        void WriteBlockedResponse(string templateJson, string templateHtml);
+
+        void DisposeContextInTheEnd();
     }
 }
