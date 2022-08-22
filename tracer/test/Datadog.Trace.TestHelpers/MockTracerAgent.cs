@@ -302,7 +302,7 @@ namespace Datadog.Trace.TestHelpers
 
             if (!isFound)
             {
-                throw new InvalidOperationException($"Snapshot count not found. Expected {statusCount}, actual {Snapshots.Count}");
+                throw new InvalidOperationException($"Probes Status count not found. Expected {statusCount}, actual {ProbesStatuses.Count}");
             }
 
             return ProbesStatuses.ToArray();
