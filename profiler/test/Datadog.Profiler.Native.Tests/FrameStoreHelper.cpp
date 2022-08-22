@@ -39,3 +39,9 @@ std::tuple<bool, std::string, std::string> FrameStoreHelper::GetFrame(uintptr_t 
 
     return { true, "module???", "frame???" };
 }
+
+
+bool FrameStoreHelper::GetTypeName(ClassID classId, std::string& name)
+{
+    return false;
+}

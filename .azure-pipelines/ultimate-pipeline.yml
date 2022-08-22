@@ -2615,7 +2615,7 @@ stages:
       jobs: [linux]
 
   - job: linux
-    timeoutInMinutes: 10 # should take ~5 mins
+    timeoutInMinutes: 20 # should take ~5 mins
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_smoke_tests_matrix'] ]
     variables:
@@ -2677,7 +2677,7 @@ stages:
       jobs: [linux]
 
   - job: linux
-    timeoutInMinutes: 10 # should take ~5 mins
+    timeoutInMinutes: 20 # should take ~5 mins
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.nuget_installer_linux_smoke_tests_matrix'] ]
     variables:
@@ -2747,7 +2747,7 @@ stages:
       jobs: [linux]
 
   - job: linux
-    timeoutInMinutes: 10 # should take ~5 mins
+    timeoutInMinutes: 20 # should take ~5 mins
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_nuget_installer_linux_smoke_tests_matrix'] ]
     variables:
@@ -2809,7 +2809,7 @@ stages:
       jobs: [linux]
 
   - job: linux
-    timeoutInMinutes: 10 # should take ~5 mins
+    timeoutInMinutes: 20 # should take ~5 mins
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_installer_linux_smoke_tests_matrix'] ]
     variables:
@@ -2875,7 +2875,7 @@ stages:
         jobs: [linux]
 
     - job: linux
-      timeoutInMinutes: 30 # should take ~15 mins
+      timeoutInMinutes: 45 # should take ~15 mins
       strategy:
         matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.installer_smoke_tests_arm64_matrix'] ]
       variables:
@@ -2934,7 +2934,7 @@ stages:
       jobs: [linux]
 
   - job: linux
-    timeoutInMinutes: 30 # should take ~15 mins
+    timeoutInMinutes: 45 # should take ~15 mins
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.nuget_installer_linux_smoke_tests_arm64_matrix'] ]
     variables:
@@ -3003,7 +3003,7 @@ stages:
       jobs: [linux]
 
   - job: linux
-    timeoutInMinutes: 30 # should take ~15 mins
+    timeoutInMinutes: 45 # should take ~15 mins
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_installer_smoke_tests_arm64_matrix'] ]
     variables:
@@ -3065,7 +3065,7 @@ stages:
       jobs: [windows]
 
   - job: windows
-    timeoutInMinutes: 30 # should take ~15 mins as large Windows docker files
+    timeoutInMinutes: 45 # should take ~15 mins as large Windows docker files
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.nuget_installer_windows_smoke_tests_matrix'] ]
     variables:
@@ -3134,7 +3134,7 @@ stages:
       jobs: [windows]
 
   - job: windows
-    timeoutInMinutes: 30 # should take ~15 mins as large Windows docker files
+    timeoutInMinutes: 45 # should take ~15 mins as large Windows docker files
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.dotnet_tool_installer_windows_smoke_tests_matrix'] ]
     variables:
@@ -3199,7 +3199,7 @@ stages:
       jobs: [windows]
 
   - job: windows
-    timeoutInMinutes: 30 # should take ~15 mins as large Windows docker files
+    timeoutInMinutes: 45 # should take ~15 mins as large Windows docker files
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.msi_installer_windows_smoke_tests_matrix'] ]
     variables:
@@ -3264,7 +3264,7 @@ stages:
       jobs: [windows]
 
   - job: windows
-    timeoutInMinutes: 30 # should take ~15 mins as large Windows docker files
+    timeoutInMinutes: 45 # should take ~15 mins as large Windows docker files
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.tracer_home_installer_windows_smoke_tests_matrix'] ]
     variables:

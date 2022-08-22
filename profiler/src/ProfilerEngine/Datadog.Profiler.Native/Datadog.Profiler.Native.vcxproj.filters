@@ -243,6 +243,12 @@
     <ClInclude Include="EnumHelpers.h">
       <Filter>Utils</Filter>
     </ClInclude>
+    <ClInclude Include="SamplesCollector.h">
+      <Filter>Profiler-Driver</Filter>
+    </ClInclude>
+    <ClInclude Include="COMHelpers.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">

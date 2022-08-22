@@ -236,6 +236,7 @@
     <ClInclude Include="AdaptiveSampler.h" />
     <ClInclude Include="EnabledProfilers.h" />
     <ClInclude Include="EnumHelpers.h" />
+    <ClInclude Include="COMHelpers.h" />
     <ClInclude Include="IAllocationsListener.h" />
     <ClInclude Include="AllocationsProvider.h" />
     <ClInclude Include="AppDomainStore.h" />
