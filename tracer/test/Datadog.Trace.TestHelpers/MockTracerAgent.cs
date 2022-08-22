@@ -92,10 +92,10 @@ namespace Datadog.Trace.TestHelpers
             => new TcpUdpAgent(port, retries, useStatsd, doNotBindPorts, requestedStatsDPort, useTelemetry) { Output = output };
 
 #if NETCOREAPP3_1_OR_GREATER
-        public static UdsAgent Create(UnixDomainSocketConfig config) => new UdsAgent(config);
+        public static UdsAgent Create(ITestOutputHelper output, UnixDomainSocketConfig config) => new UdsAgent(config) { Output = output };
 #endif
 
-        public static NamedPipeAgent Create(WindowsPipesConfig config) => new NamedPipeAgent(config);
+        public static NamedPipeAgent Create(ITestOutputHelper output, WindowsPipesConfig config) => new NamedPipeAgent(config) { Output = output };
 
         /// <summary>
         /// Wait for the given number of spans to appear.
@@ -583,8 +583,13 @@ namespace Datadog.Trace.TestHelpers
 
         private byte[] ReadStreamBody(MockHttpParser.MockHttpRequest request)
         {
+            if (request.ContentLength is null)
+            {
+                return new byte[0];
+            }
+
             var i = 0;
-            var body = new byte[request.ContentLength];
+            var body = new byte[request.ContentLength.Value];
 
             while (request.Body.Stream.CanRead && i < request.ContentLength)
             {
@@ -1156,6 +1161,10 @@ namespace Datadog.Trace.TestHelpers
                         }
 
                         throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        Output?.WriteLine("[HandleUdsTraces]Error processing uds request: " + ex);
                     }
                 }
             }
