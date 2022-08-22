@@ -15,9 +15,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
 {
-    /// <summary>
-    /// asdf
-    /// </summary>
     public class EnvironmentHelper
     {
         private static readonly string RuntimeFrameworkDescription = RuntimeInformation.FrameworkDescription.ToLower();
