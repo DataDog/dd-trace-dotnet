@@ -23,9 +23,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
         internal static Scope? CreateScope(ref TestRunnerStruct runnerInstance, Type targetType)
         {
-            string testBundle = runnerInstance.TestClass.Assembly.GetName().Name ?? string.Empty;
-            string testSuite = runnerInstance.TestClass.ToString();
-            string testName = runnerInstance.TestMethod.Name;
+            MethodInfo testMethod = runnerInstance.TestMethod;
+            Type testClass = runnerInstance.TestClass;
+
+            Common.Prepare(testMethod);
+
+            string testBundle = testClass.Assembly.GetName().Name ?? string.Empty;
+            string testSuite = testClass.ToString();
+            string testName = testMethod.Name;
 
             string testFramework = "xUnit";
 
@@ -45,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
             // Get test parameters
             object[] testMethodArguments = runnerInstance.TestMethodArguments;
-            ParameterInfo[] methodParameters = runnerInstance.TestMethod.GetParameters();
+            ParameterInfo[] methodParameters = testMethod.GetParameters();
             if (methodParameters?.Length > 0 && testMethodArguments?.Length > 0)
             {
                 TestParameters testParameters = new TestParameters();
@@ -79,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             Common.DecorateSpanWithRuntimeAndCiInformation(span);
 
             // Test code and code owners
-            Common.DecorateSpanWithSourceAndCodeOwners(span, runnerInstance.TestMethod);
+            Common.DecorateSpanWithSourceAndCodeOwners(span, testMethod);
 
             Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             Common.StartCoverage();
@@ -132,8 +137,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
         internal static bool ShouldSkip(ref TestRunnerStruct runnerInstance)
         {
+            MethodInfo testMethod = runnerInstance.TestMethod;
+
             string testSuite = runnerInstance.TestClass.ToString();
-            string testName = runnerInstance.TestMethod.Name;
+            string testName = testMethod.Name;
 
             var skippeableTests = CIVisibility.GetSkippeableTestsFromSuiteAndName(testSuite, testName);
             if (skippeableTests.Count > 0)
@@ -152,7 +159,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
                     if (parameters?.Arguments is not null)
                     {
-                        ParameterInfo[] methodParameters = runnerInstance.TestMethod.GetParameters();
+                        ParameterInfo[] methodParameters = testMethod.GetParameters();
                         bool matchSignature = true;
                         for (var i = 0; i < methodParameters.Length; i++)
                         {

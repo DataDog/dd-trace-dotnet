@@ -93,12 +93,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 
         internal static void StartCoverage()
         {
-            Ci.Coverage.CoverageReporter.Handler.StartSession();
+            if (CIVisibility.Settings.CodeCoverageEnabled)
+            {
+                Ci.Coverage.CoverageReporter.Handler.StartSession();
+            }
         }
 
         internal static void StopCoverage(Span span)
         {
-            if (Ci.Coverage.CoverageReporter.Handler.EndSession() is Ci.Coverage.Models.CoveragePayload coveragePayload)
+            if (CIVisibility.Settings.CodeCoverageEnabled && Ci.Coverage.CoverageReporter.Handler.EndSession() is Ci.Coverage.Models.CoveragePayload coveragePayload)
             {
                 if (span is not null)
                 {
@@ -109,6 +112,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
                 Log.Debug("Coverage data for TraceId={traceId} and SpanId={spanId} processed.", coveragePayload.TraceId, coveragePayload.SpanId);
                 Ci.CIVisibility.Manager?.WriteEvent(coveragePayload);
             }
+        }
+
+        internal static void Prepare(MethodInfo methodInfo)
+        {
+            // Initialize FrameworkDescription
+            _ = FrameworkDescription.Instance;
+
+            // Initialize CIEnvironment
+            _ = CIEnvironmentValues.Instance;
+
+            // Initialize Method Symbol Resolver
+            _ = MethodSymbolResolver.Instance.GetModuleDefFromMethodInfo(methodInfo);
         }
     }
 }

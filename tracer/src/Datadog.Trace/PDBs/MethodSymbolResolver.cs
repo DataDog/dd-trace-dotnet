@@ -32,6 +32,49 @@ namespace Datadog.Trace.Pdb
         public static MethodSymbolResolver Instance => _instance.Value;
 
         /// <summary>
+        /// Gets the ModuleDef from a MethodInfo
+        /// </summary>
+        /// <param name="methodInfo">MethodInfo instance</param>
+        public ModuleDefMD GetModuleDefFromMethodInfo(MethodInfo methodInfo)
+        {
+            if (methodInfo is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(methodInfo));
+            }
+
+            // Try to load ModuleDefMD from cache
+            ModuleDefMD moduleDef = null;
+            lock (_modulesDefMDs)
+            {
+                var module = methodInfo.Module;
+                if (!_modulesDefMDs.TryGetValue(module, out moduleDef))
+                {
+                    var options = new ModuleCreationOptions(ThreadSafeModuleContext.GetModuleContext());
+                    try
+                    {
+                        var mDef = ModuleDefMD.Load(module, options);
+                        // We enable the type search cache
+                        mDef.EnableTypeDefFindCache = true;
+
+                        // Check if the module has pdb info
+                        if (mDef.PdbState is not null)
+                        {
+                            moduleDef = mDef;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error loading method symbols.");
+                    }
+
+                    _modulesDefMDs.Add(module, moduleDef);
+                }
+            }
+
+            return moduleDef;
+        }
+
+        /// <summary>
         /// Try get the method symbols from the MethodInfo
         /// </summary>
         /// <param name="methodInfo">MethodInfo instance</param>
@@ -52,34 +95,8 @@ namespace Datadog.Trace.Pdb
 
             try
             {
-                // Try to load ModuleDefMD from cache
-                ModuleDefMD moduleDef = null;
-                lock (_modulesDefMDs)
-                {
-                    var module = methodInfo.Module;
-                    if (!_modulesDefMDs.TryGetValue(module, out moduleDef))
-                    {
-                        var options = new ModuleCreationOptions(ThreadSafeModuleContext.GetModuleContext());
-                        try
-                        {
-                            var mDef = ModuleDefMD.Load(module, options);
-                            // We enable the type search cache
-                            mDef.EnableTypeDefFindCache = true;
-
-                            // Check if the module has pdb info
-                            if (mDef.PdbState is not null)
-                            {
-                                moduleDef = mDef;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(ex, "Error loading method symbols.");
-                        }
-
-                        _modulesDefMDs.Add(module, moduleDef);
-                    }
-                }
+                // Load ModuleDefMD
+                ModuleDefMD moduleDef = GetModuleDefFromMethodInfo(methodInfo);
 
                 // If a ModuleDefMD with PDB is not found then we cannot do anything.
                 if (moduleDef is null)
