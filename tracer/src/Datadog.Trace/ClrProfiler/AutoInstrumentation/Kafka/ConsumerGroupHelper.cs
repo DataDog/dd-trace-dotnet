@@ -16,7 +16,11 @@ internal class ConsumerGroupHelper
 
     public static void SetConsumerGroup(object consumer, string groupId)
     {
+#if NETCOREAPP3_1_OR_GREATER
+        ConsumerToGroupIdMap.AddOrUpdate(consumer, groupId);
+#else
         ConsumerToGroupIdMap.GetValue(consumer, x => groupId);
+#endif
     }
 
     public static bool TryGetConsumerGroup(object consumer, out string? groupId)
