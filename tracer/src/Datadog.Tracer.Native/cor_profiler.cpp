@@ -255,6 +255,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
 HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_id, HRESULT hr_status)
 {
+    if (!is_attached_)
+    {
+        return S_OK;
+    }
+
     auto _ = trace::Stats::Instance()->AssemblyLoadFinishedMeasure();
 
     if (FAILED(hr_status))
@@ -262,11 +267,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
         // if assembly failed to load, skip it entirely,
         // otherwise we can crash the process if module is not valid
         CorProfilerBase::AssemblyLoadFinished(assembly_id, hr_status);
-        return S_OK;
-    }
-
-    if (!is_attached_)
-    {
         return S_OK;
     }
 
@@ -454,6 +454,11 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata, co
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HRESULT hr_status)
 {
+    if (!is_attached_)
+    {
+        return S_OK;
+    }
+
     auto _ = trace::Stats::Instance()->ModuleLoadFinishedMeasure();
 
     if (FAILED(hr_status))
@@ -461,11 +466,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
         // if module failed to load, skip it entirely,
         // otherwise we can crash the process if module is not valid
         CorProfilerBase::ModuleLoadFinished(module_id, hr_status);
-        return S_OK;
-    }
-
-    if (!is_attached_)
-    {
         return S_OK;
     }
 
@@ -1003,12 +1003,12 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
 {
-    auto _ = trace::Stats::Instance()->ModuleUnloadStartedMeasure();
-
     if (!is_attached_)
     {
         return S_OK;
     }
+
+    auto _ = trace::Stats::Instance()->ModuleUnloadStartedMeasure();
 
     // take this lock so we block until the
     // module metadata is not longer being used
@@ -1055,6 +1055,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
 
 HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
 {
+    if (!is_attached_)
+    {
+        return S_OK;
+    }
+    
     is_attached_.store(false);
 
     CorProfilerBase::Shutdown();
@@ -1076,6 +1081,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Shutdown()
     Logger::Debug("   FirstJitCompilationAppDomains: ", first_jit_compilation_app_domains.size());
     Logger::Info("Stats: ", Stats::Instance()->ToString());
     return S_OK;
+}
+
+void CorProfiler::DisableTracerCLRProfiler()
+{
+    // A full profiler detach request cannot be made because:
+    // 1. We use the COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST event mask (CORPROF_E_IMMUTABLE_FLAGS_SET)
+    // 2. We instrument code with SetILFunctionBody for the Loader injection. (CORPROF_E_IRREVERSIBLE_INSTRUMENTATION_PRESENT)
+    // https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/profiling/icorprofilerinfo3-requestprofilerdetach-method
+    Logger::Info("Disabling Tracer CLR Profiler...");
+    Shutdown();
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
@@ -1105,9 +1120,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
 
 HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function_id, BOOL is_safe_to_block)
 {
+    if (!is_attached_)
+    {
+        return S_OK;
+    }
+
     auto _ = trace::Stats::Instance()->JITCompilationStartedMeasure();
 
-    if (!is_attached_ || !is_safe_to_block)
+    if (!is_safe_to_block)
     {
         return S_OK;
     }
@@ -1282,9 +1302,14 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AppDomainShutdownFinished(AppDomainID app
 
 HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, FunctionID calleeId, BOOL* pfShouldInline)
 {
+    if (!is_attached_)
+    {
+        return S_OK;
+    }
+    
     auto _ = trace::Stats::Instance()->JITInliningMeasure();
 
-    if (!is_attached_ || rejit_handler == nullptr)
+    if (rejit_handler == nullptr)
     {
         return S_OK;
     }
@@ -3206,8 +3231,13 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef
 
 HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID functionId, BOOL* pbUseCachedFunction)
 {
+    if (!is_attached_)
+    {
+        return S_OK;
+    }
+
     auto _ = trace::Stats::Instance()->JITCachedFunctionSearchStartedMeasure();
-    if (!is_attached_ || !pbUseCachedFunction)
+    if (!pbUseCachedFunction)
     {
         return S_OK;
     }

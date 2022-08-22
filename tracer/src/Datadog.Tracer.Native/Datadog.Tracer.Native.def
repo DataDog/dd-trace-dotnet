@@ -13,3 +13,4 @@ EXPORTS
     InitializeTraceMethods
     InstrumentProbes
     GetProbesStatuses
+    DisableTracerCLRProfiler
