@@ -19,18 +19,18 @@
       }
     },
     {
-      "name": "Profiler_cpu",
+      "name": "Profiler_allocations",
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
-        "DD_PROFILING_CPU_ENABLED": "1"
+        "DD_PROFILING_ALLOCATION_ENABLED": "1"
       }
     }
   ],
   "processName": ".\\Samples.Computer01.exe",
-  "processArguments": "--scenario 5 --iterations 1",
+  "processArguments": "--scenario 9 --iterations 1000",
   "processTimeout": 15,
-  "workingDirectory": "$(CWD)\\..\\_build\\bin\\Release-x64\\profiler\\src\\Demos\\Samples.Computer01\\netcoreapp3.1",
+  "workingDirectory": "$(CWD)\\..\\_build\\bin\\Release-x64\\profiler\\src\\Demos\\Samples.Computer01\\net6.0",
   "environmentVariables": {
     "COR_ENABLE_PROFILING": "1",
     "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
@@ -43,9 +43,9 @@
   "tags": {
     "runtime.architecture": "x64",
     "runtime.name": ".NET Core",
-    "runtime.version": "3.1",
-    "benchmark.job.runtime.name": ".NET Core 3.1",
-    "benchmark.job.runtime.moniker": "netcoreapp3.1"
+    "runtime.version": "6.0",
+    "benchmark.job.runtime.name": ".NET 6.0",
+    "benchmark.job.runtime.moniker": "net6.0"
   },
   "metricsFilePath": "*metrics.json"
 }

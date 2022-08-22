@@ -19,16 +19,16 @@
       }
     },
     {
-      "name": "Profiler_cpu",
+      "name": "Profiler_allocations",
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
-        "DD_PROFILING_CPU_ENABLED": "1"
+        "DD_PROFILING_ALLOCATION_ENABLED": "1"
       }
     }
   ],
   "processName": ".\\Samples.Computer01.exe",
-  "processArguments": "--scenario 5 --iterations 1",
+  "processArguments": "--scenario 9 --iterations 1000",
   "processTimeout": 15,
   "workingDirectory": "$(CWD)\\..\\_build\\bin\\Release-x64\\profiler\\src\\Demos\\Samples.Computer01\\netcoreapp3.1",
   "environmentVariables": {
