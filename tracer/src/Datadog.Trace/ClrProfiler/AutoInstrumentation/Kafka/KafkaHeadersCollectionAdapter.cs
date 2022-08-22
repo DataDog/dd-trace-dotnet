@@ -12,7 +12,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
-    internal readonly struct KafkaHeadersCollectionAdapter : IHeadersCollection
+    internal readonly struct KafkaHeadersCollectionAdapter : IHeadersCollection, IBinaryHeadersCollection
     {
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<KafkaHeadersCollectionAdapter>();
         private readonly IHeaders _headers;
@@ -54,6 +54,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         public void Remove(string name)
         {
             _headers.Remove(name);
+        }
+
+        public byte[] TryGetBytes(string name)
+        {
+            return _headers.TryGetLastBytes(name, out var bytes) ? bytes : null;
+        }
+
+        public void Add(string name, byte[] value)
+        {
+            _headers.Add(name, value);
         }
     }
 }
