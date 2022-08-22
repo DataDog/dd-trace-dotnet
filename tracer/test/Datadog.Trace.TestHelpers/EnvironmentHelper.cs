@@ -93,7 +93,7 @@ namespace Datadog.Trace.TestHelpers
         {
             var monitoringHomeDirectoryEnvVar = "MonitoringHomeDirectory";
             var monitoringHome = Environment.GetEnvironmentVariable(monitoringHomeDirectoryEnvVar);
-            if (!string.IsNullOrEmpty(monitoringHome))
+            if (string.IsNullOrEmpty(monitoringHome))
             {
                 // default
                 monitoringHome = Path.Combine(
