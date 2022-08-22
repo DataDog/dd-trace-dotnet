@@ -35,7 +35,7 @@ ExternalProject_Get_property(libdatadog BINARY_DIR)
 set_property(DIRECTORY PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
     ${BINARY_DIR})
 
-set(LIBDATADOG_REL_FFI_LIB ${LIBDATADOG_BASE_DIR}/lib/libddprof_ffi.a)
+set(LIBDATADOG_REL_FFI_LIB ${LIBDATADOG_BASE_DIR}/lib/libdatadog_profiling.a)
 
 list(APPEND
     LIBDATADOG_INCLUDE_DIR
