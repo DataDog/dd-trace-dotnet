@@ -18,9 +18,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
     /// <para>
     /// 6.2.0 of ServiceStack.Redis changed the signature of SendReceive (added string parameter).
     /// See: https://github.com/ServiceStack/ServiceStack/commit/950155db0d1b358920eab307c61e334e24f1d174
-    /// Also, 6.2.0 broke .NET Core 2.1 and .NET Core 3.0 compatibility as ServiceStack
-    /// accidentally added a dependency that claimed it was .NET Standard 2.0 compliant
-    /// but in reality wasn't.
     /// </para>
     /// </summary>
     [InstrumentMethod(
