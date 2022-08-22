@@ -12,7 +12,6 @@ using System.Web.Routing;
 #endif
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Routing;
 #endif
 
 namespace Datadog.Trace.AppSec
