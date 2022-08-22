@@ -382,7 +382,6 @@ public class ProbesTests : TestHelper, IDisposable
     {
         SetEnvironmentVariable(ConfigurationKeys.ServiceName, EnvironmentHelper.SampleName);
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
-
         SetEnvironmentVariable(ConfigurationKeys.Rcm.FilePath, _rcmPath);
         SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "3");
