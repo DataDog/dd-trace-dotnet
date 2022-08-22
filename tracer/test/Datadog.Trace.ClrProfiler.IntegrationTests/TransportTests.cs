@@ -1,4 +1,4 @@
-﻿// <copyright file="TransportTests.cs" company="Datadog">
+// <copyright file="TransportTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -97,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             MockTracerAgent GetAgent(TracesTransportType type)
                 => type switch
                 {
-                    TracesTransportType.Default => MockTracerAgent.Create(),
+                    TracesTransportType.Default => MockTracerAgent.Create(Output),
                     TracesTransportType.WindowsNamedPipe => MockTracerAgent.Create(new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}")),
 #if NETCOREAPP3_1_OR_GREATER
                     TracesTransportType.UnixDomainSocket

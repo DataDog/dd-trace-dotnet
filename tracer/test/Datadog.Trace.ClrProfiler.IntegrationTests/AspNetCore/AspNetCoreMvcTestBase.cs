@@ -118,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
                         var initialAgentPort = TcpPortProvider.GetOpenPort();
                         HttpPort = TcpPortProvider.GetOpenPort();
 
-                        Agent = MockTracerAgent.Create(initialAgentPort);
+                        Agent = MockTracerAgent.Create(_currentOutput, initialAgentPort);
                         Agent.SpanFilters.Add(IsNotServerLifeCheck);
                         WriteToOutput($"Starting aspnetcore sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
                         _process = helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);
