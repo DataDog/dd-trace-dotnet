@@ -166,7 +166,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         var initialAgentPort = TcpPortProvider.GetOpenPort();
                         HttpPort = TcpPortProvider.GetOpenPort();
 
-                        Agent = MockTracerAgent.Create(initialAgentPort);
+                        Agent = MockTracerAgent.Create(null, initialAgentPort);
                         Agent.SpanFilters.Add(IsNotServerLifeCheck);
                         output.WriteLine($"Starting OWIN sample, agentPort: {Agent.Port}, samplePort: {HttpPort}");
                         _process = helper.StartSample(Agent, arguments: null, packageVersion: string.Empty, aspNetCorePort: HttpPort);

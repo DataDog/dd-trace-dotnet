@@ -31,7 +31,7 @@ namespace Datadog.Trace.TestHelpers
                     AddAssembliesToGac();
 
                     var initialAgentPort = TcpPortProvider.GetOpenPort();
-                    Agent = MockTracerAgent.Create(initialAgentPort);
+                    Agent = MockTracerAgent.Create(null, initialAgentPort);
 
                     HttpPort = TcpPortProvider.GetOpenPort();
                     IisExpress = helper.StartIISExpress(Agent, HttpPort, appType, VirtualApplicationPath);

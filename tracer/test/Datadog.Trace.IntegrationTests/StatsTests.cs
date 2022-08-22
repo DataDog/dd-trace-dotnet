@@ -23,7 +23,7 @@ namespace Datadog.Trace.IntegrationTests
         {
             var waitEvent = new AutoResetEvent(false);
 
-            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort());
+            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
 
             agent.StatsDeserialized += (_, _) => waitEvent.Set();
 
