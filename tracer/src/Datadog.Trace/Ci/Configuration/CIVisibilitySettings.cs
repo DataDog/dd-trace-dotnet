@@ -33,7 +33,7 @@ namespace Datadog.Trace.Ci.Configuration
 
             // Intelligent Test Runner
             IntelligentTestRunnerEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.IntelligentTestRunnerEnabled) ?? false;
-            
+
             // Code coverage
             CodeCoverageEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.CodeCoverage) ?? IntelligentTestRunnerEnabled;
             CodeCoverageSnkFilePath = source?.GetString(ConfigurationKeys.CIVisibility.CodeCoverageSnkFile);
