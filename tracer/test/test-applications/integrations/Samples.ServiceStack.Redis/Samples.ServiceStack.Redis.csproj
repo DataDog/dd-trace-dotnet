@@ -1,8 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461;netcoreapp3.1;net5.0;net6.0</TargetFrameworks>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">6.2.0</ApiVersion>
+    <!--
+      Note:
+      ServiceStack 6.2.0 accidentally broke .NET Standard 2.0 compliance
+      For running tests locally, it is recommended to change the individual <PackageReference>
+      for ServiceStack.Redis in the corresponding ItemGroup conditional to avoid running into
+      build errors locally.
+
+      The PackageVersionsGeneratorDefinitions.json has been updated with this restriction.
+    -->
+    <ApiVersion Condition="'$(ApiVersion)' == ''">5.2.0</ApiVersion>
     <RequiresDockerDependency>true</RequiresDockerDependency>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
@@ -10,9 +18,15 @@
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
   </PropertyGroup>
 
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)'=='netcoreapp2.1' OR '$(TargetFramework)'=='netcoreapp3.0'">
     <PackageReference Include="ServiceStack.Redis" Version="$(ApiVersion)" />
-    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)'!='netcoreapp2.1' AND '$(TargetFramework)'!='netcoreapp3.0'">
+    <PackageReference Include="ServiceStack.Redis" Version="$(ApiVersion)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+  </ItemGroup>
 </Project>
