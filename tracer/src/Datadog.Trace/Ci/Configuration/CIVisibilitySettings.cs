@@ -5,12 +5,15 @@
 #nullable enable
 
 using System;
+using System.Threading;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Ci.Configuration
 {
     internal class CIVisibilitySettings
     {
+        private TracerSettings? _tracerSettings;
+
         public CIVisibilitySettings(IConfigurationSource source)
         {
             Enabled = source?.GetBool(ConfigurationKeys.CIVisibility.Enabled) ?? false;
@@ -27,15 +30,6 @@ namespace Datadog.Trace.Ci.Configuration
             ProxyHttps = source?.GetString(ConfigurationKeys.Proxy.ProxyHttps);
             var proxyNoProxy = source?.GetString(ConfigurationKeys.Proxy.ProxyNoProxy) ?? string.Empty;
             ProxyNoProxy = proxyNoProxy.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
-
-            TracerSettings = new TracerSettings(source);
-
-            if (Logs)
-            {
-                // Enable the direct log submission
-                TracerSettings.LogSubmissionSettings.DirectLogSubmissionEnabledIntegrations.Add("XUnit");
-                TracerSettings.LogSubmissionSettings.DirectLogSubmissionBatchPeriod = TimeSpan.FromSeconds(1);
-            }
 
             // Code coverage
             CodeCoverageEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.CodeCoverage) ?? false;
@@ -121,12 +115,26 @@ namespace Datadog.Trace.Ci.Configuration
         /// <summary>
         /// Gets the tracer settings
         /// </summary>
-        public TracerSettings TracerSettings { get; }
+        public TracerSettings TracerSettings => LazyInitializer.EnsureInitialized(ref _tracerSettings, () => InitializeTracerSettings())!;
 
         public static CIVisibilitySettings FromDefaultSources()
         {
             var source = GlobalSettings.CreateDefaultConfigurationSource();
             return new CIVisibilitySettings(source);
+        }
+
+        private TracerSettings InitializeTracerSettings()
+        {
+            var tracerSettings = new TracerSettings(GlobalSettings.CreateDefaultConfigurationSource());
+
+            if (Logs)
+            {
+                // Enable the direct log submission
+                tracerSettings.LogSubmissionSettings.DirectLogSubmissionEnabledIntegrations.Add("XUnit");
+                tracerSettings.LogSubmissionSettings.DirectLogSubmissionBatchPeriod = TimeSpan.FromSeconds(1);
+            }
+
+            return tracerSettings;
         }
     }
 }
