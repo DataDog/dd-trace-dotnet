@@ -156,6 +156,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                 if (skippeableTests.Count > 0)
                 {
                     object[] testMethodArguments = runnerInstance.TestMethodArguments;
+                    ParameterInfo[]? methodParameters = null;
                     foreach (var skippeableTest in skippeableTests)
                     {
                         var parameters = skippeableTest.GetParameters();
@@ -169,7 +170,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
                         if (parameters?.Arguments is not null)
                         {
-                            ParameterInfo[] methodParameters = testMethod.GetParameters();
+                            methodParameters ??= testMethod.GetParameters();
                             bool matchSignature = true;
                             for (var i = 0; i < methodParameters.Length; i++)
                             {
