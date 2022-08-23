@@ -7,6 +7,86 @@
 
 
 
+
+## [Release 2.14.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.14.0)
+
+## Summary
+
+- GA release of the continuous profiler, adds support for NuGet-based deployment
+- Addresses a double-billing issue in AAS
+
+## Changes
+
+### Tracer
+* Allow null filenames in MultipartItem when using HttpClientRequest (#3024)
+* Fix possible zero in traceid or spanid (#3033)
+* [Tracer] Send AAS and Sampling Prio on all trace chunks (#3040)
+* Add .NET Framework 4.8.1 to `FrameworkDescription` (#3100)
+
+### CI Visibility
+* [CI Visibility] Disable non testhost proc instrumentation on dotnet command (#3018)
+* [CI Visibility] Refactor CI Visibility payloads with the EvpPayload abstraction (#3032)
+* [CI Visibility] Stop using OS separator in relative paths (#3034)
+* [Ci Visibility] - Update logs format to the new spec (#3037)
+* [CI Visibility] Fix Coverage version type (#3039)
+* [CI Visibility] Upload Git tree metadata (#3045)
+* [CIVisibility] Change build file and CODEOWNERS (#3046)
+* [CIVisibility] Add support to bypass some ci environment variables (#3082)
+* [CIVisibility] Fix CIAgentlessWriter flush algorithm (#3096)
+
+### Continuous Profiler
+* [Profiler] Use uws_backtrace for stackwalking on Linux (#2867)
+* [Profiler] Implement ICorProfilerCallback::EventPipeEventDelivered to receive CLR events synchronously (#2998)
+* [Profiler] Do not build the profiler native code in parallel for ASAN (#3021)
+* [Profiler] Check profiler log files for smoke tests (#3038)
+* Revert "[Profiler] Use uws_backtrace for stackwalking on Linux" (#3042)
+* [Profiler] Update libunwind to 1.6.2 (#3043)
+* [Profiler] Disable profiler when running in a container with <1 CPU (#3050)
+* [Profiler] Try to use default UDS path on Linux (#3057)
+* [Profiler] Fix generic types name for exception and allocation profilers (#3058)
+* [Profiler] Remove DD_DOTNET_PROFILER_HOME (#3073)
+* [Profiler] Improve error reported by libddprof (#3089)
+* [Profiler] Fix Profiler integration tests in VS (#3090)
+* [Profiler] Fix Sanitizer jobs (#3091)
+* [Profiler] Remove beta version for the profiler (#3092)
+* [Profiler] Change profiler library output directory on linux (#3094)
+
+### Debugger
+* [Debugger] Fix issue where line probes with backslashes did not work (#3028)
+* Disable non-deterministic tests (#3030)
+* [Debugger] Leverage AdaptiveSampler for probes (#3078)
+
+### Build / Test
+* Rename native projects in preparation for package layout refactor (#3016)
+* [CI] Allow throughput to run on benchmark branches (#3031)
+* Always use native loader for tests (part of package layout update) (#3036)
+* [AppSec] Enable AppSec in installer smoke tests (#3055)
+* Update package layouts & ship continuous profiler in dd-trace/NuGet (#3060)
+* Enable debug logs for smoke test (#3062)
+* Run MSI smoke tests against x86 runtime with the x64 installer (#3065)
+* Add a very simplistic snapshots checker (#3068)
+* Add a few smoke tests for the `dd-trace` NuGet package (#3070)
+* Small build tidy up - improve log file checking (#3071)
+* Delete `UpdateMsiContents` Target and `SyncMsiContent` (#3074)
+* More build tidying up (#3076)
+* Fix build error in OSX when using sdk version 6.0.400 (#3083)
+* [Snapshots] Add a note on version mismatch tests (#3086)
+* Centralise handling of HTTP requests in `MockTracerAgent` (#3095)
+* Increase smoke tests timeout (#3101)
+* Force fpm gem install to not update dependencies (#3104)
+* Use default monitoringHome path if env var is empty (#3105)
+
+### Miscellaneous
+* Remove x-datadog headers from SQS message attributes (#3044)
+* Fix OSX native loader build issue (#3052)
+* Fix race condition during profilers initialization (#3056)
+* Add note on 'round-tripping' to Instrumentation Verification doc (#3067)
+* Fix macOS logs and add `DD_INTERNAL_NATIVE_LOADER_PATH` env var (#3069)
+* Zippy1981/add note to update documentation when you add an instrumentation (#3080)
+
+
+[Changes since 2.13.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.13.0...v2.14.0)
+
 ## [Release 2.13.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.13.0)
 
 ## Summary
