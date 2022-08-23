@@ -352,3 +352,23 @@ TEST(ConfigurationTest, CheckMinimumCoresThresholdWhenVariableIsSet)
     auto configuration = Configuration{};
     ASSERT_EQ(configuration.MinimumCores(), 0.5);
 }
+
+TEST(ConfigurationTest, CheckContentionProfilingIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckContentionProfilingIsEnabledIsEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ContentionProfilingEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckContentionProfilingIsDisabledIsEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ContentionProfilingEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), false);
+}

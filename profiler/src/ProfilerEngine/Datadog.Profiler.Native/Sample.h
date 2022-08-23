@@ -49,8 +49,8 @@ enum class SampleValue : size_t
     AllocationSize = 4,
 
     // Thread contention profiler
-    //ContentionCount = 5,
-    //ContentionDuration = 6,
+    ContentionCount = 5,
+    ContentionDuration = 6,
 
 
 };

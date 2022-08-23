@@ -3,18 +3,19 @@
 
 #include "ClrEventsParser.h"
 
+#include <iomanip>
 #include <iostream>
 #include <sstream>
-#include <iomanip>
 
 #include "IAllocationsListener.h"
+#include "IContentionListener.h"
+
 #include "Log.h"
 
-
-ClrEventsParser::ClrEventsParser(ICorProfilerInfo12* pCorProfilerInfo, IAllocationsListener* pAllocationListener)
-    :
+ClrEventsParser::ClrEventsParser(ICorProfilerInfo12* pCorProfilerInfo, IAllocationsListener* pAllocationListener, IContentionListener* pContentionListener) :
     _pCorProfilerInfo{pCorProfilerInfo},
-    _pAllocationListener{pAllocationListener}
+    _pAllocationListener{pAllocationListener},
+    _pContentionListener{pContentionListener}
 {
 }
 
@@ -33,13 +34,13 @@ void ClrEventsParser::ParseEvent(
     UINT_PTR stackFrames[])
 {
     // Currently, only "Microsoft-Windows-DotNETRuntime" provider is used so no need to check.
-    // However, during the test, a last (k=0 id=1 V1) event is sent from "Microsoft-DotNETCore-EventPipe".
+    // However, during the test, a last (keyword=0 id=1 V1) event is sent from "Microsoft-DotNETCore-EventPipe".
 
     // These should be the same as eventId and eventVersion.
     // However it was not the case for the last event received from "Microsoft-DotNETCore-EventPipe".
     DWORD id;
     DWORD version;
-    INT64 keywords;  // used to filter out unneeded events.
+    INT64 keywords; // used to filter out unneeded events.
     WCHAR* name;
     if (!TryGetEventInfo(metadataBlob, cbMetadataBlob, name, id, keywords, version))
     {
@@ -50,8 +51,7 @@ void ClrEventsParser::ParseEvent(
     {
         ParseGcEvent(id, version, cbEventData, eventData);
     }
-    else
-    if (KEYWORD_CONTENTION == (keywords & KEYWORD_CONTENTION))
+    else if (KEYWORD_CONTENTION == (keywords & KEYWORD_CONTENTION))
     {
         ParseContentionEvent(id, version, cbEventData, eventData);
     }
@@ -59,7 +59,7 @@ void ClrEventsParser::ParseEvent(
 
 void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData)
 {
-// look for AllocationTick_V4
+    // look for AllocationTick_V4
     if ((id == EVENT_ALLOCATION_TICK) && (version == 4))
     {
         //template tid = "GCAllocationTick_V4" >
@@ -114,14 +114,23 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
             return;
         }
 
+        if (_pAllocationListener == nullptr)
+        {
+            return;
+        }
         _pAllocationListener->OnAllocation(payload.AllocationKind, payload.TypeId, payload.TypeName, payload.Address, payload.ObjectSize);
     }
 }
 
 void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData)
 {
-// look for ContentionStop_V1
-    if ((id == EVENT_CONTENTION_STOP) && (version == 1))
+    if (_pContentionListener == nullptr)
+    {
+        return;
+    }
+
+    // look for ContentionStop_V1
+    if ((id == EVENT_CONTENTION_STOP) && (version >= 1))
     {
         //<template tid="ContentionStop_V1">
         //    <data name="ContentionFlags" inType="win:UInt8" />
@@ -135,6 +144,8 @@ void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEven
         {
             return;
         }
+
+        _pContentionListener->OnContention(payload.DurationNs);
     }
 }
 

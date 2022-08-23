@@ -18,6 +18,7 @@
 #endif
 
 #include "AllocationsProvider.h"
+#include "ContentionProvider.h"
 #include "AppDomainStore.h"
 #include "ApplicationStore.h"
 #include "ClrEventsParser.h"
@@ -149,8 +150,19 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore);
         }
 
+        if (_pConfiguration->IsContentionProfilingEnabled())
+        {
+            _pContentionProvider = RegisterService<ContentionProvider>(
+                _pCorProfilerInfo,
+                _pManagedThreadList,
+                _pFrameStore.get(),
+                _pThreadsCpuManager,
+                _pAppDomainStore.get(),
+                pRuntimeIdStore);
+        }
+
         // TODO: add new CLR events-based providers to the event parser
-        _pClrEventsParser = std::make_unique<ClrEventsParser>(_pCorProfilerInfoEvents, _pAllocationsProvider);
+        _pClrEventsParser = std::make_unique<ClrEventsParser>(_pCorProfilerInfoEvents, _pAllocationsProvider, _pContentionProvider);
     }
 
     // compute enabled profilers based on configuration and receivable CLR events
@@ -200,6 +212,11 @@ bool CorProfilerCallback::InitializeServices()
         if (_pConfiguration->IsAllocationProfilingEnabled())
         {
             _pSamplesCollector->Register(_pAllocationsProvider);
+        }
+
+        if (_pConfiguration->IsContentionProfilingEnabled())
+        {
+            _pSamplesCollector->Register(_pContentionProvider);
         }
     }
 
@@ -670,7 +687,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // CLR events-based profilers need ICorProfilerInfo12 (i.e. .NET 5+) to setup the communication.
     // If no such provider is enabled, no need to trigger it.
     // TODO: update the test when a new CLR events-based profiler is added (contention, GC, ...)
-    if ((major >= 5) && _pConfiguration->IsAllocationProfilingEnabled())
+    bool AreEventBasedProfilersEnabled = _pConfiguration->IsAllocationProfilingEnabled() || _pConfiguration->IsContentionProfilingEnabled();
+    if ((major >= 5) && AreEventBasedProfilersEnabled)
     {
         HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&_pCorProfilerInfoEvents);
         if (FAILED(hr))
@@ -691,11 +709,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //       even unmapped memory if the segment has been reclaimed).
         if (major < 5)
         {
-            if (_pConfiguration->IsAllocationProfilingEnabled())
+            if (AreEventBasedProfilersEnabled)
             {
-                Log::Warn("Allocation profiling is not supported for .NET", major, ".", minor, " (.NET 5+ is required)");
+                Log::Warn("Event-based profilers (Allocation, Contention) are not supported for .NET", major, ".", minor, " (.NET 5+ is required)");
             }
-            // TODO: add warning for other unsupported CLR event-based profilers
         }
     }
 
@@ -732,11 +749,23 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         // Listen to interesting events:
         //  - AllocationTick_V4
         //  - ContentionStop_V1
+
+        UINT64 activatedKeywords = 0;
+
+        if (_pConfiguration->IsAllocationProfilingEnabled())
+        {
+            activatedKeywords |= ClrEventsParser::KEYWORD_GC;
+        }
+        if (_pConfiguration->IsContentionProfilingEnabled())
+        {
+            activatedKeywords |= ClrEventsParser::KEYWORD_CONTENTION;
+        }
+
         COR_PRF_EVENTPIPE_PROVIDER_CONFIG providers[] =
             {
                 {
                     WStr("Microsoft-Windows-DotNETRuntime"),
-                    ClrEventsParser::KEYWORD_GC | ClrEventsParser::KEYWORD_CONTENTION,
+                    activatedKeywords,
                     5, // the documentation states that AllocationTick is Informational but... need Verbose  :^(
                     NULL
                 }
@@ -798,6 +827,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
     if (_pAllocationsProvider != nullptr)
     {
         _pAllocationsProvider->Stop();
+    }
+
+    if (_pContentionProvider != nullptr)
+    {
+        _pContentionProvider->Stop();
     }
 
     // dump all threads time

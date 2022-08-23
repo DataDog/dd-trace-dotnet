@@ -42,6 +42,7 @@ public:
     bool IsExceptionProfilingEnabled() const override;
     int32_t ExceptionSampleLimit() const override;
     bool IsAllocationProfilingEnabled() const override;
+    bool IsContentionProfilingEnabled() const override;
     double MinimumCores() const override;
 
 private:
@@ -74,6 +75,7 @@ private:
     bool _isWallTimeProfilingEnabled;
     bool _isExceptionProfilingEnabled;
     bool _isAllocationProfilingEnabled;
+    bool _isContentionProfilingEnabled;
     bool _debugLogEnabled;
     fs::path _logDirectory;
     fs::path _pprofDirectory;
