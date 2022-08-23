@@ -96,8 +96,8 @@ namespace Datadog.Trace.AppSec
                     _waf = waf ?? Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules);
                     if (_waf?.InitializedSuccessfully ?? false)
                     {
-                        _instrumentationGateway.StartRequest += RunWafAndReact;
-                        _instrumentationGateway.StartRequest += RegisterForDispose;
+                        _instrumentationGateway.StartEndRequest += RunWafAndReact;
+                        _instrumentationGateway.StartEndRequest += RegisterForDispose;
                         _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
                         _instrumentationGateway.BodyAvailable += RunWafAndReact;
                         _instrumentationGateway.BlockingOpportunity += MightStopRequest;
@@ -126,7 +126,7 @@ namespace Datadog.Trace.AppSec
                         _settings.Enabled = false;
                     }
 
-                    _instrumentationGateway.StartRequest += ReportWafInitInfoOnce;
+                    _instrumentationGateway.StartEndRequest += ReportWafInitInfoOnce;
                     LifetimeManager.Instance.AddShutdownTask(RunShutdown);
                     _rateLimiter = new AppSecRateLimiter(_settings.TraceRateLimit);
                 }
@@ -388,7 +388,7 @@ namespace Datadog.Trace.AppSec
 
         private void ReportWafInitInfoOnce(object sender, InstrumentationGatewaySecurityEventArgs e)
         {
-            _instrumentationGateway.StartRequest -= ReportWafInitInfoOnce;
+            _instrumentationGateway.StartEndRequest -= ReportWafInitInfoOnce;
             var span = e.RelatedSpan.Context.TraceContext.RootSpan ?? e.RelatedSpan;
             span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             span.SetMetric(Metrics.AppSecWafInitRulesLoaded, _waf.InitializationResult.LoadedRules);
@@ -407,8 +407,8 @@ namespace Datadog.Trace.AppSec
             {
                 _instrumentationGateway.PathParamsAvailable -= RunWafAndReact;
                 _instrumentationGateway.BodyAvailable -= RunWafAndReact;
-                _instrumentationGateway.StartRequest -= RunWafAndReact;
-                _instrumentationGateway.StartRequest -= RegisterForDispose;
+                _instrumentationGateway.StartEndRequest -= RunWafAndReact;
+                _instrumentationGateway.StartEndRequest -= RegisterForDispose;
                 _instrumentationGateway.BlockingOpportunity -= MightStopRequest;
 
 #if NETFRAMEWORK

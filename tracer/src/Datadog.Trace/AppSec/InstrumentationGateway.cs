@@ -27,7 +27,7 @@ namespace Datadog.Trace.AppSec
 
         public event EventHandler<InstrumentationGatewaySecurityEventArgs> PathParamsAvailable;
 
-        public event EventHandler<InstrumentationGatewaySecurityEventArgs> StartRequest;
+        public event EventHandler<InstrumentationGatewaySecurityEventArgs> StartEndRequest;
 
         public event EventHandler<InstrumentationGatewaySecurityEventArgs> BodyAvailable;
 
@@ -35,7 +35,7 @@ namespace Datadog.Trace.AppSec
 
         public event EventHandler<InstrumentationGatewayBlockingEventArgs> BlockingOpportunity;
 
-        public void RaiseRequestStart(HttpContext context, HttpRequest request, Span relatedSpan)
+        public void RaiseRequestStartEnd(HttpContext context, HttpRequest request, Span relatedSpan)
         {
             var getEventData = () =>
             {
@@ -44,7 +44,7 @@ namespace Datadog.Trace.AppSec
                 return eventData;
             };
 
-            RaiseEvent(context, relatedSpan, getEventData, StartRequest);
+            RaiseEvent(context, relatedSpan, getEventData, StartEndRequest);
         }
 
         public void RaisePathParamsAvailable(HttpContext context, Span relatedSpan, IDictionary<string, object> pathParams, bool eraseExistingAddress = true) => RaiseEvent(context, relatedSpan, () => new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } }, PathParamsAvailable, eraseExistingAddress);
@@ -54,10 +54,7 @@ namespace Datadog.Trace.AppSec
             var getEventData = () =>
             {
                 var keysAndValues = BodyExtractor.Extract(body);
-                var eventData = new Dictionary<string, object>
-                {
-                    { AddressesConstants.RequestBody, keysAndValues }
-                };
+                var eventData = new Dictionary<string, object> { { AddressesConstants.RequestBody, keysAndValues } };
                 return eventData;
             };
 

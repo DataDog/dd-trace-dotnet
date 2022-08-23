@@ -635,13 +635,22 @@ namespace Datadog.Trace.DiagnosticListeners
                 if (shouldSecure)
                 {
                     httpContext.Response.OnCompleted(
-                       () =>
-                       {
-                           security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, span);
-                           return Task.CompletedTask;
-                       });
+                        () =>
+                        {
+                            security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, span);
+                            return Task.CompletedTask;
+                        });
 
-                    security.InstrumentationGateway.RaiseRequestStart(httpContext, request, span);
+                    httpContext.Response.OnStarting(
+                        () =>
+                        {
+                            // we subscribe here because in OnHostingHttpRequestInStop or HostingEndRequest it's too late,
+                            // the waf is already disposed by the registerfordispose callback, but we need to be at the end to get the real response status code
+                            security.InstrumentationGateway.RaiseRequestStartEnd(httpContext, request, span);
+                            return Task.CompletedTask;
+                        });
+
+                    security.InstrumentationGateway.RaiseRequestStartEnd(httpContext, request, span);
                     // Should we get rid of the Instrumentation Gateway, it s been making the code very cumbersome and hard to follow and an event driven model doesnt seem adapted here cause we need to get a return value from the security component to know here that we need to flush the span after blocking, hence the cumbersome action (last param here), binding parameters to avoid capturing local variables but so hard to read. It would be simpler to just call the security component with the current data, get the return, flush the span and throw if needed.
                     security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, (args) => DoBeforeRequestStops(args.Context, args.Scope, args.TracerSettings));
                 }
@@ -777,8 +786,12 @@ namespace Datadog.Trace.DiagnosticListeners
                 if (shouldSecure)
                 {
                     security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span, routeValues);
-                    security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, tracer.InternalActiveScope, tracer.Settings, args =>
-                        DoBeforeRequestStops(args.Context, args.Scope, args.TracerSettings));
+                    security.InstrumentationGateway.RaiseBlockingOpportunity(
+                        httpContext,
+                        tracer.InternalActiveScope,
+                        tracer.Settings,
+                        args =>
+                            DoBeforeRequestStops(args.Context, args.Scope, args.TracerSettings));
                 }
             }
         }
@@ -927,7 +940,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 if (security.Settings.Enabled && unhandledStruct.Exception is not BlockException)
                 {
                     var httpContext = unhandledStruct.HttpContext;
-                    security.InstrumentationGateway.RaiseRequestStart(httpContext, httpContext.Request, span);
+                    security.InstrumentationGateway.RaiseRequestStartEnd(httpContext, httpContext.Request, span);
                     security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, tracer.InternalActiveScope, tracer.Settings);
                 }
             }
