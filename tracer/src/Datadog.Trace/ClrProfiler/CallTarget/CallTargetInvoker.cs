@@ -528,7 +528,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
                 IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
-                return EndMethodHandler<TIntegration, TTarget>.Invoke(instance, exception, in state);
+                EndMethodHandler<TIntegration, TTarget>.Invoke(instance, exception, in state);
             }
 
             return CallTargetReturn.GetDefault();
@@ -551,7 +551,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget
             if (IntegrationOptions<TIntegration, TTarget>.IsIntegrationEnabled)
             {
                 IntegrationOptions<TIntegration, TTarget>.RecordTelemetry();
-                return EndMethodHandler<TIntegration, TTarget, TReturn>.Invoke(instance, returnValue, exception, in state);
+                var result = EndMethodHandler<TIntegration, TTarget, TReturn>.Invoke(instance, returnValue, exception, in state);
+                return new CallTargetReturn<TReturn>(result.GetReturnValue());
             }
 
             return new CallTargetReturn<TReturn>(returnValue);
