@@ -616,15 +616,16 @@ namespace Datadog.Trace.TestHelpers
         {
             var arr = JArray.Parse(batch);
 
-            var probeStatuses = new List<string>();
+            var probeStatuses = new Dictionary<string, string>();
             var snapshots = new List<string>();
 
             foreach (var token in arr)
             {
                 var stringifiedToken = token.ToString();
-                if (token["debugger"]?["diagnostics"]?["status"] != null)
+                var id = token["debugger"]?["diagnostics"]?["probeId"]?.ToString();
+                if (id != null)
                 {
-                    probeStatuses.Add(stringifiedToken);
+                    probeStatuses[id] = stringifiedToken;
                 }
                 else
                 {
@@ -634,7 +635,7 @@ namespace Datadog.Trace.TestHelpers
 
             // We override the previous Probes Statuses as the debugger-agent is always emitting complete set of probes statuses, so we can
             // solely rely on that.
-            ProbesStatuses = probeStatuses;
+            ProbesStatuses = probeStatuses.Values.ToList();
             Snapshots.AddRange(snapshots);
         }
 
