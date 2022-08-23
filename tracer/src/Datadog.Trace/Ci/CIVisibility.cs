@@ -328,7 +328,7 @@ namespace Datadog.Trace.Ci
                 var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
                 await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
                 var skippeableTests = await itrClient.GetSkippeableTestsAsync().ConfigureAwait(false);
-                Log.Debug<int>("ITR: SkippableTests = {length}, building dictionary", skippeableTests.Length);
+                Log.Information<int>("ITR: SkippableTests = {length}.", skippeableTests.Length);
 
                 var skippableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippeableTest>>>();
                 foreach (var item in skippeableTests)

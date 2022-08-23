@@ -138,6 +138,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
         internal static bool ShouldSkip(ref TestRunnerStruct runnerInstance)
         {
+            if (!CIVisibility.Settings.IntelligentTestRunnerEnabled)
+            {
+                return false;
+            }
+
             MethodInfo testMethod = runnerInstance.TestMethod;
 
             string testSuite = runnerInstance.TestClass.ToString();

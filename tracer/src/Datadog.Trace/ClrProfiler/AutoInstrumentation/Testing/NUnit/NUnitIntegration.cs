@@ -213,6 +213,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
         internal static bool ShouldSkip(ITest currentTest)
         {
+            if (!CIVisibility.Settings.IntelligentTestRunnerEnabled)
+            {
+                return false;
+            }
+
             MethodInfo testMethod = currentTest.Method.MethodInfo;
             string testName = testMethod.Name;
             string testSuite = testMethod.DeclaringType?.FullName;
