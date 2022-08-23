@@ -228,6 +228,21 @@
     <ClInclude Include="IAllocationsListener.h">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClInclude>
+    <ClInclude Include="IRuntimeInfo.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="RuntimeInfo.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="EnabledProfilers.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="IEnabledProfilers.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="EnumHelpers.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
     <ClInclude Include="SamplesCollector.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
@@ -357,6 +372,12 @@
       <Filter>Allocations</Filter>
     </ClCompile>
     <ClCompile Include="cgroup.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="RuntimeInfo.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="EnabledProfilers.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>

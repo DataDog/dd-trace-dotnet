@@ -112,9 +112,10 @@ namespace Datadog.Demos.Util
             str.AppendLine("        " + RuntimeEnvironmentInfo.Instance);
 
             str.AppendLine();
+#if NETCOREAPP2_2_OR_GREATER
             str.AppendLine("    AppDomain.CurrentDomain.SetupInformation.TargetFrameworkName:");
             str.AppendLine("        \"" + (AppDomain.CurrentDomain?.SetupInformation?.TargetFrameworkName ?? "<NULL>") + "\"");
-
+#endif
             str.AppendLine("} ");
             str.AppendLine();
 
