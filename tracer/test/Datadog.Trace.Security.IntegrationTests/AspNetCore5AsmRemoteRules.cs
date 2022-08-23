@@ -22,32 +22,37 @@ namespace Datadog.Trace.Security.IntegrationTests
     public class AspNetCore5AsmRemoteRules : AspNetBase, IDisposable
     {
         public AspNetCore5AsmRemoteRules(ITestOutputHelper outputHelper)
-            : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5AsmToggle))
+            : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5AsmRemoteRules))
         {
+            SetupRcmConfiguration();
         }
 
-        [SkippableTheory]
-        [InlineData(true)]
-        [InlineData(false)]
+        public override void Dispose()
+        {
+            base.Dispose();
+            CleanupRcmConfiguration();
+        }
+
+        [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        public async Task TestNewRemoteRules(bool enableSecurity)
+        public async Task TestNewRemoteRules()
         {
             SetupRcmConfiguration();
 
             SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "500");
             var url = "/Health/?[$slice]=value";
-            var agent = await RunOnSelfHosted(enableSecurity);
-            var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity);
+            var agent = await RunOnSelfHosted(true);
+            var settings = VerifyHelper.GetSpanVerifierSettings();
             var testStart = DateTime.UtcNow;
 
             var spans1 = await SendRequestsAsync(agent, url);
 
-            SetRcmConfiguration(new[] { ((object)new Features() { Asm_DD = new AsmDD() { Rules = " " } }, "1") }, "FEATURES");
+            SetRcmConfiguration(new[] { ((object)new AsmDD() { Rules = GetRules("2.22.222") }, "1") }, "ASM_DD");
             await Task.Delay(1000);
 
             var spans2 = await SendRequestsAsync(agent, url);
 
-            SetRcmConfiguration(new[] { ((object)new Features() { Asm_DD = new AsmDD() { Rules = " " } }, "2") }, "FEATURES");
+            SetRcmConfiguration(new[] { ((object)new AsmDD() { Rules = GetRules("3.33.333") }, "2") }, "ASM_DD");
             await Task.Delay(1000);
 
             var spans3 = await SendRequestsAsync(agent, url);
@@ -58,6 +63,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             spans.AddRange(spans3);
 
             await VerifySpans(spans.ToImmutableList(), settings, true);
+        }
+
+        private string GetRules(string version)
+        {
+            return File.ReadAllText("remote-rules.json").Replace("{VERSION}", version);
         }
     }
 }

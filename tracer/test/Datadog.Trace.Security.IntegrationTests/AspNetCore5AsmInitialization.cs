@@ -20,6 +20,13 @@ namespace Datadog.Trace.Security.IntegrationTests
         public AspNetCore5AsmInitialization(ITestOutputHelper outputHelper)
             : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5AsmInitialization))
         {
+            SetupRcmConfiguration();
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            CleanupRcmConfiguration();
         }
 
         [SkippableTheory]

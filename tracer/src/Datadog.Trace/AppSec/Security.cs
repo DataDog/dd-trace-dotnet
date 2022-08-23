@@ -47,7 +47,7 @@ namespace Datadog.Trace.AppSec
         private AppSecRateLimiter _rateLimiter;
         private bool _enabled = false;
         private IDictionary<string, Payload> _asmDataConfigs;
-        private string remoteRulesJson = null;
+        private string _remoteRulesJson = null;
 
         private bool? _usingIntegratedPipeline = null;
 
@@ -285,11 +285,10 @@ namespace Datadog.Trace.AppSec
 
         private void AsmDDProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
-            var featuresList = e.GetDeserializedConfigurations<Features>();
-            var features = featuresList.FirstOrDefault();
-            if (features != null)
+            var asmDD = e.GetDeserializedConfigurations<AsmDD>().FirstOrDefault();
+            if (asmDD != null)
             {
-                remoteRulesJson = features.Asm_DD.Rules;
+                _remoteRulesJson = asmDD.Rules;
                 UpdateStatus(true);
             }
         }
@@ -345,7 +344,7 @@ namespace Datadog.Trace.AppSec
                 {
                     _waf?.Dispose();
 
-                    _waf = Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules);
+                    _waf = Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteRulesJson);
                     if (_waf?.InitializedSuccessfully ?? false)
                     {
                         EnableWaf(fromRemoteConfig);
