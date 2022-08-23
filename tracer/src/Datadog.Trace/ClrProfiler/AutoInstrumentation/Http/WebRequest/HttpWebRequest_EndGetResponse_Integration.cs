@@ -11,6 +11,8 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Sampling;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 {
@@ -76,14 +78,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
                     if (scope is not null)
                     {
-                        if (setSamplingPriority && existingSpanContext?.SamplingPriority is not null)
+                        if (setSamplingPriority)
                         {
-                            scope.Span.SetTraceSamplingPriority(existingSpanContext.SamplingPriority.Value);
+                            scope.Span.Context.TraceContext.SetSamplingPriority(existingSpanContext.SamplingPriority.Value);
                         }
 
                         if (returnValue is HttpWebResponse response)
                         {
-                            scope.Span.SetHttpStatusCode((int)response.StatusCode, false, Tracer.Instance.Settings);
+                            scope.Span.SetHttpStatusCode((int)response.StatusCode, isServer: false, Tracer.Instance.Settings);
                         }
 
                         scope.DisposeWithException(exception);
