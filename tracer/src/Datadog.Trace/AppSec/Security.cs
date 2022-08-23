@@ -47,6 +47,7 @@ namespace Datadog.Trace.AppSec
         private AppSecRateLimiter _rateLimiter;
         private bool _enabled = false;
         private IDictionary<string, Payload> _asmDataConfigs;
+        private string remoteRulesJson = null;
 
         private bool? _usingIntegratedPipeline = null;
 
@@ -107,6 +108,7 @@ namespace Datadog.Trace.AppSec
                     Log.Information("AppSec remote enabling not allowed (DD_APPSEC_ENABLED=false).");
                 }
 
+                SharedRemoteConfiguration.AsmDDProduct.ConfigChanged += AsmDDProductConfigChanged;
                 SetRemoteConfigCapabilites();
             }
             catch (Exception ex)
@@ -279,6 +281,17 @@ namespace Datadog.Trace.AppSec
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, false);
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, true);
                 });
+        }
+
+        private void AsmDDProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
+        {
+            var featuresList = e.GetDeserializedConfigurations<Features>();
+            var features = featuresList.FirstOrDefault();
+            if (features != null)
+            {
+                remoteRulesJson = features.Asm_DD.Rules;
+                UpdateStatus(true);
+            }
         }
 
         private void FeaturesProductConfigChanged(object sender, ProductConfigChangedEventArgs e)

@@ -56,9 +56,10 @@ namespace Datadog.Trace.AppSec.Waf
         /// <param name="obfuscationParameterValueRegex">the regex that will be used to obfuscate possible sensitive data in values that are highlighted WAF as potentially malicious,
         /// empty string means use default embedded in the WAF</param>
         /// <param name="rulesFile">can be null, means use rules embedded in the manifest </param>
+        /// <param name="rulesJson">can be null. RemoteConfig rules json. Takes precedence over rulesFile </param>
         /// <param name="libVersion">can be null, means use a specific version in the name of the loaded file </param>
         /// <returns>the waf wrapper around waf native</returns>
-        internal static Waf Create(string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string rulesFile = null, string libVersion = null)
+        internal static Waf Create(string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string rulesFile = null, string rulesJson = null, string libVersion = null)
         {
             var libraryHandle = LibraryLoader.LoadAndGetHandle(libVersion);
             if (libraryHandle == IntPtr.Zero)
@@ -68,7 +69,16 @@ namespace Datadog.Trace.AppSec.Waf
 
             var wafNative = new WafNative(libraryHandle);
             var encoder = new Encoder(wafNative);
-            var initalizationResult = WafConfigurator.Configure(rulesFile, wafNative, encoder, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+            InitializationResult initalizationResult;
+            if (rulesJson != null)
+            {
+                initalizationResult = WafConfigurator.ConfigureFromRemoteConfig(rulesJson, wafNative, encoder, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+            }
+            else
+            {
+                initalizationResult = WafConfigurator.Configure(rulesFile, wafNative, encoder, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+            }
+
             return new Waf(initalizationResult, wafNative, encoder);
         }
 
