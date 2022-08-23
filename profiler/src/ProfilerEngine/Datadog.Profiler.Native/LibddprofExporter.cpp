@@ -399,12 +399,8 @@ bool LibddprofExporter::Export()
         additionalTags.Add("version", applicationInfo.Version);
         additionalTags.Add("service", applicationInfo.ServiceName);
         additionalTags.Add("runtime-id", std::string(runtimeId));
-        additionalTags.Add("profile_seq", std::to_string(exportsCount));
+        additionalTags.Add("profile_seq", std::to_string(exportsCount - 1));
 
-        // Count is incremented BEFORE creating and sending the .pprof
-        // so that it will be possible to detect "missing" profiles
-        // in the back end
-        profileInfo.exportsCount++;
         auto* request = CreateRequest(serializedProfile, exporter, additionalTags);
         if (request != nullptr)
         {
