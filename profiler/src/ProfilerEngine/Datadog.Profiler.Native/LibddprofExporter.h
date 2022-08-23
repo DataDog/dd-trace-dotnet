@@ -20,11 +20,17 @@ extern "C"
 class Sample;
 class IMetricsSender;
 class IApplicationStore;
+class IRuntimeInfo;
+class IEnabledProfilers;
 
 class LibddprofExporter : public IExporter
 {
 public:
-    LibddprofExporter(IConfiguration* configuration, IApplicationStore* applicationStore);
+    LibddprofExporter(
+        IConfiguration* configuration,
+        IApplicationStore* applicationStore,
+        IRuntimeInfo* runtimeInfo,
+        IEnabledProfilers* enabledProfilers);
     ~LibddprofExporter() override;
     bool Export() override;
     void Add(Sample const& sample) override;
@@ -76,7 +82,11 @@ private:
         std::int32_t exportsCount;
     };
 
-    static Tags CreateTags(IConfiguration* configuration);
+    static Tags CreateTags(
+        IConfiguration* configuration,
+        IRuntimeInfo* runtimeInfo,
+        IEnabledProfilers* enabledProfilers);
+
     static ddog_ProfileExporter* CreateExporter(const ddog_Vec_tag* tags, ddog_Endpoint endpoint);
     static ddog_Profile* CreateProfile();
 
@@ -113,4 +123,7 @@ private:
     ddog_Endpoint _endpoint;
     Tags _exporterBaseTags;
     IApplicationStore* const _applicationStore;
+
+public:  // for tests
+    static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);
 };

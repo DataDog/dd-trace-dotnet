@@ -5,6 +5,7 @@
 
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Util;
 
@@ -24,6 +25,7 @@ namespace Datadog.Trace
             Keys.RawTraceId,
             Keys.RawSpanId,
             Keys.PropagatedTags,
+
             // For mismatch version support we need to keep supporting old keys.
             HttpHeaderNames.TraceId,
             HttpHeaderNames.ParentId,
@@ -267,21 +269,25 @@ namespace Datadog.Trace
         /// <inheritdoc/>
         bool IReadOnlyDictionary<string, string>.TryGetValue(string key, out string value)
         {
+            var invariant = CultureInfo.InvariantCulture;
+
             switch (key)
             {
                 case Keys.TraceId:
                 case HttpHeaderNames.TraceId:
-                    value = TraceId.ToString();
+                    value = TraceId.ToString(invariant);
                     return true;
 
                 case Keys.ParentId:
                 case HttpHeaderNames.ParentId:
-                    value = SpanId.ToString();
+                    value = SpanId.ToString(invariant);
                     return true;
 
                 case Keys.SamplingPriority:
                 case HttpHeaderNames.SamplingPriority:
-                    value = SamplingPriority?.ToString();
+                    // return the value from TraceContext if available
+                    var samplingPriority = TraceContext?.SamplingPriority ?? SamplingPriority;
+                    value = samplingPriority?.ToString(invariant);
                     return true;
 
                 case Keys.Origin:
@@ -298,7 +304,8 @@ namespace Datadog.Trace
                     return true;
 
                 case Keys.PropagatedTags:
-                    value = PropagatedTags;
+                    // return the value from TraceContext if available
+                    value = TraceContext?.Tags.ToPropagationHeader() ?? PropagatedTags;
                     return true;
 
                 default:

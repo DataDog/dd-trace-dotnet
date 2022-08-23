@@ -8,14 +8,13 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.AppSec.Transports;
-using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -280,7 +279,7 @@ namespace Datadog.Trace.AppSec
         {
             span.SetTag(Tags.AppSecEvent, "true");
             var resultData = result.Data;
-            SetSamplingPriority(span);
+            SetTraceSamplingPriority(span);
 
             LogMatchesIfDebugEnabled(resultData, blocked);
 
@@ -299,15 +298,17 @@ namespace Datadog.Trace.AppSec
             AddHeaderTags(span, headers, RequestHeaders, SpanContextPropagator.HttpRequestHeadersTagPrefix);
         }
 
-        private void SetSamplingPriority(Span span)
+        private void SetTraceSamplingPriority(Span span)
         {
             if (!_settings.KeepTraces)
             {
-                span.SetTraceSamplingPriority(SamplingPriorityValues.AutoReject);
+                // NOTE: setting DD_APPSEC_KEEP_TRACES=false means "drop all traces by setting AutoReject".
+                // It does _not_ mean "stop setting UserKeep (do nothing)". It should only be used for testing.
+                span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoReject, SamplingMechanism.Asm);
             }
             else if (_rateLimiter.Allowed(span))
             {
-                span.SetTraceSamplingPriority(SamplingPriorityValues.UserKeep);
+                span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             }
         }
 
@@ -372,7 +373,7 @@ namespace Datadog.Trace.AppSec
         {
             _instrumentationGateway.EndRequest -= ReportWafInitInfoOnce;
             var span = e.RelatedSpan.Context.TraceContext.RootSpan ?? e.RelatedSpan;
-            span.SetTraceSamplingPriority(SamplingPriorityValues.UserKeep);
+            span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             span.SetMetric(Metrics.AppSecWafInitRulesLoaded, _waf.InitializationResult.LoadedRules);
             span.SetMetric(Metrics.AppSecWafInitRulesErrorCount, _waf.InitializationResult.FailedToLoadRules);
             if (_waf.InitializationResult.HasErrors)

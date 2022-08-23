@@ -28,7 +28,7 @@ namespace Samples.Kafka
 
         private static async Task ConsumeAgainstNonExistentTopic(string topic, ClientConfig config)
         {
-            using var consumer = Consumer.Create(enableAutoCommit: true, topic, consumerName: "FailingConsumer 1");
+            using var consumer = Consumer.Create(enableAutoCommit: true, topic, consumerName: "FailingConsumer1");
 
             Console.WriteLine($"Manually consuming non-existent topic...");
 

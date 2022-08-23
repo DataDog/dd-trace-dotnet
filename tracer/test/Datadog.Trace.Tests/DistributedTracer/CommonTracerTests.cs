@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
