@@ -93,7 +93,7 @@ namespace Datadog.Trace.TestHelpers
         {
             var monitoringHomeDirectoryEnvVar = "MonitoringHomeDirectory";
             var monitoringHome = Environment.GetEnvironmentVariable(monitoringHomeDirectoryEnvVar);
-            if (!string.IsNullOrEmpty(monitoringHome))
+            if (string.IsNullOrEmpty(monitoringHome))
             {
                 // default
                 monitoringHome = Path.Combine(
@@ -537,7 +537,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 // Default
                 var agentPort = fixedPort ?? TcpPortProvider.GetOpenPort();
-                agent = MockTracerAgent.Create(agentPort, useStatsd: useStatsD, useTelemetry: useTelemetry);
+                agent = MockTracerAgent.Create(_output, agentPort, useStatsd: useStatsD, useTelemetry: useTelemetry);
             }
 
             _output.WriteLine($"Agent listener info: {agent.ListenerInfo}");
