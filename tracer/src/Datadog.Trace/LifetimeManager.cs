@@ -18,7 +18,7 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LifetimeManager>();
         private static LifetimeManager _instance;
-        private readonly ConcurrentQueue<Action> _shutdownHooks = new();
+        private readonly ConcurrentQueue<object> _shutdownHooks = new();
 
         public LifetimeManager()
         {
@@ -65,21 +65,7 @@ namespace Datadog.Trace
 
         public void AddAsyncShutdownTask(Func<Task> func)
         {
-            var action = () =>
-            {
-                var current = SynchronizationContext.Current;
-                try
-                {
-                    SynchronizationContext.SetSynchronizationContext(null);
-                    func().Wait(TaskTimeout);
-                }
-                finally
-                {
-                    SynchronizationContext.SetSynchronizationContext(current);
-                }
-            };
-
-            _shutdownHooks.Enqueue(action);
+            _shutdownHooks.Enqueue(func);
         }
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
@@ -109,16 +95,29 @@ namespace Datadog.Trace
 
         private void RunShutdownTasks()
         {
+            var current = SynchronizationContext.Current;
             try
             {
-                while (_shutdownHooks.TryDequeue(out var action))
+                SynchronizationContext.SetSynchronizationContext(null);
+                while (_shutdownHooks.TryDequeue(out var actionOrFunc))
                 {
-                    action();
+                    if (actionOrFunc is Action action)
+                    {
+                        action();
+                    }
+                    else if (actionOrFunc is Func<Task> func)
+                    {
+                        func().Wait(TaskTimeout);
+                    }
                 }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error running shutdown hooks");
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(current);
             }
         }
     }

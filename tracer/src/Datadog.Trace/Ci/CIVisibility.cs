@@ -25,7 +25,8 @@ namespace Datadog.Trace.Ci
         private static readonly CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
         private static int _firstInitialization = 1;
         private static Lazy<bool> _enabledLazy = new Lazy<bool>(() => InternalEnabled(), true);
-        private static Dictionary<string, Dictionary<string, IList<SkippeableTest>>>? _skippeableTestsBySuiteAndName;
+        private static Task? _skippableTask;
+        private static Dictionary<string, Dictionary<string, IList<SkippeableTest>>>? _skippableTestsBySuiteAndName;
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
 
@@ -70,47 +71,12 @@ namespace Datadog.Trace.Ci
                 tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
             }
 
-            // Initialize Tracer
-            Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings));
-            _ = Tracer.Instance;
-
             // Intelligent Test Runner
             if (_settings.IntelligentTestRunnerEnabled)
             {
                 Log.Information("ITR: Update and uploading git tree metadata and getting skippeable tests.");
-                var context = SynchronizationContext.Current;
-                try
-                {
-                    SynchronizationContext.SetSynchronizationContext(null);
-                    var skippeableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippeableTest>>>();
-                    var skippeableTests = GetIntelligentTestRunnerSkippeableTestsAsync().GetAwaiter().GetResult();
-                    if (skippeableTests is not null)
-                    {
-                        foreach (var item in skippeableTests)
-                        {
-                            if (!skippeableTestsBySuiteAndName.TryGetValue(item.Suite, out var suite))
-                            {
-                                suite = new Dictionary<string, IList<SkippeableTest>>();
-                                skippeableTestsBySuiteAndName[item.Suite] = suite;
-                            }
-
-                            if (!suite.TryGetValue(item.Name, out var name))
-                            {
-                                name = new List<SkippeableTest>();
-                                suite[item.Name] = name;
-                            }
-
-                            name.Add(item);
-                        }
-                    }
-
-                    _skippeableTestsBySuiteAndName = skippeableTestsBySuiteAndName;
-                }
-                finally
-                {
-                    SynchronizationContext.SetSynchronizationContext(context);
-                }
+                _skippableTask = GetIntelligentTestRunnerSkippableTestsAsync();
+                LifetimeManager.Instance.AddAsyncShutdownTask(() => _skippableTask);
             }
             else if (_settings.GitUploadEnabled)
             {
@@ -120,74 +86,66 @@ namespace Datadog.Trace.Ci
                 LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
             }
 
-            static async Task UploadGitMetadataAsync()
-            {
-                try
-                {
-                    var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
-                    await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "ITR: Error uploading repository git metadata.");
-                }
-            }
-
-            static async Task<SkippeableTest[]> GetIntelligentTestRunnerSkippeableTestsAsync()
-            {
-                try
-                {
-                    var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
-                    await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
-                    var skippeableTests = await itrClient.GetSkippeableTestsAsync().ConfigureAwait(false);
-                    Log.Debug<int>("ITR: SkippeableTests = {length}", skippeableTests.Length);
-                    return skippeableTests;
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "ITR: Error getting skippeable tests.");
-                }
-
-                return Array.Empty<SkippeableTest>();
-            }
+            // Initialize Tracer
+            Log.Information("Initialize Test Tracer instance");
+            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings));
+            _ = Tracer.Instance;
         }
 
         internal static void FlushSpans()
         {
+            var sContext = SynchronizationContext.Current;
             try
             {
-                var flushThread = new Thread(InternalFlush);
-                flushThread.IsBackground = false;
-                flushThread.Name = "FlushThread";
-                flushThread.Start();
-                flushThread.Join();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Exception occurred when flushing spans.");
-            }
-
-            static void InternalFlush()
-            {
+                SynchronizationContext.SetSynchronizationContext(null);
                 if (!InternalFlushAsync().Wait(30_000))
                 {
                     Log.Error("Timeout occurred when flushing spans.");
                 }
             }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(sContext);
+            }
         }
 
-        internal static IList<SkippeableTest> GetSkippeableTestsFromSuiteAndName(string suite, string name)
+        internal static Task<IList<SkippeableTest>> GetSkippableTestsFromSuiteAndNameAsync(string suite, string name)
         {
-            if (_skippeableTestsBySuiteAndName is { } skippeableTestBySuite)
+            if (_skippableTask is { } skippableTask)
             {
-                if (skippeableTestBySuite.TryGetValue(suite, out var testsInSuite) &&
-                    testsInSuite.TryGetValue(name, out var tests))
+                if (skippableTask.IsCompleted)
                 {
-                    return tests;
+                    return Task.FromResult(GetSkippableTestsFromSuiteAndName(suite, name));
                 }
+
+                return SlowGetSkippableTestsFromSuiteAndNameAsync(suite, name);
             }
 
-            return Array.Empty<SkippeableTest>();
+            return Task.FromResult((IList<SkippeableTest>)Array.Empty<SkippeableTest>());
+
+            static async Task<IList<SkippeableTest>> SlowGetSkippableTestsFromSuiteAndNameAsync(string suite, string name)
+            {
+                if (_skippableTask is { } skippableTask)
+                {
+                    await skippableTask.ConfigureAwait(false);
+                }
+
+                return GetSkippableTestsFromSuiteAndName(suite, name);
+            }
+
+            static IList<SkippeableTest> GetSkippableTestsFromSuiteAndName(string suite, string name)
+            {
+                if (_skippableTestsBySuiteAndName is { } skippeableTestBySuite)
+                {
+                    if (skippeableTestBySuite.TryGetValue(suite, out var testsInSuite) &&
+                        testsInSuite.TryGetValue(name, out var tests))
+                    {
+                        return tests;
+                    }
+                }
+
+                return Array.Empty<SkippeableTest>();
+            }
         }
 
         internal static string GetServiceNameFromRepository(string repository)
@@ -222,7 +180,7 @@ namespace Datadog.Trace.Ci
         internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings)
         {
             IApiRequestFactory? factory = null;
-            TimeSpan agentlessTimeout = TimeSpan.FromSeconds(25);
+            TimeSpan agentlessTimeout = TimeSpan.FromSeconds(45);
 
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
@@ -347,6 +305,55 @@ namespace Datadog.Trace.Ci
                 {
                     // .
                 }
+            }
+        }
+
+        private static async Task UploadGitMetadataAsync()
+        {
+            try
+            {
+                var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
+                await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "ITR: Error uploading repository git metadata.");
+            }
+        }
+
+        private static async Task GetIntelligentTestRunnerSkippableTestsAsync()
+        {
+            try
+            {
+                var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
+                await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
+                var skippeableTests = await itrClient.GetSkippeableTestsAsync().ConfigureAwait(false);
+                Log.Debug<int>("ITR: SkippableTests = {length}, building dictionary", skippeableTests.Length);
+
+                var skippableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippeableTest>>>();
+                foreach (var item in skippeableTests)
+                {
+                    if (!skippableTestsBySuiteAndName.TryGetValue(item.Suite, out var suite))
+                    {
+                        suite = new Dictionary<string, IList<SkippeableTest>>();
+                        skippableTestsBySuiteAndName[item.Suite] = suite;
+                    }
+
+                    if (!suite.TryGetValue(item.Name, out var name))
+                    {
+                        name = new List<SkippeableTest>();
+                        suite[item.Name] = name;
+                    }
+
+                    name.Add(item);
+                }
+
+                _skippableTestsBySuiteAndName = skippableTestsBySuiteAndName;
+                Log.Debug<int>("ITR: SkippableTests dictionary has been built.", skippeableTests.Length);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "ITR: Error getting skippeable tests.");
             }
         }
     }

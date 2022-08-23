@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
@@ -216,47 +217,56 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             string testName = testMethod.Name;
             string testSuite = testMethod.DeclaringType?.FullName;
 
-            var skippeableTests = CIVisibility.GetSkippeableTestsFromSuiteAndName(testSuite, testName);
-            if (skippeableTests.Count > 0)
+            var currentContext = SynchronizationContext.Current;
+            try
             {
-                object[] testMethodArguments = currentTest.Arguments;
-                foreach (var skippeableTest in skippeableTests)
+                SynchronizationContext.SetSynchronizationContext(null);
+                var skippeableTests = CIVisibility.GetSkippableTestsFromSuiteAndNameAsync(testSuite, testName).GetAwaiter().GetResult();
+                if (skippeableTests.Count > 0)
                 {
-                    var parameters = skippeableTest.GetParameters();
-
-                    // Same test name and no parameters
-                    if ((parameters?.Arguments is null || parameters?.Arguments.Count == 0) &&
-                        (testMethodArguments is null || testMethodArguments.Length == 0))
+                    object[] testMethodArguments = currentTest.Arguments;
+                    foreach (var skippeableTest in skippeableTests)
                     {
-                        return true;
-                    }
+                        var parameters = skippeableTest.GetParameters();
 
-                    if (parameters?.Arguments is not null)
-                    {
-                        ParameterInfo[] methodParameters = testMethod.GetParameters();
-                        bool matchSignature = true;
-                        for (var i = 0; i < methodParameters.Length; i++)
-                        {
-                            var targetValue = "(default)";
-                            if (i < testMethodArguments.Length)
-                            {
-                                targetValue = Common.GetParametersValueData(testMethodArguments[i]);
-                            }
-
-                            if (!parameters.Arguments.TryGetValue(methodParameters[i].Name, out var argValue) ||
-                                (string)argValue != targetValue)
-                            {
-                                matchSignature = false;
-                                break;
-                            }
-                        }
-
-                        if (matchSignature)
+                        // Same test name and no parameters
+                        if ((parameters?.Arguments is null || parameters?.Arguments.Count == 0) &&
+                            (testMethodArguments is null || testMethodArguments.Length == 0))
                         {
                             return true;
                         }
+
+                        if (parameters?.Arguments is not null)
+                        {
+                            ParameterInfo[] methodParameters = testMethod.GetParameters();
+                            bool matchSignature = true;
+                            for (var i = 0; i < methodParameters.Length; i++)
+                            {
+                                var targetValue = "(default)";
+                                if (i < testMethodArguments.Length)
+                                {
+                                    targetValue = Common.GetParametersValueData(testMethodArguments[i]);
+                                }
+
+                                if (!parameters.Arguments.TryGetValue(methodParameters[i].Name, out var argValue) ||
+                                    (string)argValue != targetValue)
+                                {
+                                    matchSignature = false;
+                                    break;
+                                }
+                            }
+
+                            if (matchSignature)
+                            {
+                                return true;
+                            }
+                        }
                     }
                 }
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(currentContext);
             }
 
             return false;
