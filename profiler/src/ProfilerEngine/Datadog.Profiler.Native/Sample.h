@@ -25,6 +25,8 @@ SampleValueType const SampleTypeDefinitions[] =
     {"exception", "count"},     // ExceptionCount
     {"alloc-samples", "count"}, // AllocationCount
     {"alloc-size", "bytes"},    // AllocationSize
+    {"lock-count", "count"},
+    {"lock-duration", "nanoseconds"}
 
     // the new ones should be added here at the same time
     // new identifiers are added to SampleValue
@@ -51,8 +53,6 @@ enum class SampleValue : size_t
     // Thread contention profiler
     ContentionCount = 5,
     ContentionDuration = 6,
-
-
 };
 //
 static constexpr size_t array_size = sizeof(SampleTypeDefinitions) / sizeof(SampleTypeDefinitions[0]);

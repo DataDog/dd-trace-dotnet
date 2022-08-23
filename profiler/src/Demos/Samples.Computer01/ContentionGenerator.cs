@@ -30,13 +30,13 @@ namespace Samples.Computer01
             }
 
             _stopEvent = new ManualResetEvent(false);
-            _startEvent = new ManualResetEvent(false);
             _activeTasks = CreateThreads();
         }
 
         public void Run()
         {
             Start();
+            Thread.Sleep(TimeSpan.FromSeconds(1)); // to be sure that we got contention events
             Stop();
         }
 
