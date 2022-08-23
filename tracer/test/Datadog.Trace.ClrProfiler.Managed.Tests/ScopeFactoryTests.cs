@@ -32,6 +32,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [InlineData("123,123/", Id + "/")]
         [InlineData("123,123", Id)]
         [InlineData("users,123/", "users,123/")]
+        [InlineData("123af,12a/", "123af,12a/")]
+        [InlineData("123afafafafaf,12a/", "123afafafafaf,12a/")]
+        [InlineData("afafafafaf,afafafafaf/", "afafafafaf,afafafafaf/")]
         public void CleanUriSegment(string segment, string expected)
         {
             string actual = UriHelpers.GetCleanUriPath(segment);
@@ -47,6 +50,8 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [InlineData("http://example.com/path/to/file.aspx", "GET", "GET example.com/path/to/file.aspx")]
         [InlineData("https://example.com/path/123/file.aspx", "GET", "GET example.com/path/" + Id + "/file.aspx")]
         [InlineData("https://example.com/path/123,123/file.aspx", "GET", "GET example.com/path/" + Id + "/file.aspx")]
+        [InlineData("https://example.com/path/123afafafafaf,12a/file.aspx", "GET", "GET example.com/path/123afafafafaf,12a/file.aspx")]
+        [InlineData("https://example.com/path/afafafafaf,afafafafaf/file.aspx", "GET", "GET example.com/path/afafafafaf,afafafafaf/file.aspx")]
         [InlineData("https://example.com/path/123/", "GET", "GET example.com/path/" + Id + "/")]
         [InlineData("https://example.com/path/123", "GET", "GET example.com/path/" + Id)]
         [InlineData("https://example.com/path/123,123/", "GET", "GET example.com/path/" + Id + "/")]
