@@ -66,6 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 // or disposes it on the next call to Consumer.Consume()
                 Scope scope = KafkaHelper.CreateConsumerScope(
                     Tracer.Instance,
+                    instance,
                     consumeResult.Topic,
                     consumeResult.Partition,
                     consumeResult.Offset,

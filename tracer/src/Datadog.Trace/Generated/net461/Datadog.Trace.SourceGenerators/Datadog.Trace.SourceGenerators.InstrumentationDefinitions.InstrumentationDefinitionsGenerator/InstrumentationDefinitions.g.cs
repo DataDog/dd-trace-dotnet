@@ -160,6 +160,7 @@ namespace Datadog.Trace.ClrProfiler
                new ("Microsoft.Extensions.Logging.Abstractions", "Microsoft.Extensions.Logging.LoggerExternalScopeProvider", "ForEachScope",  new[] { "System.Void", "System.Action`2[System.Object,!!0]", "!!0" }, 2, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.LoggerExternalScopeProviderForEachScopeIntegration"),
 
                 // Kafka
+               new ("Confluent.Kafka", "Confluent.Kafka.Consumer`2", ".ctor",  new[] { "System.Void", "Confluent.Kafka.ConsumerBuilder`2[!0,!1]" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerConstructorIntegration"),
                new ("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Close",  new[] { "System.Void" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerCloseIntegration"),
                new ("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Consume",  new[] { "Confluent.Kafka.ConsumeResult`2[!0,!1]", "System.Int32" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerConsumeIntegration"),
                new ("Confluent.Kafka", "Confluent.Kafka.Consumer`2", "Dispose",  new[] { "System.Void" }, 1, 4, 0, 1, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerDisposeIntegration"),
@@ -571,7 +572,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.LoggerFactoryScopeProviderForEachScopeIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.LoggerExternalScopeProviderForEachScopeIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.ILogger,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerCloseIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerConstructorIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerCloseIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerConsumeIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerDisposeIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerUnsubscribeIntegration"

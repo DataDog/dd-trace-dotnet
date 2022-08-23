@@ -243,6 +243,11 @@ namespace Datadog.Trace
         internal const string KafkaOffset = "kafka.offset";
 
         /// <summary>
+        /// The consumer group that consumed the message
+        /// </summary>
+        internal const string KafkaConsumerGroup = "kafka.group";
+
+        /// <summary>
         /// Whether the record was a "tombstone" record
         /// </summary>
         internal const string KafkaTombstone = "kafka.tombstone";
