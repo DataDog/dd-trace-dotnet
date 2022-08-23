@@ -344,7 +344,7 @@ void LibddprofExporter::SetEndpoint(std::string runtimeId, uint64_t traceId, std
 
     const auto traceIdStr = std::to_string(traceId);
 
-    ddprof_ffi_Profile_set_endpoint(profile, FfiHelper::StringToCharSlice(traceIdStr), FfiHelper::StringToCharSlice(endpoint));
+    ddog_Profile_set_endpoint(profile, FfiHelper::StringToCharSlice(traceIdStr), FfiHelper::StringToCharSlice(endpoint));
 }
 
 bool LibddprofExporter::Export()

@@ -56,7 +56,8 @@ namespace Datadog.Trace
             // scope.Parent is null for distributed traces, so use scope.Span.Context.Parent
             DistributedTracer.Instance.SetSpanContext(scope.Span.Context.Parent as SpanContext);
 
-            if (isRootSpan && scope.Span.Type == SpanTypes.Web)
+            // Propagate the resource name to the profiler for root web spans
+            if (scope.Parent == null && scope.Span.Type == SpanTypes.Web)
             {
                 Profiler.Instance.ContextTracker.SetEndpoint(scope.Span.RootSpanId, scope.Span.ResourceName);
             }
