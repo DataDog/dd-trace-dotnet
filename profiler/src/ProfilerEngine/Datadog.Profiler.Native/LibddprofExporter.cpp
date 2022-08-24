@@ -67,7 +67,7 @@ LibddprofExporter::LibddprofExporter(
 
 LibddprofExporter::~LibddprofExporter()
 {
-    std::lock_guard lock(_profileInfoLock);
+    std::lock_guard lock(_perAppInfoLock);
 
     for (auto& [runtimeId, appInfo] : _perAppInfo)
     {
@@ -94,7 +94,7 @@ ddprof_ffi_ProfileExporterV3* LibddprofExporter::CreateExporter(const ddprof_ffi
     }
     else
     {
-        Log::Error("libddprof failed to create the exporter: ", result.err.ptr);
+        Log::Error("Failed to create the exporter: ", result.err.ptr);
         return nullptr;
     }
 }
@@ -256,7 +256,7 @@ ddprof_ffi_EndpointV3 LibddprofExporter::CreateEndpoint(IConfiguration* configur
 
 LibddprofExporter::ProfileInfoScope LibddprofExporter::GetInfo(std::string_view runtimeId)
 {
-    std::lock_guard lock(_profileInfoLock);
+    std::lock_guard lock(_perAppInfoLock);
 
     auto& profileInfo = _perAppInfo[runtimeId];
 
@@ -336,7 +336,7 @@ bool LibddprofExporter::Export()
     std::vector<std::string_view> keys;
 
     {
-        std::lock_guard lock(_profileInfoLock);
+        std::lock_guard lock(_perAppInfoLock);
         for (const auto& [key, _] : _perAppInfo)
         {
             keys.push_back(key);
@@ -349,7 +349,12 @@ bool LibddprofExporter::Export()
         int32_t samplesCount;
         int32_t exportsCount;
 
-        {
+        // The goal here is to minimize the amount of time we hold the profileInfo lock.
+        // The lock in ProfileInfoScope guarantees that nobody else is currently holding a reference to the profileInfo.
+        // While inside of the lock, we extract the profileInfo reference and replace it by a null pointer.
+        // This way, we know that nobody else will ever use that profileInfo again, and we can take our time to manipulate it
+        // outside of the lock.
+        {            
             const auto scope = GetInfo(runtimeId);
 
             // Get everything we need then release the lock
@@ -369,7 +374,7 @@ bool LibddprofExporter::Export()
 
         if (profile == nullptr || samplesCount == 0)
         {
-            Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be send.");
+            Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be sent.");
             continue;
         }
 
@@ -377,7 +382,7 @@ bool LibddprofExporter::Export()
         auto serializedProfile = SerializedProfile{profile};
         if (!serializedProfile.IsValid())
         {
-            Log::Error("Unable to serialize the libddprof profile. No profile will be sent.");
+            Log::Error("Unable to serialize the profile. No profile will be sent.");
             return false;
         }
 
@@ -491,7 +496,7 @@ bool LibddprofExporter::Send(ddprof_ffi_Request* request, ddprof_ffi_ProfileExpo
 
     if (result.tag == DDPROF_FFI_SEND_RESULT_ERR)
     {
-        Log::Error("libddprof error: Failed to send profile (", std::string(reinterpret_cast<const char*>(result.err.ptr), result.err.len), ")"); // NOLINT
+        Log::Error("Failed to send profile (", std::string(reinterpret_cast<const char*>(result.err.ptr), result.err.len), ")"); // NOLINT
         return false;
     }
 

@@ -53,6 +53,7 @@ private:
     std::thread _exporterThread;
     std::mutex _exportLock;
     std::promise<void> _exporterThreadPromise;
+    std::promise<void> _workerThreadPromise;
     IMetricsSender* _metricsSender;
     IExporter* _exporter;
 };

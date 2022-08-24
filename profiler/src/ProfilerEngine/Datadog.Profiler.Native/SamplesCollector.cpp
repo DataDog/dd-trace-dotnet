@@ -43,10 +43,16 @@ bool SamplesCollector::Stop()
     }
 
     _mustStop = true;
+
+    _workerThreadPromise.set_value();
     _workerThread.join();
 
     _exporterThreadPromise.set_value();
     _exporterThread.join();
+
+    // Export the leftover samples
+    CollectSamples();
+    Export();
 
     return true;
 }
@@ -60,24 +66,24 @@ void SamplesCollector::SamplesWork()
 {
     _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), WorkerThreadName);
 
-    while (!_mustStop)
+    const auto future = _workerThreadPromise.get_future();
+
+    while (future.wait_for(CollectingPeriod) == std::future_status::timeout)
     {
         CollectSamples();
-        std::this_thread::sleep_for(CollectingPeriod);
     }
 }
 
 void SamplesCollector::ExportWork()
 {
+    _pThreadsCpuManager->Map(OpSysTools::GetThreadId(), ExporterThreadName);
+
     const auto future = _exporterThreadPromise.get_future();
 
     while (future.wait_for(_uploadInterval) == std::future_status::timeout)
     {
         Export();
     }
-
-    // Exiting, export one last time
-    Export();
 }
 
 void SamplesCollector::Export()

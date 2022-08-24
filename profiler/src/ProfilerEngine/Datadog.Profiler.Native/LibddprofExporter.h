@@ -148,7 +148,7 @@ private:
     Tags _exporterBaseTags;
     IApplicationStore* const _applicationStore;
 
-    std::mutex _profileInfoLock;
+    std::mutex _perAppInfoLock;
 
 public:  // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);
