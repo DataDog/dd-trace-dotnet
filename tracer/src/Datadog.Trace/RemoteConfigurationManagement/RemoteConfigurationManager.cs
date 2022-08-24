@@ -20,7 +20,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
     internal class RemoteConfigurationManager : IRemoteConfigurationManager
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationManager));
-        private static readonly SemaphoreSlim SemaphoreSlim = new(1, 1);
+        private static readonly object LockObject = new object();
 
         private readonly string _id;
         private readonly RcmClientTracer _rcmTracer;
@@ -64,39 +64,30 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             RemoteConfigurationSettings settings,
             string serviceName)
         {
-            SemaphoreSlim.Wait();
-
-            try
+            lock (LockObject)
             {
-                Instance ??= new RemoteConfigurationManager(
+                return Instance ??= new RemoteConfigurationManager(
                     discoveryService,
                     remoteConfigurationApi,
                     id: settings.Id,
                     rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, settings.Environment, settings.AppVersion),
                     pollInterval: settings.PollInterval);
             }
-            finally
-            {
-                SemaphoreSlim.Release();
-            }
-
-            return Instance;
         }
 
         public async Task StartPollingAsync()
         {
-            await SemaphoreSlim.WaitAsync().ConfigureAwait(false);
-
-            if (_isPollingStarted)
+            lock (LockObject)
             {
-                Log.Warning("Remote Configuration management polling is already started.");
-                return;
+                if (_isPollingStarted)
+                {
+                    Log.Warning("Remote Configuration management polling is already started.");
+                    return;
+                }
+
+                _isPollingStarted = true;
+                LifetimeManager.Instance.AddShutdownTask(OnShutdown);
             }
-
-            _isPollingStarted = true;
-            LifetimeManager.Instance.AddShutdownTask(OnShutdown);
-
-            SemaphoreSlim.Release();
 
             while (!_cancellationSource.IsCancellationRequested)
             {
@@ -132,16 +123,16 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         private async Task Poll()
         {
-            await SemaphoreSlim.WaitAsync().ConfigureAwait(false);
-
             try
             {
-                var request = BuildRequest();
+                var products = _products.ToDictionary(pair => pair.Key, pair => pair.Value);
+
+                var request = BuildRequest(products);
                 var response = await _remoteConfigurationApi.GetConfigs(request).ConfigureAwait(false);
 
                 if (response?.Targets?.Signed != null)
                 {
-                    ProcessResponse(response);
+                    ProcessResponse(response, products);
                     _targetsVersion = response.Targets.Signed.Version;
                 }
             }
@@ -149,15 +140,11 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             {
                 _lastPollError = e.Message;
             }
-            finally
-            {
-                SemaphoreSlim.Release();
-            }
         }
 
-        private GetRcmRequest BuildRequest()
+        private GetRcmRequest BuildRequest(IDictionary<string, Product> products)
         {
-            var appliedConfigurations = _products.Values.SelectMany(pair => pair.AppliedConfigurations.Values);
+            var appliedConfigurations = products.Values.SelectMany(pair => pair.AppliedConfigurations.Values);
 
             var cachedTargetFiles = new List<RcmCachedTargetFile>();
             var configStates = new List<RcmConfigState>();
@@ -169,13 +156,13 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
 
             var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, _lastPollError != null, _lastPollError);
-            var rcmClient = new RcmClient(_id, _products.Keys, _rcmTracer, rcmState);
+            var rcmClient = new RcmClient(_id, products.Keys, _rcmTracer, rcmState);
             var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
 
             return rcmRequest;
         }
 
-        private void ProcessResponse(GetRcmResponse response)
+        private void ProcessResponse(GetRcmResponse response, IDictionary<string, Product> products)
         {
             var actualConfigPath =
                 response
@@ -186,9 +173,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             var changedConfigurationsByProduct = GetChangedConfigurations()
                .GroupBy(config => config.Path.Product);
 
+            // copy products
             foreach (var productGroup in changedConfigurationsByProduct)
             {
-                var product = _products[productGroup.Key];
+                var product = products[productGroup.Key];
 
                 try
                 {
@@ -217,7 +205,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                         ThrowHelper.ThrowException($"Missing config {kp.Key} in targets");
                     }
 
-                    if (!_products.TryGetValue(kp.Value.Product, out var product))
+                    if (!products.TryGetValue(kp.Value.Product, out var product))
                     {
                         ThrowHelper.ThrowException($"Received config {kp.Key} for a product that was not requested");
                     }
@@ -253,7 +241,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             {
                 List<string> remove = null;
 
-                foreach (var product in _products.Values)
+                foreach (var product in products.Values)
                 {
                     foreach (var appliedConfiguration in product.AppliedConfigurations)
                     {
