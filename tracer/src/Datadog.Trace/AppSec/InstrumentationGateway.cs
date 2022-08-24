@@ -41,7 +41,7 @@ namespace Datadog.Trace.AppSec
         {
             var getEventData = () =>
             {
-                var eventData = request.PrepareArgsForWaf();
+                var eventData = request.PrepareArgsForWaf(relatedSpan);
                 eventData.Add(AddressesConstants.ResponseStatus, context.Response.StatusCode.ToString());
                 return eventData;
             };
@@ -51,7 +51,7 @@ namespace Datadog.Trace.AppSec
 
         public void RaiseRequestStart(HttpContext context, HttpRequest request, Span relatedSpan)
         {
-            var getEventData = () => request.PrepareArgsForWaf();
+            var getEventData = () => request.PrepareArgsForWaf(relatedSpan);
             RaiseEvent(context, relatedSpan, getEventData, StartRequest);
         }
 
