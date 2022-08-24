@@ -16,7 +16,7 @@ internal class LiveDebuggerFactory
 {
     public static LiveDebugger Create(IDiscoveryService discoveryService, IRemoteConfigurationManager remoteConfigurationManager, string serviceName)
     {
-        var source = GlobalSettings.Source;
+        var source = GlobalSettings.CreateDefaultConfigurationSource();
         var settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromSource(source));
         if (!settings.Enabled)
         {
