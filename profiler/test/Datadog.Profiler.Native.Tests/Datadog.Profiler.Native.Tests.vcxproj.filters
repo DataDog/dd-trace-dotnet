@@ -33,9 +33,6 @@
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\IMetricsSenderFactory.cpp">
       <Filter>Referenced from: Datadog.Profiler.Native</Filter>
     </ClCompile>
-    <ClCompile Include="SamplesAggregatorTest.cpp">
-      <Filter>Tests</Filter>
-    </ClCompile>
     <ClCompile Include="ProfilerMockedInterface.cpp">
       <Filter>Helpers</Filter>
     </ClCompile>
