@@ -509,6 +509,11 @@ namespace Datadog.Trace
         internal const string GrpcMethodName = "grpc.method.name";
         internal const string GrpcStatusCode = "grpc.status.code";
 
+        internal const string ProcessCommandLine = "process.commandline";
+        internal const string ProcessUserName = "process.userName";
+        internal const string ProcessPassword = "process.password";
+        internal const string ProcessDomain = "process.domain";
+
         internal const string TagPropagationError = "_dd.propagation_error";
 
         internal static class User
