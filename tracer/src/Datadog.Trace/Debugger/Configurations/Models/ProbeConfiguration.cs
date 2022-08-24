@@ -9,7 +9,7 @@ using System.Linq;
 
 namespace Datadog.Trace.Debugger.Configurations.Models
 {
-    internal class ProbeConfiguration : IJsonApiObject
+    internal class ProbeConfiguration
     {
         public string Id { get; set; }
 

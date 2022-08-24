@@ -6,7 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
@@ -14,6 +18,8 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
+using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.RemoteConfigurationManagement.Transport;
 using Datadog.Trace.ServiceFabric;
 
 namespace Datadog.Trace.ClrProfiler
@@ -159,7 +165,6 @@ namespace Datadog.Trace.ClrProfiler
 
             InitializeNoNativeParts();
             var tracer = Tracer.Instance;
-            InitializeLiveDebugger();
 
             if (tracer is null)
             {
@@ -167,6 +172,15 @@ namespace Datadog.Trace.ClrProfiler
             }
             else
             {
+                try
+                {
+                    InitRemoteConfigurationManagement(tracer);
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, e.Message);
+                }
+
                 try
                 {
                     Log.Debug("Initializing TraceMethods instrumentation.");
@@ -320,12 +334,67 @@ namespace Datadog.Trace.ClrProfiler
         }
 #endif
 
-        internal static void InitializeLiveDebugger()
+        private static void InitRemoteConfigurationManagement(Tracer tracer)
+        {
+            var serviceName = tracer.Settings.ServiceName ?? tracer.DefaultServiceName;
+            var exporterSettings = tracer.Settings.Exporter;
+
+            var apiFactory = TracesTransportStrategy.Get(exporterSettings);
+            var discoveryService = DiscoveryService.Create(apiFactory);
+
+            var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
+            var rcmApi = RemoteConfigurationApiFactory.Create(rcmSettings, apiFactory, discoveryService);
+
+            var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName);
+            var liveDebugger = LiveDebuggerFactory.Create(discoveryService, configurationManager, serviceName);
+
+            Task.Run(
+                async () =>
+                {
+                    var isDiscoverySuccessful = await InitializeDiscoveryService(discoveryService).ConfigureAwait(false);
+                    if (isDiscoverySuccessful)
+                    {
+                        Log.Debug("Initializing Remote Configuration management.");
+
+                        await Task
+                             .WhenAll(
+                                  InitializeRemoteConfigurationManager(configurationManager),
+                                  InitializeLiveDebugger(liveDebugger))
+                             .ConfigureAwait(false);
+                    }
+                });
+        }
+
+        internal static async Task<bool> InitializeDiscoveryService(IDiscoveryService discoveryService)
         {
             try
             {
-                Log.Debug("Initializing live debugger singleton instance.");
-                _ = LiveDebugger.Instance;
+                return await discoveryService.DiscoverAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to discover");
+                return false;
+            }
+        }
+
+        internal static async Task InitializeRemoteConfigurationManager(IRemoteConfigurationManager remoteConfigurationManager)
+        {
+            try
+            {
+                await remoteConfigurationManager.StartPollingAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Failed to initialize Remote Configuration management.");
+            }
+        }
+
+        internal static async Task InitializeLiveDebugger(LiveDebugger liveDebugger)
+        {
+            try
+            {
+                await liveDebugger.InitializeAsync().ConfigureAwait(false);
             }
             catch (Exception ex)
             {

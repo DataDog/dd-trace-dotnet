@@ -77,7 +77,7 @@
       "version": "2"
     },
     "message": "MultipleLineProbes.MethodToInstrument(callerName=Run)\r\na=6",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -151,7 +151,7 @@
       "version": "2"
     },
     "message": "MultipleLineProbes.MethodToInstrument(callerName=Run)\r\na=0",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -225,7 +225,7 @@
       "version": "2"
     },
     "message": "MultipleLineProbes.MethodToInstrument(callerName=Run)\r\na=3",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -299,7 +299,7 @@
       "version": "2"
     },
     "message": "MultipleLineProbes.MethodToInstrument(callerName=Run)\r\na=4",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -373,7 +373,7 @@
       "version": "2"
     },
     "message": "MultipleLineProbes.MethodToInstrument(callerName=Run)\r\na=5",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -447,6 +447,6 @@
       "version": "2"
     },
     "message": "MultipleLineProbes.MethodToInstrument(callerName=Run)\r\na=6",
-    "service": "Unknown"
+    "service": "Probes"
   }
 ]

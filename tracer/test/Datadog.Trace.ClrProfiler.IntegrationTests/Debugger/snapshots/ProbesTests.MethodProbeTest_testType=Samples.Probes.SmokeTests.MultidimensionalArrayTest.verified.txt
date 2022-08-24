@@ -294,6 +294,6 @@
       "version": "2"
     },
     "message": "MultidimensionalArrayTest.Method()",
-    "service": "Unknown"
+    "service": "Probes"
   }
 ]

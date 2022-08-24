@@ -94,7 +94,7 @@
       "version": "2"
     },
     "message": "HasLocalsAndReturnValue.Method(num=7): 00:00:07\r\n@return=00:00:07, timeSpan=00:00:07",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -162,7 +162,7 @@
       "version": "2"
     },
     "message": "HasLocalsAndReturnValue.Run()\r\nresult=null",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -230,7 +230,7 @@
       "version": "2"
     },
     "message": "HasLocalsAndReturnValue.Run()\r\nresult=00:00:07",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -310,6 +310,6 @@
       "version": "2"
     },
     "message": "HasLocalsAndReturnValue.Method(num=7)\r\ntimeSpan=00:00:07",
-    "service": "Unknown"
+    "service": "Probes"
   }
 ]

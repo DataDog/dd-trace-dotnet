@@ -122,6 +122,6 @@
       "version": "2"
     },
     "message": "HasVarAndMvar+Test`1.Method(k=Generic): count: 1\r\n@return=count: 1, kk=count: 1, string=Samples.Probes.Shared.Generic, tt=count: 1",
-    "service": "Unknown"
+    "service": "Probes"
   }
 ]

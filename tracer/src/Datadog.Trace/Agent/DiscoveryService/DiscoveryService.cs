@@ -5,8 +5,8 @@
 
 using System;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -15,58 +15,83 @@ namespace Datadog.Trace.Agent.DiscoveryService
 {
     internal class DiscoveryService : IDiscoveryService
     {
-        private static readonly string[] SupportedDebuggerEndpoints = new[] { "debugger/v1/input" };
-        private static readonly string[] SupportedProbeConfigurationEndpoints = new[] { "v0.7/config" };
+        private static readonly string[] SupportedDebuggerEndpoints = { "debugger/v1/input" };
+        private static readonly string[] SupportedConfigurationEndpoints = { "v0.7/config" };
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DiscoveryService>();
+        private static readonly object GlobalLock = new();
 
         private readonly IApiRequestFactory _apiRequestFactory;
-        private readonly Uri _agentUri;
 
-        private DiscoveryService(
-            Uri agentUri,
-            IApiRequestFactory apiRequestFactory)
+        private CancellationTokenSource _cancellationSource;
+
+        private DiscoveryService(IApiRequestFactory apiRequestFactory)
         {
-            _agentUri = agentUri;
             _apiRequestFactory = apiRequestFactory;
+            _cancellationSource = new CancellationTokenSource();
+            LifetimeManager.Instance.AddShutdownTask(OnShutdown);
         }
 
-        public static string[] AllSupportedEndpoints => SupportedDebuggerEndpoints.Concat(SupportedProbeConfigurationEndpoints).ToArray();
+        public static DiscoveryService Instance { get; private set; }
 
-        public string ProbeConfigurationEndpoint { get; private set; }
+        public static string[] AllSupportedEndpoints => SupportedDebuggerEndpoints.Concat(SupportedConfigurationEndpoints).ToArray();
+
+        public string ConfigurationEndpoint { get; private set; }
 
         public string DebuggerEndpoint { get; private set; }
 
         public string AgentVersion { get; private set; }
 
-        public static DiscoveryService Create(IConfigurationSource configurationSource, IApiRequestFactory apiRequestFactory)
+        public static DiscoveryService Create(IApiRequestFactory apiRequestFactory)
         {
-            var exporterSettings = new ExporterSettings(configurationSource);
-            return new DiscoveryService(exporterSettings.AgentUri, apiRequestFactory);
+            lock (GlobalLock)
+            {
+                return Instance ??= new DiscoveryService(apiRequestFactory);
+            }
         }
 
         public async Task<bool> DiscoverAsync()
         {
-            try
+            var sleepDuration = 500; // milliseconds
+            var sleepMaxDuration = 5000; // milliseconds
+
+            while (!_cancellationSource.IsCancellationRequested)
             {
-                var api = _apiRequestFactory.Create(new Uri($"{_agentUri}/info"));
-                using var response = await api.GetAsync().ConfigureAwait(false);
-                if (response.StatusCode != 200)
+                try
                 {
-                    Log.Error("Failed to discover services");
+                    var uri = _apiRequestFactory.GetEndpoint("info");
+                    var api = _apiRequestFactory.Create(uri);
+
+                    using var response = await api.GetAsync().ConfigureAwait(false);
+                    if (response.StatusCode == 200)
+                    {
+                        var content = await response.ReadAsStringAsync().ConfigureAwait(false);
+                        ProcessDiscoveryResponse(content);
+
+                        _cancellationSource = null;
+                        return true;
+                    }
+
+                    Log.Warning("Failed to discover services");
+                }
+                catch (Exception exception)
+                {
+                    Log.Warning(exception, "Failed to discover services");
+                }
+
+                try
+                {
+                    await Task.Delay(sleepDuration, _cancellationSource.Token).ConfigureAwait(false);
+                }
+                catch (TaskCanceledException)
+                {
                     return false;
                 }
 
-                var content = await response.ReadAsStringAsync().ConfigureAwait(false);
-                ProcessDiscoveryResponse(content);
+                sleepDuration = Math.Min(sleepDuration * 2, sleepMaxDuration);
+            }
 
-                return true;
-            }
-            catch (Exception exception)
-            {
-                Log.Error(exception, "Failed to discover services");
-                return false;
-            }
+            return false;
         }
 
         private void ProcessDiscoveryResponse(string content)
@@ -80,7 +105,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 return;
             }
 
-            ProbeConfigurationEndpoint = SupportedProbeConfigurationEndpoints
+            ConfigurationEndpoint = SupportedConfigurationEndpoints
                .FirstOrDefault(
                     supportedEndpoint => discoveredEndpoints.Any(
                         endpoint => endpoint.Trim('/').Equals(supportedEndpoint, StringComparison.OrdinalIgnoreCase)));
@@ -89,6 +114,11 @@ namespace Datadog.Trace.Agent.DiscoveryService
                .FirstOrDefault(
                     supportedEndpoint => discoveredEndpoints.Any(
                         endpoint => endpoint.Trim('/').Equals(supportedEndpoint, StringComparison.OrdinalIgnoreCase)));
+        }
+
+        private void OnShutdown()
+        {
+            _cancellationSource?.Cancel();
         }
     }
 }

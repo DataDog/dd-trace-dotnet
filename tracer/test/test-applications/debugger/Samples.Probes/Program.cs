@@ -1,7 +1,5 @@
 using System;
 using System.Reflection;
-using System.Security.Policy;
-using System.Threading;
 using System.Threading.Tasks;
 using Samples.Probes;
 
@@ -18,9 +16,9 @@ public static class Program
         var listenUrl = GetArg("--listen-url", args);
         if (listenUrl == null)
         {
-            Thread.Sleep(millisecondsToWaitSetProbes);
+            await Task.Delay(TimeSpan.FromMilliseconds(millisecondsToWaitSetProbes));
             await RunTest(instance, testName);
-            Thread.Sleep(millisecondsToWaitForSendSnapshots);
+            await Task.Delay(TimeSpan.FromMilliseconds(millisecondsToWaitForSendSnapshots));
         }
         else
         {
