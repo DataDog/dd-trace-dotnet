@@ -320,11 +320,13 @@ namespace Datadog.Trace.Agent
 
                     if (buffer.TraceCount > 0)
                     {
-                        var droppedP0Traces = Interlocked.Exchange(ref _droppedP0Traces, 0);
-                        var droppedP0Spans = Interlocked.Exchange(ref _droppedP0Spans, 0);
+                        long droppedP0Traces = 0;
+                        long droppedP0Spans = 0;
 
                         if (CanComputeStats)
                         {
+                            droppedP0Traces = Interlocked.Exchange(ref _droppedP0Traces, 0);
+                            droppedP0Spans = Interlocked.Exchange(ref _droppedP0Spans, 0);
                             Log.Debug<int, int, long, long>("Flushing {spans} spans across {traces} traces. CanComputeStats is enabled with {droppedP0Traces} droppedP0Traces and {droppedP0Spans} droppedP0Spans", buffer.SpanCount, buffer.TraceCount, droppedP0Traces, droppedP0Spans);
                         }
                         else
@@ -384,9 +386,9 @@ namespace Datadog.Trace.Agent
 
             bool forceKeep = _statsAggregator?.AddRange(trace.Array, trace.Offset, trace.Count) ?? false;
 
-            // If stats computation determined that we should drop the P0 Trace,
+            // If stats computation determined that we can drop the P0 Trace,
             // skip all other processing
-            if (!shouldSerializeSpans && !forceKeep)
+            if (!shouldSerializeSpans && CanComputeStats && !forceKeep)
             {
                 Interlocked.Increment(ref _droppedP0Traces);
                 Interlocked.Add(ref _droppedP0Spans, trace.Count);
