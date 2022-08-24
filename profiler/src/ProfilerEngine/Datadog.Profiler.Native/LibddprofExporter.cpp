@@ -351,7 +351,8 @@ bool LibddprofExporter::Export()
 
         // The goal here is to minimize the amount of time we hold the profileInfo lock.
         // The lock in ProfileInfoScope guarantees that nobody else is currently holding a reference to the profileInfo.
-        // While inside of the lock, we extract the profileInfo reference and replace it by a null pointer.
+        // While inside the lock owned by the profileinfo scope, its profile is moved to the profile local variable
+        // (i.e. the profileinfo will then contains a null profile field when the next sample will be added)
         // This way, we know that nobody else will ever use that profileInfo again, and we can take our time to manipulate it
         // outside of the lock.
         {            
