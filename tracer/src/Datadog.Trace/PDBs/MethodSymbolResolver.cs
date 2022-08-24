@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -20,7 +21,7 @@ namespace Datadog.Trace.Pdb
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(MethodSymbolResolver));
         private static readonly Lazy<MethodSymbolResolver> _instance = new(() => new MethodSymbolResolver());
 
-        private readonly Dictionary<Module, ModuleDefMD> _modulesDefMDs = new();
+        private readonly Dictionary<Module, ModuleDefMD?> _modulesDefMDs = new();
 
         private MethodSymbolResolver()
         {
@@ -53,33 +54,7 @@ namespace Datadog.Trace.Pdb
             try
             {
                 // Try to load ModuleDefMD from cache
-                ModuleDefMD moduleDef = null;
-                lock (_modulesDefMDs)
-                {
-                    var module = methodInfo.Module;
-                    if (!_modulesDefMDs.TryGetValue(module, out moduleDef))
-                    {
-                        var options = new ModuleCreationOptions(ThreadSafeModuleContext.GetModuleContext());
-                        try
-                        {
-                            var mDef = ModuleDefMD.Load(module, options);
-                            // We enable the type search cache
-                            mDef.EnableTypeDefFindCache = true;
-
-                            // Check if the module has pdb info
-                            if (mDef.PdbState is not null)
-                            {
-                                moduleDef = mDef;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error(ex, "Error loading method symbols.");
-                        }
-
-                        _modulesDefMDs.Add(module, moduleDef);
-                    }
-                }
+                ModuleDefMD? moduleDef = GetModuleDef(methodInfo.Module);
 
                 // If a ModuleDefMD with PDB is not found then we cannot do anything.
                 if (moduleDef is null)
@@ -88,10 +63,10 @@ namespace Datadog.Trace.Pdb
                     return false;
                 }
 
-                string file = null;
-                SequencePoint first = null;
-                SequencePoint last = null;
-                CilBody body = null;
+                string? file = null;
+                SequencePoint? first = null;
+                SequencePoint? last = null;
+                CilBody? body = null;
 
                 if (moduleDef.ResolveToken(methodInfo.MetadataToken) is MethodDef method)
                 {
@@ -163,8 +138,11 @@ namespace Datadog.Trace.Pdb
                         }
                     }
 
-                    methodSymbol = new MethodSymbol(file, first?.StartLine ?? 0, last?.EndLine ?? 0);
-                    return true;
+                    if (file is not null)
+                    {
+                        methodSymbol = new MethodSymbol(file, first?.StartLine ?? 0, last?.EndLine ?? 0);
+                        return true;
+                    }
                 }
             }
             catch (Exception ex)
@@ -177,15 +155,52 @@ namespace Datadog.Trace.Pdb
         }
 
         /// <summary>
+        /// Get ModuleDef from a Module
+        /// </summary>
+        /// <param name="module">Module instance</param>
+        /// <returns>dnLib ModuleDefMD instance</returns>
+        public ModuleDefMD? GetModuleDef(Module module)
+        {
+            ModuleDefMD? moduleDef;
+            lock (_modulesDefMDs)
+            {
+                if (!_modulesDefMDs.TryGetValue(module, out moduleDef))
+                {
+                    var options = new ModuleCreationOptions(ThreadSafeModuleContext.GetModuleContext());
+                    try
+                    {
+                        var mDef = ModuleDefMD.Load(module, options);
+                        // We enable the type search cache
+                        mDef.EnableTypeDefFindCache = true;
+
+                        // Check if the module has pdb info
+                        if (mDef.PdbState is not null)
+                        {
+                            moduleDef = mDef;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Error(ex, "Error loading method symbols.");
+                    }
+
+                    _modulesDefMDs.Add(module, moduleDef);
+                }
+            }
+
+            return moduleDef;
+        }
+
+        /// <summary>
         /// Clear modules cache
         /// </summary>
         public void Clear()
         {
             lock (_modulesDefMDs)
             {
-                foreach (var modulesDefMD in _modulesDefMDs)
+                foreach (var modulesDefMd in _modulesDefMDs)
                 {
-                    if (modulesDefMD.Value is { } moduleDef)
+                    if (modulesDefMd.Value is { } moduleDef)
                     {
                         moduleDef.Dispose();
                     }

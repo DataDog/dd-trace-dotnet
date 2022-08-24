@@ -2,48 +2,61 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.Ci.Coverage
+namespace Datadog.Trace.Ci.Coverage;
+
+/// <summary>
+/// Coverage scope
+/// </summary>
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+public readonly ref struct CoverageScope
 {
-    /// <summary>
-    /// Coverage scope
-    /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public readonly ref struct CoverageScope
+    private readonly int[] _sequencePoints;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal CoverageScope(in int[] sequencePoints)
     {
-        private readonly string _filePath;
-        private readonly CoverageContextContainer _container;
+        _sequencePoints = sequencePoints;
+    }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal CoverageScope(string filePath, CoverageContextContainer container)
-        {
-            _filePath = filePath;
-            _container = container;
-        }
+    /// <summary>
+    /// Report a running instruction
+    /// </summary>
+    /// <param name="index">Sequence point index</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Report(int index)
+    {
+        _sequencePoints[index]++;
+    }
 
-        /// <summary>
-        /// Report a running instruction
-        /// </summary>
-        /// <param name="range">Range value</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Report(ulong range)
-        {
-            _container.Store(_filePath, range);
-        }
+    /// <summary>
+    /// Report a running instruction
+    /// </summary>
+    /// <param name="index">Sequence point index</param>
+    /// <param name="index2">Second Sequence point index</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Report(int index, int index2)
+    {
+        _sequencePoints[index]++;
+        _sequencePoints[index2]++;
+    }
 
-        /// <summary>
-        /// Report a running instruction
-        /// </summary>
-        /// <param name="range">Range value</param>
-        /// <param name="range2">Range2 value</param>
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Report(ulong range, ulong range2)
-        {
-            _container.Store(_filePath, range, range2);
-        }
+    /// <summary>
+    /// Report a running instruction
+    /// </summary>
+    /// <param name="index">Sequence point index</param>
+    /// <param name="index2">Second Sequence point index</param>
+    /// <param name="index3">Third Sequence point index</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Report(int index, int index2, int index3)
+    {
+        _sequencePoints[index]++;
+        _sequencePoints[index2]++;
+        _sequencePoints[index3]++;
     }
 }
