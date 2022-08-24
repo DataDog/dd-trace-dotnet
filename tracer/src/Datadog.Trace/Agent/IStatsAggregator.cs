@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent
@@ -28,11 +29,9 @@ namespace Datadog.Trace.Agent
         /// <summary>
         /// Receives an array of spans and computes stats points for them.
         /// </summary>
-        /// <param name="spans">The array of spans to process.</param>
-        /// <param name="offset">The array offset of the spans to process.</param>
-        /// <param name="count">The number of spans to process.</param>
+        /// <param name="spans">The ArraySegment of spans to process.</param>
         /// <returns>True if the spans should be kept based on rare stats points or error stats points, false otherwise.</returns>
-        bool AddRange(Span[] spans, int offset, int count);
+        bool AddRange(ArraySegment<Span> spans);
 
         Task DisposeAsync();
     }

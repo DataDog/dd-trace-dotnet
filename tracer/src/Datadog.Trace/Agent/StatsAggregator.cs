@@ -79,10 +79,10 @@ namespace Datadog.Trace.Agent
 
         public bool Add(params Span[] spans)
         {
-            return AddRange(spans, 0, spans.Length);
+            return AddRange(new ArraySegment<Span>(spans, 0, spans.Length));
         }
 
-        public bool AddRange(Span[] spans, int offset, int count)
+        public bool AddRange(ArraySegment<Span> spans)
         {
             var forceKeep = false;
 
@@ -92,9 +92,9 @@ namespace Datadog.Trace.Agent
             // The Flush thread only acquires the lock long enough to swap the metrics buffer.
             lock (_buffers)
             {
-                for (int i = 0; i < count; i++)
+                for (int i = 0; i < spans.Count; i++)
                 {
-                    forceKeep |= AddToBuffer(spans[offset + i]);
+                    forceKeep |= AddToBuffer(spans.Array[i + spans.Offset]);
                 }
             }
 

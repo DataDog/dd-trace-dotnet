@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tests
 
             agent.WriteTrace(CreateTrace(1), true);
 
-            statsAggregator.Verify(s => s.AddRange(It.IsAny<Span[]>(), 0, 1), Times.Once);
+            statsAggregator.Verify(s => s.AddRange(It.Is<ArraySegment<Span>>(x => x.Offset == 0 && x.Count == 1)), Times.Once);
         }
 
         [Fact]

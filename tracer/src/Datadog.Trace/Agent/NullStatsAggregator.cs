@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent
@@ -13,7 +14,7 @@ namespace Datadog.Trace.Agent
 
         public bool Add(params Span[] spans) => false;
 
-        public bool AddRange(Span[] spans, int offset, int count) => false;
+        public bool AddRange(ArraySegment<Span> spans) => false;
 
         public Task DisposeAsync()
         {
