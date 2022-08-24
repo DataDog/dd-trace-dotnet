@@ -40,6 +40,8 @@
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
+#include "RuntimeInfo.h"
+#include "EnabledProfilers.h"
 
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/pal.h"
@@ -134,7 +136,6 @@ bool CorProfilerCallback::InitializeServices()
             pRuntimeIdStore);
     }
 
-
     // _pCorProfilerInfoEvents must have been set for any CLR events-based profiler to work
     if (_pCorProfilerInfoEvents != nullptr)
     {
@@ -153,6 +154,9 @@ bool CorProfilerCallback::InitializeServices()
         _pClrEventsParser = std::make_unique<ClrEventsParser>(_pCorProfilerInfoEvents, _pAllocationsProvider);
     }
 
+    // compute enabled profilers based on configuration and receivable CLR events
+    _pEnabledProfilers = std::make_unique<EnabledProfilers>(_pConfiguration.get(), _pCorProfilerInfoEvents != nullptr);
+
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
         _pConfiguration.get(),
@@ -167,7 +171,11 @@ bool CorProfilerCallback::InitializeServices()
 
     // The different elements of the libddprof pipeline are created and linked together
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
-    _pExporter = std::make_unique<LibddprofExporter>(_pConfiguration.get(), _pApplicationStore);
+    _pExporter = std::make_unique<LibddprofExporter>(
+        _pConfiguration.get(),
+        _pApplicationStore,
+        _pRuntimeInfo.get(),
+        _pEnabledProfilers.get());
 
     _pSamplesCollector = RegisterService<SamplesCollector>(_pThreadsCpuManager);
 
@@ -390,25 +398,39 @@ ULONG STDMETHODCALLTYPE CorProfilerCallback::GetRefCount(void) const
     return refCount;
 }
 
-void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk)
+void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk, uint16_t& runtimeMajor, uint16_t& runtimeMinor)
 {
-    IUnknown* tstVerProfilerInfo;
-    if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**)&tstVerProfilerInfo))
+    runtimeMajor = 0;
+    runtimeMinor = 0;
+    IUnknown* tstVerProfilerInfo;  // ICorProfilerInfo13 will ship with .NET 7
+    if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&tstVerProfilerInfo))
     {
         _isNet46OrGreater = true;
-        Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 5.0 or later.");
+        Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 5.0 or later.");  // could be 6 too
+        tstVerProfilerInfo->Release();
+    }
+    else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**)&tstVerProfilerInfo))
+    {
+        runtimeMajor = 3;
+        runtimeMinor = 1;
+        _isNet46OrGreater = true;
+        Log::Info("ICorProfilerInfo10 available. Profiling API compatibility: .NET Core 3.1 or later.");
         tstVerProfilerInfo->Release();
     }
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo10), (void**)&tstVerProfilerInfo))
     {
+        runtimeMajor = 3;
+        runtimeMinor = 0;
         _isNet46OrGreater = true;
         Log::Info("ICorProfilerInfo10 available. Profiling API compatibility: .NET Core 3.0 or later.");
         tstVerProfilerInfo->Release();
     }
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo9), (void**)&tstVerProfilerInfo))
     {
+        runtimeMajor = 2;
+        runtimeMinor = 1;  // could also be 2.2
         _isNet46OrGreater = true;
-        Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.2 or later.");
+        Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.1 or later.");
         tstVerProfilerInfo->Release();
     }
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo8), (void**)&tstVerProfilerInfo))
@@ -512,10 +534,9 @@ void CorProfilerCallback::InspectProcessorInfo(void)
 #endif
 }
 
-void CorProfilerCallback::InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor)
+void CorProfilerCallback::InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor, COR_PRF_RUNTIME_TYPE& runtimeType)
 {
     USHORT clrInstanceId;
-    COR_PRF_RUNTIME_TYPE runtimeType;
     USHORT buildNumber;
     USHORT qfeVersion;
 
@@ -609,7 +630,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     // Log some important environment info:
     CorProfilerCallback::InspectProcessorInfo();
-    CorProfilerCallback::InspectRuntimeCompatibility(corProfilerInfoUnk);
+    uint16_t runtimeMajor;
+    uint16_t runtimeMinor;
+    CorProfilerCallback::InspectRuntimeCompatibility(corProfilerInfoUnk, runtimeMajor, runtimeMinor);
 
     // Initialize _pCorProfilerInfo:
     if (corProfilerInfoUnk == nullptr)
@@ -633,7 +656,19 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Log some more important environment info:
     USHORT major = 0;
     USHORT minor = 0;
-    CorProfilerCallback::InspectRuntimeVersion(_pCorProfilerInfo, major, minor);
+    COR_PRF_RUNTIME_TYPE runtimeType;
+    CorProfilerCallback::InspectRuntimeVersion(_pCorProfilerInfo, major, minor, runtimeType);
+
+    // for .NET Core 2.1, 3.0 and 3.1, from https://github.com/dotnet/runtime/issues/11555#issuecomment-727037353,
+    // it is needed to check ICorProfilerInfo11 for 3.1, 10 for 3.0 and 9 for 2.1 since major and minor will be 4.0
+    // from GetRuntimeInformation
+    if ((runtimeType == COR_PRF_CORE_CLR) && (major == 4))
+    {
+        major = runtimeMajor;
+        minor = runtimeMinor;
+    }
+
+    _pRuntimeInfo = std::make_unique<RuntimeInfo>(major, minor, (runtimeType == COR_PRF_DESKTOP_CLR));
 
     // CLR events-based profilers need ICorProfilerInfo12 (i.e. .NET 5+) to setup the communication.
     // If no such provider is enabled, no need to trigger it.

@@ -11,6 +11,8 @@
 #include "OpSysTools.h"
 #include "Sample.h"
 #include "dd_profiler_version.h"
+#include "IRuntimeInfo.h"
+#include "IEnabledProfilers.h"
 
 #include <cassert>
 #include <fstream>
@@ -47,11 +49,16 @@ std::string const LibddprofExporter::ProfilePeriodType = "RealTime";
 
 std::string const LibddprofExporter::ProfilePeriodUnit = "Nanoseconds";
 
-LibddprofExporter::LibddprofExporter(IConfiguration* configuration, IApplicationStore* applicationStore) :
+LibddprofExporter::LibddprofExporter(
+    IConfiguration* configuration,
+    IApplicationStore* applicationStore,
+    IRuntimeInfo* runtimeInfo,
+    IEnabledProfilers* enabledProfilers)
+    :
     _locationsAndLinesSize{512},
     _applicationStore{applicationStore}
 {
-    _exporterBaseTags = CreateTags(configuration);
+    _exporterBaseTags = CreateTags(configuration, runtimeInfo, enabledProfilers);
     _endpoint = CreateEndpoint(configuration);
     _pprofOutputPath = CreatePprofOutputPath(configuration);
     _locations.resize(_locationsAndLinesSize);
@@ -102,7 +109,10 @@ struct ddprof_ffi_Profile* LibddprofExporter::CreateProfile()
     return ddprof_ffi_Profile_new(sample_types, &period, nullptr);
 }
 
-LibddprofExporter::Tags LibddprofExporter::CreateTags(IConfiguration* configuration)
+LibddprofExporter::Tags LibddprofExporter::CreateTags(
+    IConfiguration* configuration,
+    IRuntimeInfo* runtimeInfo,
+    IEnabledProfilers* enabledProfilers)
 {
     auto tags = LibddprofExporter::Tags{};
 
@@ -114,9 +124,27 @@ LibddprofExporter::Tags LibddprofExporter::CreateTags(IConfiguration* configurat
     tags.Add("process_id", ProcessId);
     tags.Add("host", configuration->GetHostname());
 
-    // TODO get
-    // runtime_version
-    // runtime_platform (os and version, archi)
+    // runtime_version:
+    //    framework-4.8
+    //    core-6.0
+    std::stringstream buffer;
+    if (runtimeInfo->IsDotnetFramework())
+    {
+        buffer << "framework";
+    }
+    else
+    {
+        buffer << "core";
+    }
+    buffer << "-" << std::dec << runtimeInfo->GetDotnetMajorVersion() << "." << runtimeInfo->GetDotnetMinorVersion();
+    tags.Add("runtime_version", buffer.str());
+
+    // list of enabled profilers
+    std::string profilersTag = GetEnabledProfilersTag(enabledProfilers);
+    tags.Add("profiler_list", profilersTag);
+
+    // runtime_platform (os and version later)
+    tags.Add("runtime_os", runtimeInfo->GetOs());
 
     for (auto const& [name, value] : configuration->GetUserTags())
     {
@@ -125,6 +153,49 @@ LibddprofExporter::Tags LibddprofExporter::CreateTags(IConfiguration* configurat
 
     return tags;
 }
+
+std::string LibddprofExporter::GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers)
+{
+    const char* separator = "_";  // ',' are not allowed and +/SPACE would be transformed into '_' anyway
+    std::stringstream buffer;
+    bool emptyList = true;
+
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::WallTime))
+    {
+        buffer << "walltime";
+        emptyList = false;
+    }
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::Cpu))
+    {
+        if (!emptyList)
+        {
+            buffer << separator;
+        }
+        buffer << "cpu";
+        emptyList = false;
+    }
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::Exceptions))
+    {
+        if (!emptyList)
+        {
+            buffer << separator;
+        }
+        buffer << "exceptions";
+        emptyList = false;
+    }
+    if (enabledProfilers->IsEnabled(RuntimeProfiler::Allocations))
+    {
+        if (!emptyList)
+        {
+            buffer << separator;
+        }
+        buffer << "allocations";
+        emptyList = false;
+    }
+
+    return buffer.str();
+}
+
 
 ddprof_ffi_EndpointV3 LibddprofExporter::CreateEndpoint(IConfiguration* configuration)
 {
@@ -285,11 +356,6 @@ bool LibddprofExporter::Export()
             return false;
         }
 
-        // Count is incremented BEFORE creating and sending the .pprof
-        // so that it will be possible to detect "missing" profiles
-        // in the back end
-        profileInfo.exportsCount++;
-
         Tags additionalTags;
         additionalTags.Add("env", applicationInfo.Environment);
         additionalTags.Add("version", applicationInfo.Version);
@@ -297,6 +363,10 @@ bool LibddprofExporter::Export()
         additionalTags.Add("runtime-id", std::string(runtimeId));
         additionalTags.Add("profile_seq", std::to_string(profileInfo.exportsCount));
 
+        // Count is incremented BEFORE creating and sending the .pprof
+        // so that it will be possible to detect "missing" profiles
+        // in the back end
+        profileInfo.exportsCount++;
         auto* request = CreateRequest(serializedProfile, exporter, additionalTags);
         if (request != nullptr)
         {

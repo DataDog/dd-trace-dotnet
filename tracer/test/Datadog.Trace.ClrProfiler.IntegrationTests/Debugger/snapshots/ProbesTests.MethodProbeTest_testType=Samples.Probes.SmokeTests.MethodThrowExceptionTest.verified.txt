@@ -103,7 +103,7 @@
       "version": "2"
     },
     "message": "MethodThrowExceptionTest.Method(toSet=2147483647)\r\nnumberSnapshot=7",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -183,6 +183,6 @@
       "version": "2"
     },
     "message": "MethodThrowExceptionTest.Method(toSet=2147483647)\r\nnumberSnapshot=7",
-    "service": "Unknown"
+    "service": "Probes"
   }
 ]

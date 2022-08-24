@@ -16,6 +16,7 @@ using Datadog.Trace.Debugger.Models;
 using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Sink.Models;
+using Datadog.Trace.RemoteConfigurationManagement;
 using FluentAssertions;
 using Xunit;
 
@@ -23,8 +24,8 @@ namespace Datadog.Trace.Tests.Debugger;
 
 public class LiveDebuggerTests
 {
-    [Fact(Skip = "Non deterministic test, will be fixed in `RCM support PR`")]
-    public void DebuggerEnabled_ServicesCalled()
+    [Fact]
+    public async Task DebuggerEnabled_ServicesCalled()
     {
         var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
         {
@@ -33,32 +34,22 @@ public class LiveDebuggerTests
 
         var settings = ImmutableDebuggerSettings.Create(tracerSettings);
         var discoveryService = new DiscoveryServiceMock();
-        var configurationPoller = new ConfigurationPollerMock();
+        var managerMock = new RemoteConfigurationManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
+        var updater = ConfigurationUpdater.Create(settings);
 
-        LiveDebugger.Create(settings, discoveryService, configurationPoller, lineProbeResolver, debuggerSink, probeStatusPoller);
+        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, managerMock, lineProbeResolver, debuggerSink, probeStatusPoller, updater);
+        await debugger.InitializeAsync();
 
-        var counter = 0;
-
-        var allCalled = discoveryService.Called && configurationPoller.Called && debuggerSink.Called;
-        while (counter < 10 && !allCalled)
-        {
-            Thread.Sleep(100);
-
-            allCalled = discoveryService.Called && configurationPoller.Called && debuggerSink.Called;
-            counter++;
-        }
-
-        discoveryService.Called.Should().BeTrue();
-        configurationPoller.Called.Should().BeTrue();
-        debuggerSink.Called.Should().BeTrue();
         probeStatusPoller.Called.Should().BeTrue();
+        debuggerSink.Called.Should().BeTrue();
+        managerMock.Products.ContainsKey(LiveDebugger.Instance.Product.Name).Should().BeTrue();
     }
 
-    [Fact(Skip = "Non deterministic test, will be fixed in `RCM support PR`")]
-    public void DebuggerDisabled_ServicesNotCalled()
+    [Fact]
+    public async Task DebuggerDisabled_ServicesNotCalled()
     {
         var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
         {
@@ -67,23 +58,24 @@ public class LiveDebuggerTests
 
         var settings = ImmutableDebuggerSettings.Create(tracerSettings);
         var discoveryService = new DiscoveryServiceMock();
-        var configurationPoller = new ConfigurationPollerMock();
+        var managerMock = new RemoteConfigurationManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
+        var updater = ConfigurationUpdater.Create(settings);
 
-        LiveDebugger.Create(settings, discoveryService, configurationPoller, lineProbeResolver, debuggerSink, probeStatusPoller);
+        var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, managerMock, lineProbeResolver, debuggerSink, probeStatusPoller, updater);
+        await debugger.InitializeAsync();
 
-        discoveryService.Called.Should().BeFalse();
-        configurationPoller.Called.Should().BeFalse();
         lineProbeResolver.Called.Should().BeFalse();
         debuggerSink.Called.Should().BeFalse();
         probeStatusPoller.Called.Should().BeFalse();
+        managerMock.Products.ContainsKey(LiveDebugger.Instance.Product.Name).Should().BeFalse();
     }
 
     private class DiscoveryServiceMock : IDiscoveryService
     {
-        public string ProbeConfigurationEndpoint => nameof(ProbeConfigurationEndpoint);
+        public string ConfigurationEndpoint => nameof(ConfigurationEndpoint);
 
         public string DebuggerEndpoint => nameof(DebuggerEndpoint);
 
@@ -98,9 +90,11 @@ public class LiveDebuggerTests
         }
     }
 
-    private class ConfigurationPollerMock : IConfigurationPoller
+    private class RemoteConfigurationManagerMock : IRemoteConfigurationManager
     {
         internal bool Called { get; private set; }
+
+        internal Dictionary<string, Product> Products { get; private set; } = new();
 
         public Task StartPollingAsync()
         {
@@ -108,8 +102,14 @@ public class LiveDebuggerTests
             return Task.CompletedTask;
         }
 
-        public void Dispose()
+        public void RegisterProduct(Product product)
         {
+            Products.Add(product.Name, product);
+        }
+
+        public void UnregisterProduct(string productName)
+        {
+            Products.Remove(productName);
         }
     }
 

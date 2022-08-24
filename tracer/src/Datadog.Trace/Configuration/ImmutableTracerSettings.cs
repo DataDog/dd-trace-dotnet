@@ -83,7 +83,8 @@ namespace Datadog.Trace.Configuration
             ExpandRouteTemplatesEnabled = settings.ExpandRouteTemplatesEnabled || !RouteTemplateResourceNamesEnabled;
 
             // tag propagation
-            TagPropagationHeaderMaxLength = settings.TagPropagationHeaderMaxLength;
+            OutgoingTagPropagationHeaderMaxLength = settings.OutgoingTagPropagationHeaderMaxLength;
+
             // query string related env variables
             ObfuscationQueryStringRegex = settings.ObfuscationQueryStringRegex;
             QueryStringReportingEnabled = settings.QueryStringReportingEnabled;
@@ -320,7 +321,7 @@ namespace Datadog.Trace.Configuration
         /// <remarks>
         /// This value is not used when extracting an incoming propagation header from an upstream service.
         /// </remarks>
-        internal int TagPropagationHeaderMaxLength { get; }
+        internal int OutgoingTagPropagationHeaderMaxLength { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

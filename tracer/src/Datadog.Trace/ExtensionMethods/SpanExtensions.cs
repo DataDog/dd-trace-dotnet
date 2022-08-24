@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
@@ -24,18 +25,16 @@ namespace Datadog.Trace.ExtensionMethods
         /// </summary>
         /// <param name="span">A span that belongs to the trace.</param>
         /// <param name="samplingPriority">The new sampling priority for the trace.</param>
+        /// <remarks>
+        /// This public extension method is meant for external users only. Internal Datadog calls should
+        /// use the methods on <see cref="TraceContext"/> instead.</remarks>
         public static void SetTraceSamplingPriority(this ISpan span, SamplingPriority samplingPriority)
-        {
-            span.SetTraceSamplingPriority((int)samplingPriority);
-        }
-
-        internal static void SetTraceSamplingPriority(this ISpan span, int samplingPriority)
         {
             if (span == null) { ThrowHelper.ThrowArgumentNullException(nameof(span)); }
 
-            if (span.Context is SpanContext spanContext && spanContext.TraceContext != null)
+            if (span.Context is SpanContext { TraceContext: { } traceContext })
             {
-                spanContext.TraceContext.SetSamplingPriority(samplingPriority);
+                traceContext.SetSamplingPriority((int)samplingPriority, SamplingMechanism.Manual);
             }
         }
 

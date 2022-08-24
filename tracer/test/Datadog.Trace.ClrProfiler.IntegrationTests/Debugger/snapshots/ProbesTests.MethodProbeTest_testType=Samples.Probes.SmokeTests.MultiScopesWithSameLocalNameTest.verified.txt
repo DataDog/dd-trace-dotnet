@@ -64,7 +64,7 @@
       "version": "2"
     },
     "message": "MultiScopesWithSameLocalNameTest.Run()\r\ni=0, localInFor=0",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -131,7 +131,7 @@
       "version": "2"
     },
     "message": "MultiScopesWithSameLocalNameTest.Run()\r\ni=0, localInFor=0",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -198,7 +198,7 @@
       "version": "2"
     },
     "message": "MultiScopesWithSameLocalNameTest.Run()\r\ni=0, localInFor=9",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -265,6 +265,6 @@
       "version": "2"
     },
     "message": "MultiScopesWithSameLocalNameTest.Run()\r\ni=1, localInFor=10",
-    "service": "Unknown"
+    "service": "Probes"
   }
 ]

@@ -21,6 +21,24 @@ namespace Datadog.Trace.IntegrationTests
         [Fact]
         public async Task SendStats()
         {
+            await SendStatsHelper(statsComputationEnabled: true, expectStats: true);
+        }
+
+        [Fact]
+        public async Task SendsStatsOnlyAfterSpansAreFinished_TS008()
+        {
+            await SendStatsHelper(statsComputationEnabled: true, expectStats: false, finishSpansOnClose: false);
+        }
+
+        [Fact]
+        public async Task IsDisabledThroughConfiguration_TS010()
+        {
+            await SendStatsHelper(statsComputationEnabled: false, expectStats: false);
+        }
+
+        private async Task SendStatsHelper(bool statsComputationEnabled, bool expectStats, bool finishSpansOnClose = true)
+        {
+            expectStats &= statsComputationEnabled && finishSpansOnClose;
             var waitEvent = new AutoResetEvent(false);
 
             using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
@@ -29,7 +47,7 @@ namespace Datadog.Trace.IntegrationTests
 
             var settings = new TracerSettings
             {
-                StatsComputationEnabled = true,
+                StatsComputationEnabled = statsComputationEnabled,
                 ServiceVersion = "V",
                 Environment = "Test",
                 Exporter = new ExporterSettings
@@ -44,7 +62,7 @@ namespace Datadog.Trace.IntegrationTests
 
             Span span1;
 
-            using (var scope = tracer.StartActiveInternal("operationName"))
+            using (var scope = tracer.StartActiveInternal("operationName", finishOnClose: finishSpansOnClose))
             {
                 span1 = scope.Span;
                 span1.ResourceName = "resourceName";
@@ -53,11 +71,18 @@ namespace Datadog.Trace.IntegrationTests
             }
 
             await tracer.FlushAsync();
-            waitEvent.WaitOne(TimeSpan.FromMinutes(1)).Should().Be(true, "timeout while waiting for stats");
+            if (expectStats)
+            {
+                waitEvent.WaitOne(TimeSpan.FromSeconds(15)).Should().Be(true, "timeout while waiting for stats");
+            }
+            else
+            {
+                waitEvent.WaitOne(TimeSpan.FromSeconds(15)).Should().Be(false, "No stats should be received");
+            }
 
             Span span2;
 
-            using (var scope = tracer.StartActiveInternal("operationName"))
+            using (var scope = tracer.StartActiveInternal("operationName", finishOnClose: finishSpansOnClose))
             {
                 span2 = scope.Span;
                 span2.ResourceName = "resourceName";
@@ -66,11 +91,25 @@ namespace Datadog.Trace.IntegrationTests
             }
 
             await tracer.FlushAsync();
-            waitEvent.WaitOne(TimeSpan.FromMinutes(1)).Should().Be(true, "timeout while waiting for stats");
+            if (expectStats)
+            {
+                waitEvent.WaitOne(TimeSpan.FromSeconds(15)).Should().Be(true, "timeout while waiting for stats");
 
-            var payload = agent.WaitForStats(2);
+                var payload = agent.WaitForStats(2);
+                payload.Should().HaveCount(2);
 
-            payload.Should().HaveCount(2);
+                var stats1 = payload[0];
+                stats1.Sequence.Should().Be(1);
+                AssertStats(stats1, span1, isError: false);
+
+                var stats2 = payload[1];
+                stats2.Sequence.Should().Be(2);
+                AssertStats(stats2, span2, isError: true);
+            }
+            else
+            {
+                waitEvent.WaitOne(TimeSpan.FromSeconds(15)).Should().Be(false, "No stats should be received");
+            }
 
             void AssertStats(MockClientStatsPayload stats, Span span, bool isError)
             {
@@ -104,14 +143,6 @@ namespace Datadog.Trace.IntegrationTests
                 group.TopLevelHits.Should().Be(1);
                 group.Type.Should().Be(span.Type);
             }
-
-            var stats1 = payload[0];
-            stats1.Sequence.Should().Be(1);
-            AssertStats(stats1, span1, isError: false);
-
-            var stats2 = payload[1];
-            stats2.Sequence.Should().Be(2);
-            AssertStats(stats2, span2, isError: true);
         }
     }
 }

@@ -111,6 +111,6 @@
       "version": "2"
     },
     "message": "HasFieldLazyValueInitialized.Method(lastName=First): First\r\n@return=First",
-    "service": "Unknown"
+    "service": "Probes"
   }
 ]

@@ -15,7 +15,8 @@
         "http.status_code": "200",
         "http.url": "http://localhost:5000/api/values",
         "runtime-id": "b34b2bed-9444-4597-87f6-b8202b03b1b8",
-        "span.kind": "client"
+        "span.kind": "client",
+        "_dd.p.dm": "-0"
       },
       "metrics": {
         "_dd.agent_psr": 1.0,
@@ -40,7 +41,7 @@
         "_dd.runtime_family": "dotnet",
         "aspnet_core.route": "api/values",
         "component": "aspnet_core",
-        "http.client_ip": "127.0.0.1", 
+        "http.client_ip": "127.0.0.1",
         "http.method": "GET",
         "http.request.headers.host": "localhost:5000",
         "http.route": "api/values",
@@ -49,7 +50,8 @@
         "language": "dotnet",
         "network.client.ip": "127.0.0.1",
         "runtime-id": "b34b2bed-9444-4597-87f6-b8202b03b1b8",
-        "span.kind": "server"
+        "span.kind": "server",
+        "_dd.p.dm": "-0"
       },
       "metrics": {
         "_dd.appsec.enabled": 1.0,

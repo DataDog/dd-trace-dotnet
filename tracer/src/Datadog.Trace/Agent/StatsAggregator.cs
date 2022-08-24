@@ -93,6 +93,24 @@ namespace Datadog.Trace.Agent
             }
         }
 
+        internal static StatsAggregationKey BuildKey(Span span)
+        {
+            var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
+
+            if (rawHttpStatusCode == null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
+            {
+                httpStatusCode = 0;
+            }
+
+            return new StatsAggregationKey(
+                span.ResourceName,
+                span.ServiceName,
+                span.OperationName,
+                span.Type,
+                httpStatusCode,
+                span.Context.Origin == "synthetics");
+        }
+
         internal async Task Flush()
         {
             // Use a do/while loop to still flush once if _processExit is already completed (this makes testing easier)
@@ -119,7 +137,9 @@ namespace Datadog.Trace.Agent
         }
 
         /// <summary>
-        /// Converts a nanosec timestamp into a float nanosecond timestamp truncated to a fixed precision
+        /// Converts a nanosec timestamp into a float nanosecond timestamp truncated to a fixed precision.
+        /// Span timestamps must have maximum precision, but we can reduce precision of timestamps for
+        /// aggregated stats points to achieve more efficient data representation.
         /// </summary>
         /// <param name="ns">Timestamp to convert</param>
         /// <returns>Timestamp with truncated precision</returns>
@@ -137,24 +157,6 @@ namespace Datadog.Trace.Agent
             }
 
             return ns << shift;
-        }
-
-        private static StatsAggregationKey BuildKey(Span span)
-        {
-            var rawHttpStatusCode = span.GetTag(Tags.HttpStatusCode);
-
-            if (rawHttpStatusCode == null || !int.TryParse(rawHttpStatusCode, out var httpStatusCode))
-            {
-                httpStatusCode = 0;
-            }
-
-            return new StatsAggregationKey(
-                span.ResourceName,
-                span.ServiceName,
-                span.OperationName,
-                span.Type,
-                httpStatusCode,
-                span.Context.Origin == "synthetics");
         }
 
         private void AddToBuffer(Span span)

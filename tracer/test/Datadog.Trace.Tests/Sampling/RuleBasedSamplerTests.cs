@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Sampling
@@ -99,6 +100,24 @@ namespace Datadog.Trace.Tests.Sampling
                 acceptableVariancePercent: 0.05f);
         }
 
+        [Fact]
+        public void Choose_Between_Sampling_Mechanisms()
+        {
+            var span = GetMyServiceSpan(traceId: 1);
+            var sampler = new RuleBasedSampler(new NoLimits());
+
+            // if there are no other rules, and before we wave agent rates, mechanism is "Default"
+            var (_, mechanism1) = sampler.MakeSamplingDecision(span);
+            mechanism1.Should().Be(SamplingMechanism.Default);
+
+            // add agent rates
+            sampler.SetDefaultSampleRates(MockAgentRates);
+
+            // after we have agent rates, mechanism is "AgentRate"
+            var (_, mechanism2) = sampler.MakeSamplingDecision(span);
+            mechanism2.Should().Be(SamplingMechanism.AgentRate);
+        }
+
         private static Span GetMyServiceSpan(ulong traceId)
         {
             var span = new Span(new SpanContext(traceId, spanId: 1, null, serviceName: ServiceName), DateTimeOffset.Now) { OperationName = OperationName };
@@ -123,13 +142,13 @@ namespace Datadog.Trace.Tests.Sampling
             {
                 var traceId = idGenerator.CreateNew();
                 var span = GetMyServiceSpan(traceId);
-                var priority = sampler.GetSamplingPriority(span);
+                var decision = sampler.MakeSamplingDecision(span);
 
-                if (priority == SamplingPriorityValues.AutoKeep)
+                if (decision.Priority == SamplingPriorityValues.AutoKeep)
                 {
                     autoKeeps++;
                 }
-                else if (priority == SamplingPriorityValues.UserKeep)
+                else if (decision.Priority == SamplingPriorityValues.UserKeep)
                 {
                     userKeeps++;
                 }

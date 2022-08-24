@@ -127,10 +127,13 @@ internal static class FnvHash64
         // for each octet_of_data to be hashed
         foreach (var b in bytes)
         {
-            // hash = hash * FNV_prime
-            hash *= FnvPrime;
-            // hash = hash xor octet_of_data
-            hash ^= b;
+            unchecked
+            {
+                // hash = hash * FNV_prime
+                hash *= FnvPrime;
+                // hash = hash xor octet_of_data
+                hash ^= b;
+            }
         }
 
         return hash;
@@ -141,10 +144,13 @@ internal static class FnvHash64
         // for each octet_of_data to be hashed
         foreach (var b in bytes)
         {
-            // hash = hash xor octet_of_data
-            hash ^= b;
-            // hash = hash * FNV_prime
-            hash *= FnvPrime;
+            unchecked
+            {
+                // hash = hash xor octet_of_data
+                hash ^= b;
+                // hash = hash * FNV_prime
+                hash *= FnvPrime;
+            }
         }
 
         return hash;
@@ -156,10 +162,13 @@ internal static class FnvHash64
         // for each octet_of_data to be hashed
         foreach (var b in bytes)
         {
-            // hash = hash * FNV_prime
-            hash *= FnvPrime;
-            // hash = hash xor octet_of_data
-            hash ^= b;
+            unchecked
+            {
+                // hash = hash * FNV_prime
+                hash *= FnvPrime;
+                // hash = hash xor octet_of_data
+                hash ^= b;
+            }
         }
 
         return hash;
@@ -170,10 +179,13 @@ internal static class FnvHash64
         // for each octet_of_data to be hashed
         foreach (var b in bytes)
         {
-            // hash = hash xor octet_of_data
-            hash ^= b;
-            // hash = hash * FNV_prime
-            hash *= FnvPrime;
+            unchecked
+            {
+                // hash = hash xor octet_of_data
+                hash ^= b;
+                // hash = hash * FNV_prime
+                hash *= FnvPrime;
+            }
         }
 
         return hash;

@@ -203,6 +203,7 @@ namespace Datadog.Trace.TestHelpers
                 .MatchesOneOf(Name, "kafka.consume", "kafka.produce")
                 .Matches(Type, "queue"))
             .Tags(s => s
+                .IsOptional("kafka.group")
                 .IsOptional("kafka.offset")
                 .IsOptional("kafka.partition")
                 .IsOptional("kafka.tombstone")
