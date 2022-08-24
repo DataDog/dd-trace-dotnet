@@ -240,8 +240,6 @@ namespace Datadog.Trace.Agent
 
             // Set additional headers
             request.AddHeader(AgentHttpHeaderNames.TraceCount, numberOfTraces.ToString());
-            request.AddHeader(AgentHttpHeaderNames.DroppedP0Traces, numberOfDroppedP0Traces.ToString());
-            request.AddHeader(AgentHttpHeaderNames.DroppedP0Spans, numberOfDroppedP0Spans.ToString());
 
             if (_containerId != null)
             {
@@ -251,6 +249,8 @@ namespace Datadog.Trace.Agent
             if (statsComputationEnabled)
             {
                 request.AddHeader(AgentHttpHeaderNames.StatsComputation, "true");
+                request.AddHeader(AgentHttpHeaderNames.DroppedP0Traces, numberOfDroppedP0Traces.ToString());
+                request.AddHeader(AgentHttpHeaderNames.DroppedP0Spans, numberOfDroppedP0Spans.ToString());
             }
 
             try
