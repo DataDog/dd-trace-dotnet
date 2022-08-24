@@ -113,7 +113,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 {
                     await Task.Delay(_pollInterval, _cancellationSource.Token).ConfigureAwait(false);
                 }
-                catch (TaskCanceledException)
+                catch (OperationCanceledException)
                 {
                     // We are shutting down, so don't do anything about it
                 }

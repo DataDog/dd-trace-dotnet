@@ -24,14 +24,17 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public void AssignConfigs(List<RemoteConfiguration> changedConfigs)
         {
-            var configurations =
-                changedConfigs
-                   .Where(RemoteConfigurationPredicate)
-                   .Select(configuration => configuration.Contents)
-                   .ToList()
-                ;
+            List<byte[]> configurations = null;
+            foreach(var config in changedConfigs)
+            {
+                if(RemoteConfigurationPredicate(config))
+                {
+                    configurations ??= new List<byte[]>();
+                    configurations.Add(config.Contents);
+                }
+            }
 
-            if (configurations.Any())
+            if (configurations is not null)
             {
                 ConfigChanged?.Invoke(this, new ProductConfigChangedEventArgs(configurations));
             }
