@@ -25,9 +25,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         public void AssignConfigs(List<RemoteConfiguration> changedConfigs)
         {
             List<byte[]> configurations = null;
-            foreach(var config in changedConfigs)
+
+            foreach (var config in changedConfigs)
             {
-                if(RemoteConfigurationPredicate(config))
+                if (RemoteConfigurationPredicate(config))
                 {
                     configurations ??= new List<byte[]>();
                     configurations.Add(config.Contents);
