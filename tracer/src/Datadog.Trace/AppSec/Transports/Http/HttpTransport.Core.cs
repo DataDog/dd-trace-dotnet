@@ -5,6 +5,9 @@
 
 #if !NETFRAMEWORK
 using System;
+using System.Reflection;
+using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
@@ -51,18 +54,23 @@ namespace Datadog.Trace.AppSec.Transports.Http
             _context.Items["block"] = true;
             var httpResponse = _context.Response;
             httpResponse.Clear();
+            httpResponse.Headers.Clear();
             httpResponse.StatusCode = 403;
+            string template = templateHtml;
             if (_context.Request.Headers["Accept"] == "application/json")
             {
                 httpResponse.ContentType = "application/json";
-                httpResponse.WriteAsync(templateJson).Wait();
+                template = templateJson;
             }
             else
             {
                 httpResponse.ContentType = "text/html";
-                httpResponse.WriteAsync(templateHtml).Wait();
             }
 
+            var resp = Encoding.ASCII.GetBytes(template);
+            httpResponse.ContentLength = resp.Length;
+            httpResponse.Body.Write(resp, 0, resp.Length);
+            httpResponse.Body.Dispose();
             _completeAsync ??= httpResponse.GetType().GetMethod("CompleteAsync");
             if (_completeAsync != null)
             {

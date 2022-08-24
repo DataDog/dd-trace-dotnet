@@ -936,12 +936,16 @@ namespace Datadog.Trace.DiagnosticListeners
                 span.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
 
                 var security = CurrentSecurity;
-                if (security.Settings.Enabled && unhandledStruct.Exception is not BlockException)
+                if (unhandledStruct.Exception is not BlockException)
                 {
                     span.SetException(unhandledStruct.Exception);
-                    var httpContext = unhandledStruct.HttpContext;
-                    security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, span);
-                    security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, tracer.InternalActiveScope, tracer.Settings);
+                    if (security.Settings.Enabled)
+                    {
+                        span.SetException(unhandledStruct.Exception);
+                        var httpContext = unhandledStruct.HttpContext;
+                        security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, span);
+                        security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, tracer.InternalActiveScope, tracer.Settings);
+                    }
                 }
             }
         }
