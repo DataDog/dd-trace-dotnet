@@ -54,13 +54,13 @@ namespace Datadog.Trace.AppSec.Transports.Http
             httpResponse.StatusCode = 403;
             if (_context.Request.Headers["Accept"] == "application/json")
             {
-                httpResponse.WriteAsync(templateJson).Wait();
                 httpResponse.ContentType = "application/json";
+                httpResponse.WriteAsync(templateJson).Wait();
             }
             else
             {
-                httpResponse.WriteAsync(templateHtml).Wait();
                 httpResponse.ContentType = "text/html";
+                httpResponse.WriteAsync(templateHtml).Wait();
             }
 
             _completeAsync ??= httpResponse.GetType().GetMethod("CompleteAsync");

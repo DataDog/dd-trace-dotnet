@@ -96,8 +96,9 @@ namespace Datadog.Trace.AppSec
                     _waf = waf ?? Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules);
                     if (_waf?.InitializedSuccessfully ?? false)
                     {
-                        _instrumentationGateway.StartEndRequest += RunWafAndReact;
-                        _instrumentationGateway.StartEndRequest += RegisterForDispose;
+                        _instrumentationGateway.StartRequest += RunWafAndReact;
+                        _instrumentationGateway.EndRequest += RunWafAndReact;
+                        _instrumentationGateway.StartRequest += RegisterForDispose;
                         _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
                         _instrumentationGateway.BodyAvailable += RunWafAndReact;
                         _instrumentationGateway.BlockingOpportunity += MightStopRequest;
@@ -126,7 +127,7 @@ namespace Datadog.Trace.AppSec
                         _settings.Enabled = false;
                     }
 
-                    _instrumentationGateway.StartEndRequest += ReportWafInitInfoOnce;
+                    _instrumentationGateway.StartRequest += ReportWafInitInfoOnce;
                     LifetimeManager.Instance.AddShutdownTask(RunShutdown);
                     _rateLimiter = new AppSecRateLimiter(_settings.TraceRateLimit);
                 }
@@ -345,10 +346,13 @@ namespace Datadog.Trace.AppSec
 
         private void MightStopRequest(object sender, InstrumentationGatewayBlockingEventArgs args)
         {
-            if (args.Context.Items["block"] != null)
+            if (args.Transport.Blocked)
             {
-                AddResponseHeaderTags(new HttpTransport(args.Context), args.Scope.Span);
+                AddResponseHeaderTags(args.Transport, args.Scope.Span);
                 args.InvokeDoBeforeBlocking();
+                var transport = args.Transport;
+                var additiveContext = GetOrCreateContext(transport);
+                additiveContext.Dispose();
                 throw new BlockException();
             }
         }
@@ -388,7 +392,7 @@ namespace Datadog.Trace.AppSec
 
         private void ReportWafInitInfoOnce(object sender, InstrumentationGatewaySecurityEventArgs e)
         {
-            _instrumentationGateway.StartEndRequest -= ReportWafInitInfoOnce;
+            _instrumentationGateway.StartRequest -= ReportWafInitInfoOnce;
             var span = e.RelatedSpan.Context.TraceContext.RootSpan ?? e.RelatedSpan;
             span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             span.SetMetric(Metrics.AppSecWafInitRulesLoaded, _waf.InitializationResult.LoadedRules);
@@ -407,8 +411,9 @@ namespace Datadog.Trace.AppSec
             {
                 _instrumentationGateway.PathParamsAvailable -= RunWafAndReact;
                 _instrumentationGateway.BodyAvailable -= RunWafAndReact;
-                _instrumentationGateway.StartEndRequest -= RunWafAndReact;
-                _instrumentationGateway.StartEndRequest -= RegisterForDispose;
+                _instrumentationGateway.StartRequest -= RunWafAndReact;
+                _instrumentationGateway.StartRequest -= RegisterForDispose;
+                _instrumentationGateway.EndRequest -= RunWafAndReact;
                 _instrumentationGateway.BlockingOpportunity -= MightStopRequest;
 
 #if NETFRAMEWORK

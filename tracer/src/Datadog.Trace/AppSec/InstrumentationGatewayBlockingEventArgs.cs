@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.AppSec.Transports;
+using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.Configuration;
 #if NETFRAMEWORK
 using System.Web;
@@ -24,9 +25,12 @@ namespace Datadog.Trace.AppSec
             Scope = scope;
             TracerSettings = settings;
             DoBeforeBlocking = doBeforeBlocking;
+            Transport = new HttpTransport(context);
         }
 
         internal HttpContext Context { get; }
+
+        internal ITransport Transport { get; }
 
         internal Scope Scope { get; }
 

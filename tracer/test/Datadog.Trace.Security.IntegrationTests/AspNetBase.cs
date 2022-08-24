@@ -109,24 +109,27 @@ namespace Datadog.Trace.Security.IntegrationTests
             _agent?.Dispose();
         }
 
-        public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false)
+        public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string useragent = null)
         {
-            var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType);
+            var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType, useragent);
 
-            settings.ModifySerialization(serializationSettings =>
-            {
-                serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(sp => sp.Tags, (target, value) =>
+            settings.ModifySerialization(
+                serializationSettings =>
                 {
-                    if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
-                    {
-                        var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
-                        var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
-                        target.Tags[Tags.AppSecJson] = orderedAppSecJson;
-                    }
+                    serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(
+                        sp => sp.Tags,
+                        (target, value) =>
+                        {
+                            if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
+                            {
+                                var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
+                                var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
+                                target.Tags[Tags.AppSecJson] = orderedAppSecJson;
+                            }
 
-                    return VerifyHelper.ScrubStackTraceForErrors(target, target.Tags);
+                            return VerifyHelper.ScrubStackTraceForErrors(target, target.Tags);
+                        });
                 });
-            });
             settings.AddRegexScrubber(AppSecWafDuration, "_dd.appsec.waf.duration: 0.0");
             settings.AddRegexScrubber(AppSecWafDurationWithBindings, "_dd.appsec.waf.duration_ext: 0.0");
             if (!testInit)
