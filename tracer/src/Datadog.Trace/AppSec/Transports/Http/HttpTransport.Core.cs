@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace Datadog.Trace.AppSec.Transports.Http
 {
@@ -56,7 +57,14 @@ namespace Datadog.Trace.AppSec.Transports.Http
             httpResponse.Clear();
             httpResponse.Headers.Clear();
             httpResponse.StatusCode = 403;
-            string template = templateHtml;
+            var syncIOFeature = _context.Features.Get<IHttpBodyControlFeature>();
+            if (syncIOFeature != null)
+            {
+                // allow synchronous operatoin for net core >=3.1 otherwise invalidoperation exception
+                syncIOFeature.AllowSynchronousIO = true;
+            }
+
+            var template = templateHtml;
             if (_context.Request.Headers["Accept"] == "application/json")
             {
                 httpResponse.ContentType = "application/json";
