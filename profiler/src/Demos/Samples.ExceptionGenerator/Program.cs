@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using Datadog.Demos.Util;
+using Datadog.RuntimeMetrics;
 
 namespace Samples.ExceptionGenerator
 {
@@ -38,69 +39,73 @@ namespace Samples.ExceptionGenerator
             }
             else
             {
-                if (scenario != null)
+                // collect CLR metrics that will be saved into a json file
+                // if DD_PROFILING_METRICS_FILEPATH is set
+                using (var collector = new MetricsCollector())
                 {
-                    for (int i = 0; i < iterations; i++)
+                    if (scenario != null)
                     {
-                        switch (scenario.Value)
+                        for (int i = 0; i < iterations; i++)
                         {
-                            case Scenario.ExceptionsProfilerTest:
-                                new ExceptionsProfilerTestScenario().Run();
+                            switch (scenario.Value)
+                            {
+                                case Scenario.ExceptionsProfilerTest:
+                                    new ExceptionsProfilerTestScenario().Run();
 
-                                // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
-                                Console.WriteLine(" ########### Sleeping for 10 seconds");
-                                Thread.Sleep(10_000);
-                                break;
+                                    // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
+                                    Console.WriteLine(" ########### Sleeping for 10 seconds");
+                                    Thread.Sleep(10_000);
+                                    break;
 
-                            case Scenario.ParallelExceptions:
-                                new ParallelExceptionsScenario().Run();
-                                Console.WriteLine(" ########### Generating exceptions in parallel...");
-                                break;
+                                case Scenario.ParallelExceptions:
+                                    new ParallelExceptionsScenario().Run();
+                                    Console.WriteLine(" ########### Generating exceptions in parallel...");
+                                    break;
 
-                            case Scenario.Sampling:
-                                new SamplingScenario().Run();
+                                case Scenario.Sampling:
+                                    new SamplingScenario().Run();
 
-                                // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
-                                Console.WriteLine(" ########### Sleeping for 20 seconds");
-                                Thread.Sleep(20_000);
-                                break;
+                                    // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
+                                    Console.WriteLine(" ########### Sleeping for 20 seconds");
+                                    Thread.Sleep(20_000);
+                                    break;
 
-                            case Scenario.GenericExceptions:
-                                new GenericExceptionsScenario().Run();
-                                Console.WriteLine(" ########### Generating generic exceptions...");
-                                break;
+                                case Scenario.GenericExceptions:
+                                    new GenericExceptionsScenario().Run();
+                                    Console.WriteLine(" ########### Generating generic exceptions...");
+                                    break;
 
-                            default:
-                                Console.WriteLine($" ########### Unknown scenario: {scenario}.");
-                                break;
+                                default:
+                                    Console.WriteLine($" ########### Unknown scenario: {scenario}.");
+                                    break;
+                            }
                         }
                     }
+                    else if (timeout == TimeSpan.MinValue)
+                    {
+                        Console.WriteLine($" ########### The application will run interactively because no timeout was specified or could be parsed.");
+
+                        exceptionGeneratorService.StartService();
+
+                        Console.WriteLine($"{Environment.NewLine} ########### Press enter to finish.");
+                        Console.ReadLine();
+
+                        exceptionGeneratorService.StopService();
+
+                        Console.WriteLine($"{Environment.NewLine} ########### Press enter to terminate.");
+                        Console.ReadLine();
+                    }
+                    else
+                    {
+                        Console.WriteLine($" ########### The application will run non-interactively for {timeout} and will stop after that time.");
+
+                        exceptionGeneratorService.StartService();
+
+                        Thread.Sleep(timeout);
+
+                        exceptionGeneratorService.StopService();
+                    }
                 }
-                else if (timeout == TimeSpan.MinValue)
-                {
-                    Console.WriteLine($" ########### The application will run interactively because no timeout was specified or could be parsed.");
-
-                    exceptionGeneratorService.StartService();
-
-                    Console.WriteLine($"{Environment.NewLine} ########### Press enter to finish.");
-                    Console.ReadLine();
-
-                    exceptionGeneratorService.StopService();
-
-                    Console.WriteLine($"{Environment.NewLine} ########### Press enter to terminate.");
-                    Console.ReadLine();
-                }
-                else
-                {
-                    Console.WriteLine($" ########### The application will run non-interactively for {timeout} and will stop after that time.");
-
-                    exceptionGeneratorService.StartService();
-
-                    Thread.Sleep(timeout);
-
-                    exceptionGeneratorService.StopService();
-                }
-
                 Console.WriteLine($"{Environment.NewLine} ########### Finishing run at {DateTime.UtcNow}");
             }
         }

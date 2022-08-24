@@ -4,31 +4,45 @@
   "count": 10,
   "scenarios": [
     {
-      "name": "Baseline",
+      "name": "Baseline_allocation",
       "environmentVariables": {
         "CORECLR_ENABLE_PROFILING": "0",
         "COR_ENABLE_PROFILING": "0"
       }
     },
     {
-      "name": "Profiler",
+      "name": "Profiler_no_allocation",
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
+        "DD_PROFILING_WALLTIME_ENABLED": "0",
+        "DD_PROFILING_CPU_ENABLED": "0",
         "DD_TRACE_ENABLED" : "0"
       }
     },
     {
-      "name": "Profiler_allocations",
+      "name": "Profiler_allocation",
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
+        "DD_PROFILING_WALLTIME_ENABLED": "0",
+        "DD_PROFILING_CPU_ENABLED": "0",
+        "DD_PROFILING_ALLOCATION_ENABLED": "1"
+      }
+    },
+    {
+      "name": "Profiler_allocation_cpu_walltime",
+      "environmentVariables": {
+        "DD_CLR_ENABLE_NGEN": "true",
+        "DD_PROFILING_ENABLED": "1",
+        "DD_PROFILING_WALLTIME_ENABLED": "1",
+        "DD_PROFILING_CPU_ENABLED": "1",
         "DD_PROFILING_ALLOCATION_ENABLED": "1"
       }
     }
   ],
   "processName": "dotnet",
-  "processArguments": "Samples.Computer01.dll --scenario 9 --iterations 1000",
+  "processArguments": "Samples.Computer01.dll --scenario 9 --iterations 500",
   "processTimeout": 15,
   "workingDirectory": "$(CWD)/../_build/bin/Release-x64/profiler/src/Demos/Samples.Computer01/netcoreapp3.1",
   "environmentVariables": {

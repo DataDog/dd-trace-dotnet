@@ -15,7 +15,18 @@
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
+        "DD_PROFILING_WALLTIME_ENABLED": "0",
+        "DD_PROFILING_CPU_ENABLED": "0",
         "DD_TRACE_ENABLED" : "0"
+      }
+    },
+    {
+      "name": "Profiler_walltime",
+      "environmentVariables": {
+        "DD_CLR_ENABLE_NGEN": "true",
+        "DD_PROFILING_ENABLED": "1",
+        "DD_PROFILING_CPU_ENABLED": "0",
+        "DD_TRACE_ENABLED": "0"
       }
     },
     {

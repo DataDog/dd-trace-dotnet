@@ -4,17 +4,19 @@
   "count": 10,
   "scenarios": [
     {
-      "name": "Baseline",
+      "name": "Baseline_exception",
       "environmentVariables": {
         "CORECLR_ENABLE_PROFILING": "0",
         "COR_ENABLE_PROFILING": "0"
       }
     },
     {
-      "name": "Profiler",
+      "name": "Profiler_no_exception",
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
+        "DD_PROFILING_WALLTIME_ENABLED": "0",
+        "DD_PROFILING_CPU_ENABLED": "0",
         "DD_TRACE_ENABLED" : "0"
       }
     },
@@ -23,12 +25,24 @@
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
-        "DD_PROFILING_EXCEPTION_ENABLED":  "1" 
+        "DD_PROFILING_WALLTIME_ENABLED": "0",
+        "DD_PROFILING_CPU_ENABLED": "0",
+        "DD_PROFILING_EXCEPTION_ENABLED": "1"
+      }
+    },
+    {
+      "name": "Profiler_exceptions_cpu_walltime",
+      "environmentVariables": {
+        "DD_CLR_ENABLE_NGEN": "true",
+        "DD_PROFILING_ENABLED": "1",
+        "DD_PROFILING_WALLTIME_ENABLED": "1",
+        "DD_PROFILING_CPU_ENABLED": "1",
+        "DD_PROFILING_EXCEPTION_ENABLED": "1"
       }
     }
   ],
   "processName": "dotnet",
-  "processArguments": "Samples.ExceptionGenerator.dll --scenario 2 --iterations 250",
+  "processArguments": "Samples.ExceptionGenerator.dll --scenario 2 --iterations 200",
   "processTimeout": 15,
   "workingDirectory": "$(CWD)/../_build/bin/Release-x64/profiler/src/Demos/Samples.ExceptionGenerator/netcoreapp3.1",
   "environmentVariables": {

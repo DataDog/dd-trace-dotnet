@@ -1,5 +1,3 @@
 #!/bin/bash
 
-${GOPATH}/bin/timeit PiComputation.linux.$1.json
-${GOPATH}/bin/timeit Exceptions.linux.$1.json
-${GOPATH}/bin/timeit Allocations.linux.$1.json
+${GOPATH}/bin/timeit $1.linux.$2.json
