@@ -14,7 +14,6 @@ const std::string Sample::ExceptionTypeLabel = "exception type";
 const std::string Sample::ExceptionMessageLabel = "exception message";
 const std::string Sample::AllocationClassLabel = "allocation class";
 
-
 Sample::Sample(uint64_t timestamp, std::string_view runtimeId) :
     Sample(runtimeId)
 {
@@ -47,11 +46,15 @@ Sample& Sample::operator=(Sample&& other) noexcept
     return *this;
 }
 
+Sample Sample::Copy() const
+{
+    return {*this};
+}
+
 uint64_t Sample::GetTimeStamp() const
 {
     return _timestamp;
 }
-
 
 const Values& Sample::GetValues() const
 {
@@ -73,9 +76,9 @@ void Sample::AddValue(std::int64_t value, SampleValue index)
     if (pos >= array_size)
     {
         // TODO: fix compilation error about std::stringstream
-        //std::stringstream builder;
-        //builder << "\"index\" (=" << index << ") is greater than limit (=" << array_size << ")";
-        //throw std::invalid_argument(builder.str());
+        // std::stringstream builder;
+        // builder << "\"index\" (=" << index << ") is greater than limit (=" << array_size << ")";
+        // throw std::invalid_argument(builder.str());
         throw std::invalid_argument("index");
     }
 
@@ -84,7 +87,7 @@ void Sample::AddValue(std::int64_t value, SampleValue index)
 
 void Sample::AddFrame(const std::string& moduleName, const std::string& frame)
 {
-    _callstack.push_back({ moduleName, frame });
+    _callstack.push_back({moduleName, frame});
 }
 
 const std::vector<std::pair<std::string, std::string>>& Sample::GetCallstack() const

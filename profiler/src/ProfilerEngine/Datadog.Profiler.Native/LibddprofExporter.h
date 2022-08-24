@@ -6,6 +6,8 @@
 #include "IExporter.h"
 #include "TagsHelper.h"
 
+#include <mutex>
+
 extern "C"
 {
 #include "datadog/profiling.h"
@@ -72,6 +74,16 @@ private:
         ddog_Vec_tag _ffiTags;
     };
 
+    class ProfileAutoDelete
+    {
+    public:
+        ProfileAutoDelete(struct ddog_Profile* profile);
+        ~ProfileAutoDelete();
+
+    private:
+        struct ddog_Profile* _profile;
+    };
+        
     class ProfileInfo
     {
     public:
@@ -80,6 +92,18 @@ private:
         ddog_Profile* profile;
         std::int32_t samplesCount;
         std::int32_t exportsCount;
+        std::mutex lock;
+    };
+
+    class ProfileInfoScope
+    {
+    public:
+        ProfileInfoScope(ProfileInfo& profileInfo);
+
+        ProfileInfo& profileInfo;
+
+    private:
+        std::lock_guard<std::mutex> _lockGuard;
     };
 
     static Tags CreateTags(
@@ -92,7 +116,7 @@ private:
 
     ddog_Request* CreateRequest(SerializedProfile const& encodedProfile, ddog_ProfileExporter* exporter,  const Tags& additionalTags) const;
     ddog_Endpoint CreateEndpoint(IConfiguration* configuration);
-    ProfileInfo& GetInfo(std::string_view runtimeId);
+    ProfileInfoScope GetInfo(std::string_view runtimeId);
 
     void ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int idx);
 
@@ -123,6 +147,8 @@ private:
     ddog_Endpoint _endpoint;
     Tags _exporterBaseTags;
     IApplicationStore* const _applicationStore;
+
+    std::mutex _perAppInfoLock;
 
 public:  // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);

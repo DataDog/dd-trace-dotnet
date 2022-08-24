@@ -98,10 +98,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 => type switch
                 {
                     TracesTransportType.Default => MockTracerAgent.Create(Output),
-                    TracesTransportType.WindowsNamedPipe => MockTracerAgent.Create(new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}")),
+                    TracesTransportType.WindowsNamedPipe => MockTracerAgent.Create(Output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}")),
 #if NETCOREAPP3_1_OR_GREATER
                     TracesTransportType.UnixDomainSocket
-                        => MockTracerAgent.Create(new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null)),
+                        => MockTracerAgent.Create(Output, new UnixDomainSocketConfig(Path.Combine(Path.GetTempPath(), Path.GetRandomFileName()), null)),
 #endif
                     _ => throw new InvalidOperationException("Unsupported transport type " + type),
                 };

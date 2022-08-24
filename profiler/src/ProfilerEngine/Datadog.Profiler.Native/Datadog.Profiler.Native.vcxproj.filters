@@ -146,9 +146,6 @@
     <ClInclude Include="Sample.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
-    <ClInclude Include="SamplesAggregator.h">
-      <Filter>Profiler-Driver</Filter>
-    </ClInclude>
     <ClInclude Include="ISamplesProvider.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
@@ -314,9 +311,6 @@
     </ClCompile>
     <ClCompile Include="TagsHelper.cpp">
       <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="SamplesAggregator.cpp">
-      <Filter>Profiler-Driver</Filter>
     </ClCompile>
     <ClCompile Include="Sample.cpp">
       <Filter>Profiler-Driver</Filter>

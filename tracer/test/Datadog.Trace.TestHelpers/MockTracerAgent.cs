@@ -92,10 +92,10 @@ namespace Datadog.Trace.TestHelpers
             => new TcpUdpAgent(port, retries, useStatsd, doNotBindPorts, requestedStatsDPort, useTelemetry) { Output = output };
 
 #if NETCOREAPP3_1_OR_GREATER
-        public static UdsAgent Create(UnixDomainSocketConfig config) => new UdsAgent(config);
+        public static UdsAgent Create(ITestOutputHelper output, UnixDomainSocketConfig config) => new UdsAgent(config) { Output = output };
 #endif
 
-        public static NamedPipeAgent Create(WindowsPipesConfig config) => new NamedPipeAgent(config);
+        public static NamedPipeAgent Create(ITestOutputHelper output, WindowsPipesConfig config) => new NamedPipeAgent(config) { Output = output };
 
         /// <summary>
         /// Wait for the given number of spans to appear.
@@ -302,7 +302,7 @@ namespace Datadog.Trace.TestHelpers
 
             if (!isFound)
             {
-                throw new InvalidOperationException($"Snapshot count not found. Expected {statusCount}, actual {Snapshots.Count}");
+                throw new InvalidOperationException($"Probes Status count not found. Expected {statusCount}, actual {ProbesStatuses.Count}");
             }
 
             return ProbesStatuses.ToArray();
@@ -583,8 +583,13 @@ namespace Datadog.Trace.TestHelpers
 
         private byte[] ReadStreamBody(MockHttpParser.MockHttpRequest request)
         {
+            if (request.ContentLength is null)
+            {
+                return new byte[0];
+            }
+
             var i = 0;
-            var body = new byte[request.ContentLength];
+            var body = new byte[request.ContentLength.Value];
 
             while (request.Body.Stream.CanRead && i < request.ContentLength)
             {
@@ -611,15 +616,16 @@ namespace Datadog.Trace.TestHelpers
         {
             var arr = JArray.Parse(batch);
 
-            var probeStatuses = new List<string>();
+            var probeStatuses = new Dictionary<string, string>();
             var snapshots = new List<string>();
 
             foreach (var token in arr)
             {
                 var stringifiedToken = token.ToString();
-                if (token["debugger"]?["diagnostics"]?["status"] != null)
+                var id = token["debugger"]?["diagnostics"]?["probeId"]?.ToString();
+                if (id != null)
                 {
-                    probeStatuses.Add(stringifiedToken);
+                    probeStatuses[id] = stringifiedToken;
                 }
                 else
                 {
@@ -629,7 +635,7 @@ namespace Datadog.Trace.TestHelpers
 
             // We override the previous Probes Statuses as the debugger-agent is always emitting complete set of probes statuses, so we can
             // solely rely on that.
-            ProbesStatuses = probeStatuses;
+            ProbesStatuses = probeStatuses.Values.ToList();
             Snapshots.AddRange(snapshots);
         }
 
@@ -1156,6 +1162,10 @@ namespace Datadog.Trace.TestHelpers
                         }
 
                         throw;
+                    }
+                    catch (Exception ex)
+                    {
+                        Output?.WriteLine("[HandleUdsTraces]Error processing uds request: " + ex);
                     }
                 }
             }

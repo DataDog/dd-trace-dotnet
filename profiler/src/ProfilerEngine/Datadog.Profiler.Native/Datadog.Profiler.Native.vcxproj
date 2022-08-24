@@ -292,7 +292,6 @@
     <ClInclude Include="RuntimeInfo.h" />
     <ClInclude Include="Sample.h" />
     <ClInclude Include="SamplesCollector.h" />
-    <ClInclude Include="SamplesAggregator.h" />
     <ClInclude Include="ProviderBase.h" />
     <ClInclude Include="ScopeFinalizer.h" />
     <ClInclude Include="Semaphore.h" />
@@ -343,7 +342,6 @@
     <ClCompile Include="RuntimeInfo.cpp" />
     <ClCompile Include="Sample.cpp" />
     <ClCompile Include="SamplesCollector.cpp" />
-    <ClCompile Include="SamplesAggregator.cpp" />
     <ClCompile Include="ProviderBase.cpp" />
     <ClCompile Include="StackFramesCollectorBase.cpp" />
     <ClCompile Include="StackSamplerLoop.cpp" />

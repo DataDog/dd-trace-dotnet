@@ -14,18 +14,21 @@ namespace Datadog.Trace.Debugger.Configurations
     {
         private const int MaxAllowedSnapshotProbes = 100;
         private const int MaxAllowedMetricProbes = 100;
-        private readonly ImmutableDebuggerSettings _settings;
+        private readonly string _env;
+        private readonly string _version;
+
         private ProbeConfiguration _currentConfiguration;
 
-        private ConfigurationUpdater(ImmutableDebuggerSettings settings)
+        private ConfigurationUpdater(string env, string version)
         {
-            _settings = settings;
+            _env = env;
+            _version = version;
             _currentConfiguration = new ProbeConfiguration();
         }
 
         public static ConfigurationUpdater Create(ImmutableDebuggerSettings settings)
         {
-            return new ConfigurationUpdater(settings);
+            return new ConfigurationUpdater(settings.Environment, settings.ServiceVersion);
         }
 
         public bool Accept(ProbeConfiguration configuration)
@@ -93,8 +96,8 @@ namespace Datadog.Trace.Debugger.Configurations
                                  .ToDictionary(tag => tag.Key, tag => tag.Value)
                         ;
 
-                    var envNotExistsOrMatch = !tagMap.TryGetValue("env", out var probeEnv) || probeEnv == _settings.Environment;
-                    var versionNotExistsOrMatch = !tagMap.TryGetValue("version", out var probeVersion) || probeVersion == _settings.ServiceVersion;
+                    var envNotExistsOrMatch = !tagMap.TryGetValue("env", out var probeEnv) || probeEnv == _env;
+                    var versionNotExistsOrMatch = !tagMap.TryGetValue("version", out var probeVersion) || probeVersion == _version;
 
                     return envNotExistsOrMatch && versionNotExistsOrMatch;
                 }
