@@ -251,14 +251,27 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
             void UnapplyRemovedConfigurations()
             {
+                List<string> remove = null;
+
                 foreach (var product in _products.Values)
                 {
                     foreach (var appliedConfiguration in product.AppliedConfigurations)
                     {
                         if (!actualConfigPath.ContainsKey(appliedConfiguration.Key))
                         {
-                            product.AppliedConfigurations.Remove(appliedConfiguration.Key);
+                            remove ??= new List<string>();
+                            remove.Add(appliedConfiguration.Key);
                         }
+                    }
+
+                    if (remove is not null)
+                    {
+                        foreach (var key in remove)
+                        {
+                            product.AppliedConfigurations.Remove(key);
+                        }
+
+                        remove.Clear();
                     }
                 }
             }
