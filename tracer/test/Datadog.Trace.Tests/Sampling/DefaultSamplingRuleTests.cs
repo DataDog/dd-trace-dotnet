@@ -15,7 +15,7 @@ namespace Datadog.Trace.Tests.Sampling
     {
         [Theory]
         // Value returned by the agent per default
-        [InlineData("service:,env:", "hello", "world", 1f)]
+        [InlineData("service:,env:", "hello", "world", 0.5f)]
         // Does not match
         [InlineData("service:nope,env:nope", "hello", "world", 1f)]
         // Nominal case
@@ -29,15 +29,12 @@ namespace Datadog.Trace.Tests.Sampling
         public void KeyParsing(string key, string expectedService, string expectedEnv, float expectedRate)
         {
             var rule = new DefaultSamplingRule();
-
             rule.SetDefaultSampleRates(new Dictionary<string, float> { { key, .5f } });
 
             var span = new Span(new SpanContext(1, 1, null, serviceName: expectedService), DateTimeOffset.Now);
             span.SetTag(Tags.Env, expectedEnv);
 
-            var samplingRate = rule.GetSamplingRate(span);
-
-            Assert.Equal(expectedRate, samplingRate);
+            rule.GetSamplingRate(span).Should().Be(expectedRate);
         }
 
         [Fact]

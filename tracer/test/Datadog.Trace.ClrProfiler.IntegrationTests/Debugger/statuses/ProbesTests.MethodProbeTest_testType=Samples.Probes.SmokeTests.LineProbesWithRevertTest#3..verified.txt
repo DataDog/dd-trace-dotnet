@@ -9,7 +9,7 @@
       }
     },
     "message": "Installed probe d1bf6b7f-7fae-6c5f-3c28-d47a96e0ad70.",
-    "service": null
+    "service": "Probes"
   },
   {
     "ddsource": "dd_debugger",
@@ -21,6 +21,6 @@
       }
     },
     "message": "Installed probe f23aa325-ec46-b774-3f32-a89b9879ce7d.",
-    "service": null
+    "service": "Probes"
   }
 ]

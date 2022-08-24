@@ -20,6 +20,8 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] OffsetBytes = new byte[] { 107, 97, 102, 107, 97, 46, 111, 102, 102, 115, 101, 116 };
         // TombstoneBytes = System.Text.Encoding.UTF8.GetBytes("kafka.tombstone");
         private static readonly byte[] TombstoneBytes = new byte[] { 107, 97, 102, 107, 97, 46, 116, 111, 109, 98, 115, 116, 111, 110, 101 };
+        // ConsumerGroupBytes = System.Text.Encoding.UTF8.GetBytes("kafka.group");
+        private static readonly byte[] ConsumerGroupBytes = new byte[] { 107, 97, 102, 107, 97, 46, 103, 114, 111, 117, 112 };
 
         public override string? GetTag(string key)
         {
@@ -30,6 +32,7 @@ namespace Datadog.Trace.Tagging
                 "kafka.partition" => Partition,
                 "kafka.offset" => Offset,
                 "kafka.tombstone" => Tombstone,
+                "kafka.group" => ConsumerGroup,
                 _ => base.GetTag(key),
             };
         }
@@ -46,6 +49,9 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "kafka.tombstone": 
                     Tombstone = value;
+                    break;
+                case "kafka.group": 
+                    ConsumerGroup = value;
                     break;
                 default: 
                     base.SetTag(key, value);
@@ -78,6 +84,11 @@ namespace Datadog.Trace.Tagging
             if (Tombstone is not null)
             {
                 processor.Process(new TagItem<string>("kafka.tombstone", Tombstone, TombstoneBytes));
+            }
+
+            if (ConsumerGroup is not null)
+            {
+                processor.Process(new TagItem<string>("kafka.group", ConsumerGroup, ConsumerGroupBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -117,6 +128,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("kafka.tombstone (tag):")
                   .Append(Tombstone)
+                  .Append(',');
+            }
+
+            if (ConsumerGroup is not null)
+            {
+                sb.Append("kafka.group (tag):")
+                  .Append(ConsumerGroup)
                   .Append(',');
             }
 

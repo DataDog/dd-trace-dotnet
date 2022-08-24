@@ -81,7 +81,7 @@
       "version": "2"
     },
     "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run)\r\na=0, i=0, sum=0",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -165,7 +165,7 @@
       "version": "2"
     },
     "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run)\r\na=3, i=5, sum=72",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -249,7 +249,7 @@
       "version": "2"
     },
     "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run)\r\na=4, i=5, sum=72",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -333,7 +333,7 @@
       "version": "2"
     },
     "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run)\r\na=5, i=5, sum=72",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -417,6 +417,6 @@
       "version": "2"
     },
     "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run)\r\na=6, i=5, sum=72",
-    "service": "Unknown"
+    "service": "Probes"
   }
 ]

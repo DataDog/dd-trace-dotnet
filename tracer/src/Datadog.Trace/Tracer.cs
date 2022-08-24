@@ -345,23 +345,32 @@ namespace Datadog.Trace
 
             TraceContext traceContext;
 
-            // try to get the trace context (from local spans) or
-            // sampling priority (from propagated spans),
-            // otherwise start a new trace context
+            // try to get the trace context (from local spans),
+            // otherwise start a new trace context and get sampling priority (from propagated spans)
             if (parent is SpanContext parentSpanContext)
             {
+                // if traceContext is not null, parent is from a local (non-propagated) span
+                // and this child span belongs in the same TraceContext
                 traceContext = parentSpanContext.TraceContext;
+
                 if (traceContext == null)
                 {
-                    var traceTags = TagPropagation.ParseHeader(parentSpanContext.PropagatedTags);
+                    // if traceContext is null, parent was extracted from propagation headers.
+                    // start a new trace and keep the sampling priority and trace tags.
+                    var traceTags = TagPropagation.ParseHeader(parentSpanContext.PropagatedTags, Settings.OutgoingTagPropagationHeaderMaxLength);
                     traceContext = new TraceContext(this, traceTags);
-                    traceContext.SetSamplingPriority(parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority());
+
+                    var samplingPriority = parentSpanContext.SamplingPriority ?? DistributedTracer.Instance.GetSamplingPriority();
+                    traceContext.SetSamplingPriority(samplingPriority);
                 }
             }
             else
             {
+                // parent is not a SpanContext, start a new trace
+                var samplingPriority = DistributedTracer.Instance.GetSamplingPriority();
+
                 traceContext = new TraceContext(this, tags: null);
-                traceContext.SetSamplingPriority(DistributedTracer.Instance.GetSamplingPriority());
+                traceContext.SetSamplingPriority(samplingPriority);
 
                 if (traceId == null)
                 {

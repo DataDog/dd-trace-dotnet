@@ -7,6 +7,7 @@ using System;
 using Datadog.Trace.ClrProfiler.Helpers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
@@ -117,7 +118,8 @@ namespace Datadog.Trace.ClrProfiler
                 if (!addToTraceContext && span.Context.TraceContext.SamplingPriority == null)
                 {
                     // If we don't add the span to the trace context, then we need to manually call the sampler
-                    span.Context.TraceContext.SetSamplingPriority(tracer.TracerManager.Sampler?.GetSamplingPriority(span));
+                    var samplingDecision = tracer.TracerManager.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
+                    span.Context.TraceContext.SetSamplingPriority(samplingDecision);
                 }
             }
             catch (Exception ex)

@@ -524,14 +524,14 @@ namespace Datadog.Trace.TestHelpers
 #if NETCOREAPP3_1_OR_GREATER
                 var tracesUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
                 var metricsUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
-                agent = MockTracerAgent.Create(new UnixDomainSocketConfig(tracesUdsPath, metricsUdsPath) { UseDogstatsD = useStatsD, UseTelemetry = useTelemetry });
+                agent = MockTracerAgent.Create(_output, new UnixDomainSocketConfig(tracesUdsPath, metricsUdsPath) { UseDogstatsD = useStatsD, UseTelemetry = useTelemetry });
 #else
             throw new NotSupportedException("UDS is not supported in non-netcore applications or < .NET Core 3.1 ");
 #endif
             }
             else if (_transportType == TestTransports.WindowsNamedPipe)
             {
-                agent = MockTracerAgent.Create(new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}") { UseDogstatsD = useStatsD, UseTelemetry = useTelemetry });
+                agent = MockTracerAgent.Create(_output, new WindowsPipesConfig($"trace-{Guid.NewGuid()}", $"metrics-{Guid.NewGuid()}") { UseDogstatsD = useStatsD, UseTelemetry = useTelemetry });
             }
             else
             {

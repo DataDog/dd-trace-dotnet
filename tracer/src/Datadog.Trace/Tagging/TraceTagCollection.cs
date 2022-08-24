@@ -7,22 +7,26 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Tagging
 {
     internal class TraceTagCollection
     {
-        // used when tag list is null because "new List<KeyValuePair<string, string>>.Enumerator" returns an invalid enumerator.
-        private static readonly List<KeyValuePair<string, string>>.Enumerator EmptyEnumerator = new List<KeyValuePair<string, string>>(0).GetEnumerator();
-
         private readonly object _listLock = new();
+        private readonly int _outgoingHeaderMaxLength;
 
         private List<KeyValuePair<string, string>>? _tags;
-
         private string? _cachedPropagationHeader;
 
-        public TraceTagCollection(List<KeyValuePair<string, string>>? tags = null, string? cachedPropagationHeader = null)
+        public TraceTagCollection(int outgoingHeaderMaxLength)
+            : this(outgoingHeaderMaxLength, null, null)
         {
+        }
+
+        public TraceTagCollection(int outgoingHeaderMaxLength, List<KeyValuePair<string, string>>? tags, string? cachedPropagationHeader)
+        {
+            _outgoingHeaderMaxLength = outgoingHeaderMaxLength;
             _tags = tags;
             _cachedPropagationHeader = cachedPropagationHeader;
         }
@@ -32,11 +36,52 @@ namespace Datadog.Trace.Tagging
         /// </summary>
         public int Count => _tags?.Count ?? 0;
 
-        public void SetTag(string name, string? value)
+        /// <summary>
+        /// Adds a new tag to the collection.
+        /// If the tag already exists, is not modified.
+        /// </summary>
+        /// <param name="name">The name of the tag.</param>
+        /// <param name="value">The value of the tag.</param>
+        /// <returns><see langword="true"/> if the tag is added to the collection, <see langword="false"/> otherwise.</returns>
+        public bool TryAddTag(string name, string value)
         {
-            if (name is null)
+            if (value == null!)
             {
-                throw new ArgumentNullException(nameof(name));
+                // if tag exists we won't change it, and if it doesn't exist we won't add it,
+                // so nothing to do here
+                return false;
+            }
+
+            return SetTag(name, value, replaceIfExists: false);
+        }
+
+        /// <summary>
+        /// Adds a new tag to the collection if it doesn't already exists,
+        /// or updates the tag with a new value if it already exists.
+        /// If the tag value is <see langword="null"/>, the tag is not added to the collection,
+        /// and its previous value is removed if found.
+        /// </summary>
+        /// <param name="name">The name of the tag.</param>
+        /// <param name="value">The value of the tag.</param>
+        /// <returns>
+        /// <see langword="true"/> if the collection is modified by adding, updating, or removing a tag,
+        /// <see langword="false"/> otherwise.
+        /// </returns>
+        public bool SetTag(string name, string? value)
+        {
+            return SetTag(name, value, replaceIfExists: true);
+        }
+
+        private bool SetTag(string name, string? value, bool replaceIfExists)
+        {
+            if (name == null!)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(name));
+            }
+
+            if (value == null)
+            {
+                return RemoveTag(name);
             }
 
             var isPropagated = name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase);
@@ -50,47 +95,90 @@ namespace Datadog.Trace.Tagging
                     {
                         if (string.Equals(_tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
                         {
-                            if (value == null)
+                            // found the tag
+                            if (replaceIfExists)
                             {
-                                // tag already exists, setting it to null removes it
-                                _tags.RemoveAt(i);
-                            }
-                            else if (!string.Equals(_tags[i].Value, value, StringComparison.Ordinal))
-                            {
-                                // tag already exists with different value, replace it
-                                _tags[i] = new(name, value);
-
-                                // clear the cached header
-                                if (isPropagated)
+                                if (!string.Equals(_tags[i].Value, value, StringComparison.Ordinal))
                                 {
-                                    _cachedPropagationHeader = null;
+                                    // tag already exists with different value, replace it
+                                    _tags[i] = new(name, value);
+
+                                    // clear the cached header
+                                    if (isPropagated)
+                                    {
+                                        _cachedPropagationHeader = null;
+                                    }
+
+                                    return true;
                                 }
                             }
 
-                            return;
+                            // tag exists but replaceIfExists is false, don't modify anything
+                            return false;
                         }
                     }
                 }
 
-                // tag not found, add new one
-                if (value != null)
+                // tag not found
+
+                // delay creating the List<T> as long as possible
+                _tags ??= new List<KeyValuePair<string, string>>(1);
+
+                // add new tag
+                _tags.Add(new(name, value));
+
+                // clear the cached header if we added a propagated tag
+                if (isPropagated)
                 {
-                    // delay creating the List<T> as long as possible
-                    _tags ??= new List<KeyValuePair<string, string>>(1);
+                    _cachedPropagationHeader = null;
+                }
 
-                    _tags.Add(new(name, value));
+                return true;
+            }
+        }
 
-                    // clear the cached header
-                    if (isPropagated)
+        public bool RemoveTag(string name)
+        {
+            if (name == null!)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(name));
+            }
+
+            var isPropagated = name.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.OrdinalIgnoreCase);
+
+            if (_tags?.Count > 0)
+            {
+                lock (_listLock)
+                {
+                    for (int i = 0; i < _tags.Count; i++)
                     {
-                        _cachedPropagationHeader = null;
+                        if (string.Equals(_tags[i].Key, name, StringComparison.OrdinalIgnoreCase))
+                        {
+                            _tags.RemoveAt(i);
+
+                            // clear the cached header
+                            if (isPropagated)
+                            {
+                                _cachedPropagationHeader = null;
+                            }
+
+                            return true;
+                        }
                     }
                 }
             }
+
+            // tag not found
+            return false;
         }
 
         public string? GetTag(string name)
         {
+            if (name == null!)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(name));
+            }
+
             if (_tags?.Count > 0)
             {
                 lock (_listLock)
@@ -108,24 +196,26 @@ namespace Datadog.Trace.Tagging
             return null;
         }
 
+        public void SetTags(TraceTagCollection? tags)
+        {
+            if (tags?.Count > 0)
+            {
+                foreach (var tag in tags.ToArray())
+                {
+                    SetTag(tag.Key, tag.Value);
+                }
+            }
+        }
+
         /// <summary>
         /// Constructs a string that can be used for horizontal propagation using the "x-datadog-tags" header
         /// in a "key1=value1,key2=value2" format. This header should only include tags with the "_dd.p.*" prefix.
         /// The returned string is cached and reused if no relevant tags are changed between calls.
         /// </summary>
         /// <returns>A string that can be used for horizontal propagation using the "x-datadog-tags" header.</returns>
-        public string ToPropagationHeader(int maxLength)
+        public string ToPropagationHeader()
         {
-            return _cachedPropagationHeader ??= TagPropagation.ToHeader(this, maxLength);
-        }
-
-        /// <summary>
-        /// Returns the trace tags an <see cref="IEnumerable{T}"/>.
-        /// Use for testing only as it will allocate the enumerator on the heap.
-        /// </summary>
-        internal IEnumerable<KeyValuePair<string, string>> ToEnumerable()
-        {
-            return _tags ?? (IEnumerable<KeyValuePair<string, string>>)Array.Empty<KeyValuePair<string, string>>();
+            return _cachedPropagationHeader ??= TagPropagation.ToHeader(this, _outgoingHeaderMaxLength);
         }
 
         public KeyValuePair<string, string>[] ToArray()

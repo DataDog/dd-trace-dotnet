@@ -144,7 +144,7 @@ namespace Datadog.Trace.TestHelpers
                 Headers = headers,
                 Method = method,
                 PathAndQuery = pathAndQuery,
-                ContentLength = length.Value,
+                ContentLength = length,
                 Body = new StreamContent(stream, length)
             };
         }
@@ -157,7 +157,7 @@ namespace Datadog.Trace.TestHelpers
 
             public string PathAndQuery { get; set; }
 
-            public long ContentLength { get; set; }
+            public long? ContentLength { get; set; }
 
             public StreamContent Body { get; set; }
 

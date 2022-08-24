@@ -212,7 +212,7 @@ namespace Samples.Kafka
             var config = new ConsumerConfig
             {
                 BootstrapServers = Config.KafkaBrokerHost,
-                GroupId = "Samples.Kafka.TestConsumer",
+                GroupId = "Samples.Kafka." + consumerName,
                 AutoOffsetReset = AutoOffsetReset.Earliest,
                 EnableAutoCommit = enableAutoCommit,
             };

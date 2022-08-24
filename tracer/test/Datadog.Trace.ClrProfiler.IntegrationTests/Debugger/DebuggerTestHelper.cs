@@ -35,11 +35,6 @@ internal static class DebuggerTestHelper
         return probes.Aggregate(0, (accuNumOfSnapshots, next) => accuNumOfSnapshots + next.ExpectedNumberOfSnapshots);
     }
 
-    internal static ProbeConfiguration CreateProbeDefinition(SnapshotProbe[] probes)
-    {
-        return new ProbeConfiguration { Id = Guid.Empty.ToString(), SnapshotProbes = probes };
-    }
-
     internal static (ProbeAttributeBase ProbeTestData, SnapshotProbe Probe)[] GetAllProbes(Type type, string targetFramework, bool unlisted, DeterministicGuidGenerator guidGenerator)
     {
         const BindingFlags allMask =

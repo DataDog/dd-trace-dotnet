@@ -11,6 +11,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
@@ -76,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
                 if (setSamplingPriority && existingSpanContext?.SamplingPriority is not null)
                 {
-                    span.SetTraceSamplingPriority(existingSpanContext.SamplingPriority.Value);
+                    span.Context.TraceContext?.SetSamplingPriority(existingSpanContext.SamplingPriority.Value);
                 }
 
                 GrpcCommon.RecordFinalStatus(span, receivedStatus.StatusCode, receivedStatus.Detail, receivedStatus.DebugException);
@@ -210,7 +211,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             if (span.Context.TraceContext.SamplingPriority == null)
             {
                 // If we don't add the span to the trace context, then we need to manually call the sampler
-                span.Context.TraceContext.SetSamplingPriority(tracer.TracerManager.Sampler?.GetSamplingPriority(span));
+                var samplingDecision = tracer.TracerManager.Sampler?.MakeSamplingDecision(span) ?? SamplingDecision.Default;
+                span.Context.TraceContext.SetSamplingPriority(samplingDecision);
             }
 
             return span;

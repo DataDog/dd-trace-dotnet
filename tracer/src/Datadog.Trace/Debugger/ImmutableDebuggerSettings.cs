@@ -11,16 +11,25 @@ namespace Datadog.Trace.Debugger
 {
     internal class ImmutableDebuggerSettings
     {
-        public ImmutableDebuggerSettings(bool enabled, ProbeMode probeMode, string apiKey, string runtimeId, string serviceName, string serviceVersion, int probeConfigurationsPollIntervalSeconds, string probeConfigurationsPath, string environment, int maxSerializationTimeInMilliseconds, int maximumDepthOfMembersToCopy, string snapshotsPath, int uploadBatchSize, int diagnosticsIntervalSeconds, int uploadFlushIntervalMilliseconds, TracesTransportType transportType, Uri agentUri)
+        public ImmutableDebuggerSettings(
+            bool enabled,
+            string apiKey,
+            string runtimeId,
+            string serviceVersion,
+            string environment,
+            int maxSerializationTimeInMilliseconds,
+            int maximumDepthOfMembersToCopy,
+            string snapshotsPath,
+            int uploadBatchSize,
+            int diagnosticsIntervalSeconds,
+            int uploadFlushIntervalMilliseconds,
+            TracesTransportType transportType,
+            Uri agentUri)
         {
             Enabled = enabled;
-            ProbeMode = probeMode;
             ApiKey = apiKey;
             RuntimeId = runtimeId;
-            ServiceName = serviceName;
             ServiceVersion = serviceVersion;
-            ProbeConfigurationsPollIntervalSeconds = probeConfigurationsPollIntervalSeconds;
-            ProbeConfigurationsPath = probeConfigurationsPath;
             Environment = environment;
             MaxSerializationTimeInMilliseconds = maxSerializationTimeInMilliseconds;
             MaximumDepthOfMembersOfMembersToCopy = maximumDepthOfMembersToCopy;
@@ -34,21 +43,13 @@ namespace Datadog.Trace.Debugger
 
         public bool Enabled { get; }
 
-        public ProbeMode ProbeMode { get; }
-
         public string ApiKey { get; }
 
         public string RuntimeId { get; }
 
-        public string ServiceName { get; }
-
         public string ServiceVersion { get; }
 
-        public string ProbeConfigurationsPath { get; }
-
         public string SnapshotsPath { get; set; }
-
-        public int ProbeConfigurationsPollIntervalSeconds { get; }
 
         public string Environment { get; }
 
@@ -72,13 +73,9 @@ namespace Datadog.Trace.Debugger
         public static ImmutableDebuggerSettings Create(DebuggerSettings debuggerSettings) =>
             Create(
                 debuggerSettings.Enabled,
-                debuggerSettings.ProbeMode,
                 debuggerSettings.ApiKey,
                 debuggerSettings.RuntimeId,
-                debuggerSettings.ServiceName,
                 debuggerSettings.ServiceVersion,
-                debuggerSettings.ProbeConfigurationsPollIntervalSeconds,
-                debuggerSettings.ProbeConfigurationsPath,
                 debuggerSettings.Environment,
                 debuggerSettings.MaxSerializationTimeInMilliseconds,
                 debuggerSettings.MaximumDepthOfMembersToCopy,
@@ -91,13 +88,9 @@ namespace Datadog.Trace.Debugger
 
         public static ImmutableDebuggerSettings Create(
             bool enabled,
-            ProbeMode probeMode,
             string apiKey,
             string runtimeId,
-            string serviceName,
             string serviceVersion,
-            int probeConfigurationsPollIntervalSeconds,
-            string probeConfigurationsPath,
             string environment,
             int maxSerializationTimeInMilliseconds,
             int maximumDepthOfMembersOfMembersToCopy,
@@ -109,13 +102,9 @@ namespace Datadog.Trace.Debugger
             Uri agentUri) =>
             new ImmutableDebuggerSettings(
                 enabled,
-                probeMode,
                 apiKey,
                 runtimeId,
-                serviceName,
                 serviceVersion,
-                probeConfigurationsPollIntervalSeconds,
-                probeConfigurationsPath,
                 environment,
                 maxSerializationTimeInMilliseconds,
                 maximumDepthOfMembersOfMembersToCopy,
