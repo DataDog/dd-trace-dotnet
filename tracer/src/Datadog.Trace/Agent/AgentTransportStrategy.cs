@@ -17,6 +17,7 @@ namespace Datadog.Trace.Agent;
 internal static class AgentTransportStrategy
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AgentTransportStrategy));
+    private static readonly Uri Localhost = new Uri("http://localhost");
 
     /// <summary>
     /// A generic helper for creating an <see cref="IApiRequestFactory"/> for sending to the agent
@@ -29,14 +30,16 @@ internal static class AgentTransportStrategy
     /// <param name="defaultAgentHeaders">The default headers to add to HttpClient requests</param>
     /// <param name="getHttpHeaderHelper">A func that returns an <see cref="HttpHeaderHelperBase"/> for use
     /// with <see cref="DatadogHttpClient"/></param>
-    /// <param name="getBaseEndpoint">A func that returns the endpoint to send requests to </param>
+    /// <param name="getBaseEndpoint">A func that returns the endpoint to send requests to for a given "base" endpoint.
+    /// The base endpoint will be <see cref="ImmutableExporterSettings.AgentUri" /> for TCP requests and
+    /// http://localhost/ for named pipes/UDS</param>
     public static IApiRequestFactory Get(
         ImmutableExporterSettings settings,
         string productName,
         TimeSpan? tcpTimeout,
         KeyValuePair<string, string>[] defaultAgentHeaders,
         Func<HttpHeaderHelperBase> getHttpHeaderHelper,
-        Func<Uri> getBaseEndpoint)
+        Func<Uri, Uri> getBaseEndpoint)
     {
         var strategy = settings.TracesTransport;
 
@@ -48,7 +51,7 @@ internal static class AgentTransportStrategy
                 return new HttpStreamRequestFactory(
                     new NamedPipeClientStreamFactory(settings.TracesPipeName, settings.TracesPipeTimeoutMs),
                     new DatadogHttpClient(getHttpHeaderHelper()),
-                    getBaseEndpoint());
+                    getBaseEndpoint(Localhost));
 
             case TracesTransportType.UnixDomainSocket:
 #if NET5_0_OR_GREATER
@@ -57,14 +60,14 @@ internal static class AgentTransportStrategy
                 return new SocketHandlerRequestFactory(
                     new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath),
                     defaultAgentHeaders,
-                    getBaseEndpoint());
+                    getBaseEndpoint(Localhost));
 #elif NETCOREAPP3_1_OR_GREATER
                 // intentionally using string interpolation, as this is only called once, and avoids array allocation
                 Log.Information($"Using {nameof(UnixDomainSocketStreamFactory)} for {productName} transport, with Unix Domain Sockets path {settings.TracesUnixDomainSocketPath} and timeout {settings.TracesPipeTimeoutMs}ms.");
                 return new HttpStreamRequestFactory(
                     new UnixDomainSocketStreamFactory(settings.TracesUnixDomainSocketPath),
                     new DatadogHttpClient(getHttpHeaderHelper()),
-                    getBaseEndpoint());
+                    getBaseEndpoint(Localhost));
 #else
                 Log.Error("Using Unix Domain Sockets for {ProductName} transport is only supported on .NET Core 3.1 and greater. Falling back to default transport.", productName);
                 goto case TracesTransportType.Default;
@@ -73,10 +76,10 @@ internal static class AgentTransportStrategy
             default:
 #if NETCOREAPP
                 Log.Information("Using {FactoryType} for {ProductName} transport.", nameof(HttpClientRequestFactory), productName);
-                return new HttpClientRequestFactory(settings.AgentUri, defaultAgentHeaders, timeout: tcpTimeout);
+                return new HttpClientRequestFactory(getBaseEndpoint(settings.AgentUri), defaultAgentHeaders, timeout: tcpTimeout);
 #else
                 Log.Information("Using {FactoryType} for {ProductName} transport.", nameof(ApiWebRequestFactory), productName);
-                return new ApiWebRequestFactory(settings.AgentUri, defaultAgentHeaders, timeout: tcpTimeout);
+                return new ApiWebRequestFactory(getBaseEndpoint(settings.AgentUri), defaultAgentHeaders, timeout: tcpTimeout);
 #endif
         }
     }

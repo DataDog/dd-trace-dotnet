@@ -18,6 +18,6 @@ namespace Datadog.Trace.Agent
                 tcpTimeout: null,
                 AgentHttpHeaderNames.DefaultHeaders,
                 () => new TraceAgentHttpHeaderHelper(),
-                () => new Uri("http://localhost"));
+                uri => uri);
     }
 }

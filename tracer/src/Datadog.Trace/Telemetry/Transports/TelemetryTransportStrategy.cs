@@ -9,6 +9,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Telemetry.Transports;
 
@@ -35,5 +36,5 @@ internal static class TelemetryTransportStrategy
             tcpTimeout: Timeout,
             TelemetryHttpHeaderNames.GetDefaultAgentHeaders(),
             () => new TelemetryAgentHttpHeaderHelper(),
-            () => new Uri("http://localhost/" + TelemetryConstants.AgentTelemetryEndpoint));
+            uri => UriHelpers.Combine(uri, TelemetryConstants.AgentTelemetryEndpoint));
 }
