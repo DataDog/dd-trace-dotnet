@@ -610,8 +610,6 @@ namespace Datadog.Trace.DiagnosticListeners
             var tracer = CurrentTracer;
             var security = CurrentSecurity;
 
-            security.ProcessControlCommand(arg); // Temporal solution while we integrate remote config
-
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
             var shouldSecure = security.Settings.Enabled;
 
