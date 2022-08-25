@@ -70,6 +70,10 @@ jobs:
         framework:
           - netcoreapp31
           - net60
+        scenario:
+          - PiComputation
+          - Exceptions
+          - Allocations
     services:
       dd-agent:
         image: 'datadog/agent:latest'
@@ -119,7 +123,7 @@ jobs:
       - name: Execute PiComputation benchmark
         run: |
           cd profiler/build
-          ./run.sh ${{ matrix.framework }}
+          ./run.sh  ${{ matrix.scenario }} ${{ matrix.framework }}
 
       - name: Wait 20 seconds to agent flush before finishing pipeline
         run: sleep 20
@@ -371,7 +375,10 @@ jobs:
           - net45
           - netcoreapp31
           - net60
-
+        scenario:
+          - PiComputation
+          - Exceptions
+          - Allocations
     steps:
     
       - uses: actions/setup-dotnet@v2
@@ -431,7 +438,7 @@ jobs:
           DD_TRACE_LOG_DIRECTORY: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}' # for the loader
         run: |
           cd profiler\build
-          .\run.cmd ${{ matrix.framework }}
+          .\run.cmd  ${{ matrix.scenario }} ${{ matrix.framework }}
 
       - name: Wait 20 seconds to agent flush before finishing pipeline
         run: Start-Sleep -s 20
