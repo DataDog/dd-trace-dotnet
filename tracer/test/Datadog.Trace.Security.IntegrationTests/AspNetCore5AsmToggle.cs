@@ -24,13 +24,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         public AspNetCore5AsmToggle(ITestOutputHelper outputHelper)
             : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5AsmToggle))
         {
-            SetupRcmConfiguration();
-        }
-
-        public override void Dispose()
-        {
-            base.Dispose();
-            CleanupRcmConfiguration();
         }
 
         [SkippableTheory]

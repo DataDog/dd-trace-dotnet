@@ -81,6 +81,8 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         public virtual void Dispose()
         {
+            CleanupRcmConfiguration();
+
             var request = WebRequest.CreateHttp($"http://localhost:{_httpPort}{_shutdownPath}");
             request.GetResponse().Close();
 
