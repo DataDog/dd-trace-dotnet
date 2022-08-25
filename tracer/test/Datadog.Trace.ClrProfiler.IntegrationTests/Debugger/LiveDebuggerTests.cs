@@ -54,15 +54,9 @@ public class LiveDebuggerTests : TestHelper
 
     private async Task RunTest()
     {
-        var guidGenerator = new DeterministicGuidGenerator();
-        var testType =
-            typeof(IRun)
-               .Assembly.GetTypes()
-               .Where(t => t.GetInterface(nameof(IRun)) != null)
-               .First(t => DebuggerTestHelper.GetAllProbes(t, EnvironmentHelper.GetTargetFramework(), unlisted: false, guidGenerator).Any());
+        var testType = DebuggerTestHelper.FirstSupportedProbeTestType(EnvironmentHelper.GetTargetFramework());
 
         using var agent = EnvironmentHelper.GetMockAgent();
-
         using var sample = StartSample(agent, $"--test-name {testType.FullName}", string.Empty, aspNetCorePort: 5000);
         using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.ProcessName}*");
         await logEntryWatcher.WaitForLogEntry(LiveDebuggerDisabledLogEntry);

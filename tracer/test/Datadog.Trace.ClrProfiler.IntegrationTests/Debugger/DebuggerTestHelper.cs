@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -17,6 +18,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger;
 
 internal static class DebuggerTestHelper
 {
+    public static IEnumerable<object[]> AllProbeTestTypes()
+    {
+        return typeof(IRun)
+              .Assembly.GetTypes()
+              .Where(t => t.GetInterface(nameof(IRun)) != null)
+              .Select(t => new object[] { t });
+    }
+
+    public static Type FirstSupportedProbeTestType(string framework)
+    {
+        return typeof(IRun)
+              .Assembly.GetTypes()
+              .Where(t => t.GetInterface(nameof(IRun)) != null)
+              .First(t => DebuggerTestHelper.GetAllProbes(t, framework, unlisted: false, new DeterministicGuidGenerator()).Any());
+    }
+
     internal static DebuggerSampleProcessHelper StartSample(TestHelper helper, MockTracerAgent agent, string testName)
     {
         var listenPort = TcpPortProvider.GetOpenPort();

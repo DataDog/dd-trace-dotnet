@@ -54,9 +54,7 @@ public class ProbesTests : TestHelper, IDisposable
 
     public static IEnumerable<object[]> ProbeTests()
     {
-        return typeof(IRun).Assembly.GetTypes()
-                           .Where(t => t.GetInterface(nameof(IRun)) != null)
-                           .Select(t => new object[] { t });
+        return DebuggerTestHelper.AllProbeTestTypes();
     }
 
     [SkippableTheory]
@@ -155,6 +153,56 @@ public class ProbesTests : TestHelper, IDisposable
     [MemberData(nameof(ProbeTests))]
     public async Task MethodProbeTest(Type testType)
     {
+        await RunMethodProbeTests(testType);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("Category", "LinuxUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    public async Task MethodProbeTest_NamedPipes()
+    {
+        if (!EnvironmentTools.IsWindows())
+        {
+            throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+        }
+
+        var testType = DebuggerTestHelper.FirstProbeTestType(EnvironmentHelper.GetTargetFramework());
+        EnvironmentHelper.EnableWindowsNamedPipes();
+
+        await RunMethodProbeTests(testType);
+    }
+
+#if NETCOREAPP3_1_OR_GREATER
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task MethodProbeTest_UDS()
+    {
+        var testType = DebuggerTestHelper.FirstProbeTestType(EnvironmentHelper.GetTargetFramework());
+        EnvironmentHelper.EnableUnixDomainSockets();
+
+        await RunMethodProbeTests(testType);
+    }
+#endif
+
+    public void Dispose()
+    {
+        try
+        {
+            if (File.Exists(_rcmPath))
+            {
+                File.Delete(_rcmPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            Output?.WriteLine("ProbesTests.Cleanup - failed to clean prob file between tests: " + ex);
+        }
+    }
+
+    private async Task RunMethodProbeTests(Type testType)
+    {
         var probes = GetProbeConfiguration(testType, false, new DeterministicGuidGenerator());
         var agent = GetMockAgent();
 
@@ -234,21 +282,6 @@ public class ProbesTests : TestHelper, IDisposable
         }
     }
 
-    public void Dispose()
-    {
-        try
-        {
-            if (File.Exists(_rcmPath))
-            {
-                File.Delete(_rcmPath);
-            }
-        }
-        catch (Exception ex)
-        {
-            Output?.WriteLine("ProbesTests.Cleanup - failed to clean prob file between tests: " + ex);
-        }
-    }
-
     private async Task ApproveSnapshots(string[] snapshots, Type testType, bool isMultiPhase, int phaseNumber)
     {
         await ApproveOnDisk(snapshots, testType, isMultiPhase, phaseNumber, "snapshots");
@@ -274,6 +307,7 @@ public class ProbesTests : TestHelper, IDisposable
 
         settings.ScrubEmptyLines();
         settings.AddScrubber(ScrubSnapshotJson);
+        settings.AutoVerify();
 
         VerifierSettings.DerivePathInfo(
             (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", path)));
@@ -456,13 +490,12 @@ public class ProbesTests : TestHelper, IDisposable
     {
         var mockAgent = EnvironmentHelper.GetMockAgent();
 
-        if (mockAgent is not MockTracerAgent.TcpUdpAgent agent)
+        if (mockAgent is MockTracerAgent.TcpUdpAgent agent)
         {
-            throw new NotSupportedException($"Expected the mock agent to be of type {typeof(MockTracerAgent.TcpUdpAgent)} but found {mockAgent.GetType()}.");
+            SetEnvironmentVariable(ConfigurationKeys.AgentPort, agent.Port.ToString());
         }
 
-        SetEnvironmentVariable(ConfigurationKeys.AgentPort, agent.Port.ToString());
-        agent.ShouldDeserializeTraces = false;
-        return agent;
+        mockAgent.ShouldDeserializeTraces = false;
+        return mockAgent;
     }
 }

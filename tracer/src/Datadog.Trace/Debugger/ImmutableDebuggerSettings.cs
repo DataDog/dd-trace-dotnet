@@ -21,8 +21,7 @@ namespace Datadog.Trace.Debugger
             Uri? snapshotUri,
             int uploadBatchSize,
             int diagnosticsIntervalSeconds,
-            int uploadFlushIntervalMilliseconds,
-            TracesTransportType transportType)
+            int uploadFlushIntervalMilliseconds)
         {
             Enabled = enabled;
             ServiceVersion = serviceVersion;
@@ -33,7 +32,6 @@ namespace Datadog.Trace.Debugger
             UploadBatchSize = uploadBatchSize;
             DiagnosticsIntervalSeconds = diagnosticsIntervalSeconds;
             UploadFlushIntervalMilliseconds = uploadFlushIntervalMilliseconds;
-            TransportType = transportType;
         }
 
         public bool Enabled { get; }
@@ -54,8 +52,6 @@ namespace Datadog.Trace.Debugger
 
         public int UploadFlushIntervalMilliseconds { get; }
 
-        public TracesTransportType TransportType { get; }
-
         public static ImmutableDebuggerSettings Create(TracerSettings tracerSettings) =>
             Create(tracerSettings.DebuggerSettings);
 
@@ -69,8 +65,7 @@ namespace Datadog.Trace.Debugger
                 debuggerSettings.SnapshotUri,
                 debuggerSettings.UploadBatchSize,
                 debuggerSettings.DiagnosticsIntervalSeconds,
-                debuggerSettings.UploadFlushIntervalMilliseconds,
-                debuggerSettings.TransportType);
+                debuggerSettings.UploadFlushIntervalMilliseconds);
 
         public static ImmutableDebuggerSettings Create(
             bool enabled,
@@ -81,8 +76,7 @@ namespace Datadog.Trace.Debugger
             Uri? snapshotUri,
             int uploadBatchSize,
             int diagnosticsIntervalSeconds,
-            int uploadFlushIntervalMilliseconds,
-            TracesTransportType transportType) =>
+            int uploadFlushIntervalMilliseconds) =>
             new ImmutableDebuggerSettings(
                 enabled,
                 serviceVersion,
@@ -92,7 +86,6 @@ namespace Datadog.Trace.Debugger
                 snapshotUri,
                 uploadBatchSize,
                 diagnosticsIntervalSeconds,
-                uploadFlushIntervalMilliseconds,
-                transportType);
+                uploadFlushIntervalMilliseconds);
     }
 }
