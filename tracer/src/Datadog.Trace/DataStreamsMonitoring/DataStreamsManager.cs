@@ -7,8 +7,11 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.DataStreamsMonitoring.Transport;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -24,15 +27,21 @@ internal class DataStreamsManager
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsManager>();
     private readonly NodeHashBase _nodeHashBase;
     private bool _isEnabled;
+    private DataStreamsWriter? _writer;
 
     public DataStreamsManager(
         bool enabled,
         string env,
-        string defaultServiceName)
+        string defaultServiceName,
+        IApiRequestFactory apiRequestFactory)
     {
-        _isEnabled = enabled;
         // We don't yet support primary tag in .NET yet
         _nodeHashBase = HashHelper.CalculateNodeHashBase(defaultServiceName, env, primaryTag: null);
+        // TODO: dynamically enable/disable based on discovery service
+        _isEnabled = enabled;
+        _writer = enabled
+                      ? _writer = CreateWriter(env, defaultServiceName, apiRequestFactory)
+                      : null;
     }
 
     public bool IsEnabled => Volatile.Read(ref _isEnabled);
@@ -40,12 +49,23 @@ internal class DataStreamsManager
     public static DataStreamsManager Create(
         ImmutableTracerSettings settings,
         string defaultServiceName)
-        => new(settings.IsDataStreamsMonitoringEnabled, settings.Environment, defaultServiceName);
+        => new(
+            settings.IsDataStreamsMonitoringEnabled,
+            settings.Environment,
+            defaultServiceName,
+            DataStreamsTransportStrategy.GetAgentIntakeFactory(settings.Exporter));
 
-    public Task DisposeAsync()
+    public async Task DisposeAsync()
     {
         Volatile.Write(ref _isEnabled, false);
-        return Task.CompletedTask;
+        var writer = Interlocked.Exchange(ref _writer, null);
+
+        if (writer is null)
+        {
+            return;
+        }
+
+        await writer.DisposeAsync().ConfigureAwait(false);
     }
 
     /// <summary>
@@ -104,7 +124,16 @@ internal class DataStreamsManager
             var parentHash = parentPathway?.Hash ?? default;
             var pathwayHash = HashHelper.CalculatePathwayHash(nodeHash, parentHash);
 
-            // TODO: send to aggregator
+            var writer = Volatile.Read(ref _writer);
+            writer?.Add(
+                new StatsPoint(
+                    edgeTags: edgeTags,
+                    hash: pathwayHash,
+                    parentHash: parentHash,
+                    timestampNs: edgeStartNs,
+                    pathwayLatencyNs: edgeStartNs - pathwayStartNs,
+                    edgeLatencyNs: edgeStartNs - (parentPathway?.EdgeStart ?? edgeStartNs)));
+
             var pathway = new PathwayContext(
                 hash: pathwayHash,
                 pathwayStartNs: pathwayStartNs,
@@ -131,4 +160,15 @@ internal class DataStreamsManager
             return null;
         }
     }
+
+    private static DataStreamsWriter CreateWriter(
+        string env,
+        string defaultServiceName,
+        IApiRequestFactory requestFactory) =>
+        new DataStreamsWriter(
+            new DataStreamsAggregator(
+                new DataStreamsMessagePackFormatter(env, defaultServiceName),
+                bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs),
+            new DataStreamsApi(requestFactory),
+            bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs);
 }
