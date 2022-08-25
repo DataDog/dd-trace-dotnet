@@ -26,7 +26,7 @@ namespace Datadog.Trace.HttpOverStreams
 
         private readonly HttpHeaderHelperBase _headerHelper;
 
-        private DatadogHttpClient(HttpHeaderHelperBase headerHelper)
+        public DatadogHttpClient(HttpHeaderHelperBase headerHelper)
         {
             _headerHelper = headerHelper;
         }
