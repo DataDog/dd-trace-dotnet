@@ -42,7 +42,7 @@
     }
   ],
   "processName": "dotnet",
-  "processArguments": "Samples.ExceptionGenerator.dll --scenario 2 --iterations 200",
+  "processArguments": "Samples.ExceptionGenerator.dll --scenario 5 --iterations 200",
   "processTimeout": 15,
   "workingDirectory": "$(CWD)/../_build/bin/Release-x64/profiler/src/Demos/Samples.ExceptionGenerator/netcoreapp3.1",
   "environmentVariables": {

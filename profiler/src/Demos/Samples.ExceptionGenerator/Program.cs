@@ -17,6 +17,7 @@ namespace Samples.ExceptionGenerator
         ParallelExceptions = 2,
         Sampling = 3,
         GenericExceptions = 4,
+        TimeItExceptions = 5,
     }
 
     public class Program
@@ -59,7 +60,10 @@ namespace Samples.ExceptionGenerator
 
                                 case Scenario.ParallelExceptions:
                                     new ParallelExceptionsScenario().Run();
-                                    Console.WriteLine(" ########### Generating exceptions in parallel...");
+
+                                    // TODO: Remove the sleep when flush on shutdown is implemented in the profiler
+                                    Console.WriteLine(" ########### Sleeping for 20 seconds");
+                                    Thread.Sleep(20_000);
                                     break;
 
                                 case Scenario.Sampling:
@@ -73,6 +77,11 @@ namespace Samples.ExceptionGenerator
                                 case Scenario.GenericExceptions:
                                     new GenericExceptionsScenario().Run();
                                     Console.WriteLine(" ########### Generating generic exceptions...");
+                                    break;
+
+                                case Scenario.TimeItExceptions:
+                                    new ParallelExceptionsScenario().Run();
+                                    Console.WriteLine(" ########### Generating exceptions in parallel...");
                                     break;
 
                                 default:
