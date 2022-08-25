@@ -33,6 +33,7 @@ public class LiveDebuggerTests : TestHelper
         SetServiceVersion("1.0.0");
     }
 
+    [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
@@ -42,6 +43,7 @@ public class LiveDebuggerTests : TestHelper
         await RunTest();
     }
 
+    [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
