@@ -352,8 +352,6 @@ struct IntegrationDefinition
                is_derived == other.is_derived && is_interface == other.is_interface &&
                is_exact_signature_match == other.is_exact_signature_match;
     }
-    
-    IntegrationDefinition& operator=(IntegrationDefinition const&) = default;
 };
 
 typedef struct _CallTargetDefinition
