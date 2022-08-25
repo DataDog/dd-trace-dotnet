@@ -29,6 +29,11 @@ EnabledProfilers::EnabledProfilers(IConfiguration* pConfiguration, bool isListen
             _enabledProfilers |= RuntimeProfiler::Allocations;
         }
 
+        if (pConfiguration->IsContentionProfilingEnabled())
+        {
+            _enabledProfilers |= RuntimeProfiler::Contention;
+        }
+
         // TODO: add new CLR event driven profilers
     }
 }
