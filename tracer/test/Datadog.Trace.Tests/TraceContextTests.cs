@@ -427,17 +427,14 @@ namespace Datadog.Trace.Tests
         {
             Dictionary<string, string> vars = new();
 
-            if (!inAASContext)
-            {
-                AzureAppServices.Metadata = new AzureAppServices(vars);
-            }
-            else
+            if (inAASContext)
             {
                 vars.Add(AzureAppServices.AzureAppServicesContextKey, "true");
                 vars.Add(AzureAppServices.ResourceGroupKey, "ThisIsAResourceGroup");
                 vars.Add(Datadog.Trace.Configuration.ConfigurationKeys.ApiKey, "xxx");
-                AzureAppServices.Metadata = new AzureAppServices(vars);
             }
+
+            AzureAppServices.Metadata = new AzureAppServices(vars);
         }
     }
 }
