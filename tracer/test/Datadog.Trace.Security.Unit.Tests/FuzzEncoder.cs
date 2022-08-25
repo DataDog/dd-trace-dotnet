@@ -31,16 +31,8 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Fact]
         public void LetsFuzz()
         {
-#if _NET5_0_OR_GREATER_
             // if we don't throw any exceptions and generate a valid object the the test is successful
-            for (int x = 0; x < 1000; x++)
-            {
-                x--;
-                Console.WriteLine($"Waiting on ProcessId {System.Diagnostics.Process.GetCurrentProcess().Id}");
-                Console.Beep();
-                System.Threading.Thread.Sleep(1000);
-            }
-#endif
+
             var libraryHandle = LibraryLoader.LoadAndGetHandle();
             var wafNative = new WafNative(libraryHandle);
             var encoder = new AppSec.Waf.Encoder(wafNative);
