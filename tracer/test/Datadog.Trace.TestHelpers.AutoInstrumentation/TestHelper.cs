@@ -32,6 +32,8 @@ namespace Datadog.Trace.TestHelpers
 {
     public abstract class TestHelper : IDisposable
     {
+        private bool _deleteRcmFile = true;
+
         protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
             : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides), output)
         {
@@ -57,6 +59,8 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
             Output.WriteLine($"Native Loader DLL: {EnvironmentHelper.GetNativeLoaderPath()}");
+
+            SetupRcmConfiguration();
         }
 
         public bool SecurityEnabled { get; private set; }
@@ -628,13 +632,22 @@ namespace Datadog.Trace.TestHelpers
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
         }
 
-        protected void SetupRcmConfiguration()
+        protected void SetupRcmConfiguration(string path = null)
         {
-            var path = Path.GetTempFileName();
-            File.Delete(path);
-            Directory.CreateDirectory(path);
-            path = Path.Combine(path, "rcm_config.json");
-            if (File.Exists(path)) { File.Delete(path); }
+            if (path == null)
+            {
+                path = Path.GetTempFileName();
+                File.Delete(path);
+                Directory.CreateDirectory(path);
+                path = Path.Combine(path, "rcm_config.json");
+                if (File.Exists(path)) { File.Delete(path); }
+                _deleteRcmFile = true;
+            }
+            else
+            {
+                _deleteRcmFile = false;
+            }
+
             SetEnvironmentVariable(ConfigurationKeys.Rcm.FilePath, path);
         }
 
@@ -642,7 +655,7 @@ namespace Datadog.Trace.TestHelpers
         {
             if (EnvironmentHelper.CustomEnvironmentVariables.TryGetValue(ConfigurationKeys.Rcm.FilePath, out var rcmConfigPath))
             {
-                if (File.Exists(rcmConfigPath)) { File.Delete(rcmConfigPath); }
+                if (File.Exists(rcmConfigPath) && _deleteRcmFile) { File.Delete(rcmConfigPath); }
                 EnvironmentHelper.CustomEnvironmentVariables.Remove(ConfigurationKeys.Rcm.FilePath);
             }
         }
