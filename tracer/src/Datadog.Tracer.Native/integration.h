@@ -348,8 +348,6 @@ struct IntegrationDefinition
         return target_method == other.target_method && integration_type == other.integration_type &&
                is_derived == other.is_derived && is_exact_signature_match == other.is_exact_signature_match;
     }
-    
-    IntegrationDefinition& operator=(IntegrationDefinition const&) = default;
 };
 
 typedef struct _CallTargetDefinition
