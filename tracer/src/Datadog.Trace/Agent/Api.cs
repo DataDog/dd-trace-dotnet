@@ -42,7 +42,6 @@ namespace Datadog.Trace.Agent
             IDogStatsd statsd,
             Action<Dictionary<string, float>> updateSampleRates,
             bool partialFlushEnabled,
-            bool statsComputationEnabled,
             IDatadogLogger log = null)
         {
             // optionally injecting a log instance in here for testing purposes
