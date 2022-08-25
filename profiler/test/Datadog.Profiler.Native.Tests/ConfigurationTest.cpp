@@ -372,3 +372,23 @@ TEST(ConfigurationTest, CheckContentionProfilingIsDisabledIfEnvVarSetToFalse)
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.IsContentionProfilingEnabled(), false);
 }
+
+TEST(ConfigurationTest, CheckCpuProfilingIsEnabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsCpuProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckCpuProfilingIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilingEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsCpuProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckCpuProfilingIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilingEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsCpuProfilingEnabled(), false);
+}

@@ -24,10 +24,10 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
         }
 
         [TestAppFact("Samples.Computer01")]
-        public void NoCpuSampleIfCpuProfilerIsNotActivatedByDefault(string appName, string framework, string appAssembly)
+        public void GetCpuSamplesIfCpuProfilerIsActivatedByDefault(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
-            CheckCpuProfiles(runner, false);
+            CheckCpuProfiles(runner, true);
         }
 
         [TestAppFact("Samples.Computer01")]
