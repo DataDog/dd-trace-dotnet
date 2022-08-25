@@ -385,11 +385,11 @@ namespace Datadog.Trace.Agent
             }
 
             trace = _statsAggregator?.ProcessTrace(trace) ?? trace;
-            bool forceKeep = _statsAggregator?.AddRange(trace) ?? false;
+            bool shouldSendTrace = _statsAggregator?.AddRange(trace) ?? true;
 
             // If stats computation determined that we can drop the P0 Trace,
             // skip all other processing
-            if (!shouldSerializeSpans && CanComputeStats && !forceKeep)
+            if (!shouldSerializeSpans && CanComputeStats && !shouldSendTrace)
             {
                 Interlocked.Increment(ref _droppedP0Traces);
                 Interlocked.Add(ref _droppedP0Spans, trace.Count);
