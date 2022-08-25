@@ -359,14 +359,14 @@ TEST(ConfigurationTest, CheckContentionProfilingIsDisabledByDefault)
     ASSERT_THAT(configuration.IsContentionProfilingEnabled(), false);
 }
 
-TEST(ConfigurationTest, CheckContentionProfilingIsEnabledIsEnvVarSetToTrue)
+TEST(ConfigurationTest, CheckContentionProfilingIsEnabledIfEnvVarSetToTrue)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ContentionProfilingEnabled, WStr("1"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.IsContentionProfilingEnabled(), true);
 }
 
-TEST(ConfigurationTest, CheckContentionProfilingIsDisabledIsEnvVarSetToFalse)
+TEST(ConfigurationTest, CheckContentionProfilingIsDisabledIfEnvVarSetToFalse)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ContentionProfilingEnabled, WStr("0"));
     auto configuration = Configuration{};

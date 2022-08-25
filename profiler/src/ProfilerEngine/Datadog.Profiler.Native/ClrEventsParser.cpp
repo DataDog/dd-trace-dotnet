@@ -59,6 +59,11 @@ void ClrEventsParser::ParseEvent(
 
 void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData)
 {
+    if (_pAllocationListener == nullptr)
+    {
+        return;
+    }
+
     // look for AllocationTick_V4
     if ((id == EVENT_ALLOCATION_TICK) && (version == 4))
     {
@@ -110,11 +115,6 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
             return;
         }
         if (!Read(payload.ObjectSize, pEventData, cbEventData, offset))
-        {
-            return;
-        }
-
-        if (_pAllocationListener == nullptr)
         {
             return;
         }
