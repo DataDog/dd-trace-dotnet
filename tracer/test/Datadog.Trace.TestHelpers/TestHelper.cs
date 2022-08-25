@@ -29,7 +29,7 @@ using Datadog.Trace.ExtensionMethods; // needed for Dictionary<K,V>.GetValueOrDe
 
 namespace Datadog.Trace.TestHelpers
 {
-    public abstract class TestHelper
+    public abstract class TestHelper : IDisposable
     {
         private bool _deleteRcmFile = true;
 
@@ -67,6 +67,11 @@ namespace Datadog.Trace.TestHelpers
         protected string TestPrefix => $"{EnvironmentTools.GetBuildConfiguration()}.{EnvironmentHelper.GetTargetFramework()}";
 
         protected ITestOutputHelper Output { get; }
+
+        public virtual void Dispose()
+        {
+            CleanupRcmConfiguration();
+        }
 
         public Process StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "")
         {
