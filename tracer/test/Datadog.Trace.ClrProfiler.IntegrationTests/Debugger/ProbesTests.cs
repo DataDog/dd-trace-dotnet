@@ -168,18 +168,19 @@ public class ProbesTests : TestHelper, IDisposable
             throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
         }
 
-        var testType = DebuggerTestHelper.FirstProbeTestType(EnvironmentHelper.GetTargetFramework());
+        var testType = DebuggerTestHelper.FirstSupportedProbeTestType(EnvironmentHelper.GetTargetFramework());
         EnvironmentHelper.EnableWindowsNamedPipes();
 
         await RunMethodProbeTests(testType);
     }
 
 #if NETCOREAPP3_1_OR_GREATER
+    [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public async Task MethodProbeTest_UDS()
     {
-        var testType = DebuggerTestHelper.FirstProbeTestType(EnvironmentHelper.GetTargetFramework());
+        var testType = DebuggerTestHelper.FirstSupportedProbeTestType(EnvironmentHelper.GetTargetFramework());
         EnvironmentHelper.EnableUnixDomainSockets();
 
         await RunMethodProbeTests(testType);
