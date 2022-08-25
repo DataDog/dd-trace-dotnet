@@ -18,9 +18,6 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.ProcessDomain)]
         public string Domain { get; set; }
 
-        [Tag(Trace.Tags.ProcessPassword)]
-        public string Password { get; set; }
-
         [Tag(Trace.Tags.ProcessUserName)]
         public string UserName { get; set; }
     }

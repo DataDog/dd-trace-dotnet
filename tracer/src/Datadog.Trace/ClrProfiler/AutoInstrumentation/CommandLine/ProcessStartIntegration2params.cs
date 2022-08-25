@@ -1,4 +1,4 @@
-// <copyright file="ProcessStartIntegration.cs" company="Datadog">
+// <copyright file="ProcessStartIntegration2params.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,21 +19,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
    TypeName = "System.Diagnostics.Process",
    MethodName = "Start",
    ReturnTypeName = ClrNames.Process,
-   ParameterTypeNames = new[] { ClrNames.String },
+   ParameterTypeNames = new[] { ClrNames.String, ClrNames.String },
    MinimumVersion = "1.0.0",
    MaximumVersion = "7.*.*",
    IntegrationName = nameof(Configuration.IntegrationId.CommandExecution))]
-    public class ProcessStartIntegration
+    public class ProcessStartIntegration2params
     {
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <param name="filename">file name</param>
+        /// <param name="commandParams">arguments passed to the process</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget>(ref string filename)
+        internal static CallTargetState OnMethodBegin<TTarget>(ref string filename, ref string commandParams)
         {
-            return new CallTargetState(scope: ProcessStartCommon.CreateScope(Tracer.Instance, filename));
+            return new CallTargetState(scope: ProcessStartCommon.CreateScope(Tracer.Instance, filename, commandParams));
         }
 
         /// <summary>
