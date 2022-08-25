@@ -104,7 +104,7 @@ namespace Datadog.Trace.Agent
 
         internal SpanBuffer BackBuffer => _backBuffer;
 
-        public bool CanComputeStats => _statsAggregator.CanComputeStats ?? false;
+        public bool CanComputeStats => _statsAggregator?.CanComputeStats ?? false;
 
         public Task<bool> Ping()
         {
