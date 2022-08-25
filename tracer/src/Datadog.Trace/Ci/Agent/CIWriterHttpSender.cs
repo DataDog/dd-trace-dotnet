@@ -13,6 +13,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.Ci.Agent
 {
@@ -140,21 +141,7 @@ namespace Datadog.Trace.Ci.Agent
                     }
 
                     // Before retry delay
-                    bool isSocketException = false;
-                    Exception innerException = exception;
-
-                    while (innerException != null)
-                    {
-                        if (innerException is SocketException)
-                        {
-                            isSocketException = true;
-                            break;
-                        }
-
-                        innerException = innerException.InnerException;
-                    }
-
-                    if (isSocketException)
+                    if (exception.IsSocketException())
                     {
                         Log.Debug(exception, "Unable to communicate with {AgentEndpoint}", _apiRequestFactory.Info(url));
                     }

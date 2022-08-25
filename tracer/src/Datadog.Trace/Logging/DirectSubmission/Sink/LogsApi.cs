@@ -8,6 +8,7 @@ using System;
 using System.Net.Sockets;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink
 {
@@ -133,7 +134,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                 }
 
                 // Before retry delay
-                if (IsSocketException(exception))
+                if (exception.IsSocketException())
                 {
                     Log.Debug(exception, "Unable to communicate with the logs intake at {IntakeEndpoint}", _apiRequestFactory.Info(_logsIntakeEndpoint));
                 }
@@ -143,21 +144,6 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                 retriesRemaining--;
                 nextSleepDuration *= 2;
             }
-        }
-
-        private static bool IsSocketException(Exception? exception)
-        {
-            while (exception is not null)
-            {
-                if (exception is SocketException)
-                {
-                    return true;
-                }
-
-                exception = exception.InnerException;
-            }
-
-            return false;
         }
     }
 }

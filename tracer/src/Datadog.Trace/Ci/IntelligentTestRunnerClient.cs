@@ -19,6 +19,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci;
@@ -314,21 +315,7 @@ internal class IntelligentTestRunnerClient
                 }
 
                 // Before retry delay
-                bool isSocketException = false;
-                Exception? innerException = exceptionDispatchInfo.SourceException;
-
-                while (innerException != null)
-                {
-                    if (innerException is SocketException)
-                    {
-                        isSocketException = true;
-                        break;
-                    }
-
-                    innerException = innerException.InnerException;
-                }
-
-                if (isSocketException)
+                if (exceptionDispatchInfo.SourceException.IsSocketException())
                 {
                     Log.Debug(exceptionDispatchInfo.SourceException, "Unable to communicate with the server");
                 }

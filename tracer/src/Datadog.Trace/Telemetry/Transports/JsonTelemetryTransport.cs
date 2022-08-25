@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
@@ -83,13 +84,8 @@ namespace Datadog.Trace.Telemetry.Transports
 
         private static bool IsFatalException(Exception ex)
         {
-            return ex is SocketException
-#if !NETFRAMEWORK
-                       or WebException { InnerException: System.Net.Http.HttpRequestException { InnerException: SocketException } }
-                       or System.Net.Http.HttpRequestException { InnerException: SocketException }
-#endif
-                       or WebException { Response: HttpWebResponse { StatusCode: HttpStatusCode.NotFound } }
-                       or WebException { InnerException: SocketException };
+            return ex.IsSocketException()
+                || ex is WebException { Response: HttpWebResponse { StatusCode: HttpStatusCode.NotFound } };
         }
     }
 }
