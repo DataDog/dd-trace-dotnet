@@ -9,4 +9,5 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 internal static class DataStreamsConstants
 {
     public const int DefaultBucketDurationMs = 10_000;
+    public const string IntakePath = "v0.1/pipeline_stats";
 }
