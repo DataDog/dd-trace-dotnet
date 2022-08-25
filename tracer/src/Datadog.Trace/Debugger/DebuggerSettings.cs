@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -22,18 +23,15 @@ namespace Datadog.Trace.Debugger
         {
         }
 
-        public DebuggerSettings(IConfigurationSource configurationSource)
+        public DebuggerSettings(IConfigurationSource? configurationSource)
         {
-            ApiKey = configurationSource?.GetString(ConfigurationKeys.ApiKey);
-            RuntimeId = Util.RuntimeId.Get();
-            ServiceName = configurationSource?.GetString(ConfigurationKeys.ServiceName);
-
             var exporterSettings = new ExporterSettings(configurationSource);
             TransportType = exporterSettings.TracesTransport;
 
-            var agentUri = exporterSettings.AgentUri.ToString().TrimEnd('/');
-            AgentUri = exporterSettings.AgentUri;
-            SnapshotsPath = configurationSource?.GetString(ConfigurationKeys.Debugger.SnapshotUrl)?.TrimEnd('/') ?? agentUri;
+            if (Uri.TryCreate(ConfigurationKeys.Debugger.SnapshotUrl?.TrimEnd('/'), UriKind.Absolute, out var snapshotUri))
+            {
+                SnapshotUri = snapshotUri;
+            }
 
             ServiceVersion = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
             Environment = configurationSource?.GetString(ConfigurationKeys.Environment);
@@ -71,17 +69,11 @@ namespace Datadog.Trace.Debugger
                     : flushInterval.Value;
         }
 
-        public string ApiKey { get; }
+        public string? ServiceVersion { get; }
 
-        public string RuntimeId { get; }
+        public Uri? SnapshotUri { get; }
 
-        public string ServiceName { get; }
-
-        public string ServiceVersion { get; }
-
-        public string SnapshotsPath { get; }
-
-        public string Environment { get; }
+        public string? Environment { get; }
 
         public bool Enabled { get; }
 
@@ -96,8 +88,6 @@ namespace Datadog.Trace.Debugger
         public int UploadFlushIntervalMilliseconds { get; }
 
         public TracesTransportType TransportType { get; }
-
-        public Uri AgentUri { get; }
 
         public static DebuggerSettings FromSource(IConfigurationSource source)
         {

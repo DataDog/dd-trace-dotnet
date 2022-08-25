@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations;
@@ -14,7 +16,7 @@ namespace Datadog.Trace.Debugger;
 
 internal class LiveDebuggerFactory
 {
-    public static LiveDebugger Create(IDiscoveryService discoveryService, IRemoteConfigurationManager remoteConfigurationManager, string serviceName)
+    public static LiveDebugger Create(IDiscoveryService discoveryService, IRemoteConfigurationManager remoteConfigurationManager, IApiRequestFactory apiFactory, string serviceName)
     {
         var source = GlobalSettings.CreateDefaultConfigurationSource();
         var settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromSource(source));
@@ -23,12 +25,10 @@ internal class LiveDebuggerFactory
             return LiveDebugger.Create(settings, string.Empty, null, null, null, null, null, null);
         }
 
-        var apiFactory = DebuggerTransportStrategy.Get(settings.AgentUri);
-
         var snapshotStatusSink = SnapshotSink.Create(settings);
         var probeStatusSink = ProbeStatusSink.Create(settings, serviceName);
 
-        var batchApi = BatchUploadApiFactory.Create(settings, apiFactory, discoveryService);
+        var batchApi = AgentBatchUploadApi.Create(settings, apiFactory, discoveryService);
         var batchUploader = BatchUploader.Create(batchApi);
         var debuggerSink = DebuggerSink.Create(snapshotStatusSink, probeStatusSink, settings, batchUploader);
 

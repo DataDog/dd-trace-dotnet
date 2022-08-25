@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -13,45 +14,35 @@ namespace Datadog.Trace.Debugger
     {
         public ImmutableDebuggerSettings(
             bool enabled,
-            string apiKey,
-            string runtimeId,
-            string serviceVersion,
-            string environment,
+            string? serviceVersion,
+            string? environment,
             int maxSerializationTimeInMilliseconds,
             int maximumDepthOfMembersToCopy,
-            string snapshotsPath,
+            Uri? snapshotUri,
             int uploadBatchSize,
             int diagnosticsIntervalSeconds,
             int uploadFlushIntervalMilliseconds,
-            TracesTransportType transportType,
-            Uri agentUri)
+            TracesTransportType transportType)
         {
             Enabled = enabled;
-            ApiKey = apiKey;
-            RuntimeId = runtimeId;
             ServiceVersion = serviceVersion;
             Environment = environment;
             MaxSerializationTimeInMilliseconds = maxSerializationTimeInMilliseconds;
             MaximumDepthOfMembersOfMembersToCopy = maximumDepthOfMembersToCopy;
-            SnapshotsPath = snapshotsPath;
+            SnapshotUri = snapshotUri;
             UploadBatchSize = uploadBatchSize;
             DiagnosticsIntervalSeconds = diagnosticsIntervalSeconds;
             UploadFlushIntervalMilliseconds = uploadFlushIntervalMilliseconds;
             TransportType = transportType;
-            AgentUri = agentUri;
         }
 
         public bool Enabled { get; }
 
-        public string ApiKey { get; }
+        public string? ServiceVersion { get; }
 
-        public string RuntimeId { get; }
+        public string? Environment { get; }
 
-        public string ServiceVersion { get; }
-
-        public string SnapshotsPath { get; set; }
-
-        public string Environment { get; }
+        public Uri? SnapshotUri { get; set; }
 
         public int MaxSerializationTimeInMilliseconds { get; }
 
@@ -65,54 +56,43 @@ namespace Datadog.Trace.Debugger
 
         public TracesTransportType TransportType { get; }
 
-        public Uri AgentUri { get; }
-
         public static ImmutableDebuggerSettings Create(TracerSettings tracerSettings) =>
             Create(tracerSettings.DebuggerSettings);
 
         public static ImmutableDebuggerSettings Create(DebuggerSettings debuggerSettings) =>
             Create(
                 debuggerSettings.Enabled,
-                debuggerSettings.ApiKey,
-                debuggerSettings.RuntimeId,
                 debuggerSettings.ServiceVersion,
                 debuggerSettings.Environment,
                 debuggerSettings.MaxSerializationTimeInMilliseconds,
                 debuggerSettings.MaximumDepthOfMembersToCopy,
-                debuggerSettings.SnapshotsPath,
+                debuggerSettings.SnapshotUri,
                 debuggerSettings.UploadBatchSize,
                 debuggerSettings.DiagnosticsIntervalSeconds,
                 debuggerSettings.UploadFlushIntervalMilliseconds,
-                debuggerSettings.TransportType,
-                debuggerSettings.AgentUri);
+                debuggerSettings.TransportType);
 
         public static ImmutableDebuggerSettings Create(
             bool enabled,
-            string apiKey,
-            string runtimeId,
-            string serviceVersion,
-            string environment,
+            string? serviceVersion,
+            string? environment,
             int maxSerializationTimeInMilliseconds,
             int maximumDepthOfMembersOfMembersToCopy,
-            string snapshotsPath,
+            Uri? snapshotUri,
             int uploadBatchSize,
             int diagnosticsIntervalSeconds,
             int uploadFlushIntervalMilliseconds,
-            TracesTransportType transportType,
-            Uri agentUri) =>
+            TracesTransportType transportType) =>
             new ImmutableDebuggerSettings(
                 enabled,
-                apiKey,
-                runtimeId,
                 serviceVersion,
                 environment,
                 maxSerializationTimeInMilliseconds,
                 maximumDepthOfMembersOfMembersToCopy,
-                snapshotsPath,
+                snapshotUri,
                 uploadBatchSize,
                 diagnosticsIntervalSeconds,
                 uploadFlushIntervalMilliseconds,
-                transportType,
-                agentUri);
+                transportType);
     }
 }
