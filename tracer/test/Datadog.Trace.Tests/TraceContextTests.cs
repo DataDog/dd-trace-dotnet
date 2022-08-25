@@ -192,8 +192,8 @@ namespace Datadog.Trace.Tests
 
             ArraySegment<Span>? spans = null;
 
-            tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
-                  .Callback<ArraySegment<Span>>(s => spans = s);
+            tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>(), true))
+                  .Callback<ArraySegment<Span>, bool>((s, _) => spans = s);
 
             SetAASContext(inAASContext);
             var traceContext = new TraceContext(tracer.Object);
@@ -277,36 +277,6 @@ namespace Datadog.Trace.Tests
             spans.Value.Should().OnlyContain(s => (int)s.GetMetric(Metrics.SamplingPriority) == SamplingPriorityValues.UserKeep);
 
             CheckAASDecoration(inAASContext, spans);
-        }
-
-        private void CheckAASDecoration(bool inAASContext, ArraySegment<Span>? spans)
-        {
-            if (inAASContext)
-            {
-                // only one span should contain the aas metadata
-                spans.Value.Should().ContainSingle(s => s.GetTag(Tags.AzureAppServicesResourceGroup) != null);
-            }
-            else
-            {
-                spans.Value.Should().OnlyContain(s => s.GetTag(Tags.AzureAppServicesResourceGroup) == null);
-            }
-        }
-
-        private void SetAASContext(bool inAASContext)
-        {
-            var vars = Environment.GetEnvironmentVariables();
-
-            if (!inAASContext)
-            {
-                AzureAppServices.Metadata = new AzureAppServices(vars);
-            }
-            else
-            {
-                vars.Add(AzureAppServices.AzureAppServicesContextKey, "true");
-                vars.Add(AzureAppServices.ResourceGroupKey, "ThisIsAResourceGroup");
-                vars.Add(Datadog.Trace.Configuration.ConfigurationKeys.ApiKey, "xxx");
-                AzureAppServices.Metadata = new AzureAppServices(vars);
-            }
         }
 
         [Theory]
@@ -438,6 +408,36 @@ namespace Datadog.Trace.Tests
             traceContext.CloseSpan(rootSpan);
             var sampled = ((rootSpan.TraceId * KnuthFactor) % TracerConstants.MaxTraceId) <= (analyticsSampleRate * TracerConstants.MaxTraceId);
             tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>(), sampled));
+        }
+
+        private void CheckAASDecoration(bool inAASContext, ArraySegment<Span>? spans)
+        {
+            if (inAASContext)
+            {
+                // only one span should contain the aas metadata
+                spans.Value.Should().ContainSingle(s => s.GetTag(Tags.AzureAppServicesResourceGroup) != null);
+            }
+            else
+            {
+                spans.Value.Should().OnlyContain(s => s.GetTag(Tags.AzureAppServicesResourceGroup) == null);
+            }
+        }
+
+        private void SetAASContext(bool inAASContext)
+        {
+            var vars = Environment.GetEnvironmentVariables();
+
+            if (!inAASContext)
+            {
+                AzureAppServices.Metadata = new AzureAppServices(vars);
+            }
+            else
+            {
+                vars.Add(AzureAppServices.AzureAppServicesContextKey, "true");
+                vars.Add(AzureAppServices.ResourceGroupKey, "ThisIsAResourceGroup");
+                vars.Add(Datadog.Trace.Configuration.ConfigurationKeys.ApiKey, "xxx");
+                AzureAppServices.Metadata = new AzureAppServices(vars);
+            }
         }
     }
 }
