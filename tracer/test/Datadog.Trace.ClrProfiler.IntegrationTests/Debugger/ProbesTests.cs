@@ -50,6 +50,7 @@ public class ProbesTests : TestHelper, IDisposable
     {
         SetServiceVersion("1.0.0");
         _rcmPath = Path.Combine(EnvironmentHelper.GetSampleProjectDirectory(), RemoteConfigurationFileName);
+        SetupRcmConfiguration(_rcmPath);
     }
 
     public static IEnumerable<object[]> ProbeTests()
