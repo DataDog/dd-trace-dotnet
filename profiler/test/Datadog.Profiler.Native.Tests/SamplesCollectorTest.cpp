@@ -68,9 +68,12 @@ public:
 
     Sample CreateSample(std::string_view rid)
     {
+        static std::string ModuleName = "My module";
+        static std::string FunctionName = "My frame";
+
         Sample s{rid};
 
-        s.AddFrame("My module", "My frame");
+        s.AddFrame(ModuleName, FunctionName);
 
         return s;
     }

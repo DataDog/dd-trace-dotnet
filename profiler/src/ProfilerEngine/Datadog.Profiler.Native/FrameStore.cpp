@@ -18,7 +18,7 @@ FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pCon
 {
 }
 
-std::tuple<bool, std::string, std::string> FrameStore::GetFrame(uintptr_t instructionPointer)
+std::tuple<bool, std::string_view, std::string_view> FrameStore::GetFrame(uintptr_t instructionPointer)
 {
     static const std::string NotResolvedModuleName("NotResolvedModule");
     static const std::string NotResolvedFrame("NotResolvedFrame");
@@ -47,7 +47,7 @@ std::tuple<bool, std::string, std::string> FrameStore::GetFrame(uintptr_t instru
 // to get function name + offset
 // see https://docs.microsoft.com/en-us/windows/win32/api/dbghelp/nf-dbghelp-symfromaddr for more details
 // However, today, no symbol resolution is done; only the module implementing the function is provided
-std::pair<std::string, std::string> FrameStore::GetNativeFrame(uintptr_t instructionPointer)
+std::pair<std::string_view, std::string_view> FrameStore::GetNativeFrame(uintptr_t instructionPointer)
 {
     static const std::string UnknownNativeFrame("|lm:Unknown-Native-Module |ns:NativeCode |ct:Unknown-Native-Module |fn:Function");
     static const std::string UnknowNativeModule = "Unknown-Native-Module";
@@ -77,12 +77,12 @@ std::pair<std::string, std::string> FrameStore::GetNativeFrame(uintptr_t instruc
         std::lock_guard<std::mutex> lock(_nativeLock);
         // emplace returns a pair<iterator, bool>. It returns false if the element was already there
         // we use the iterator (first element of the pair) to get a reference to the key and the value
-        auto it = _framePerNativeModule.emplace(std::move(moduleName), builder.str()).first;
+        auto [it, _] = _framePerNativeModule.emplace(std::move(moduleName), builder.str());
         return {it->first, it->second};
     }
 }
 
-std::pair<std::string, std::string> FrameStore::GetManagedFrame(FunctionID functionId)
+std::pair<std::string_view, std::string_view> FrameStore::GetManagedFrame(FunctionID functionId)
 {
     {
         std::lock_guard<std::mutex> lock(_methodsLock);
@@ -134,7 +134,12 @@ std::pair<std::string, std::string> FrameStore::GetManagedFrame(FunctionID funct
         bool isEncoded = true;
         if (!GetTypeDesc(pMetadataImport.Get(), classId, moduleId, mdTokenType, typeDesc, isEncoded))
         {
-            return {UnknownManagedAssembly, UnknownManagedType + " |fn:" + methodName};
+            // This should never happen but in case it happens, we cache the module/frame value.
+            // It's safe to cache, because there is no reason that the next calls to
+            // GetTypeDesc will succeed.
+            auto& value = _methods[functionId];
+            value = {UnknownManagedAssembly, UnknownManagedType + " |fn:" + std::move(methodName)};
+            return value;
         }
 
         if (classId != 0)
@@ -161,16 +166,16 @@ std::pair<std::string, std::string> FrameStore::GetManagedFrame(FunctionID funct
     {
         std::lock_guard<std::mutex> lock(_methodsLock);
 
-        // store it into the function cache
-        _methods[functionId] = {typeDesc.Assembly, managedFrame};
+        // store it into the function cache and return an iterator to the stored elements
+        auto [it, _] = _methods.emplace(functionId, std::make_pair(typeDesc.Assembly, managedFrame));
+        // first is the key, second is the associated value
+        return it->second;
     }
-
-    return {typeDesc.Assembly, managedFrame};
 }
 
 bool FrameStore::GetTypeName(ClassID classId, std::string& name)
 {
-    // no backend encoding --> C# like 
+    // no backend encoding --> C# like
     bool isEncoded = false;
 
     TypeDesc typeDesc;
