@@ -189,35 +189,29 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private static void AddAppsecSpecificInstrumentations(bool enable = true)
+        private static void AddAppsecSpecificInstrumentations()
         {
             try
             {
-                Log.Debug("Sending CallTarget AppSec integration definitions to native library.");
-                var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.AppSec);
+                Log.Debug("Adding CallTarget appsec derived integration definitions to native library.");
+                var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.AppSec);
                 NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-
-                Log.Information<int>("The profiler has been initialized with {count} AppSec definitions.", payload.Definitions.Length);
+                Log.Information($"{payload.Definitions.Length} AppSec derived definitions added to the profiler.");
             }
             catch (Exception ex)
             {
                 Log.Error(ex, ex.Message);
             }
+        }
 
+        private static void RemoveAppsecSpecificInstrumentations()
+        {
             try
             {
-                Log.Debug("Sending CallTarget appsec derived integration definitions to native library.");
+                Log.Debug("Removing CallTarget appsec derived integration definitions from native library.");
                 var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.AppSec);
-                if (enable)
-                {
-                    NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-                }
-                else
-                {
-                    NativeMethods.RemoveCallTargetDefinitions(payload.DefinitionsId, payload.Definitions);
-                }
-
-                Log.Information<int>("The profiler has been initialized with {count} AppSec derived definitions.", payload.Definitions.Length);
+                NativeMethods.RemoveCallTargetDefinitions(payload.DefinitionsId, payload.Definitions);
+                Log.Information($"{payload.Definitions.Length} AppSec derived definitions removed from the profiler.");
             }
             catch (Exception ex)
             {
@@ -298,6 +292,7 @@ namespace Datadog.Trace.AppSec
                 {
                     _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
                 }
+
 #else
                 _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
 #endif
@@ -322,7 +317,8 @@ namespace Datadog.Trace.AppSec
                 _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
                 _instrumentationGateway.EndRequest -= ReportWafInitInfoOnce;
 
-                AddAppsecSpecificInstrumentations(false);
+                RemoveAppsecSpecificInstrumentations();
+
                 _enabled = false;
             }
         }
