@@ -82,11 +82,11 @@ namespace Datadog.Profiler.IntegrationTests.Contention
                             continue;
                         }
 
-                        var lockCount = sample.Value[ContentionCountSlot];
+                        var duration = sample.Value[ContentionDurationSlot];
 
                         var labels = sample.Labels(profile).ToArray();
 
-                        yield return (count, lockCount, sample.StackTrace(profile), profile.TimeNanos);
+                        yield return (count, duration, sample.StackTrace(profile), profile.TimeNanos);
                     }
                 }
             }
@@ -107,7 +107,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             var contentionSamples = ExtractContentionSamples(runner.Environment.PprofDir).ToArray();
             contentionSamples.Should().NotBeEmpty();
 
-            Assert.All(contentionSamples,  s => Assert.True(s.Count > 0));
+            Assert.All(contentionSamples,  s => Assert.True(s.Duration > 0));
         }
     }
 }
