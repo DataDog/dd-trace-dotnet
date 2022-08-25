@@ -155,14 +155,21 @@ namespace Datadog.Trace.IntegrationTests
             }
 
             // Assert header values
-            var headersAlwaysZeroes = !expectStats || expectAllTraces;
             if (!finishSpansOnClose)
             {
+                // If we never finish the spans, there will be no requests to the trace agent
                 droppedP0TracesHeaderValues.Should().BeEquivalentTo(new string[] { });
                 droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { });
             }
-            else if (headersAlwaysZeroes)
+            else if (!expectStats)
             {
+                // If we don't send stats, then we won't add the headers
+                droppedP0TracesHeaderValues.Should().BeEquivalentTo(new string[] { null, null, null });
+                droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { null, null, null });
+            }
+            else if (expectAllTraces)
+            {
+                // If we still expect all the traces to come in, each request will have 0 dropped traces/spans
                 droppedP0TracesHeaderValues.Should().BeEquivalentTo(new string[] { "0", "0", "0" });
                 droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { "0", "0", "0" });
             }
