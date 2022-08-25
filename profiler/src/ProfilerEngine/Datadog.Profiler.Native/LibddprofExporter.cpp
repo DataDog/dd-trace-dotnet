@@ -67,9 +67,20 @@ LibddprofExporter::LibddprofExporter(
 
 LibddprofExporter::~LibddprofExporter()
 {
-    for (auto [runtimeId, appInfo] : _perAppInfo)
+    std::lock_guard lock(_perAppInfoLock);
+
+    for (auto& [runtimeId, appInfo] : _perAppInfo)
     {
-        ddprof_ffi_Profile_free(appInfo.profile);
+        {
+            std::lock_guard lockProfile(appInfo.lock);
+
+            if (appInfo.profile != nullptr)
+            {
+                ddprof_ffi_Profile_free(appInfo.profile);
+            }
+
+            appInfo.profile = nullptr;
+        }
     }
     _perAppInfo.clear();
 }
@@ -83,7 +94,7 @@ ddprof_ffi_ProfileExporterV3* LibddprofExporter::CreateExporter(const ddprof_ffi
     }
     else
     {
-        Log::Error("libddprof failed to create the exporter: ", result.err.ptr);
+        Log::Error("Failed to create the exporter: ", result.err.ptr);
         return nullptr;
     }
 }
@@ -243,24 +254,25 @@ ddprof_ffi_EndpointV3 LibddprofExporter::CreateEndpoint(IConfiguration* configur
     return ddprof_ffi_EndpointV3_agent(FfiHelper::StringToCharSlice(_agentUrl));
 }
 
-LibddprofExporter::ProfileInfo& LibddprofExporter::GetInfo(std::string_view runtimeId)
+LibddprofExporter::ProfileInfoScope LibddprofExporter::GetInfo(std::string_view runtimeId)
 {
-    auto& profileInfo = _perAppInfo[runtimeId];
-    if (profileInfo.profile != nullptr)
-    {
-        return profileInfo;
-    }
+    std::lock_guard lock(_perAppInfoLock);
 
-    profileInfo.profile = CreateProfile();
+    auto& profileInfo = _perAppInfo[runtimeId];
 
     return profileInfo;
 }
 
 void LibddprofExporter::Add(Sample const& sample)
 {
-    auto& profileInfo = GetInfo(sample.GetRuntimeId());
+    auto profileInfoScope = GetInfo(sample.GetRuntimeId());
 
-    auto* profile = profileInfo.profile;
+    if (profileInfoScope.profileInfo.profile == nullptr)
+    {
+        profileInfoScope.profileInfo.profile = CreateProfile();
+    }
+
+    auto* profile = profileInfoScope.profileInfo.profile;
 
     auto const& callstack = sample.GetCallstack();
     auto nbFrames = callstack.size();
@@ -312,7 +324,7 @@ void LibddprofExporter::Add(Sample const& sample)
     ffiSample.values = {values.data(), values.size()};
 
     ddprof_ffi_Profile_add(profile, ffiSample);
-    profileInfo.samplesCount++;
+    profileInfoScope.profileInfo.samplesCount++;
 }
 
 bool LibddprofExporter::Export()
@@ -320,26 +332,58 @@ bool LibddprofExporter::Export()
     bool exported = false;
 
     int32_t idx = 0;
-    for (auto& [runtimeId, profileInfo] : _perAppInfo)
+
+    std::vector<std::string_view> keys;
+
     {
-        auto samplesCount = profileInfo.samplesCount;
+        std::lock_guard lock(_perAppInfoLock);
+        for (const auto& [key, _] : _perAppInfo)
+        {
+            keys.push_back(key);
+        }
+    }
+
+    for (auto& runtimeId : keys)
+    {
+        ddprof_ffi_Profile* profile;
+        int32_t samplesCount;
+        int32_t exportsCount;
+
+        // The goal here is to minimize the amount of time we hold the profileInfo lock.
+        // The lock in ProfileInfoScope guarantees that nobody else is currently holding a reference to the profileInfo.
+        // While inside the lock owned by the profileinfo scope, its profile is moved to the profile local variable
+        // (i.e. the profileinfo will then contains a null profile field when the next sample will be added)
+        // This way, we know that nobody else will ever use that profile again, and we can take our time to manipulate it
+        // outside of the lock.
+        {            
+            const auto scope = GetInfo(runtimeId);
+
+            // Get everything we need then release the lock
+            profile = scope.profileInfo.profile;
+            samplesCount = scope.profileInfo.samplesCount;
+
+            // Count is incremented BEFORE creating and sending the .pprof
+            // so that it will be possible to detect "missing" profiles
+            // in the back end
+            exportsCount = ++scope.profileInfo.exportsCount;
+
+            scope.profileInfo.profile = nullptr;
+            scope.profileInfo.samplesCount = 0;
+        }
+
         const auto& applicationInfo = _applicationStore->GetApplicationInfo(std::string(runtimeId));
 
-        if (samplesCount <= 0)
+        if (profile == nullptr || samplesCount == 0)
         {
-            Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be send.");
+            Log::Debug("The profiler for application ", applicationInfo.ServiceName, " (runtime id:", runtimeId, ") have empty profile. Nothing will be sent.");
             continue;
         }
 
-        // reset the samples count
-        profileInfo.samplesCount = 0;
-        auto* profile = profileInfo.profile;
-        on_leave { ddprof_ffi_Profile_reset(profile, nullptr); };
-
+        auto profileAutoDelete = ProfileAutoDelete{profile};
         auto serializedProfile = SerializedProfile{profile};
         if (!serializedProfile.IsValid())
         {
-            Log::Error("Unable to serialize the libddprof profile. No profile will be sent.");
+            Log::Error("Unable to serialize the profile. No profile will be sent.");
             return false;
         }
 
@@ -361,12 +405,8 @@ bool LibddprofExporter::Export()
         additionalTags.Add("version", applicationInfo.Version);
         additionalTags.Add("service", applicationInfo.ServiceName);
         additionalTags.Add("runtime-id", std::string(runtimeId));
-        additionalTags.Add("profile_seq", std::to_string(profileInfo.exportsCount));
+        additionalTags.Add("profile_seq", std::to_string(exportsCount - 1));
 
-        // Count is incremented BEFORE creating and sending the .pprof
-        // so that it will be possible to detect "missing" profiles
-        // in the back end
-        profileInfo.exportsCount++;
         auto* request = CreateRequest(serializedProfile, exporter, additionalTags);
         if (request != nullptr)
         {
@@ -457,7 +497,7 @@ bool LibddprofExporter::Send(ddprof_ffi_Request* request, ddprof_ffi_ProfileExpo
 
     if (result.tag == DDPROF_FFI_SEND_RESULT_ERR)
     {
-        Log::Error("libddprof error: Failed to send profile (", std::string(reinterpret_cast<const char*>(result.err.ptr), result.err.len), ")"); // NOLINT
+        Log::Error("Failed to send profile (", std::string(reinterpret_cast<const char*>(result.err.ptr), result.err.len), ")"); // NOLINT
         return false;
     }
 
@@ -575,6 +615,20 @@ const ddprof_ffi_Vec_tag* LibddprofExporter::Tags::GetFfiTags() const
 }
 
 //
+// LibddprofExporter::ProfileAutoDelete class
+//
+
+LibddprofExporter::ProfileAutoDelete::ProfileAutoDelete(struct ddprof_ffi_Profile* profile) :
+    _profile{profile}
+{
+}
+
+LibddprofExporter::ProfileAutoDelete::~ProfileAutoDelete()
+{
+    ddprof_ffi_Profile_free(_profile);
+}
+
+//
 // LibddprofExporter::ProfileInfo class
 //
 
@@ -583,4 +637,10 @@ LibddprofExporter::ProfileInfo::ProfileInfo()
     profile = nullptr;
     samplesCount = 0;
     exportsCount = 0;
+}
+
+LibddprofExporter::ProfileInfoScope::ProfileInfoScope(LibddprofExporter::ProfileInfo& profileInfo) :
+    profileInfo(profileInfo),
+    _lockGuard(profileInfo.lock)
+{
 }
