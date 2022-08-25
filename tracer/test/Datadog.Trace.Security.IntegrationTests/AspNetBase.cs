@@ -79,7 +79,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             return Task.FromResult(_agent);
         }
 
-        public void Dispose()
+        public virtual void Dispose()
         {
             var request = WebRequest.CreateHttp($"http://localhost:{_httpPort}{_shutdownPath}");
             request.GetResponse().Close();
