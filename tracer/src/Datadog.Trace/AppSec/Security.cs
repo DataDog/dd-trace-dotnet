@@ -271,6 +271,7 @@ namespace Datadog.Trace.AppSec
         {
             if (!_enabled)
             {
+                Log.Information("AppSec Enabled");
                 _instrumentationGateway.EndRequest += RunWaf;
                 _instrumentationGateway.PathParamsAvailable += AggregateAddressesInContext;
                 _instrumentationGateway.BodyAvailable += AggregateAddressesInContext;
@@ -309,7 +310,9 @@ namespace Datadog.Trace.AppSec
         {
             if (_enabled)
             {
-                _instrumentationGateway.StartRequest += RunWafAndReact;
+                Log.Information("AppSec Disabled");
+
+                _instrumentationGateway.StartRequest -= RunWafAndReact;
                 _instrumentationGateway.EndRequest -= RunWafAndReactAndCleanup;
                 _instrumentationGateway.PathParamsAvailable -= RunWafAndReact;
                 _instrumentationGateway.BodyAvailable -= RunWafAndReact;

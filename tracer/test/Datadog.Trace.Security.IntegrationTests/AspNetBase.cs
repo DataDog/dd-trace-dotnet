@@ -79,9 +79,9 @@ namespace Datadog.Trace.Security.IntegrationTests
             return Task.FromResult(_agent);
         }
 
-        public virtual void Dispose()
+        public override void Dispose()
         {
-            CleanupRcmConfiguration();
+            base.Dispose();
 
             var request = WebRequest.CreateHttp($"http://localhost:{_httpPort}{_shutdownPath}");
             request.GetResponse().Close();
