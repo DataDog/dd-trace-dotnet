@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(ref string filename, ref string commandParams)
         {
-            return new CallTargetState(scope: ProcessStartCommon.CreateScope(Tracer.Instance, filename, commandParams));
+            return new CallTargetState(scope: ProcessStartCommon.CreateScope(filename, commandParams));
         }
 
         /// <summary>

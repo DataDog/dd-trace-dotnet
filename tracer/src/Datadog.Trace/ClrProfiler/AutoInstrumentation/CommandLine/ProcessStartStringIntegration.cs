@@ -1,11 +1,13 @@
-// <copyright file="ProcessStartIntegration.cs" company="Datadog">
+// <copyright file="ProcessStartStringIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
-using System.Diagnostics;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 {
@@ -17,26 +19,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
    TypeName = "System.Diagnostics.Process",
    MethodName = "Start",
    ReturnTypeName = ClrNames.Process,
+   ParameterTypeNames = new[] { ClrNames.String },
    MinimumVersion = "1.0.0",
    MaximumVersion = "7.*.*",
    IntegrationName = nameof(Configuration.IntegrationId.CommandExecution))]
-    public class ProcessStartIntegration
+    public class ProcessStartStringIntegration
     {
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="filename">file name</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
+        internal static CallTargetState OnMethodBegin<TTarget>(ref string filename)
         {
-            var process = instance as System.Diagnostics.Process;
-            if (process != null)
-            {
-                return new CallTargetState(scope: ProcessStartCommon.CreateScope(process.StartInfo));
-            }
-
-            return CallTargetState.GetDefault();
+            return new CallTargetState(scope: ProcessStartCommon.CreateScope(filename));
         }
 
         /// <summary>

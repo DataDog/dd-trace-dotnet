@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Diagnostics;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -13,12 +15,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
     internal static class ProcessStartCommon
     {
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.CommandExecution;
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessStartIntegration));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessStartStringIntegration));
         internal const string OperationName = "command_execution";
         internal const string ServiceName = "command";
 
-        internal static Scope CreateScope(Tracer tracer, string filename, string arguments = null, string domain = null, string userName = null)
+        internal static Scope CreateScope(ProcessStartInfo info)
         {
+            if (info != null)
+            {
+                return CreateScope(info.FileName, info.Arguments, info.UserName);
+            }
+
+            return null;
+        }
+
+        internal static Scope CreateScope(string filename, string arguments = null, string userName = null, string domain = null)
+        {
+            var tracer = Tracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !tracer.Settings.IsIntegrationEnabled(IntegrationId.AdoNet))
             {
                 // integration disabled, don't create a scope, skip this span
@@ -42,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 
                 var tags = new ProcessCommandStartTags
                 {
-                    CommandLine = filename + (arguments != null ? " " + arguments : string.Empty),
+                    CommandLine = (filename ?? string.Empty) + (arguments != null ? " " + arguments : string.Empty),
                     Domain = domain,
                     UserName = userName
                 };
