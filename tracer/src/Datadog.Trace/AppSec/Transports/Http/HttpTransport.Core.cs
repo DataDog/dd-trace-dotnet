@@ -35,6 +35,8 @@ namespace Datadog.Trace.AppSec.Transports.Http
             return _context.Features.Get<IContext>();
         }
 
+        public void DisposeAdditiveContext() => GetAdditiveContext()?.Dispose();
+
         public void SetAdditiveContext(IContext additive_context)
         {
             _context.Features.Set(additive_context);
@@ -78,7 +80,6 @@ namespace Datadog.Trace.AppSec.Transports.Http
             var resp = Encoding.ASCII.GetBytes(template);
             httpResponse.ContentLength = resp.Length;
             httpResponse.Body.Write(resp, 0, resp.Length);
-            httpResponse.Body.Dispose();
             _completeAsync ??= httpResponse.GetType().GetMethod("CompleteAsync");
             if (_completeAsync != null)
             {
@@ -86,12 +87,11 @@ namespace Datadog.Trace.AppSec.Transports.Http
                 t.ConfigureAwait(false);
                 t.Wait();
             }
-        }
-
-        public void DisposeContextInTheEnd()
-        {
-            var context = GetAdditiveContext();
-            _context.Response.RegisterForDispose(context);
+            else
+            {
+                // note that Body.FlushAsync doesnt do anything once some headers have been set so no point
+                httpResponse.Body.Dispose();
+            }
         }
     }
 }

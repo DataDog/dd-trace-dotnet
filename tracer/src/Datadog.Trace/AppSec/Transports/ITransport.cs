@@ -20,6 +20,8 @@ namespace Datadog.Trace.AppSec.Transports
 
         IContext GetAdditiveContext();
 
+        void DisposeAdditiveContext();
+
         void SetAdditiveContext(IContext additiveContext);
 
         IHeadersCollection GetRequestHeaders();
@@ -27,7 +29,5 @@ namespace Datadog.Trace.AppSec.Transports
         IHeadersCollection GetResponseHeaders();
 
         void WriteBlockedResponse(string templateJson, string templateHtml);
-
-        void DisposeContextInTheEnd();
     }
 }

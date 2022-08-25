@@ -70,13 +70,12 @@ namespace Datadog.Trace.AppSec.Transports.Http
             // todo
         }
 
-        public void DisposeContextInTheEnd()
+        public void StopRequestMovingFurther()
         {
-            // todo to check
-            _context.DisposeOnPipelineCompleted(GetAdditiveContext());
+            // todo
         }
 
-        public void StopRequestMovingFurther()
+        public void DisposeAdditiveContext()
         {
             // todo
         }

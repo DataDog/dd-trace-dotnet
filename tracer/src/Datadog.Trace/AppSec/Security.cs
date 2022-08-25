@@ -97,8 +97,7 @@ namespace Datadog.Trace.AppSec
                     if (_waf?.InitializedSuccessfully ?? false)
                     {
                         _instrumentationGateway.StartRequest += RunWafAndReact;
-                        _instrumentationGateway.EndRequest += RunWafAndReact;
-                        _instrumentationGateway.StartRequest += RegisterForDispose;
+                        _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
                         _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
                         _instrumentationGateway.BodyAvailable += RunWafAndReact;
                         _instrumentationGateway.BlockingOpportunity += MightStopRequest;
@@ -261,11 +260,6 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private static void RegisterForDispose(object sender, InstrumentationGatewaySecurityEventArgs e)
-        {
-            e.Transport.DisposeContextInTheEnd();
-        }
-
         /// <summary>
         /// Frees resources
         /// </summary>
@@ -357,6 +351,12 @@ namespace Datadog.Trace.AppSec
             }
         }
 
+        private void RunWafAndReactAndCleanup(object sender, InstrumentationGatewaySecurityEventArgs e)
+        {
+            RunWafAndReact(sender, e);
+            e.Transport.DisposeAdditiveContext();
+        }
+
         private void RunWafAndReact(object sender, InstrumentationGatewaySecurityEventArgs e)
         {
             try
@@ -412,8 +412,7 @@ namespace Datadog.Trace.AppSec
                 _instrumentationGateway.PathParamsAvailable -= RunWafAndReact;
                 _instrumentationGateway.BodyAvailable -= RunWafAndReact;
                 _instrumentationGateway.StartRequest -= RunWafAndReact;
-                _instrumentationGateway.StartRequest -= RegisterForDispose;
-                _instrumentationGateway.EndRequest -= RunWafAndReact;
+                _instrumentationGateway.EndRequest -= RunWafAndReactAndCleanup;
                 _instrumentationGateway.BlockingOpportunity -= MightStopRequest;
 
 #if NETFRAMEWORK
