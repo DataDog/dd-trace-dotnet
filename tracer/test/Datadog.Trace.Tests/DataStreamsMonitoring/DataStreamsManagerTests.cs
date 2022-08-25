@@ -6,6 +6,7 @@
 using System.Threading.Tasks;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.TestHelpers.TransportHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -16,7 +17,7 @@ public class DataStreamsManagerTests
     [Fact]
     public void WhenDisabled_DoesNotInjectContext()
     {
-        var dsm = new DataStreamsManager(enabled: false, "foo", "bar");
+        var dsm = GetDataStreamManager(false);
         var headers = new TestHeadersCollection();
         var context = new PathwayContext(new PathwayHash(123), 1234, 5678);
 
@@ -28,7 +29,7 @@ public class DataStreamsManagerTests
     [Fact]
     public void WhenEnabled_InjectsContext()
     {
-        var dsm = new DataStreamsManager(enabled: true, "foo", "bar");
+        var dsm = GetDataStreamManager(true);
         var headers = new TestHeadersCollection();
         var context = new PathwayContext(new PathwayHash(123), 1234, 5678);
 
@@ -40,8 +41,8 @@ public class DataStreamsManagerTests
     [Fact]
     public void WhenDisabled_DoesNotExtractContext()
     {
-        var enabledDsm = new DataStreamsManager(enabled: true, "foo", "bar");
-        var disabledDsm = new DataStreamsManager(enabled: false, "foo", "bar");
+        var enabledDsm = GetDataStreamManager(true);
+        var disabledDsm = GetDataStreamManager(false);
         var headers = new TestHeadersCollection();
         var context = new PathwayContext(new PathwayHash(123), 1234, 5678);
 
@@ -54,7 +55,7 @@ public class DataStreamsManagerTests
     [Fact]
     public void WhenEnabled_ExtractsContext()
     {
-        var dsm = new DataStreamsManager(enabled: true, "foo", "bar");
+        var dsm = GetDataStreamManager(true);
         var headers = new TestHeadersCollection();
         var context = new PathwayContext(new PathwayHash(123), 12340000, 56780000);
 
@@ -71,7 +72,7 @@ public class DataStreamsManagerTests
     [Fact]
     public void WhenEnabled_AndNoContext_ReturnsNewContext()
     {
-        var dsm = new DataStreamsManager(enabled: true, "foo", "bar");
+        var dsm = GetDataStreamManager(true);
 
         var context = dsm.SetCheckpoint(parentPathway: null, new[] { "some-tags" });
         context.Should().NotBeNull();
@@ -83,7 +84,7 @@ public class DataStreamsManagerTests
         var env = "foo";
         var service = "bar";
         var edgeTags = new[] { "some-tags" };
-        var dsm = new DataStreamsManager(enabled: true, env, service);
+        var dsm = GetDataStreamManager(true);
 
         var context = dsm.SetCheckpoint(parentPathway: null, edgeTags);
         context.Should().NotBeNull();
@@ -101,7 +102,7 @@ public class DataStreamsManagerTests
         var env = "foo";
         var service = "bar";
         var edgeTags = new[] { "some-tags" };
-        var dsm = new DataStreamsManager(enabled: true, env, service);
+        var dsm = GetDataStreamManager(true);
         var parent = new PathwayContext(new PathwayHash(123), 12340000, 56780000);
 
         var context = dsm.SetCheckpoint(parent, edgeTags);
@@ -117,7 +118,7 @@ public class DataStreamsManagerTests
     [Fact]
     public void WhenDisabled_SetCheckpoint_ReturnsNull()
     {
-        var dsm = new DataStreamsManager(enabled: false, "foo", "bar");
+        var dsm = GetDataStreamManager(false);
         var parent = new PathwayContext(new PathwayHash(123), 12340000, 56780000);
 
         var context = dsm.SetCheckpoint(parent, new[] { "some-tags" });
@@ -127,7 +128,7 @@ public class DataStreamsManagerTests
     [Fact]
     public async Task DisposeAsync_DisablesDsm()
     {
-        var dsm = new DataStreamsManager(enabled: true, "foo", "bar");
+        var dsm = GetDataStreamManager(true);
         var parent = new PathwayContext(new PathwayHash(123), 12340000, 56780000);
 
         dsm.IsEnabled.Should().BeTrue();
@@ -138,4 +139,11 @@ public class DataStreamsManagerTests
         var context = dsm.SetCheckpoint(parent, new[] { "some-tags" });
         context.Should().BeNull();
     }
+
+    private static DataStreamsManager GetDataStreamManager(bool enabled)
+        => new DataStreamsManager(
+            enabled,
+            env: "foo",
+            defaultServiceName: "bar",
+            new TestRequestFactory());
 }

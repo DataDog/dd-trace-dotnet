@@ -5,6 +5,7 @@
 
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.TestHelpers.TransportHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -15,7 +16,7 @@ public class SpanContextDataStreamsManagerTests
     [Fact]
     public void SetCheckpoint_SetsTheSpanPathwayContext()
     {
-        var dsm = new DataStreamsManager(enabled: true, "env", "service");
+        var dsm = new DataStreamsManager(enabled: true, "env", "service", new TestRequestFactory());
         var spanContext = new SpanContext(traceId: 123, spanId: 1234);
         spanContext.PathwayContext.Should().BeNull();
 
@@ -39,7 +40,7 @@ public class SpanContextDataStreamsManagerTests
     [Fact]
     public void MergePathwayContext_WhenOtherContextIsNull_KeepsContext()
     {
-        var dsm = new DataStreamsManager(enabled: true, "env", "service");
+        var dsm = new DataStreamsManager(enabled: true, "env", "service", new TestRequestFactory());
         var spanContext = new SpanContext(traceId: 123, spanId: 1234);
         spanContext.SetCheckpoint(dsm, new[] { "some-edge" });
         spanContext.PathwayContext.Should().NotBeNull();
@@ -54,7 +55,7 @@ public class SpanContextDataStreamsManagerTests
     {
         int iterations = 1000_000;
         // When we have a context and there's a new context we pick one randomly
-        var dsm = new DataStreamsManager(enabled: true, "env", "service");
+        var dsm = new DataStreamsManager(enabled: true, "env", "service", new TestRequestFactory());
         var spanContext = new SpanContext(traceId: 123, spanId: 1234);
         spanContext.SetCheckpoint(dsm, new[] { "some-edge" });
 
