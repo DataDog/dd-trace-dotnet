@@ -129,7 +129,7 @@ std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter();
 std::tuple<std::unique_ptr<ISamplesCollector>, MockSamplesCollector&> CreateSamplesCollector();
 
 template <typename T>
-Sample CreateSample(std::string_view runtimeId, const T& callstack, std::initializer_list<std::pair<std::string, std::string>> labels, std::int64_t value)
+Sample CreateSample(std::string_view runtimeId, const T& callstack, const std::initializer_list<Label>& labels, std::int64_t value)
 {
     Sample sample{runtimeId};
 

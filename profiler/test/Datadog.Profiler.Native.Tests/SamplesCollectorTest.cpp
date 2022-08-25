@@ -215,7 +215,7 @@ TEST(SamplesCollectorTest, MustNotFailWhenSendingProfileThrows)
     collector.Register(&samplesProvider);
 
     collector.Start();
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(70ms);
     collector.Export();
     collector.Stop();
 
