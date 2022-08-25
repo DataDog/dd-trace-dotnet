@@ -308,7 +308,6 @@ public class ProbesTests : TestHelper, IDisposable
 
         settings.ScrubEmptyLines();
         settings.AddScrubber(ScrubSnapshotJson);
-        settings.AutoVerify();
 
         VerifierSettings.DerivePathInfo(
             (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", path)));
