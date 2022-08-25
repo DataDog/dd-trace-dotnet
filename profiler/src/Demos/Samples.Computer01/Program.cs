@@ -22,7 +22,8 @@ namespace Samples.Computer01
         Sleep,
         Async,
         Iterator,
-        GenericsAllocation
+        GenericsAllocation,
+        ContentionGenerator
     }
 
     public class Program
@@ -44,7 +45,7 @@ namespace Samples.Computer01
             // 9: start n threads allocating array of Generic<int> in LOH
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} " +
             $"[--service] [--iterations <number of iterations to execute>] " +
-            $"[--scenario <0=all 1=computer 2=generics 3=wall time 4=pi computation 5=compute fibonacci 6=n sleeping threads 7=async calls 8=iterator calls 9=allocate array of Generic<int>>] " +
+            $"[--scenario <0=all 1=computer 2=generics 3=wall time 4=pi computation 5=compute fibonacci 6=n sleeping threads 7=async calls 8=iterator calls 9=allocate array of Generic<int>> 10=n of threads competing for a lock] " +
             $"[--timeout <duration in seconds> | --run-infinitely]");
             Console.WriteLine();
 

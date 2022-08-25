@@ -237,6 +237,7 @@
     <ClInclude Include="EnabledProfilers.h" />
     <ClInclude Include="EnumHelpers.h" />
     <ClInclude Include="COMHelpers.h" />
+    <ClInclude Include="ContentionProvider.h" />
     <ClInclude Include="IAllocationsListener.h" />
     <ClInclude Include="AllocationsProvider.h" />
     <ClInclude Include="AppDomainStore.h" />
@@ -261,6 +262,7 @@
     <ClInclude Include="IApplicationStore.h" />
     <ClInclude Include="ICollector.h" />
     <ClInclude Include="IEnabledProfilers.h" />
+    <ClInclude Include="IContentionListener.h" />
     <ClInclude Include="IFrameStore.h" />
     <ClInclude Include="HResultConverter.h" />
     <ClInclude Include="IClrLifetime.h" />
@@ -284,6 +286,7 @@
     <ClInclude Include="LibddprofExporter.h" />
     <ClInclude Include="ProfilerEngineStatus.h" />
     <ClInclude Include="RawAllocationSample.h" />
+    <ClInclude Include="RawContentionSample.h" />
     <ClInclude Include="RawCpuSample.h" />
     <ClInclude Include="RawExceptionSample.h" />
     <ClInclude Include="RawSample.h" />
@@ -318,6 +321,7 @@
     <ClCompile Include="cgroup.cpp" />
     <ClCompile Include="ClrLifetime.cpp" />
     <ClCompile Include="Configuration.cpp" />
+    <ClCompile Include="ContentionProvider.cpp" />
     <ClCompile Include="CorProfilerCallback.cpp" />
     <ClCompile Include="CorProfilerCallbackFactory.cpp" />
     <ClCompile Include="CpuTimeProvider.cpp" />

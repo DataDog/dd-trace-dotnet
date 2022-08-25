@@ -29,6 +29,7 @@
 #include <memory>
 #include <vector>
 
+class ContentionProvider;
 class IService;
 class IThreadsCpuManager;
 class IManagedThreadList;
@@ -204,6 +205,7 @@ private :
     WallTimeProvider* _pWallTimeProvider = nullptr;
     CpuTimeProvider* _pCpuTimeProvider = nullptr;
     AllocationsProvider* _pAllocationsProvider = nullptr;
+    ContentionProvider* _pContentionProvider = nullptr;
     SamplesCollector* _pSamplesCollector = nullptr;
 
     std::vector<std::unique_ptr<IService>> _services;

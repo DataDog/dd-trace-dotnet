@@ -28,16 +28,9 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             _output = output;
         }
 
-        [TestAppFact("Samples.Computer01")]
+        [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
         public void ShouldGetAllocationSamples(string appName, string framework, string appAssembly)
         {
-            // only valid with .NET 5+
-            if (framework != "net6.0")
-            {
-                // TODO: find a way to skip the test based on the framework (here .NET 5+ only)
-                return;
-            }
-
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
             runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
@@ -45,15 +38,9 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             CheckExceptionProfiles(runner);
         }
 
-        [TestAppFact("Samples.Computer01")]
+        [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
         public void ShouldAllocationProfilerBeDisabledByDefault(string appName, string framework, string appAssembly)
         {
-            // only valid with .NET 5+
-            if (framework != "net6.0")
-            {
-                return;
-            }
-
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
 
@@ -71,15 +58,9 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             ExtractAllocationSamples(runner.Environment.PprofDir).Should().BeEmpty();
         }
 
-        [TestAppFact("Samples.Computer01")]
+        [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
         public void ExplicitlyDisableExceptionProfiler(string appName, string framework, string appAssembly)
         {
-            // only valid with .NET 5+
-            if (framework != "net6.0")
-            {
-                return;
-            }
-
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
 
             runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "0");

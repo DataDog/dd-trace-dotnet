@@ -27,6 +27,7 @@ namespace Samples.Computer01
         private AsyncComputation _asyncComputation;
         private IteratorComputation _iteratorComputation;
         private GenericsAllocation _genericsAllocation;
+        private ContentionGenerator _contentionGenerator;
 
         public void StartService(Scenario scenario, int nbThreads)
         {
@@ -82,6 +83,10 @@ namespace Samples.Computer01
                     StartGenericsAllocation(nbThreads);
                     break;
 
+                case Scenario.ContentionGenerator:
+                    StartContentionGenerator(nbThreads);
+                    break;
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
             }
@@ -134,6 +139,10 @@ namespace Samples.Computer01
 
                 case Scenario.GenericsAllocation:
                     StopGenericsAllocation();
+                    break;
+
+                case Scenario.ContentionGenerator:
+                    StopContentionGenerator();
                     break;
             }
         }
@@ -190,6 +199,10 @@ namespace Samples.Computer01
 
                     case Scenario.GenericsAllocation:
                         RunGenericsAllocation(nbThreads);
+                        break;
+
+                    case Scenario.ContentionGenerator:
+                        RunContentionGenerator(nbThreads);
                         break;
 
                     default:
@@ -262,6 +275,12 @@ namespace Samples.Computer01
             _genericsAllocation.Start();
         }
 
+        private void StartContentionGenerator(int nbThreads)
+        {
+            _contentionGenerator = new ContentionGenerator(nbThreads);
+            _contentionGenerator.Start();
+        }
+
         private void StopComputer()
         {
             using (_computer)
@@ -321,6 +340,11 @@ namespace Samples.Computer01
             _genericsAllocation.Stop();
         }
 
+        private void StopContentionGenerator()
+        {
+            _contentionGenerator.Stop();
+        }
+
         private void RunComputer()
         {
             using (var computer = new Computer<byte, KeyValuePair<char, KeyValuePair<int, KeyValuePair<float, object>>>>())
@@ -375,6 +399,12 @@ namespace Samples.Computer01
         {
             var allocations = new GenericsAllocation(nbThreads);
             allocations.Run();
+        }
+
+        private void RunContentionGenerator(int nbThreads)
+        {
+            var contentionGenerator = new ContentionGenerator(nbThreads);
+            contentionGenerator.Run();
         }
 
         public class MySpecialClassA
