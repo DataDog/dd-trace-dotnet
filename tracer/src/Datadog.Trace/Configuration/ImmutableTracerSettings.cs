@@ -203,11 +203,6 @@ namespace Datadog.Trace.Configuration
         public bool StatsComputationEnabled { get; }
 
         /// <summary>
-        /// Gets a value indicating the time interval (in seconds) for sending stats
-        /// </summary>
-        public int StatsComputationInterval { get; }
-
-        /// <summary>
         /// Gets a value indicating whether a span context should be created on exiting a successful Kafka
         /// Consumer.Consume() call, and closed on entering Consumer.Consume().
         /// </summary>
@@ -224,6 +219,11 @@ namespace Datadog.Trace.Configuration
         /// are enabled and sent to DogStatsd.
         /// </summary>
         internal bool RuntimeMetricsEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating the time interval (in seconds) for sending stats
+        /// </summary>
+        internal int StatsComputationInterval { get; }
 
         /// <summary>
         /// Gets the comma separated list of url patterns to skip tracing.
