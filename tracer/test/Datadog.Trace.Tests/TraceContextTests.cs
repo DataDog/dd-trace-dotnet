@@ -425,7 +425,7 @@ namespace Datadog.Trace.Tests
 
         private void SetAASContext(bool inAASContext)
         {
-            var vars = Environment.GetEnvironmentVariables();
+            Dictionary<string, string> vars = new();
 
             if (!inAASContext)
             {
