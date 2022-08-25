@@ -83,7 +83,7 @@ namespace Datadog.Trace.AppSec
         {
         }
 
-        private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IWaf waf = null, IDogStatsd statsd = null)
+        private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IWaf waf = null)
         {
             try
             {
@@ -143,10 +143,7 @@ namespace Datadog.Trace.AppSec
         /// </summary>
         public static Security Instance
         {
-            get
-            {
-                return LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock);
-            }
+            get => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock);
 
             set
             {

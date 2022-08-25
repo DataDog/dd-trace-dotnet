@@ -12,6 +12,7 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -56,10 +57,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             // adding these header so we can later assert it was collect properly
             _httpClient.DefaultRequestHeaders.Add("X-FORWARDED", "86.242.244.246");
             _httpClient.DefaultRequestHeaders.Add("user-agent", "Mistake Not...");
-            _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings
-            {
-                ContractResolver = new OrderedContractResolver()
-            };
+            _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_WAF_TIMEOUT", 10_000_000.ToString());
         }
 
@@ -184,30 +182,35 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var allSpansReceived = WaitForSpans(agent, iterations * totalRequests * spansPerRequest, "Overall wait", testStart, url);
 
-            var groupedSpans = allSpansReceived.GroupBy(s =>
-            {
-                var time = new DateTimeOffset((s.Start / TimeConstants.NanoSecondsPerTick) + TimeConstants.UnixEpochInTicks, TimeSpan.Zero);
-                return time.Second;
-            });
+            var groupedSpans = allSpansReceived.GroupBy(
+                s =>
+                {
+                    var time = new DateTimeOffset((s.Start / TimeConstants.NanoSecondsPerTick) + TimeConstants.UnixEpochInTicks, TimeSpan.Zero);
+                    return time.Second;
+                });
 
-            var spansWithUserKeep = allSpansReceived.Where(s =>
-            {
-                s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
-                s.Metrics.TryGetValue("_sampling_priority_v1", out var samplingPriority);
-                return ((enableSecurity && appsecevent == "true") || !enableSecurity) && samplingPriority == 2.0;
-            });
+            var spansWithUserKeep = allSpansReceived.Where(
+                s =>
+                {
+                    s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
+                    s.Metrics.TryGetValue("_sampling_priority_v1", out var samplingPriority);
+                    return ((enableSecurity && appsecevent == "true") || !enableSecurity) && samplingPriority == 2.0;
+                });
 
-            var spansWithoutUserKeep = allSpansReceived.Where(s =>
-            {
-                s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
-                return ((enableSecurity && appsecevent == "true") || !enableSecurity) && (!s.Metrics.ContainsKey("_sampling_priority_v1") || s.Metrics["_sampling_priority_v1"] != 2.0);
-            });
+            var spansWithoutUserKeep = allSpansReceived.Where(
+                s =>
+                {
+                    s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
+                    return ((enableSecurity && appsecevent == "true") || !enableSecurity) && (!s.Metrics.ContainsKey("_sampling_priority_v1") || s.Metrics["_sampling_priority_v1"] != 2.0);
+                });
             var itemsCount = allSpansReceived.Count();
-            var appsecItemsCount = allSpansReceived.Where(s =>
-            {
-                s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
-                return appsecevent == "true";
-            }).Count();
+            var appsecItemsCount = allSpansReceived.Where(
+                                                        s =>
+                                                        {
+                                                            s.Tags.TryGetValue(Tags.AppSecEvent, out var appsecevent);
+                                                            return appsecevent == "true";
+                                                        })
+                                                   .Count();
             if (enableSecurity)
             {
                 var message = "approximate because of parallel requests";
@@ -243,28 +246,31 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected void SetHttpPort(int httpPort) => _httpPort = httpPort;
 
-        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType)
+        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent)
         {
+            if (!string.IsNullOrEmpty(userAgent) && _httpClient.DefaultRequestHeaders.GetValues("user-agent").All(c => c != userAgent))
+            {
+                _httpClient.DefaultRequestHeaders.Add("user-agent", userAgent);
+            }
+
             var url = $"http://localhost:{_httpPort}{path}";
             var response =
-                    body == null ?
-                        await _httpClient.GetAsync(url) :
-                        await _httpClient.PostAsync(url, new StringContent(body, Encoding.UTF8, contentType ?? "application/json"));
+                body == null ? await _httpClient.GetAsync(url) : await _httpClient.PostAsync(url, new StringContent(body, Encoding.UTF8, contentType ?? "application/json"));
             var responseText = await response.Content.ReadAsStringAsync();
             return (response.StatusCode, responseText);
         }
 
         protected virtual string GetTestName() => _testName;
 
-        private async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, string body, int numberOfAttacks, int expectedSpans, string phase, string contentType = null)
+        private async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, string body, int numberOfAttacks, int expectedSpans, string phase, string contentType = null, string userAgent = null)
         {
             var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
-            await SendRequestsAsyncNoWaitForSpans(url, body, numberOfAttacks, contentType);
+            await SendRequestsAsyncNoWaitForSpans(url, body, numberOfAttacks, contentType, userAgent);
 
             return WaitForSpans(agent, expectedSpans, phase, minDateTime, url);
         }
 
-        private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null)
+        private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null, string userAgent = null)
         {
             var batchSize = 4;
             for (int x = 0; x < numberOfAttacks;)
@@ -274,7 +280,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 {
                     x++;
                     y++;
-                    attacks.Add(SubmitRequest(url, body, contentType));
+                    attacks.Add(SubmitRequest(url, body, contentType, userAgent));
                 }
 
                 await Task.WhenAll(attacks);
@@ -289,9 +295,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
             var message =
-                string.IsNullOrWhiteSpace(phase) ?
-                    string.Empty :
-                    string.Format("This is phase: {0}", phase);
+                string.IsNullOrWhiteSpace(phase) ? string.Empty : string.Format("This is phase: {0}", phase);
             spans.Count.Should().Be(expectedSpans, message);
 
             return spans;

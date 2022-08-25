@@ -209,7 +209,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
                 else if (ReferenceEquals(eventName, _hostingUnhandledExceptionEventKey) ||
-                    ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
+                         ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
                 {
                     OnHostingUnhandledException(arg);
                     return;
