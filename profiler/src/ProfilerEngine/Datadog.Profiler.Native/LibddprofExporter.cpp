@@ -338,9 +338,14 @@ void LibddprofExporter::Add(Sample const& sample)
 
 void LibddprofExporter::SetEndpoint(std::string runtimeId, uint64_t traceId, std::string endpoint)
 {
-    const auto& profileInfo = GetInfo(runtimeId);
+    const auto profileInfoScope = GetInfo(runtimeId);
 
-    auto* profile = profileInfo.profile;
+    if (profileInfoScope.profileInfo.profile == nullptr)
+    {
+        profileInfoScope.profileInfo.profile = CreateProfile();
+    }
+
+    auto* profile = profileInfoScope.profileInfo.profile;
 
     const auto traceIdStr = std::to_string(traceId);
 
