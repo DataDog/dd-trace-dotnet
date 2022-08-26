@@ -19,7 +19,7 @@ namespace Datadog.Trace.IntegrationTests
 {
     public class StatsTests
     {
-        private const int StatsComputationIntervalSeconds = 3;
+        private const int StatsComputationIntervalSeconds = 10;
 
         [Fact]
         public async Task SendStats()
