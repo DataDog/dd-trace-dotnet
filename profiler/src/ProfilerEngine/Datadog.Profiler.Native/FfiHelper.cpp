@@ -4,29 +4,29 @@
 #include "FfiHelper.h"
 #include <string.h>
 
-ddprof_ffi_ByteSlice FfiHelper::StringToByteSlice(std::string const& str)
+ddog_ByteSlice FfiHelper::StringToByteSlice(std::string const& str)
 {
     return {(uint8_t*)str.c_str(), str.size()};
 }
 
-ddprof_ffi_ByteSlice FfiHelper::StringToByteSlice(char const* str)
+ddog_ByteSlice FfiHelper::StringToByteSlice(char const* str)
 {
     return {(uint8_t*)str, strlen(str)};
 }
 
-ddprof_ffi_Slice_c_char FfiHelper::StringToCharSlice(std::string const& str)
+ddog_Slice_c_char FfiHelper::StringToCharSlice(std::string const& str)
 {
     return {str.data(), str.size()};
 }
 
-ddprof_ffi_Slice_c_char FfiHelper::StringToCharSlice(std::string_view str)
+ddog_Slice_c_char FfiHelper::StringToCharSlice(std::string_view str)
 {
     return {str.data(), str.size()};
 }
 
-ddprof_ffi_ValueType FfiHelper::CreateValueType(std::string const& type, std::string const& unit)
+ddog_ValueType FfiHelper::CreateValueType(std::string const& type, std::string const& unit)
 {
-    auto valueType = ddprof_ffi_ValueType{};
+    auto valueType = ddog_ValueType{};
     valueType.type_ = FfiHelper::StringToCharSlice(type);
     valueType.unit = FfiHelper::StringToCharSlice(unit);
     return valueType;
