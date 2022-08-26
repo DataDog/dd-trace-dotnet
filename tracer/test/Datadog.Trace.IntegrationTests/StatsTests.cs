@@ -140,7 +140,7 @@ namespace Datadog.Trace.IntegrationTests
                 var stats1 = payload[0];
                 stats1.Sequence.Should().Be(1);
 
-                var totalDuration = span1.Duration + span2.Duration + span3.Duration;
+                var totalDuration = span1.Duration.ToNanoseconds() + span2.Duration.ToNanoseconds() + span3.Duration.ToNanoseconds();
                 AssertStats(stats1, span1, totalDuration);
             }
 
@@ -193,7 +193,7 @@ namespace Datadog.Trace.IntegrationTests
                 }
             }
 
-            void AssertStats(MockClientStatsPayload stats, Span span, TimeSpan totalDuration)
+            void AssertStats(MockClientStatsPayload stats, Span span, long totalDuration)
             {
                 stats.Env.Should().Be(settings.Environment);
                 stats.Hostname.Should().Be(HostMetadata.Instance.Hostname);
@@ -214,7 +214,7 @@ namespace Datadog.Trace.IntegrationTests
                 var group = bucket.Stats[0];
 
                 group.DbType.Should().BeNull();
-                group.Duration.Should().Be(totalDuration.ToNanoseconds());
+                group.Duration.Should().Be(totalDuration);
                 group.Errors.Should().Be(1);
                 group.ErrorSummary.Should().NotBeEmpty();
                 group.Hits.Should().Be(3);
