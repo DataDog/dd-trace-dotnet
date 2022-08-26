@@ -34,7 +34,8 @@
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
-        "DD_PROFILING_CPU_ENABLED": "1" 
+        "DD_PROFILING_CPU_ENABLED": "1",
+        "DD_TRACE_ENABLED" : "0"
       }
     }
   ],
