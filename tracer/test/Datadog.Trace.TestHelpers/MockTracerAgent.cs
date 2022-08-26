@@ -20,6 +20,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -67,6 +68,8 @@ namespace Datadog.Trace.TestHelpers
         public IImmutableList<MockSpan> Spans { get; private set; } = ImmutableList<MockSpan>.Empty;
 
         public IImmutableList<MockClientStatsPayload> Stats { get; private set; } = ImmutableList<MockClientStatsPayload>.Empty;
+
+        public IImmutableList<MockDataStreamsPayload> DataStreams { get; private set; } = ImmutableList<MockDataStreamsPayload>.Empty;
 
         public IImmutableList<NameValueCollection> TraceRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
@@ -235,6 +238,29 @@ namespace Datadog.Trace.TestHelpers
             return stats;
         }
 
+        public IImmutableList<MockDataStreamsPayload> WaitForDataStreams(
+            int count,
+            int timeoutInMilliseconds = 20000)
+        {
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
+
+            IImmutableList<MockDataStreamsPayload> stats = ImmutableList<MockDataStreamsPayload>.Empty;
+
+            while (DateTime.UtcNow < deadline)
+            {
+                stats = DataStreams;
+
+                if (stats.Count >= count)
+                {
+                    break;
+                }
+
+                Thread.Sleep(500);
+            }
+
+            return stats;
+        }
+
         /// <summary>
         /// Wait for the given number of probe snapshots to appear.
         /// </summary>
@@ -381,6 +407,11 @@ namespace Datadog.Trace.TestHelpers
             {
                 HandlePotentialRemoteConfig(request);
                 return RcmResponse ?? "{}";
+            }
+            else if (request.PathAndQuery.StartsWith("/v0.1/pipeline_stats"))
+            {
+                HandlePotentialDataStreams(request);
+                return "{}";
             }
             else
             {
@@ -539,6 +570,37 @@ namespace Datadog.Trace.TestHelpers
                     var body = ReadStreamBody(request);
                     var rc = Encoding.UTF8.GetString(body);
                     RemoteConfigRequests.Enqueue(rc);
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message.ToLowerInvariant();
+
+                    if (message.Contains("beyond the end of the stream"))
+                    {
+                        // Accept call is likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                        return;
+                    }
+
+                    throw;
+                }
+            }
+        }
+
+        private void HandlePotentialDataStreams(MockHttpParser.MockHttpRequest request)
+        {
+            if (ShouldDeserializeTraces && request.ContentLength >= 1)
+            {
+                try
+                {
+                    var body = ReadStreamBody(request);
+
+                    var dataStreamsPayload = MessagePackSerializer.Deserialize<MockDataStreamsPayload>(body);
+
+                    lock (this)
+                    {
+                        DataStreams = DataStreams.Add(dataStreamsPayload);
+                    }
                 }
                 catch (Exception ex)
                 {
