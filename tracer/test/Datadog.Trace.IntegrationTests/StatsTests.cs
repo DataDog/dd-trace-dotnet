@@ -129,6 +129,8 @@ namespace Datadog.Trace.IntegrationTests
             }
 
             await tracer.FlushAsync();
+            await tracer.FlushAndCloseAsync(); // Flushes and closes both traces and stats
+
             WaitForStats(statsWaitEvent, expectStats);
             WaitForTraces(tracesWaitEvent, finishSpansOnClose); // The last span was an error, so we expect to receive it as long as it closed
 
