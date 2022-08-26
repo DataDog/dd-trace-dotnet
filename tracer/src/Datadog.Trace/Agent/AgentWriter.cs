@@ -384,16 +384,26 @@ namespace Datadog.Trace.Agent
                 return null;
             }
 
-            trace = _statsAggregator?.ProcessTrace(trace) ?? trace;
-            bool shouldSendTrace = _statsAggregator?.AddRange(trace) ?? true;
-
-            // If stats computation determined that we can drop the P0 Trace,
-            // skip all other processing
-            if (!shouldSerializeSpans && CanComputeStats && !shouldSendTrace)
+            // Eagerly return if the trace is empty
+            if (trace.Count == 0)
             {
-                Interlocked.Increment(ref _droppedP0Traces);
-                Interlocked.Add(ref _droppedP0Spans, trace.Count);
                 return;
+            }
+
+            trace = _statsAggregator?.ProcessTrace(trace) ?? trace;
+            if (CanComputeStats)
+            {
+                bool shouldSendTrace = _statsAggregator?.RunSamplers(trace) ?? true;
+                _statsAggregator?.AddRange(trace);
+
+                // If stats computation determined that we can drop the P0 Trace,
+                // skip all other processing
+                if (!shouldSendTrace)
+                {
+                    Interlocked.Increment(ref _droppedP0Traces);
+                    Interlocked.Add(ref _droppedP0Spans, trace.Count);
+                    return;
+                }
             }
 
             // Add the current keep rate to the root span

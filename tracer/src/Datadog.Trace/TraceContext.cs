@@ -18,7 +18,6 @@ namespace Datadog.Trace
 {
     internal class TraceContext
     {
-        private const ulong KnuthFactor = 1_111_111_111_111_111_111;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceContext>();
 
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
@@ -27,7 +26,6 @@ namespace Datadog.Trace
         private bool _rootSpanSent;
         private bool _rootSpanInNextBatch;
 
-        private bool _shouldKeepTrace;
         private int _openSpans;
         private int? _samplingPriority;
 
@@ -95,8 +93,6 @@ namespace Datadog.Trace
 
             ArraySegment<Span> spansToWrite = default;
             var rootSpanInNextBatch = false;
-            bool shouldKeepTraceFinal = false;
-            bool shouldKeepSpan = ShouldKeepSpan(span);
 
             // Propagate the resource name to the profiler for root web spans
             if (span.IsRootSpan && span.Type == SpanTypes.Web)
@@ -114,7 +110,6 @@ namespace Datadog.Trace
                 }
 
                 _openSpans--;
-                _shouldKeepTrace |= shouldKeepSpan;
 
                 if (_openSpans == 0)
                 {
@@ -136,8 +131,6 @@ namespace Datadog.Trace
                     // Therefore, we bypass the resize logic and immediately allocate the array to its maximum size
                     _spans = new ArrayBuilder<Span>(spansToWrite.Count);
                 }
-
-                shouldKeepTraceFinal = _shouldKeepTrace;
             }
 
             if (spansToWrite.Count > 0)
@@ -147,7 +140,9 @@ namespace Datadog.Trace
                 AddAASMetadata(spansToWrite.Array![0]);
                 PropagateSamplingPriority(span, spansToWrite, rootSpanInNextBatch);
 
-                Tracer.Write(spansToWrite, shouldKeepTraceFinal);
+                // In this commit, do not change the interface, just pass along the value and let it become a no-op
+                // Don't worry, this will be cleaned up in the same PR
+                Tracer.Write(spansToWrite, shouldSerializeSpans: true);
             }
         }
 
@@ -223,40 +218,6 @@ namespace Datadog.Trace
                 span.Tags.SetTag(Datadog.Trace.Tags.AzureAppServicesRuntime, AzureAppServices.Metadata.Runtime);
                 span.Tags.SetTag(Datadog.Trace.Tags.AzureAppServicesExtensionVersion, AzureAppServices.Metadata.SiteExtensionVersion);
             }
-        }
-
-        // Based on the Go implementation. Cross-check with Java
-        //
-        // Keep the entire trace when StatsComputation is not enabled
-        // When StatsComputation is enabled, perform the following checks (in the given order) when each span is finished. If any span returns true, keep the entire trace.
-        // - Is the current sampling priority > 0? Return true.
-        // - Have any errors been seen? Return true
-        // - If the current span doesn't have Metrics["_dd1.sr.eausr"] (aka AnalyticsSampleRate), skip. If it does, run the Knuth sampling decision on the metric value and return the result.
-        private bool ShouldKeepSpan(Span span)
-        {
-            // For now, assume that we have enabled stats computation AND the agent has been confirmed to be compatible
-            // We'll need to redo this because we should asynchronously send the agent compatibility check and then set enabled/disabled accordingly
-            if (_shouldKeepTrace || !Tracer.CanDropP0s)
-            {
-                return true;
-            }
-
-            if (_samplingPriority is int a && a > 0)
-            {
-                return true;
-            }
-
-            if (span.Error)
-            {
-                return true;
-            }
-
-            if (span.GetMetric(Trace.Tags.Analytics) is double rate)
-            {
-                return ((span.TraceId * KnuthFactor) % TracerConstants.MaxTraceId) <= (rate * TracerConstants.MaxTraceId);
-            }
-
-            return false;
         }
 
         private void PropagateSamplingPriority(Span closedSpan, ArraySegment<Span> spansToWrite, bool containsRootSpan)
