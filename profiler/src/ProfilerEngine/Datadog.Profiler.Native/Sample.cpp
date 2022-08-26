@@ -95,11 +95,6 @@ const CallStack& Sample::GetCallstack() const
     return _callstack;
 }
 
-void Sample::AddLabel(const Label& label)
-{
-    _labels.push_back(label);
-}
-
 std::string_view Sample::GetRuntimeId() const
 {
     return _runtimeId;

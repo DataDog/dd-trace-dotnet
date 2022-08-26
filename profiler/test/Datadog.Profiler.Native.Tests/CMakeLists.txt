@@ -11,6 +11,10 @@ add_compile_options(-fPIC -fms-extensions)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined -Wc++17-extensions)
 
+if (RUN_ASAN)
+    add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer)
+endif()
+
 if(ISLINUX)
     add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
 endif()
@@ -51,6 +55,10 @@ target_include_directories(${TEST_EXECUTABLE_NAME}
 )
 
 add_dependencies(${TEST_EXECUTABLE_NAME} fmt gmock gtest Datadog.Profiler.Native.static)
+
+if (RUN_ASAN)
+    target_link_libraries(Datadog.Profiler.Native.static -fsanitize=address)
+endif()
 
 target_link_libraries(${TEST_EXECUTABLE_NAME}
   Datadog.Profiler.Native.static

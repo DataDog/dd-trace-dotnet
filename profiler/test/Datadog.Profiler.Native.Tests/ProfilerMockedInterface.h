@@ -6,14 +6,14 @@
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 
 #include "Configuration.h"
-#include "IExporter.h"
-#include "ISamplesProvider.h"
-#include "IMetricsSender.h"
-#include "Sample.h"
-#include "TagsHelper.h"
 #include "IApplicationStore.h"
+#include "IExporter.h"
+#include "IMetricsSender.h"
 #include "IRuntimeIdStore.h"
 #include "ISamplesCollector.h"
+#include "ISamplesProvider.h"
+#include "Sample.h"
+#include "TagsHelper.h"
 
 class MockConfiguration : public IConfiguration
 {
@@ -128,24 +128,6 @@ std::tuple<std::shared_ptr<ISamplesProvider>, MockSampleProvider&> CreateSamples
 std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter();
 std::tuple<std::unique_ptr<ISamplesCollector>, MockSamplesCollector&> CreateSamplesCollector();
 
-template <typename T>
-Sample CreateSample(std::string_view runtimeId, const T& callstack, const std::initializer_list<Label>& labels, std::int64_t value)
-{
-    Sample sample{runtimeId};
-
-    for (auto frame = callstack.begin(); frame != callstack.end(); ++frame)
-    {
-        sample.AddFrame(frame->first, frame->second);
-    }
-
-    for (auto const& [name, value] : labels)
-    {
-        sample.AddLabel({name, value});
-    }
-
-    sample.SetValue(value);
-
-    return sample;
-}
+Sample CreateSample(std::string_view runtimeId, const std::vector<std::pair<std::string, std::string>>& callstack, const std::vector<std::pair<std::string, std::string>>& labels, std::int64_t value);
 
 std::vector<std::pair<std::string, std::string>> CreateCallstack(int depth);

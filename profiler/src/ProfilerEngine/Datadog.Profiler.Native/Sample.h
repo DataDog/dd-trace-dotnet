@@ -94,7 +94,12 @@ public:
     // and a Sample in each Provider (this is the each behind CollectorBase template class)
     void AddValue(std::int64_t value, SampleValue index);
     void AddFrame(std::string_view moduleName, std::string_view frame);
-    void AddLabel(const Label& label);
+
+    template<typename T>
+    void AddLabel(T&& label)
+    {
+        _labels.push_back(std::forward<T>(label));
+    }
 
     // helpers for well known mandatory labels
     void SetPid(const std::string& pid);

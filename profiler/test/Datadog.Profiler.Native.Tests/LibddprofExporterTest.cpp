@@ -65,22 +65,22 @@ TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
     auto exporter = LibddprofExporter(&mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers);
 
     // Add samples to only one application
-    auto callstack1 = std::initializer_list<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
-    auto labels1 = std::initializer_list<Label>{{"label1", "value1"}, {"label2", "value2"}};
+    auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
+    auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
     auto sample1 = CreateSample(firstRid,
                                 callstack1,
                                 labels1,
                                 21);
 
-    auto callstack2 = std::initializer_list<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}, {"module", "frame4"}});
-    auto labels2 = std::initializer_list<Label>{{"label1", "value1"}, {"label2", "value2"}, {"label3", "value3"}};
+    auto callstack2 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}, {"module", "frame4"}});
+    auto labels2 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}, {"label3", "value3"}};
     auto sample2 = CreateSample(firstRid,
                                 callstack2,
                                 labels2,
                                 42);
 
-    auto callstack3 = std::initializer_list<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}});
-    auto labels3 = std::initializer_list<Label>{{"label1", "value1"}};
+    auto callstack3 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}});
+    auto labels3 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}};
     auto sample3 = CreateSample(firstRid,
                                 callstack3,
                                 labels3,
@@ -163,15 +163,15 @@ TEST(LibddprofExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
 
     auto exporter = LibddprofExporter(&mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers);
 
-    auto callstack1 = std::initializer_list<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
-    auto labels1 = std::initializer_list<Label>{{"label1", "value1"}, {"label2", "value2"}};
+    auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
+    auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
     auto sample1 = CreateSample(firstRid,
                                 callstack1,
                                 labels1,
                                 21);
 
-    auto callstack2 = std::initializer_list<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}, {"module", "frame4"}});
-    auto labels2 = std::initializer_list<Label>{{"label1", "value1"}, {"label2", "value2"}, {"label3", "value3"}};
+    auto callstack2 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}, {"module", "frame4"}});
+    auto labels2 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}, {"label3", "value3"}};
     auto sample2 = CreateSample(secondRid,
                                 callstack2,
                                 labels2,
@@ -255,15 +255,15 @@ TEST(LibddprofExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplication
 
     auto exporter = LibddprofExporter(&mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers);
 
-    auto callstack1 = std::initializer_list<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
-    auto labels1 = std::initializer_list<Label>{{"label1", "value1"}, {"label2", "value2"}};
+    auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
+    auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
     auto sample1 = CreateSample(firstRid,
                                 callstack1,
                                 labels1,
                                 21);
 
-    auto callstack2 = std::initializer_list<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
-    auto labels2 = std::initializer_list<Label>{{"label1", "value1"}, {"label2", "value2"}};
+    auto callstack2 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
+    auto labels2 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
     auto sample2 = CreateSample(secondRid,
                                 callstack2,
                                 labels2,
@@ -440,7 +440,7 @@ TEST(LibddprofExporterTest, MakeSureNoCrashForReallyLongCallstack)
 
     std::string runtimeId = "MyRid";
     auto callstack = CreateCallstack(2048);
-    auto labels = std::initializer_list<Label>{{"label1", "value1"}, {"label2", "value2"}};
+    auto labels = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
     auto sample1 = CreateSample(runtimeId, callstack, labels, 42);
 
     EXPECT_NO_THROW(exporter.Add(sample1));
