@@ -36,6 +36,7 @@ namespace Datadog.Trace.Tests
             var statsAggregator = new Mock<IStatsAggregator>();
             ArraySegment<Span> trace = CreateTrace(1);
             statsAggregator.Setup(x => x.ProcessTrace(trace)).Returns(trace);
+            statsAggregator.Setup(x => x.CanComputeStats).Returns(true);
 
             var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator.Object, statsd: null, automaticFlush: false);
 
