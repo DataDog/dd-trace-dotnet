@@ -344,7 +344,7 @@ bool LibddprofExporter::Export()
 
     for (auto& runtimeId : keys)
     {
-        ddog_ffi_Profile* profile;
+        ddog_Profile* profile;
         int32_t samplesCount;
         int32_t exportsCount;
 
@@ -617,7 +617,7 @@ const ddog_Vec_tag* LibddprofExporter::Tags::GetFfiTags() const
 // LibddprofExporter::ProfileAutoDelete class
 //
 
-LibddprofExporter::ProfileAutoDelete::ProfileAutoDelete(struct ddog_ffi_Profile* profile) :
+LibddprofExporter::ProfileAutoDelete::ProfileAutoDelete(struct ddog_Profile* profile) :
     _profile{profile}
 {
 }
