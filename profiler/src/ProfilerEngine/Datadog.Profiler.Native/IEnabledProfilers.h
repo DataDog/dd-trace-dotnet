@@ -14,7 +14,7 @@ ENUM_FLAGS(RuntimeProfiler, size_t)
     Exceptions = 4,
     Allocations = 8,
 
-    // Contentions = 16
+    Contention = 16
     // Heap = 32
 };
 

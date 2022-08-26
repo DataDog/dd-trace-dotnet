@@ -2,15 +2,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
-#include "ISamplesProvider.h"
-#include "Sample.h"
 
-#include <list>
-
-class ISamplesCollector
+class IContentionListener
 {
 public:
-    virtual ~ISamplesCollector() = default;
+    virtual ~IContentionListener() = default;
 
-    virtual void Register(ISamplesProvider* sampleProvider) = 0;
+    virtual void OnContention(double contentionDuration) = 0;
 };

@@ -21,6 +21,7 @@
 
 #define LONG_LENGTH 1024
 
+#pragma pack(1)
 struct AllocationTickV4Payload
 {
     uint32_t AllocationAmount;     // The allocation size, in bytes.
@@ -46,6 +47,9 @@ struct ContentionStopV1Payload
     uint16_t ClrInstanceId;    // Unique ID for the instance of CLR.
     double_t DurationNs;       // Duration of the contention (without spinning)
 };
+#pragma pack()
+
+class IContentionListener;
 
 class ClrEventsParser
 {
@@ -54,7 +58,7 @@ public:
     static const int KEYWORD_CONTENTION = 0x4000;
 
 public:
-    ClrEventsParser(ICorProfilerInfo12* pCorProfilerInfo, IAllocationsListener* pAllocationListener);
+    ClrEventsParser(ICorProfilerInfo12* pCorProfilerInfo, IAllocationsListener* pAllocationListener, IContentionListener* pContentionListener);
     void ParseEvent(EVENTPIPE_PROVIDER provider,
                     DWORD eventId,
                     DWORD eventVersion,
@@ -105,6 +109,7 @@ private:
 private:
     ICorProfilerInfo12* _pCorProfilerInfo = nullptr;
     IAllocationsListener* _pAllocationListener = nullptr;
+    IContentionListener* _pContentionListener = nullptr;
 
 private:
     const int EVENT_ALLOCATION_TICK = 10;   // version 4 contains the size + reference

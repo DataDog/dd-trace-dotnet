@@ -1,2 +1,2 @@
 @echo off
-%GOPATH%\\bin\\timeit.exe PiComputation.windows.%1.json
+%GOPATH%\\bin\\timeit.exe %1.windows.%2.json

@@ -29,13 +29,13 @@
 #include <memory>
 #include <vector>
 
+class ContentionProvider;
 class IService;
 class IThreadsCpuManager;
 class IManagedThreadList;
 class IStackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
-class SamplesAggregator;
 
 namespace shared {
 class Loader;
@@ -205,7 +205,7 @@ private :
     WallTimeProvider* _pWallTimeProvider = nullptr;
     CpuTimeProvider* _pCpuTimeProvider = nullptr;
     AllocationsProvider* _pAllocationsProvider = nullptr;
-    SamplesAggregator* _pSamplesAggregator = nullptr;
+    ContentionProvider* _pContentionProvider = nullptr;
     SamplesCollector* _pSamplesCollector = nullptr;
 
     std::vector<std::unique_ptr<IService>> _services;
