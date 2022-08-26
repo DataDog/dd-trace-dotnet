@@ -191,37 +191,65 @@ namespace Datadog.Trace.AppSec
 
         private static void AddAppsecSpecificInstrumentations()
         {
+            int defs = 0, derived = 0;
+            try
+            {
+                Log.Debug("Adding CallTarget AppSec integration definitions to native library.");
+                var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.AppSec);
+                NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                defs = payload.Definitions.Length;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
             try
             {
                 Log.Debug("Adding CallTarget appsec derived integration definitions to native library.");
                 var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.AppSec);
                 NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-                Log.Information($"{payload.Definitions.Length} AppSec derived definitions added to the profiler.");
+                derived = payload.Definitions.Length;
             }
             catch (Exception ex)
             {
                 Log.Error(ex, ex.Message);
             }
+
+            Log.Information($"{defs} AppSec definitions and {derived} derived definitions added to the profiler.");
         }
 
         private static void RemoveAppsecSpecificInstrumentations()
         {
+            int defs = 0, derived = 0;
             try
             {
-                Log.Debug("Removing CallTarget appsec derived integration definitions from native library.");
-                var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.AppSec);
+                Log.Debug("Adding CallTarget AppSec integration definitions to native library.");
+                var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.AppSec);
                 NativeMethods.RemoveCallTargetDefinitions(payload.DefinitionsId, payload.Definitions);
-                Log.Information($"{payload.Definitions.Length} AppSec derived definitions removed from the profiler.");
+                defs = payload.Definitions.Length;
             }
             catch (Exception ex)
             {
                 Log.Error(ex, ex.Message);
             }
+
+            try
+            {
+                Log.Debug("Adding CallTarget appsec derived integration definitions to native library.");
+                var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.AppSec);
+                NativeMethods.RemoveCallTargetDefinitions(payload.DefinitionsId, payload.Definitions);
+                derived = payload.Definitions.Length;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
+            Log.Information($"{defs} AppSec definitions and {derived} derived definitions removed from the profiler.");
         }
 
-        /// <summary>
-        /// Frees resources
-        /// </summary>
+        /// <summary> Frees resources </summary>
         public void Dispose()
         {
             _waf?.Dispose();
