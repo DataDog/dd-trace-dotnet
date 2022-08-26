@@ -34,6 +34,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioContention);
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
 
             CheckContentionProfiles(runner);
         }
@@ -43,6 +44,7 @@ namespace Datadog.Profiler.IntegrationTests.Contention
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioContention);
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
 
             using var agent = new MockDatadogAgent(_output);
 

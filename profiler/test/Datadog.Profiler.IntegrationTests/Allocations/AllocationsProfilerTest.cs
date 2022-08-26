@@ -34,6 +34,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
             runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
 
             CheckExceptionProfiles(runner);
         }
@@ -43,6 +44,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
 
             using var agent = new MockDatadogAgent(_output);
 
