@@ -103,8 +103,6 @@ namespace Datadog.Trace.IntegrationTests
             }
 
             await tracer.FlushAsync();
-            WaitForStats(statsWaitEvent, expectStats);
-            WaitForTraces(tracesWaitEvent, finishSpansOnClose); // The first span is unique, so we expect to receive it as long as it closed
 
             // Scenario 2: Send the same server span as before, but it is not an error and it is not a new point,
             // so this trace can be dropped when ClientDropP0s is true
@@ -118,8 +116,6 @@ namespace Datadog.Trace.IntegrationTests
             }
 
             await tracer.FlushAsync();
-            WaitForStats(statsWaitEvent, expectStats);
-            WaitForTraces(tracesWaitEvent, expectAllTraces && finishSpansOnClose);
 
             // Scenario 3: Send server span with 200 status code but with an error
             Span span3;
@@ -138,20 +134,14 @@ namespace Datadog.Trace.IntegrationTests
 
             if (expectStats)
             {
-                var payload = agent.WaitForStats(3);
-                payload.Should().HaveCount(3);
+                var payload = agent.WaitForStats(1);
+                payload.Should().HaveCount(1);
 
                 var stats1 = payload[0];
                 stats1.Sequence.Should().Be(1);
-                AssertStats(stats1, span1, isError: false);
 
-                var stats2 = payload[1];
-                stats2.Sequence.Should().Be(2);
-                AssertStats(stats2, span2, isError: false);
-
-                var stats3 = payload[2];
-                stats3.Sequence.Should().Be(3);
-                AssertStats(stats3, span3, isError: true);
+                var totalDuration = span1.Duration + span2.Duration + span3.Duration;
+                AssertStats(stats1, span1, totalDuration);
             }
 
             // Assert header values
@@ -195,15 +185,15 @@ namespace Datadog.Trace.IntegrationTests
             {
                 if (expected)
                 {
-                    e.WaitOne(TimeSpan.FromSeconds(StatsComputationIntervalSeconds)).Should().Be(true, "timeout while waiting for stats");
+                    e.WaitOne(TimeSpan.FromSeconds(StatsComputationIntervalSeconds * 2)).Should().Be(true, "timeout while waiting for stats");
                 }
                 else
                 {
-                    e.WaitOne(TimeSpan.FromSeconds(StatsComputationIntervalSeconds)).Should().Be(false, "No stats should be received");
+                    e.WaitOne(TimeSpan.FromSeconds(StatsComputationIntervalSeconds * 2)).Should().Be(false, "No stats should be received");
                 }
             }
 
-            void AssertStats(MockClientStatsPayload stats, Span span, bool isError)
+            void AssertStats(MockClientStatsPayload stats, Span span, TimeSpan totalDuration)
             {
                 stats.Env.Should().Be(settings.Environment);
                 stats.Hostname.Should().Be(HostMetadata.Instance.Hostname);
@@ -224,15 +214,15 @@ namespace Datadog.Trace.IntegrationTests
                 var group = bucket.Stats[0];
 
                 group.DbType.Should().BeNull();
-                group.Duration.Should().Be(span.Duration.ToNanoseconds());
-                group.Errors.Should().Be(isError ? 1 : 0);
+                group.Duration.Should().Be(totalDuration.ToNanoseconds());
+                group.Errors.Should().Be(1);
                 group.ErrorSummary.Should().NotBeEmpty();
-                group.Hits.Should().Be(1);
+                group.Hits.Should().Be(3);
                 group.HttpStatusCode.Should().Be(int.Parse(span.GetTag(Tags.HttpStatusCode)));
                 group.Name.Should().Be(span.OperationName);
                 group.OkSummary.Should().NotBeEmpty();
                 group.Synthetics.Should().Be(false);
-                group.TopLevelHits.Should().Be(1);
+                group.TopLevelHits.Should().Be(3);
                 group.Type.Should().Be(span.Type);
             }
         }
