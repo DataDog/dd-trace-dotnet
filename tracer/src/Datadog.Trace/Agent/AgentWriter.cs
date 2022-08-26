@@ -111,7 +111,7 @@ namespace Datadog.Trace.Agent
             return _api.SendTracesAsync(EmptyPayload, 0, false, 0, 0);
         }
 
-        public void WriteTrace(ArraySegment<Span> trace, bool shouldSerializeSpans)
+        public void WriteTrace(ArraySegment<Span> trace)
         {
             if (trace.Count == 0)
             {
@@ -122,11 +122,11 @@ namespace Datadog.Trace.Agent
             if (_serializationTask.IsCompleted)
             {
                 // Serialization thread is not running, serialize the trace in the current thread
-                SerializeTrace(trace, shouldSerializeSpans);
+                SerializeTrace(trace);
             }
             else
             {
-                _pendingTraces.Enqueue(new WorkItem(trace, shouldSerializeSpans));
+                _pendingTraces.Enqueue(new WorkItem(trace));
 
                 if (!_serializationMutex.IsSet)
                 {
@@ -359,7 +359,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private void SerializeTrace(ArraySegment<Span> trace, bool shouldSerializeSpans)
+        private void SerializeTrace(ArraySegment<Span> trace)
         {
             // Declaring as inline method because only safe to invoke in the context of SerializeTrace
             SpanBuffer SwapBuffers()
@@ -487,7 +487,7 @@ namespace Datadog.Trace.Agent
                         }
 
                         hasDequeuedTraces = true;
-                        SerializeTrace(item.Trace, item.ShouldSerializeSpans);
+                        SerializeTrace(item.Trace);
                     }
                 }
                 catch (Exception ex)
@@ -516,20 +516,17 @@ namespace Datadog.Trace.Agent
         private readonly struct WorkItem
         {
             public readonly ArraySegment<Span> Trace;
-            public readonly bool ShouldSerializeSpans;
             public readonly Action Callback;
 
-            public WorkItem(ArraySegment<Span> trace, bool shouldSerializeSpans)
+            public WorkItem(ArraySegment<Span> trace)
             {
                 Trace = trace;
-                ShouldSerializeSpans = shouldSerializeSpans;
                 Callback = null;
             }
 
             public WorkItem(Action callback)
             {
                 Trace = default;
-                ShouldSerializeSpans = default;
                 Callback = callback;
             }
         }

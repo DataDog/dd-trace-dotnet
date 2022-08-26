@@ -52,7 +52,7 @@ namespace Benchmarks.Trace
         [Benchmark]
         public Task WriteAndFlushEnrichedTraces()
         {
-            AgentWriter.WriteTrace(EnrichedSpans, true);
+            AgentWriter.WriteTrace(EnrichedSpans);
             return AgentWriter.FlushTracesAsync();
         }
 

@@ -559,7 +559,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
             public Task<bool> Ping() => Task.FromResult(true);
 
-            public void WriteTrace(ArraySegment<Span> trace, bool shouldSerializeSpans) => Traces.Add(trace);
+            public void WriteTrace(ArraySegment<Span> trace) => Traces.Add(trace);
         }
     }
 }

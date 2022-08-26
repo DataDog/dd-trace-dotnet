@@ -80,18 +80,18 @@ namespace Datadog.Trace.Tests
             }
 
             // At this point in time, we have 4 closed spans in the trace
-            tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>(), true), Times.Never);
+            tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>()), Times.Never);
 
             AddAndCloseSpan();
 
             // Now we have 5 closed spans, partial flush should kick-in if activated
             if (partialFlush)
             {
-                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 5), true), Times.Once);
+                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 5)), Times.Once);
             }
             else
             {
-                tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>(), true), Times.Never);
+                tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>()), Times.Never);
             }
 
             for (int i = 0; i < 5; i++)
@@ -102,11 +102,11 @@ namespace Datadog.Trace.Tests
             // We have 5 more closed spans, partial flush should kick-in a second time if activated
             if (partialFlush)
             {
-                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 5), true), Times.Exactly(2));
+                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 5)), Times.Exactly(2));
             }
             else
             {
-                tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>(), true), Times.Never);
+                tracer.Verify(t => t.Write(It.IsAny<ArraySegment<Span>>()), Times.Never);
             }
 
             traceContext.CloseSpan(rootSpan);
@@ -114,11 +114,11 @@ namespace Datadog.Trace.Tests
             // Now the remaining spans are flushed
             if (partialFlush)
             {
-                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 1), true), Times.Once);
+                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 1)), Times.Once);
             }
             else
             {
-                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 11), true), Times.Once);
+                tracer.Verify(t => t.Write(It.Is<ArraySegment<Span>>(s => s.Count == 11)), Times.Once);
             }
         }
 
@@ -142,8 +142,8 @@ namespace Datadog.Trace.Tests
 
             ArraySegment<Span>? spans = null;
 
-            tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>(), true))
-                  .Callback<ArraySegment<Span>, bool>((s, _) => spans = s);
+            tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
+                  .Callback<ArraySegment<Span>>((s) => spans = s);
 
             var traceContext = new TraceContext(tracer.Object);
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep);
@@ -192,8 +192,8 @@ namespace Datadog.Trace.Tests
 
             ArraySegment<Span>? spans = null;
 
-            tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>(), true))
-                  .Callback<ArraySegment<Span>, bool>((s, _) => spans = s);
+            tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
+                  .Callback<ArraySegment<Span>>((s) => spans = s);
 
             SetAASContext(inAASContext);
             var traceContext = new TraceContext(tracer.Object);
@@ -251,8 +251,8 @@ namespace Datadog.Trace.Tests
 
             ArraySegment<Span>? spans = null;
 
-            tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>(), true))
-                  .Callback<ArraySegment<Span>, bool>((s, _) => spans = s);
+            tracer.Setup(t => t.Write(It.IsAny<ArraySegment<Span>>()))
+                  .Callback<ArraySegment<Span>>((s) => spans = s);
 
             SetAASContext(inAASContext);
 

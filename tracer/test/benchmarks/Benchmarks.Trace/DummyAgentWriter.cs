@@ -34,7 +34,7 @@ namespace Benchmarks.Trace
             return PingTask;
         }
 
-        public void WriteTrace(ArraySegment<Span> trace, bool shouldSerializeSpans)
+        public void WriteTrace(ArraySegment<Span> trace)
         {
         }
     }

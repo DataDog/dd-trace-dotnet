@@ -324,12 +324,11 @@ namespace Datadog.Trace
         /// Writes the specified <see cref="Span"/> collection to the agent writer.
         /// </summary>
         /// <param name="trace">The <see cref="Span"/> collection to write.</param>
-        /// <param name="shouldSerializeSpans">Indicates whether the spans should be serialized into traces.</param>
-        void IDatadogTracer.Write(ArraySegment<Span> trace, bool shouldSerializeSpans)
+        void IDatadogTracer.Write(ArraySegment<Span> trace)
         {
             if (Settings.TraceEnabled || AzureAppServices.Metadata.CustomTracingEnabled)
             {
-                TracerManager.WriteTrace(trace, shouldSerializeSpans);
+                TracerManager.WriteTrace(trace);
             }
         }
 

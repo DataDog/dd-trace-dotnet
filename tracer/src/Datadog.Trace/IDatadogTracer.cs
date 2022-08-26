@@ -23,6 +23,6 @@ namespace Datadog.Trace
 
         ImmutableTracerSettings Settings { get; }
 
-        void Write(ArraySegment<Span> span, bool shouldSerializeSpans);
+        void Write(ArraySegment<Span> span);
     }
 }

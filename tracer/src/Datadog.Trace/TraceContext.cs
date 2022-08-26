@@ -140,9 +140,7 @@ namespace Datadog.Trace
                 AddAASMetadata(spansToWrite.Array![0]);
                 PropagateSamplingPriority(span, spansToWrite, rootSpanInNextBatch);
 
-                // In this commit, do not change the interface, just pass along the value and let it become a no-op
-                // Don't worry, this will be cleaned up in the same PR
-                Tracer.Write(spansToWrite, shouldSerializeSpans: true);
+                Tracer.Write(spansToWrite);
             }
         }
 
