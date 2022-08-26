@@ -18,8 +18,8 @@ namespace Datadog.Trace.Sampling
         private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
 
         private readonly float _samplingRate;
-        private readonly string _serviceNameRegex;
-        private readonly string _operationNameRegex;
+        private readonly Regex _serviceNameRegex;
+        private readonly Regex _operationNameRegex;
 
         private bool _hasPoisonedRegex;
 
@@ -30,8 +30,20 @@ namespace Datadog.Trace.Sampling
             string operationNameRegex)
         {
             _samplingRate = rate;
-            _serviceNameRegex = WrapWithLineCharacters(serviceNameRegex);
-            _operationNameRegex = WrapWithLineCharacters(operationNameRegex);
+
+            _serviceNameRegex = serviceNameRegex is null
+                                    ? null
+                                    : new(
+                                        WrapWithLineCharacters(serviceNameRegex),
+                                        RegexOptions.Compiled,
+                                        RegexTimeout);
+            _operationNameRegex = operationNameRegex is null
+                                      ? null
+                                      : new(
+                                          WrapWithLineCharacters(operationNameRegex),
+                                          RegexOptions.Compiled,
+                                          RegexTimeout);
+
             RuleName = ruleName;
         }
 
@@ -76,12 +88,12 @@ namespace Datadog.Trace.Sampling
                 return false;
             }
 
-            if (DoesNotMatch(input: span.ServiceName, pattern: _serviceNameRegex))
+            if (DoesNotMatch(input: span.ServiceName, regex: _serviceNameRegex))
             {
                 return false;
             }
 
-            if (DoesNotMatch(input: span.OperationName, pattern: _operationNameRegex))
+            if (DoesNotMatch(input: span.OperationName, regex: _operationNameRegex))
             {
                 return false;
             }
@@ -115,18 +127,16 @@ namespace Datadog.Trace.Sampling
             return regex;
         }
 
-        private bool DoesNotMatch(string input, string pattern)
+        private bool DoesNotMatch(string input, Regex regex)
         {
             try
             {
-                if (pattern != null &&
-                    !Regex.IsMatch(
-                        input: input,
-                        pattern: pattern,
-                        options: RegexOptions.None,
-                        matchTimeout: RegexTimeout))
+                if (regex is not null)
                 {
-                    return true;
+                    if (!regex.Match(input).Success)
+                    {
+                        return true;
+                    }
                 }
             }
             catch (RegexMatchTimeoutException timeoutEx)
@@ -136,7 +146,7 @@ namespace Datadog.Trace.Sampling
                     timeoutEx,
                     "Timeout when trying to match against {Value} on {Pattern}.",
                     input,
-                    pattern);
+                    regex?.ToString());
             }
 
             return false;
