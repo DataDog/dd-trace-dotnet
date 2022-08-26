@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.TraceSamplers
 {
@@ -18,7 +19,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
                 var span = trace.Array[i + trace.Offset];
                 if (span.GetMetric(Tags.Analytics) is double rate)
                 {
-                    return ((span.TraceId * KnuthFactor) % TracerConstants.MaxTraceId) <= (rate * TracerConstants.MaxTraceId);
+                    return SamplingHelpers.SampleByRate(span.TraceId, rate);
                 }
             }
 
