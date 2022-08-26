@@ -301,6 +301,11 @@ namespace Datadog.Trace.Configuration
         public const string StatsComputationEnabled = "DD_TRACE_STATS_COMPUTATION_ENABLED";
 
         /// <summary>
+        /// Configuration key for configuring the interval (in seconds) for sending stats (aka trace metrics)
+        /// </summary>
+        public const string StatsComputationInterval = "_DD_TRACE_STATS_COMPUTATION_INTERVAL";
+
+        /// <summary>
         /// Configuration key for setting the propagation style injection.
         /// </summary>
         public const string PropagationStyleInject = "DD_PROPAGATION_STYLE_INJECT";

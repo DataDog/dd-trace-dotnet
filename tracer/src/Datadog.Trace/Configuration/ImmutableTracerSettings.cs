@@ -55,6 +55,7 @@ namespace Datadog.Trace.Configuration
             IpHeaderDisabled = settings.IpHeaderDisabled;
             TracerMetricsEnabled = settings.TracerMetricsEnabled;
             StatsComputationEnabled = settings.StatsComputationEnabled;
+            StatsComputationInterval = settings.StatsComputationInterval;
             RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled;
             KafkaCreateConsumerScopeEnabled = settings.KafkaCreateConsumerScopeEnabled;
             StartupDiagnosticLogEnabled = settings.StartupDiagnosticLogEnabled;
@@ -218,6 +219,11 @@ namespace Datadog.Trace.Configuration
         /// are enabled and sent to DogStatsd.
         /// </summary>
         internal bool RuntimeMetricsEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating the time interval (in seconds) for sending stats
+        /// </summary>
+        internal int StatsComputationInterval { get; }
 
         /// <summary>
         /// Gets the comma separated list of url patterns to skip tracing.

@@ -3,19 +3,18 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent
 {
     internal class NullStatsAggregator : IStatsAggregator
     {
-        public void Add(params Span[] spans)
-        {
-        }
+        public bool? CanComputeStats => false;
 
-        public void AddRange(Span[] spans, int offset, int count)
-        {
-        }
+        public bool Add(params Span[] spans) => false;
+
+        public bool AddRange(ArraySegment<Span> spans) => false;
 
         public Task DisposeAsync()
         {

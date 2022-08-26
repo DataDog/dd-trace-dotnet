@@ -36,9 +36,9 @@ namespace Datadog.Trace.Tests
             factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == TracesPath))).Returns(new Uri("http://localhost/traces"));
             factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == StatsPath))).Returns(new Uri("http://localhost/stats"));
 
-            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false, statsComputationEnabled: false);
+            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false);
 
-            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
+            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0);
 
             requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Once());
         }
@@ -57,9 +57,9 @@ namespace Datadog.Trace.Tests
             factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == TracesPath))).Returns(new Uri("http://localhost/traces"));
             factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == StatsPath))).Returns(new Uri("http://localhost/stats"));
 
-            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false, statsComputationEnabled: false);
+            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false);
 
-            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
+            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0);
 
             requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Exactly(5));
         }
@@ -78,7 +78,7 @@ namespace Datadog.Trace.Tests
             factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == TracesPath))).Returns(new Uri("http://localhost/traces"));
             factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == StatsPath))).Returns(new Uri("http://localhost/stats"));
 
-            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false, statsComputationEnabled: true);
+            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false);
 
             var statsBuffer = new StatsBuffer(new ClientStatsPayload());
 
@@ -101,7 +101,7 @@ namespace Datadog.Trace.Tests
             factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == TracesPath))).Returns(new Uri("http://localhost/traces"));
             factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == StatsPath))).Returns(new Uri("http://localhost/stats"));
 
-            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false, statsComputationEnabled: true);
+            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false);
 
             var statsBuffer = new StatsBuffer(new ClientStatsPayload());
 
@@ -126,9 +126,9 @@ namespace Datadog.Trace.Tests
             factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == TracesPath))).Returns(new Uri("http://localhost/traces"));
             factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == StatsPath))).Returns(new Uri("http://localhost/stats"));
 
-            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false, statsComputationEnabled: statsComputationEnabled);
+            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false);
 
-            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
+            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, statsComputationEnabled, 0, 0);
 
             requestMock.Verify(x => x.AddHeader(AgentHttpHeaderNames.StatsComputation, "true"), statsComputationEnabled ? Times.Once : Times.Never);
         }
@@ -152,12 +152,12 @@ namespace Datadog.Trace.Tests
 
             var logMock = new Mock<IDatadogLogger>();
 
-            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: true, log: logMock.Object, statsComputationEnabled: false);
+            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: true, log: logMock.Object);
 
             // First time should write the warning
-            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
+            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0);
             // Second time, it won't
-            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
+            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0);
 
             // ReSharper disable ExplicitCallerInfoArgument
             logMock.Verify(
@@ -192,9 +192,9 @@ namespace Datadog.Trace.Tests
 
             var ratesWereSet = false;
             Action<Dictionary<string, float>> updateSampleRates = _ => ratesWereSet = true;
-            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: updateSampleRates, partialFlushEnabled: false, statsComputationEnabled: false);
+            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: updateSampleRates, partialFlushEnabled: false);
 
-            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1);
+            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0);
             ratesWereSet.Should().BeTrue();
         }
 
@@ -219,7 +219,7 @@ namespace Datadog.Trace.Tests
             factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == TracesPath))).Returns(new Uri("http://localhost/traces"));
             factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == StatsPath))).Returns(new Uri("http://localhost/stats"));
 
-            var api = new Api(factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: partialFlushEnabled, statsComputationEnabled: false);
+            var api = new Api(factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: partialFlushEnabled);
 
             // First call depends on the parameters of the test
             api.LogPartialFlushWarningIfRequired(agentVersion).Should().Be(expectedResult);
