@@ -93,7 +93,7 @@ public:
     // but it seems better for encapsulation to do the transformation between collected raw data
     // and a Sample in each Provider (this is the each behind CollectorBase template class)
     void AddValue(std::int64_t value, SampleValue index);
-    void AddFrame(std::string_view moduleName, std::string_view frame); // TODO: use stringview to avoid copy
+    void AddFrame(std::string_view moduleName, std::string_view frame);
     void AddLabel(const Label& label);
 
     // helpers for well known mandatory labels
@@ -116,7 +116,7 @@ public:
 
 private:
     uint64_t _timestamp;
-    CallStack _callstack; // TODO: use stringview to avoid copy
+    CallStack _callstack;
     Values _values;
     Labels _labels;
     std::string_view _runtimeId;
