@@ -61,7 +61,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_WAF_TIMEOUT", 10_000_000.ToString());
         }
 
-        public Task<MockTracerAgent> RunOnSelfHosted(bool enableSecurity, string externalRulesFile = null, int? traceRateLimit = null)
+        public Task<MockTracerAgent> RunOnSelfHosted(bool? enableSecurity, string externalRulesFile = null, int? traceRateLimit = null)
         {
             if (_agent == null)
             {
@@ -320,7 +320,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             string arguments,
             string packageVersion = "",
             string framework = "",
-            bool enableSecurity = true,
+            bool? enableSecurity = true,
             string externalRulesFile = null,
             int? traceRateLimit = null)
         {

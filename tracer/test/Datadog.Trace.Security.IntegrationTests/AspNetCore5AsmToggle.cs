@@ -29,8 +29,9 @@ namespace Datadog.Trace.Security.IntegrationTests
         [SkippableTheory]
         [InlineData(true)]
         [InlineData(false)]
+        [InlineData(null)]
         [Trait("RunOnWindows", "True")]
-        public async Task TestSecurityToggling(bool enableSecurity)
+        public async Task TestSecurityToggling(bool? enableSecurity)
         {
             SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "500");
             var url = "/Health/?[$slice]=value";
