@@ -20,6 +20,7 @@ namespace Datadog.Trace.ContinuousProfiler
         public static Profiler Instance
         {
             get { return LazyInitializer.EnsureInitialized(ref _instance, () => Create()); }
+            internal set { _instance = value; }
         }
 
         public IProfilerStatus Status { get; }
