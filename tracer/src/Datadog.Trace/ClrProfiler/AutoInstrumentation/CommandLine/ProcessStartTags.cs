@@ -12,13 +12,13 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Consumer;
 
-        [Tag(Trace.Tags.ProcessCommandLine)]
-        public string CommandLine { get; set; }
+        [Tag(Trace.Tags.ProcessEnvironmentVars)]
+        public string EnviromentVars { get; set; }
 
-        [Tag(Trace.Tags.ProcessDomain)]
-        public string Domain { get; set; }
+        [Tag(Trace.Tags.ProcessExitCode)]
+        public string ExitCode { get; set; }
 
-        [Tag(Trace.Tags.ProcessUserName)]
-        public string UserName { get; set; }
+        [Tag(Trace.Tags.ProcessCommandLineTruncated)]
+        public string Truncated { get; set; }
     }
 }

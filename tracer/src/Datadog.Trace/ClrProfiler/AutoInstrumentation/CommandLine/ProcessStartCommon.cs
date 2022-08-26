@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -15,24 +17,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
     internal static class ProcessStartCommon
     {
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.CommandExecution;
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessStartStringIntegration));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessStartCommon));
         internal const string OperationName = "command_execution";
         internal const string ServiceName = "command";
+        internal const int MaxCommandLineLength = 4096;
 
         internal static Scope CreateScope(ProcessStartInfo info)
         {
             if (info != null)
             {
-                return CreateScope(info.FileName, info.Arguments, info.UserName);
+                return CreateScope(info.FileName, info.Arguments, info.UseShellExecute ? null : info.EnvironmentVariables as IDictionary<string, string>);
             }
 
             return null;
         }
 
-        internal static Scope CreateScope(string filename, string arguments = null, string userName = null, string domain = null)
+        internal static Scope CreateScope(string filename, string arguments, IDictionary<string, string> envVariables)
         {
             var tracer = Tracer.Instance;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !tracer.Settings.IsIntegrationEnabled(IntegrationId.AdoNet))
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !tracer.Settings.IsIntegrationEnabled(IntegrationId.CommandExecution))
             {
                 // integration disabled, don't create a scope, skip this span
                 return null;
@@ -44,20 +47,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             {
                 Span parent = tracer.InternalActiveScope?.Span;
 
-                if (parent is { Type: SpanTypes.System } &&
-                    parent.OperationName == OperationName)
+                if (parent is { Type: SpanTypes.System } && parent.OperationName == OperationName)
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
-                    // e.g. ExecuteReader() -> ExecuteReader(commandBehavior)
                     return null;
                 }
 
+                var truncated = false;
+                if (arguments.Length > MaxCommandLineLength)
+                {
+                    arguments = Truncate(arguments, MaxCommandLineLength);
+                    truncated = true;
+                }
+
+                var commandLine = (filename ?? string.Empty) + arguments;
+
                 var tags = new ProcessCommandStartTags
                 {
-                    CommandLine = (filename ?? string.Empty) + (arguments != null ? " " + arguments : string.Empty),
-                    Domain = domain,
-                    UserName = userName
+                    EnviromentVars = CommandLineParametersAnalyzer.ScrubbingEnvVariables(envVariables),
+                    Truncated = truncated ? "true" : null
                 };
 
                 var serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
@@ -72,6 +81,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             }
 
             return scope;
+        }
+
+        public static string Truncate(string value, int maxLength)
+        {
+            if (string.IsNullOrEmpty(value))
+            {
+                return value;
+            }
+
+            return value.Length <= maxLength ? value : value.Substring(0, maxLength);
         }
     }
 }
