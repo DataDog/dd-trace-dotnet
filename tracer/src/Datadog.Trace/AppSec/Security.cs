@@ -96,9 +96,15 @@ namespace Datadog.Trace.AppSec
                 _waf = waf;
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
 
-                UpdateStatus();
-
-                SharedRemoteConfiguration.FeaturesProduct.ConfigChanged += FeaturesProductConfigChanged;
+                if (_settings.CanBeEnabled)
+                {
+                    UpdateStatus();
+                    SharedRemoteConfiguration.FeaturesProduct.ConfigChanged += FeaturesProductConfigChanged;
+                }
+                else
+                {
+                    Log.Information("AppSec remote enabling not allowed.");
+                }
             }
             catch (Exception ex)
             {

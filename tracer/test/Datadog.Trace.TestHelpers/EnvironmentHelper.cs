@@ -183,7 +183,7 @@ namespace Datadog.Trace.TestHelpers
             int aspNetCorePort,
             IDictionary<string, string> environmentVariables,
             string processToProfile = null,
-            bool enableSecurity = false,
+            bool? enableSecurity = null,
             string externalRulesFile = null)
         {
             string profilerEnabled = AutomaticInstrumentationEnabled ? "1" : "0";
@@ -218,9 +218,9 @@ namespace Datadog.Trace.TestHelpers
             // for ASP.NET Core sample apps, set the server's port
             environmentVariables["ASPNETCORE_URLS"] = $"http://127.0.0.1:{aspNetCorePort}/";
 
-            if (enableSecurity)
+            if (enableSecurity != null)
             {
-                environmentVariables[ConfigurationKeys.AppSec.Enabled] = enableSecurity.ToString();
+                environmentVariables[ConfigurationKeys.AppSec.Enabled] = enableSecurity.Value.ToString();
             }
 
             if (!string.IsNullOrEmpty(externalRulesFile))
