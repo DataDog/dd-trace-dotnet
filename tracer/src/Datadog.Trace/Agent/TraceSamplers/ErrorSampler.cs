@@ -11,7 +11,15 @@ namespace Datadog.Trace.Agent.TraceSamplers
     {
         public bool Sample(ArraySegment<Span> trace)
         {
-            return StatsAggregator.TraceContainsError(trace);
+            for (int i = 0; i < trace.Count; i++)
+            {
+                if (trace.Array[i + trace.Offset].Error)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

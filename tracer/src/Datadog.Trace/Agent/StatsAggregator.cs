@@ -115,8 +115,8 @@ namespace Datadog.Trace.Agent
 
         public bool RunSamplers(ArraySegment<Span> trace)
         {
-            // TODO: If Agent configuration leads to RareSamplerDisabled, do not execute RareSampler
-            // Run this early to make sure the signature gets counted by the RareSampler.
+            // TODO: Add ability to disable the RareSampler, which the trace agent has
+            // Run the RareSampler early to make sure the signature gets counted
             var rare = _rareSampler.Sample(trace);
 
             if (_prioritySampler.Sample(trace))
@@ -174,19 +174,6 @@ namespace Datadog.Trace.Agent
                 span.Type,
                 httpStatusCode,
                 span.Context.Origin == "synthetics");
-        }
-
-        internal static bool TraceContainsError(ArraySegment<Span> trace)
-        {
-            for (int i = 0; i < trace.Count; i++)
-            {
-                if (trace.Array[i + trace.Offset].Error)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
 
         internal async Task Flush()

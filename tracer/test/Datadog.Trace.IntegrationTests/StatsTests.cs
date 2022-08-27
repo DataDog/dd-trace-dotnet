@@ -540,10 +540,7 @@ namespace Datadog.Trace.IntegrationTests
                     payload[0].GetMetric("_dd.rare").Should().BeNull();
                 }
 
-                foreach (var span in payload.Skip(1))
-                {
-                    span.GetMetric("_dd.rare").Should().BeNull();
-                }
+                payload.Skip(1).Should().OnlyContain(span => span.GetMetric("_dd.rare") == null);
             }
 
             void AssertStats(MockClientStatsPayload stats, Span span, long totalDuration)
