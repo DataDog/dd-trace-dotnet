@@ -9,5 +9,9 @@ namespace Samples.Security.WebApi.Controllers
         public void Post([FromBody] MiscModel miscModel)
         {
         }
+
+        public void Shutdown()
+        {
+        }
     }
 }
