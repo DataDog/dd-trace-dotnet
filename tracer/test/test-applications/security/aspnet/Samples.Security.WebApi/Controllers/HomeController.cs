@@ -10,8 +10,10 @@ namespace Samples.Security.WebApi.Controllers
         {
         }
 
-        public void Shutdown()
+        [AcceptVerbs("GET")]
+        public string Shutdown()
         {
+            return "Ok";
         }
     }
 }
