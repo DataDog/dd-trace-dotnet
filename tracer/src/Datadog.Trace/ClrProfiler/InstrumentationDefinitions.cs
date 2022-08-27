@@ -57,22 +57,6 @@ namespace Datadog.Trace.ClrProfiler
 
         internal static void Dispose()
         {
-            foreach (var payload in Instrumentations.Values)
-            {
-                foreach (var def in payload.Definitions)
-                {
-                    def.Dispose();
-                }
-            }
-
-            foreach (var payload in DerivedInstrumentations.Values)
-            {
-                foreach (var def in payload.Definitions)
-                {
-                    def.Dispose();
-                }
-            }
-
             foreach (var def in InstrumentationsNatives)
             {
                 def.Dispose();
