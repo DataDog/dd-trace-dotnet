@@ -215,7 +215,7 @@
       "version": "2"
     },
     "message": "GenericMethodWithArguments.Method(genericParam=Person): Alfred Hitchcock (30)\r\n@return=Alfred Hitchcock (30)",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -351,6 +351,6 @@
       "version": "2"
     },
     "message": "GenericMethodWithArguments.Method(genericParam=Person)",
-    "service": "Unknown"
+    "service": "Probes"
   }
 ]

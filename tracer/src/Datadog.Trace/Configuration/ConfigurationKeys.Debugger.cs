@@ -4,7 +4,6 @@
 // </copyright>
 
 using Datadog.Trace.Debugger;
-using Datadog.Trace.Logging.DirectSubmission;
 
 namespace Datadog.Trace.Configuration
 {
@@ -13,31 +12,18 @@ namespace Datadog.Trace.Configuration
         internal static class Debugger
         {
             /// <summary>
-            /// Configuration key for debugger poll interval (in seconds).
-            /// </summary>
-            /// <seealso cref="DebuggerSettings.ProbeConfigurationsPollIntervalSeconds"/>
-            public const string PollInterval = "DD_DEBUGGER_POLL_INTERVAL";
-
-            /// <summary>
-            /// Configuration key for the URL used to query our backend directly for the list of active probes.
+            /// Used to send Live Debugger snapshots directly to our backend.
             /// This can only be used if DD_API_KEY is also available.
             /// </summary>
-            /// <seealso cref="DebuggerSettings.ProbeConfigurationsPath"/>
+            /// <seealso cref="DebuggerSettings.SnapshotsPath"/>
             public const string SnapshotUrl = "DD_DEBUGGER_SNAPSHOT_URL";
-
-            /// <summary>
-            /// Configuration key for probe configuration file full path.
-            /// Loads the probe configuration from a local file on disk. Useful for local development and testing.
-            /// </summary>
-            /// <seealso cref="DebuggerSettings.ProbeConfigurationsPath"/>
-            public const string ProbeFile = "DD_DEBUGGER_PROBE_FILE";
 
             /// <summary>
             /// Configuration key for enabling or disabling Live Debugger.
             /// Default value is false (disabled).
             /// </summary>
             /// <seealso cref="DebuggerSettings.Enabled"/>
-            public const string Enabled = "DD_INTERNAL_DEBUGGER_ENABLED";
+            public const string Enabled = "DD_DEBUGGER_ENABLED";
 
             /// <summary>
             /// Configuration key for the max object depth to serialize for probe snapshots.

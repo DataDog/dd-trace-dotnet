@@ -55,6 +55,7 @@ namespace Datadog.Trace.Configuration
             IpHeaderDisabled = settings.IpHeaderDisabled;
             TracerMetricsEnabled = settings.TracerMetricsEnabled;
             StatsComputationEnabled = settings.StatsComputationEnabled;
+            StatsComputationInterval = settings.StatsComputationInterval;
             RuntimeMetricsEnabled = settings.RuntimeMetricsEnabled;
             KafkaCreateConsumerScopeEnabled = settings.KafkaCreateConsumerScopeEnabled;
             StartupDiagnosticLogEnabled = settings.StartupDiagnosticLogEnabled;
@@ -83,7 +84,8 @@ namespace Datadog.Trace.Configuration
             ExpandRouteTemplatesEnabled = settings.ExpandRouteTemplatesEnabled || !RouteTemplateResourceNamesEnabled;
 
             // tag propagation
-            TagPropagationHeaderMaxLength = settings.TagPropagationHeaderMaxLength;
+            OutgoingTagPropagationHeaderMaxLength = settings.OutgoingTagPropagationHeaderMaxLength;
+
             // query string related env variables
             ObfuscationQueryStringRegex = settings.ObfuscationQueryStringRegex;
             QueryStringReportingEnabled = settings.QueryStringReportingEnabled;
@@ -219,6 +221,11 @@ namespace Datadog.Trace.Configuration
         internal bool RuntimeMetricsEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating the time interval (in seconds) for sending stats
+        /// </summary>
+        internal int StatsComputationInterval { get; }
+
+        /// <summary>
         /// Gets the comma separated list of url patterns to skip tracing.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.HttpClientExcludedUrlSubstrings"/>
@@ -320,7 +327,7 @@ namespace Datadog.Trace.Configuration
         /// <remarks>
         /// This value is not used when extracting an incoming propagation header from an upstream service.
         /// </remarks>
-        internal int TagPropagationHeaderMaxLength { get; }
+        internal int OutgoingTagPropagationHeaderMaxLength { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

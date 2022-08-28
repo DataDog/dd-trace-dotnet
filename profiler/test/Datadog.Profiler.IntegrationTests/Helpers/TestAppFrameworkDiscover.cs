@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Xunit.Abstractions;
 using Xunit.Sdk;
@@ -26,6 +27,7 @@ namespace Datadog.Profiler.SmokeTests
         {
             var appName = factAttribute.GetNamedArgument<string>("AppName");
             var appAssembly = factAttribute.GetNamedArgument<string>("AppAssembly");
+            var frameworks = factAttribute.GetNamedArgument<string[]>("Frameworks");
             var appFolderPath = TestApplicationRunner.GetApplicationOutputFolderPath(appName);
 
             MessageSink.OnMessage(new DiagnosticMessage("Discovering tests case in {0} for application {1}", appFolderPath, appName));
@@ -46,13 +48,25 @@ namespace Datadog.Profiler.SmokeTests
 
             foreach (string folder in System.IO.Directory.GetDirectories(appFolderPath))
             {
-                results.Add(
-                    new XunitTestCase(
-                            MessageSink,
-                            TestMethodDisplay.Method,
-                            TestMethodDisplayOptions.All,
-                            testMethod,
-                            new object[] { appName, System.IO.Path.GetFileName(folder), appAssembly }));
+                var framework = System.IO.Path.GetFileName(folder);
+                if (frameworks == null || frameworks.Contains(framework))
+                {
+                    results.Add(
+                        new XunitTestCase(
+                                MessageSink,
+                                TestMethodDisplay.Method,
+                                TestMethodDisplayOptions.All,
+                                testMethod,
+                                new object[] { appName, System.IO.Path.GetFileName(folder), appAssembly }));
+                }
+                else
+                {
+                    var xx = new SkippableTestCase(
+                        $"Test case skipped: {framework} is an unsupported framework",
+                        testMethod,
+                        new object[] { appName, System.IO.Path.GetFileName(folder), appAssembly });
+                    results.Add(xx);
+                }
             }
 
             if (results.Count == 0)

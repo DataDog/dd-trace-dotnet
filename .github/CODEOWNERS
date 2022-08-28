@@ -22,9 +22,11 @@
 /tracer/src/Datadog.Trace/ContinuousProfiler @DataDog/apm-dotnet @DataDog/profiling-dotnet
 
 # Debugger
-/tracer/src/Datadog.Trace/Debugger        @DataDog/debugger-dotnet
-/tracer/test/Datadog.Trace.Tests/Debugger @DataDog/debugger-dotnet
-/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Debugger @DataDog/debugger-dotnet
+/tracer/src/Datadog.Trace/Debugger/        @DataDog/debugger-dotnet
+/tracer/test/Datadog.Trace.Tests/Debugger/ @DataDog/debugger-dotnet
+/tracer/src/Datadog.Trace/PDBs/            @DataDog/debugger-dotnet
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Debugger/ @DataDog/debugger-dotnet
+/tracer/test/test-applications/debugger/   @DataDog/debugger-dotnet
 
 # Shared code we could move to the root folder
 /tracer/build/                            @DataDog/apm-dotnet @DataDog/debugger-dotnet @DataDog/profiling-dotnet @DataDog/asm-dotnet

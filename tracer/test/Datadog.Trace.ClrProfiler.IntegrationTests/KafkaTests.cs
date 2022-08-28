@@ -39,6 +39,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             : base("Kafka", output)
         {
             SetServiceVersion("1.0.0");
+            EnableDebugMode();
         }
 
         [SkippableTheory]
@@ -128,11 +129,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                .HaveCountGreaterOrEqualTo(ExpectedTombstoneProducerSpans)
                .And.OnlyContain(tag => tag == "true");
 
+            allConsumerSpans.Should().OnlyContain(x => x.Tags.ContainsKey(Tags.KafkaConsumerGroup));
+
+            successfulConsumerSpans
+               .Should()
+               .OnlyContain(
+                    x => x.Tags[Tags.KafkaConsumerGroup] == "Samples.Kafka.AutoCommitConsumer1"
+                      || x.Tags[Tags.KafkaConsumerGroup] == "Samples.Kafka.ManualCommitConsumer2");
+
             // Error spans are created in 1.5.3 when the broker doesn't exist yet
             // Other package versions don't error, so won't create a span,
             // so no fixed number requirement
             if (errorConsumerSpans.Count > 0)
             {
+                errorConsumerSpans.Should().OnlyContain(x => x.Tags[Tags.KafkaConsumerGroup] == "Samples.Kafka.FailingConsumer1");
+
                 errorConsumerSpans
                    .Should()
                    .OnlyContain(x => x.Tags.ContainsKey(Tags.ErrorType))

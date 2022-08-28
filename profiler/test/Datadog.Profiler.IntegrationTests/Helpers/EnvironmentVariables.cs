@@ -16,5 +16,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string ExceptionProfilerEnabled = "DD_PROFILING_EXCEPTION_ENABLED";
         public const string ExceptionSampleLimit = "DD_PROFILING_EXCEPTION_SAMPLE_LIMIT";
         public const string AllocationProfilerEnabled = "DD_PROFILING_ALLOCATION_ENABLED";
+        public const string ContentionProfilerEnabled = "DD_PROFILING_CONTENTION_ENABLED";
     }
 }

@@ -116,7 +116,7 @@ namespace Datadog.Trace.Telemetry
 
             var settings = _settings.Settings;
 
-            var data = new List<TelemetryValue>(_azureApServicesMetadata.IsRelevant ? 21 : 17)
+            var data = new List<TelemetryValue>(_azureApServicesMetadata.IsRelevant ? 27 : 23)
             {
                 new(ConfigTelemetryData.Platform, value: FrameworkDescription.Instance.ProcessArchitecture),
                 new(ConfigTelemetryData.Enabled, value: settings.TraceEnabled),
@@ -142,6 +142,7 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.ActivityListenerEnabled, value: settings.IsActivityListenerEnabled),
                 new(ConfigTelemetryData.ProfilerLoaded, value: _profiler?.Status.IsProfilerReady),
                 new(ConfigTelemetryData.CodeHotspotsEnabled, value: _profiler?.ContextTracker.IsEnabled),
+                new(ConfigTelemetryData.StatsComputationEnabled, value: settings.StatsComputationEnabled),
             };
 
             if (_azureApServicesMetadata.IsRelevant)

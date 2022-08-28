@@ -63,7 +63,7 @@ namespace Datadog.Trace.Tests
                     new(HttpHeaderNames.ParentId, SpanId.ToString(InvariantCulture)),
                 };
 
-            var settings = new TracerSettings { TagPropagationHeaderMaxLength = 0 };
+            var settings = new TracerSettings { OutgoingTagPropagationHeaderMaxLength = 0 };
             var traceContext = new TraceContext(new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, null, telemetry: null));
             var context = new SpanContext(null, traceContext, serviceName: null, TraceId, SpanId) { PropagatedTags = PropagatedTags };
 

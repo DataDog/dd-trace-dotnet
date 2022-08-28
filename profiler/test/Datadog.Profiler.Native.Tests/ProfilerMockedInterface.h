@@ -42,6 +42,7 @@ public:
     MOCK_METHOD(bool, IsExceptionProfilingEnabled, (), (const override));
     MOCK_METHOD(int, ExceptionSampleLimit, (), (const override));
     MOCK_METHOD(bool, IsAllocationProfilingEnabled, (), (const override));
+    MOCK_METHOD(bool, IsContentionProfilingEnabled, (), (const override));
     MOCK_METHOD(double, MinimumCores, (), (const override));
 };
 
@@ -56,7 +57,6 @@ class MockSamplesCollector : public ISamplesCollector
 {
 public:
     MOCK_METHOD(void, Register, (ISamplesProvider * sampleProvider), (override));
-    MOCK_METHOD(std::list<Sample>, GetSamples, (), (override));
 };
 
 class MockSampleProvider : public ISamplesProvider

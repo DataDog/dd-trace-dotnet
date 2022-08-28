@@ -25,6 +25,8 @@ SampleValueType const SampleTypeDefinitions[] =
     {"exception", "count"},     // ExceptionCount
     {"alloc-samples", "count"}, // AllocationCount
     {"alloc-size", "bytes"},    // AllocationSize
+    {"lock-count", "count"},
+    {"lock-duration", "nanoseconds"}
 
     // the new ones should be added here at the same time
     // new identifiers are added to SampleValue
@@ -49,10 +51,8 @@ enum class SampleValue : size_t
     AllocationSize = 4,
 
     // Thread contention profiler
-    //ContentionCount = 5,
-    //ContentionDuration = 6,
-
-
+    ContentionCount = 5,
+    ContentionDuration = 6,
 };
 //
 static constexpr size_t array_size = sizeof(SampleTypeDefinitions) / sizeof(SampleTypeDefinitions[0]);
@@ -69,13 +69,16 @@ class Sample
 {
 public:
     Sample(std::string_view runtimeId); // only for tests
-    Sample(uint64_t timestamp, std::string_view runtimeId);
-    Sample(const Sample&) = delete;
+    Sample(uint64_t timestamp, std::string_view runtimeId);    
     Sample& operator=(const Sample& sample) = delete;
     Sample(Sample&& sample) noexcept;
     Sample& operator=(Sample&& other) noexcept;
 
+protected:
+    Sample(const Sample&) = default;
+
 public:
+    Sample Copy() const;
     uint64_t GetTimeStamp() const;
     const Values& GetValues() const;
     const std::vector<std::pair<std::string, std::string>>& GetCallstack() const;

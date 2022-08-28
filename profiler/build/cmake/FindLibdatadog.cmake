@@ -1,6 +1,6 @@
 include(ExternalProject)
 
-set(LIBDATADOG_VERSION "v0.7.0" CACHE STRING "libdatadog version")
+set(LIBDATADOG_VERSION "v0.8.0" CACHE STRING "libdatadog version")
 
 if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
    set(LIBDATADOG_BASE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-${LIBATADOG_VERSION}/src/libdatadog-build/libdatadog/libdatadog-${CMAKE_SYSTEM_PROCESSOR}-alpine-linux-musl)
@@ -10,15 +10,15 @@ endif()
 
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64)
   if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
-    set(SHA256_LIBDATADOG "de0ba9c95da07d89b487d99b36f767f763f1272ebdff5b532b576473d64f3c66" CACHE STRING "libdatadog sha256")
+    set(SHA256_LIBDATADOG "68919ddf9bc6491927bf16fb819b18fd052209d77774097b57f7879ebafc9bdf" CACHE STRING "libdatadog sha256")
   else()
-    set(SHA256_LIBDATADOG "256750fe9ebcd9bf8426b83f89f52572f01559ae5f4add3a4c46df84fc122eb6" CACHE STRING "libdatadog sha256")
+    set(SHA256_LIBDATADOG "9c6dd7058c7d0c9af8ffe18b4565fcda08462debc81f60ce0eb87aa5f7b74a0b" CACHE STRING "libdatadog sha256")
   endif()
 else()
   if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
-    set(SHA256_LIBDATADOG "0ae6b3d9d37e6af8e31a44286424c34ddd4945022efbaed6978fc60a8b923ba6" CACHE STRING "libdatadog sha256")
+    set(SHA256_LIBDATADOG "e410300255d93f016562e7e072dcb09f94d0550ff3e289f97fff4cd155a4d3a4" CACHE STRING "libdatadog sha256")
   else()
-    set(SHA256_LIBDATADOG "b5f617d08e637e9a201437198e715b2f3688d5367d0af572988c80dd3c2e6b81" CACHE STRING "libdatadog sha256")
+    set(SHA256_LIBDATADOG "94f52edaed31f8c2a25cd569b0b065f8bb221120706d57ef2ca592b0512333f2" CACHE STRING "libdatadog sha256")
   endif()
 endif()
 
@@ -35,7 +35,7 @@ ExternalProject_Get_property(libdatadog BINARY_DIR)
 set_property(DIRECTORY PROPERTY ADDITIONAL_MAKE_CLEAN_FILES
     ${BINARY_DIR})
 
-set(LIBDATADOG_REL_FFI_LIB ${LIBDATADOG_BASE_DIR}/lib/libddprof_ffi.a)
+set(LIBDATADOG_REL_FFI_LIB ${LIBDATADOG_BASE_DIR}/lib/libdatadog_profiling.a)
 
 list(APPEND
     LIBDATADOG_INCLUDE_DIR

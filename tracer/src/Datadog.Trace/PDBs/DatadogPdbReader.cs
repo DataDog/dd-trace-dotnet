@@ -35,9 +35,15 @@ namespace Datadog.Trace.Pdb
 
         public static DatadogPdbReader CreatePdbReader(Assembly assembly)
         {
-            string assemblyFullPath = assembly.Location;
+            var assemblyFullPath = assembly.Location;
             var module = ModuleDefMD.Load(assembly.ManifestModule);
-            string pdbFullPath = Path.ChangeExtension(assemblyFullPath, "pdb");
+            var pdbFullPath = Path.ChangeExtension(assemblyFullPath, "pdb");
+
+            if (!File.Exists(pdbFullPath))
+            {
+                return null;
+            }
+
             var pdbStream = DataReaderFactoryFactory.Create(pdbFullPath, false);
             var dnlibReader = SymbolReaderFactory.Create(ModuleCreationOptions.DefaultPdbReaderOptions, module.Metadata, pdbStream);
             if (dnlibReader == null)
