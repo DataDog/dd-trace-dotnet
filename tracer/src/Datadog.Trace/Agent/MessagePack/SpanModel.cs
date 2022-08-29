@@ -1,0 +1,38 @@
+﻿// <copyright file="SpanModel.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#nullable enable
+
+namespace Datadog.Trace.Agent.MessagePack;
+
+/// <summary>
+/// Contains a reference to a <see cref="Span"/> and additional context needed for serialization.
+/// </summary>
+internal readonly struct SpanModel
+{
+    public readonly Span Span;
+
+    public readonly TraceChunkModel? TraceChunk;
+
+    public readonly bool IsLocalRoot;
+
+    public readonly bool IsChunkOrphan;
+
+    public readonly bool IsFirstSpanInChunk;
+
+    public SpanModel(
+        Span span,
+        TraceChunkModel? traceChunk,
+        bool isLocalRoot,
+        bool isChunkOrphan,
+        bool isFirstSpanInChunk)
+    {
+        Span = span;
+        TraceChunk = traceChunk;
+        IsLocalRoot = isLocalRoot;
+        IsChunkOrphan = isChunkOrphan;
+        IsFirstSpanInChunk = isFirstSpanInChunk;
+    }
+}
