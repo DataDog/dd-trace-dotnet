@@ -218,7 +218,7 @@ namespace Datadog.Trace.Coverage.Collector
                              *
                              *  public static int Factorial(int value)
                              *  {
-                             *      if (!CoverageReporter.TryGetScope(1, 1, out var scope))
+                             *      if (!CoverageReporter<Metadata>.TryGetScope(1, 1, out var scope))
                              *      {
                              *          if (value == 1)
                              *          {
@@ -400,7 +400,6 @@ namespace Datadog.Trace.Coverage.Collector
                             {
                                 var currentInstruction = clonedInstructionsWithSequencePoints[i];
                                 var currentInstructionIndex = instructions.IndexOf(currentInstruction);
-                                // var originalInstructionIndex = currentInstructionIndex - instructionsOriginalLength;
                                 var currentInstructionClone = CloneInstruction(currentInstruction);
 
                                 if (i < clonedInstructionsWithSequencePoints.Count - 1)
@@ -419,9 +418,6 @@ namespace Datadog.Trace.Coverage.Collector
                                                 eHandler.HandlerEnd == nextInstruction ||
                                                 eHandler.FilterStart == nextInstruction))
                                     {
-                                        // var nextInstructionIndex = instructions.IndexOf(nextInstruction);
-                                        // var originalNextInstructionIndex = nextInstructionIndex - instructionsOriginalLength;
-
                                         currentInstruction.OpCode = OpCodes.Ldloca;
                                         currentInstruction.Operand = coverageScopeVariable;
                                         instructions.Insert(currentInstructionIndex + 1, Instruction.Create(OpCodes.Ldc_I4, i));

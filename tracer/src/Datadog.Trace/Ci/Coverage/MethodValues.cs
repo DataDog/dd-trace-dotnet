@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.Ci.Coverage;
@@ -13,7 +14,7 @@ internal class MethodValues
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public MethodValues(int maxSequencePoints)
     {
-        SequencePoints = new int[maxSequencePoints];
+        SequencePoints = maxSequencePoints == 0 ? Array.Empty<int>() : new int[maxSequencePoints];
     }
 
     public int[] SequencePoints { get; }

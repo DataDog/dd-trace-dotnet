@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.Ci.Coverage;
@@ -13,7 +14,7 @@ internal class TypeValues
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public TypeValues(int maxMethods)
     {
-        Methods = new MethodValues[maxMethods];
+        Methods = maxMethods == 0 ? Array.Empty<MethodValues>() : new MethodValues[maxMethods];
     }
 
     public MethodValues?[] Methods { get; }

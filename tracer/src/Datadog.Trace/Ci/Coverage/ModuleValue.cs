@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 
@@ -15,7 +16,7 @@ internal class ModuleValue
     public ModuleValue(Module module, int maxTypes)
     {
         Module = module;
-        Types = new TypeValues[maxTypes];
+        Types = maxTypes == 0 ? Array.Empty<TypeValues>() : new TypeValues[maxTypes];
     }
 
     public Module Module { get; }

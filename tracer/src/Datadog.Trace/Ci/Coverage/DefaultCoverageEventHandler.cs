@@ -50,9 +50,9 @@ internal sealed class DefaultCoverageEventHandler : CoverageEventHandler
                     }
 
                     var methodDef = typeDef.Methods[j];
-                    if (methodDef.HasBody && methodDef.Body.HasInstructions)
+                    if (methodDef.HasBody && methodDef.Body.HasInstructions && currentMethod.SequencePoints.Length > 0)
                     {
-                        var seqPoints = new List<SequencePoint>(methodDef.Body.Instructions.Count);
+                        var seqPoints = new List<SequencePoint>(currentMethod.SequencePoints.Length);
                         foreach (var instruction in methodDef.Body.Instructions)
                         {
                             if (instruction.SequencePoint is null ||
