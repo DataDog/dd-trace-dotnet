@@ -5,7 +5,6 @@
 
 #nullable enable
 using System;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Debugger
@@ -25,9 +24,6 @@ namespace Datadog.Trace.Debugger
 
         public DebuggerSettings(IConfigurationSource? configurationSource)
         {
-            var exporterSettings = new ExporterSettings(configurationSource);
-            TransportType = exporterSettings.TracesTransport;
-
             if (Uri.TryCreate(ConfigurationKeys.Debugger.SnapshotUrl?.TrimEnd('/'), UriKind.Absolute, out var snapshotUri))
             {
                 SnapshotUri = snapshotUri;
@@ -86,8 +82,6 @@ namespace Datadog.Trace.Debugger
         public int DiagnosticsIntervalSeconds { get; }
 
         public int UploadFlushIntervalMilliseconds { get; }
-
-        public TracesTransportType TransportType { get; }
 
         public static DebuggerSettings FromSource(IConfigurationSource source)
         {
