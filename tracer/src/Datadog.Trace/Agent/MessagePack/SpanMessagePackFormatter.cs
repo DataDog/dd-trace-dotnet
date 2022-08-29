@@ -66,7 +66,7 @@ namespace Datadog.Trace.Agent.MessagePack
         {
             int originalOffset = offset;
             var spans = value.Spans;
-            var spanIds = new HashSet<ulong>();
+            var spanIds = new HashSet<ulong>(spans.Count);
 
             // Using a for loop to avoid the boxing allocation on ArraySegment.GetEnumerator
             for (var i = 0; i < spans.Count; i++)
