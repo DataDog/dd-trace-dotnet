@@ -6,9 +6,9 @@
 #nullable enable
 
 using System.Linq;
-using Datadog.Trace.Telemetry;
+using Datadog.Trace.HttpOverStreams;
 
-namespace Datadog.Trace.HttpOverStreams
+namespace Datadog.Trace.Telemetry.Transports
 {
     internal class TelemetryAgentHttpHeaderHelper : HttpHeaderHelperBase
     {

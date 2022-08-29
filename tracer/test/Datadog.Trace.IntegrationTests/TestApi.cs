@@ -27,7 +27,7 @@ namespace Datadog.Trace.IntegrationTests
             return objects;
         }
 
-        public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces)
+        public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans)
         {
             var spans = MessagePackSerializer.Deserialize<List<List<MockSpan>>>(traces);
 

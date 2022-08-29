@@ -54,6 +54,9 @@ namespace Datadog.Trace.Agent
         private Task _frontBufferFlushTask;
         private Task _backBufferFlushTask;
 
+        private long _droppedP0Traces;
+        private long _droppedP0Spans;
+
         private long _droppedSpans;
 
         static AgentWriter()
@@ -101,12 +104,14 @@ namespace Datadog.Trace.Agent
 
         internal SpanBuffer BackBuffer => _backBuffer;
 
+        public bool CanComputeStats => _statsAggregator?.CanComputeStats ?? false;
+
         public Task<bool> Ping()
         {
-            return _api.SendTracesAsync(EmptyPayload, 0);
+            return _api.SendTracesAsync(EmptyPayload, 0, false, 0, 0);
         }
 
-        public void WriteTrace(ArraySegment<Span> trace)
+        public void WriteTrace(ArraySegment<Span> trace, bool shouldSerializeSpans)
         {
             if (trace.Count == 0)
             {
@@ -117,11 +122,11 @@ namespace Datadog.Trace.Agent
             if (_serializationTask.IsCompleted)
             {
                 // Serialization thread is not running, serialize the trace in the current thread
-                SerializeTrace(trace);
+                SerializeTrace(trace, shouldSerializeSpans);
             }
             else
             {
-                _pendingTraces.Enqueue(new WorkItem(trace));
+                _pendingTraces.Enqueue(new WorkItem(trace, shouldSerializeSpans));
 
                 if (!_serializationMutex.IsSet)
                 {
@@ -315,9 +320,21 @@ namespace Datadog.Trace.Agent
 
                     if (buffer.TraceCount > 0)
                     {
-                        Log.Debug<int, int>("Flushing {spans} spans across {traces} traces", buffer.SpanCount, buffer.TraceCount);
+                        long droppedP0Traces = 0;
+                        long droppedP0Spans = 0;
 
-                        var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount).ConfigureAwait(false);
+                        if (CanComputeStats)
+                        {
+                            droppedP0Traces = Interlocked.Exchange(ref _droppedP0Traces, 0);
+                            droppedP0Spans = Interlocked.Exchange(ref _droppedP0Spans, 0);
+                            Log.Debug<int, int, long, long>("Flushing {spans} spans across {traces} traces. CanComputeStats is enabled with {droppedP0Traces} droppedP0Traces and {droppedP0Spans} droppedP0Spans", buffer.SpanCount, buffer.TraceCount, droppedP0Traces, droppedP0Spans);
+                        }
+                        else
+                        {
+                            Log.Debug<int, int>("Flushing {spans} spans across {traces} traces. CanComputeStats is disabled.", buffer.SpanCount, buffer.TraceCount);
+                        }
+
+                        var success = await _api.SendTracesAsync(buffer.Data, buffer.TraceCount, CanComputeStats, droppedP0Traces, droppedP0Spans).ConfigureAwait(false);
 
                         if (success)
                         {
@@ -342,7 +359,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private void SerializeTrace(ArraySegment<Span> trace)
+        private void SerializeTrace(ArraySegment<Span> trace, bool shouldSerializeSpans)
         {
             // Declaring as inline method because only safe to invoke in the context of SerializeTrace
             SpanBuffer SwapBuffers()
@@ -367,7 +384,16 @@ namespace Datadog.Trace.Agent
                 return null;
             }
 
-            _statsAggregator?.AddRange(trace.Array, trace.Offset, trace.Count);
+            bool forceKeep = _statsAggregator?.AddRange(trace) ?? false;
+
+            // If stats computation determined that we can drop the P0 Trace,
+            // skip all other processing
+            if (!shouldSerializeSpans && CanComputeStats && !forceKeep)
+            {
+                Interlocked.Increment(ref _droppedP0Traces);
+                Interlocked.Add(ref _droppedP0Spans, trace.Count);
+                return;
+            }
 
             // Add the current keep rate to the root span
             var rootSpan = trace.Array[trace.Offset].Context.TraceContext?.RootSpan;
@@ -450,7 +476,7 @@ namespace Datadog.Trace.Agent
                         }
 
                         hasDequeuedTraces = true;
-                        SerializeTrace(item.Trace);
+                        SerializeTrace(item.Trace, item.ShouldSerializeSpans);
                     }
                 }
                 catch (Exception ex)
@@ -479,17 +505,20 @@ namespace Datadog.Trace.Agent
         private readonly struct WorkItem
         {
             public readonly ArraySegment<Span> Trace;
+            public readonly bool ShouldSerializeSpans;
             public readonly Action Callback;
 
-            public WorkItem(ArraySegment<Span> trace)
+            public WorkItem(ArraySegment<Span> trace, bool shouldSerializeSpans)
             {
                 Trace = trace;
+                ShouldSerializeSpans = shouldSerializeSpans;
                 Callback = null;
             }
 
             public WorkItem(Action callback)
             {
                 Trace = default;
+                ShouldSerializeSpans = default;
                 Callback = callback;
             }
         }

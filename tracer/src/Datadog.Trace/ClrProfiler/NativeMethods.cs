@@ -64,6 +64,18 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        public static void DisableTracerCLRProfiler()
+        {
+            if (IsWindows)
+            {
+                Windows.DisableTracerCLRProfiler();
+            }
+            else
+            {
+                NonWindows.DisableTracerCLRProfiler();
+            }
+        }
+
         public static void AddDerivedInstrumentations(string id, NativeCallTargetDefinition[] methodArrays)
         {
             if (methodArrays is null || methodArrays.Length == 0)
@@ -143,6 +155,9 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Tracer.Native.dll")]
             public static extern void InitializeTraceMethods([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName, [MarshalAs(UnmanagedType.LPWStr)] string configuration);
+
+            [DllImport("Datadog.Tracer.Native.dll")]
+            public static extern void DisableTracerCLRProfiler();
         }
 
         // assume .NET Core if not running on Windows
@@ -169,6 +184,9 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern void InitializeTraceMethods([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName, [MarshalAs(UnmanagedType.LPWStr)] string configuration);
+
+            [DllImport("Datadog.Tracer.Native")]
+            public static extern void DisableTracerCLRProfiler();
         }
     }
 }

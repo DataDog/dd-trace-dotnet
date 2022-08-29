@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -18,10 +19,18 @@ namespace Datadog.Trace.IntegrationTests
 {
     public class StatsTests
     {
+        private const int StatsComputationIntervalSeconds = 10;
+
         [Fact]
         public async Task SendStats()
         {
             await SendStatsHelper(statsComputationEnabled: true, expectStats: true);
+        }
+
+        [Fact]
+        public async Task SendsStatsAndDropsSpansWhenSampleRateIsZero_TS007()
+        {
+            await SendStatsHelper(statsComputationEnabled: true, expectStats: true, expectAllTraces: false, globalSamplingRate: 0.0);
         }
 
         [Fact]
@@ -36,18 +45,41 @@ namespace Datadog.Trace.IntegrationTests
             await SendStatsHelper(statsComputationEnabled: false, expectStats: false);
         }
 
-        private async Task SendStatsHelper(bool statsComputationEnabled, bool expectStats, bool finishSpansOnClose = true)
+        private async Task SendStatsHelper(bool statsComputationEnabled, bool expectStats, double? globalSamplingRate = null, bool expectAllTraces = true, bool finishSpansOnClose = true)
         {
             expectStats &= statsComputationEnabled && finishSpansOnClose;
-            var waitEvent = new AutoResetEvent(false);
+            var statsWaitEvent = new AutoResetEvent(false);
+            var tracesWaitEvent = new AutoResetEvent(false);
 
             using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
 
-            agent.StatsDeserialized += (_, _) => waitEvent.Set();
+            List<string> droppedP0TracesHeaderValues = new();
+            List<string> droppedP0SpansHeaderValues = new();
+            agent.RequestReceived += (sender, args) =>
+            {
+                var context = args.Value;
+                if (context.Request.RawUrl.EndsWith("/traces"))
+                {
+                    droppedP0TracesHeaderValues.Add(context.Request.Headers.Get("Datadog-Client-Dropped-P0-Traces"));
+                    droppedP0SpansHeaderValues.Add(context.Request.Headers.Get("Datadog-Client-Dropped-P0-Spans"));
+                }
+            };
+
+            agent.StatsDeserialized += (_, _) =>
+            {
+                statsWaitEvent.Set();
+            };
+
+            agent.RequestDeserialized += (_, _) =>
+            {
+                tracesWaitEvent.Set();
+            };
 
             var settings = new TracerSettings
             {
+                GlobalSamplingRate = globalSamplingRate,
                 StatsComputationEnabled = statsComputationEnabled,
+                StatsComputationInterval = StatsComputationIntervalSeconds,
                 ServiceVersion = "V",
                 Environment = "Test",
                 Exporter = new ExporterSettings
@@ -60,58 +92,110 @@ namespace Datadog.Trace.IntegrationTests
 
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
 
+            // Scenario 1: Send server span with 200 status code (success). This is a unique stats point so this trace is kept
             Span span1;
-
             using (var scope = tracer.StartActiveInternal("operationName", finishOnClose: finishSpansOnClose))
             {
                 span1 = scope.Span;
                 span1.ResourceName = "resourceName";
-                span1.SetHttpStatusCode(200, isServer: false, immutableSettings);
+                span1.SetHttpStatusCode(200, isServer: true, immutableSettings);
                 span1.Type = "span1";
             }
 
             await tracer.FlushAsync();
-            if (expectStats)
-            {
-                waitEvent.WaitOne(TimeSpan.FromSeconds(15)).Should().Be(true, "timeout while waiting for stats");
-            }
-            else
-            {
-                waitEvent.WaitOne(TimeSpan.FromSeconds(15)).Should().Be(false, "No stats should be received");
-            }
 
+            // Scenario 2: Send the same server span as before, but it is not an error and it is not a new point,
+            // so this trace can be dropped when ClientDropP0s is true
             Span span2;
-
             using (var scope = tracer.StartActiveInternal("operationName", finishOnClose: finishSpansOnClose))
             {
                 span2 = scope.Span;
                 span2.ResourceName = "resourceName";
-                span2.SetHttpStatusCode(500, isServer: true, immutableSettings);
-                span2.Type = "span2";
+                span2.SetHttpStatusCode(200, isServer: true, immutableSettings);
+                span2.Type = "span1";
             }
 
             await tracer.FlushAsync();
+
+            // Scenario 3: Send server span with 200 status code but with an error
+            Span span3;
+            using (var scope = tracer.StartActiveInternal("operationName", finishOnClose: finishSpansOnClose))
+            {
+                span3 = scope.Span;
+                span3.ResourceName = "resourceName";
+                span3.SetHttpStatusCode(200, isServer: true, immutableSettings);
+                span3.Type = "span1";
+                span3.Error = true;
+            }
+
+            await tracer.FlushAsync();
+            await tracer.FlushAndCloseAsync(); // Flushes and closes both traces and stats
+
+            WaitForStats(statsWaitEvent, expectStats);
+            WaitForTraces(tracesWaitEvent, finishSpansOnClose); // The last span was an error, so we expect to receive it as long as it closed
+
             if (expectStats)
             {
-                waitEvent.WaitOne(TimeSpan.FromSeconds(15)).Should().Be(true, "timeout while waiting for stats");
-
-                var payload = agent.WaitForStats(2);
-                payload.Should().HaveCount(2);
+                var payload = agent.WaitForStats(1);
+                payload.Should().HaveCount(1);
 
                 var stats1 = payload[0];
                 stats1.Sequence.Should().Be(1);
-                AssertStats(stats1, span1, isError: false);
 
-                var stats2 = payload[1];
-                stats2.Sequence.Should().Be(2);
-                AssertStats(stats2, span2, isError: true);
+                var totalDuration = span1.Duration.ToNanoseconds() + span2.Duration.ToNanoseconds() + span3.Duration.ToNanoseconds();
+                AssertStats(stats1, span1, totalDuration);
+            }
+
+            // Assert header values
+            if (!finishSpansOnClose)
+            {
+                // If we never finish the spans, there will be no requests to the trace agent
+                droppedP0TracesHeaderValues.Should().BeEquivalentTo(new string[] { });
+                droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { });
+            }
+            else if (!expectStats)
+            {
+                // If we don't send stats, then we won't add the headers
+                droppedP0TracesHeaderValues.Should().BeEquivalentTo(new string[] { null, null, null });
+                droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { null, null, null });
+            }
+            else if (expectAllTraces)
+            {
+                // If we still expect all the traces to come in, each request will have 0 dropped traces/spans
+                droppedP0TracesHeaderValues.Should().BeEquivalentTo(new string[] { "0", "0", "0" });
+                droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { "0", "0", "0" });
             }
             else
             {
-                waitEvent.WaitOne(TimeSpan.FromSeconds(15)).Should().Be(false, "No stats should be received");
+                droppedP0TracesHeaderValues.Should().BeEquivalentTo(new string[] { "0", "1" });
+                droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { "0", "1" });
             }
 
-            void AssertStats(MockClientStatsPayload stats, Span span, bool isError)
+            void WaitForTraces(AutoResetEvent e, bool expected)
+            {
+                if (expected)
+                {
+                    e.WaitOne(TimeSpan.FromSeconds(15)).Should().Be(true, "timeout while waiting for traces");
+                }
+                else
+                {
+                    e.WaitOne(TimeSpan.FromSeconds(15)).Should().Be(false, "No traces should be received");
+                }
+            }
+
+            void WaitForStats(AutoResetEvent e, bool expected)
+            {
+                if (expected)
+                {
+                    e.WaitOne(TimeSpan.FromSeconds(StatsComputationIntervalSeconds * 2)).Should().Be(true, "timeout while waiting for stats");
+                }
+                else
+                {
+                    e.WaitOne(TimeSpan.FromSeconds(StatsComputationIntervalSeconds * 2)).Should().Be(false, "No stats should be received");
+                }
+            }
+
+            void AssertStats(MockClientStatsPayload stats, Span span, long totalDuration)
             {
                 stats.Env.Should().Be(settings.Environment);
                 stats.Hostname.Should().Be(HostMetadata.Instance.Hostname);
@@ -124,7 +208,7 @@ namespace Datadog.Trace.IntegrationTests
 
                 var bucket = stats.Stats[0];
                 bucket.AgentTimeShift.Should().Be(0);
-                bucket.Duration.Should().Be(TimeSpan.FromSeconds(10).ToNanoseconds());
+                bucket.Duration.Should().Be(TimeSpan.FromSeconds(StatsComputationIntervalSeconds).ToNanoseconds());
                 bucket.Start.Should().NotBe(0);
 
                 bucket.Stats.Should().HaveCount(1);
@@ -132,15 +216,15 @@ namespace Datadog.Trace.IntegrationTests
                 var group = bucket.Stats[0];
 
                 group.DbType.Should().BeNull();
-                group.Duration.Should().Be(span.Duration.ToNanoseconds());
-                group.Errors.Should().Be(isError ? 1 : 0);
+                group.Duration.Should().Be(totalDuration);
+                group.Errors.Should().Be(1);
                 group.ErrorSummary.Should().NotBeEmpty();
-                group.Hits.Should().Be(1);
+                group.Hits.Should().Be(3);
                 group.HttpStatusCode.Should().Be(int.Parse(span.GetTag(Tags.HttpStatusCode)));
                 group.Name.Should().Be(span.OperationName);
                 group.OkSummary.Should().NotBeEmpty();
                 group.Synthetics.Should().Be(false);
-                group.TopLevelHits.Should().Be(1);
+                group.TopLevelHits.Should().Be(3);
                 group.Type.Should().Be(span.Type);
             }
         }
