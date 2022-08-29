@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -43,8 +44,7 @@ namespace Datadog.Trace.IntegrationTests
             var beforeY2KDuration = TimeSpan.FromMilliseconds(2000);
             var year2KDateTime = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-            var agentConfiguration = new MockTracerAgent.AgentConfiguration();
-            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort(), configuration: agentConfiguration);
+            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
 
             var settings = new TracerSettings
             {
@@ -61,7 +61,7 @@ namespace Datadog.Trace.IntegrationTests
             var immutableSettings = settings.Build();
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
             Span span;
-            SpinWait.SpinUntil(() => tracer.CanComputeStats, 5_000);
+            // SpinWait.SpinUntil(() => tracer.CanComputeStats, 5_000); // TODO: Replace with discovery logic
 
             // Service
             // - If service is empty, it is set to DefaultServiceName
@@ -189,8 +189,7 @@ namespace Datadog.Trace.IntegrationTests
         [Fact]
         public async Task SendsStatsWithProcessing_Obfuscator()
         {
-            var agentConfiguration = new MockTracerAgent.AgentConfiguration();
-            using var agent = MockTracerAgent.Create(TcpPortProvider.GetOpenPort(), configuration: agentConfiguration);
+            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
 
             var settings = new TracerSettings
             {
@@ -206,7 +205,7 @@ namespace Datadog.Trace.IntegrationTests
 
             var immutableSettings = settings.Build();
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
-            SpinWait.SpinUntil(() => tracer.CanComputeStats, 5_000);
+            // SpinWait.SpinUntil(() => tracer.CanComputeStats, 5_000); // TODO: Replace with discovery logic
 
             CreateDefaultSpan(type: "sql", resource: "SELECT * FROM TABLE WHERE userId = 'abc1287681964'");
             CreateDefaultSpan(type: "sql", resource: "SELECT * FROM TABLE WHERE userId = 'abc\\'1287\\'681\\'\\'\\'\\'964'");
