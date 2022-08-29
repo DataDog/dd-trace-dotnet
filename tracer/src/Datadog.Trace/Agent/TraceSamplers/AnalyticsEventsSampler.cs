@@ -10,8 +10,6 @@ namespace Datadog.Trace.Agent.TraceSamplers
 {
     internal class AnalyticsEventsSampler : ITraceSampler
     {
-        private const ulong KnuthFactor = 1_111_111_111_111_111_111;
-
         public bool Sample(ArraySegment<Span> trace)
         {
             for (int i = 0; i < trace.Count; i++)

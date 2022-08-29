@@ -9,7 +9,7 @@ namespace Datadog.Trace.Util
     {
         private const ulong KnuthFactor = 1_111_111_111_111_111_111;
 
-        internal static bool SampleByRate(ulong traceId, double rate) =>
-            ((traceId * KnuthFactor) % TracerConstants.MaxTraceId) <= (rate * TracerConstants.MaxTraceId);
+        internal static bool SampleByRate(ulong id, double rate) =>
+            ((id * KnuthFactor) % TracerConstants.MaxTraceId) <= (rate * TracerConstants.MaxTraceId);
     }
 }
