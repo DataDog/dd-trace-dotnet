@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -35,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             return paramDeny.IsMatch(param);
         }
 
-        internal static string ScrubbingEnvVariables(IDictionary<string, string> envVariables)
+        internal static string ScrubbingEnvVariables(StringDictionary envVariables)
         {
             if (envVariables != null)
             {
@@ -43,16 +44,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 
                 foreach (var variable in envVariables.Keys)
                 {
-                    if (IsAllowedVariable(variable))
+                    var stringVar = variable.ToString();
+                    if (IsAllowedVariable(stringVar))
                     {
-                        variableLine += variable + "=" + envVariables[variable];
-
-                        if (variable != envVariables.Keys.Last())
-                        {
-                            variableLine += "\n";
-                        }
+                        variableLine += variable + "=" + envVariables[stringVar] + "\n";
                     }
                 }
+
+                return variableLine;
             }
 
             return null;

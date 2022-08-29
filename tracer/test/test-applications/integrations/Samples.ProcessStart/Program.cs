@@ -1,3 +1,5 @@
+using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Security;
 using System.Threading.Tasks;
@@ -10,27 +12,27 @@ namespace Samples.ProcessStart
         {
             try
             {
-                Process.Start("cmd.exe");
+                Process.Start("nonexisting.exe");
             }
-            catch { }
+            catch (Win32Exception) { }
 
             try
             {
                 Process.Start("nonexisting.exe", "arg1");
             }
-            catch { }
+            catch (Win32Exception) { }
 
             try
             {
                 Process.Start("nonexisting.exe", "arg1", "user", new SecureString(), "domain");
             }
-            catch { }
+            catch (Win32Exception) { }
 
             try
             {
                 Process.Start("nonexisting.exe", "user", new SecureString(), "domain");
             }
-            catch { }
+            catch (Win32Exception) { }
 
             try
             {
@@ -39,7 +41,7 @@ namespace Samples.ProcessStart
                 process.StartInfo.UseShellExecute = false;
                 process.Start();
             }
-            catch { }
+            catch (Win32Exception) { }
         }
     }
 }

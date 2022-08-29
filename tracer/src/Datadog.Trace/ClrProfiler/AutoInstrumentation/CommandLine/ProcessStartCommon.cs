@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -26,13 +27,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         {
             if (info != null)
             {
-                return CreateScope(info.FileName, info.Arguments, info.UseShellExecute ? null : info.EnvironmentVariables as IDictionary<string, string>);
+                return CreateScope(info.FileName, info.UseShellExecute ? null : info.EnvironmentVariables);
             }
 
             return null;
         }
 
-        internal static Scope CreateScope(string filename, string arguments, IDictionary<string, string> envVariables)
+        internal static Scope CreateScope(string filename, StringDictionary envVariables)
         {
             var tracer = Tracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !tracer.Settings.IsIntegrationEnabled(IntegrationId.CommandExecution))
@@ -55,17 +56,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 }
 
                 var truncated = false;
-                if (arguments.Length > MaxCommandLineLength)
+                var varsTruncated = CommandLineParametersAnalyzer.ScrubbingEnvVariables(envVariables);
+                if (varsTruncated?.Length > MaxCommandLineLength)
                 {
-                    arguments = Truncate(arguments, MaxCommandLineLength);
+                    varsTruncated = Truncate(varsTruncated, MaxCommandLineLength);
                     truncated = true;
                 }
 
-                var commandLine = (filename ?? string.Empty) + arguments;
-
                 var tags = new ProcessCommandStartTags
                 {
-                    EnviromentVars = CommandLineParametersAnalyzer.ScrubbingEnvVariables(envVariables),
+                    EnviromentVars = varsTruncated,
                     Truncated = truncated ? "true" : null
                 };
 

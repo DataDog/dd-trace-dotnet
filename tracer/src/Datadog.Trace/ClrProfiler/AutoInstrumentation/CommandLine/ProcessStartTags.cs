@@ -15,10 +15,7 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.ProcessEnvironmentVars)]
         public string EnviromentVars { get; set; }
 
-        [Tag(Trace.Tags.ProcessExitCode)]
-        public string ExitCode { get; set; }
-
-        [Tag(Trace.Tags.ProcessCommandLineTruncated)]
+        [Tag(Trace.Tags.ProcesTruncated)]
         public string Truncated { get; set; }
     }
 }
