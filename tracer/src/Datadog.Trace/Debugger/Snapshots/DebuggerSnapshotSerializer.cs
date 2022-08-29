@@ -63,10 +63,15 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 if (source is IEnumerable enumerable && SupportedTypesService.IsSupportedCollection(source))
                 {
-                    jsonWriter.WritePropertyName(variableName);
+                    if (variableName != null)
+                    {
+                        jsonWriter.WritePropertyName(variableName);
+                    }
+
                     jsonWriter.WriteStartObject();
                     SerializeEnumerable(source, type, jsonWriter, enumerable, currentDepth, ref totalObjects, cts);
                     jsonWriter.WriteEndObject();
+
                     return true;
                 }
 
@@ -339,6 +344,13 @@ namespace Datadog.Trace.Debugger.Snapshots
                 {
                     case FieldInfo field:
                         {
+                            if (field.FieldType.ContainsGenericParameters ||
+                                field.DeclaringType.ContainsGenericParameters ||
+                                field.ReflectedType.ContainsGenericParameters)
+                            {
+                                return false;
+                            }
+
                             type = field.FieldType;
                             if (source != null || field.IsStatic)
                             {

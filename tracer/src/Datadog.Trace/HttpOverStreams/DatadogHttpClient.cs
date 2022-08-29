@@ -63,7 +63,11 @@ namespace Datadog.Trace.HttpOverStreams
                 await writer.FlushAsync().ConfigureAwait(false);
             }
 
-            await request.Content.CopyToAsync(requestStream).ConfigureAwait(false);
+            if (request.Content != null)
+            {
+                await request.Content.CopyToAsync(requestStream).ConfigureAwait(false);
+            }
+
             Logger.Debug("Datadog HTTP: Flushing stream.");
             await requestStream.FlushAsync().ConfigureAwait(false);
         }

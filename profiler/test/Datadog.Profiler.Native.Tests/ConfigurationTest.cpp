@@ -352,3 +352,43 @@ TEST(ConfigurationTest, CheckMinimumCoresThresholdWhenVariableIsSet)
     auto configuration = Configuration{};
     ASSERT_EQ(configuration.MinimumCores(), 0.5);
 }
+
+TEST(ConfigurationTest, CheckContentionProfilingIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckContentionProfilingIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ContentionProfilingEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckContentionProfilingIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ContentionProfilingEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsContentionProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckCpuProfilingIsEnabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsCpuProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckCpuProfilingIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilingEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsCpuProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckCpuProfilingIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilingEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsCpuProfilingEnabled(), false);
+}

@@ -37,6 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Shared\RuntimeMetrics\RuntimeMetrics.csproj" />
     <ProjectReference Include="..\Shared\Util\Datadog.Demos.Util.csproj" />
   </ItemGroup>
 

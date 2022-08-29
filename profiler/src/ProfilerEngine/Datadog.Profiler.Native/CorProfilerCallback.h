@@ -21,19 +21,21 @@
 #include "WallTimeProvider.h"
 #include "CpuTimeProvider.h"
 #include "SamplesCollector.h"
+#include "IRuntimeInfo.h"
+#include "IEnabledProfilers.h"
 #include "shared/src/native-src/string.h"
 
 #include <atomic>
 #include <memory>
 #include <vector>
 
+class ContentionProvider;
 class IService;
 class IThreadsCpuManager;
 class IManagedThreadList;
 class IStackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
-class SamplesAggregator;
 
 namespace shared {
 class Loader;
@@ -203,7 +205,7 @@ private :
     WallTimeProvider* _pWallTimeProvider = nullptr;
     CpuTimeProvider* _pCpuTimeProvider = nullptr;
     AllocationsProvider* _pAllocationsProvider = nullptr;
-    SamplesAggregator* _pSamplesAggregator = nullptr;
+    ContentionProvider* _pContentionProvider = nullptr;
     SamplesCollector* _pSamplesCollector = nullptr;
 
     std::vector<std::unique_ptr<IService>> _services;
@@ -212,12 +214,14 @@ private :
     std::unique_ptr<IConfiguration> _pConfiguration = nullptr;
     std::unique_ptr<IAppDomainStore> _pAppDomainStore = nullptr;
     std::unique_ptr<IFrameStore> _pFrameStore = nullptr;
+    std::unique_ptr<IRuntimeInfo> _pRuntimeInfo = nullptr;
+    std::unique_ptr<IEnabledProfilers> _pEnabledProfilers = nullptr;
 
 private:
     static void ConfigureDebugLog();
-    static void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk);
+    static void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk, uint16_t& runtimeMajor, uint16_t& runtimeMinor);
     static void InspectProcessorInfo();
-    static void InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor);
+    static void InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor, COR_PRF_RUNTIME_TYPE& runtimeType);
     static const char* SysInfoProcessorArchitectureToStr(WORD wProcArch);
 
     void DisposeInternal();

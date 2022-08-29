@@ -76,6 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
         internal static Scope CreateConsumerScope(
             Tracer tracer,
+            object consumer,
             string topic,
             Partition? partition,
             Offset? offset,
@@ -135,6 +136,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 if (offset is not null)
                 {
                     tags.Offset = offset.ToString();
+                }
+
+                if (ConsumerGroupHelper.TryGetConsumerGroup(consumer, out var groupId))
+                {
+                    tags.ConsumerGroup = groupId;
                 }
 
                 if (message is not null && message.Timestamp.Type != 0)

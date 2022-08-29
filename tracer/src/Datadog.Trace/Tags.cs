@@ -243,6 +243,11 @@ namespace Datadog.Trace
         internal const string KafkaOffset = "kafka.offset";
 
         /// <summary>
+        /// The consumer group that consumed the message
+        /// </summary>
+        internal const string KafkaConsumerGroup = "kafka.group";
+
+        /// <summary>
         /// Whether the record was a "tombstone" record
         /// </summary>
         internal const string KafkaTombstone = "kafka.tombstone";
@@ -499,6 +504,8 @@ namespace Datadog.Trace
         internal const string GrpcMethodName = "grpc.method.name";
         internal const string GrpcStatusCode = "grpc.status.code";
 
+        internal const string TagPropagationError = "_dd.propagation_error";
+
         internal static class User
         {
             internal const string Email = "usr.email";
@@ -509,9 +516,9 @@ namespace Datadog.Trace
             internal const string Scope = "usr.scope";
         }
 
-        internal static class TagPropagation
+        internal static class Propagated
         {
-            internal const string Error = "_dd.propagation_error";
+            internal const string DecisionMaker = "_dd.p.dm";
         }
     }
 }

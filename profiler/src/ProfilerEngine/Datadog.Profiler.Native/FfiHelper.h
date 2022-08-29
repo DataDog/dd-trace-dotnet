@@ -9,7 +9,7 @@
 
 extern "C"
 {
-#include "ddprof/ffi.h"
+#include "datadog/common.h"
 }
 
 class FfiHelper
@@ -17,9 +17,9 @@ class FfiHelper
 public:
     FfiHelper() = delete;
 
-    static ddprof_ffi_ByteSlice StringToByteSlice(std::string const& str);
-    static ddprof_ffi_ByteSlice StringToByteSlice(char const* str);
-    static ddprof_ffi_Slice_c_char StringToCharSlice(std::string const& str);
-    static ddprof_ffi_Slice_c_char StringToCharSlice(std::string_view str);
-    static ddprof_ffi_ValueType CreateValueType(std::string const& type, std::string const& unit);
+    static ddog_ByteSlice StringToByteSlice(std::string const& str);
+    static ddog_ByteSlice StringToByteSlice(char const* str);
+    static ddog_Slice_c_char StringToCharSlice(std::string const& str);
+    static ddog_Slice_c_char StringToCharSlice(std::string_view str);
+    static ddog_ValueType CreateValueType(std::string const& type, std::string const& unit);
 };

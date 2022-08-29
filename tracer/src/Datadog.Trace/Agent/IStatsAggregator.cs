@@ -3,15 +3,35 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent
 {
     internal interface IStatsAggregator
     {
-        void Add(params Span[] spans);
+        /// <summary>
+        /// Gets a value indicating whether the Datadog agent supports stats
+        /// computation in tracers.
+        ///
+        /// This will return null if the endpoint discovery request has not
+        /// completed.
+        /// </summary>
+        bool? CanComputeStats { get; }
 
-        void AddRange(Span[] spans, int offset, int count);
+        /// <summary>
+        /// Receives an array of spans and computes stats points for them.
+        /// </summary>
+        /// <param name="spans">The array of spans to process.</param>
+        /// <returns>True if the spans should be kept based on rare stats points or error stats points, false otherwise.</returns>
+        bool Add(params Span[] spans);
+
+        /// <summary>
+        /// Receives an array of spans and computes stats points for them.
+        /// </summary>
+        /// <param name="spans">The ArraySegment of spans to process.</param>
+        /// <returns>True if the spans should be kept based on rare stats points or error stats points, false otherwise.</returns>
+        bool AddRange(ArraySegment<Span> spans);
 
         Task DisposeAsync();
     }

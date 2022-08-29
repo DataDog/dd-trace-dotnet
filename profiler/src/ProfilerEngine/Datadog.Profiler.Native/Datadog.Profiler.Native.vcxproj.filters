@@ -39,6 +39,9 @@
     <Filter Include="Allocations">
       <UniqueIdentifier>{ebcb3383-0a0b-49fd-a5ad-99ea7b92d783}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Contention">
+      <UniqueIdentifier>{bb4d04f1-ed7e-48db-b2e0-99b56d4f258a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CorProfilerCallback.h">
@@ -146,9 +149,6 @@
     <ClInclude Include="Sample.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
-    <ClInclude Include="SamplesAggregator.h">
-      <Filter>Profiler-Driver</Filter>
-    </ClInclude>
     <ClInclude Include="ISamplesProvider.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
@@ -228,11 +228,35 @@
     <ClInclude Include="IAllocationsListener.h">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClInclude>
+    <ClInclude Include="IRuntimeInfo.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="RuntimeInfo.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="EnabledProfilers.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="IEnabledProfilers.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="EnumHelpers.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
     <ClInclude Include="SamplesCollector.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
     <ClInclude Include="COMHelpers.h">
       <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="ContentionProvider.h">
+      <Filter>Contention</Filter>
+    </ClInclude>
+    <ClInclude Include="RawContentionSample.h">
+      <Filter>Contention</Filter>
+    </ClInclude>
+    <ClInclude Include="IContentionListener.h">
+      <Filter>Contention</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -300,9 +324,6 @@
     <ClCompile Include="TagsHelper.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
-    <ClCompile Include="SamplesAggregator.cpp">
-      <Filter>Profiler-Driver</Filter>
-    </ClCompile>
     <ClCompile Include="Sample.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
@@ -358,6 +379,15 @@
     </ClCompile>
     <ClCompile Include="cgroup.cpp">
       <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="RuntimeInfo.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="EnabledProfilers.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="ContentionProvider.cpp">
+      <Filter>Contention</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

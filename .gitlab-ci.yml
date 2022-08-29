@@ -56,7 +56,11 @@ publish:
           try {
               # The grants option at the end is used to allow public access on the files we upload as the acls only aren't enough.
               aws s3 cp artifacts/ s3://dd-windowsfilter/builds/tracer/${CI_COMMIT_SHA} --recursive --region us-east-1 --exclude "*" --include "*.zip" --include "*.msi" --grants read=uri=http://acs.amazonaws.com/groups/global/AllUsers full=id=3a6e02b08553fd157ae3fb918945dd1eaae5a1aa818940381ef07a430cf25732
-              return
+              If ($LASTEXITCODE -eq 0) { 
+                return
+              }
+
+              throw "Error uploading artifacts to S3"
           } catch {
               $msg = $Error[0].Exception.Message
               Write-Output "Encountered error during while publishing to S3. Error Message is $msg."

@@ -18,6 +18,7 @@
 #endif
 
 #include "AllocationsProvider.h"
+#include "ContentionProvider.h"
 #include "AppDomainStore.h"
 #include "ApplicationStore.h"
 #include "ClrEventsParser.h"
@@ -36,10 +37,11 @@
 #include "OsSpecificApi.h"
 #include "ProfilerEngineStatus.h"
 #include "RuntimeIdStore.h"
-#include "SamplesAggregator.h"
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
+#include "RuntimeInfo.h"
+#include "EnabledProfilers.h"
 
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/pal.h"
@@ -134,7 +136,6 @@ bool CorProfilerCallback::InitializeServices()
             pRuntimeIdStore);
     }
 
-
     // _pCorProfilerInfoEvents must have been set for any CLR events-based profiler to work
     if (_pCorProfilerInfoEvents != nullptr)
     {
@@ -149,9 +150,23 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore);
         }
 
+        if (_pConfiguration->IsContentionProfilingEnabled())
+        {
+            _pContentionProvider = RegisterService<ContentionProvider>(
+                _pCorProfilerInfo,
+                _pManagedThreadList,
+                _pFrameStore.get(),
+                _pThreadsCpuManager,
+                _pAppDomainStore.get(),
+                pRuntimeIdStore);
+        }
+
         // TODO: add new CLR events-based providers to the event parser
-        _pClrEventsParser = std::make_unique<ClrEventsParser>(_pCorProfilerInfoEvents, _pAllocationsProvider);
+        _pClrEventsParser = std::make_unique<ClrEventsParser>(_pCorProfilerInfoEvents, _pAllocationsProvider, _pContentionProvider);
     }
+
+    // compute enabled profilers based on configuration and receivable CLR events
+    _pEnabledProfilers = std::make_unique<EnabledProfilers>(_pConfiguration.get(), _pCorProfilerInfoEvents != nullptr);
 
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
@@ -167,9 +182,13 @@ bool CorProfilerCallback::InitializeServices()
 
     // The different elements of the libddprof pipeline are created and linked together
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
-    _pExporter = std::make_unique<LibddprofExporter>(_pConfiguration.get(), _pApplicationStore);
+    _pExporter = std::make_unique<LibddprofExporter>(
+        _pConfiguration.get(),
+        _pApplicationStore,
+        _pRuntimeInfo.get(),
+        _pEnabledProfilers.get());
 
-    _pSamplesCollector = RegisterService<SamplesCollector>(_pThreadsCpuManager);
+    _pSamplesCollector = RegisterService<SamplesCollector>(_pConfiguration.get(), _pThreadsCpuManager, _pExporter.get(), _metricsSender.get());
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
@@ -194,9 +213,12 @@ bool CorProfilerCallback::InitializeServices()
         {
             _pSamplesCollector->Register(_pAllocationsProvider);
         }
-    }
 
-    _pSamplesAggregator = RegisterService<SamplesAggregator>(_pConfiguration.get(), _pThreadsCpuManager, _pExporter.get(), _metricsSender.get(), _pSamplesCollector);
+        if (_pConfiguration->IsContentionProfilingEnabled())
+        {
+            _pSamplesCollector->Register(_pContentionProvider);
+        }
+    }
 
     auto started = StartServices();
     if (!started)
@@ -390,25 +412,39 @@ ULONG STDMETHODCALLTYPE CorProfilerCallback::GetRefCount(void) const
     return refCount;
 }
 
-void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk)
+void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk, uint16_t& runtimeMajor, uint16_t& runtimeMinor)
 {
-    IUnknown* tstVerProfilerInfo;
-    if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**)&tstVerProfilerInfo))
+    runtimeMajor = 0;
+    runtimeMinor = 0;
+    IUnknown* tstVerProfilerInfo;  // ICorProfilerInfo13 will ship with .NET 7
+    if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&tstVerProfilerInfo))
     {
         _isNet46OrGreater = true;
-        Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 5.0 or later.");
+        Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 5.0 or later.");  // could be 6 too
+        tstVerProfilerInfo->Release();
+    }
+    else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**)&tstVerProfilerInfo))
+    {
+        runtimeMajor = 3;
+        runtimeMinor = 1;
+        _isNet46OrGreater = true;
+        Log::Info("ICorProfilerInfo10 available. Profiling API compatibility: .NET Core 3.1 or later.");
         tstVerProfilerInfo->Release();
     }
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo10), (void**)&tstVerProfilerInfo))
     {
+        runtimeMajor = 3;
+        runtimeMinor = 0;
         _isNet46OrGreater = true;
         Log::Info("ICorProfilerInfo10 available. Profiling API compatibility: .NET Core 3.0 or later.");
         tstVerProfilerInfo->Release();
     }
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo9), (void**)&tstVerProfilerInfo))
     {
+        runtimeMajor = 2;
+        runtimeMinor = 1;  // could also be 2.2
         _isNet46OrGreater = true;
-        Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.2 or later.");
+        Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.1 or later.");
         tstVerProfilerInfo->Release();
     }
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo8), (void**)&tstVerProfilerInfo))
@@ -512,10 +548,9 @@ void CorProfilerCallback::InspectProcessorInfo(void)
 #endif
 }
 
-void CorProfilerCallback::InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor)
+void CorProfilerCallback::InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerInfo, USHORT& major, USHORT& minor, COR_PRF_RUNTIME_TYPE& runtimeType)
 {
     USHORT clrInstanceId;
-    COR_PRF_RUNTIME_TYPE runtimeType;
     USHORT buildNumber;
     USHORT qfeVersion;
 
@@ -609,7 +644,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     // Log some important environment info:
     CorProfilerCallback::InspectProcessorInfo();
-    CorProfilerCallback::InspectRuntimeCompatibility(corProfilerInfoUnk);
+    uint16_t runtimeMajor;
+    uint16_t runtimeMinor;
+    CorProfilerCallback::InspectRuntimeCompatibility(corProfilerInfoUnk, runtimeMajor, runtimeMinor);
 
     // Initialize _pCorProfilerInfo:
     if (corProfilerInfoUnk == nullptr)
@@ -633,12 +670,25 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Log some more important environment info:
     USHORT major = 0;
     USHORT minor = 0;
-    CorProfilerCallback::InspectRuntimeVersion(_pCorProfilerInfo, major, minor);
+    COR_PRF_RUNTIME_TYPE runtimeType;
+    CorProfilerCallback::InspectRuntimeVersion(_pCorProfilerInfo, major, minor, runtimeType);
+
+    // for .NET Core 2.1, 3.0 and 3.1, from https://github.com/dotnet/runtime/issues/11555#issuecomment-727037353,
+    // it is needed to check ICorProfilerInfo11 for 3.1, 10 for 3.0 and 9 for 2.1 since major and minor will be 4.0
+    // from GetRuntimeInformation
+    if ((runtimeType == COR_PRF_CORE_CLR) && (major == 4))
+    {
+        major = runtimeMajor;
+        minor = runtimeMinor;
+    }
+
+    _pRuntimeInfo = std::make_unique<RuntimeInfo>(major, minor, (runtimeType == COR_PRF_DESKTOP_CLR));
 
     // CLR events-based profilers need ICorProfilerInfo12 (i.e. .NET 5+) to setup the communication.
     // If no such provider is enabled, no need to trigger it.
     // TODO: update the test when a new CLR events-based profiler is added (contention, GC, ...)
-    if ((major >= 5) && _pConfiguration->IsAllocationProfilingEnabled())
+    bool AreEventBasedProfilersEnabled = _pConfiguration->IsAllocationProfilingEnabled() || _pConfiguration->IsContentionProfilingEnabled();
+    if ((major >= 5) && AreEventBasedProfilersEnabled)
     {
         HRESULT hr = corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&_pCorProfilerInfoEvents);
         if (FAILED(hr))
@@ -659,11 +709,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //       even unmapped memory if the segment has been reclaimed).
         if (major < 5)
         {
-            if (_pConfiguration->IsAllocationProfilingEnabled())
+            if (AreEventBasedProfilersEnabled)
             {
-                Log::Warn("Allocation profiling is not supported for .NET", major, ".", minor, " (.NET 5+ is required)");
+                Log::Warn("Event-based profilers (Allocation, Contention) are not supported for .NET", major, ".", minor, " (.NET 5+ is required)");
             }
-            // TODO: add warning for other unsupported CLR event-based profilers
         }
     }
 
@@ -700,11 +749,23 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         // Listen to interesting events:
         //  - AllocationTick_V4
         //  - ContentionStop_V1
+
+        UINT64 activatedKeywords = 0;
+
+        if (_pConfiguration->IsAllocationProfilingEnabled())
+        {
+            activatedKeywords |= ClrEventsParser::KEYWORD_GC;
+        }
+        if (_pConfiguration->IsContentionProfilingEnabled())
+        {
+            activatedKeywords |= ClrEventsParser::KEYWORD_CONTENTION;
+        }
+
         COR_PRF_EVENTPIPE_PROVIDER_CONFIG providers[] =
             {
                 {
                     WStr("Microsoft-Windows-DotNETRuntime"),
-                    ClrEventsParser::KEYWORD_GC | ClrEventsParser::KEYWORD_CONTENTION,
+                    activatedKeywords,
                     5, // the documentation states that AllocationTick is Informational but... need Verbose  :^(
                     NULL
                 }
@@ -749,7 +810,6 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
     _pStackSamplerLoopManager->Stop();
 
     _pSamplesCollector->Stop();
-    _pSamplesAggregator->Stop();
 
     // Calling Stop on providers transforms the last raw samples
     if (_pWallTimeProvider != nullptr)
@@ -767,6 +827,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown(void)
     if (_pAllocationsProvider != nullptr)
     {
         _pAllocationsProvider->Stop();
+    }
+
+    if (_pContentionProvider != nullptr)
+    {
+        _pContentionProvider->Stop();
     }
 
     // dump all threads time

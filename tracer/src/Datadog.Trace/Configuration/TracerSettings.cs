@@ -123,6 +123,8 @@ namespace Datadog.Trace.Configuration
 
             StatsComputationEnabled = source?.GetBool(ConfigurationKeys.StatsComputationEnabled) ?? false;
 
+            StatsComputationInterval = source?.GetInt32(ConfigurationKeys.StatsComputationInterval) ?? 10;
+
             RuntimeMetricsEnabled = source?.GetBool(ConfigurationKeys.RuntimeMetricsEnabled) ??
                                     false;
 
@@ -196,9 +198,9 @@ namespace Datadog.Trace.Configuration
             // Filter out tags with empty keys or empty values, and trim whitespaces
             GrpcTags = InitializeHeaderTags(grpcTags, headerTagsNormalizationFixEnabled: true);
 
-            var propagationHeaderMaximumLength = source?.GetInt32(ConfigurationKeys.TagPropagation.HeaderMaxLength);
+            var outgoingTagPropagationHeaderMaxLength = source?.GetInt32(ConfigurationKeys.TagPropagation.HeaderMaxLength);
 
-            TagPropagationHeaderMaxLength = propagationHeaderMaximumLength is >= 0 and <= Tagging.TagPropagation.OutgoingPropagationHeaderMaxLength ? (int)propagationHeaderMaximumLength : Tagging.TagPropagation.OutgoingPropagationHeaderMaxLength;
+            OutgoingTagPropagationHeaderMaxLength = outgoingTagPropagationHeaderMaxLength is >= 0 and <= Tagging.TagPropagation.OutgoingTagPropagationHeaderMaxLength ? (int)outgoingTagPropagationHeaderMaxLength : Tagging.TagPropagation.OutgoingTagPropagationHeaderMaxLength;
 
             IsActivityListenerEnabled = source?.GetBool(ConfigurationKeys.FeatureFlags.ActivityListenerEnabled) ??
                                         // default value
@@ -397,6 +399,11 @@ namespace Datadog.Trace.Configuration
         public bool StartupDiagnosticLogEnabled { get; set; }
 
         /// <summary>
+        /// Gets or sets the time interval (in seconds) for sending stats
+        /// </summary>
+        internal int StatsComputationInterval { get; set; }
+
+        /// <summary>
         /// Gets or sets the maximum length of an outgoing propagation header's value ("x-datadog-tags")
         /// when injecting it into downstream service calls.
         /// </summary>
@@ -404,7 +411,7 @@ namespace Datadog.Trace.Configuration
         /// <remarks>
         /// This value is not used when extracting an incoming propagation header from an upstream service.
         /// </remarks>
-        internal int TagPropagationHeaderMaxLength { get; set; }
+        internal int OutgoingTagPropagationHeaderMaxLength { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating the injection propagation style.

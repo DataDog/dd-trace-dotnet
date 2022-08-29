@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\..\packages\libdatadog.0.7.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.0.7.0\build\native\libdatadog.props')" />
+  <Import Project="..\..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -234,7 +234,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AdaptiveSampler.h" />
+    <ClInclude Include="EnabledProfilers.h" />
+    <ClInclude Include="EnumHelpers.h" />
     <ClInclude Include="COMHelpers.h" />
+    <ClInclude Include="ContentionProvider.h" />
     <ClInclude Include="IAllocationsListener.h" />
     <ClInclude Include="AllocationsProvider.h" />
     <ClInclude Include="AppDomainStore.h" />
@@ -258,6 +261,8 @@
     <ClInclude Include="IAppDomainStore.h" />
     <ClInclude Include="IApplicationStore.h" />
     <ClInclude Include="ICollector.h" />
+    <ClInclude Include="IEnabledProfilers.h" />
+    <ClInclude Include="IContentionListener.h" />
     <ClInclude Include="IFrameStore.h" />
     <ClInclude Include="HResultConverter.h" />
     <ClInclude Include="IClrLifetime.h" />
@@ -265,6 +270,7 @@
     <ClInclude Include="IMetricsSender.h" />
     <ClInclude Include="IMetricsSenderFactory.h" />
     <ClInclude Include="IRuntimeIdStore.h" />
+    <ClInclude Include="IRuntimeInfo.h" />
     <ClInclude Include="ISamplesCollector.h" />
     <ClInclude Include="IService.h" />
     <ClInclude Include="IStackSamplerLoopManager.h" />
@@ -280,14 +286,15 @@
     <ClInclude Include="LibddprofExporter.h" />
     <ClInclude Include="ProfilerEngineStatus.h" />
     <ClInclude Include="RawAllocationSample.h" />
+    <ClInclude Include="RawContentionSample.h" />
     <ClInclude Include="RawCpuSample.h" />
     <ClInclude Include="RawExceptionSample.h" />
     <ClInclude Include="RawSample.h" />
     <ClInclude Include="RefCountingObject.h" />
     <ClInclude Include="RuntimeIdStore.h" />
+    <ClInclude Include="RuntimeInfo.h" />
     <ClInclude Include="Sample.h" />
     <ClInclude Include="SamplesCollector.h" />
-    <ClInclude Include="SamplesAggregator.h" />
     <ClInclude Include="ProviderBase.h" />
     <ClInclude Include="ScopeFinalizer.h" />
     <ClInclude Include="Semaphore.h" />
@@ -314,10 +321,12 @@
     <ClCompile Include="cgroup.cpp" />
     <ClCompile Include="ClrLifetime.cpp" />
     <ClCompile Include="Configuration.cpp" />
+    <ClCompile Include="ContentionProvider.cpp" />
     <ClCompile Include="CorProfilerCallback.cpp" />
     <ClCompile Include="CorProfilerCallbackFactory.cpp" />
     <ClCompile Include="CpuTimeProvider.cpp" />
     <ClCompile Include="DogstatsdService.cpp" />
+    <ClCompile Include="EnabledProfilers.cpp" />
     <ClCompile Include="ExceptionSampler.cpp" />
     <ClCompile Include="ExceptionsProvider.cpp" />
     <ClCompile Include="FfiHelper.cpp" />
@@ -334,9 +343,9 @@
     <ClCompile Include="RawSample.cpp" />
     <ClCompile Include="RefCountingObject.cpp" />
     <ClCompile Include="RuntimeIdStore.cpp" />
+    <ClCompile Include="RuntimeInfo.cpp" />
     <ClCompile Include="Sample.cpp" />
     <ClCompile Include="SamplesCollector.cpp" />
-    <ClCompile Include="SamplesAggregator.cpp" />
     <ClCompile Include="ProviderBase.cpp" />
     <ClCompile Include="StackFramesCollectorBase.cpp" />
     <ClCompile Include="StackSamplerLoop.cpp" />
@@ -358,6 +367,6 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.0.7.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.0.7.0\build\native\libdatadog.props'))" />
+    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props'))" />
   </Target>
 </Project>

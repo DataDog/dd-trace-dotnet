@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers;
@@ -94,10 +95,11 @@ namespace Datadog.Trace.Tests.Tagging
             SetupForSerializationTest(span, customTagCount);
             var deserializedSpan = SerializeSpan(span);
 
-            deserializedSpan.Tags.Count.Should().Be(customTagCount + 3);
+            deserializedSpan.Tags.Count.Should().Be(customTagCount + 4);
             deserializedSpan.Tags.Should().Contain(Tags.Env, "Overridden Environment");
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
             deserializedSpan.Tags.Should().Contain(Tags.RuntimeId, Tracer.RuntimeId);
+            deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, $"-{SamplingMechanism.Default.ToString()}");
 
             deserializedSpan.Metrics.Count.Should().Be(customTagCount + 3);
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\packages\libdatadog.0.7.0\build\native\libdatadog.props" Condition="Exists('..\..\..\packages\libdatadog.0.7.0\build\native\libdatadog.props')" />
+  <Import Project="..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props" Condition="Exists('..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -55,9 +55,9 @@
     <ClCompile Include="ProfilerMockedInterface.cpp" />
     <ClCompile Include="RuntimeIdStoreHelper.cpp" />
     <ClCompile Include="RuntimeIdTest.cpp" />
+    <ClCompile Include="RuntimeInfoHelper.cpp" />
     <ClCompile Include="SamplesCollectorTest.cpp" />
     <ClCompile Include="SamplesProviderTest.cpp" />
-    <ClCompile Include="SamplesAggregatorTest.cpp" />
     <ClCompile Include="StackSnapshotResultReusableBufferTest.cpp" />
     <ClCompile Include="TagsHelperTest.cpp" />
     <ClCompile Include="ProviderTest.cpp" />
@@ -70,6 +70,7 @@
     <ClInclude Include="FrameStoreHelper.h" />
     <ClInclude Include="ProfilerMockedInterface.h" />
     <ClInclude Include="RuntimeIdStoreHelper.h" />
+    <ClInclude Include="RuntimeInfoHelper.h" />
     <ClInclude Include="ThreadsCpuManagerHelper.h" />
   </ItemGroup>
   <ItemGroup>
@@ -172,6 +173,6 @@
     </PropertyGroup>
     <Error Condition="!Exists('$(PackagesDir)\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.4\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.1.8.1.4\build\native\Microsoft.googletest.v140.windesktop.msvcstl.static.rt-static.targets'))" />
     <Error Condition="!Exists('..\..\..\packages\gmock.1.11.0\build\native\gmock.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\gmock.1.11.0\build\native\gmock.targets'))" />
-    <Error Condition="!Exists('..\..\..\packages\libdatadog.0.7.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\libdatadog.0.7.0\build\native\libdatadog.props'))" />
+    <Error Condition="!Exists('..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props'))" />
   </Target>
 </Project>
