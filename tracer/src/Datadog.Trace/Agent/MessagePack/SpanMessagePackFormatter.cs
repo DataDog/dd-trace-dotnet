@@ -114,17 +114,8 @@ namespace Datadog.Trace.Agent.MessagePack
                 tagProcessors = tracer.TracerManager?.TagProcessors;
             }
 
-            offset += SerializeTags(ref bytes, offset, value, value.Tags, tagProcessors);
-
-            return offset - originalOffset;
-        }
-
-        private int SerializeTags(ref byte[] bytes, int offset, Span span, ITags tags, ITagProcessor[] tagProcessors)
-        {
-            int originalOffset = offset;
-
-            offset += WriteTags(ref bytes, offset, span, tags, tagProcessors);
-            offset += WriteMetrics(ref bytes, offset, span, tags, tagProcessors);
+            offset += WriteTags(ref bytes, offset, value, value.Tags, tagProcessors);
+            offset += WriteMetrics(ref bytes, offset, value, value.Tags, tagProcessors);
 
             return offset - originalOffset;
         }
