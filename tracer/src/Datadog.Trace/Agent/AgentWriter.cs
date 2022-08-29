@@ -406,19 +406,21 @@ namespace Datadog.Trace.Agent
                 }
             }
 
-            // Add the current keep rate to the root span
-            var rootSpan = trace.Array![trace.Offset].Context.TraceContext?.RootSpan;
+            var traceContext = trace.Array![trace.Offset].Context.TraceContext;
+            var traceChunk = new TraceChunkModel(trace, traceContext);
 
-            if (rootSpan is not null)
+            // Add the current keep rate to the root span
+            if (traceChunk.LocalRoot is { } root)
             {
                 var currentKeepRate = _traceKeepRateCalculator.GetKeepRate();
-                if (rootSpan.Tags is CommonTags commonTags)
+
+                if (root.Tags is CommonTags commonTags)
                 {
                     commonTags.TracesKeepRate = currentKeepRate;
                 }
                 else
                 {
-                    rootSpan.Tags.SetMetric(Metrics.TracesKeepRate, currentKeepRate);
+                    root.Tags.SetMetric(Metrics.TracesKeepRate, currentKeepRate);
                 }
             }
 
@@ -426,7 +428,7 @@ namespace Datadog.Trace.Agent
             // This allows the serialization thread to keep doing its job while a buffer is being flushed
             var buffer = _activeBuffer;
 
-            if (buffer.TryWrite(trace, ref _temporaryBuffer))
+            if (buffer.TryWrite(traceChunk, ref _temporaryBuffer))
             {
                 // Serialization to the primary buffer succeeded
                 return;
@@ -440,7 +442,7 @@ namespace Datadog.Trace.Agent
                 // One buffer is full, request an eager flush
                 RequestFlush();
 
-                if (buffer.TryWrite(trace, ref _temporaryBuffer))
+                if (buffer.TryWrite(traceChunk, ref _temporaryBuffer))
                 {
                     // Serialization to the secondary buffer succeeded
                     return;
