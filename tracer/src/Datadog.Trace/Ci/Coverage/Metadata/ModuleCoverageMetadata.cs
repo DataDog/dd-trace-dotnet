@@ -17,7 +17,9 @@ public abstract class ModuleCoverageMetadata
     /// <summary>
     /// Gets or sets the metadata array
     /// </summary>
-    protected int[][] Metadata { get; set; } = Array.Empty<int[]>();
+#pragma warning disable SA1401
+    protected readonly int[][] Metadata = Array.Empty<int[]>();
+#pragma warning restore SA1401
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal int GetTotalTypes() => Metadata.Length;

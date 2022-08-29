@@ -36,25 +36,7 @@ namespace Datadog.Trace.Coverage.Collector
             _events = events;
             _logger = new DataCollectorLogger(logger, environmentContext.SessionDataCollectionContext);
 
-            try
-            {
-                _ciVisibilitySettings = CIVisibilitySettings.FromDefaultSources();
-
-                // Read the DD_DOTNET_TRACER_HOME environment variable
-                _tracerHome = Util.EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
-                if (string.IsNullOrEmpty(_tracerHome) || !Directory.Exists(_tracerHome))
-                {
-                    _logger.Error("Tracer home (DD_DOTNET_TRACER_HOME environment variable) is not defined or folder doesn't exist, coverage has been disabled.");
-
-                    // By not register a handler to SessionStart and SessionEnd the coverage gets disabled (assemblies are not being processed).
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex);
-                _ciVisibilitySettings = null;
-            }
+            Initialize();
 
             if (_events is not null)
             {
@@ -100,7 +82,30 @@ namespace Datadog.Trace.Coverage.Collector
             _logger?.SetContext(e.Context);
         }
 
-        private void ProcessFolder(string folder, SearchOption searchOption)
+        internal void Initialize()
+        {
+            try
+            {
+                _ciVisibilitySettings = CIVisibilitySettings.FromDefaultSources();
+
+                // Read the DD_DOTNET_TRACER_HOME environment variable
+                _tracerHome = Util.EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
+                if (string.IsNullOrEmpty(_tracerHome) || !Directory.Exists(_tracerHome))
+                {
+                    _logger?.Error("Tracer home (DD_DOTNET_TRACER_HOME environment variable) is not defined or folder doesn't exist, coverage has been disabled.");
+
+                    // By not register a handler to SessionStart and SessionEnd the coverage gets disabled (assemblies are not being processed).
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex);
+                _ciVisibilitySettings = null;
+            }
+        }
+
+        internal void ProcessFolder(string folder, SearchOption searchOption)
         {
             if (_tracerHome is null)
             {

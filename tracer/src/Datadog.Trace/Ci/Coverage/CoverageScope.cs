@@ -45,18 +45,4 @@ public readonly ref struct CoverageScope
         _sequencePoints[index]++;
         _sequencePoints[index2]++;
     }
-
-    /// <summary>
-    /// Report a running instruction
-    /// </summary>
-    /// <param name="index">Sequence point index</param>
-    /// <param name="index2">Second Sequence point index</param>
-    /// <param name="index3">Third Sequence point index</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Report(int index, int index2, int index3)
-    {
-        _sequencePoints[index]++;
-        _sequencePoints[index2]++;
-        _sequencePoints[index3]++;
-    }
 }
