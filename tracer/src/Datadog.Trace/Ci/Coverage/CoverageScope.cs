@@ -19,7 +19,7 @@ public readonly ref struct CoverageScope
     private readonly int[] _sequencePoints;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal CoverageScope(in int[] sequencePoints)
+    internal CoverageScope(int[] sequencePoints)
     {
         _sequencePoints = sequencePoints;
     }

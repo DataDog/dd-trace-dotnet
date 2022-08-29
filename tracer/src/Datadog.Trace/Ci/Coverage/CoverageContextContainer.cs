@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Threading;
 
 namespace Datadog.Trace.Ci.Coverage;
 
@@ -15,8 +16,8 @@ namespace Datadog.Trace.Ci.Coverage;
 /// </summary>
 internal sealed class CoverageContextContainer
 {
+    private static readonly List<AsyncLocal<Tuple<ModuleValue, CoverageContextContainer>?>> AsyncLocals = new();
     private readonly List<ModuleValue> _container = new();
-    private readonly List<Action> _cleanActions = new();
 
     /// <summary>
     /// Gets or sets a value indicating whether if the coverage is enabled for the context
@@ -32,12 +33,23 @@ internal sealed class CoverageContextContainer
         = true;
 
     /// <summary>
+    /// Adds an AsyncLocal to be cleared on container close.
+    /// </summary>
+    /// <param name="asyncLocal">Async local of the module</param>
+    public static void AddAsyncLocal(AsyncLocal<Tuple<ModuleValue, CoverageContextContainer>?> asyncLocal)
+    {
+        lock (AsyncLocals)
+        {
+            AsyncLocals.Add(asyncLocal);
+        }
+    }
+
+    /// <summary>
     /// Stores module data into the context
     /// </summary>
     /// <param name="module">Module instance</param>
-    /// <param name="cleanAction">Action to clean the async local of the module</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal bool TryAdd(ModuleValue module, Action cleanAction)
+    internal bool TryAdd(ModuleValue module)
     {
         var container = _container;
         lock (container)
@@ -45,7 +57,6 @@ internal sealed class CoverageContextContainer
             if (Enabled)
             {
                 container.Add(module);
-                _cleanActions.Add(cleanAction);
                 return true;
             }
 
@@ -66,12 +77,14 @@ internal sealed class CoverageContextContainer
             Enabled = false;
             var data = container.ToArray();
             container.Clear();
-            foreach (var action in _cleanActions)
+            lock (AsyncLocals)
             {
-                action();
+                foreach (var asyncLocal in AsyncLocals)
+                {
+                    asyncLocal.Value = null;
+                }
             }
 
-            _cleanActions.Clear();
             return data;
         }
     }

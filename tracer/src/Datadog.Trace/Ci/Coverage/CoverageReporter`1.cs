@@ -26,14 +26,13 @@ public static class CoverageReporter<TMeta>
     private static readonly TMeta Metadata;
     private static readonly Module Module;
     private static readonly AsyncLocal<Tuple<ModuleValue, CoverageContextContainer>?> ModuleContainer;
-    private static readonly Action CleanContainer;
 
     static CoverageReporter()
     {
         Metadata = new TMeta();
         Module = typeof(TMeta).Module;
         ModuleContainer = new();
-        CleanContainer = () => ModuleContainer.Value = null;
+        CoverageContextContainer.AddAsyncLocal(ModuleContainer);
     }
 
     /// <summary>
@@ -65,7 +64,7 @@ public static class CoverageReporter<TMeta>
             }
 
             module = new ModuleValue(Module, Metadata.GetTotalTypes());
-            container.TryAdd(module, CleanContainer);
+            container.TryAdd(module);
             ModuleContainer.Value = new Tuple<ModuleValue, CoverageContextContainer>(module, container);
         }
 
