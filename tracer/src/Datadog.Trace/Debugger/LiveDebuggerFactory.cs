@@ -10,13 +10,14 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.Sink;
+using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.RemoteConfigurationManagement;
 
 namespace Datadog.Trace.Debugger;
 
 internal class LiveDebuggerFactory
 {
-    public static LiveDebugger Create(IDiscoveryService discoveryService, IRemoteConfigurationManager remoteConfigurationManager, IApiRequestFactory apiFactory, string serviceName)
+    public static LiveDebugger Create(IDiscoveryService discoveryService, IRemoteConfigurationManager remoteConfigurationManager, ImmutableExporterSettings exporterSettings, string serviceName)
     {
         var source = GlobalSettings.CreateDefaultConfigurationSource();
         var settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromSource(source));
@@ -27,6 +28,14 @@ internal class LiveDebuggerFactory
 
         var snapshotStatusSink = SnapshotSink.Create(settings);
         var probeStatusSink = ProbeStatusSink.Create(settings, serviceName);
+
+        var apiFactory = AgentTransportStrategy.Get(
+            exporterSettings,
+            productName: "debugger",
+            tcpTimeout: null,
+            AgentHttpHeaderNames.DefaultHeaders,
+            () => new DefaultJsonHeaderHelper(),
+            uri => uri);
 
         var batchApi = AgentBatchUploadApi.Create(settings, apiFactory, discoveryService);
         var batchUploader = BatchUploader.Create(batchApi);

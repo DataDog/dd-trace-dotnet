@@ -349,13 +349,13 @@ namespace Datadog.Trace.ClrProfiler
             var serviceName = tracer.Settings.ServiceName ?? tracer.DefaultServiceName;
             var exporterSettings = tracer.Settings.Exporter;
 
-            var discoveryService = DiscoveryService.Create(TracesTransportStrategy.Get(exporterSettings));
+            var discoveryService = DiscoveryService.Create(exporterSettings);
 
             var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
-            var rcmApi = RemoteConfigurationApiFactory.Create(rcmSettings, TracesTransportStrategy.Get(exporterSettings), discoveryService);
+            var rcmApi = RemoteConfigurationApiFactory.Create(exporterSettings, rcmSettings, discoveryService);
 
             var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName);
-            var liveDebugger = LiveDebuggerFactory.Create(discoveryService, configurationManager, TracesTransportStrategy.Get(exporterSettings), serviceName);
+            var liveDebugger = LiveDebuggerFactory.Create(discoveryService, configurationManager, exporterSettings, serviceName);
 
             Task.Run(
                 async () =>
