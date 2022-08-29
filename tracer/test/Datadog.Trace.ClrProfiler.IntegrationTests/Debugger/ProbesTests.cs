@@ -490,11 +490,6 @@ public class ProbesTests : TestHelper, IDisposable
     {
         var mockAgent = EnvironmentHelper.GetMockAgent();
 
-        if (mockAgent is MockTracerAgent.TcpUdpAgent agent)
-        {
-            SetEnvironmentVariable(ConfigurationKeys.AgentPort, agent.Port.ToString());
-        }
-
         mockAgent.ShouldDeserializeTraces = false;
         return mockAgent;
     }
