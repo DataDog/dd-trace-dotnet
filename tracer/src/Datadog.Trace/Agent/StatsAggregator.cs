@@ -116,16 +116,13 @@ namespace Datadog.Trace.Agent
             {
                 foreach (var processor in _traceProcessors)
                 {
-                    if (processor is not null)
+                    try
                     {
-                        try
-                        {
-                            trace = processor.Process(trace);
-                        }
-                        catch (Exception e)
-                        {
-                            Log.Error(e, e.Message);
-                        }
+                        trace = processor.Process(trace);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(e, e.Message);
                     }
                 }
             }
