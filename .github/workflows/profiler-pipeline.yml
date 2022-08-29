@@ -73,7 +73,6 @@ jobs:
         scenario:
           - PiComputation
           - Exceptions
-          - Allocations
     services:
       dd-agent:
         image: 'datadog/agent:latest'
