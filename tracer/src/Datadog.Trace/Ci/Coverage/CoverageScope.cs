@@ -6,6 +6,7 @@
 
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.Ci.Coverage;
 
@@ -31,7 +32,12 @@ public readonly ref struct CoverageScope
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Report(int index)
     {
+#if NET5_0_OR_GREATER
+        // Removes bound check
+        Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_sequencePoints), index)++;
+#else
         _sequencePoints[index]++;
+#endif
     }
 
     /// <summary>
@@ -42,7 +48,14 @@ public readonly ref struct CoverageScope
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Report(int index, int index2)
     {
+#if NET5_0_OR_GREATER
+        // Removes bound check
+        ref int arr = ref MemoryMarshal.GetArrayDataReference(_sequencePoints);
+        Unsafe.Add(ref arr, index)++;
+        Unsafe.Add(ref arr, index2)++;
+#else
         _sequencePoints[index]++;
         _sequencePoints[index2]++;
+#endif
     }
 }
