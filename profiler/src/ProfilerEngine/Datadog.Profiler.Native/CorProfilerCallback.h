@@ -171,7 +171,8 @@ public:
     {
         return _this;
     }
-    static IClrLifetime* GetClrLifetime();
+
+    IClrLifetime* GetClrLifetime() const;
 
 // Access to global services
 // All services are allocated/started and stopped/deleted by the CorProfilerCallback (no need to use unique_ptr/shared_ptr)

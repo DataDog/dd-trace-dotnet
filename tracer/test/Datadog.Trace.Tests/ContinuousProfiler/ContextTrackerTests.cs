@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests.ContinuousProfiler
 
             try
             {
-                Profiler.Instance = new Profiler(contextTracker.Object, null);
+                Profiler.SetInstanceForTests(new Profiler(contextTracker.Object, null));
 
                 var tracer = CreateTracer();
 
@@ -59,7 +59,7 @@ namespace Datadog.Trace.Tests.ContinuousProfiler
             }
             finally
             {
-                Profiler.Instance = null;
+                Profiler.SetInstanceForTests(null);
             }
         }
 

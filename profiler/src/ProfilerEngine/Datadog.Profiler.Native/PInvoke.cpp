@@ -13,7 +13,7 @@
 
 extern "C" void __stdcall ThreadsCpuManager_Map(std::uint32_t threadId, const WCHAR* pName)
 {
-    auto profiler = CorProfilerCallback::GetInstance();
+    const auto profiler = CorProfilerCallback::GetInstance();
     if (profiler == nullptr)
     {
         Log::Error("ThreadsCpuManager_Map is called BEFORE CLR initialize");
@@ -25,7 +25,15 @@ extern "C" void __stdcall ThreadsCpuManager_Map(std::uint32_t threadId, const WC
 
 extern "C" void* __stdcall GetNativeProfilerIsReadyPtr()
 {
-    if (!CorProfilerCallback::GetClrLifetime()->IsRunning())
+    const auto profiler = CorProfilerCallback::GetInstance();
+
+    if (profiler == nullptr)
+    {
+        Log::Error("GetNativeProfilerIsReadyPtr is called BEFORE CLR initialize");
+        return nullptr;
+    }
+
+    if (!profiler->GetClrLifetime()->IsRunning())
     {
         return nullptr;
     }
@@ -35,19 +43,20 @@ extern "C" void* __stdcall GetNativeProfilerIsReadyPtr()
 
 extern "C" void* __stdcall GetPointerToNativeTraceContext()
 {
-    if (!CorProfilerCallback::GetClrLifetime()->IsRunning())
-    {
-        return nullptr;
-    }
+    const auto profiler = CorProfilerCallback::GetInstance();
 
-    // Engine is active. Get info for current thread.
-    auto profiler = CorProfilerCallback::GetInstance();
     if (profiler == nullptr)
     {
         Log::Error("GetPointerToNativeTraceContext is called BEFORE CLR initialize");
         return nullptr;
     }
 
+    if (!profiler->GetClrLifetime()->IsRunning())
+    {
+        return nullptr;
+    }
+
+    // Engine is active. Get info for current thread.
     ManagedThreadInfo* pCurrentThreadInfo;
     HRESULT hr = profiler->GetManagedThreadList()->TryGetCurrentThreadInfo(&pCurrentThreadInfo);
     if (FAILED(hr))
@@ -68,12 +77,6 @@ extern "C" void* __stdcall GetPointerToNativeTraceContext()
 
 extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, const char* serviceName, const char* environment, const char* version)
 {
-    if (!CorProfilerCallback::GetClrLifetime()->IsRunning())
-    {
-        return;
-    }
-
-    // Engine is active. Get info for current thread.
     const auto profiler = CorProfilerCallback::GetInstance();
 
     if (profiler == nullptr)
@@ -82,6 +85,12 @@ extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, 
         return;
     }
 
+    if (!profiler->GetClrLifetime()->IsRunning())
+    {
+        return;
+    }
+
+    // Engine is active. Get info for current thread.
     profiler->GetApplicationStore()->SetApplicationInfo(
         runtimeId ? runtimeId : std::string(),
         serviceName ? serviceName : std::string(),
@@ -91,16 +100,16 @@ extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, 
 
 extern "C" void __stdcall SetEndpointForTrace(const char* runtimeId, uint64_t traceId, const char* endpoint)
 {
-    if (!CorProfilerCallback::GetClrLifetime()->IsRunning())
-    {
-        return;
-    }
-
     const auto profiler = CorProfilerCallback::GetInstance();
 
     if (profiler == nullptr)
     {
         Log::Error("SetEndpointForTrace is called BEFORE CLR initialize");
+        return;
+    }
+
+    if (!profiler->GetClrLifetime()->IsRunning())
+    {
         return;
     }
 

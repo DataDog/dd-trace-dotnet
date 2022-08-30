@@ -336,7 +336,7 @@ void LibddprofExporter::Add(Sample const& sample)
     profileInfoScope.profileInfo.samplesCount++;
 }
 
-void LibddprofExporter::SetEndpoint(std::string runtimeId, uint64_t traceId, std::string endpoint)
+void LibddprofExporter::SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint)
 {
     const auto profileInfoScope = GetInfo(runtimeId);
 
