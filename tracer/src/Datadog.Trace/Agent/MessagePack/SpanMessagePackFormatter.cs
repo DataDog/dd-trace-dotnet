@@ -80,11 +80,11 @@ namespace Datadog.Trace.Agent.MessagePack
             {
                 var span = spans.Array![i + spans.Offset];
                 var parentSpanId = span.Context.ParentId ?? 0;
-                bool isRoot = parentSpanId == 0 || span == span.Context.TraceContext.RootSpan;
+                bool isLocalRoot = parentSpanId == 0 || span == span.Context.TraceContext.RootSpan;
                 bool isOrphan = parentSpanId > 0 && !spanIds.Contains(parentSpanId);
                 bool isFirst = i == 0;
 
-                var spanModel = new SpanModel(span, value, isRoot, isOrphan, isFirst);
+                var spanModel = new SpanModel(span, value, isLocalRoot, isOrphan, isFirst);
                 offset += Serialize(ref bytes, offset, spanModel, formatterResolver);
             }
 
