@@ -24,10 +24,10 @@ internal readonly struct TraceChunkModel
 
     public readonly string? Origin;
 
-    public readonly TraceTagCollection Tags;
+    public readonly TraceTagCollection? Tags;
 
-    public TraceChunkModel(ArraySegment<Span> spans, TraceContext traceContext)
-        : this(spans, traceContext.RootSpan, traceContext.SamplingPriority, traceContext.RootSpan.Context.Origin, traceContext.Tags)
+    public TraceChunkModel(ArraySegment<Span> spans, TraceContext? traceContext)
+        : this(spans, traceContext?.RootSpan, traceContext?.SamplingPriority, traceContext?.RootSpan.Context.Origin, traceContext?.Tags)
     {
     }
 
@@ -36,7 +36,7 @@ internal readonly struct TraceChunkModel
         Span? localRoot,
         int? samplingPriority,
         string? origin,
-        TraceTagCollection tags)
+        TraceTagCollection? tags)
     {
         Spans = spans;
         LocalRoot = localRoot;
