@@ -19,7 +19,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
    ReturnTypeName = ClrNames.Process,
    MinimumVersion = "1.0.0",
    MaximumVersion = "7.*.*",
-   IntegrationName = nameof(Configuration.IntegrationId.CommandExecution))]
+   IntegrationName = nameof(Configuration.IntegrationId.ProcessStart))]
+    [InstrumentMethod(
+   AssemblyName = "System.Diagnostics.Process",
+   TypeName = "System.Diagnostics.Process",
+   MethodName = "Start",
+   ReturnTypeName = ClrNames.Process,
+   MinimumVersion = "1.0.0",
+   MaximumVersion = "7.*.*",
+   IntegrationName = nameof(Configuration.IntegrationId.ProcessStart))]
     public class ProcessStartIntegration
     {
         /// <summary>

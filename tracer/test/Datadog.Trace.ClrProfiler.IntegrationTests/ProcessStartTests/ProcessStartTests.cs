@@ -46,12 +46,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             foreach (var span in spans)
             {
                 var result = span.IsProcessStart();
-                Assert.False(result.Success, result.ToString());
+                Assert.True(result.Success, result.ToString());
+                Assert.Equal(SpanTypes.System, span.Type);
+                Assert.Equal(span.Name, expectedOperationName);
+                Assert.Contains(".exe", span.Resource.ToLower());
                 Assert.Equal(expectedServiceName, span.Service);
                 Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
             }
 
-            telemetry.AssertIntegrationEnabled(IntegrationId.CommandExecution);
+            telemetry.AssertIntegrationEnabled(IntegrationId.ProcessStart);
         }
 
         [SkippableFact]
@@ -63,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             const int totalSpanCount = 21;
             const string expectedOperationName = "command_execution";
 
-            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.Sqlite)}_ENABLED", "false");
+            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.ProcessStart)}_ENABLED", "false");
 
             using var telemetry = this.ConfigureTelemetry();
             string packageVersion = PackageVersions.MicrosoftDataSqlite.First()[0] as string;
@@ -71,9 +74,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 
-            Assert.NotEmpty(spans);
             Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
-            telemetry.AssertIntegrationDisabled(IntegrationId.CommandExecution);
+            telemetry.AssertIntegrationDisabled(IntegrationId.ProcessStart);
         }
     }
 }

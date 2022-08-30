@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 {
     internal static class ProcessStartCommon
     {
-        internal const IntegrationId IntegrationId = Configuration.IntegrationId.CommandExecution;
+        internal const IntegrationId IntegrationId = Configuration.IntegrationId.ProcessStart;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessStartCommon));
         internal const string OperationName = "command_execution";
         internal const string ServiceName = "command";
@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         internal static Scope CreateScope(string filename, StringDictionary envVariables)
         {
             var tracer = Tracer.Instance;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !tracer.Settings.IsIntegrationEnabled(IntegrationId.CommandExecution))
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !tracer.Settings.IsIntegrationEnabled(IntegrationId.ProcessStart))
             {
                 // integration disabled, don't create a scope, skip this span
                 return null;
@@ -70,6 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 };
 
                 var serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
+                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
                 scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
                 scope.Span.ResourceName = filename;
                 scope.Span.Type = SpanTypes.System;
