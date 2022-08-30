@@ -17,8 +17,7 @@ namespace Datadog.Trace.Agent.MessagePack
 {
     internal class SpanMessagePackFormatter : IMessagePackFormatter<TraceChunkModel>,
                                               IMessagePackFormatter<SpanModel>,
-                                              IMessagePackFormatter<Span>, // deprecated, use IMessagePackFormatter<SpanModel>
-                                              IMessagePackFormatter<ArraySegment<Span>> // deprecated, use IMessagePackFormatter<TraceChunkModel>
+                                              IMessagePackFormatter<Span> // IMessagePackFormatter<Span> is not allowed, use IMessagePackFormatter<SpanModel> instead
     {
         public static readonly SpanMessagePackFormatter Instance = new();
 
@@ -52,14 +51,6 @@ namespace Datadog.Trace.Agent.MessagePack
         {
             double processId = DomainMetadata.Instance.ProcessId;
             _processIdValueBytes = processId > 0 ? MessagePackSerializer.Serialize(processId) : null;
-        }
-
-        // IMessagePackFormatter<ArraySegment<Span>> is deprecated, use IMessagePackFormatter<TraceMessageChunk>
-        public int Serialize(ref byte[] bytes, int offset, ArraySegment<Span> value, IFormatterResolver formatterResolver)
-        {
-            var traceContext = value.Array![value.Offset].Context.TraceContext;
-            var traceChunk = new TraceChunkModel(value, traceContext);
-            return Serialize(ref bytes, offset, traceChunk, formatterResolver);
         }
 
         public int Serialize(ref byte[] bytes, int offset, TraceChunkModel value, IFormatterResolver formatterResolver)
@@ -98,15 +89,6 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             return offset - originalOffset;
-        }
-
-        // IMessagePackFormatter<Span> is deprecated, use IMessagePackFormatter<SpanModel>
-        public int Serialize(ref byte[] bytes, int offset, Span value, IFormatterResolver formatterResolver)
-        {
-            // without more context, we can only determine if this span is a local root
-            bool isRoot = value.Context.ParentId is null or 0 || value == value.Context.TraceContext.RootSpan;
-            var spanModel = new SpanModel(value, traceChunk: null, isRoot, isChunkOrphan: false, isFirstSpanInChunk: false);
-            return Serialize(ref bytes, offset, spanModel, formatterResolver);
         }
 
         public int Serialize(ref byte[] bytes, int offset, SpanModel value, IFormatterResolver formatterResolver)
@@ -181,6 +163,13 @@ namespace Datadog.Trace.Agent.MessagePack
             return offset - originalOffset;
         }
 
+        int IMessagePackFormatter<Span>.Serialize(ref byte[] bytes, int offset, Span value, IFormatterResolver formatterResolver)
+        {
+            // We block IMessagePackFormatter<Span> since it can return wrong results and we want to catch any tests trying to use it.
+            // Note that this also covers Span collections, like Span[] and ArraySegment<Span>.
+            throw new NotSupportedException("Serializing Span with IMessagePackFormatter<Span> is not supported. Use IMessagePackFormatter<SpanModel> instead.");
+        }
+
         // TAGS
 
         private int WriteTags(ref byte[] bytes, int offset, SpanModel model, ITagProcessor[] tagProcessors)
@@ -213,9 +202,11 @@ namespace Datadog.Trace.Agent.MessagePack
             offset = tagWriter.Offset;
             count += tagWriter.Count;
 
-            if (model.IsLocalRoot && model.TraceChunk?.Tags.ToArray() is { Length: > 0 } traceTags)
+            // TODO: for each trace tag, determine if it should be added to the local root,
+            // to the first span in the chunk, or to all orphan spans.
+            // For now, we add them to the local root which is correct in most cases.
+            if (model.IsLocalRoot && model.TraceChunk?.Tags?.ToArray() is { Length: > 0 } traceTags)
             {
-                // write trace-level string tags
                 count += traceTags.Length;
 
                 foreach (var tag in traceTags)
@@ -364,22 +355,17 @@ namespace Datadog.Trace.Agent.MessagePack
 
         TraceChunkModel IMessagePackFormatter<TraceChunkModel>.Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
         {
-            throw new NotImplementedException();
-        }
-
-        ArraySegment<Span> IMessagePackFormatter<ArraySegment<Span>>.Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
-        {
-            throw new NotImplementedException();
+            throw new NotSupportedException($"{nameof(SpanMessagePackFormatter)} does not support deserialization. For testing purposes, deserialize using the MessagePack NuGet package.");
         }
 
         Span IMessagePackFormatter<Span>.Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException($"{nameof(SpanMessagePackFormatter)} does not support deserialization. For testing purposes, deserialize using the MessagePack NuGet package.");
         }
 
         SpanModel IMessagePackFormatter<SpanModel>.Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException($"{nameof(SpanMessagePackFormatter)} does not support deserialization. For testing purposes, deserialize using the MessagePack NuGet package.");
         }
 
         internal struct TagWriter : IItemProcessor<string>, IItemProcessor<double>
