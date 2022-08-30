@@ -95,6 +95,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         public void CheckEndpointsAreAttached(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true);
+            runner.TestDurationInSeconds = 20;
 
             // By default, the endpoint profiling feature is activated
 
@@ -113,6 +114,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         public void NoEndpointsAttachedIfFeatureDeactivated(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true);
+            runner.TestDurationInSeconds = 20;
             runner.Environment.SetVariable(EnvironmentVariables.EndpointProfilerEnabled, "0");
 
             using var agent = new MockDatadogAgent(_output);
