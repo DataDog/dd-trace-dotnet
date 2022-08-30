@@ -121,8 +121,10 @@ namespace Datadog.Trace.Coverage.Collector
                 Directory.EnumerateFiles(folder, "*.*", searchOption),
                 file =>
                 {
+                    var path = Path.GetDirectoryName(file);
+                    var fileWithoutExtension = Path.GetFileNameWithoutExtension(file);
                     // Skip the Datadog.Trace assembly
-                    if (tracerAssemblyName == Path.GetFileNameWithoutExtension(file))
+                    if (tracerAssemblyName == fileWithoutExtension)
                     {
                         return;
                     }
@@ -130,31 +132,34 @@ namespace Datadog.Trace.Coverage.Collector
                     var extension = Path.GetExtension(file).ToLowerInvariant();
                     if (extension is ".dll" or ".exe" or "")
                     {
-                        try
+                        if (File.Exists(Path.Combine(path, fileWithoutExtension + ".pdb")) || File.Exists(Path.Combine(path, fileWithoutExtension + ".PDB")))
                         {
-                            var asmProcessor = new AssemblyProcessor(file, _tracerHome, _logger, _ciVisibilitySettings);
-                            asmProcessor.Process();
-
-                            lock (processedDirectories)
+                            try
                             {
-                                numAssemblies++;
-                                processedDirectories.Add(Path.GetDirectoryName(file) ?? string.Empty);
+                                var asmProcessor = new AssemblyProcessor(file, _tracerHome, _logger, _ciVisibilitySettings);
+                                asmProcessor.Process();
+
+                                lock (processedDirectories)
+                                {
+                                    numAssemblies++;
+                                    processedDirectories.Add(Path.GetDirectoryName(file) ?? string.Empty);
+                                }
                             }
-                        }
-                        catch (PdbNotFoundException)
-                        {
-                            // If the PDB file was not found, we skip the assembly without throwing error.
-                            _logger?.Debug($"{nameof(PdbNotFoundException)} processing file: {file}");
-                        }
-                        catch (BadImageFormatException)
-                        {
-                            // If the Assembly has not the correct format (eg. native dll / exe)
-                            // We skip processing the assembly.
-                            _logger?.Debug($"{nameof(BadImageFormatException)} processing file: {file}");
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger?.Error(ex);
+                            catch (PdbNotFoundException)
+                            {
+                                // If the PDB file was not found, we skip the assembly without throwing error.
+                                _logger?.Debug($"{nameof(PdbNotFoundException)} processing file: {file}");
+                            }
+                            catch (BadImageFormatException)
+                            {
+                                // If the Assembly has not the correct format (eg. native dll / exe)
+                                // We skip processing the assembly.
+                                _logger?.Debug($"{nameof(BadImageFormatException)} processing file: {file}");
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger?.Error(ex);
+                            }
                         }
                     }
                 });
