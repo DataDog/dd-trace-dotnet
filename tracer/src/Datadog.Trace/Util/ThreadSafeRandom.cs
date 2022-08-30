@@ -21,12 +21,14 @@ internal static class ThreadSafeRandom
 #else
     private static readonly Random Global = new();
 
-    private static readonly ThreadLocal<Random> Local;
+    [ThreadStatic]
+    private static Random? _local;
 
-    static ThreadSafeRandom()
+    private static Random Local
     {
-        Local = new ThreadLocal<Random>(
-            () =>
+        get
+        {
+            if (_local is null)
             {
                 int seed;
                 lock (Global)
@@ -34,13 +36,16 @@ internal static class ThreadSafeRandom
                     seed = Global.Next();
                 }
 
-                return new Random(seed);
-            });
+                _local = new Random(seed);
+            }
+
+            return _local;
+        }
     }
 
     public static int Next(int maxValue)
     {
-        return Local.Value!.Next(maxValue);
+        return Local.Next(maxValue);
     }
 
     public static int Next(int minValue, int maxValue)
@@ -50,7 +55,7 @@ internal static class ThreadSafeRandom
 
     public static double NextDouble()
     {
-        return Local.Value!.NextDouble();
+        return Local.NextDouble();
     }
 #endif
 }
