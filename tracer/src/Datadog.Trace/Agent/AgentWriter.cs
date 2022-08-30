@@ -414,17 +414,17 @@ namespace Datadog.Trace.Agent
             var traceChunk = new TraceChunkModel(trace, traceContext);
 
             // Add the current keep rate to the root span
-            if (traceChunk.LocalRoot is { } root)
+            if (traceChunk.LocalRoot is { } rootSpan)
             {
                 var currentKeepRate = _traceKeepRateCalculator.GetKeepRate();
 
-                if (root.Tags is CommonTags commonTags)
+                if (rootSpan.Tags is CommonTags commonTags)
                 {
                     commonTags.TracesKeepRate = currentKeepRate;
                 }
                 else
                 {
-                    root.Tags.SetMetric(Metrics.TracesKeepRate, currentKeepRate);
+                    rootSpan.Tags.SetMetric(Metrics.TracesKeepRate, currentKeepRate);
                 }
             }
 
