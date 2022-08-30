@@ -76,7 +76,6 @@ private:
     bool _isExceptionProfilingEnabled;
     bool _isAllocationProfilingEnabled;
     bool _isContentionProfilingEnabled;
-    bool _isEndpointProfilingEnabled;
     bool _debugLogEnabled;
     fs::path _logDirectory;
     fs::path _pprofDirectory;

@@ -36,26 +36,31 @@ namespace Datadog.Trace.Tests.ContinuousProfiler
 
                 var tracer = CreateTracer();
 
-                var rootWebScope = tracer.StartActive("Root");
-                rootWebScope.Span.Type = SpanTypes.Web;
-                rootWebScope.Span.ResourceName = "Wrong endpoint";
+                ulong expectedSpanId = 0;
 
-                // The resource name of this scope shouldn't be propagated because it's not root
-                var childScope = tracer.StartActive("child");
-                childScope.Close();
+                using (var rootWebScope = tracer.StartActive("Root"))
+                {
+                    expectedSpanId = rootWebScope.Span.SpanId;
+                    rootWebScope.Span.Type = SpanTypes.Web;
+                    rootWebScope.Span.ResourceName = "Wrong endpoint";
 
-                // Only the latest value of the resource name should be propagated
-                rootWebScope.Span.ResourceName = expectedEndpoint;
-                rootWebScope.Close();
+                    // The resource name of this scope shouldn't be propagated because it's not root
+                    using (tracer.StartActive("child"))
+                    {
+                    }
+
+                    // Only the latest value of the resource name should be propagated
+                    rootWebScope.Span.ResourceName = expectedEndpoint;
+                }
 
                 // The resource name of this scope shouldn't be propagated because it's not web
-                var rootOtherScope = tracer.StartActive("Root2");
-                rootWebScope.Span.Type = SpanTypes.Http;
-                rootWebScope.Span.ResourceName = "Wrong endpoint";
+                using (var rootOtherScope = tracer.StartActive("Root2"))
+                {
+                    rootOtherScope.Span.Type = SpanTypes.Http;
+                    rootOtherScope.Span.ResourceName = "Wrong endpoint";
+                }
 
-                rootOtherScope.Close();
-
-                invocations.Should().BeEquivalentTo(new[] { (rootWebScope.Span.SpanId, expectedEndpoint) });
+                invocations.Should().BeEquivalentTo(new[] { (expectedSpanId, expectedEndpoint) });
             }
             finally
             {
