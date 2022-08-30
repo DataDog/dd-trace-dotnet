@@ -10,8 +10,7 @@ using Datadog.Trace.Configuration;
 #if NETFRAMEWORK
 using System.Web;
 using System.Web.Routing;
-#endif
-#if !NETFRAMEWORK
+#else
 using Microsoft.AspNetCore.Http;
 #endif
 
