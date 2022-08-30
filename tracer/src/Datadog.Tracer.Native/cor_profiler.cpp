@@ -684,11 +684,22 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
     {
         if (module_info.assembly.name.rfind(skip_assembly_pattern, 0) == 0)
         {
+            // The assembly matches the "skip" prefix, but check if it's specifically included
+            for (auto&& include_assembly : include_assemblies)
+            {
+                if (module_info.assembly.name == include_assembly)
+                {
+                    Logger::Debug("ModuleLoadFinished matched module by pattern: ", module_id, " ", module_info.assembly.name,
+                        "but assembly is explicitly included");
+                    goto inject;
+                }
+            }
             Logger::Debug("ModuleLoadFinished skipping module by pattern: ", module_id, " ", module_info.assembly.name);
             return S_OK;
         }
     }
 
+inject:    
     if (module_info.assembly.name == managed_profiler_name)
     {
         // Fix PInvoke Rewriting
