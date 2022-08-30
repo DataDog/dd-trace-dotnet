@@ -31,6 +31,11 @@ FROM base as builder
 # Copy the build project in and build it
 WORKDIR /project
 COPY . /build
+
+# Hacky workaround for `The configured user limit (128) on the number of inotify instances has been reached.`
+# in .NET Core 2.1
+RUN echo fs.inotify.max_user_instances=524288 >> /etc/sysctl.conf
+
 RUN dotnet build /build
 
 FROM base as tester
@@ -47,4 +52,9 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
 # Copy the build project in and build it
 WORKDIR /project
 COPY . /build
+
+# Hacky workaround for `The configured user limit (128) on the number of inotify instances has been reached.`
+# in .NET Core 2.1
+RUN echo fs.inotify.max_user_instances=524288 >> /etc/sysctl.conf
+
 RUN dotnet build /build
