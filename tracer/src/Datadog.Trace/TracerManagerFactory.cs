@@ -143,7 +143,7 @@ namespace Datadog.Trace
 
         protected virtual ISampler GetSampler(ImmutableTracerSettings settings)
         {
-            var sampler = new RuleBasedSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecond));
+            var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecond));
 
             if (!string.IsNullOrWhiteSpace(settings.CustomSamplingRules))
             {
