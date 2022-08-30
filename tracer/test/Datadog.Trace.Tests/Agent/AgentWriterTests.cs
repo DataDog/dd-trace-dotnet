@@ -15,7 +15,7 @@ using FluentAssertions;
 using Moq;
 using Xunit;
 
-namespace Datadog.Trace.Tests
+namespace Datadog.Trace.Tests.Agent
 {
     public class AgentWriterTests
     {

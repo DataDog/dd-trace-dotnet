@@ -9,7 +9,7 @@ using System.Reflection;
 using Datadog.Trace.Agent.Transports;
 using Xunit;
 
-namespace Datadog.Trace.Tests
+namespace Datadog.Trace.Tests.Agent.Transports
 {
     [Collection(nameof(WebRequestCollection))]
     public class ApiWebRequestFactoryTests
