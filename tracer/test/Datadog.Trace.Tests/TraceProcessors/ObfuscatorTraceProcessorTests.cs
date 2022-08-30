@@ -142,7 +142,7 @@ namespace Datadog.Trace.Tests.TraceProcessors
         [MemberData(nameof(GetSqlObfuscatedQuery))]
         public void SqlObfuscatorTest(string inValue, string expectedValue)
         {
-            var actualValue = Trace.TraceProcessors.ObfuscatorTraceProcessor.ObfuscateSqlResource(inValue);
+            var actualValue = Trace.Processors.ObfuscatorTraceProcessor.ObfuscateSqlResource(inValue);
             Assert.Equal(expectedValue, actualValue);
         }
     }

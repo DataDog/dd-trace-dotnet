@@ -33,6 +33,8 @@ namespace Datadog.Trace.Agent
         /// <returns>True if the spans should be kept based on rare stats points or error stats points, false otherwise.</returns>
         bool AddRange(ArraySegment<Span> spans);
 
+        ArraySegment<Span> ProcessTrace(ArraySegment<Span> trace);
+
         Task DisposeAsync();
     }
 }
