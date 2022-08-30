@@ -24,21 +24,12 @@ namespace Datadog.Trace.Security.IntegrationTests
         public AspNetCore5AsmRemoteRules(ITestOutputHelper outputHelper)
             : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5AsmRemoteRules))
         {
-            SetupRcmConfiguration();
-        }
-
-        public override void Dispose()
-        {
-            base.Dispose();
-            CleanupRcmConfiguration();
         }
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         public async Task TestNewRemoteRules()
         {
-            SetupRcmConfiguration();
-
             SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "500");
             var url = "/Health/?[$slice]=value";
             var agent = await RunOnSelfHosted(true);

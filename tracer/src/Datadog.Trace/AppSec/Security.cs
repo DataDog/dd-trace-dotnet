@@ -336,8 +336,7 @@ namespace Datadog.Trace.AppSec
 
         private void UpdateStatus(bool fromRemoteConfig = false)
         {
-            if (_enabled == _settings.Enabled) { return; }
-
+            if (_enabled == _settings.Enabled && !force) { return; }
             lock (_settings)
             {
                 if (_settings.Enabled)
