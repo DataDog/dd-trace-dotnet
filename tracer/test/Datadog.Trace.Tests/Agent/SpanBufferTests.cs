@@ -4,11 +4,11 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using MessagePack; // use nuget MessagePack to deserialize
 using Xunit;
 
@@ -25,42 +25,30 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
 
-            var traces = new List<ArraySegment<Span>>();
-
             for (int i = 0; i < traceCount; i++)
             {
-                var spans = new Span[spanCount];
+                var spans = CreateTraceChunk(spanCount);
+                var localRoot = spans.Array![spans.Offset];
+                var traceChunk = new TraceChunkModel(spans, localRoot, samplingPriority: null, origin: null, tags: null);
 
-                for (int j = 0; j < spanCount; j++)
-                {
-                    spans[j] = new Span(new SpanContext((ulong)i, (ulong)i), DateTimeOffset.UtcNow);
-                }
-
-                traces.Add(new ArraySegment<Span>(spans));
-            }
-
-            foreach (var trace in traces)
-            {
-                Assert.True(buffer.TryWrite(trace, ref _temporaryBuffer));
+                Assert.True(buffer.TryWrite(traceChunk, ref _temporaryBuffer));
             }
 
             buffer.Lock();
 
-            Assert.Equal(traceCount, buffer.TraceCount);
-            Assert.Equal(traceCount * spanCount, buffer.SpanCount);
+            buffer.TraceCount.Should().Be(traceCount);
+            buffer.SpanCount.Should().Be(traceCount * spanCount);
 
             var content = buffer.Data;
-
-            var result = MessagePackSerializer.Deserialize<MockSpan[][]>(content);
-
+            var mockTraceChunks = MessagePackSerializer.Deserialize<MockSpan[][]>(content);
             var resized = content.Count > SpanBuffer.InitialBufferSize;
 
             // We want to test the case where the buffer is big enough from the start, and the case where it has to be resized
             // Make sure that the span/trace count assumptions are correct to test the scenario
-            Assert.True(resizeExpected == resized, $"Total serialized size was {content.Count}");
+            resized.Should().Be(resizeExpected, "Total serialized size was {0}", content.Count);
 
-            Assert.Equal(traceCount, result.Length);
-            Assert.Equal(traceCount * spanCount, result.Sum(t => t.Length));
+            mockTraceChunks.Length.Should().Be(traceCount);
+            mockTraceChunks.Sum(t => t.Length).Should().Be(traceCount * spanCount);
         }
 
         [Fact]
@@ -68,77 +56,85 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = new SpanBuffer(10, SpanFormatterResolver.Instance);
 
-            Assert.False(buffer.IsFull);
+            buffer.IsFull.Should().BeFalse();
 
-            var trace = new ArraySegment<Span>(new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) });
+            var spans = CreateTraceChunk(1);
+            var localRoot = spans.Array![spans.Offset];
+            var traceChunk = new TraceChunkModel(spans, localRoot, samplingPriority: null, origin: null, tags: null);
+            var result = buffer.TryWrite(traceChunk, ref _temporaryBuffer);
 
-            var result = buffer.TryWrite(trace, ref _temporaryBuffer);
-
-            Assert.False(result);
-            Assert.Equal(0, buffer.TraceCount);
-            Assert.True(buffer.IsFull);
+            result.Should().BeFalse();
+            buffer.TraceCount.Should().Be(0);
+            buffer.IsFull.Should().BeTrue();
 
             buffer.Lock();
-
             var innerBuffer = buffer.Data;
 
-            Assert.True(innerBuffer.Array.Skip(SpanBuffer.HeaderSize).All(b => b == 0x0), "No data should have been written to the buffer");
+            innerBuffer.Array!.Skip(SpanBuffer.HeaderSize).All(b => b == 0x0).Should().BeTrue("No data should have been written to the buffer");
 
             buffer.Clear();
 
-            Assert.False(buffer.IsFull);
+            buffer.IsFull.Should().BeFalse();
         }
 
         [Fact]
         public void LockingBuffer()
         {
             var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
+            var spans = CreateTraceChunk(1);
+            var localRoot = spans.Array![spans.Offset];
+            var traceChunk = new TraceChunkModel(spans, localRoot, samplingPriority: null, origin: null, tags: null);
 
-            var trace = new ArraySegment<Span>(new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) });
-
-            Assert.True(buffer.TryWrite(trace, ref _temporaryBuffer));
+            buffer.TryWrite(traceChunk, ref _temporaryBuffer).Should().BeTrue();
 
             buffer.Lock();
 
-            Assert.False(buffer.TryWrite(trace, ref _temporaryBuffer));
+            buffer.TryWrite(traceChunk, ref _temporaryBuffer).Should().BeFalse();
 
             buffer.Clear();
 
-            Assert.True(buffer.TryWrite(trace, ref _temporaryBuffer));
+            buffer.TryWrite(traceChunk, ref _temporaryBuffer).Should().BeTrue();
         }
 
         [Fact]
         public void ClearingBuffer()
         {
             var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
+            var spans = CreateTraceChunk(3);
+            var localRoot = spans.Array![spans.Offset];
+            var traceChunk = new TraceChunkModel(spans, localRoot, samplingPriority: null, origin: null, tags: null);
 
-            var trace = new ArraySegment<Span>(new[]
-            {
-                new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow),
-                new Span(new SpanContext(2, 2), DateTimeOffset.UtcNow),
-                new Span(new SpanContext(3, 3), DateTimeOffset.UtcNow),
-            });
-
-            Assert.True(buffer.TryWrite(trace, ref _temporaryBuffer));
-
-            Assert.Equal(1, buffer.TraceCount);
-            Assert.Equal(3, buffer.SpanCount);
+            buffer.TryWrite(traceChunk, ref _temporaryBuffer).Should().BeTrue();
+            buffer.TraceCount.Should().Be(1);
+            buffer.SpanCount.Should().Be(3);
 
             buffer.Clear();
 
-            Assert.Equal(0, buffer.TraceCount);
-            Assert.Equal(0, buffer.SpanCount);
+            buffer.TraceCount.Should().Be(0);
+            buffer.SpanCount.Should().Be(0);
 
             buffer.Lock();
 
-            var innerBuffer = buffer.Data;
-            Assert.Equal(SpanBuffer.HeaderSize, innerBuffer.Count);
+            buffer.Data.Count.Should().Be(SpanBuffer.HeaderSize);
         }
 
         [Fact]
         public void InvalidSize()
         {
             Assert.Throws<ArgumentException>(() => new SpanBuffer(4, SpanFormatterResolver.Instance));
+        }
+
+        private static ArraySegment<Span> CreateTraceChunk(int spanCount, ulong startingId = 1)
+        {
+            var spans = new Span[spanCount];
+
+            for (ulong i = 0; i < (ulong)spanCount; i++)
+            {
+                var spanContext = new SpanContext(startingId + i, startingId + i);
+                spans[i] = new Span(spanContext, DateTimeOffset.UtcNow);
+            }
+
+            return new ArraySegment<Span>(spans);
         }
     }
 }
