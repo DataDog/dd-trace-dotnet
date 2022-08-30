@@ -19,7 +19,7 @@ namespace Datadog.Trace.Agent
 
         private readonly IMessagePackFormatter<TraceChunkModel> _formatter;
         private readonly IFormatterResolver _formatterResolver;
-        private readonly object _syncRoot = new object();
+        private readonly object _syncRoot = new();
         private readonly int _maxBufferSize;
 
         private byte[] _buffer;
