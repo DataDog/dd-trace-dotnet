@@ -51,7 +51,7 @@ class MockExporter : public IExporter
 public:
     MOCK_METHOD(void, Add, (Sample const& sample), (override));
     MOCK_METHOD(bool, Export, (), (override));
-    MOCK_METHOD(void, SetEndpoint, (std::string runtimeId, uint64_t traceId, std::string endpoint), (override));
+    MOCK_METHOD(void, SetEndpoint, (const std::string& runtimeId, uint64_t traceId, const std::string& endpoint), (override));
 };
 
 class MockSamplesCollector : public ISamplesCollector
