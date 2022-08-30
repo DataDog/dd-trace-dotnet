@@ -406,6 +406,10 @@ namespace Datadog.Trace.Agent
                 }
             }
 
+            // since all we have is an array of spans, use the trace context from the first span
+            // to get the other values we need (sampling priority, origin, trace tags, etc) for now.
+            // the idea is that as we refactor further, we can pass more than just the spans,
+            // and these values can come directly from the trace context.
             var traceContext = trace.Array![trace.Offset].Context.TraceContext;
             var traceChunk = new TraceChunkModel(trace, traceContext);
 
