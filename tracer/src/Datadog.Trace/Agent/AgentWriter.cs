@@ -384,6 +384,7 @@ namespace Datadog.Trace.Agent
                 return null;
             }
 
+            trace = _statsAggregator?.ProcessTrace(trace) ?? trace;
             bool forceKeep = _statsAggregator?.AddRange(trace) ?? false;
 
             // If stats computation determined that we can drop the P0 Trace,
