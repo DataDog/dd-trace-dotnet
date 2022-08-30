@@ -88,17 +88,29 @@ namespace Datadog.Trace.Sampling
                 return false;
             }
 
-            if (DoesNotMatch(input: span.ServiceName, regex: _serviceNameRegex))
+            // special case where if both regex are null we match
+            if (_serviceNameRegex is null && _operationNameRegex is null)
             {
-                return false;
+                return true;
             }
 
-            if (DoesNotMatch(input: span.OperationName, regex: _operationNameRegex))
+            try
             {
+                // if the regex is null, we will always match it as we don't care
+                var serviceMatch = _serviceNameRegex?.Match(span.ServiceName).Success ?? true;
+                var operationMatch = _operationNameRegex?.Match(span.OperationName).Success ?? true;
+                return serviceMatch && operationMatch;
+            }
+            catch (RegexMatchTimeoutException e)
+            {
+                _hasPoisonedRegex = true;
+                Log.Error(
+                    e,
+                    "Timeout when trying to match against {Value} on {Pattern}.",
+                    e.Input,
+                    e.Pattern);
                 return false;
             }
-
-            return true;
         }
 
         public float GetSamplingRate(Span span)
@@ -125,31 +137,6 @@ namespace Datadog.Trace.Sampling
             }
 
             return regex;
-        }
-
-        private bool DoesNotMatch(string input, Regex regex)
-        {
-            try
-            {
-                if (regex is not null)
-                {
-                    if (!regex.Match(input).Success)
-                    {
-                        return true;
-                    }
-                }
-            }
-            catch (RegexMatchTimeoutException timeoutEx)
-            {
-                _hasPoisonedRegex = true;
-                Log.Error(
-                    timeoutEx,
-                    "Timeout when trying to match against {Value} on {Pattern}.",
-                    input,
-                    regex?.ToString());
-            }
-
-            return false;
         }
 
         [Serializable]
