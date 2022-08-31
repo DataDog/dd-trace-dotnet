@@ -51,7 +51,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 var apiRequestFactory = AgentTransportStrategy.Get(
                     exporterSettings,
                     productName: "discovery",
-                    tcpTimeout: null,
+                    tcpTimeout: TimeSpan.FromSeconds(15),
                     AgentHttpHeaderNames.MinimalHeaders,
                     () => new MinimalAgentHeaderHelper(),
                     uri => uri);

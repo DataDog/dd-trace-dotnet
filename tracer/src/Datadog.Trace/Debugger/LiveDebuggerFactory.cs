@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -32,7 +33,7 @@ internal class LiveDebuggerFactory
         var apiFactory = AgentTransportStrategy.Get(
             exporterSettings,
             productName: "debugger",
-            tcpTimeout: null,
+            tcpTimeout: TimeSpan.FromSeconds(15),
             AgentHttpHeaderNames.MinimalHeaders,
             () => new MinimalAgentHeaderHelper(),
             uri => uri);

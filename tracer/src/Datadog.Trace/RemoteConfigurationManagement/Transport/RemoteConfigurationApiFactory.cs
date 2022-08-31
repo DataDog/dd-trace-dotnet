@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -18,7 +19,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
             var apiRequestFactory = AgentTransportStrategy.Get(
                 exporterSettings,
                 productName: "rcm",
-                tcpTimeout: null,
+                tcpTimeout: TimeSpan.FromSeconds(15),
                 AgentHttpHeaderNames.MinimalHeaders,
                 () => new MinimalAgentHeaderHelper(),
                 uri => uri);
