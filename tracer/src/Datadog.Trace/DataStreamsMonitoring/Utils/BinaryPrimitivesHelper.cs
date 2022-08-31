@@ -17,25 +17,25 @@ internal static class BinaryPrimitivesHelper
         // write the bytes one at a time
         if (BitConverter.IsLittleEndian)
         {
-            bytes[0] = (byte)(value & 0xFF);
-            bytes[1] = (byte)((value >> 8) & 0xFF);
-            bytes[2] = (byte)((value >> 16) & 0xFF);
-            bytes[3] = (byte)((value >> 24) & 0xFF);
-            bytes[4] = (byte)((value >> 32) & 0xFF);
-            bytes[5] = (byte)((value >> 40) & 0xFF);
-            bytes[6] = (byte)((value >> 48) & 0xFF);
-            bytes[7] = (byte)((value >> 56) & 0xFF);
+            bytes[0] = unchecked((byte)(value & 0xFF));
+            bytes[1] = unchecked((byte)((value >> 8) & 0xFF));
+            bytes[2] = unchecked((byte)((value >> 16) & 0xFF));
+            bytes[3] = unchecked((byte)((value >> 24) & 0xFF));
+            bytes[4] = unchecked((byte)((value >> 32) & 0xFF));
+            bytes[5] = unchecked((byte)((value >> 40) & 0xFF));
+            bytes[6] = unchecked((byte)((value >> 48) & 0xFF));
+            bytes[7] = unchecked((byte)((value >> 56) & 0xFF));
         }
         else
         {
-            bytes[8] = (byte)(value & 0xFF);
-            bytes[7] = (byte)((value >> 8) & 0xFF);
-            bytes[6] = (byte)((value >> 16) & 0xFF);
-            bytes[5] = (byte)((value >> 24) & 0xFF);
-            bytes[4] = (byte)((value >> 32) & 0xFF);
-            bytes[3] = (byte)((value >> 40) & 0xFF);
-            bytes[2] = (byte)((value >> 48) & 0xFF);
-            bytes[1] = (byte)((value >> 56) & 0xFF);
+            bytes[7] = unchecked((byte)(value & 0xFF));
+            bytes[6] = unchecked((byte)((value >> 8) & 0xFF));
+            bytes[5] = unchecked((byte)((value >> 16) & 0xFF));
+            bytes[4] = unchecked((byte)((value >> 24) & 0xFF));
+            bytes[3] = unchecked((byte)((value >> 32) & 0xFF));
+            bytes[2] = unchecked((byte)((value >> 40) & 0xFF));
+            bytes[1] = unchecked((byte)((value >> 48) & 0xFF));
+            bytes[0] = unchecked((byte)((value >> 56) & 0xFF));
         }
 
 #endif
@@ -50,25 +50,25 @@ internal static class BinaryPrimitivesHelper
         if (BitConverter.IsLittleEndian)
         {
             ulong value = bytes[7];
-            value = (value << 8) | bytes[6];
-            value = (value << 8) | bytes[5];
-            value = (value << 8) | bytes[4];
-            value = (value << 8) | bytes[3];
-            value = (value << 8) | bytes[2];
-            value = (value << 8) | bytes[1];
-            value = (value << 8) | bytes[0];
+            value = unchecked((value << 8) | bytes[6]);
+            value = unchecked((value << 8) | bytes[5]);
+            value = unchecked((value << 8) | bytes[4]);
+            value = unchecked((value << 8) | bytes[3]);
+            value = unchecked((value << 8) | bytes[2]);
+            value = unchecked((value << 8) | bytes[1]);
+            value = unchecked((value << 8) | bytes[0]);
             return value;
         }
         else
         {
             ulong value = bytes[0];
-            value = (value << 8) | bytes[1];
-            value = (value << 8) | bytes[2];
-            value = (value << 8) | bytes[3];
-            value = (value << 8) | bytes[4];
-            value = (value << 8) | bytes[5];
-            value = (value << 8) | bytes[6];
-            value = (value << 8) | bytes[7];
+            value = unchecked((value << 8) | bytes[1]);
+            value = unchecked((value << 8) | bytes[2]);
+            value = unchecked((value << 8) | bytes[3]);
+            value = unchecked((value << 8) | bytes[4]);
+            value = unchecked((value << 8) | bytes[5]);
+            value = unchecked((value << 8) | bytes[6]);
+            value = unchecked((value << 8) | bytes[7]);
             return value;
         }
 #endif
