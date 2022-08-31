@@ -156,7 +156,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
 
             var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, _lastPollError != null, _lastPollError);
-            var rcmClient = new RcmClient(_id, products.Keys, _rcmTracer, rcmState);
+            var rcmClient = new RcmClient(_id, products.Keys, _rcmTracer, rcmState, new byte[] { 0 });
             var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
 
             return rcmRequest;
