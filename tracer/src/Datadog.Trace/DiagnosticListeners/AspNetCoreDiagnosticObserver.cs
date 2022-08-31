@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -112,7 +113,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
                 else if (ReferenceEquals(eventName, _hostingUnhandledExceptionEventKey) ||
-                    ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
+                         ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
                 {
                     OnHostingUnhandledException(arg);
                     return;
@@ -208,7 +209,7 @@ namespace Datadog.Trace.DiagnosticListeners
                     return;
                 }
                 else if (ReferenceEquals(eventName, _hostingUnhandledExceptionEventKey) ||
-                    ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
+                         ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
                 {
                     OnHostingUnhandledException(arg);
                     return;
@@ -502,17 +503,17 @@ namespace Datadog.Trace.DiagnosticListeners
             IDictionary<string, string> routeValues = actionDescriptor.RouteValues;
 
             string controllerName = routeValues.TryGetValue("controller", out controllerName)
-                ? controllerName?.ToLowerInvariant()
-                : null;
+                                        ? controllerName?.ToLowerInvariant()
+                                        : null;
             string actionName = routeValues.TryGetValue("action", out actionName)
-                ? actionName?.ToLowerInvariant()
-                : null;
+                                    ? actionName?.ToLowerInvariant()
+                                    : null;
             string areaName = routeValues.TryGetValue("area", out areaName)
-                ? areaName?.ToLowerInvariant()
-                : null;
+                                  ? areaName?.ToLowerInvariant()
+                                  : null;
             string pagePath = routeValues.TryGetValue("page", out pagePath)
-                ? pagePath?.ToLowerInvariant()
-                : null;
+                                  ? pagePath?.ToLowerInvariant()
+                                  : null;
             string aspNetRoute = trackingFeature.Route;
             string resourceName = trackingFeature.ResourceName;
 
@@ -582,6 +583,28 @@ namespace Datadog.Trace.DiagnosticListeners
             return span;
         }
 
+        private static void DoBeforeRequestStops(HttpContext httpContext, Scope scope, ImmutableTracerSettings tracerSettings)
+        {
+            var span = scope.Span;
+            var isMissingHttpStatusCode = !span.HasHttpStatusCode();
+
+            if (string.IsNullOrEmpty(span.ResourceName) || isMissingHttpStatusCode)
+            {
+                if (string.IsNullOrEmpty(span.ResourceName))
+                {
+                    span.ResourceName = AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request);
+                }
+
+                if (isMissingHttpStatusCode)
+                {
+                    span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracerSettings);
+                }
+            }
+
+            span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracerSettings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+            scope.Dispose();
+        }
+
         private void OnHostingHttpRequestInStart(object arg)
         {
             var tracer = CurrentTracer;
@@ -600,28 +623,36 @@ namespace Datadog.Trace.DiagnosticListeners
                 HttpContext httpContext = requestStruct.HttpContext;
                 HttpRequest request = httpContext.Request;
                 Span span = null;
+                Scope scope = null;
                 if (shouldTrace)
                 {
                     // Use an empty resource name here, as we will likely replace it as part of the request
                     // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
-                    span = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty).Span;
+                    scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, httpContext, httpContext.Request, resourceName: string.Empty);
+                    span = scope.Span;
                 }
 
                 if (shouldSecure)
                 {
-                    httpContext.Response.OnStarting(() =>
-                    {
-                        // we subscribe here because in OnHostingHttpRequestInStop or HostingEndRequest it's too late,
-                        // the waf is already disposed by the registerfordispose callback
-                        security.InstrumentationGateway.RaiseEndRequest(httpContext, request, span);
-                        return System.Threading.Tasks.Task.CompletedTask;
-                    });
+                    httpContext.Response.OnCompleted(
+                        () =>
+                        {
+                            security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, span);
+                            return Task.CompletedTask;
+                        });
 
-                    httpContext.Response.OnCompleted(() =>
-                    {
-                        security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, span);
-                        return System.Threading.Tasks.Task.CompletedTask;
-                    });
+                    httpContext.Response.OnStarting(
+                        () =>
+                        {
+                            // we subscribe here because in OnHostingHttpRequestInStop or HostingEndRequest it's too late,
+                            // the waf is already disposed by the registerfordispose callback, but we need to be at the end to get the real response status code
+                            security.InstrumentationGateway.RaiseRequestEnd(httpContext, request, span);
+                            return Task.CompletedTask;
+                        });
+
+                    security.InstrumentationGateway.RaiseRequestStart(httpContext, request, span);
+                    // Should we get rid of the Instrumentation Gateway, it s been making the code very cumbersome and hard to follow and an event driven model doesnt seem adapted here cause we need to get a return value from the security component to know here that we need to flush the span after blocking, hence the cumbersome action (last param here), binding parameters to avoid capturing local variables but so hard to read. It would be simpler to just call the security component with the current data, get the return, flush the span and throw if needed.
+                    security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, (args) => DoBeforeRequestStops(args.Context, args.Scope, args.TracerSettings));
                 }
             }
         }
@@ -714,20 +745,12 @@ namespace Datadog.Trace.DiagnosticListeners
 
                 var request = httpContext.Request.DuckCast<HttpRequestStruct>();
                 RouteValueDictionary routeValues = request.RouteValues;
-
-                var security = CurrentSecurity;
-                var shouldSecure = security.Settings.Enabled;
-                if (shouldSecure)
-                {
-                    security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span, routeValues);
-                }
-
                 // No need to ToLowerInvariant() these strings, as we lower case
                 // the whole route later
                 object raw;
                 string controllerName = routeValues.TryGetValue("controller", out raw)
-                                        ? raw as string
-                                        : null;
+                                            ? raw as string
+                                            : null;
                 string actionName = routeValues.TryGetValue("action", out raw)
                                         ? raw as string
                                         : null;
@@ -756,6 +779,19 @@ namespace Datadog.Trace.DiagnosticListeners
                     span.ResourceName = resourceName;
                     tags.AspNetCoreRoute = normalizedRoute;
                     span.SetTag(Tags.HttpRoute, normalizedRoute);
+                }
+
+                var security = CurrentSecurity;
+                var shouldSecure = security.Settings.Enabled;
+                if (shouldSecure)
+                {
+                    security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, span, routeValues);
+                    security.InstrumentationGateway.RaiseBlockingOpportunity(
+                        httpContext,
+                        tracer.InternalActiveScope,
+                        tracer.Settings,
+                        args =>
+                            DoBeforeRequestStops(args.Context, args.Scope, args.TracerSettings));
                 }
             }
         }
@@ -866,29 +902,13 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (scope != null)
             {
-                var span = scope.Span;
-
                 // We may need to update the resource name if none of the routing/mvc events updated it.
                 // If we had an unhandled exception, the status code will already be updated correctly,
                 // but if the span was manually marked as an error, we still need to record the status code
-                var isMissingHttpStatusCode = !span.HasHttpStatusCode();
                 var httpRequest = arg.DuckCast<HttpRequestInStopStruct>();
                 HttpContext httpContext = httpRequest.HttpContext;
-                if (string.IsNullOrEmpty(span.ResourceName) || isMissingHttpStatusCode)
-                {
-                    if (string.IsNullOrEmpty(span.ResourceName))
-                    {
-                        span.ResourceName = AspNetCoreRequestHandler.GetDefaultResourceName(httpContext.Request);
-                    }
 
-                    if (isMissingHttpStatusCode)
-                    {
-                        span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracer.Settings);
-                    }
-                }
-
-                span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
-                scope.Dispose();
+                DoBeforeRequestStops(httpContext, scope, tracer.Settings);
             }
         }
 
@@ -905,7 +925,6 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (span != null && arg.TryDuckCast<UnhandledExceptionStruct>(out var unhandledStruct))
             {
-                span.SetException(unhandledStruct.Exception);
                 int statusCode = 500;
 
                 if (unhandledStruct.Exception.TryDuckCast<BadHttpRequestExceptionStruct>(out var badRequestException))
@@ -913,15 +932,21 @@ namespace Datadog.Trace.DiagnosticListeners
                     statusCode = badRequestException.StatusCode;
                 }
 
-                var security = CurrentSecurity;
-                if (security.Settings.Enabled)
-                {
-                    var httpContext = unhandledStruct.HttpContext;
-                    security.InstrumentationGateway.RaiseEndRequest(httpContext, httpContext.Request, span);
-                }
-
                 // Generic unhandled exceptions are converted to 500 errors by Kestrel
                 span.SetHttpStatusCode(statusCode: statusCode, isServer: true, tracer.Settings);
+
+                var security = CurrentSecurity;
+                if (unhandledStruct.Exception is not BlockException)
+                {
+                    span.SetException(unhandledStruct.Exception);
+                    if (security.Settings.Enabled)
+                    {
+                        span.SetException(unhandledStruct.Exception);
+                        var httpContext = unhandledStruct.HttpContext;
+                        security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, span);
+                        security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, tracer.InternalActiveScope, tracer.Settings);
+                    }
+                }
             }
         }
 
@@ -944,6 +969,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public HttpContext HttpContext;
+
             [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
             public Exception Exception;
         }

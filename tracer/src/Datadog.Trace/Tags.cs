@@ -446,6 +446,11 @@ namespace Datadog.Trace
         internal const string AppSecEvent = "appsec.event";
 
         /// <summary>
+        /// If a span was involved with an application security event and that the request was blocked
+        /// </summary>
+        internal const string AppSecBlocked = "appsec.blocked";
+
+        /// <summary>
         /// The details of the security event
         /// </summary>
         internal const string AppSecJson = "_dd.appsec.json";
