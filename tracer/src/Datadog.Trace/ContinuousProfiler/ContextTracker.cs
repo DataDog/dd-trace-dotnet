@@ -19,6 +19,7 @@ namespace Datadog.Trace.ContinuousProfiler
 
         private readonly IProfilerStatus _status;
         private readonly bool _isCodeHotspotsEnabled;
+        private readonly bool _isEndpointProfilingEnabled;
 
         /// <summary>
         /// _traceContextPtr points to a structure with this layout
@@ -37,10 +38,13 @@ namespace Datadog.Trace.ContinuousProfiler
         /// </summary>
         private readonly ThreadLocal<IntPtr> _traceContextPtr;
 
+        private bool _firstEndpointFailure = true;
+
         public ContextTracker(IProfilerStatus status)
         {
             _status = status;
             _isCodeHotspotsEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CodeHotspotsEnabled)?.ToBoolean() ?? true;
+            _isEndpointProfilingEnabled = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.EndpointProfilingEnabled)?.ToBoolean() ?? true;
             _traceContextPtr = new ThreadLocal<IntPtr>();
         }
 
@@ -55,6 +59,25 @@ namespace Datadog.Trace.ContinuousProfiler
         public void Set(ulong localRootSpanId, ulong spanId)
         {
             WriteToNative(new SpanContext(localRootSpanId, spanId));
+        }
+
+        public void SetEndpoint(ulong localRootSpanId, string endpoint)
+        {
+            if (IsEnabled && _isEndpointProfilingEnabled && !string.IsNullOrEmpty(endpoint))
+            {
+                try
+                {
+                    NativeInterop.SetEndpoint(RuntimeId.Get(), localRootSpanId, endpoint);
+                }
+                catch (Exception e)
+                {
+                    if (_firstEndpointFailure)
+                    {
+                        Log.Warning(e, "Unable to set the endpoint for span {spanId}", localRootSpanId);
+                        _firstEndpointFailure = false;
+                    }
+                }
+            }
         }
 
         public void Reset()

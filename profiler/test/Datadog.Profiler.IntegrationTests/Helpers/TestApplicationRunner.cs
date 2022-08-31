@@ -25,7 +25,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         // take long time to start and to end.
         private readonly TimeSpan _maxTestRunDuration = TimeSpan.FromSeconds(600);
 
-        private readonly int _testDurationInSeconds = 10;
         private readonly int _profilingExportsIntervalInSeconds = 3;
         private string _appListenerPort;
 
@@ -50,6 +49,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public EnvironmentHelper Environment { get; }
 
         public string ServiceName { get; set; }
+
+        public int TestDurationInSeconds { get; set; } = 10;
 
         public static string GetApplicationOutputFolderPath(string appName)
         {
@@ -104,7 +105,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             // Look for a free open port to pass to the ASP.NET Core applications
             // that accept --urls on their command line
             _appListenerPort = $"http://localhost:{TcpPortProvider.GetOpenPort()}";
-            var arguments = $"--timeout {_testDurationInSeconds} --urls {_appListenerPort}";
+            var arguments = $"--timeout {TestDurationInSeconds} --urls {_appListenerPort}";
             if (!string.IsNullOrEmpty(_commandLine))
             {
                 arguments += $" {_commandLine}";
