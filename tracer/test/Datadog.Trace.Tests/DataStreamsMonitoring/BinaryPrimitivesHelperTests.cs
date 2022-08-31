@@ -13,10 +13,11 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring;
 
 public class BinaryPrimitivesHelperTests
 {
+    private static readonly Random Random = new();
+
     [Fact]
     public void CanRoundTripValue()
     {
-        var random = new Random();
         var bytes = new byte[8];
         var expected = GetULong();
         BinaryPrimitivesHelper.WriteUInt64LittleEndian(bytes, expected);
@@ -27,7 +28,29 @@ public class BinaryPrimitivesHelperTests
         ulong GetULong()
         {
             var bytes = new byte[8];
-            random.NextBytes(bytes);
+            Random.NextBytes(bytes);
+            return BitConverter.ToUInt64(bytes, 0);
+        }
+    }
+
+    [Fact]
+    public void CanRoundTripValueWithZeroLowerByte()
+    {
+        var bytes = new byte[8];
+        var expected = GetZeroedUlong();
+
+        BinaryPrimitivesHelper.WriteUInt64LittleEndian(bytes, expected);
+        bytes[0].Should().Be(0);
+
+        var actual = BinaryPrimitivesHelper.ReadUInt64LittleEndian(bytes);
+
+        actual.Should().Be(expected);
+
+        ulong GetZeroedUlong()
+        {
+            var bytes = new byte[8];
+            Random.NextBytes(bytes);
+            bytes[0] = 0x00;
             return BitConverter.ToUInt64(bytes, 0);
         }
     }
