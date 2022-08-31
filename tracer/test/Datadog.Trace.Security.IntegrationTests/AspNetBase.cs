@@ -128,9 +128,9 @@ namespace Datadog.Trace.Security.IntegrationTests
                         target.Tags[Tags.AppSecJson] = orderedAppSecJson;
                     }
 
-                            return VerifyHelper.ScrubStackTraceForErrors(target, target.Tags);
-                        });
+                    return VerifyHelper.ScrubStackTraceForErrors(target, target.Tags);
                 });
+            });
             settings.AddRegexScrubber(AppSecWafDuration, "_dd.appsec.waf.duration: 0.0");
             settings.AddRegexScrubber(AppSecWafDurationWithBindings, "_dd.appsec.waf.duration_ext: 0.0");
             if (!testInit)
@@ -265,7 +265,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected virtual string GetTestName() => _testName;
 
-        protected async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, string body, int numberOfAttacks, int expectedSpans, string phase, string contentType = null)
+        protected async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, string body, int numberOfAttacks, int expectedSpans, string phase, string contentType = null, string userAgent = null)
         {
             var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
             await SendRequestsAsyncNoWaitForSpans(url, body, numberOfAttacks, contentType, userAgent);
@@ -284,7 +284,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             return spans.ToImmutableList();
         }
 
-        private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null)
+        private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null, string userAgent = null)
         {
             var batchSize = 4;
             for (int x = 0; x < numberOfAttacks;)

@@ -189,10 +189,11 @@ public class ProbesTests : TestHelper, IDisposable
     }
 #endif
 
-    public void Dispose()
+    public override void Dispose()
     {
         try
         {
+            base.Dispose();
             if (File.Exists(_rcmPath))
             {
                 File.Delete(_rcmPath);
