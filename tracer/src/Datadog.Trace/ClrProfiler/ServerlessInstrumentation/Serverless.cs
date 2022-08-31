@@ -57,6 +57,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
                     {
                         new(handler.GetAssembly(), handler.GetFullType(), handler.GetMethodName(), handler.ParamTypeArray, 0, 0, 0, 65535, 65535, 65535, assemblyName, integrationType)
                     };
+
+                    LifetimeManager.Instance.AddShutdownTask(RunShutdown);
                 }
 
                 return callTargetDefinitions;
@@ -140,6 +142,16 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
         internal static void Error(string message, Exception ex = null)
         {
             Console.WriteLine($"{DateTime.UtcNow:yyyy-MM-dd HH:mm:ss:fff} {message} {ex?.ToString().Replace("\n", "\\n")}");
+        }
+
+        private static void RunShutdown()
+        {
+            foreach (var def in callTargetDefinitions)
+            {
+                def.Dispose();
+            }
+
+            callTargetDefinitions = null;
         }
     }
 }
