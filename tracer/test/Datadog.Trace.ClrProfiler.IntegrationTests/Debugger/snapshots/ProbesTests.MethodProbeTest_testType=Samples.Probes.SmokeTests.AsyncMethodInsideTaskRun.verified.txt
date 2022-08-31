@@ -43,7 +43,7 @@
       "version": "2"
     },
     "message": "AsyncMethodInsideTaskRun+<RunInsideTask>d__1.MoveNext(): RunInsideTask 01234: Finished\r\n@return=RunInsideTask 01234: Finished",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -113,6 +113,6 @@
       "version": "2"
     },
     "message": "AsyncMethodInsideTaskRun+<Method>d__2.MoveNext(seed=RunInsideTask): RunInsideTask 01234\r\n@return=RunInsideTask 01234, i=5, result=RunInsideTask 01234",
-    "service": "Unknown"
+    "service": "Probes"
   }
 ]

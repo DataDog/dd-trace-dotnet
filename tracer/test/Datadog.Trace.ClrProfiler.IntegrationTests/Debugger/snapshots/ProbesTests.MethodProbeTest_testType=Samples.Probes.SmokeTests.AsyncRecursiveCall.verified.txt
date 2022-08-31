@@ -57,7 +57,7 @@
       "version": "2"
     },
     "message": "AsyncRecursiveCall+<Recursive>d__1.MoveNext(i=0): 3\r\n@return=3",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -117,7 +117,7 @@
       "version": "2"
     },
     "message": "AsyncRecursiveCall+<Recursive>d__1.MoveNext(i=1): 3\r\n@return=3",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -182,6 +182,6 @@
       "version": "2"
     },
     "message": "AsyncRecursiveCall+<Recursive>d__1.MoveNext(i=2): 3\r\n@return=3",
-    "service": "Unknown"
+    "service": "Probes"
   }
 ]

@@ -43,7 +43,7 @@
       "version": "2"
     },
     "message": "AsyncVoid+<VoidTaskMethod>d__1.MoveNext()\r\ne=null",
-    "service": "Unknown"
+    "service": "Probes"
   },
   {
     "dd.span_id": "ScrubbedValue",
@@ -96,6 +96,6 @@
       "version": "2"
     },
     "message": "AsyncVoid+<VoidMethod>d__2.MoveNext(caller=VoidTaskMethod)",
-    "service": "Unknown"
+    "service": "Probes"
   }
 ]
