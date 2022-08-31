@@ -40,7 +40,7 @@ public class HashHelperTests
         }
 
         var expectedHash = FnvHash64.GenerateHash(sb.ToString(), FnvHash64.Version.V1);
-        var baseHash = HashHelper.CalculateBaseNodeHash(service, env, primaryTag);
+        var baseHash = HashHelper.CalculateNodeHashBase(service, env, primaryTag);
         var actual = HashHelper.CalculateNodeHash(baseHash, sortedArgs);
 
         actual.Value.Should().Be(expectedHash);
