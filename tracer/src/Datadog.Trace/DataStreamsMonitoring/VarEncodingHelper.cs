@@ -182,7 +182,7 @@ internal static class VarEncodingHelper
 #endif
 
     /// <summary>
-    /// Serializes 64-bit signed integers using zig-zag encoding,
+    /// Serializes 32-bit signed integers using zig-zag encoding,
     /// which ensures small-scale integers are turned into unsigned integers
     /// that have leading zeros, whether they are positive or negative,
     /// hence allows for space-efficient encoding of those values.
@@ -195,7 +195,7 @@ internal static class VarEncodingHelper
         => WriteVarLongZigZag(bytes, offset, value);
 
     /// <summary>
-    /// Serializes 64-bit signed integers using zig-zag encoding,
+    /// Serializes 32-bit signed integers using zig-zag encoding,
     /// which ensures small-scale integers are turned into unsigned integers
     /// that have leading zeros, whether they are positive or negative,
     /// hence allows for space-efficient encoding of those values.
@@ -208,7 +208,7 @@ internal static class VarEncodingHelper
 
 #if NETCOREAPP3_1_OR_GREATER
     /// <summary>
-    /// Serializes 64-bit signed integers using zig-zag encoding,
+    /// Serializes 32-bit signed integers using zig-zag encoding,
     /// which ensures small-scale integers are turned into unsigned integers
     /// that have leading zeros, whether they are positive or negative,
     /// hence allows for space-efficient encoding of those values.
@@ -310,7 +310,7 @@ internal static class VarEncodingHelper
 #endif
 
     /// <summary>
-    /// Deserializes 64-bit unsigned integers that have been encoded using
+    /// Deserializes 32-bit unsigned integers that have been encoded using
     /// <see cref="WriteVarInt(byte[],int,uint)" />
     /// </summary>
     /// <param name="bytes">The byte array to write the buffer into</param>
@@ -344,7 +344,7 @@ internal static class VarEncodingHelper
     /// <param name="offset">The offset within the array to start writing</param>
     /// <param name="bytesRead">The number of bytes read when successfully decoded</param>
     /// <returns>The decoded value, or null if decoding failed</returns>
-    public static long? ReadVarIntZigZag(byte[] bytes, int offset, out int bytesRead)
+    public static int? ReadVarIntZigZag(byte[] bytes, int offset, out int bytesRead)
         => ReadVarLongZigZag(bytes, offset, out bytesRead) is { } decoded and >= int.MinValue and <= int.MaxValue
             ? (int)decoded
             : null;
@@ -357,7 +357,7 @@ internal static class VarEncodingHelper
     /// <param name="bytes">The buffer to read the encoded value from</param>
     /// <param name="bytesRead">The number of bytes read when successfully decoded</param>
     /// <returns>The decoded value, or null if decoding failed</returns>
-    public static long? ReadVarIntZigZag(Span<byte> bytes, out int bytesRead)
+    public static int? ReadVarIntZigZag(Span<byte> bytes, out int bytesRead)
         => ReadVarLongZigZag(bytes, out bytesRead) is { } decoded and >= int.MinValue and <= int.MaxValue
             ? (int)decoded
             : null;
