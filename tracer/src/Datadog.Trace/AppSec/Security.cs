@@ -250,7 +250,7 @@ namespace Datadog.Trace.AppSec
 
             try
             {
-                Log.Debug("Adding CallTarget appsec derived integration definitions to native library.");
+                Log.Debug("Removing CallTarget appsec derived integration definitions from native library.");
                 var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.AppSec);
                 NativeMethods.RemoveCallTargetDefinitions(payload.DefinitionsId, payload.Definitions);
                 derived = payload.Definitions.Length;
