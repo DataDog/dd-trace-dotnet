@@ -4,10 +4,15 @@
     <OutputType>Exe</OutputType>
     <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net45;netcoreapp3.1;net6.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp3.1;net6.0</TargetFrameworks>
+    <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
     <Platforms>AnyCPU;x64;x86</Platforms>
 
     <!--This is required for smoke test assembly discovery-->
     <AssemblyName>Samples.Computer01</AssemblyName>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(IsLinux)'=='true'">
+    <DefineConstants>Linux</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup Condition=" '$(Platform)' == 'AnyCPU' ">

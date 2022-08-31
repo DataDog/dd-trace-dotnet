@@ -23,7 +23,11 @@ namespace Samples.Computer01
         Async,
         Iterator,
         GenericsAllocation,
-        ContentionGenerator
+        ContentionGenerator,
+
+#if Linux && NET6_0_OR_GREATER
+        LinuxSignalHandler
+#endif
     }
 
     public class Program
