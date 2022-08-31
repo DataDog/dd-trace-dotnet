@@ -266,9 +266,11 @@ namespace Datadog.Trace.AppSec
             var features = e.GetDeserializedConfigurations<Features>().FirstOrDefault();
             if (features != null)
             {
-                _settings.Enabled = features.Asm.Enabled;
+                _settings.Enabled = features.TypedFile.Asm.Enabled;
                 UpdateStatus();
             }
+
+            e.Acknowldge(features.Name);
         }
 
         private void UpdateStatus()

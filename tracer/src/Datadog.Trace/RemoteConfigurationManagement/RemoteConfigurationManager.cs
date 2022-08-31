@@ -152,7 +152,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             foreach (var cache in appliedConfigurations)
             {
                 cachedTargetFiles.Add(new RcmCachedTargetFile(cache.Path.Path, cache.Length, cache.Hashes.Select(kp => new RcmCachedTargetFileHash(kp.Key, kp.Value)).ToList()));
-                configStates.Add(new RcmConfigState(cache.Path.Id, cache.Version, cache.Path.Product));
+                configStates.Add(new RcmConfigState(cache.Path.Id, cache.Version, cache.Path.Product, cache.ApplyState, cache.Error));
             }
 
             var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, _lastPollError != null, _lastPollError);
@@ -183,7 +183,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     var configurations = productGroup.ToList();
 
                     product.AssignConfigs(configurations);
-                    CacheAppliedConfigurations(product, configurations);
                 }
                 catch (Exception e)
                 {
@@ -217,23 +216,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     }
 
                     yield return new RemoteConfiguration(kp.Value, targetFiles[kp.Key].Raw, signedTarget.Length, signedTarget.Hashes, signedTarget.Custom.V);
-                }
-            }
-
-            void CacheAppliedConfigurations(Product product, List<RemoteConfiguration> configurations)
-            {
-                foreach (var config in configurations)
-                {
-                    var remoteConfigurationCache = new RemoteConfigurationCache(config.Path, config.Length, config.Hashes, config.Version);
-
-                    if (product.AppliedConfigurations.ContainsKey(config.Path.Path))
-                    {
-                        product.AppliedConfigurations[config.Path.Path] = remoteConfigurationCache;
-                    }
-                    else
-                    {
-                        product.AppliedConfigurations.Add(config.Path.Path, remoteConfigurationCache);
-                    }
                 }
             }
 

@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
@@ -24,5 +25,21 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         public Dictionary<string, string> Hashes { get; }
 
         public int Version { get; }
+
+        public ApplyState ApplyState { get; private set; } = ApplyState.UNACKNOWLEDGED;
+
+        public string Error { get; private set; }
+
+        public void Applied()
+        {
+            ApplyState = ApplyState.ACKNOWLEDGED;
+            Error = null;
+        }
+
+        public void ErrorOccured(string error)
+        {
+            ApplyState = ApplyState.ERROR;
+            Error = error;
+        }
     }
 }

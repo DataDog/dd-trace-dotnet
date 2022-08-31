@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
@@ -24,20 +25,50 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public void AssignConfigs(List<RemoteConfiguration> changedConfigs)
         {
-            List<byte[]> configurations = null;
+            List<NamedRawFile> filteredConfigs = null;
 
             foreach (var config in changedConfigs)
             {
+                var remoteConfigurationCache = new RemoteConfigurationCache(config.Path, config.Length, config.Hashes, config.Version);
+                AppliedConfigurations[remoteConfigurationCache.Path.Path] = remoteConfigurationCache;
+
                 if (RemoteConfigurationPredicate(config))
                 {
-                    configurations ??= new List<byte[]>();
-                    configurations.Add(config.Contents);
+                    filteredConfigs ??= new List<NamedRawFile>();
+                    filteredConfigs.Add(new NamedRawFile(config.Path.Path, config.Contents));
                 }
             }
 
-            if (configurations is not null)
+            if (filteredConfigs is not null)
             {
-                ConfigChanged?.Invoke(this, new ProductConfigChangedEventArgs(configurations));
+                var e = new ProductConfigChangedEventArgs(filteredConfigs);
+                try
+                {
+                    ConfigChanged?.Invoke(this, e);
+                }
+                catch (Exception ex)
+                {
+                    foreach (var item in filteredConfigs)
+                    {
+                        e.Error(item.Name, ex.Message);
+                    }
+                }
+
+                var results = e.GetResults();
+                foreach (var result in results)
+                {
+                    switch (result.ApplyState)
+                    {
+                        case ApplyState.ACKNOWLEDGED:
+                            AppliedConfigurations[result.Filename].Applied();
+                            break;
+                        case ApplyState.ERROR:
+                            AppliedConfigurations[result.Filename].ErrorOccured(result.Error);
+                            break;
+                        default:
+                            break;
+                    }
+                }
             }
         }
 
