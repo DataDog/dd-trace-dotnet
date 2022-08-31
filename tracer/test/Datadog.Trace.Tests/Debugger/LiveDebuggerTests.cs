@@ -76,7 +76,11 @@ public class LiveDebuggerTests
 
         public string DebuggerEndpoint => nameof(DebuggerEndpoint);
 
+        public string StatsEndpoint => nameof(StatsEndpoint);
+
         public string AgentVersion => nameof(AgentVersion);
+
+        public bool? ClientDropP0s => false;
 
         internal bool Called { get; private set; }
 
