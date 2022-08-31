@@ -259,7 +259,7 @@ TEST(SamplesCollectorTest, MustNotFailWhenAddingSampleThrows)
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1s));
 
     auto [exporter, mockExporter] = CreateExporter();
-    EXPECT_CALL(mockExporter, Add(_)).Times(3).WillOnce(Return()).WillRepeatedly(Throw(std::exception()));
+    EXPECT_CALL(mockExporter, Add(_)).Times(AtLeast(2)).WillOnce(Return()).WillRepeatedly(Throw(std::exception()));
     EXPECT_CALL(mockExporter, Export()).Times(1); // Called once when stopping
 
     auto metricsSender = MockMetricsSender();
