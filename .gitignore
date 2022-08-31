@@ -352,3 +352,6 @@ profiler/_build/
 
 .ionide/
 /devenv.bat
+
+#debugger test artifacts
+tracer/test/test-applications/debugger/Samples.Probes/probes_definition.json
