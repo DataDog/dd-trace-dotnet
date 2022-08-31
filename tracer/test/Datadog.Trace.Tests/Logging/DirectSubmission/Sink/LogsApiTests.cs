@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -214,11 +215,18 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 
             public long ContentLength => _body?.Length ?? 0;
 
+            public Encoding ContentEncoding => Encoding.UTF8;
+
             public void Dispose()
             {
             }
 
             public string GetHeader(string headerName) => throw new NotImplementedException();
+
+            public Task<Stream> GetStreamAsync()
+            {
+                return Task.FromResult(new StreamReader(_body).BaseStream);
+            }
 
             public Task<string> ReadAsStringAsync() => Task.FromResult(_body);
         }

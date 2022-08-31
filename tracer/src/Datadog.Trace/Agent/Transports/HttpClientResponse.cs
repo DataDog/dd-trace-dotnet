@@ -4,8 +4,10 @@
 // </copyright>
 
 #if NETCOREAPP
+using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent.Transports
@@ -17,11 +19,16 @@ namespace Datadog.Trace.Agent.Transports
         public HttpClientResponse(HttpResponseMessage response)
         {
             _response = response;
+
+            var encoding = _response.Content.Headers.ContentEncoding.FirstOrDefault();
+            ContentEncoding = !string.IsNullOrEmpty(encoding) ? Encoding.GetEncoding(encoding) : Encoding.UTF8;
         }
 
         public int StatusCode => (int)_response.StatusCode;
 
         public long ContentLength => _response.Content.Headers.ContentLength ?? -1;
+
+        public Encoding ContentEncoding { get; }
 
         public void Dispose()
         {
@@ -48,9 +55,9 @@ namespace Datadog.Trace.Agent.Transports
             return null;
         }
 
-        public Task<string> ReadAsStringAsync()
+        public Task<Stream> GetStreamAsync()
         {
-            return _response.Content.ReadAsStringAsync();
+            return _response.Content.ReadAsStreamAsync();
         }
     }
 }

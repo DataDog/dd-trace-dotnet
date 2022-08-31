@@ -127,9 +127,10 @@ internal class IntelligentTestRunnerClient
             request.AddHeader(ApiKeyHeader, _settings.ApiKey);
             Log.Debug("ITR: Searching commits from: {url}", _searchCommitsUrl.ToString());
             using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
-            var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
             if (response.StatusCode is < 200 or >= 300)
             {
+                var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+
                 if (finalTry)
                 {
                     try
@@ -145,8 +146,8 @@ internal class IntelligentTestRunnerClient
                 throw new WebException($"Status: {response.StatusCode}, Content: {responseContent}");
             }
 
-            var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<CommitResponse>>(responseContent);
-            if (deserializedResult.Data is null)
+            var deserializedResult = await response.ReadAsTypeAsync<DataArrayEnvelope<CommitResponse>>().ConfigureAwait(false);
+            if (deserializedResult.Data.Length == 0)
             {
                 return Array.Empty<string>();
             }
