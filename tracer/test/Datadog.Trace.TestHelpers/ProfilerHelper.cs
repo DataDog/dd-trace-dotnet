@@ -36,7 +36,7 @@ namespace Datadog.Trace.TestHelpers
                 aspNetCorePort,
                 startInfo.Environment,
                 processToProfile,
-                enableSecurity.GetValueOrDefault(),
+                enableSecurity,
                 externalRulesFile);
 
             startInfo.UseShellExecute = false;
