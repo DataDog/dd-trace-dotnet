@@ -36,13 +36,14 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
 
-        private readonly AppSecRateLimiter _rateLimiter;
-        private readonly IWaf _waf;
         private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
+        private IWaf _waf;
+        private AppSecRateLimiter _rateLimiter;
+        private bool _enabled = false;
 
 #if NETFRAMEWORK
-        private readonly bool _usingIntegratedPipeline;
+        private bool? _usingIntegratedPipeline = null;
 #endif
 
         static Security()
@@ -88,48 +89,10 @@ namespace Datadog.Trace.AppSec
             try
             {
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
-
                 _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
+                _waf = waf;
 
-                if (_settings.Enabled)
-                {
-                    _waf = waf ?? Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules);
-                    if (_waf?.InitializedSuccessfully ?? false)
-                    {
-                        _instrumentationGateway.StartRequest += RunWafAndReact;
-                        _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
-                        _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
-                        _instrumentationGateway.BodyAvailable += RunWafAndReact;
-                        _instrumentationGateway.BlockingOpportunity += MightStopRequest;
-#if NETFRAMEWORK
-                        try
-                        {
-                            _usingIntegratedPipeline = TryGetUsingIntegratedPipelineBool();
-                        }
-                        catch (Exception ex)
-                        {
-                            _usingIntegratedPipeline = false;
-                            Log.Error(ex, "Unable to query the IIS pipeline. Request and response information may be limited.");
-                        }
-
-                        if (_usingIntegratedPipeline)
-                        {
-                            _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
-                        }
-#else
-                        _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
-#endif
-                        AddAppsecSpecificInstrumentations();
-                    }
-                    else
-                    {
-                        _settings.Enabled = false;
-                    }
-
-                    _instrumentationGateway.StartRequest += ReportWafInitInfoOnce;
-                    LifetimeManager.Instance.AddShutdownTask(RunShutdown);
-                    _rateLimiter = new AppSecRateLimiter(_settings.TraceRateLimit);
-                }
+                UpdateStatus();
             }
             catch (Exception ex)
             {
@@ -271,6 +234,73 @@ namespace Datadog.Trace.AppSec
         public void Dispose()
         {
             _waf?.Dispose();
+        }
+
+        private void UpdateStatus()
+        {
+            lock (_settings)
+            {
+                if (_enabled == _settings.Enabled) { return; }
+                if (_settings.Enabled)
+                {
+                    _waf = _waf ?? Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules);
+                    if (_waf?.InitializedSuccessfully ?? false)
+                    {
+                        _instrumentationGateway.StartRequest += RunWafAndReact;
+                        _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
+                        _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
+                        _instrumentationGateway.BodyAvailable += RunWafAndReact;
+                        _instrumentationGateway.BlockingOpportunity += MightStopRequest;
+
+#if NETFRAMEWORK
+                        if (_usingIntegratedPipeline == null)
+                        {
+                            try
+                            {
+                                _usingIntegratedPipeline = TryGetUsingIntegratedPipelineBool();
+                            }
+                            catch (Exception ex)
+                            {
+                                _usingIntegratedPipeline = false;
+                                Log.Error(ex, "Unable to query the IIS pipeline. Request and response information may be limited.");
+                            }
+                        }
+
+                        if (_usingIntegratedPipeline.Value)
+                        {
+                            _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
+                        }
+#else
+                        _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
+#endif
+                        AddAppsecSpecificInstrumentations();
+
+                        _instrumentationGateway.EndRequest += ReportWafInitInfoOnce;
+                        LifetimeManager.Instance.AddShutdownTask(RunShutdown);
+                        _rateLimiter = _rateLimiter ?? new AppSecRateLimiter(_settings.TraceRateLimit);
+                    }
+                    else
+                    {
+                        _settings.Enabled = false;
+                    }
+                }
+
+                if (!_settings.Enabled)
+                {
+                    _instrumentationGateway.StartRequest += RunWafAndReact;
+                    _instrumentationGateway.EndRequest -= RunWafAndReactAndCleanup;
+                    _instrumentationGateway.PathParamsAvailable -= RunWafAndReact;
+                    _instrumentationGateway.BodyAvailable -= RunWafAndReact;
+                    _instrumentationGateway.BlockingOpportunity -= MightStopRequest;
+
+                    _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
+                    _instrumentationGateway.EndRequest -= ReportWafInitInfoOnce;
+
+                    AddAppsecSpecificInstrumentations(false);
+                }
+
+                _enabled = _settings.Enabled;
+            }
         }
 
         private void InstrumentationGateway_AddHeadersResponseTags(object sender, InstrumentationGatewayEventArgs e)
@@ -419,15 +449,7 @@ namespace Datadog.Trace.AppSec
                 _instrumentationGateway.StartRequest -= RunWafAndReact;
                 _instrumentationGateway.EndRequest -= RunWafAndReactAndCleanup;
                 _instrumentationGateway.BlockingOpportunity -= MightStopRequest;
-
-#if NETFRAMEWORK
-                if (_usingIntegratedPipeline)
-                {
-                    _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
-                }
-#else
                 _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
-#endif
             }
 
             Dispose();
