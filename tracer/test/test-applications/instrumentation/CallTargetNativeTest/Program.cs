@@ -247,6 +247,15 @@ namespace CallTargetNativeTest
                         // GenericParentAbstractMethod();
                         break;
                     }
+                case "remove":
+                    {
+                        WithOutArguments();
+                        DisableDefinitions();
+                        WithOutArguments(false);
+                        EnableDefinitions();
+                        WithOutArguments();
+                        break;
+                    }
                 case "all":
                     {
                         Argument0();
@@ -310,23 +319,20 @@ namespace CallTargetNativeTest
                         GenericParentWithOutArguments();
                         // .
                         AbstractMethod();
+                        //.
+                        WithOutArguments();
+                        DisableDefinitions();
+                        WithOutArguments(false);
+                        EnableDefinitions();
+                        WithOutArguments();
                         // *** Derived instrumentation is not yet supported for nested types.
                         // ParentAbstractMethod();
                         // StructParentAbstractMethod();
                         // GenericParentAbstractMethod();
                         break;
                     }
-                case "remove":
-                    {
-                        WithOutArguments();
-                        DisableDefinitions();
-                        WithOutArguments(false);
-                        EnableDefinitions();
-                        WithOutArguments();
-                        break;
-                    }
                 default:
-                    Console.WriteLine("Run with the profiler and use a number from 0-9/withref/without/abstract/all as an argument.");
+                    Console.WriteLine("Run with the profiler and use a number from 0-9/withref/without/abstract/remove/all as an argument.");
                     return;
             }
 
