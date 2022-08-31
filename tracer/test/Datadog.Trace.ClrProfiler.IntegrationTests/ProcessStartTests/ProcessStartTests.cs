@@ -15,8 +15,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class ProcessStartTests : TestHelper
     {
-        private const string ExpectedServiceName = "Samples.ProcessStart-command";
-
         public ProcessStartTests(ITestOutputHelper output)
             : base("ProcessStart", output)
         {
@@ -33,8 +31,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             const int expectedSpanCount = 5;
             const string expectedOperationName = "command_execution";
             const string expectedServiceName = "Samples.ProcessStart-command";
-
-            SetEnvironmentVariable($"MonitoringHomeDirectory", "C:\\CommonFolder\\shared\\repos\\dd-trace-dotnet\\shared\\bin\\monitoring-home");
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
