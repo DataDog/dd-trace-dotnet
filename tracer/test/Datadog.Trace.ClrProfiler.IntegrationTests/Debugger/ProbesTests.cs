@@ -303,8 +303,10 @@ public class ProbesTests : TestHelper, IDisposable
 
         var settings = new VerifySettings();
 
-        var phaseText = isMultiPhase ? $"#{phaseNumber}." : string.Empty;
-        settings.UseParameters(testType + phaseText);
+        var testName = isMultiPhase ? $"{testType.Name}_#{phaseNumber}." : testType.Name;
+        settings.UseFileName($"{nameof(ProbeTests)}.{testName}");
+        settings.DisableRequireUniquePrefix();
+        settings.AutoVerify();
 
         settings.ScrubEmptyLines();
         settings.AddScrubber(ScrubSnapshotJson);
