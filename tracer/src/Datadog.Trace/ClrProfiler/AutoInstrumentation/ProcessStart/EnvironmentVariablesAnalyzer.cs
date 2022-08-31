@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                     var stringVar = variable.ToString();
                     if (IsAllowedVariable(stringVar))
                     {
-                        variableLine += variable + "=" + envVariables[stringVar] + "\n";
+                        variableLine += stringVar + "=" + envVariables[stringVar] + "\n";
                     }
                 }
 
