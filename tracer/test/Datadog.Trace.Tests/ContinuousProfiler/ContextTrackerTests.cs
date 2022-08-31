@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests.ContinuousProfiler
 
                 var tracer = CreateTracer();
 
-                ulong expectedSpanId = 0;
+                ulong expectedSpanId;
 
                 using (var rootWebScope = tracer.StartActive("Root"))
                 {

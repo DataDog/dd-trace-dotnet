@@ -38,6 +38,8 @@ namespace Datadog.Trace.ContinuousProfiler
         /// </summary>
         private readonly ThreadLocal<IntPtr> _traceContextPtr;
 
+        private bool _firstEndpointFailure = true;
+
         public ContextTracker(IProfilerStatus status)
         {
             _status = status;
@@ -63,7 +65,18 @@ namespace Datadog.Trace.ContinuousProfiler
         {
             if (IsEnabled && _isEndpointProfilingEnabled && !string.IsNullOrEmpty(endpoint))
             {
-                NativeInterop.SetEndpoint(RuntimeId.Get(), localRootSpanId, endpoint);
+                try
+                {
+                    NativeInterop.SetEndpoint(RuntimeId.Get(), localRootSpanId, endpoint);
+                }
+                catch (Exception e)
+                {
+                    if (_firstEndpointFailure)
+                    {
+                        Log.Warning(e, "Unable to set the endpoint for span {spanId}", localRootSpanId);
+                        _firstEndpointFailure = false;
+                    }
+                }
             }
         }
 

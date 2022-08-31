@@ -12,8 +12,6 @@ namespace Datadog.Trace
 {
     internal class AsyncLocalScopeManager : IScopeManager, IScopeRawAccess
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AsyncLocalScopeManager));
-
         private readonly AsyncLocal<Scope> _activeScope = CreateScope();
 
         public Scope Active
@@ -55,12 +53,6 @@ namespace Datadog.Trace
 
             // scope.Parent is null for distributed traces, so use scope.Span.Context.Parent
             DistributedTracer.Instance.SetSpanContext(scope.Span.Context.Parent as SpanContext);
-
-            // Propagate the resource name to the profiler for root web spans
-            if (scope.Parent == null && scope.Span.Type == SpanTypes.Web)
-            {
-                Profiler.Instance.ContextTracker.SetEndpoint(scope.Span.RootSpanId, scope.Span.ResourceName);
-            }
         }
 
         private static AsyncLocal<Scope> CreateScope()
