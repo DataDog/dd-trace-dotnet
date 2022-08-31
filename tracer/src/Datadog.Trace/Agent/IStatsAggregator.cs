@@ -20,6 +20,15 @@ namespace Datadog.Trace.Agent
         bool? CanComputeStats { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the Datadog agent supports
+        /// tracers dropping P0 traces.
+        ///
+        /// This will return null if the endpoint discovery request has not
+        /// completed.
+        /// </summary>
+        bool? CanDropP0s { get; }
+
+        /// <summary>
         /// Receives an array of spans and computes stats points for them.
         /// </summary>
         /// <param name="spans">The array of spans to process.</param>

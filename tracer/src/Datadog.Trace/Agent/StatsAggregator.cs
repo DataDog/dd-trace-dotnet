@@ -83,6 +83,8 @@ namespace Datadog.Trace.Agent
 
         public bool? CanComputeStats { get; private set; } = true;
 
+        public bool? CanDropP0s { get; private set; } = true;
+
         public static IStatsAggregator Create(IApi api, ImmutableTracerSettings settings)
         {
             return settings.StatsComputationEnabled ? new StatsAggregator(api, settings) : new NullStatsAggregator();
@@ -130,18 +132,15 @@ namespace Datadog.Trace.Agent
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ArraySegment<Span> ProcessTrace(ArraySegment<Span> trace)
         {
-            if (CanComputeStats == true || CanComputeStats is null)
+            foreach (var processor in _traceProcessors)
             {
-                foreach (var processor in _traceProcessors)
+                try
                 {
-                    try
-                    {
-                        trace = processor.Process(trace);
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Error(e, e.Message);
-                    }
+                    trace = processor.Process(trace);
+                }
+                catch (Exception e)
+                {
+                    Log.Error(e, e.Message);
                 }
             }
 
