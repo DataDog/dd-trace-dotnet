@@ -66,15 +66,15 @@ namespace Datadog.Trace.AppSec.Transports.Http
                 syncIOFeature.AllowSynchronousIO = true;
             }
 
-            var template = templateHtml;
+            var template = templateJson;
             if (_context.Request.Headers["Accept"] == "application/json")
             {
                 httpResponse.ContentType = "application/json";
-                template = templateJson;
             }
             else
             {
                 httpResponse.ContentType = "text/html";
+                template = templateHtml;
             }
 
             var resp = Encoding.ASCII.GetBytes(template);
