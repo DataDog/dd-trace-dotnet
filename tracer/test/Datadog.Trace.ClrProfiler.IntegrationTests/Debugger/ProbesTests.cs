@@ -440,52 +440,6 @@ public class ProbesTests : TestHelper, IDisposable
 
     private void SetRcmConfiguration(IEnumerable<(object Config, string Id)> configurations)
     {
-        var targetFiles = new List<RcmFile>();
-        var targets = new Dictionary<string, Target>();
-        var clientConfigs = new List<string>();
-
-        foreach (var configuration in configurations)
-        {
-            var path = $"datadog/2/{LiveDebuggerProduct.ProductName}/{configuration.Id}/config";
-            var content = JsonConvert.SerializeObject(configuration.Config);
-
-            clientConfigs.Add(path);
-
-            targetFiles.Add(new RcmFile()
-            {
-                Path = path,
-                Raw = Encoding.UTF8.GetBytes(content)
-            });
-
-            targets.Add(path, new Target()
-            {
-                Hashes = new Dictionary<string, string> { { "guid", Guid.NewGuid().ToString() } }
-            });
-        }
-
-        var root = new TufRoot()
-        {
-            Signed = new Signed()
-            {
-                Targets = targets
-            }
-        };
-
-        var response = new GetRcmResponse()
-        {
-            ClientConfigs = clientConfigs,
-            TargetFiles = targetFiles,
-            Targets = root
-        };
-
-        var json = JsonConvert.SerializeObject(response);
-        if (EnvironmentHelper.CustomEnvironmentVariables.TryGetValue(ConfigurationKeys.Rcm.FilePath, out var rcmConfigPath))
-        {
-            File.WriteAllText(rcmConfigPath, json);
-        }
-        else
-        {
-            throw new InvalidOperationException("Path for remote configurations is not set.");
-        }
+        SetRcmConfiguration(configurations, LiveDebuggerProduct.ProductName);
     }
 }
