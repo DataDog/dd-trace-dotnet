@@ -61,13 +61,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _objectArrayAddField = GetDelegateForNativeFunction<ObjectArrayAddDelegate>(handle, "ddwaf_object_array_add");
             _objectArrayGetIndex = GetDelegateForNativeFunction<ObjectArrayGetAtIndexDelegate>(handle, "ddwaf_object_get_index");
             _objectMapAddFieldX64 =
-                Environment.Is64BitProcess ?
-                    GetDelegateForNativeFunction<ObjectMapAddDelegateX64>(handle, "ddwaf_object_map_addl") :
-                    null;
+                Environment.Is64BitProcess ? GetDelegateForNativeFunction<ObjectMapAddDelegateX64>(handle, "ddwaf_object_map_addl") : null;
             _objectMapAddFieldX86 =
-                Environment.Is64BitProcess ?
-                    null :
-                    GetDelegateForNativeFunction<ObjectMapAddDelegateX86>(handle, "ddwaf_object_map_addl");
+                Environment.Is64BitProcess ? null : GetDelegateForNativeFunction<ObjectMapAddDelegateX86>(handle, "ddwaf_object_map_addl");
             _freeObjectield = GetDelegateForNativeFunction<FreeObjectDelegate>(handle, "ddwaf_object_free", out _freeObjectFuncField);
             _freeResultField = GetDelegateForNativeFunction<FreeResultDelegate>(handle, "ddwaf_result_free");
             _rulesetInfoFreeField = GetDelegateForNativeFunction<FreeRulesetInfoDelegate>(handle, "ddwaf_ruleset_info_free");
@@ -194,9 +190,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         internal bool ObjectArrayAdd(IntPtr array, IntPtr entry) => _objectArrayAddField(array, entry);
 
         // Setting entryNameLength to 0 will result in the entryName length being re-computed with strlen
-        internal bool ObjectMapAdd(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry) => Environment.Is64BitProcess ?
-                    _objectMapAddFieldX64(map, entryName, entryNameLength, entry) :
-                    _objectMapAddFieldX86(map, entryName, (uint)entryNameLength, entry);
+        internal bool ObjectMapAdd(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry) => Environment.Is64BitProcess ? _objectMapAddFieldX64(map, entryName, entryNameLength, entry) : _objectMapAddFieldX86(map, entryName, (uint)entryNameLength, entry);
 
         internal void ObjectFreePtr(IntPtr input) => _freeObjectield(input);
 
