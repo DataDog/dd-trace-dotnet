@@ -290,7 +290,19 @@ namespace Datadog.Trace.IntegrationTests
             await SendStatsHelper(statsComputationEnabled: false, expectStats: false);
         }
 
-        private async Task SendStatsHelper(bool statsComputationEnabled, bool expectStats, double? globalSamplingRate = null, bool expectAllTraces = true, bool finishSpansOnClose = true)
+        [Fact]
+        public async Task IsDisabledWhenIncompatibleAgentDetected_TS011()
+        {
+            await SendStatsHelper(statsComputationEnabled: true, expectStats: false, statsEndpointEnabled: false);
+        }
+
+        [Fact]
+        public async Task SendsStatsAndKeepsP0sWhenAgentDropP0sIsFalse()
+        {
+            await SendStatsHelper(statsComputationEnabled: true, expectStats: true, expectAllTraces: true, globalSamplingRate: 0.0, clientDropP0sEnabled: false);
+        }
+
+        private async Task SendStatsHelper(bool statsComputationEnabled, bool expectStats, double? globalSamplingRate = null, bool expectAllTraces = true, bool finishSpansOnClose = true, bool statsEndpointEnabled = true, bool clientDropP0sEnabled = true)
         {
             expectStats &= statsComputationEnabled && finishSpansOnClose;
             var statsWaitEvent = new AutoResetEvent(false);
@@ -301,7 +313,15 @@ namespace Datadog.Trace.IntegrationTests
             int spansCount = 0;
             int p0DroppedSpansCount = 0;
 
-            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+            // Configure the mock agent
+            var agentConfiguration = new MockTracerAgent.AgentConfiguration();
+            agentConfiguration.ClientDropP0s = clientDropP0sEnabled;
+            if (!statsEndpointEnabled)
+            {
+                agentConfiguration.Endpoints = agentConfiguration.Endpoints.Where(s => s != "/v0.6/stats").ToArray();
+            }
+
+            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort(), agentConfiguration: agentConfiguration);
 
             List<string> droppedP0TracesHeaderValues = new();
             List<string> droppedP0SpansHeaderValues = new();
@@ -341,6 +361,13 @@ namespace Datadog.Trace.IntegrationTests
             var immutableSettings = settings.Build();
 
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+
+            // Wait until the discovery service has been reached and we've confirmed that we can send stats
+            if (expectStats)
+            {
+                // SpinWait.SpinUntil(() => tracer.CanComputeStats, 5_000);
+                // tracer.CanComputeStats.Should().Be(true, "the stats agreggator should invoke the agent discovery");
+            }
 
             // Scenario 1: Send the common span, but add an error
             // ClientDropP0s + UserReject Expectation: Kept because the trace contains error spans
