@@ -68,6 +68,21 @@ public class VarEncodingHelperTests
             Signed(long.MinValue, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF),
         };
 
+    public static IEnumerable<object[]> UnsignedVarInts() =>
+        new List<object[]>
+        {
+            UnsignedInt(0, 0x00),
+            UnsignedInt(1, 0x01),
+            UnsignedInt(127, 0x7F),
+            UnsignedInt(128, 0x80, 0x01),
+            UnsignedInt(129, 0x81, 0x01),
+            UnsignedInt(255, 0xFF, 0x01),
+            UnsignedInt(256, 0x80, 0x02),
+            UnsignedInt(16383, 0xFF, 0x7F),
+            UnsignedInt(16384, 0x80, 0x80, 0x01),
+            UnsignedInt(16385, 0x81, 0x80, 0x01),
+        };
+
     public static IEnumerable<object[]> SignedVarInts() =>
         new List<object[]>
         {
@@ -267,6 +282,84 @@ public class VarEncodingHelperTests
 #endif
 
     [Theory]
+    [MemberData(nameof(UnsignedVarInts))]
+    public void WriteVarInt_BytesTest(uint value, byte[] encoded)
+    {
+        var bytes = new byte[encoded.Length];
+        var bytesWritten = VarEncodingHelper.WriteVarInt(bytes, 0, value);
+
+        using var s = new AssertionScope();
+        bytesWritten.Should().Be(bytes.Length);
+        bytes.Should().Equal(encoded);
+    }
+
+    [Theory]
+    [MemberData(nameof(UnsignedVarInts))]
+    public void WriteVarInt_BinaryWriterTest(uint value, byte[] encoded)
+    {
+        var bytes = new byte[encoded.Length];
+        using var ms = new MemoryStream(bytes);
+        using var writer = new BinaryWriter(ms, Encoding.UTF8);
+        var bytesWritten = VarEncodingHelper.WriteVarInt(writer, value);
+
+        using var s = new AssertionScope();
+        bytesWritten.Should().Be(bytes.Length);
+        bytes.Should().Equal(encoded);
+    }
+
+#if NETCOREAPP3_1_OR_GREATER
+    [Theory]
+    [MemberData(nameof(UnsignedVarInts))]
+    public void WriteVarInt_SpanTest(uint value, byte[] encoded)
+    {
+        Span<byte> bytes = stackalloc byte[encoded.Length];
+        var bytesWritten = VarEncodingHelper.WriteVarInt(bytes, value);
+
+        using var s = new AssertionScope();
+        bytesWritten.Should().Be(bytes.Length);
+        for (var i = 0; i < encoded.Length; i++)
+        {
+            var b = encoded[i];
+            bytes[i].Should().Be(b, $"the byte at {i} should be equal");
+        }
+    }
+#endif
+
+    [Theory]
+    [MemberData(nameof(UnsignedVarInts))]
+    public void ReadVarInt_BytesTest(uint expected, byte[] encoded)
+    {
+        var actual = VarEncodingHelper.ReadVarInt(encoded, 0, out var bytesRead);
+        actual.Should().Be(expected);
+        bytesRead.Should().Be(encoded.Length);
+    }
+
+    [Theory]
+    [MemberData(nameof(BadBytes))]
+    public void ReadVarInt_BytesTest_Error(byte[] bytes)
+    {
+        VarEncodingHelper.ReadVarInt(bytes, 0, out _).Should().BeNull();
+    }
+
+#if NETCOREAPP3_1_OR_GREATER
+    [Theory]
+    [MemberData(nameof(UnsignedVarInts))]
+    public void ReadVarInt_SpanTest(uint expected, byte[] encoded)
+    {
+        var actual = VarEncodingHelper.ReadVarInt(encoded.AsSpan(), out var bytesRead);
+        actual.Should().Be(expected);
+        bytesRead.Should().Be(encoded.Length);
+    }
+
+    [Theory]
+    [MemberData(nameof(BadBytes))]
+    public void ReadVarInt_SpanTest_Error(byte[] bytes)
+    {
+        VarEncodingHelper.ReadVarInt(bytes.AsSpan(), out _).Should().BeNull();
+    }
+#endif
+
+    [Theory]
     [MemberData(nameof(SignedVarInts))]
     public void WriteVarIntZigZag_BytesTest(int value, byte[] encoded)
     {
@@ -368,6 +461,8 @@ public class VarEncodingHelperTests
     private static object[] Unsigned(ulong value, params byte[] bytes) => new object[] { value, bytes };
 
     private static object[] Signed(long value, params byte[] bytes) => new object[] { value, bytes };
+
+    private static object[] UnsignedInt(int value, params byte[] bytes) => new object[] { value, bytes };
 
     private static object[] SignedInt(int value, params byte[] bytes) => new object[] { value, bytes };
 }
