@@ -103,7 +103,7 @@ namespace Datadog.Trace.AppSec
                 }
                 else
                 {
-                    Log.Information("AppSec remote enabling not allowed.");
+                    Log.Information("AppSec remote enabling not allowed (DD_APPSEC_ENABLED=false).");
                 }
             }
             catch (Exception ex)
@@ -222,7 +222,7 @@ namespace Datadog.Trace.AppSec
                 Log.Error(ex, ex.Message);
             }
 
-            Log.Information($"{defs} AppSec definitions and {derived} derived definitions added to the profiler.");
+            Log.Information($"{defs} AppSec definitions and {derived} AppSec derived definitions added to the profiler.");
         }
 
         private static void RemoveAppsecSpecificInstrumentations()
@@ -230,7 +230,7 @@ namespace Datadog.Trace.AppSec
             int defs = 0, derived = 0;
             try
             {
-                Log.Debug("Adding CallTarget AppSec integration definitions to native library.");
+                Log.Debug("Removing CallTarget AppSec integration definitions from native library.");
                 var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.AppSec);
                 NativeMethods.RemoveCallTargetDefinitions(payload.DefinitionsId, payload.Definitions);
                 defs = payload.Definitions.Length;
@@ -242,7 +242,7 @@ namespace Datadog.Trace.AppSec
 
             try
             {
-                Log.Debug("Adding CallTarget appsec derived integration definitions to native library.");
+                Log.Debug("Removing CallTarget appsec derived integration definitions from native library.");
                 var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.AppSec);
                 NativeMethods.RemoveCallTargetDefinitions(payload.DefinitionsId, payload.Definitions);
                 derived = payload.Definitions.Length;
@@ -252,7 +252,7 @@ namespace Datadog.Trace.AppSec
                 Log.Error(ex, ex.Message);
             }
 
-            Log.Information($"{defs} AppSec definitions and {derived} derived definitions removed from the profiler.");
+            Log.Information($"{defs} AppSec definitions and {derived} AppSec derived definitions removed from the profiler.");
         }
 
         /// <summary> Frees resources </summary>
