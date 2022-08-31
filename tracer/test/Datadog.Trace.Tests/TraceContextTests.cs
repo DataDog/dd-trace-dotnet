@@ -64,13 +64,13 @@ namespace Datadog.Trace.Tests
 
             void AddAndCloseSpan()
             {
-                var span = new Span(new SpanContext(42, SpanIdGenerator.ThreadInstance.CreateNew()), DateTimeOffset.UtcNow);
+                var span = new Span(new SpanContext(42, SpanIdGenerator.CreateNew()), DateTimeOffset.UtcNow);
 
                 traceContext.AddSpan(span);
                 traceContext.CloseSpan(span);
             }
 
-            var rootSpan = new Span(new SpanContext(42, SpanIdGenerator.ThreadInstance.CreateNew()), DateTimeOffset.UtcNow);
+            var rootSpan = new Span(new SpanContext(42, SpanIdGenerator.CreateNew()), DateTimeOffset.UtcNow);
 
             traceContext.AddSpan(rootSpan);
 
@@ -127,7 +127,7 @@ namespace Datadog.Trace.Tests
         {
             const int partialFlushThreshold = 3;
 
-            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.ThreadInstance.CreateNew()), DateTimeOffset.UtcNow);
+            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.CreateNew()), DateTimeOffset.UtcNow);
 
             var tracer = new Mock<IDatadogTracer>();
 
@@ -178,7 +178,7 @@ namespace Datadog.Trace.Tests
         [InlineData(false)]
         public void ChunksSentAfterRootSpanShouldContainAASMetadataAndSamplingPriority(bool inAASContext)
         {
-            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.ThreadInstance.CreateNew()), DateTimeOffset.UtcNow);
+            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.CreateNew()), DateTimeOffset.UtcNow);
 
             var tracer = new Mock<IDatadogTracer>();
 
@@ -236,7 +236,7 @@ namespace Datadog.Trace.Tests
         {
             const int partialFlushThreshold = 2;
 
-            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.ThreadInstance.CreateNew()), DateTimeOffset.UtcNow);
+            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.CreateNew()), DateTimeOffset.UtcNow);
 
             var tracer = new Mock<IDatadogTracer>();
 
@@ -284,7 +284,7 @@ namespace Datadog.Trace.Tests
         [InlineData(0)]
         public void StatsComputationEnabled_SerializeSpansFalseWhen_SamplingPriorityLessThanEqualTo0(int samplingPriority)
         {
-            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.ThreadInstance.CreateNew()), DateTimeOffset.UtcNow);
+            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.CreateNew()), DateTimeOffset.UtcNow);
 
             var tracer = new Mock<IDatadogTracer>();
 
@@ -311,7 +311,7 @@ namespace Datadog.Trace.Tests
         [InlineData(2)]
         public void StatsComputationEnabled_SerializeSpansTrueWhen_SamplingPriorityGreaterThan0(int samplingPriority)
         {
-            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.ThreadInstance.CreateNew()), DateTimeOffset.UtcNow);
+            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.CreateNew()), DateTimeOffset.UtcNow);
 
             var tracer = new Mock<IDatadogTracer>();
 
@@ -338,7 +338,7 @@ namespace Datadog.Trace.Tests
         [InlineData(true)]
         public void StatsComputationEnabled_SerializeSpansTrueWhen_TraceHasErrors(bool hasChildSpans)
         {
-            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.ThreadInstance.CreateNew()), DateTimeOffset.UtcNow);
+            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.CreateNew()), DateTimeOffset.UtcNow);
 
             var tracer = new Mock<IDatadogTracer>();
 
@@ -378,7 +378,7 @@ namespace Datadog.Trace.Tests
         [InlineData(true, 1)]
         public void StatsComputationEnabled_SerializeSpansTrueWhen_SpanHasAnalyticsAndSampled(bool hasChildSpans, double analyticsSampleRate)
         {
-            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.ThreadInstance.CreateNew()), DateTimeOffset.UtcNow);
+            Span CreateSpan() => new Span(new SpanContext(42, SpanIdGenerator.CreateNew()), DateTimeOffset.UtcNow);
 
             var tracer = new Mock<IDatadogTracer>();
 
