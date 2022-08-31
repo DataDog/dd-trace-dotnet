@@ -33,8 +33,8 @@ internal class LiveDebuggerFactory
             exporterSettings,
             productName: "debugger",
             tcpTimeout: null,
-            AgentHttpHeaderNames.DefaultHeaders,
-            () => new DefaultJsonHeaderHelper(),
+            AgentHttpHeaderNames.MinimalHeaders,
+            () => new MinimalAgentHeaderHelper(),
             uri => uri);
 
         var batchApi = AgentBatchUploadApi.Create(settings, apiFactory, discoveryService);

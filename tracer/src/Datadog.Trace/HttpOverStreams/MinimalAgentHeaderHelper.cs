@@ -1,4 +1,4 @@
-// <copyright file="DefaultJsonHeaderHelper.cs" company="Datadog">
+// <copyright file="MinimalAgentHeaderHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace Datadog.Trace.HttpOverStreams;
 
-internal class DefaultJsonHeaderHelper : HttpHeaderHelperBase
+internal class MinimalAgentHeaderHelper : HttpHeaderHelperBase
 {
     private static string? _metadataHeaders = null;
 
@@ -18,7 +18,7 @@ internal class DefaultJsonHeaderHelper : HttpHeaderHelperBase
         {
             if (_metadataHeaders == null)
             {
-                var headers = AgentHttpHeaderNames.DefaultHeaders.Select(kvp => $"{kvp.Key}: {kvp.Value}{DatadogHttpValues.CrLf}");
+                var headers = AgentHttpHeaderNames.MinimalHeaders.Select(kvp => $"{kvp.Key}: {kvp.Value}{DatadogHttpValues.CrLf}");
                 _metadataHeaders = string.Concat(headers);
             }
 

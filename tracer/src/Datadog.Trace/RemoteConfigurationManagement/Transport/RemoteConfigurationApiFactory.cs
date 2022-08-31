@@ -19,8 +19,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
                 exporterSettings,
                 productName: "rcm",
                 tcpTimeout: null,
-                AgentHttpHeaderNames.DefaultHeaders,
-                () => new DefaultJsonHeaderHelper(),
+                AgentHttpHeaderNames.MinimalHeaders,
+                () => new MinimalAgentHeaderHelper(),
                 uri => uri);
 
             return

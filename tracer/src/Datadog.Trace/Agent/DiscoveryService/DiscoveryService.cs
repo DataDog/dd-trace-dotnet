@@ -52,8 +52,8 @@ namespace Datadog.Trace.Agent.DiscoveryService
                     exporterSettings,
                     productName: "discovery",
                     tcpTimeout: null,
-                    AgentHttpHeaderNames.DefaultHeaders,
-                    () => new DefaultJsonHeaderHelper(),
+                    AgentHttpHeaderNames.MinimalHeaders,
+                    () => new MinimalAgentHeaderHelper(),
                     uri => uri);
 
                 return Instance ??= new DiscoveryService(apiRequestFactory);
