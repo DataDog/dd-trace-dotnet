@@ -285,10 +285,10 @@ namespace Datadog.Trace.AppSec
 
         private void AsmDDProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
-            var asmDD = e.GetDeserializedConfigurations<AsmDD>().FirstOrDefault();
+            var asmDD = e.GetDeserializedConfigurations<string>().FirstOrDefault();
             if (asmDD != null)
             {
-                _remoteRulesJson = asmDD.Rules;
+                _remoteRulesJson = asmDD;
                 UpdateStatus(true);
             }
         }
