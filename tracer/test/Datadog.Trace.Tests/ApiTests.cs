@@ -182,7 +182,7 @@ namespace Datadog.Trace.Tests
             var responseMock = new Mock<IApiResponse>();
             responseMock.Setup(x => x.StatusCode).Returns(200);
             responseMock.Setup(x => x.GetStreamAsync()).Returns(() => Task.FromResult<Stream>(new MemoryStream(Encoding.UTF8.GetBytes(serializedResponse))));
-
+            responseMock.Setup(x => x.ContentEncoding).Returns(() => Encoding.UTF8);
             responseMock.Setup(x => x.ContentLength).Returns(serializedResponse.Length);
 
             var requestMock = new Mock<IApiRequest>();

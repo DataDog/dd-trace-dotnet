@@ -20,7 +20,7 @@ namespace Datadog.Trace.Agent.Transports
         {
             _response = response;
 
-            var encoding = _response.Content.Headers.ContentEncoding.FirstOrDefault();
+            var encoding = _response.Content?.Headers?.ContentEncoding?.FirstOrDefault();
             ContentEncoding = !string.IsNullOrEmpty(encoding) ? Encoding.GetEncoding(encoding) : Encoding.UTF8;
         }
 
