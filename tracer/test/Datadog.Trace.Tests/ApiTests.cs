@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -179,7 +180,7 @@ namespace Datadog.Trace.Tests
 
             var responseMock = new Mock<IApiResponse>();
             responseMock.Setup(x => x.StatusCode).Returns(200);
-            responseMock.Setup(x => x.ReadAsStringAsync()).Returns(Task.FromResult(serializedResponse));
+            responseMock.Setup(x => x.GetStreamAsync()).Returns(() => Task.FromResult(new StringReader(serializedResponse)));
             responseMock.Setup(x => x.ContentLength).Returns(serializedResponse.Length);
 
             var requestMock = new Mock<IApiRequest>();
