@@ -19,7 +19,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string NetCoreRuntime = "Target process is running with .NET Core";
         public const string RuntimeDetectionFailed = "Failed to detect target process runtime, assuming .NET Framework";
         public const string BothRuntimesDetected = "The target process is running .NET Framework and .NET Core simultaneously. Checks will be performed assuming a .NET Framework runtime.";
-        public const string ProfilerNotLoaded = "The native library is not loaded into the process";
+        public const string LoaderNotLoaded = "The native loader library is not loaded into the process";
+        public const string NativeTracerNotLoaded = "The native tracer library is not loaded into the process";
         public const string TracerNotLoaded = "Tracer is not loaded into the process";
         public const string AgentDetectionFailed = "Could not detect the agent version. It may be running with a version older than 7.27.0.";
         public const string IisProcess = "The target process is an IIS process. The detection of the configuration might be incomplete, it's recommended to use dd-trace check iis <site name> instead.";
@@ -31,6 +32,16 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string OutOfProcess = "Detected ASP.NET Core hosted out of proces. Trying to find the application process.";
         public const string AspNetCoreProcessNotFound = "Could not find the ASP.NET Core applicative process.";
         public const string VersionConflict = "Tracer version 1.x can't be loaded simultaneously with other versions and will produce orphaned traces. Make sure to synchronize the Datadog.Trace NuGet version with the installed automatic instrumentation package version.";
+
+        public const string ContinousProfilerEnabled = "DD_PROFILING_ENABLED is set.";
+        public const string ContinousProfilerDisabled = "The continous profiler is explicitly disabled through DD_PROFILING_ENABLED.";
+        public const string ContinousProfilerNotSet = "DD_PROFILING_ENABLED is not set, the continous profiler is disabled.";
+        public const string ContinousProfilerNotLoaded = "The continuous profiler library is not loaded into the process.";
+        public const string ContinousProfilerWithoutLoader = "The continous profiler needs the Datadog.Trace.ClrProfiler.Native module and the loader.conf file to work. Try reinstalling the tracer in version 2.14+.";
+
+        public const string LdPreloadNotSet = "The environment variable LD_PRELOAD is not set. Check the Datadog .NET Profiler documentation to set it properly.";
+
+        public static string ApiWrapperNotFound(string path) => $"The environment variable LD_PRELOAD is set to '{path}' but the file could not be found. Check the Datadog .NET Profiler documentation to set it properly.";
 
         public static string ProfilerVersion(string version) => $"The native library version {version} is loaded into the process.";
 

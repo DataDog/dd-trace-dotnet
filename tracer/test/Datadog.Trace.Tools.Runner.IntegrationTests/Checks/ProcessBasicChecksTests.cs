@@ -104,7 +104,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             result.Should().BeFalse();
 
             console.Output.Should().ContainAll(
-                ProfilerNotLoaded,
+                LoaderNotLoaded,
+                NativeTracerNotLoaded,
                 TracerNotLoaded,
                 EnvironmentVariableNotSet("DD_DOTNET_TRACER_HOME"),
                 WrongEnvironmentVariableFormat(CorProfilerKey, Utils.Profilerid, null),
@@ -144,7 +145,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             result.Should().BeFalse();
 
             console.Output.Should().ContainAll(
-                ProfilerNotLoaded,
+                LoaderNotLoaded,
+                NativeTracerNotLoaded,
                 TracerNotLoaded,
                 TracerHomeNotFoundFormat("TheDirectoryDoesNotExist"),
                 WrongEnvironmentVariableFormat(CorProfilerKey, Utils.Profilerid, Guid.Empty.ToString("B")),
@@ -183,7 +185,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             }
 
             console.Output.Should().NotContainAny(
-                ProfilerNotLoaded,
+                NativeTracerNotLoaded,
                 TracerNotLoaded,
                 "DD_DOTNET_TRACER_HOME",
                 CorProfilerKey,

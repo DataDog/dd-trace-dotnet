@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Reflection.PortableExecutable;
 using System.Runtime.InteropServices;
 using Spectre.Console;
 
@@ -41,11 +40,38 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 runtime = ProcessInfo.Runtime.NetFx;
             }
 
-            var profilerModule = FindProfilerModule(process);
+            bool isContinuousProfilerEnabled;
 
-            if (profilerModule == null)
+            if (process.EnvironmentVariables.TryGetValue("DD_PROFILING_ENABLED", out var profilingEnabled))
             {
-                Utils.WriteWarning(ProfilerNotLoaded);
+                if (ParseBooleanConfigurationValue(profilingEnabled))
+                {
+                    AnsiConsole.WriteLine(ContinousProfilerEnabled);
+                    isContinuousProfilerEnabled = true;
+                }
+                else
+                {
+                    AnsiConsole.WriteLine(ContinousProfilerDisabled);
+                    isContinuousProfilerEnabled = false;
+                }
+            }
+            else
+            {
+                AnsiConsole.WriteLine(ContinousProfilerNotSet);
+                isContinuousProfilerEnabled = false;
+            }
+
+            var loaderModule = FindLoader(process);
+            var nativeTracerModule = FindNativeTracerModule(process, loaderModule != null);
+
+            if (loaderModule == null)
+            {
+                AnsiConsole.WriteLine(LoaderNotLoaded);
+            }
+
+            if (nativeTracerModule == null)
+            {
+                Utils.WriteWarning(NativeTracerNotLoaded);
                 ok = false;
             }
             else
@@ -54,9 +80,14 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 // .so modules don't have version metadata
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    var version = FileVersionInfo.GetVersionInfo(profilerModule);
+                    var version = FileVersionInfo.GetVersionInfo(nativeTracerModule);
                     AnsiConsole.WriteLine(ProfilerVersion(version.FileVersion ?? "{empty}"));
                 }
+            }
+
+            if (isContinuousProfilerEnabled)
+            {
+                CheckContinousProfiler(process, loaderModule);
             }
 
             var tracerModules = FindTracerModules(process).ToArray();
@@ -136,11 +167,51 @@ namespace Datadog.Trace.Tools.Runner.Checks
             ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32", requiredOnLinux: false);
             ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64", requiredOnLinux: false);
 
-            if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 if (!CheckRegistry(registryService))
                 {
                     ok = false;
+                }
+            }
+
+            return ok;
+        }
+
+        internal static bool CheckContinousProfiler(ProcessInfo process, string? loaderModule)
+        {
+            bool ok = true;
+
+            var continuousProfilerModule = FindContinousProfilerModule(process);
+
+            if (continuousProfilerModule == null)
+            {
+                Utils.WriteWarning(ContinousProfilerNotLoaded);
+                ok = false;
+            }
+
+            if (loaderModule == null)
+            {
+                Utils.WriteError(ContinousProfilerWithoutLoader);
+                ok = false;
+            }
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                process.EnvironmentVariables.TryGetValue("LD_PRELOAD", out var ldPreload);
+
+                if (ldPreload == null)
+                {
+                    Utils.WriteError(LdPreloadNotSet);
+                    ok = false;
+                }
+                else
+                {
+                    if (!File.Exists(ldPreload))
+                    {
+                        Utils.WriteError(ApiWrapperNotFound(ldPreload));
+                        ok = false;
+                    }
                 }
             }
 
@@ -219,7 +290,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
             else if (requiredOnLinux)
             {
-                if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+                if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     Utils.WriteError(EnvironmentVariableNotSet(key));
                     ok = false;
@@ -258,7 +329,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
         {
             var fileName = Path.GetFileName(fullPath);
 
-            if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 return "Datadog.Trace.ClrProfiler.Native.dll".Equals(fileName, StringComparison.OrdinalIgnoreCase) ||
                        "Datadog.Tracer.Native.dll".Equals(fileName, StringComparison.OrdinalIgnoreCase) ||
@@ -270,18 +341,65 @@ namespace Datadog.Trace.Tools.Runner.Checks
             // Paths are case-sensitive on Linux
             return "Datadog.Trace.ClrProfiler.Native.so".Equals(fileName, StringComparison.Ordinal) ||
                    "Datadog.Tracer.Native.so".Equals(fileName, StringComparison.Ordinal) ||
-                    // Check for legacy names
+                   // Check for legacy names
                    "Datadog.AutoInstrumentation.NativeLoader.so".Equals(fileName, StringComparison.Ordinal);
         }
 
-        private static string? FindProfilerModule(ProcessInfo process)
+        private static string? FindLoader(ProcessInfo process)
         {
             foreach (var module in process.Modules)
             {
                 var fileName = Path.GetFileName(module);
 
                 if (fileName.Equals("Datadog.Trace.ClrProfiler.Native.dll", StringComparison.OrdinalIgnoreCase)
-                    || fileName.Equals("Datadog.Trace.ClrProfiler.Native.so", StringComparison.OrdinalIgnoreCase))
+                 || fileName.Equals("Datadog.Trace.ClrProfiler.Native.so", StringComparison.OrdinalIgnoreCase))
+                {
+                    // This could be either the native tracer or the loader.
+                    // If it's the loader then there should be a loader.conf file next to it.
+                    var folder = Path.GetDirectoryName(fileName)!;
+
+                    if (File.Exists(Path.Combine(folder, "loader.conf")))
+                    {
+                        return module;
+                    }
+                }
+                else if (fileName.Equals("Datadog.AutoInstrumentation.NativeLoader.x64.dll", StringComparison.OrdinalIgnoreCase)
+                      || fileName.Equals("Datadog.AutoInstrumentation.NativeLoader.x86.dll", StringComparison.OrdinalIgnoreCase)
+                      || fileName.Equals("Datadog.AutoInstrumentation.NativeLoader.so", StringComparison.OrdinalIgnoreCase))
+                {
+                    return module;
+                }
+            }
+
+            return null;
+        }
+
+        private static string? FindContinousProfilerModule(ProcessInfo process)
+        {
+            foreach (var module in process.Modules)
+            {
+                var fileName = Path.GetFileName(module);
+
+                if (fileName.Equals("Datadog.Profiler.Native.dll", StringComparison.OrdinalIgnoreCase)
+                 || fileName.Equals("Datadog.Profiler.Native.so", StringComparison.OrdinalIgnoreCase))
+                {
+                    return module;
+                }
+            }
+
+            return null;
+        }
+
+        private static string? FindNativeTracerModule(ProcessInfo process, bool foundLoader)
+        {
+            var expectedFileName = foundLoader ? "Datadog.Tracer.Native" : "Datadog.Trace.ClrProfiler.Native";
+
+            foreach (var module in process.Modules)
+            {
+                var fileName = Path.GetFileName(module);
+
+                if (fileName.Equals($"{expectedFileName}.dll", StringComparison.OrdinalIgnoreCase)
+                    || fileName.Equals($"{expectedFileName}.so", StringComparison.OrdinalIgnoreCase))
                 {
                     return module;
                 }
@@ -301,6 +419,23 @@ namespace Datadog.Trace.Tools.Runner.Checks
                     yield return module;
                 }
             }
+        }
+
+        private static bool ParseBooleanConfigurationValue(string value)
+        {
+            var trimmedValue = value.Trim();
+
+            return trimmedValue is "true"
+                or "True"
+                or "TRUE"
+                or "yes"
+                or "Yes"
+                or "YES"
+                or "t"
+                or "T"
+                or "Y"
+                or "y"
+                or "1";
         }
     }
 }
