@@ -81,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             return scope;
         }
 
-        public static string Truncate(string value, int maxLength)
+        internal static string Truncate(string value, int maxLength)
         {
             return (string.IsNullOrEmpty(value) || value.Length <= maxLength) ? value : value.Substring(0, maxLength);
         }

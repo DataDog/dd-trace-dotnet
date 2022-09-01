@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.ComponentModel;
 using System.Diagnostics;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
@@ -28,6 +29,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
    MinimumVersion = "1.0.0",
    MaximumVersion = "7.*.*",
    IntegrationName = nameof(Configuration.IntegrationId.ProcessStart))]
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public class ProcessStartIntegration
     {
         /// <summary>
