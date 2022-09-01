@@ -5,6 +5,31 @@
   },
   "rules": [
     {
+      "id": "ublock",
+      "name": "Hello",
+      "tags": {
+        "type": "security_scanner",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.headers.no_cookies",
+                "key_path": [
+                  "user-agent"
+                ]
+              }
+            ],
+            "regex": "Hello\\/v"
+          },
+          "operator": "match_regex"
+        }
+      ],
+      "transformers": []
+    },
+    {
       "id": "crs-913-110",
       "name": "Acunetix",
       "tags": {

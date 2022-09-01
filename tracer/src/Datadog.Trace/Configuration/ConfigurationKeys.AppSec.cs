@@ -65,6 +65,16 @@ namespace Datadog.Trace.Configuration
             /// The regex that will be used to obfuscate possible senative data in values that are highlighted WAF as potentially malicious
             /// </summary>
             internal const string ObfuscationParameterValueRegex = "DD_APPSEC_OBFUSCATION_PARAMETER_VALUE_REGEXP";
+
+            /// <summary>
+            /// Blocking response template for HTML content. This template is used in combination with the status code to craft and send a response upon blocking the request.
+            /// </summary>
+            internal const string HtmlBlockedTemplate = "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_HTML";
+
+            /// <summary>
+            /// Blocking response template for Json content. This template is used in combination with the status code to craft and send a response upon blocking the request.
+            /// </summary>
+            internal const string JsonBlockedTemplate = "DD_APPSEC_HTTP_BLOCKED_TEMPLATE_JSON";
         }
     }
 }

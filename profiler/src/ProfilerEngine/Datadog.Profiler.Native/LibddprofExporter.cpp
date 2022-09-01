@@ -336,6 +336,22 @@ void LibddprofExporter::Add(Sample const& sample)
     profileInfoScope.profileInfo.samplesCount++;
 }
 
+void LibddprofExporter::SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint)
+{
+    const auto profileInfoScope = GetInfo(runtimeId);
+
+    if (profileInfoScope.profileInfo.profile == nullptr)
+    {
+        profileInfoScope.profileInfo.profile = CreateProfile();
+    }
+
+    auto* profile = profileInfoScope.profileInfo.profile;
+
+    const auto traceIdStr = std::to_string(traceId);
+
+    ddog_Profile_set_endpoint(profile, FfiHelper::StringToCharSlice(traceIdStr), FfiHelper::StringToCharSlice(endpoint));
+}
+
 bool LibddprofExporter::Export()
 {
     bool exported = false;

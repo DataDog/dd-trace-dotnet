@@ -51,7 +51,7 @@
     <div>@Html.ActionLink("GET /?arg=database()", "Index", new { arg = "database()" });</div>
     <div> <a href="@(Url.Action("Index", "Home"))?[$ne]=arg">GET /?[$ne]=arg</a></div>
     <div> <a href="@(Url.Action("Params", "Health", new {id = "appscan_fingerprint"}))">GET /Health/Params/appscan_fingerprint</a></div>
-    <div> <a href="@(HttpContext.Current.Request.Path+"/wp-config")">GET /wp-config > 404 rules</a></div>
+    <div> <a href="health/wp-config">GET /wp-config > 404 rules</a></div>
 
     <div>
         @Html.Raw(Context.Request["q"])

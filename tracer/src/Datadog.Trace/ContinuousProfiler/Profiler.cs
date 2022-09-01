@@ -26,6 +26,11 @@ namespace Datadog.Trace.ContinuousProfiler
 
         public IContextTracker ContextTracker { get; }
 
+        internal static void SetInstanceForTests(Profiler value)
+        {
+            _instance = value;
+        }
+
         private static Profiler Create()
         {
             var status = new ProfilerStatus();

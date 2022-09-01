@@ -28,7 +28,7 @@ namespace Samples.Security.AspNetCore5
             {
                 DatabaseHelper.CreateAndFeedDatabase(Configuration.GetConnectionString("DefaultConnection"));
             }
-            services.AddRazorPages(); 
+            services.AddRazorPages();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -46,7 +46,7 @@ namespace Samples.Security.AspNetCore5
             }
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-            
+
             app.UseRouting();
 
             app.UseAuthorization();
@@ -60,6 +60,14 @@ namespace Samples.Security.AspNetCore5
                     _ = Task.Run(() => builder.ApplicationServices.GetService<IHostApplicationLifetime>().StopApplication());
                 });
             });
+
+            app.Use(async (context, next) =>
+            {
+                // make sure if we go into this middleware after blocking has happened that it s not a second request issued by the developerhandlingpage middleware! if it s that no worries it s another request, not the attack one., its  a redirect.
+                // await context.Response.WriteAsync("do smth before all");
+                await next.Invoke();
+            });
+           
 
             app.UseEndpoints(endpoints =>
             {

@@ -14,6 +14,14 @@ namespace Samples.Security.AspNetCore5.Endpoints
                 var s = routeValues["s"] as string;
                 return context.Response.WriteAsync($"Hello world {s}!");
             });
+
+            routeBuilder.MapGet("/headers/", context =>
+            {
+                context.Response.Headers.Add("content-type", "text");
+                context.Response.Headers.Add("content-length", "16");
+                context.Response.Headers.Add("content-language", "en-US");
+                return context.Response.WriteAsync("Hello headers!\\n");
+            });
         }
     }
 }

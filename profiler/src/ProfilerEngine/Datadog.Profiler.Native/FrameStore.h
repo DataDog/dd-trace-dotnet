@@ -32,7 +32,7 @@ public:
     FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pConfiguration);
 
 public :
-    std::tuple<bool, std::string, std::string> GetFrame(uintptr_t instructionPointer) override;
+    std::tuple<bool, std::string_view, std::string_view> GetFrame(uintptr_t instructionPointer) override;
     bool GetTypeName(ClassID classId, std::string& name) override;
 
 private:
@@ -61,8 +61,8 @@ private:
         );
     bool GetTypeDesc(ClassID classId, TypeDesc& typeDesc, bool isEncoded);
     bool GetCachedTypeDesc(ClassID classId, TypeDesc& typeDesc);
-    std::pair <std::string, std::string> GetManagedFrame(FunctionID functionId);
-    std::pair <std::string, std::string> GetNativeFrame(uintptr_t instructionPointer);
+    std::pair <std::string_view, std::string_view> GetManagedFrame(FunctionID functionId);
+    std::pair <std::string_view, std::string_view> GetNativeFrame(uintptr_t instructionPointer);
 
 public:   // global helpers
     static bool GetAssemblyName(ICorProfilerInfo4* pInfo, ModuleID moduleId, std::string& assemblyName);
