@@ -12,8 +12,6 @@ namespace Datadog.Trace
 {
     internal class AsyncLocalScopeManager : IScopeManager, IScopeRawAccess
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AsyncLocalScopeManager));
-
         private readonly AsyncLocal<Scope> _activeScope = CreateScope();
 
         public Scope Active

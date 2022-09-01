@@ -29,15 +29,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             Execute(
                 AddressesConstants.RequestQuery,
-                new Dictionary<string, string[]>
-                {
-                    {
-                        key, new string[]
-                        {
-                            attack
-                        }
-                    }
-                },
+                new Dictionary<string, string[]> { { key, new string[] { attack } } },
                 flow,
                 rule);
         }
@@ -49,15 +41,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             Execute(
                 AddressesConstants.RequestPathParams,
-                new Dictionary<string, string[]>
-                {
-                    {
-                        key, new string[]
-                        {
-                            attack
-                        }
-                    }
-                },
+                new Dictionary<string, string[]> { { key, new string[] { attack } } },
                 flow,
                 rule);
         }
@@ -82,12 +66,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             Execute(
                 AddressesConstants.RequestHeaderNoCookies,
-                new Dictionary<string, string>
-                {
-                    {
-                        header, content
-                    }
-                },
+                new Dictionary<string, string> { { header, content } },
                 flow,
                 rule);
         }
@@ -104,12 +83,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             Execute(
                 AddressesConstants.RequestCookies,
-                new Dictionary<string, List<string>>
-                {
-                    {
-                        key, new List<string> { content }
-                    }
-                },
+                new Dictionary<string, List<string>> { { key, new List<string> { content } } },
                 flow,
                 rule);
         }
@@ -120,12 +94,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         private static void Execute(string address, object value, string flow, string rule)
         {
-            var args = new Dictionary<string, object>
-            {
-                {
-                    address, value
-                }
-            };
+            var args = new Dictionary<string, object> { { address, value } };
             if (!args.ContainsKey(AddressesConstants.RequestUriRaw))
             {
                 args.Add(AddressesConstants.RequestUriRaw, "http://localhost:54587/");
@@ -139,8 +108,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             using var waf = Waf.Create(string.Empty, string.Empty);
             waf.Should().NotBeNull();
             using var context = waf.CreateContext();
-            context.AggregateAddresses(args, true);
-            var result = context.Run(1_000_000);
+            var result = context.Run(args, 1_000_000);
             result.ReturnCode.Should().Be(ReturnCode.Monitor);
             var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
             resultData.Rule.Tags.Type.Should().Be(flow);

@@ -44,3 +44,22 @@ std::vector<std::pair<std::string, std::string>> CreateCallstack(int depth)
 
     return result;
 }
+
+Sample CreateSample(std::string_view runtimeId, const std::vector<std::pair<std::string, std::string>>& callstack, const std::vector<std::pair<std::string, std::string>>& labels, std::int64_t value)
+{
+    Sample sample{runtimeId};
+
+    for (auto& [module, frame] : callstack)
+    {
+        sample.AddFrame(module, frame);
+    }
+
+    for (auto const& [name, value] : labels)
+    {
+        sample.AddLabel(Label{name, value});
+    }
+
+    sample.SetValue(value);
+
+    return sample;
+}

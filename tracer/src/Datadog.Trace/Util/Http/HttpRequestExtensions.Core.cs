@@ -10,6 +10,7 @@ using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util.Http.QueryStringObfuscation;
 using Microsoft.AspNetCore.Http;
 
@@ -19,7 +20,7 @@ namespace Datadog.Trace.Util.Http
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HttpRequestExtensions));
 
-        internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request)
+        internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request, Span relatedSpan)
         {
             var headersDic = new Dictionary<string, string[]>(request.Headers.Keys.Count);
             foreach (var k in request.Headers.Keys)
@@ -84,6 +85,7 @@ namespace Datadog.Trace.Util.Http
                 { AddressesConstants.RequestQuery, queryStringDic },
                 { AddressesConstants.RequestHeaderNoCookies, headersDic },
                 { AddressesConstants.RequestCookies, cookiesDic },
+                { AddressesConstants.RequestClientIp, relatedSpan.GetTag(Trace.Tags.HttpClientIp) }
             };
 
             return dict;

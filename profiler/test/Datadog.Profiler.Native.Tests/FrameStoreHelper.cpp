@@ -21,23 +21,18 @@ FrameStoreHelper::FrameStoreHelper(bool isManaged, std::string prefix, size_t co
     }
 }
 
-
-//FrameStoreHelper::FrameStoreHelper(std::unordered_map<uintptr_t, std::string> mapping)
-//    :
-//    _mapping{mapping}
-//{
-//}
-
-
-std::tuple<bool, std::string, std::string> FrameStoreHelper::GetFrame(uintptr_t instructionPointer)
+std::tuple<bool, std::string_view, std::string_view> FrameStoreHelper::GetFrame(uintptr_t instructionPointer)
 {
+    static std::string UnknownModuleName = "module???";
+    static std::string UnknownFunctionName = "frame???";
+
     auto item = _mapping.find(instructionPointer);
     if (item != _mapping.end())
     {
         return item->second;
     }
 
-    return { true, "module???", "frame???" };
+    return {true, UnknownModuleName, UnknownFunctionName};
 }
 
 

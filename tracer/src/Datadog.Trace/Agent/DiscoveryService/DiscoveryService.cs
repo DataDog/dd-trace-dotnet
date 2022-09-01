@@ -7,6 +7,8 @@ using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -42,10 +44,18 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         public string AgentVersion { get; private set; }
 
-        public static DiscoveryService Create(IApiRequestFactory apiRequestFactory)
+        public static DiscoveryService Create(ImmutableExporterSettings exporterSettings)
         {
             lock (GlobalLock)
             {
+                var apiRequestFactory = AgentTransportStrategy.Get(
+                    exporterSettings,
+                    productName: "discovery",
+                    tcpTimeout: TimeSpan.FromSeconds(15),
+                    AgentHttpHeaderNames.MinimalHeaders,
+                    () => new MinimalAgentHeaderHelper(),
+                    uri => uri);
+
                 return Instance ??= new DiscoveryService(apiRequestFactory);
             }
         }

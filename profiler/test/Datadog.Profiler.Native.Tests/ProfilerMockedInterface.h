@@ -6,14 +6,14 @@
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 
 #include "Configuration.h"
-#include "IExporter.h"
-#include "ISamplesProvider.h"
-#include "IMetricsSender.h"
-#include "Sample.h"
-#include "TagsHelper.h"
 #include "IApplicationStore.h"
+#include "IExporter.h"
+#include "IMetricsSender.h"
 #include "IRuntimeIdStore.h"
 #include "ISamplesCollector.h"
+#include "ISamplesProvider.h"
+#include "Sample.h"
+#include "TagsHelper.h"
 
 class MockConfiguration : public IConfiguration
 {
@@ -51,6 +51,7 @@ class MockExporter : public IExporter
 public:
     MOCK_METHOD(void, Add, (Sample const& sample), (override));
     MOCK_METHOD(bool, Export, (), (override));
+    MOCK_METHOD(void, SetEndpoint, (const std::string& runtimeId, uint64_t traceId, const std::string& endpoint), (override));
 };
 
 class MockSamplesCollector : public ISamplesCollector
@@ -127,24 +128,6 @@ std::tuple<std::shared_ptr<ISamplesProvider>, MockSampleProvider&> CreateSamples
 std::tuple<std::unique_ptr<IExporter>, MockExporter&> CreateExporter();
 std::tuple<std::unique_ptr<ISamplesCollector>, MockSamplesCollector&> CreateSamplesCollector();
 
-template <typename T>
-Sample CreateSample(std::string_view runtimeId, const T& callstack, std::initializer_list<std::pair<std::string, std::string>> labels, std::int64_t value)
-{
-    Sample sample{runtimeId};
-
-    for (auto frame = callstack.begin(); frame != callstack.end(); ++frame)
-    {
-        sample.AddFrame(frame->first, frame->second);
-    }
-
-    for (auto const& [name, value] : labels)
-    {
-        sample.AddLabel({name, value});
-    }
-
-    sample.SetValue(value);
-
-    return sample;
-}
+Sample CreateSample(std::string_view runtimeId, const std::vector<std::pair<std::string, std::string>>& callstack, const std::vector<std::pair<std::string, std::string>>& labels, std::int64_t value);
 
 std::vector<std::pair<std::string, std::string>> CreateCallstack(int depth);

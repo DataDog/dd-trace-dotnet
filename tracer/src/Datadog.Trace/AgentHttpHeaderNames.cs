@@ -80,5 +80,15 @@ namespace Datadog.Trace
             new(LanguageVersion, FrameworkDescription.Instance.ProductVersion),
             new(ComputedTopLevelSpan, "1")
         };
+
+        /// <summary>
+        /// Gets the minimal constant header that can be added to any request to the agent
+        /// </summary>
+        internal static KeyValuePair<string, string>[] MinimalHeaders { get; } =
+        {
+            new(Language, ".NET"),
+            new(TracerVersion, TracerConstants.AssemblyVersion),
+            new(HttpHeaderNames.TracingEnabled, "false"), // don't add automatic instrumentation to requests directed to the agent
+        };
     }
 }
