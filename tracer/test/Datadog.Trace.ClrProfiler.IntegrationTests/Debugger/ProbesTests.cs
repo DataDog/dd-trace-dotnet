@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger;
 [CollectionDefinition(nameof(ProbesTests), DisableParallelization = true)]
 [Collection(nameof(ProbesTests))]
 [UsesVerify]
-public class ProbesTests : TestHelper, IDisposable
+public class ProbesTests : RemoteConfigTestHelper, IDisposable
 {
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
     private const string ProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument probes definitions completed.";
@@ -420,11 +420,11 @@ public class ProbesTests : TestHelper, IDisposable
             new(probeConfiguration, EnvironmentHelper.SampleName.ToUUID())
         };
 
-        SetRcmConfiguration(configurations);
+        WriteRcmFile(configurations);
     }
 
-    private void SetRcmConfiguration(IEnumerable<(object Config, string Id)> configurations)
+    private void WriteRcmFile(IEnumerable<(object Config, string Id)> configurations)
     {
-        SetRcmConfiguration(configurations, LiveDebuggerProduct.ProductName);
+        WriteRcmFile(configurations, LiveDebuggerProduct.ProductName);
     }
 }

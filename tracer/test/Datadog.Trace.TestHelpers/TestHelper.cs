@@ -56,8 +56,6 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
             Output.WriteLine($"Native Loader DLL: {EnvironmentHelper.GetNativeLoaderPath()}");
-
-            SetupRcm();
         }
 
         protected EnvironmentHelper EnvironmentHelper { get; }
@@ -68,7 +66,6 @@ namespace Datadog.Trace.TestHelpers
 
         public virtual void Dispose()
         {
-            CleanupRcm();
         }
 
         public Process StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "")
@@ -671,81 +668,6 @@ namespace Datadog.Trace.TestHelpers
             // other tags
             Assert.Equal(SpanKinds.Server, span.Tags.GetValueOrDefault(Tags.SpanKind));
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
-        }
-
-        protected void SetupRcm(string path = null)
-        {
-            if (path == null)
-            {
-                path = Path.GetTempFileName();
-                File.Delete(path);
-                Directory.CreateDirectory(path);
-                path = Path.Combine(path, "rcm_config.json");
-                if (File.Exists(path)) { File.Delete(path); }
-            }
-
-            SetEnvironmentVariable(ConfigurationKeys.Rcm.FilePath, path);
-        }
-
-        protected void CleanupRcm()
-        {
-            if (EnvironmentHelper.CustomEnvironmentVariables.TryGetValue(ConfigurationKeys.Rcm.FilePath, out var rcmConfigPath))
-            {
-                if (File.Exists(rcmConfigPath)) { File.Delete(rcmConfigPath); }
-                EnvironmentHelper.CustomEnvironmentVariables.Remove(ConfigurationKeys.Rcm.FilePath);
-            }
-        }
-
-        protected void SetRcmConfiguration(IEnumerable<(object Config, string Id)> configurations, string productName)
-        {
-            var targetFiles = new List<RcmFile>();
-            var targets = new Dictionary<string, Target>();
-            var clientConfigs = new List<string>();
-
-            foreach (var configuration in configurations)
-            {
-                var path = $"datadog/2/{productName}/{configuration.Id}/config";
-                var content = JsonConvert.SerializeObject(configuration.Config);
-
-                clientConfigs.Add(path);
-
-                targetFiles.Add(new RcmFile()
-                {
-                    Path = path,
-                    Raw = Encoding.UTF8.GetBytes(content)
-                });
-
-                targets.Add(path, new Target()
-                {
-                    Hashes = new Dictionary<string, string> { { "guid", Guid.NewGuid().ToString() } }
-                });
-            }
-
-            var root = new TufRoot()
-            {
-                Signed = new Signed()
-                {
-                    Targets = targets
-                }
-            };
-
-            var response = new GetRcmResponse()
-            {
-                ClientConfigs = clientConfigs,
-                TargetFiles = targetFiles,
-                Targets = root
-            };
-
-            var json = JsonConvert.SerializeObject(response);
-            if (EnvironmentHelper.CustomEnvironmentVariables.TryGetValue(ConfigurationKeys.Rcm.FilePath, out var rcmConfigPath))
-            {
-                File.WriteAllText(rcmConfigPath, json);
-                Console.WriteLine($"Writing Remote Config at {rcmConfigPath}");
-            }
-            else
-            {
-                throw new InvalidOperationException("Path for remote configurations is not set.");
-            }
         }
 
         private bool IsServerSpan(MockSpan span) =>

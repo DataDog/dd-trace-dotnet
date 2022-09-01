@@ -41,12 +41,12 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var spans1 = await SendRequestsAsync(agent, url);
 
-            SetRcmConfiguration(new[] { ((object)new Features() { Asm = new Asm() { Enabled = false } }, "1") }, "FEATURES");
+            WriteRcmFile(new[] { ((object)new Features() { Asm = new Asm() { Enabled = false } }, "1") }, "FEATURES");
             await Task.Delay(1000);
 
             var spans2 = await SendRequestsAsync(agent, url);
 
-            SetRcmConfiguration(new[] { ((object)new Features() { Asm = new Asm() { Enabled = true } }, "2") }, "FEATURES");
+            WriteRcmFile(new[] { ((object)new Features() { Asm = new Asm() { Enabled = true } }, "2") }, "FEATURES");
             await Task.Delay(1000);
 
             var spans3 = await SendRequestsAsync(agent, url);
