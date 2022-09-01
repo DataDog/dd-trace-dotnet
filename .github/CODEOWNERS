@@ -24,7 +24,7 @@
 # Debugger
 /tracer/src/Datadog.Trace/Debugger/        @DataDog/debugger-dotnet
 /tracer/test/Datadog.Trace.Tests/Debugger/ @DataDog/debugger-dotnet
-/tracer/src/Datadog.Trace/PDBs/            @DataDog/debugger-dotnet
+/tracer/src/Datadog.Trace/PDBs/            @DataDog/debugger-dotnet @DataDog/ci-app-libraries-dotnet
 /tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/Debugger/ @DataDog/debugger-dotnet
 /tracer/test/test-applications/debugger/   @DataDog/debugger-dotnet
 
