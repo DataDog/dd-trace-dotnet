@@ -6,7 +6,7 @@ mkdir -p tracer/build_data/snapshots
 mkdir -p tracer/build_data/logs
 ```
 
-Download build artifact linux-packages-debian/datadog-dotnet-apm_{currentversion}_amd64 and copy it to the artifacts folder created above
+Download build artifact `linux-packages-debian/datadog-dotnet-apm_{currentversion}_amd64` and copy it to the artifacts folder created above.
 Set `SNAPSHOT_CI` to 0 in docker-compose.yml, in the test-agent target.
 
 Then run the following
