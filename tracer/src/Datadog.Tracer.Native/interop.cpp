@@ -30,7 +30,7 @@ EXTERN_C VOID STDAPICALLTYPE InitializeProfiler(WCHAR* id, trace::CallTargetDefi
 
 EXTERN_C VOID STDAPICALLTYPE RemoveCallTargetDefinitions(WCHAR* id, trace::CallTargetDefinition* items, int size)
 {
-    return trace::profiler->InitializeProfiler(id, items, size, false);
+    return trace::profiler->RemoveCallTargetDefinitions(id, items, size);
 }
 
 EXTERN_C VOID STDAPICALLTYPE EnableByRefInstrumentation()

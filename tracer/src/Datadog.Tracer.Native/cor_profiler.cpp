@@ -1380,7 +1380,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITInlining(FunctionID callerId, Function
 //
 // InitializeProfiler method
 //
-void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int size, bool enable)
+void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int size)
 {
     auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
     shared::WSTRING definitionsId = shared::WSTRING(id);
@@ -1389,7 +1389,20 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 
     if (size > 0)
     {
-        InternalAddInstrumentation(id, items, size, false, enable);
+        InternalAddInstrumentation(id, items, size, false, true);
+    }
+}
+
+void CorProfiler::RemoveCallTargetDefinitions(WCHAR* id, CallTargetDefinition* items, int size)
+{
+    auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+    shared::WSTRING definitionsId = shared::WSTRING(id);
+    Logger::Info("RemoveCallTargetDefinitions: received id: ", definitionsId, " from managed side with ", size,
+                 " integrations.");
+
+    if (size > 0)
+    {
+        InternalAddInstrumentation(id, items, size, false, false);
     }
 }
 
