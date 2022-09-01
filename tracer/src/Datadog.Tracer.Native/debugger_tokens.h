@@ -327,7 +327,7 @@ public:
     HRESULT WriteEndReturnMemberRef(void* rewriterWrapperPtr, const TypeInfo* currentType,
                                     TypeSignature* returnArgument, ILInstr** instruction, ProbeType probeType);
 
-    HRESULT WriteLogException(void* rewriterWrapperPtr, const TypeInfo* currentType, ProbeType probeType);
+    HRESULT WriteLogException(void* rewriterWrapperPtr, ProbeType probeType);
 
     HRESULT WriteLogArg(void* rewriterWrapperPtr, const TypeSignature& argument, ILInstr** instruction, ProbeType probeType);
 

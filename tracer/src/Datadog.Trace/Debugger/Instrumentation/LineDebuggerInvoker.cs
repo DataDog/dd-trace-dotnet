@@ -76,11 +76,10 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Log exception
         /// </summary>
-        /// <typeparam name="TTarget">Target type</typeparam>
         /// <param name="exception">Exception instance</param>
         /// <param name="state">Debugger state</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogException<TTarget>(Exception exception, ref LineDebuggerState state)
+        public static void LogException(Exception exception, ref LineDebuggerState state)
         {
             Log.Error(exception, "Error caused by our instrumentation");
             state.IsActive = false;
