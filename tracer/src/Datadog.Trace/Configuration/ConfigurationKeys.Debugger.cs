@@ -15,7 +15,7 @@ namespace Datadog.Trace.Configuration
             /// Used to send Live Debugger snapshots directly to our backend.
             /// This can only be used if DD_API_KEY is also available.
             /// </summary>
-            /// <seealso cref="DebuggerSettings.SnapshotsPath"/>
+            /// <seealso cref="DebuggerSettings.SnapshotUri"/>
             public const string SnapshotUrl = "DD_DEBUGGER_SNAPSHOT_URL";
 
             /// <summary>

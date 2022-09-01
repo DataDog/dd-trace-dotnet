@@ -59,8 +59,9 @@ static constexpr size_t array_size = sizeof(SampleTypeDefinitions) / sizeof(Samp
 //---------------------------------------------------------------
 
 typedef std::array<int64_t, array_size> Values;
-typedef std::pair<std::string, std::string> Label; // TODO: use stringview to avoid copy
+typedef std::pair<std::string_view, std::string> Label;
 typedef std::list<Label> Labels;
+typedef std::vector<std::pair<std::string_view, std::string_view>> CallStack;
 
 /// <summary>
 /// Unfinished class. The purpose, for now, is just to work on the export component.
@@ -69,7 +70,7 @@ class Sample
 {
 public:
     Sample(std::string_view runtimeId); // only for tests
-    Sample(uint64_t timestamp, std::string_view runtimeId);    
+    Sample(uint64_t timestamp, std::string_view runtimeId);
     Sample& operator=(const Sample& sample) = delete;
     Sample(Sample&& sample) noexcept;
     Sample& operator=(Sample&& other) noexcept;
@@ -81,7 +82,7 @@ public:
     Sample Copy() const;
     uint64_t GetTimeStamp() const;
     const Values& GetValues() const;
-    const std::vector<std::pair<std::string, std::string>>& GetCallstack() const;
+    const CallStack& GetCallstack() const;
     const Labels& GetLabels() const;
     std::string_view GetRuntimeId() const;
 
@@ -92,8 +93,13 @@ public:
     // but it seems better for encapsulation to do the transformation between collected raw data
     // and a Sample in each Provider (this is the each behind CollectorBase template class)
     void AddValue(std::int64_t value, SampleValue index);
-    void AddFrame(const std::string& moduleName, const std::string& frame); // TODO: use stringview to avoid copy
-    void AddLabel(const Label& label);
+    void AddFrame(std::string_view moduleName, std::string_view frame);
+
+    template<typename T>
+    void AddLabel(T&& label)
+    {
+        _labels.push_back(std::forward<T>(label));
+    }
 
     // helpers for well known mandatory labels
     void SetPid(const std::string& pid);
@@ -115,7 +121,7 @@ public:
 
 private:
     uint64_t _timestamp;
-    std::vector<std::pair<std::string, std::string>> _callstack; // TODO: use stringview to avoid copy
+    CallStack _callstack;
     Values _values;
     Labels _labels;
     std::string_view _runtimeId;

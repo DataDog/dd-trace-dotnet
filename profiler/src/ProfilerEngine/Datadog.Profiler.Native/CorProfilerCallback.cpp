@@ -64,10 +64,9 @@ Error("unknown platform");
 #define PROFILER_LIBRARY_BINARY_FILE_NAME WStr("Datadog.Profiler.Native" LIBRARY_FILE_EXTENSION)
 #endif
 
-// Static helpers
-IClrLifetime* CorProfilerCallback::GetClrLifetime()
+IClrLifetime* CorProfilerCallback::GetClrLifetime() const
 {
-    return _this->_pClrLifetime.get();
+    return _pClrLifetime.get();
 }
 
 // Initialization

@@ -18,6 +18,8 @@ namespace Datadog.Trace.TestHelpers
     public static class VerifyHelper
     {
         private static readonly Regex LocalhostRegex = new(@"localhost\:\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        // bytes differ slightly depending on platform
+        private static readonly Regex BlockedContent = new(@"http.response.headers.content-length\: 2\d{3}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex LoopBackRegex = new(@"127.0.0.1\:\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex KeepRateRegex = new(@"_dd.tracer_kr: \d\.\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex ProcessIdRegex = new(@"process_id: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -70,6 +72,7 @@ namespace Datadog.Trace.TestHelpers
             settings.AddRegexScrubber(KeepRateRegex, "_dd.tracer_kr: 1.0");
             settings.AddRegexScrubber(ProcessIdRegex, "process_id: 0");
             settings.AddRegexScrubber(ClientIpRegex, "http.client_ip: 127.0.0.1");
+            settings.AddRegexScrubber(BlockedContent, "http.response.headers.content-length: 2xxx");
             settings.AddRegexScrubber(GrpcUserAgentRegex, "http.useragent: grpc-dotnet/123");
             settings.ScrubInlineGuids();
             return settings;

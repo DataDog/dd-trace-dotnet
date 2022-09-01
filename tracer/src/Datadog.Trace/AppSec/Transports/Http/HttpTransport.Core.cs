@@ -5,19 +5,28 @@
 
 #if !NETFRAMEWORK
 using System;
+using System.Reflection;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Headers;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace Datadog.Trace.AppSec.Transports.Http
 {
     internal class HttpTransport : ITransport
     {
+        private static System.Reflection.MethodInfo _completeAsync;
+
         private readonly HttpContext _context;
 
         public HttpTransport(HttpContext context) => _context = context;
 
         public bool IsSecureConnection => _context.Request.IsHttps;
+
+        public bool Blocked => _context.Items["block"] != null;
 
         public Func<string, string> GetHeader => key => _context.Request.Headers[key];
 
@@ -25,6 +34,8 @@ namespace Datadog.Trace.AppSec.Transports.Http
         {
             return _context.Features.Get<IContext>();
         }
+
+        public void DisposeAdditiveContext() => GetAdditiveContext()?.Dispose();
 
         public void SetAdditiveContext(IContext additive_context)
         {
@@ -39,6 +50,48 @@ namespace Datadog.Trace.AppSec.Transports.Http
         public IHeadersCollection GetResponseHeaders()
         {
             return new HeadersCollectionAdapter(_context.Response.Headers);
+        }
+
+        public void WriteBlockedResponse(string templateJson, string templateHtml)
+        {
+            _context.Items["block"] = true;
+            var httpResponse = _context.Response;
+            httpResponse.Clear();
+            httpResponse.Headers.Clear();
+            httpResponse.StatusCode = 403;
+            var syncIOFeature = _context.Features.Get<IHttpBodyControlFeature>();
+            if (syncIOFeature != null)
+            {
+                // allow synchronous operatoin for net core >=3.1 otherwise invalidoperation exception
+                syncIOFeature.AllowSynchronousIO = true;
+            }
+
+            var template = templateJson;
+            if (_context.Request.Headers["Accept"] == "application/json")
+            {
+                httpResponse.ContentType = "application/json";
+            }
+            else
+            {
+                httpResponse.ContentType = "text/html";
+                template = templateHtml;
+            }
+
+            var resp = Encoding.ASCII.GetBytes(template);
+            httpResponse.ContentLength = resp.Length;
+            httpResponse.Body.Write(resp, 0, resp.Length);
+            _completeAsync ??= httpResponse.GetType().GetMethod("CompleteAsync");
+            if (_completeAsync != null)
+            {
+                var t = (Task)_completeAsync.Invoke(httpResponse, null);
+                t.ConfigureAwait(false);
+                t.Wait();
+            }
+            else
+            {
+                // note that Body.FlushAsync doesnt do anything once some headers have been set so no point
+                httpResponse.Body.Dispose();
+            }
         }
     }
 }

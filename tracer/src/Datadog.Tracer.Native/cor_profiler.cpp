@@ -684,8 +684,30 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
     {
         if (module_info.assembly.name.rfind(skip_assembly_pattern, 0) == 0)
         {
-            Logger::Debug("ModuleLoadFinished skipping module by pattern: ", module_id, " ", module_info.assembly.name);
-            return S_OK;
+            bool is_included = false;
+            // The assembly matches the "skip" prefix, but check if it's specifically included
+            for (auto&& include_assembly : include_assemblies)
+            {
+                if (module_info.assembly.name == include_assembly)
+                {
+                    is_included = true;
+                    break;
+                }
+            }
+
+            if (is_included)
+            {
+                Logger::Debug("ModuleLoadFinished matched module by pattern: ", module_id, " ",
+                              module_info.assembly.name,
+                              "but assembly is explicitly included");
+                break;
+            }
+            else
+            {
+                Logger::Debug("ModuleLoadFinished skipping module by pattern: ", module_id, " ",
+                              module_info.assembly.name);
+                return S_OK;
+            }
         }
     }
 

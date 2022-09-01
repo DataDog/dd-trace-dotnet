@@ -171,7 +171,8 @@ public:
     {
         return _this;
     }
-    static IClrLifetime* GetClrLifetime();
+
+    IClrLifetime* GetClrLifetime() const;
 
 // Access to global services
 // All services are allocated/started and stopped/deleted by the CorProfilerCallback (no need to use unique_ptr/shared_ptr)
@@ -181,6 +182,7 @@ public:
     IManagedThreadList* GetManagedThreadList() { return _pManagedThreadList; }
     IStackSamplerLoopManager* GetStackSamplerLoopManager() { return _pStackSamplerLoopManager; }
     IApplicationStore* GetApplicationStore() { return _pApplicationStore; }
+    IExporter* GetExporter() { return _pExporter.get(); }
 
 private :
     static CorProfilerCallback* _this;

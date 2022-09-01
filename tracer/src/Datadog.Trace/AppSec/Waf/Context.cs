@@ -16,13 +16,12 @@ namespace Datadog.Trace.AppSec.Waf
     internal class Context : IContext
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Context>();
-        private readonly IDictionary<string, object> _addresses = new Dictionary<string, object>();
         private readonly IntPtr contextHandle;
         private readonly WafNative wafNative;
         private readonly Encoder encoder;
         private readonly List<Obj> argCache = new();
         private readonly Stopwatch _stopwatch;
-        private bool disposed = false;
+        private bool disposed;
         private ulong _totalRuntimeOverRuns;
 
         public Context(IntPtr contextHandle, WafNative wafNative, Encoder encoder)
@@ -35,19 +34,20 @@ namespace Datadog.Trace.AppSec.Waf
 
         ~Context() => Dispose(false);
 
-        public IResult Run(ulong timeoutMicroSeconds)
+        public IResult Run(IDictionary<string, object> addresses, ulong timeoutMicroSeconds)
         {
             if (disposed)
             {
                 ThrowHelper.ThrowException("Can't run WAF when disposed");
             }
 
-            _stopwatch.Restart();
-            var pwArgs = encoder.Encode(_addresses, argCache, applySafetyLimits: true);
+            // not restart cause it's the total runtime over runs, and we run several * during request
+            _stopwatch.Start();
+            var pwArgs = encoder.Encode(addresses, argCache, applySafetyLimits: true);
 
             if (Log.IsEnabled(LogEventLevel.Debug))
             {
-                var parameters = Encoder.FormatArgs(_addresses);
+                var parameters = Encoder.FormatArgs(addresses);
                 Log.Debug("DDAS-0010-00: Executing AppSec In-App WAF with parameters: {Parameters}", parameters);
             }
 
@@ -66,17 +66,6 @@ namespace Datadog.Trace.AppSec.Waf
             }
 
             return result;
-        }
-
-        public void AggregateAddresses(IDictionary<string, object> args, bool eraseExistingAddress)
-        {
-            foreach (var item in args)
-            {
-                if (eraseExistingAddress || !_addresses.ContainsKey(item.Key))
-                {
-                    _addresses[item.Key] = item.Value;
-                }
-            }
         }
 
         public void Dispose(bool disposing)

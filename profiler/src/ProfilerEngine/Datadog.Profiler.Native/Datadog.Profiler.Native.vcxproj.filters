@@ -212,7 +212,6 @@
     <ClInclude Include="ISamplesCollector.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
-    <ClInclude Include="SamplesCollector.h" />
     <ClInclude Include="cgroup.h">
       <Filter>Utils</Filter>
     </ClInclude>
@@ -257,6 +256,9 @@
     </ClInclude>
     <ClInclude Include="IContentionListener.h">
       <Filter>Contention</Filter>
+    </ClInclude>
+    <ClInclude Include="SamplesCollector.h">
+      <Filter>Profiler-Driver</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

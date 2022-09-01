@@ -7,3 +7,4 @@
   GetNativeProfilerIsReadyPtr PRIVATE
   GetPointerToNativeTraceContext PRIVATE
   SetApplicationInfoForAppDomain PRIVATE
+  SetEndpointForTrace PRIVATE
