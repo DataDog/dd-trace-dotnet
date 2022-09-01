@@ -1,14 +1,33 @@
 using System.Collections.Generic;
+using System.IO;
+using Newtonsoft.Json;
 using Nuke.Common;
 using Nuke.Common.IO;
 
 partial class Build
 {
-    public void AddDebuggerEnvironmentVariables(Dictionary<string, string> envVars)
+    public void AddDebuggerEnvironmentVariables(Dictionary<string, string> envVars, ExplorationTestName explorationTestName, AbsolutePath explorationTestsDirectory)
     {
         AddTracerEnvironmentVariables(envVars);
         envVars.Add("DD_INTERNAL_DEBUGGER_ENABLED", "1");
         envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL", "1");
+        envVars.Add("COMPlus_DbgEnableMiniDump", "1");
+        envVars.Add("COMPlus_DbgMiniDumpType", "4");
+        envVars.Add("VSTEST_CONNECTION_TIMEOUT", "200");
+        envVars.Add("DD_TRACE_DEBUG", "1");
+
+        var path = CreateProbeDefinition(explorationTestName, explorationTestsDirectory);
+        envVars.Add("DD_DEBUGGER_PROBE_FILE", path);
+    }
+
+    static string CreateProbeDefinition(ExplorationTestName explorationTestName, AbsolutePath explorationTestsDirectory)
+    {
+        const string ProbesDefinitionFileName = "probes_definition.json";
+        var testDescription = ExplorationTestDescription.GetExplorationTestDescription(explorationTestName);
+        var projectPath = $"{explorationTestsDirectory}/{testDescription.Name}/{testDescription.PathToUnitTestProject}";
+        var path = Path.Combine(projectPath, ProbesDefinitionFileName);
+        File.WriteAllText(path, "{}");
+        return path;
     }
 
     public void AddContinuousProfilerEnvironmentVariables(Dictionary<string, string> envVars)

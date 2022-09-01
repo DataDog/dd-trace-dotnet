@@ -364,6 +364,8 @@ struct TypeInfo
     std::shared_ptr<TypeInfo> extend_from;
     const bool valueType;
     const bool isGeneric;
+    const bool isAbstract;
+    const bool isSealed;
     std::shared_ptr<TypeInfo> parent_type;
     const mdToken scopeToken;
 
@@ -375,12 +377,14 @@ struct TypeInfo
         extend_from(nullptr),
         valueType(false),
         isGeneric(false),
+        isAbstract(false),
+        isSealed(false),
         parent_type(nullptr),
         scopeToken(0)
     {
     }
     TypeInfo(mdToken id, shared::WSTRING name, mdTypeSpec type_spec, ULONG32 token_type, std::shared_ptr<TypeInfo> extend_from,
-             bool valueType, bool isGeneric, std::shared_ptr<TypeInfo> parent_type, mdToken scopeToken) :
+             bool valueType, bool isGeneric, bool isAbstract, bool isSealed, std::shared_ptr<TypeInfo> parent_type, mdToken scopeToken) :
         id(id),
         name(name),
         type_spec(type_spec),
@@ -388,6 +392,8 @@ struct TypeInfo
         extend_from(extend_from),
         valueType(valueType),
         isGeneric(isGeneric),
+        isAbstract(isAbstract),
+        isSealed(isSealed),
         parent_type(parent_type),
         scopeToken(scopeToken)
     {
@@ -396,6 +402,11 @@ struct TypeInfo
     bool IsValid() const
     {
         return id != 0;
+    }
+
+    bool IsStaticClass() const
+    {
+        return isAbstract && isSealed;
     }
 };
 

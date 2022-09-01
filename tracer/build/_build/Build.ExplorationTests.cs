@@ -155,7 +155,7 @@ partial class Build
         switch (ExplorationTestUseCase)
         {
             case global::ExplorationTestUseCase.Debugger:
-                AddDebuggerEnvironmentVariables(envVariables);
+                AddDebuggerEnvironmentVariables(envVariables, ExplorationTestName.Value, ExplorationTestsDirectory);
                 break;
             case global::ExplorationTestUseCase.ContinuousProfiler:
                 AddContinuousProfilerEnvironmentVariables(envVariables);

@@ -70,8 +70,12 @@ internal static class DebuggerTestHelper
             BindingFlags.Instance;
 
         var snapshotMethodProbes = type.GetNestedTypes(allMask)
-                                       .SelectMany(nestedType => nestedType.GetMethods(allMask | BindingFlags.DeclaredOnly))
-                                       .Concat(type.GetMethods(allMask | BindingFlags.DeclaredOnly))
+                                       .SelectMany(nestedType =>
+                                                       nestedType.GetMethods(allMask | BindingFlags.DeclaredOnly)
+                                                                 .Concat(nestedType.GetConstructors(allMask | BindingFlags.DeclaredOnly).As<IEnumerable<MethodBase>>()))
+                                       .Concat(type.GetMethods(allMask | BindingFlags.DeclaredOnly)
+                                                   .Concat(type.GetConstructors(allMask | BindingFlags.DeclaredOnly).As<IEnumerable<MethodBase>>()))
+                                       .As<IEnumerable<MethodBase>>()
                                        .Where(
                                             m =>
                                             {
@@ -103,7 +107,7 @@ internal static class DebuggerTestHelper
         return new Where() { SourceFile = filePath, Lines = new[] { line.LineNumber.ToString() } };
     }
 
-    private static SnapshotProbe CreateSnapshotMethodProbe(MethodInfo method, DeterministicGuidGenerator guidGenerator)
+    private static SnapshotProbe CreateSnapshotMethodProbe(MethodBase method, DeterministicGuidGenerator guidGenerator)
     {
         var probeTestData = method.GetCustomAttribute<MethodProbeTestDataAttribute>();
         var where = CreateMethodProbeWhere(method, probeTestData);
@@ -122,7 +126,7 @@ internal static class DebuggerTestHelper
         };
     }
 
-    private static Where CreateMethodProbeWhere(MethodInfo method, MethodProbeTestDataAttribute probeTestData)
+    private static Where CreateMethodProbeWhere(MethodBase method, MethodProbeTestDataAttribute probeTestData)
     {
         var @where = new Where();
         @where.TypeName = probeTestData.UseFullTypeName ? method.DeclaringType.FullName : method.DeclaringType.Name;

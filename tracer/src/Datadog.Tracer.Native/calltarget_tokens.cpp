@@ -732,9 +732,14 @@ mdToken CallTargetTokens::GetCurrentTypeRef(const TypeInfo* currentType, bool& i
     // If the current type is a generic type we need to transverse the type.
     // to look for a non generic one that we can use.
     TypeInfo* cType = const_cast<TypeInfo*>(currentType);
-    while (cType->isGeneric)
+    while (cType != nullptr && cType->isGeneric)
     {
         cType = const_cast<TypeInfo*>(cType->extend_from.get());
+    }
+
+    if (cType == nullptr)
+    {
+        return objectTypeRef;
     }
 
     isValueType = cType->valueType;

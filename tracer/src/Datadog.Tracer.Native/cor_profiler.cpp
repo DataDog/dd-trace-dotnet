@@ -3357,9 +3357,16 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
-    // keep this lock until we are done using the module,
-    // to prevent it from unloading while in use
-    std::lock_guard<std::mutex> guard(module_ids_lock_);
+    try
+    {
+        // keep this lock until we are done using the module,
+        // to prevent it from unloading while in use
+        std::lock_guard<std::mutex> guard(module_ids_lock_);
+    }
+    catch (...)
+    {
+        return S_OK;
+    }
 
     // Extract Module metadata
     ModuleID module_id;
