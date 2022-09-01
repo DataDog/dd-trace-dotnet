@@ -13,27 +13,30 @@ using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Attributes;
+using Datadog.Trace.Ci.Coverage.Metadata;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using MethodAttributes = Mono.Cecil.MethodAttributes;
+using TypeAttributes = Mono.Cecil.TypeAttributes;
 
 namespace Datadog.Trace.Coverage.Collector
 {
     internal class AssemblyProcessor
     {
         private static readonly object PadLock = new();
-        private static readonly CultureInfo USCultureInfo = new("us-US");
+        private static readonly CultureInfo UsCultureInfo = new("us-US");
         private static readonly Regex NetCorePattern = new(@".NETCoreApp,Version=v(\d.\d)", RegexOptions.Compiled);
         private static readonly ConstructorInfo CoveredAssemblyAttributeTypeCtor = typeof(CoveredAssemblyAttribute).GetConstructors()[0];
-        private static readonly MethodInfo ReportTryGetScopeMethodInfo = typeof(CoverageReporter).GetMethod("TryGetScope")!;
-        private static readonly MethodInfo ScopeReportMethodInfo = typeof(CoverageScope).GetMethod("Report", new[] { typeof(ulong) })!;
-        private static readonly MethodInfo ScopeReport2MethodInfo = typeof(CoverageScope).GetMethod("Report", new[] { typeof(ulong), typeof(ulong) })!;
+        private static readonly Type ModuleCoverageMetadataType = typeof(ModuleCoverageMetadata);
+        private static readonly MethodInfo ReportTryGetScopeMethodInfo = typeof(CoverageReporter<>).GetMethod("TryGetScope")!;
+        private static readonly MethodInfo ArrayEmptyMethod = typeof(Array).GetMethod("Empty")!;
+        private static readonly MethodInfo ArrayEmptyOfIntMethod = ArrayEmptyMethod.MakeGenericMethod(typeof(int));
         private static readonly Assembly TracerAssembly = typeof(CoverageReporter).Assembly;
 
         private readonly CIVisibilitySettings? _ciVisibilitySettings;
         private readonly ICollectorLogger _logger;
         private readonly string _tracerHome;
         private readonly string _assemblyFilePath;
-        private readonly string _pdbFilePath;
 
         private byte[]? _strongNameKeyBlob;
 
@@ -43,14 +46,13 @@ namespace Datadog.Trace.Coverage.Collector
             _logger = logger ?? new ConsoleCollectorLogger();
             _ciVisibilitySettings = ciVisibilitySettings;
             _assemblyFilePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
-            _pdbFilePath = Path.ChangeExtension(filePath, ".pdb");
 
             if (!File.Exists(_assemblyFilePath))
             {
                 throw new FileNotFoundException($"Assembly not found in path: {_assemblyFilePath}");
             }
 
-            if (!File.Exists(_pdbFilePath))
+            if (!File.Exists(Path.ChangeExtension(filePath, ".pdb")))
             {
                 Ci.Coverage.Exceptions.PdbNotFoundException.Throw();
             }
@@ -112,299 +114,293 @@ namespace Datadog.Trace.Coverage.Collector
                     }
                 }
 
-                bool isDirty = false;
-                ulong totalMethods = 0;
-                ulong totalInstructions = 0;
+                var isDirty = false;
 
                 // Process all modules in the assembly
-                foreach (ModuleDefinition module in assemblyDefinition.Modules)
-                {
-                    _logger.Debug($"Processing module: {module.Name}");
+                var module = assemblyDefinition.MainModule;
+                _logger.Debug($"Processing module: {module.Name}");
 
-                    // Process all types defined in the module
-                    foreach (TypeDefinition moduleType in module.GetTypes())
+                // Process all types defined in the module
+                var moduleTypes = module.Types;
+
+                var moduleCoverageMetadataImplTypeDef = new TypeDefinition(
+                    typeof(ModuleCoverageMetadata).Namespace + ".Target",
+                    "ModuleCoverage",
+                    TypeAttributes.Class | TypeAttributes.Public,
+                    module.ImportReference(ModuleCoverageMetadataType));
+
+                var moduleCoverageMetadataImplCtor = new MethodDefinition(
+                    ".ctor",
+                    MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig | MethodAttributes.RTSpecialName,
+                    module.ImportReference(typeof(void)));
+
+                // Create number of types array
+                var moduleCoverageMetadataImplMetadataField = new FieldReference("Metadata", module.ImportReference(typeof(int[][])), module.ImportReference(ModuleCoverageMetadataType));
+                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
+                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, moduleTypes.Count));
+                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Newarr, module.ImportReference(typeof(int[]))));
+                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplMetadataField));
+
+                moduleCoverageMetadataImplTypeDef.Methods.Add(moduleCoverageMetadataImplCtor);
+
+                var reportTypeGenericInstance = new GenericInstanceType(module.ImportReference(typeof(CoverageReporter<>)));
+                reportTypeGenericInstance.GenericArguments.Add(moduleCoverageMetadataImplTypeDef);
+
+                var reportTryGetScopeMethod = module.ImportReference(ReportTryGetScopeMethodInfo);
+                reportTryGetScopeMethod.DeclaringType = reportTypeGenericInstance;
+
+                for (var typeIndex = 0; typeIndex < moduleTypes.Count; typeIndex++)
+                {
+                    var moduleType = moduleTypes[typeIndex];
+
+                    _logger.Debug($"\t{moduleType.FullName}");
+                    var moduleTypeMethods = moduleType.Methods;
+
+                    // Create Type number of methods array
+                    moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
+                    moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldfld, moduleCoverageMetadataImplMetadataField));
+                    moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, typeIndex));
+                    if (moduleTypeMethods.Count > 0)
                     {
-                        if (moduleType.CustomAttributes.Any(cAttr =>
-                            cAttr.Constructor.DeclaringType.Name == nameof(AvoidCoverageAttribute)))
+                        moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, moduleTypeMethods.Count));
+                        moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Newarr, module.ImportReference(typeof(int))));
+                    }
+                    else
+                    {
+                        var arrayEmptyOfIntMethodReference = module.ImportReference(ArrayEmptyOfIntMethod);
+                        moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Call, arrayEmptyOfIntMethodReference));
+                    }
+
+                    moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stelem_Ref));
+
+                    // Process all Methods in the type
+                    for (var methodIndex = 0; methodIndex < moduleTypeMethods.Count; methodIndex++)
+                    {
+                        var moduleTypeMethod = moduleTypeMethods[methodIndex];
+                        if (moduleTypeMethod.DebugInformation is null || !moduleTypeMethod.DebugInformation.HasSequencePoints)
                         {
+                            _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}");
                             continue;
                         }
 
-                        _logger.Debug($"\t{moduleType.FullName}");
+                        _logger.Debug($"\t\t[YES] {moduleTypeMethod.FullName}.");
 
-                        // Process all Methods in the type
-                        foreach (var moduleTypeMethod in moduleType.Methods)
+                        // Extract body from the method
+                        if (moduleTypeMethod.HasBody)
                         {
-                            if (moduleTypeMethod.CustomAttributes.Any(cAttr =>
-                                cAttr.Constructor.DeclaringType.Name == nameof(AvoidCoverageAttribute)))
+                            /*** This block rewrites the method body code that looks like this:
+                             *
+                             *  public static class MyMathClass
+                             *  {
+                             *      public static int Factorial(int value)
+                             *      {
+                             *          if (value == 1)
+                             *          {
+                             *              return 1;
+                             *          }
+                             *          return value * Factorial(value - 1);
+                             *      }
+                             *  }
+                             *
+                             *** To this:
+                             *
+                             *  using Datadog.Trace.Ci.Coverage;
+                             *
+                             *  public static int Factorial(int value)
+                             *  {
+                             *      if (!CoverageReporter<ModuleCoverage>.TryGetScope(1, 1, out var counters))
+                             *      {
+                             *          if (value == 1)
+                             *          {
+                             *              return 1;
+                             *          }
+                             *          return value * Factorial(value - 1);
+                             *      }
+                             *      counters[0]++;
+                             *      counters[1]++;
+                             *      int result;
+                             *      if (value == 1)
+                             *      {
+                             *          counters[2]++;
+                             *          counters[3]++;
+                             *          result = 1;
+                             *      }
+                             *      else
+                             *      {
+                             *          counters[4]++;
+                             *          result = value * Factorial(value - 1);
+                             *      }
+                             *      counters[5]++;
+                             *      return result;
+                             *  }
+                             */
+
+                            var methodBody = moduleTypeMethod.Body;
+                            var instructions = methodBody.Instructions;
+                            var instructionsOriginalLength = instructions.Count;
+                            if (instructions.Capacity < instructionsOriginalLength * 2)
                             {
-                                continue;
+                                instructions.Capacity = instructionsOriginalLength * 2;
                             }
 
-                            if (moduleTypeMethod.DebugInformation is null || !moduleTypeMethod.DebugInformation.HasSequencePoints)
+                            var sequencePoints = moduleTypeMethod.DebugInformation.SequencePoints;
+                            var sequencePointsOriginalLength = sequencePoints.Count;
+
+                            // Step 1 - Clone instructions
+                            for (var i = 0; i < instructionsOriginalLength; i++)
                             {
-                                _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}");
-                                continue;
+                                instructions.Add(CloneInstruction(instructions[i]));
                             }
 
-                            _logger.Debug($"\t\t[YES] {moduleTypeMethod.FullName}.");
-
-                            totalMethods++;
-
-                            // Extract body from the method
-                            if (moduleTypeMethod.HasBody)
+                            // Step 2 - Fix jumps in cloned instructions
+                            for (var i = 0; i < instructionsOriginalLength; i++)
                             {
-                                /*** This block rewrites the method body code that looks like this:
-                                 *
-                                 *  public static class MyMathClass
-                                 *  {
-                                 *      public static int Factorial(int value)
-                                 *      {
-                                 *          if (value == 1)
-                                 *          {
-                                 *              return 1;
-                                 *          }
-                                 *          return value * Factorial(value - 1);
-                                 *      }
-                                 *  }
-                                 *
-                                 *** To this:
-                                 *
-                                 *  using Datadog.Trace.Ci.Coverage;
-                                 *
-                                 *  public static int Factorial(int value)
-                                 *  {
-                                 *      if (!CoverageReporter.TryGetScope("/app/MyMathClass.cs", out var scope))
-                                 *      {
-                                 *          if (value == 1)
-                                 *          {
-                                 *              return 1;
-                                 *          }
-                                 *          return value * Factorial(value - 1);
-                                 *      }
-                                 *      scope.Report(1688871335493638uL, 1970363492139032uL);
-                                 *      int result;
-                                 *      if (value == 1)
-                                 *      {
-                                 *          scope.Report(2251838468915210uL, 2533330625560598uL);
-                                 *          result = 1;
-                                 *      }
-                                 *      else
-                                 *      {
-                                 *          scope.Report(3377738376020013uL);
-                                 *          result = value * Factorial(value - 1);
-                                 *      }
-                                 *      scope.Report(3659196172926982uL);
-                                 *      return result;
-                                 *  }
-                                 */
+                                var currentInstruction = instructions[i];
 
-                                var methodBody = moduleTypeMethod.Body;
-                                var instructions = methodBody.Instructions;
-                                var instructionsOriginalLength = instructions.Count;
-                                if (instructions.Capacity < instructionsOriginalLength * 2)
+                                if (currentInstruction.Operand is Instruction jmpTargetInstruction)
                                 {
-                                    instructions.Capacity = instructionsOriginalLength * 2;
+                                    // Normal jump
+
+                                    // Get index of the jump target
+                                    var jmpTargetInstructionIndex = instructions.IndexOf(jmpTargetInstruction);
+
+                                    // Modify the clone instruction with the cloned jump target
+                                    var clonedInstruction = instructions[i + instructionsOriginalLength];
+                                    RemoveShortOpCodes(clonedInstruction);
+                                    clonedInstruction.Operand = instructions[jmpTargetInstructionIndex + instructionsOriginalLength];
                                 }
-
-                                var sequencePoints = moduleTypeMethod.DebugInformation.SequencePoints;
-                                var sequencePointsOriginalLength = sequencePoints.Count;
-                                string? methodFileName = null;
-                                uint localInstructions = 0;
-
-                                // Step 1 - Clone instructions
-                                for (var i = 0; i < instructionsOriginalLength; i++)
+                                else if (currentInstruction.Operand is Instruction[] jmpTargetInstructions)
                                 {
-                                    instructions.Add(CloneInstruction(instructions[i]));
-                                }
+                                    // Switch jumps
 
-                                // Step 2 - Fix jumps in cloned instructions
-                                for (var i = 0; i < instructionsOriginalLength; i++)
-                                {
-                                    var currentInstruction = instructions[i];
-
-                                    if (currentInstruction.Operand is Instruction jmpTargetInstruction)
+                                    // Create a new array of instructions with the cloned jump targets
+                                    var newJmpTargetInstructions = new Instruction[jmpTargetInstructions.Length];
+                                    for (var j = 0; j < jmpTargetInstructions.Length; j++)
                                     {
-                                        // Normal jump
-
-                                        // Get index of the jump target
-                                        var jmpTargetInstructionIndex = instructions.IndexOf(jmpTargetInstruction);
-
-                                        // Modify the clone instruction with the cloned jump target
-                                        var clonedInstruction = instructions[i + instructionsOriginalLength];
-                                        RemoveShortOpCodes(clonedInstruction);
-                                        clonedInstruction.Operand = instructions[jmpTargetInstructionIndex + instructionsOriginalLength];
-                                    }
-                                    else if (currentInstruction.Operand is Instruction[] jmpTargetInstructions)
-                                    {
-                                        // Switch jumps
-
-                                        // Create a new array of instructions with the cloned jump targets
-                                        var newJmpTargetInstructions = new Instruction[jmpTargetInstructions.Length];
-                                        for (var j = 0; j < jmpTargetInstructions.Length; j++)
-                                        {
-                                            newJmpTargetInstructions[j] = instructions[instructions.IndexOf(jmpTargetInstructions[j]) + instructionsOriginalLength];
-                                        }
-
-                                        // Modify the clone instruction with the cloned jump target
-                                        var clonedInstruction = instructions[i + instructionsOriginalLength];
-                                        RemoveShortOpCodes(clonedInstruction);
-                                        clonedInstruction.Operand = newJmpTargetInstructions;
-                                    }
-                                }
-
-                                // Step 3 - Clone exception handlers
-                                if (methodBody.HasExceptionHandlers)
-                                {
-                                    var exceptionHandlers = methodBody.ExceptionHandlers;
-                                    var exceptionHandlersOrignalLength = exceptionHandlers.Count;
-
-                                    for (var i = 0; i < exceptionHandlersOrignalLength; i++)
-                                    {
-                                        var currentExceptionHandler = exceptionHandlers[i];
-                                        var clonedExceptionHandler = new ExceptionHandler(currentExceptionHandler.HandlerType);
-                                        clonedExceptionHandler.CatchType = currentExceptionHandler.CatchType;
-
-                                        if (currentExceptionHandler.TryStart is not null)
-                                        {
-                                            clonedExceptionHandler.TryStart = instructions[instructions.IndexOf(currentExceptionHandler.TryStart) + instructionsOriginalLength];
-                                        }
-
-                                        if (currentExceptionHandler.TryEnd is not null)
-                                        {
-                                            clonedExceptionHandler.TryEnd = instructions[instructions.IndexOf(currentExceptionHandler.TryEnd) + instructionsOriginalLength];
-                                        }
-
-                                        if (currentExceptionHandler.HandlerStart is not null)
-                                        {
-                                            clonedExceptionHandler.HandlerStart = instructions[instructions.IndexOf(currentExceptionHandler.HandlerStart) + instructionsOriginalLength];
-                                        }
-
-                                        if (currentExceptionHandler.HandlerEnd is not null)
-                                        {
-                                            clonedExceptionHandler.HandlerEnd = instructions[instructions.IndexOf(currentExceptionHandler.HandlerEnd) + instructionsOriginalLength];
-                                        }
-
-                                        if (currentExceptionHandler.FilterStart is not null)
-                                        {
-                                            clonedExceptionHandler.FilterStart = instructions[instructions.IndexOf(currentExceptionHandler.FilterStart) + instructionsOriginalLength];
-                                        }
-
-                                        methodBody.ExceptionHandlers.Add(clonedExceptionHandler);
-                                    }
-                                }
-
-                                // Step 4 - Clone sequence points
-                                List<Tuple<Instruction, SequencePoint>> clonedInstructionsWithOriginalSequencePoint = new List<Tuple<Instruction, SequencePoint>>();
-                                for (var i = 0; i < sequencePointsOriginalLength; i++)
-                                {
-                                    var currentSequencePoint = sequencePoints[i];
-                                    var currentInstruction = instructions.First(i => i.Offset == currentSequencePoint.Offset);
-                                    var clonedInstruction = instructions[instructions.IndexOf(currentInstruction) + instructionsOriginalLength];
-
-                                    if (!currentSequencePoint.IsHidden)
-                                    {
-                                        totalInstructions++;
-                                        localInstructions++;
-                                        clonedInstructionsWithOriginalSequencePoint.Add(Tuple.Create(clonedInstruction, currentSequencePoint));
+                                        newJmpTargetInstructions[j] = instructions[instructions.IndexOf(jmpTargetInstructions[j]) + instructionsOriginalLength];
                                     }
 
-                                    var clonedSequencePoint = new SequencePoint(clonedInstruction, currentSequencePoint.Document);
-                                    clonedSequencePoint.StartLine = currentSequencePoint.StartLine;
-                                    clonedSequencePoint.StartColumn = currentSequencePoint.StartColumn;
-                                    clonedSequencePoint.EndLine = currentSequencePoint.EndLine;
-                                    clonedSequencePoint.EndColumn = currentSequencePoint.EndColumn;
-                                    sequencePoints.Add(clonedSequencePoint);
-
-                                    if (string.IsNullOrEmpty(methodFileName))
-                                    {
-                                        methodFileName = currentSequencePoint.Document.Url;
-                                    }
+                                    // Modify the clone instruction with the cloned jump target
+                                    var clonedInstruction = instructions[i + instructionsOriginalLength];
+                                    RemoveShortOpCodes(clonedInstruction);
+                                    clonedInstruction.Operand = newJmpTargetInstructions;
                                 }
-
-                                var clonedInstructions = instructions.Skip(instructionsOriginalLength).ToList();
-                                var clonedInstructionsLength = clonedInstructions.Count;
-
-                                // Step 6 - Modify local var to add the Coverage Scope instance.
-                                var coverageScopeVariable = new VariableDefinition(module.ImportReference(typeof(CoverageScope)));
-                                methodBody.Variables.Add(coverageScopeVariable);
-
-                                // Step 7 - Insert initial condition
-                                if (string.IsNullOrEmpty(methodFileName))
-                                {
-                                    methodFileName = "unknown";
-                                }
-
-                                var tryGetScopeMethodRef = module.ImportReference(ReportTryGetScopeMethodInfo);
-                                instructions.Insert(0, Instruction.Create(OpCodes.Ldstr, methodFileName));
-                                instructions.Insert(1, Instruction.Create(OpCodes.Ldloca, coverageScopeVariable));
-                                instructions.Insert(2, Instruction.Create(OpCodes.Call, tryGetScopeMethodRef));
-                                instructions.Insert(3, Instruction.Create(OpCodes.Brtrue, instructions[instructionsOriginalLength + 3]));
-
-                                // Step 8 - Insert line reporter
-                                var scopeReportMethodRef = module.ImportReference(ScopeReportMethodInfo);
-                                var scopeReport2MethodRef = module.ImportReference(ScopeReport2MethodInfo);
-                                for (var i = 0; i < clonedInstructionsWithOriginalSequencePoint.Count; i++)
-                                {
-                                    var currentItem = clonedInstructionsWithOriginalSequencePoint[i];
-                                    var currentInstruction = currentItem.Item1;
-                                    var currentSequencePoint = currentItem.Item2;
-                                    var currentInstructionRange = GetRangeFromSequencePoint(currentSequencePoint);
-                                    var currentInstructionIndex = instructions.IndexOf(currentInstruction);
-                                    var currentInstructionClone = CloneInstruction(currentInstruction);
-
-                                    if (i < clonedInstructionsWithOriginalSequencePoint.Count - 1)
-                                    {
-                                        var nextItem = clonedInstructionsWithOriginalSequencePoint[i + 1];
-                                        var nextInstruction = nextItem.Item1;
-
-                                        // We check if the next instruction with sequence point is a NOP and is immediatly after the current one.
-                                        // If that is the case we can group two ranges in a single instruction.
-                                        if (instructions.IndexOf(nextInstruction) - 1 == currentInstructionIndex &&
-                                            (currentInstruction.OpCode == OpCodes.Nop || nextInstruction.OpCode == OpCodes.Nop) &&
-                                            !methodBody.ExceptionHandlers.Any(eHandler =>
-                                                eHandler.TryStart == nextInstruction ||
-                                                eHandler.TryEnd == nextInstruction ||
-                                                eHandler.HandlerStart == nextInstruction ||
-                                                eHandler.HandlerEnd == nextInstruction ||
-                                                eHandler.FilterStart == nextInstruction))
-                                        {
-                                            var nextSequencePoint = nextItem.Item2;
-                                            var nextInstructionRange = GetRangeFromSequencePoint(nextSequencePoint);
-                                            var nextInstructionIndex = instructions.IndexOf(nextInstruction);
-
-                                            currentInstruction.OpCode = OpCodes.Ldloca;
-                                            currentInstruction.Operand = coverageScopeVariable;
-                                            instructions.Insert(currentInstructionIndex + 1, Instruction.Create(OpCodes.Ldc_I8, (long)currentInstructionRange));
-                                            instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldc_I8, (long)nextInstructionRange));
-                                            instructions.Insert(currentInstructionIndex + 3, Instruction.Create(OpCodes.Call, scopeReport2MethodRef));
-                                            instructions.Insert(currentInstructionIndex + 4, currentInstructionClone);
-
-                                            // We process both instructions in a single call.
-                                            i++;
-                                            continue;
-                                        }
-                                    }
-
-                                    currentInstruction.OpCode = OpCodes.Ldloca;
-                                    currentInstruction.Operand = coverageScopeVariable;
-                                    instructions.Insert(currentInstructionIndex + 1, Instruction.Create(OpCodes.Ldc_I8, (long)currentInstructionRange));
-                                    instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Call, scopeReportMethodRef));
-                                    instructions.Insert(currentInstructionIndex + 3, currentInstructionClone);
-                                }
-
-                                isDirty = true;
                             }
+
+                            // Step 3 - Clone exception handlers
+                            if (methodBody.HasExceptionHandlers)
+                            {
+                                var exceptionHandlers = methodBody.ExceptionHandlers;
+                                var exceptionHandlersOrignalLength = exceptionHandlers.Count;
+
+                                for (var i = 0; i < exceptionHandlersOrignalLength; i++)
+                                {
+                                    var currentExceptionHandler = exceptionHandlers[i];
+                                    var clonedExceptionHandler = new ExceptionHandler(currentExceptionHandler.HandlerType);
+                                    clonedExceptionHandler.CatchType = currentExceptionHandler.CatchType;
+
+                                    if (currentExceptionHandler.TryStart is not null)
+                                    {
+                                        clonedExceptionHandler.TryStart = instructions[instructions.IndexOf(currentExceptionHandler.TryStart) + instructionsOriginalLength];
+                                    }
+
+                                    if (currentExceptionHandler.TryEnd is not null)
+                                    {
+                                        clonedExceptionHandler.TryEnd = instructions[instructions.IndexOf(currentExceptionHandler.TryEnd) + instructionsOriginalLength];
+                                    }
+
+                                    if (currentExceptionHandler.HandlerStart is not null)
+                                    {
+                                        clonedExceptionHandler.HandlerStart = instructions[instructions.IndexOf(currentExceptionHandler.HandlerStart) + instructionsOriginalLength];
+                                    }
+
+                                    if (currentExceptionHandler.HandlerEnd is not null)
+                                    {
+                                        clonedExceptionHandler.HandlerEnd = instructions[instructions.IndexOf(currentExceptionHandler.HandlerEnd) + instructionsOriginalLength];
+                                    }
+
+                                    if (currentExceptionHandler.FilterStart is not null)
+                                    {
+                                        clonedExceptionHandler.FilterStart = instructions[instructions.IndexOf(currentExceptionHandler.FilterStart) + instructionsOriginalLength];
+                                    }
+
+                                    methodBody.ExceptionHandlers.Add(clonedExceptionHandler);
+                                }
+                            }
+
+                            // Step 4 - Clone sequence points
+                            var clonedInstructionsWithSequencePoints = new List<Instruction>();
+                            for (var i = 0; i < sequencePointsOriginalLength; i++)
+                            {
+                                var currentSequencePoint = sequencePoints[i];
+                                var currentInstruction = instructions.First(i => i.Offset == currentSequencePoint.Offset);
+                                var clonedInstruction = instructions[instructions.IndexOf(currentInstruction) + instructionsOriginalLength];
+
+                                if (!currentSequencePoint.IsHidden)
+                                {
+                                    clonedInstructionsWithSequencePoints.Add(clonedInstruction);
+                                }
+
+                                var clonedSequencePoint = new SequencePoint(clonedInstruction, currentSequencePoint.Document);
+                                clonedSequencePoint.StartLine = currentSequencePoint.StartLine;
+                                clonedSequencePoint.StartColumn = currentSequencePoint.StartColumn;
+                                clonedSequencePoint.EndLine = currentSequencePoint.EndLine;
+                                clonedSequencePoint.EndColumn = currentSequencePoint.EndColumn;
+                                sequencePoints.Add(clonedSequencePoint);
+                            }
+
+                            // Step 6 - Modify local var to add the Coverage counters instance.
+                            var countersVariable = new VariableDefinition(module.ImportReference(typeof(int[])));
+                            methodBody.Variables.Add(countersVariable);
+
+                            // Create methods sequence points array
+                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
+                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldfld, moduleCoverageMetadataImplMetadataField));
+                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, typeIndex));
+                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldelem_Ref));
+                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, methodIndex));
+                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, clonedInstructionsWithSequencePoints.Count));
+                            moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stelem_I4));
+
+                            instructions.Insert(0, Instruction.Create(OpCodes.Ldc_I4, typeIndex));
+                            instructions.Insert(1, Instruction.Create(OpCodes.Ldc_I4, methodIndex));
+                            instructions.Insert(2, Instruction.Create(OpCodes.Ldloca, countersVariable));
+                            instructions.Insert(3, Instruction.Create(OpCodes.Call, reportTryGetScopeMethod));
+                            instructions.Insert(4, Instruction.Create(OpCodes.Brtrue, instructions[instructionsOriginalLength + 4]));
+
+                            // Step 7 - Insert line reporter
+                            for (var i = 0; i < clonedInstructionsWithSequencePoints.Count; i++)
+                            {
+                                var currentInstruction = clonedInstructionsWithSequencePoints[i];
+                                var currentInstructionIndex = instructions.IndexOf(currentInstruction);
+                                var currentInstructionClone = CloneInstruction(currentInstruction);
+
+                                currentInstruction.OpCode = OpCodes.Ldloc;
+                                currentInstruction.Operand = countersVariable;
+                                instructions.Insert(currentInstructionIndex + 1, Instruction.Create(OpCodes.Ldc_I4, i));
+                                instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldelema, module.ImportReference(typeof(int))));
+                                instructions.Insert(currentInstructionIndex + 3, Instruction.Create(OpCodes.Dup));
+                                instructions.Insert(currentInstructionIndex + 4, Instruction.Create(OpCodes.Ldind_I4));
+                                instructions.Insert(currentInstructionIndex + 5, Instruction.Create(OpCodes.Ldc_I4_1));
+                                instructions.Insert(currentInstructionIndex + 6, Instruction.Create(OpCodes.Add));
+                                instructions.Insert(currentInstructionIndex + 7, Instruction.Create(OpCodes.Stind_I4));
+                                instructions.Insert(currentInstructionIndex + 8, currentInstructionClone);
+                            }
+
+                            isDirty = true;
                         }
                     }
+                }
 
-                    // Change attributes to drop native bits
-                    if ((module.Attributes & ModuleAttributes.ILLibrary) == ModuleAttributes.ILLibrary)
-                    {
-                        module.Architecture = TargetArchitecture.I386;
-                        module.Attributes &= ~ModuleAttributes.ILLibrary;
-                        module.Attributes |= ModuleAttributes.ILOnly;
-                    }
+                moduleTypes.Add(moduleCoverageMetadataImplTypeDef);
+                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ret));
+
+                // Change attributes to drop native bits
+                if ((module.Attributes & ModuleAttributes.ILLibrary) == ModuleAttributes.ILLibrary)
+                {
+                    module.Architecture = TargetArchitecture.I386;
+                    module.Attributes &= ~ModuleAttributes.ILLibrary;
+                    module.Attributes |= ModuleAttributes.ILOnly;
                 }
 
                 // Save assembly if we modify it successfully
@@ -437,44 +433,6 @@ namespace Datadog.Trace.Coverage.Collector
             {
                 Ci.Coverage.Exceptions.PdbNotFoundException.Throw();
             }
-            catch
-            {
-                throw;
-            }
-        }
-
-        private static ulong GetRangeFromSequencePoint(SequencePoint currentSequencePoint)
-        {
-            var startLine = currentSequencePoint.StartLine;
-            var startColumn = currentSequencePoint.StartColumn;
-            var endLine = currentSequencePoint.EndLine;
-            var endColumn = currentSequencePoint.EndColumn;
-
-            if (startLine > ushort.MaxValue || endLine > ushort.MaxValue)
-            {
-                // If the line is greater than ushort.MaxValue we set the range as 0
-                // This will keep the filename being reported and taken in consideration by the ITR
-                // The ITR with range 0 means that any modification in the file is included.
-                startLine = 0;
-                startColumn = 0;
-                endLine = 0;
-                endColumn = 0;
-            }
-
-            if (startColumn > ushort.MaxValue || endColumn > ushort.MaxValue)
-            {
-                // If only the column is greater than ushort.MaxValue we only take in consideration
-                // the line range.
-                startColumn = 0;
-                endColumn = 0;
-            }
-
-            var currentInstructionRange = ((ulong)(ushort)startLine << 48) |
-                                          ((ulong)(ushort)startColumn << 32) |
-                                          ((ulong)(ushort)endLine << 16) |
-                                          ((ulong)(ushort)endColumn);
-
-            return currentInstructionRange;
         }
 
         private static void RemoveShortOpCodes(Instruction instruction)
@@ -596,7 +554,7 @@ namespace Datadog.Trace.Coverage.Collector
                     if (matchTarget.Success)
                     {
                         var versionValue = matchTarget.Groups[1].Value;
-                        if (float.TryParse(versionValue, NumberStyles.AllowDecimalPoint, USCultureInfo, out var version))
+                        if (float.TryParse(versionValue, NumberStyles.AllowDecimalPoint, UsCultureInfo, out var version))
                         {
                             if (version >= 2.0 && version <= 3.0)
                             {

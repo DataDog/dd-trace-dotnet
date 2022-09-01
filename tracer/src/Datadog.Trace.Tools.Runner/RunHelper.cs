@@ -97,7 +97,7 @@ namespace Datadog.Trace.Tools.Runner
                         var baseDirectory = Path.GetDirectoryName(typeof(Coverage.Collector.CoverageCollector).Assembly.Location);
                         if (isTestCommand)
                         {
-                            arguments += " --collect DatadogCoverage -a \"" + baseDirectory + "\"";
+                            arguments += " --collect DatadogCoverage --test-adapter-path \"" + baseDirectory + "\"";
                         }
                         else if (isVsTestCommand)
                         {
