@@ -214,11 +214,6 @@ namespace Datadog.Trace
         ImmutableTracerSettings ITracer.Settings => Settings;
 
         /// <summary>
-        /// Gets a value indicating whether the tracer can drop P0 spans and traces.
-        /// </summary>
-        bool IDatadogTracer.CanDropP0s => Settings.StatsComputationEnabled;
-
-        /// <summary>
         /// Gets the <see cref="ISampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
         /// </summary>
         ISampler IDatadogTracer.Sampler => TracerManager.Sampler;

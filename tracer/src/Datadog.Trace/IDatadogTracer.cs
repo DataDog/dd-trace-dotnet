@@ -15,8 +15,6 @@ namespace Datadog.Trace
     /// </summary>
     internal interface IDatadogTracer
     {
-        bool CanDropP0s { get; }
-
         string DefaultServiceName { get; }
 
         ISampler Sampler { get; }

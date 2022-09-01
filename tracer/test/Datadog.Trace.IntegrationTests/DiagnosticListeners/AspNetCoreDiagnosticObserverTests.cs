@@ -549,8 +549,6 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
 
         private class AgentWriterStub : IAgentWriter
         {
-            public bool CanDropP0s => false;
-
             public List<ArraySegment<Span>> Traces { get; } = new();
 
             public Task FlushAndCloseAsync() => Task.CompletedTask;
