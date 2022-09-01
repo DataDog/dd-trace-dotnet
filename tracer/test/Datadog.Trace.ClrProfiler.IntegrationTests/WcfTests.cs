@@ -44,12 +44,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // so only test New WCF
                 if (binding == "Custom")
                 {
-                    yield return new object[] { binding, true };
+                    yield return new object[] { binding, true, true };
                     continue;
                 }
 
-                yield return new object[] { binding, false };
-                yield return new object[] { binding, true };
+                yield return new object[] { binding, false, true };
+                yield return new object[] { binding, false, false };
+                yield return new object[] { binding, true,  true };
+                yield return new object[] { binding, true,  false };
             }
         }
 
@@ -57,17 +59,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [MemberData(nameof(GetData))]
-        public async Task SubmitsTraces(string binding, bool enableNewWcfInstrumentation)
+        public async Task SubmitsTraces(string binding, bool enableNewWcfInstrumentation, bool enableWcfObfuscation)
         {
             if (enableNewWcfInstrumentation)
             {
                 SetEnvironmentVariable("DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED", "true");
             }
 
+            if (enableWcfObfuscation)
+            {
+                SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled, "true");
+            }
+            else
+            {
+                SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.WcfObfuscationEnabled, "false");
+            }
+
             Output.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
 
             var expectedSpanCount = 6;
-
             const string expectedOperationName = "wcf.request";
 
             using var telemetry = this.ConfigureTelemetry();
@@ -81,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 agent.SpanFilters.Add(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
 
-                var settings = VerifyHelper.GetSpanVerifierSettings(binding, enableNewWcfInstrumentation);
+                var settings = VerifyHelper.GetSpanVerifierSettings(binding, enableNewWcfInstrumentation, enableWcfObfuscation);
 
                 await Verifier.Verify(spans, settings)
                               .UseMethodName("_");
