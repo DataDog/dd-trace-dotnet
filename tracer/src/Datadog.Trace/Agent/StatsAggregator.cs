@@ -89,8 +89,6 @@ namespace Datadog.Trace.Agent
 
         public bool? CanComputeStats { get; private set; } = null;
 
-        public bool? CanDropP0s { get; private set; } = null;
-
         public static IStatsAggregator Create(IApi api, ImmutableTracerSettings settings, IDiscoveryService discoveryService)
         {
             return settings.StatsComputationEnabled ? new StatsAggregator(api, settings, discoveryService) : new NullStatsAggregator();
@@ -273,12 +271,11 @@ namespace Datadog.Trace.Agent
             try
             {
                 var isDiscoverySuccessful = await _discoveryService.DiscoverAsync().ConfigureAwait(false);
-                CanComputeStats = isDiscoverySuccessful && !string.IsNullOrWhiteSpace(_discoveryService.StatsEndpoint);
-                CanDropP0s = isDiscoverySuccessful && _discoveryService.ClientDropP0s == true;
+                CanComputeStats = isDiscoverySuccessful && !string.IsNullOrWhiteSpace(_discoveryService.StatsEndpoint) && _discoveryService.ClientDropP0s == true;
 
                 if (CanComputeStats.Value)
                 {
-                    Log.Debug("Stats computation has been enabled with client_drop_p0s={ClientDropP0s}", CanDropP0s);
+                    Log.Debug("Stats computation has been enabled.");
                 }
                 else
                 {
@@ -288,7 +285,6 @@ namespace Datadog.Trace.Agent
             catch (Exception e)
             {
                 CanComputeStats = false;
-                CanDropP0s = false;
 
                 Log.Error(e, "Initializing stats computation failed.");
             }

@@ -14,19 +14,16 @@ namespace Datadog.Trace.Agent
         /// Gets a value indicating whether the Datadog agent supports stats
         /// computation in tracers.
         ///
-        /// This will return null if the endpoint discovery request has not
-        /// completed.
+        /// This will return true if enabled by configuration and if the
+        /// endpoint discovery request confirmed that the agent has feature
+        /// "client_drop_p0s: true".
+        ///
+        /// This will return null if enabled by configuration and if the
+        /// endpoint discovery request has not yet completed.
+        ///
+        /// This will return false otherwise.
         /// </summary>
         bool? CanComputeStats { get; }
-
-        /// <summary>
-        /// Gets a value indicating whether the Datadog agent supports
-        /// tracers dropping P0 traces.
-        ///
-        /// This will return null if the endpoint discovery request has not
-        /// completed.
-        /// </summary>
-        bool? CanDropP0s { get; }
 
         /// <summary>
         /// Receives an array of spans and computes stats points for them.
