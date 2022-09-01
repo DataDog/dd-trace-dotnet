@@ -15,6 +15,10 @@ if (RUN_ASAN)
     add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer)
 endif()
 
+if (RUN_UBSAN)
+    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all)
+endif()
+
 if(ISLINUX)
     add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
 endif()
@@ -57,7 +61,11 @@ target_include_directories(${TEST_EXECUTABLE_NAME}
 add_dependencies(${TEST_EXECUTABLE_NAME} fmt gmock gtest Datadog.Profiler.Native.static)
 
 if (RUN_ASAN)
-    target_link_libraries(Datadog.Profiler.Native.static -fsanitize=address)
+    target_link_libraries(${TEST_EXECUTABLE_NAME} -fsanitize=address)
+endif()
+
+if (RUN_UBSAN)
+    target_link_libraries(${TEST_EXECUTABLE_NAME} -fsanitize=undefined)
 endif()
 
 target_link_libraries(${TEST_EXECUTABLE_NAME}

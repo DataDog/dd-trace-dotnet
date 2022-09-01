@@ -293,6 +293,12 @@ jobs:
       - name: Build sample applications
         run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
 
+      - name: Run unit tests
+        run: |
+          sudo mkdir -p /var/log/datadog/dotnet
+          sudo chmod a+rwx /var/log/datadog/dotnet
+          UBSAN_OPTIONS=print_stacktrace=1 ./profiler/_build/bin/Datadog.Profiler.Native.Tests/Datadog.Profiler.Native.Tests
+
       - name: Prepare environment to run the application
         run: |
           #
