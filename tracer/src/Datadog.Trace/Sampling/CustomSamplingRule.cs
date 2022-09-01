@@ -31,18 +31,35 @@ namespace Datadog.Trace.Sampling
         {
             _samplingRate = rate;
 
-            _serviceNameRegex = serviceNameRegex is null
-                                    ? null
-                                    : new(
-                                        WrapWithLineCharacters(serviceNameRegex),
-                                        RegexOptions.Compiled,
-                                        RegexTimeout);
-            _operationNameRegex = operationNameRegex is null
+            try
+            {
+                _serviceNameRegex = serviceNameRegex is null
+                    ? null
+                    : new(
+                        WrapWithLineCharacters(serviceNameRegex),
+                        RegexOptions.Compiled,
+                        RegexTimeout);
+            }
+            catch (ArgumentException e)
+            {
+                Log.Error("Custom sampling rule regex for service name was invalid.", e);
+                throw;
+            }
+
+            try
+            {
+                _operationNameRegex = operationNameRegex is null
                                       ? null
                                       : new(
                                           WrapWithLineCharacters(operationNameRegex),
                                           RegexOptions.Compiled,
                                           RegexTimeout);
+            }
+            catch (ArgumentException e)
+            {
+                Log.Error("Custom sampling rule regex for operation name was invalid.", e);
+                throw;
+            }
 
             RuleName = ruleName;
         }
@@ -65,12 +82,14 @@ namespace Datadog.Trace.Sampling
                 {
                     var index = 0;
                     var rules = JsonConvert.DeserializeObject<List<CustomRuleConfig>>(configuration);
-                    return rules.Select(
-                        r =>
-                        {
-                            index++; // Used to create a readable rule name if one is not specified
-                            return new CustomSamplingRule(r.SampleRate, r.RuleName ?? $"config-rule-{index}", r.Service, r.OperationName);
-                        });
+                    var samplingRules = new List<CustomSamplingRule>();
+                    foreach (var r in rules)
+                    {
+                        index++; // Used to create a readable rule name if one is not specified
+                        samplingRules.Add(new CustomSamplingRule(r.SampleRate, r.RuleName ?? $"config-rule-{index}", r.Service, r.OperationName));
+                    }
+
+                    return samplingRules;
                 }
             }
             catch (Exception ex)
