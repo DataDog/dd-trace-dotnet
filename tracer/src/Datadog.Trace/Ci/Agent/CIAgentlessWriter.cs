@@ -83,11 +83,12 @@ namespace Datadog.Trace.Ci.Agent
             _buffersArray = new Buffers[concurrencyLevel];
             for (var i = 0; i < _buffersArray.Length; i++)
             {
-                _buffersArray[i] = new Buffers(
+                var buffers = new Buffers(
                     sender,
                     new CITestCyclePayload(settings, formatterResolver: formatterResolver),
                     new CICodeCoveragePayload(settings, formatterResolver: formatterResolver));
-                var tskFlush = Task.Factory.StartNew(InternalFlushEventsAsync, new object[] { this, _buffersArray[i] }, TaskCreationOptions.LongRunning);
+                _buffersArray[i] = buffers;
+                var tskFlush = Task.Run(() => InternalFlushEventsAsync(this, buffers));
                 tskFlush.ContinueWith(t => Log.Error(t.Exception, "Error in sending ci visibility events"), TaskContinuationOptions.OnlyOnFaulted);
                 _buffersArray[i].SetFlushTask(tskFlush);
             }
@@ -192,13 +193,10 @@ namespace Datadog.Trace.Ci.Agent
             }
         }
 
-        private static async Task InternalFlushEventsAsync(object state)
+        private static async Task InternalFlushEventsAsync(CIAgentlessWriter writer, Buffers buffers)
         {
-            var stateArray = (object[])state;
-            var writer = (CIAgentlessWriter)stateArray[0];
             var batchInterval = writer._batchInterval;
             var eventQueue = writer._eventQueue;
-            var buffers = (Buffers)stateArray[1];
             var index = buffers.Index;
             var flushDelayEvent = buffers.FlushDelayEvent;
             var ciTestCycleBuffer = buffers.CiTestCycleBuffer;
