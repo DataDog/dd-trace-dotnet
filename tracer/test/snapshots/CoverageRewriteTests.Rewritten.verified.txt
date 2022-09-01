@@ -102,7 +102,7 @@ namespace Datadog.Trace.Ci.Coverage.Metadata.Target
 		public ModuleCoverage()
 		{
 			Metadata = new int[2][];
-			Metadata[0] = new int[0];
+			Metadata[0] = Array.Empty<int>();
 			Metadata[1] = new int[5];
 			Metadata[1][0] = 1;
 			Metadata[1][1] = 1;

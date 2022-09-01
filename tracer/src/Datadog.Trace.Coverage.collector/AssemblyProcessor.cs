@@ -29,6 +29,8 @@ namespace Datadog.Trace.Coverage.Collector
         private static readonly ConstructorInfo CoveredAssemblyAttributeTypeCtor = typeof(CoveredAssemblyAttribute).GetConstructors()[0];
         private static readonly Type ModuleCoverageMetadataType = typeof(ModuleCoverageMetadata);
         private static readonly MethodInfo ReportTryGetScopeMethodInfo = typeof(CoverageReporter<>).GetMethod("TryGetScope")!;
+        private static readonly MethodInfo ArrayEmptyMethod = typeof(Array).GetMethod("Empty")!;
+        private static readonly MethodInfo ArrayEmptyOfIntMethod = ArrayEmptyMethod.MakeGenericMethod(typeof(int));
         private static readonly Assembly TracerAssembly = typeof(CoverageReporter).Assembly;
 
         private readonly CIVisibilitySettings? _ciVisibilitySettings;
@@ -158,8 +160,17 @@ namespace Datadog.Trace.Coverage.Collector
                     moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
                     moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldfld, moduleCoverageMetadataImplMetadataField));
                     moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, typeIndex));
-                    moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, moduleTypeMethods.Count));
-                    moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Newarr, module.ImportReference(typeof(int))));
+                    if (moduleTypeMethods.Count > 0)
+                    {
+                        moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, moduleTypeMethods.Count));
+                        moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Newarr, module.ImportReference(typeof(int))));
+                    }
+                    else
+                    {
+                        var arrayEmptyOfIntMethodReference = module.ImportReference(ArrayEmptyOfIntMethod);
+                        moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Call, arrayEmptyOfIntMethodReference));
+                    }
+
                     moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stelem_Ref));
 
                     // Process all Methods in the type
