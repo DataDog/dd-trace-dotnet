@@ -336,7 +336,7 @@ namespace Datadog.Trace.AppSec
 #endif
                 AddAppsecSpecificInstrumentations();
 
-                _instrumentationGateway.EndRequest += ReportWafInitInfoOnce;
+                _instrumentationGateway.StartRequest += ReportWafInitInfoOnce;
                 _rateLimiter = _rateLimiter ?? new AppSecRateLimiter(_settings.TraceRateLimit);
 
                 _enabled = true;
@@ -355,7 +355,7 @@ namespace Datadog.Trace.AppSec
                 _instrumentationGateway.BodyAvailable -= RunWafAndReact;
                 _instrumentationGateway.BlockingOpportunity -= MightStopRequest;
                 _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
-                _instrumentationGateway.EndRequest -= ReportWafInitInfoOnce;
+                _instrumentationGateway.StartRequest -= ReportWafInitInfoOnce;
 
                 RemoveAppsecSpecificInstrumentations();
 
