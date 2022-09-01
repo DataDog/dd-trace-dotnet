@@ -6,6 +6,7 @@
 using System;
 using System.Net;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.Configuration;
@@ -49,7 +50,7 @@ namespace Datadog.Trace.Ci
             return new CISampler();
         }
 
-        protected override IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ISampler sampler)
+        protected override IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ISampler sampler, IDiscoveryService discoveryService)
         {
             // Check for agentless scenario
             if (_settings.Agentless)
@@ -70,7 +71,7 @@ namespace Datadog.Trace.Ci
 
                 // Set the tracer buffer size to the max
                 var traceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
-                return new CIAgentWriter(settings, sampler, traceBufferSize);
+                return new CIAgentWriter(settings, sampler, discoveryService, traceBufferSize);
             }
         }
     }

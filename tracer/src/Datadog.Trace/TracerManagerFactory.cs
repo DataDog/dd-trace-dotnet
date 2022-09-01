@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
@@ -94,7 +95,8 @@ namespace Datadog.Trace
                          ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName))
                          : null;
             sampler ??= GetSampler(settings);
-            agentWriter ??= GetAgentWriter(settings, statsd, sampler);
+            var discoveryService = DiscoveryService.Create(settings.Exporter);
+            agentWriter ??= GetAgentWriter(settings, statsd, sampler, discoveryService);
             scopeManager ??= new AsyncLocalScopeManager();
 
             if (settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer)
@@ -164,12 +166,12 @@ namespace Datadog.Trace
             return sampler;
         }
 
-        protected virtual IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ISampler sampler)
+        protected virtual IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ISampler sampler, IDiscoveryService discoveryService)
         {
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
             var api = new Api(apiRequestFactory, statsd, rates => sampler.SetDefaultSampleRates(rates), settings.Exporter.PartialFlushEnabled);
 
-            var statsAggregator = StatsAggregator.Create(api, settings);
+            var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
             return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize);
         }

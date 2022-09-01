@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.TraceSamplers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -34,6 +35,8 @@ namespace Datadog.Trace.Agent
 
         private readonly Task _flushTask;
 
+        private readonly IDiscoveryService _discoveryService;
+
         private readonly PrioritySampler _prioritySampler;
         private readonly ErrorSampler _errorSampler;
         private readonly RareSampler _rareSampler;
@@ -41,7 +44,7 @@ namespace Datadog.Trace.Agent
 
         private int _currentBuffer;
 
-        internal StatsAggregator(IApi api, ImmutableTracerSettings settings)
+        internal StatsAggregator(IApi api, ImmutableTracerSettings settings, IDiscoveryService discoveryService)
         {
             _api = api;
             _processExit = new TaskCompletionSource<bool>();
@@ -72,6 +75,9 @@ namespace Datadog.Trace.Agent
 
             _flushTask = Task.Run(Flush);
             _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in StatsAggregator"), TaskContinuationOptions.OnlyOnFaulted);
+
+            _discoveryService = discoveryService;
+            Task.Run(InitializeAsync);
         }
 
         /// <summary>
@@ -81,13 +87,13 @@ namespace Datadog.Trace.Agent
         /// </summary>
         internal StatsBuffer CurrentBuffer => _buffers[_currentBuffer];
 
-        public bool? CanComputeStats { get; private set; } = true;
+        public bool? CanComputeStats { get; private set; } = null;
 
-        public bool? CanDropP0s { get; private set; } = true;
+        public bool? CanDropP0s { get; private set; } = null;
 
-        public static IStatsAggregator Create(IApi api, ImmutableTracerSettings settings)
+        public static IStatsAggregator Create(IApi api, ImmutableTracerSettings settings, IDiscoveryService discoveryService)
         {
-            return settings.StatsComputationEnabled ? new StatsAggregator(api, settings) : new NullStatsAggregator();
+            return settings.StatsComputationEnabled ? new StatsAggregator(api, settings, discoveryService) : new NullStatsAggregator();
         }
 
         public Task DisposeAsync()
@@ -170,6 +176,13 @@ namespace Datadog.Trace.Agent
             // Use a do/while loop to still flush once if _processExit is already completed (this makes testing easier)
             do
             {
+                if (CanComputeStats == false)
+                {
+                    // TODO: When we implement the feature to continuously poll the Agent Configuration,
+                    // we may want to stay in this loop instead of returning
+                    return;
+                }
+
                 await Task.WhenAny(_processExit.Task, Task.Delay(_bucketDuration)).ConfigureAwait(false);
 
                 var buffer = CurrentBuffer;
@@ -182,7 +195,10 @@ namespace Datadog.Trace.Agent
                 if (buffer.Buckets.Count > 0)
                 {
                     // Push the metrics
-                    await _api.SendStatsAsync(buffer, _bucketDuration.ToNanoseconds()).ConfigureAwait(false);
+                    if (CanComputeStats == true)
+                    {
+                        await _api.SendStatsAsync(buffer, _bucketDuration.ToNanoseconds()).ConfigureAwait(false);
+                    }
 
                     buffer.Reset();
                 }
@@ -249,6 +265,32 @@ namespace Datadog.Trace.Agent
             else
             {
                 bucket.OkSummary.Add(ConvertTimestamp(duration));
+            }
+        }
+
+        private async Task InitializeAsync()
+        {
+            try
+            {
+                var isDiscoverySuccessful = await _discoveryService.DiscoverAsync().ConfigureAwait(false);
+                CanComputeStats = isDiscoverySuccessful && !string.IsNullOrWhiteSpace(_discoveryService.StatsEndpoint);
+                CanDropP0s = isDiscoverySuccessful && _discoveryService.ClientDropP0s == true;
+
+                if (CanComputeStats.Value)
+                {
+                    Log.Debug("Stats computation has been enabled with client_drop_p0s={ClientDropP0s}", CanDropP0s);
+                }
+                else
+                {
+                    Log.Warning("Stats computation disabled because the detected agent does not support this feature.");
+                }
+            }
+            catch (Exception e)
+            {
+                CanComputeStats = false;
+                CanDropP0s = false;
+
+                Log.Error(e, "Initializing stats computation failed.");
             }
         }
     }

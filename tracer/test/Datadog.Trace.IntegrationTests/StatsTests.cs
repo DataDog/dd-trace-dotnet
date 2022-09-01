@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.PlatformHelpers;
@@ -19,6 +20,8 @@ using Xunit;
 
 namespace Datadog.Trace.IntegrationTests
 {
+    [Collection(nameof(DiscoveryServiceInstanceTestCollection))]
+    [DiscoveryServiceRestorer]
     public class StatsTests
     {
         private const int StatsComputationIntervalSeconds = 10;
@@ -61,7 +64,10 @@ namespace Datadog.Trace.IntegrationTests
             var immutableSettings = settings.Build();
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
             Span span;
-            // SpinWait.SpinUntil(() => tracer.CanComputeStats, 5_000); // TODO: Replace with discovery logic
+
+            // Wait until the discovery service has been reached and we've confirmed that we can send stats
+            var spinSucceeded = SpinWait.SpinUntil(() => tracer.TracerManager.AgentWriter is AgentWriter { CanComputeStats: true }, 5_000);
+            spinSucceeded.Should().BeTrue();
 
             // Service
             // - If service is empty, it is set to DefaultServiceName
@@ -205,7 +211,10 @@ namespace Datadog.Trace.IntegrationTests
 
             var immutableSettings = settings.Build();
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
-            // SpinWait.SpinUntil(() => tracer.CanComputeStats, 5_000); // TODO: Replace with discovery logic
+
+            // Wait until the discovery service has been reached and we've confirmed that we can send stats
+            var spinSucceeded = SpinWait.SpinUntil(() => tracer.TracerManager.AgentWriter is AgentWriter { CanComputeStats: true }, 5_000);
+            spinSucceeded.Should().BeTrue();
 
             CreateDefaultSpan(type: "sql", resource: "SELECT * FROM TABLE WHERE userId = 'abc1287681964'");
             CreateDefaultSpan(type: "sql", resource: "SELECT * FROM TABLE WHERE userId = 'abc\\'1287\\'681\\'\\'\\'\\'964'");
@@ -297,9 +306,9 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [Fact]
-        public async Task SendsStatsAndKeepsP0sWhenAgentDropP0sIsFalse()
+        public async Task IsDisabledWhenAgentDropP0sIsFalse()
         {
-            await SendStatsHelper(statsComputationEnabled: true, expectStats: true, expectAllTraces: true, globalSamplingRate: 0.0, clientDropP0sEnabled: false);
+            await SendStatsHelper(statsComputationEnabled: true, expectStats: false, expectAllTraces: true, globalSamplingRate: 0.0, clientDropP0sEnabled: false);
         }
 
         private async Task SendStatsHelper(bool statsComputationEnabled, bool expectStats, double? globalSamplingRate = null, bool expectAllTraces = true, bool finishSpansOnClose = true, bool statsEndpointEnabled = true, bool clientDropP0sEnabled = true)
@@ -365,8 +374,8 @@ namespace Datadog.Trace.IntegrationTests
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
             if (expectStats)
             {
-                // SpinWait.SpinUntil(() => tracer.CanComputeStats, 5_000);
-                // tracer.CanComputeStats.Should().Be(true, "the stats agreggator should invoke the agent discovery");
+                var spinSucceeded = SpinWait.SpinUntil(() => tracer.TracerManager.AgentWriter is AgentWriter { CanComputeStats: true }, 5_000);
+                spinSucceeded.Should().BeTrue();
             }
 
             // Scenario 1: Send the common span, but add an error

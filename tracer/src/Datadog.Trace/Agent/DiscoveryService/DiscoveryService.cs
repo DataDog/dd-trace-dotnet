@@ -60,6 +60,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                     () => new MinimalAgentHeaderHelper(),
                     uri => uri);
 
+                // TODO: If custom instrumentation updates the exporterSettings, we need to refresh the DiscoveryService instance and make sure all users get updated
                 return Instance ??= new DiscoveryService(apiRequestFactory);
             }
         }
@@ -105,6 +106,19 @@ namespace Datadog.Trace.Agent.DiscoveryService
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Sets the DiscoveryService instance.
+        /// Intended use is for unit testing
+        /// </summary>
+        /// <param name="discoveryService">DiscoveryService instance</param>
+        internal static void SetDiscoveryService(DiscoveryService discoveryService)
+        {
+            lock (GlobalLock)
+            {
+                Instance = discoveryService;
+            }
         }
 
         private async Task ProcessDiscoveryResponse(IApiResponse response)
