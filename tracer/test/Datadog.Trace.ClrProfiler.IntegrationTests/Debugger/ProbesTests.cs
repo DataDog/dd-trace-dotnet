@@ -50,7 +50,7 @@ public class ProbesTests : TestHelper, IDisposable
     {
         SetServiceVersion("1.0.0");
         _rcmPath = Path.Combine(EnvironmentHelper.GetSampleProjectDirectory(), RemoteConfigurationFileName);
-        SetupRcmConfiguration(_rcmPath);
+        SetupRcm(_rcmPath);
     }
 
     public static IEnumerable<object[]> ProbeTests()
@@ -188,22 +188,6 @@ public class ProbesTests : TestHelper, IDisposable
         await RunMethodProbeTests(testType);
     }
 #endif
-
-    public override void Dispose()
-    {
-        try
-        {
-            base.Dispose();
-            if (File.Exists(_rcmPath))
-            {
-                File.Delete(_rcmPath);
-            }
-        }
-        catch (Exception ex)
-        {
-            Output?.WriteLine("ProbesTests.Cleanup - failed to clean prob file between tests: " + ex);
-        }
-    }
 
     private async Task RunMethodProbeTests(Type testType)
     {
