@@ -1395,7 +1395,6 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 
 void CorProfiler::RemoveCallTargetDefinitions(WCHAR* id, CallTargetDefinition* items, int size)
 {
-    auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
     shared::WSTRING definitionsId = shared::WSTRING(id);
     Logger::Info("RemoveCallTargetDefinitions: received id: ", definitionsId, " from managed side with ", size,
                  " integrations.");
@@ -1446,12 +1445,13 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
     shared::WSTRING definitionsId = shared::WSTRING(id);
     std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
 
-    if (enable && definitions_ids_.find(definitionsId) != definitions_ids_.end())
+    auto defsIdFound = definitions_ids_.find(definitionsId) != definitions_ids_.end();
+    if (enable && defsIdFound)
     {
         Logger::Info("InitializeProfiler: Id already processed.");
         return;
     }
-    if (!enable && definitions_ids_.find(definitionsId) == definitions_ids_.end())
+    if (!enable && !defsIdFound)
     {
         Logger::Info("UninitializeProfiler: Id not processed.");
         return;
