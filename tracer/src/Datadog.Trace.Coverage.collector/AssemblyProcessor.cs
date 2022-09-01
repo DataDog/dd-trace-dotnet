@@ -24,20 +24,17 @@ namespace Datadog.Trace.Coverage.Collector
     internal class AssemblyProcessor
     {
         private static readonly object PadLock = new();
-        private static readonly CultureInfo USCultureInfo = new("us-US");
+        private static readonly CultureInfo UsCultureInfo = new("us-US");
         private static readonly Regex NetCorePattern = new(@".NETCoreApp,Version=v(\d.\d)", RegexOptions.Compiled);
         private static readonly ConstructorInfo CoveredAssemblyAttributeTypeCtor = typeof(CoveredAssemblyAttribute).GetConstructors()[0];
         private static readonly Type ModuleCoverageMetadataType = typeof(ModuleCoverageMetadata);
         private static readonly MethodInfo ReportTryGetScopeMethodInfo = typeof(CoverageReporter<>).GetMethod("TryGetScope")!;
-        private static readonly MethodInfo ScopeReportMethodInfo = typeof(CoverageScope).GetMethod("Report", new[] { typeof(int) })!;
-        private static readonly MethodInfo ScopeReport2MethodInfo = typeof(CoverageScope).GetMethod("Report", new[] { typeof(int), typeof(int) })!;
         private static readonly Assembly TracerAssembly = typeof(CoverageReporter).Assembly;
 
         private readonly CIVisibilitySettings? _ciVisibilitySettings;
         private readonly ICollectorLogger _logger;
         private readonly string _tracerHome;
         private readonly string _assemblyFilePath;
-        private readonly string _pdbFilePath;
 
         private byte[]? _strongNameKeyBlob;
 
@@ -47,14 +44,13 @@ namespace Datadog.Trace.Coverage.Collector
             _logger = logger ?? new ConsoleCollectorLogger();
             _ciVisibilitySettings = ciVisibilitySettings;
             _assemblyFilePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
-            _pdbFilePath = Path.ChangeExtension(filePath, ".pdb");
 
             if (!File.Exists(_assemblyFilePath))
             {
                 throw new FileNotFoundException($"Assembly not found in path: {_assemblyFilePath}");
             }
 
-            if (!File.Exists(_pdbFilePath))
+            if (!File.Exists(Path.ChangeExtension(filePath, ".pdb")))
             {
                 Ci.Coverage.Exceptions.PdbNotFoundException.Throw();
             }
@@ -117,8 +113,6 @@ namespace Datadog.Trace.Coverage.Collector
                 }
 
                 var isDirty = false;
-                ulong totalMethods = 0;
-                ulong totalInstructions = 0;
 
                 // Process all modules in the assembly
                 var module = assemblyDefinition.MainModule;
@@ -156,12 +150,6 @@ namespace Datadog.Trace.Coverage.Collector
                 for (var typeIndex = 0; typeIndex < moduleTypes.Count; typeIndex++)
                 {
                     var moduleType = moduleTypes[typeIndex];
-                    if (moduleType.CustomAttributes.Any(
-                            cAttr =>
-                                cAttr.Constructor.DeclaringType.Name == nameof(AvoidCoverageAttribute)))
-                    {
-                        continue;
-                    }
 
                     _logger.Debug($"\t{moduleType.FullName}");
                     var moduleTypeMethods = moduleType.Methods;
@@ -178,13 +166,6 @@ namespace Datadog.Trace.Coverage.Collector
                     for (var methodIndex = 0; methodIndex < moduleTypeMethods.Count; methodIndex++)
                     {
                         var moduleTypeMethod = moduleTypeMethods[methodIndex];
-                        if (moduleTypeMethod.CustomAttributes.Any(
-                                cAttr =>
-                                    cAttr.Constructor.DeclaringType.Name == nameof(AvoidCoverageAttribute)))
-                        {
-                            continue;
-                        }
-
                         if (moduleTypeMethod.DebugInformation is null || !moduleTypeMethod.DebugInformation.HasSequencePoints)
                         {
                             _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}");
@@ -192,8 +173,6 @@ namespace Datadog.Trace.Coverage.Collector
                         }
 
                         _logger.Debug($"\t\t[YES] {moduleTypeMethod.FullName}.");
-
-                        totalMethods++;
 
                         // Extract body from the method
                         if (moduleTypeMethod.HasBody)
@@ -218,7 +197,7 @@ namespace Datadog.Trace.Coverage.Collector
                              *
                              *  public static int Factorial(int value)
                              *  {
-                             *      if (!CoverageReporter<Metadata>.TryGetScope(1, 1, out var scope))
+                             *      if (!CoverageReporter<ModuleCoverage>.TryGetScope(1, 1, out var counters))
                              *      {
                              *          if (value == 1)
                              *          {
@@ -226,19 +205,21 @@ namespace Datadog.Trace.Coverage.Collector
                              *          }
                              *          return value * Factorial(value - 1);
                              *      }
-                             *      scope.Report(0, 1);
+                             *      counters[0]++;
+                             *      counters[1]++;
                              *      int result;
                              *      if (value == 1)
                              *      {
-                             *          scope.Report(2, 3);
+                             *          counters[2]++;
+                             *          counters[3]++;
                              *          result = 1;
                              *      }
                              *      else
                              *      {
-                             *          scope.Report(4);
+                             *          counters[4]++;
                              *          result = value * Factorial(value - 1);
                              *      }
-                             *      scope.Report(5);
+                             *      counters[5]++;
                              *      return result;
                              *  }
                              */
@@ -253,8 +234,6 @@ namespace Datadog.Trace.Coverage.Collector
 
                             var sequencePoints = moduleTypeMethod.DebugInformation.SequencePoints;
                             var sequencePointsOriginalLength = sequencePoints.Count;
-                            string? methodFileName = null;
-                            uint localInstructions = 0;
 
                             // Step 1 - Clone instructions
                             for (var i = 0; i < instructionsOriginalLength; i++)
@@ -348,8 +327,6 @@ namespace Datadog.Trace.Coverage.Collector
 
                                 if (!currentSequencePoint.IsHidden)
                                 {
-                                    totalInstructions++;
-                                    localInstructions++;
                                     clonedInstructionsWithSequencePoints.Add(clonedInstruction);
                                 }
 
@@ -359,24 +336,11 @@ namespace Datadog.Trace.Coverage.Collector
                                 clonedSequencePoint.EndLine = currentSequencePoint.EndLine;
                                 clonedSequencePoint.EndColumn = currentSequencePoint.EndColumn;
                                 sequencePoints.Add(clonedSequencePoint);
-
-                                if (string.IsNullOrEmpty(methodFileName))
-                                {
-                                    methodFileName = currentSequencePoint.Document.Url;
-                                }
                             }
 
-                            var clonedInstructions = instructions.Skip(instructionsOriginalLength).ToList();
-
-                            // Step 6 - Modify local var to add the Coverage Scope instance.
-                            var coverageScopeVariable = new VariableDefinition(module.ImportReference(typeof(CoverageScope)));
-                            methodBody.Variables.Add(coverageScopeVariable);
-
-                            // Step 7 - Insert initial condition
-                            if (string.IsNullOrEmpty(methodFileName))
-                            {
-                                methodFileName = "unknown";
-                            }
+                            // Step 6 - Modify local var to add the Coverage counters instance.
+                            var countersVariable = new VariableDefinition(module.ImportReference(typeof(int[])));
+                            methodBody.Variables.Add(countersVariable);
 
                             // Create methods sequence points array
                             moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
@@ -389,53 +353,27 @@ namespace Datadog.Trace.Coverage.Collector
 
                             instructions.Insert(0, Instruction.Create(OpCodes.Ldc_I4, typeIndex));
                             instructions.Insert(1, Instruction.Create(OpCodes.Ldc_I4, methodIndex));
-                            instructions.Insert(2, Instruction.Create(OpCodes.Ldloca, coverageScopeVariable));
+                            instructions.Insert(2, Instruction.Create(OpCodes.Ldloca, countersVariable));
                             instructions.Insert(3, Instruction.Create(OpCodes.Call, reportTryGetScopeMethod));
                             instructions.Insert(4, Instruction.Create(OpCodes.Brtrue, instructions[instructionsOriginalLength + 4]));
 
-                            // Step 8 - Insert line reporter
-                            var scopeReportMethodRef = module.ImportReference(ScopeReportMethodInfo);
-                            var scopeReport2MethodRef = module.ImportReference(ScopeReport2MethodInfo);
+                            // Step 7 - Insert line reporter
                             for (var i = 0; i < clonedInstructionsWithSequencePoints.Count; i++)
                             {
                                 var currentInstruction = clonedInstructionsWithSequencePoints[i];
                                 var currentInstructionIndex = instructions.IndexOf(currentInstruction);
                                 var currentInstructionClone = CloneInstruction(currentInstruction);
 
-                                if (i < clonedInstructionsWithSequencePoints.Count - 1)
-                                {
-                                    var nextInstruction = clonedInstructionsWithSequencePoints[i + 1];
-
-                                    // We check if the next instruction with sequence point is a NOP and is immediatly after the current one.
-                                    // If that is the case we can group two ranges in a single instruction.
-                                    if (instructions.IndexOf(nextInstruction) - 1 == currentInstructionIndex &&
-                                        (currentInstruction.OpCode == OpCodes.Nop || nextInstruction.OpCode == OpCodes.Nop) &&
-                                        !methodBody.ExceptionHandlers.Any(
-                                            eHandler =>
-                                                eHandler.TryStart == nextInstruction ||
-                                                eHandler.TryEnd == nextInstruction ||
-                                                eHandler.HandlerStart == nextInstruction ||
-                                                eHandler.HandlerEnd == nextInstruction ||
-                                                eHandler.FilterStart == nextInstruction))
-                                    {
-                                        currentInstruction.OpCode = OpCodes.Ldloca;
-                                        currentInstruction.Operand = coverageScopeVariable;
-                                        instructions.Insert(currentInstructionIndex + 1, Instruction.Create(OpCodes.Ldc_I4, i));
-                                        instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldc_I4, i + 1));
-                                        instructions.Insert(currentInstructionIndex + 3, Instruction.Create(OpCodes.Call, scopeReport2MethodRef));
-                                        instructions.Insert(currentInstructionIndex + 4, currentInstructionClone);
-
-                                        // We process both instructions in a single call.
-                                        i++;
-                                        continue;
-                                    }
-                                }
-
-                                currentInstruction.OpCode = OpCodes.Ldloca;
-                                currentInstruction.Operand = coverageScopeVariable;
+                                currentInstruction.OpCode = OpCodes.Ldloc;
+                                currentInstruction.Operand = countersVariable;
                                 instructions.Insert(currentInstructionIndex + 1, Instruction.Create(OpCodes.Ldc_I4, i));
-                                instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Call, scopeReportMethodRef));
-                                instructions.Insert(currentInstructionIndex + 3, currentInstructionClone);
+                                instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldelema, module.ImportReference(typeof(int))));
+                                instructions.Insert(currentInstructionIndex + 3, Instruction.Create(OpCodes.Dup));
+                                instructions.Insert(currentInstructionIndex + 4, Instruction.Create(OpCodes.Ldind_I4));
+                                instructions.Insert(currentInstructionIndex + 5, Instruction.Create(OpCodes.Ldc_I4_1));
+                                instructions.Insert(currentInstructionIndex + 6, Instruction.Create(OpCodes.Add));
+                                instructions.Insert(currentInstructionIndex + 7, Instruction.Create(OpCodes.Stind_I4));
+                                instructions.Insert(currentInstructionIndex + 8, currentInstructionClone);
                             }
 
                             isDirty = true;
@@ -484,44 +422,6 @@ namespace Datadog.Trace.Coverage.Collector
             {
                 Ci.Coverage.Exceptions.PdbNotFoundException.Throw();
             }
-            catch
-            {
-                throw;
-            }
-        }
-
-        private static ulong GetRangeFromSequencePoint(SequencePoint currentSequencePoint)
-        {
-            var startLine = currentSequencePoint.StartLine;
-            var startColumn = currentSequencePoint.StartColumn;
-            var endLine = currentSequencePoint.EndLine;
-            var endColumn = currentSequencePoint.EndColumn;
-
-            if (startLine > ushort.MaxValue || endLine > ushort.MaxValue)
-            {
-                // If the line is greater than ushort.MaxValue we set the range as 0
-                // This will keep the filename being reported and taken in consideration by the ITR
-                // The ITR with range 0 means that any modification in the file is included.
-                startLine = 0;
-                startColumn = 0;
-                endLine = 0;
-                endColumn = 0;
-            }
-
-            if (startColumn > ushort.MaxValue || endColumn > ushort.MaxValue)
-            {
-                // If only the column is greater than ushort.MaxValue we only take in consideration
-                // the line range.
-                startColumn = 0;
-                endColumn = 0;
-            }
-
-            var currentInstructionRange = ((ulong)(ushort)startLine << 48) |
-                                          ((ulong)(ushort)startColumn << 32) |
-                                          ((ulong)(ushort)endLine << 16) |
-                                          ((ulong)(ushort)endColumn);
-
-            return currentInstructionRange;
         }
 
         private static void RemoveShortOpCodes(Instruction instruction)
@@ -643,7 +543,7 @@ namespace Datadog.Trace.Coverage.Collector
                     if (matchTarget.Success)
                     {
                         var versionValue = matchTarget.Groups[1].Value;
-                        if (float.TryParse(versionValue, NumberStyles.AllowDecimalPoint, USCultureInfo, out var version))
+                        if (float.TryParse(versionValue, NumberStyles.AllowDecimalPoint, UsCultureInfo, out var version))
                         {
                             if (version >= 2.0 && version <= 3.0)
                             {

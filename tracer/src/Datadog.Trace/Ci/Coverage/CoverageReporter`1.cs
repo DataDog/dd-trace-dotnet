@@ -40,16 +40,16 @@ public static class CoverageReporter<TMeta>
     /// </summary>
     /// <param name="typeIndex">Type index</param>
     /// <param name="methodIndex">Method index</param>
-    /// <param name="scope">CoverageScope ref struct instance</param>
+    /// <param name="counters">Counters array for the method</param>
     /// <returns>True if the coverage is enabled and the scope is available; otherwise, false.</returns>
-    public static bool TryGetScope(int typeIndex, int methodIndex, out CoverageScope scope)
+    public static bool TryGetScope(int typeIndex, int methodIndex, out int[]? counters)
     {
         ModuleValue module;
         if (ModuleContainer.Value is { } moduleContainer)
         {
             if (!moduleContainer.Item2.Enabled)
             {
-                scope = default;
+                counters = default;
                 return false;
             }
 
@@ -59,7 +59,7 @@ public static class CoverageReporter<TMeta>
         {
             if (CoverageReporter.Container is not { Enabled: true } container)
             {
-                scope = default;
+                counters = default;
                 return false;
             }
 
@@ -80,7 +80,7 @@ public static class CoverageReporter<TMeta>
             type.Methods[methodIndex] = method;
         }
 
-        scope = new CoverageScope(method.SequencePoints);
+        counters = method.SequencePoints;
         return true;
     }
 }

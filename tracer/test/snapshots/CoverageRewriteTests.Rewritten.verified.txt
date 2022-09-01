@@ -29,22 +29,22 @@ namespace CoverageRewriterAssembly
 			[CompilerGenerated]
 			get
 			{
-				if (!CoverageReporter<ModuleCoverage>.TryGetScope(1, 0, out var scope))
+				if (!CoverageReporter<ModuleCoverage>.TryGetScope(1, 0, out var counters))
 				{
 					return <MyProperty>k__BackingField;
 				}
-				scope.Report(0);
+				counters[0]++;
 				return <MyProperty>k__BackingField;
 			}
 			[CompilerGenerated]
 			set
 			{
-				if (!CoverageReporter<ModuleCoverage>.TryGetScope(1, 1, out var scope))
+				if (!CoverageReporter<ModuleCoverage>.TryGetScope(1, 1, out var counters))
 				{
 					<MyProperty>k__BackingField = value;
 					return;
 				}
-				scope.Report(0);
+				counters[0]++;
 				<MyProperty>k__BackingField = value;
 			}
 		}
@@ -52,7 +52,7 @@ namespace CoverageRewriterAssembly
 		public void Main()
 		{
 			int i;
-			if (!CoverageReporter<ModuleCoverage>.TryGetScope(1, 2, out var scope))
+			if (!CoverageReporter<ModuleCoverage>.TryGetScope(1, 2, out var counters))
 			{
 				Console.WriteLine("Main Method");
 				for (i = 0; i < 100; i++)
@@ -63,27 +63,30 @@ namespace CoverageRewriterAssembly
 				Console.WriteLine(MyProperty);
 				return;
 			}
-			scope.Report(0, 1);
+			counters[0]++;
+			counters[1]++;
 			Console.WriteLine("Main Method");
-			scope.Report(2);
+			counters[2]++;
 			i = 0;
 			while (true)
 			{
-				scope.Report(7);
+				counters[7]++;
 				if (i >= 100)
 				{
 					break;
 				}
-				scope.Report(3, 4);
+				counters[3]++;
+				counters[4]++;
 				Console.WriteLine(i);
-				scope.Report(5, 6);
+				counters[5]++;
+				counters[6]++;
 				i++;
 			}
-			scope.Report(8);
+			counters[8]++;
 			MyProperty = "Value";
-			scope.Report(9);
+			counters[9]++;
 			Console.WriteLine(MyProperty);
-			scope.Report(10);
+			counters[10]++;
 		}
 
 		public async Task MainAsync()
