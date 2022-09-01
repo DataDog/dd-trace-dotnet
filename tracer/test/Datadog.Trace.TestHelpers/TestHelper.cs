@@ -31,8 +31,6 @@ namespace Datadog.Trace.TestHelpers
 {
     public abstract class TestHelper : IDisposable
     {
-        private bool _deleteRcmFile = true;
-
         protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
             : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides), output)
         {
@@ -59,7 +57,7 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
             Output.WriteLine($"Native Loader DLL: {EnvironmentHelper.GetNativeLoaderPath()}");
 
-            SetupRcmConfiguration();
+            SetupRcm();
         }
 
         protected EnvironmentHelper EnvironmentHelper { get; }
@@ -70,7 +68,7 @@ namespace Datadog.Trace.TestHelpers
 
         public virtual void Dispose()
         {
-            CleanupRcmConfiguration();
+            CleanupRcm();
         }
 
         public Process StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "")
@@ -675,7 +673,7 @@ namespace Datadog.Trace.TestHelpers
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
         }
 
-        protected void SetupRcmConfiguration(string path = null)
+        protected void SetupRcm(string path = null)
         {
             if (path == null)
             {
@@ -684,21 +682,16 @@ namespace Datadog.Trace.TestHelpers
                 Directory.CreateDirectory(path);
                 path = Path.Combine(path, "rcm_config.json");
                 if (File.Exists(path)) { File.Delete(path); }
-                _deleteRcmFile = true;
-            }
-            else
-            {
-                _deleteRcmFile = false;
             }
 
             SetEnvironmentVariable(ConfigurationKeys.Rcm.FilePath, path);
         }
 
-        protected void CleanupRcmConfiguration()
+        protected void CleanupRcm()
         {
             if (EnvironmentHelper.CustomEnvironmentVariables.TryGetValue(ConfigurationKeys.Rcm.FilePath, out var rcmConfigPath))
             {
-                if (File.Exists(rcmConfigPath) && _deleteRcmFile) { File.Delete(rcmConfigPath); }
+                if (File.Exists(rcmConfigPath)) { File.Delete(rcmConfigPath); }
                 EnvironmentHelper.CustomEnvironmentVariables.Remove(ConfigurationKeys.Rcm.FilePath);
             }
         }
