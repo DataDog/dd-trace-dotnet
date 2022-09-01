@@ -91,11 +91,12 @@ namespace Datadog.Trace
                                      GetApplicationName() ??
                                      UnknownServiceName;
 
+            var discoveryService = DiscoveryService.Create(settings.Exporter);
+
             statsd = settings.TracerMetricsEnabled
                          ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName))
                          : null;
             sampler ??= GetSampler(settings);
-            var discoveryService = DiscoveryService.Create(settings.Exporter);
             agentWriter ??= GetAgentWriter(settings, statsd, sampler, discoveryService);
             scopeManager ??= new AsyncLocalScopeManager();
 
