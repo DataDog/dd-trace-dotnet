@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Threading.Tasks;
+using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent.DiscoveryService
 {
@@ -23,5 +24,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
         bool? ClientDropP0s { get; }
 
         Task<bool> DiscoverAsync();
+
+        Task DisposeAsync();
     }
 }

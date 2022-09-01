@@ -154,5 +154,11 @@ namespace Datadog.Trace.Agent.DiscoveryService
         {
             _cancellationSource?.Cancel();
         }
+
+        public Task DisposeAsync()
+        {
+            _cancellationSource?.Cancel();
+            return Task.CompletedTask;
+        }
     }
 }
