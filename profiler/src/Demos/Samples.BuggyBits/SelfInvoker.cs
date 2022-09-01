@@ -35,26 +35,36 @@ namespace BuggyBits
         {
             Console.WriteLine($"{this.GetType().Name} started.");
 
-            try
+            if (_scenario == Scenario.None)
             {
-                string asyncEndpoint = GetEndpoint(rootUrl);
-
-                // Run for the given number of iterations
-                // 0 means wait for cancellation
-                int current = 0;
-                while (
-                    ((iterations == 0) && !_exitToken.IsCancellationRequested) ||
-                    (iterations > current))
+                await Task.Run(() =>
                 {
-                    await Task.Delay(SleepDuration);
-                    await ExecuteIterationAsync(asyncEndpoint);
-
-                    current++;
-                }
+                    _exitToken.WaitHandle.WaitOne();
+                });
             }
-            catch (Exception x)
+            else
             {
-                Console.WriteLine($"{x.GetType().Name} | {x.Message}");
+                try
+                {
+                    string asyncEndpoint = GetEndpoint(rootUrl);
+
+                    // Run for the given number of iterations
+                    // 0 means wait for cancellation
+                    int current = 0;
+                    while (
+                        ((iterations == 0) && !_exitToken.IsCancellationRequested) ||
+                        (iterations > current))
+                    {
+                        await Task.Delay(SleepDuration);
+                        await ExecuteIterationAsync(asyncEndpoint);
+
+                        current++;
+                    }
+                }
+                catch (Exception x)
+                {
+                    Console.WriteLine($"{x.GetType().Name} | {x.Message}");
+                }
             }
 
             Console.WriteLine($"{this.GetType().Name} stopped.");
@@ -76,6 +86,9 @@ namespace BuggyBits
 
                 case Scenario.Async:
                     return $"{rootUrl}/Products/async";
+
+                case Scenario.FormatExceptions:
+                    return $"{rootUrl}/Products/Sales";
             }
         }
 
