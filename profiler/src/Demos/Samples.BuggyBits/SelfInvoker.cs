@@ -37,10 +37,7 @@ namespace BuggyBits
 
             if (_scenario == Scenario.None)
             {
-                await Task.Run(() =>
-                {
-                    _exitToken.WaitHandle.WaitOne();
-                });
+                await Task.Delay(Timeout.Infinite, _exitToken);
             }
             else
             {
