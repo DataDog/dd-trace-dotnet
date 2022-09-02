@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "ArmUnsupported")]
         public void IntegrationDisabled()
         {
-            const int totalSpanCount = 21;
+            const int totalSpanCount = 5;
             const string expectedOperationName = "command_execution";
 
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.ProcessStart)}_ENABLED", "false");

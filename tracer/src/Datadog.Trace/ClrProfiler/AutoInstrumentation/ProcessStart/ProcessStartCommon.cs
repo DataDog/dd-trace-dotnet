@@ -25,7 +25,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         {
             if (info != null)
             {
+                // In FF, we need to have the UseShellExecute property set to false in order to use environment variables.
+#if !NETCOREAPP
+                return CreateScope(info.FileName, info.UseShellExecute ? null : info.Environment);
+#else
                 return CreateScope(info.FileName, info.Environment);
+#endif
             }
 
             return null;
@@ -34,6 +39,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         internal static Scope CreateScope(string filename, IDictionary<string, string> envVariables)
         {
             var tracer = Tracer.Instance;
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !tracer.Settings.IsIntegrationEnabled(IntegrationId.ProcessStart))
+            {
+                // integration disabled, don't create a scope, skip this span
+                return null;
+            }
 
             Scope scope = null;
 
