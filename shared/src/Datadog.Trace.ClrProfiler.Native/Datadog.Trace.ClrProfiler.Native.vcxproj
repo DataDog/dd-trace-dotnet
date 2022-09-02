@@ -226,6 +226,7 @@
     <ClInclude Include="instrumented_assembly_generator\method_signature.h" />
     <ClInclude Include="log.h" />
     <ClInclude Include="exported_functions.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="runtimeid_store.h" />
     <ClInclude Include="util.h" />
   </ItemGroup>
@@ -257,6 +258,9 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
