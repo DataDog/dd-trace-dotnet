@@ -9,11 +9,14 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -27,27 +30,30 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
 
         [SkippableTheory]
-        [InlineData(true)]
-        [InlineData(false)]
-        [InlineData(null)]
+        [InlineData(true, ApplyStates.ACKNOWLEDGED)]
+        [InlineData(false, ApplyStates.UNACKNOWLEDGED)]
+        [InlineData(null, ApplyStates.ACKNOWLEDGED)]
         [Trait("RunOnWindows", "True")]
-        public async Task TestSecurityToggling(bool? enableSecurity)
+        public async Task TestSecurityToggling(bool? enableSecurity, uint expectedState)
         {
-            SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "500");
+            SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
             var url = "/Health/?[$slice]=value";
             var agent = await RunOnSelfHosted(enableSecurity);
-            var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity);
-            var testStart = DateTime.UtcNow;
+            var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, expectedState);
 
             var spans1 = await SendRequestsAsync(agent, url);
 
             agent.SetupRcm(Output, new[] { ((object)new Features() { Asm = new Asm() { Enabled = false } }, "1") }, "FEATURES");
             await Task.Delay(1000);
 
+            CheckAckState(agent, expectedState, null, "First RCM call");
+
             var spans2 = await SendRequestsAsync(agent, url);
 
             agent.SetupRcm(Output, new[] { ((object)new Features() { Asm = new Asm() { Enabled = true } }, "2") }, "FEATURES");
             await Task.Delay(1000);
+
+            CheckAckState(agent, expectedState, null, "Second RCM call");
 
             var spans3 = await SendRequestsAsync(agent, url);
 
@@ -57,6 +63,34 @@ namespace Datadog.Trace.Security.IntegrationTests
             spans.AddRange(spans3);
 
             await VerifySpans(spans.ToImmutableList(), settings, true);
+        }
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestRemoteConfigError()
+        {
+            var enableSecurity = true;
+            SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
+            var url = "/Health/?[$slice]=value";
+            var agent = await RunOnSelfHosted(enableSecurity);
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+
+            var spans1 = await SendRequestsAsync(agent, url);
+
+            agent.SetupRcm(Output, new[] { ((object)"haha, you weren't expect this!", "1") }, "FEATURES");
+            await Task.Delay(1000);
+
+            CheckAckState(agent, ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.Configuration.Features'. Path '', line 1, position 32.", "First RCM call");
+
+            await VerifySpans(spans1.ToImmutableList(), settings, true);
+        }
+
+        private void CheckAckState(MockTracerAgent agent, uint expectedState, string expectedError, string message)
+        {
+            var request = agent.GetLastRcmRequest();
+            var state = request?.Client?.State?.ConfigStates?.FirstOrDefault(x => x.Product == "FEATURES");
+            state?.ApplyState.Should().Be(expectedState, message);
+            state?.ApplyError.Should().Be(expectedError, message);
         }
     }
 }

@@ -22,6 +22,22 @@ namespace Datadog.Trace.TestHelpers
             output.WriteLine("Using RCM response: " + response);
         }
 
+        internal static GetRcmRequest GetLastRcmRequest(this MockTracerAgent agent)
+        {
+            string lastRemoteConfigPayload = null;
+            while (agent.RemoteConfigRequests.TryDequeue(out lastRemoteConfigPayload))
+            {
+            }
+
+            if (lastRemoteConfigPayload == null)
+            {
+                return null;
+            }
+
+            var request = JsonConvert.DeserializeObject<GetRcmRequest>(lastRemoteConfigPayload);
+            return request;
+        }
+
         private static string BuildRcmResponse(IEnumerable<(object Config, string Id)> configurations, string productName)
         {
             var targetFiles = new List<RcmFile>();
