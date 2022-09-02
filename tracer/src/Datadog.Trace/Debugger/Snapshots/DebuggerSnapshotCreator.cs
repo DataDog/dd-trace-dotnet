@@ -13,11 +13,13 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
-    internal readonly ref struct DebuggerSnapshotCreator
+    internal readonly struct DebuggerSnapshotCreator : IDisposable
     {
         private const string LoggerVersion = "2";
         private const string DDSource = "dd_debugger";
         private const string UnknownValue = "Unknown";
+
+        private static readonly ImmutableDebuggerSettings Settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromDefaultSource());
 
         private readonly JsonTextWriter _jsonWriter;
         private readonly StringBuilder _jsonUnderlyingString;
@@ -107,8 +109,9 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WriteEndObject();
         }
 
-        internal DebuggerSnapshotCreator EndSnapshot(TimeSpan? duration)
+        internal DebuggerSnapshotCreator EndSnapshot(DateTimeOffset? startTime)
         {
+            var duration = DateTimeOffset.UtcNow - startTime;
             _jsonWriter.WritePropertyName("id");
             _jsonWriter.WriteValue(Guid.NewGuid());
 
@@ -136,16 +139,18 @@ namespace Datadog.Trace.Debugger.Snapshots
             DebuggerSnapshotSerializer.SerializeObjectFields(instance, type, _jsonWriter);
         }
 
-        internal void CaptureArgument<TArg>(TArg argument, string name, bool isFirstArgument, bool shouldEndLocals)
+        internal void CaptureArgument<TArg>(TArg argument, string name, bool isFirstArgument, bool shouldEndLocals, Type argType = null)
         {
             StartLocalsOrArgs(isFirstArgument, shouldEndLocals, "arguments");
-            DebuggerSnapshotSerializer.Serialize(argument, typeof(TArg), name, _jsonWriter);
+            // in case TArg is object and we have the concrete type, use it
+            DebuggerSnapshotSerializer.Serialize(argument, argType ?? typeof(TArg), name, _jsonWriter);
         }
 
-        internal void CaptureLocal<TLocal>(TLocal local, string name, bool isFirstLocal)
+        internal void CaptureLocal<TLocal>(TLocal local, string name, bool isFirstLocal, Type localType = null)
         {
             StartLocalsOrArgs(isFirstLocal, false, "locals");
-            DebuggerSnapshotSerializer.Serialize(local, typeof(TLocal), name, _jsonWriter);
+            // in case TLocal is object and we have the concrete type, use it
+            DebuggerSnapshotSerializer.Serialize(local, localType ?? typeof(TLocal), name, _jsonWriter);
         }
 
         internal void CaptureException(Exception ex)
@@ -161,6 +166,17 @@ namespace Datadog.Trace.Debugger.Snapshots
             AddFrames(new StackTrace(ex).GetFrames() ?? Array.Empty<StackFrame>());
             _jsonWriter.WriteEndArray();
             _jsonWriter.WriteEndObject();
+        }
+
+        internal void FinalizeSnapshot(StackFrame[] frames, string methodName, string typeFullName, DateTimeOffset? startTime, string probeFilePath)
+        {
+            AddStackInfo(frames)
+            .EndSnapshot(startTime)
+            .EndDebugger()
+            .AddLoggerInfo(methodName, typeFullName, probeFilePath)
+            .AddGeneralInfo(LiveDebugger.Instance.ServiceName, null, null) // internal ticket ID 929
+            .AddMessage()
+            .Complete();
         }
 
         private void AddFrames(StackFrame[] frames)
@@ -185,7 +201,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
         }
 
-        internal DebuggerSnapshotCreator AddMethodProbeInfo(string probeId, string methodName, string type)
+        internal DebuggerSnapshotCreator AddMethodProbeInfo(string probeId, string methodName, string typeFullName)
         {
             _jsonWriter.WritePropertyName("probe");
             _jsonWriter.WriteStartObject();
@@ -200,7 +216,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WriteValue(methodName ?? UnknownValue);
 
             _jsonWriter.WritePropertyName("type");
-            _jsonWriter.WriteValue(type ?? UnknownValue);
+            _jsonWriter.WriteValue(typeFullName ?? UnknownValue);
 
             _jsonWriter.WriteEndObject();
             _jsonWriter.WriteEndObject();
@@ -220,7 +236,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WriteStartObject();
 
             _jsonWriter.WritePropertyName("file");
-            _jsonWriter.WriteValue(probeFilePath.Replace('\\', '/'));
+            _jsonWriter.WriteValue(SanitizePath(probeFilePath));
 
             _jsonWriter.WritePropertyName("lines");
             _jsonWriter.WriteStartArray();
@@ -233,6 +249,11 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
+        private static string SanitizePath(string probeFilePath)
+        {
+            return string.IsNullOrEmpty(probeFilePath) ? null : probeFilePath.Replace('\\', '/');
+        }
+
         internal DebuggerSnapshotCreator AddStackInfo(StackFrame[] stackFrames)
         {
             _jsonWriter.WritePropertyName("stack");
@@ -243,7 +264,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        internal DebuggerSnapshotCreator AddLoggerInfo(string name, string method)
+        internal DebuggerSnapshotCreator AddLoggerInfo(string methodName, string typeFullName, string probeFilePath)
         {
             _jsonWriter.WritePropertyName("logger");
             _jsonWriter.WriteStartObject();
@@ -259,10 +280,10 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WriteValue(LoggerVersion);
 
             _jsonWriter.WritePropertyName("name");
-            _jsonWriter.WriteValue(name);
+            _jsonWriter.WriteValue(typeFullName ?? SanitizePath(probeFilePath));
 
             _jsonWriter.WritePropertyName("method");
-            _jsonWriter.WriteValue(method);
+            _jsonWriter.WriteValue(methodName);
 
             _jsonWriter.WriteEndObject();
 
@@ -290,12 +311,19 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        public void AddMessage()
+        public DebuggerSnapshotCreator AddMessage()
         {
             var snapshotObject = JsonConvert.DeserializeObject<Snapshot>(_jsonUnderlyingString.ToString() + "}");
             var message = SnapshotSummary.FormatMessage(snapshotObject);
             _jsonWriter.WritePropertyName("message");
             _jsonWriter.WriteValue(message);
+            return this;
+        }
+
+        public DebuggerSnapshotCreator Complete()
+        {
+            _jsonWriter.WriteEndObject();
+            return this;
         }
 
         private void StartLocalsOrArgs(bool isFirstLocalOrArg, bool shouldEndObject, string name)
@@ -314,11 +342,10 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal string GetSnapshotJson()
         {
-            _jsonWriter.WriteEndObject();
             return StringBuilderCache.GetStringAndRelease(_jsonUnderlyingString);
         }
 
-        internal void Dispose()
+        public void Dispose()
         {
             _jsonWriter?.Close();
         }

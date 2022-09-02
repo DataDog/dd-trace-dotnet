@@ -41,6 +41,8 @@ const auto SystemTypeName = WStr("System.Type");
 const auto GetTypeFromHandleMethodName = WStr("GetTypeFromHandle");
 const auto RuntimeTypeHandleTypeName = WStr("System.RuntimeTypeHandle");
 const auto RuntimeMethodHandleTypeName = WStr("System.RuntimeMethodHandle");
+const shared::WSTRING IAsyncStateMachineName = WStr("System.Runtime.CompilerServices.IAsyncStateMachine");
+
 
 template <typename T>
 class EnumeratorIterator;
@@ -580,6 +582,8 @@ HRESULT GetCorLibAssemblyRef(const ComPtr<IMetaDataAssemblyEmit>& assembly_emit,
 
 bool FindTypeDefByName(const shared::WSTRING instrumentationTargetMethodTypeName, const shared::WSTRING assemblyName,
                        const ComPtr<IMetaDataImport2>& metadata_import, mdTypeDef& typeDef);
+
+HRESULT HasAsyncStateMachineAttribute(const ComPtr<IMetaDataImport2>& metadataImport, const mdMethodDef methodDefToken, bool& hasAsyncAttribute);
 } // namespace trace
 
 #endif // DD_CLR_PROFILER_CLR_HELPERS_H_

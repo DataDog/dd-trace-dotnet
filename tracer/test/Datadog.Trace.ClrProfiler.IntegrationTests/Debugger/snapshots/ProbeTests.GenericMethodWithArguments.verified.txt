@@ -208,8 +208,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.GenericMethodWithArguments",
-      "name": "Method",
+      "method": "Method",
+      "name": "Samples.Probes.SmokeTests.GenericMethodWithArguments",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -344,8 +344,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.GenericMethodWithArguments",
-      "name": "Method",
+      "method": "Method",
+      "name": "Samples.Probes.SmokeTests.GenericMethodWithArguments",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"

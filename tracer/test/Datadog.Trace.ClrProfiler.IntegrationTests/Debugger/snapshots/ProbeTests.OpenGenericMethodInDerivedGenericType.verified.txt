@@ -129,8 +129,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericType+Test2`1",
-      "name": "Method",
+      "method": "Method",
+      "name": "Samples.Probes.SmokeTests.OpenGenericMethodInDerivedGenericType+Test2`1",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"

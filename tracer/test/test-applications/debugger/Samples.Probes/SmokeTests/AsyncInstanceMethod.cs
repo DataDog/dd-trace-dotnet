@@ -5,24 +5,21 @@ namespace Samples.Probes.SmokeTests
 {
     internal class AsyncInstanceMethod : IAsyncRun
     {
+        private const string ClassName = "AsyncInstanceMethod";
+
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
         public async Task RunAsync()
         {
-            await Method("Name");
+            await Method($"{ClassName}.{nameof(RunAsync)}");
         }
 
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        [MethodProbeTestData("System.Threading.Tasks.Task<System.String>", new[] { "System.String" })]
-        public async Task<string> Method(string name)
+        [MethodProbeTestData]
+        public async Task<string> Method(string input)
         {
-            char[] array = new char[name.Length];
-            for (int i = 0; i < name.Length; i++)
-            {
-                array[i] = name[i];
-            }
-
-            await Task.Delay(250);
-            return new string(array);
+            var output = input + ".";
+            await Task.Delay(20);
+            return output + nameof(Method);
         }
     }
 }

@@ -100,8 +100,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.SimpleNestedTypeNameTest+NestedType",
-      "name": "MethodToInstrument",
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.SmokeTests.SimpleNestedTypeNameTest+NestedType",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"

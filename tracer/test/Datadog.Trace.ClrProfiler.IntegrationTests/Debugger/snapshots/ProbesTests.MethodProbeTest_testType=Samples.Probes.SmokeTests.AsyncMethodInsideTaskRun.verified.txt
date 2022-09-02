@@ -1,0 +1,118 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "fields": null
+          },
+          "return": {
+            "fields": null,
+            "locals": {
+              "@return": {
+                "fields": null,
+                "type": "String",
+                "value": "RunInsideTask 01234: Finished"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "RunInsideTask",
+            "type": "Samples.Probes.SmokeTests.AsyncMethodInsideTaskRun"
+          }
+        },
+        "stack": [],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "RunInsideTask",
+      "name": "Samples.Probes.SmokeTests.AsyncMethodInsideTaskRun",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "AsyncMethodInsideTaskRun+<RunInsideTask>d__1.MoveNext(): RunInsideTask 01234: Finished\r\n@return=RunInsideTask 01234: Finished",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "seed": {
+                "fields": null,
+                "type": "String",
+                "value": "RunInsideTask"
+              }
+            },
+            "fields": null
+          },
+          "return": {
+            "arguments": {
+              "seed": {
+                "fields": null,
+                "type": "String",
+                "value": "RunInsideTask"
+              }
+            },
+            "fields": null,
+            "locals": {
+              "@return": {
+                "fields": null,
+                "type": "String",
+                "value": "RunInsideTask 01234"
+              },
+              "i": {
+                "fields": null,
+                "type": "Int32",
+                "value": "5"
+              },
+              "result": {
+                "fields": null,
+                "type": "String",
+                "value": "RunInsideTask 01234"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.SmokeTests.AsyncMethodInsideTaskRun"
+          }
+        },
+        "stack": [],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.SmokeTests.AsyncMethodInsideTaskRun",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "AsyncMethodInsideTaskRun+<Method>d__2.MoveNext(seed=RunInsideTask): RunInsideTask 01234\r\n@return=RunInsideTask 01234, i=5, result=RunInsideTask 01234",
+    "service": "Probes"
+  }
+]

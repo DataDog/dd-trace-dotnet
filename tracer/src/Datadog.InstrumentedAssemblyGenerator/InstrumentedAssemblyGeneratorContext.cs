@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using dnlib.DotNet;
 
@@ -291,11 +292,12 @@ namespace Datadog.InstrumentedAssemblyGenerator
                     break;
 
                 case MetadataTable.Field:
-                    field = module.GetTypes().SelectMany(t => t.Fields).
-                                   FirstOrDefault(f => f.FullName.Equals(metadataMember.FullName, StringComparison.InvariantCultureIgnoreCase) ||
-                                                       f.Name.String.Equals(metadataMember.MethodOrField, StringComparison.InvariantCultureIgnoreCase) &&
-                                                       f.DeclaringType.FullName.Equals(metadataMember.Type, StringComparison.InvariantCultureIgnoreCase) &&
-                                                       f.FieldType.FullName.Equals(metadataMember.ReturnTypeSig.GetTypeSig(module, this).FullName, StringComparison.InvariantCultureIgnoreCase));
+                    var all  = module.GetTypes().SelectMany(t => t.Fields).ToList();
+                    field = all.FirstOrDefault(f => f.FullName.Equals(metadataMember.FullName, StringComparison.InvariantCultureIgnoreCase) ||
+                                                    f.Name.String.Equals(metadataMember.MethodOrField, StringComparison.InvariantCultureIgnoreCase) &&
+                                                    (f.DeclaringType.FullName.Equals(metadataMember.Type, StringComparison.InvariantCultureIgnoreCase) ||
+                                                     f.DeclaringType.IsNested && f.DeclaringType.Name.String.Equals(metadataMember.Type, StringComparison.InvariantCultureIgnoreCase)) &&
+                                                    f.FieldType.FullName.Equals(metadataMember.ReturnTypeSig.GetTypeSig(module, this).FullName, StringComparison.InvariantCultureIgnoreCase));
                     break;
                 default:
                     Logger.Error($"{nameof(ResolveInstrumentedMappedField)}: Case {originalToken.Table} is not implemented. {metadataMember}");

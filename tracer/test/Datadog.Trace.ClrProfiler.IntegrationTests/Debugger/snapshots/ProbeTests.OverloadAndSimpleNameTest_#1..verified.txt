@@ -95,8 +95,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest",
-      "name": "Method",
+      "method": "Method",
+      "name": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -210,8 +210,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest",
-      "name": "Method",
+      "method": "Method",
+      "name": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -620,8 +620,8 @@
       }
     },
     "logger": {
-      "method": "OuterType+OverloadAndSimpleNameTest",
-      "name": "Method",
+      "method": "Method",
+      "name": "OuterType+OverloadAndSimpleNameTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -700,8 +700,8 @@
       }
     },
     "logger": {
-      "method": "OuterType+OverloadAndSimpleNameTest",
-      "name": "Method",
+      "method": "Method",
+      "name": "OuterType+OverloadAndSimpleNameTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -876,8 +876,8 @@
       }
     },
     "logger": {
-      "method": "Spicing.Things.Up.OverloadAndSimpleNameTest",
-      "name": "Method",
+      "method": "Method",
+      "name": "Spicing.Things.Up.OverloadAndSimpleNameTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -956,8 +956,8 @@
       }
     },
     "logger": {
-      "method": "Spicing.Things.Down.OuterType+OverloadAndSimpleNameTest",
-      "name": "Method",
+      "method": "Method",
+      "name": "Spicing.Things.Down.OuterType+OverloadAndSimpleNameTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -1036,8 +1036,8 @@
       }
     },
     "logger": {
-      "method": "Spicing.Things.Up.OverloadAndSimpleNameTest",
-      "name": "Method",
+      "method": "Method",
+      "name": "Spicing.Things.Up.OverloadAndSimpleNameTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -1148,8 +1148,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest",
-      "name": "Method",
+      "method": "Method",
+      "name": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -1228,8 +1228,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest",
-      "name": "Method",
+      "method": "Method",
+      "name": "Samples.Probes.SmokeTests.OverloadAndSimpleNameTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"

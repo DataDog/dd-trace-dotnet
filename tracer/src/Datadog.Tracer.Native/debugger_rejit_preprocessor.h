@@ -13,7 +13,7 @@ namespace debugger
 /// </summary>
 class DebuggerRejitPreprocessor : public RejitPreprocessor<MethodProbeDefinition>
 {
-public:  
+public:
     using RejitPreprocessor::RejitPreprocessor;
 
     ULONG PreprocessLineProbes(const std::vector<ModuleID>& modules,
@@ -40,7 +40,22 @@ protected:
     CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo) const;
     void UpdateMethod(RejitHandlerModuleMethod* methodHandler, const MethodProbeDefinition& methodProbe) override;
     static void UpdateMethod(RejitHandlerModuleMethod* methodHandler, const ProbeDefinition_S& probe);
+    [[nodiscard]] std::tuple<HRESULT, mdMethodDef, FunctionInfo> PickMethodToRejit(
+        const ComPtr<IMetaDataImport2>& metadataImport,
+        const ComPtr<IMetaDataEmit2>& metadataEmit,
+        mdTypeDef typeDef,
+        mdMethodDef methodDef,
+        const FunctionInfo& functionInfo) const;
     bool ShouldSkipModule(const ModuleInfo& moduleInfo, const MethodProbeDefinition& methodProbe) final;
+    void EnqueueNewMethod(const MethodProbeDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
+                          ComPtr<IMetaDataEmit2>& metadataEmit, const ModuleInfo& moduleInfo, mdTypeDef typeDef,
+                          std::vector<MethodIdentifier>& rejitRequests, unsigned methodDef,
+                          const FunctionInfo& functionInfo, RejitHandlerModule* moduleHandler) override;
+    HRESULT GetMoveNextMethodFromKickOffMethod(const ComPtr<IMetaDataImport2>& metadataImport, mdTypeDef typeDef, mdMethodDef methodDef, const FunctionInfo& function,
+                                               mdMethodDef& moveNextMethod, mdTypeDef& nestedAsyncClassOrStruct) const;
+    static std::tuple<HRESULT, mdMethodDef, FunctionInfo> TransformKickOffToMoveNext(const ComPtr<IMetaDataImport2>& metadataImport,
+                                                                                     const ComPtr<IMetaDataEmit2>& metadataEmit,
+                                                                                     mdMethodDef moveNextMethod, mdTypeDef nestedAsyncClassOrStruct);
 };
 
 } // namespace debugger
