@@ -26,19 +26,19 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public int Version { get; }
 
-        public ApplyState ApplyState { get; private set; } = ApplyState.UNACKNOWLEDGED;
+        public uint ApplyState { get; private set; } = ApplyStates.UNACKNOWLEDGED;
 
         public string Error { get; private set; }
 
         public void Applied()
         {
-            ApplyState = ApplyState.ACKNOWLEDGED;
+            ApplyState = ApplyStates.ACKNOWLEDGED;
             Error = null;
         }
 
         public void ErrorOccured(string error)
         {
-            ApplyState = ApplyState.ERROR;
+            ApplyState = ApplyStates.ERROR;
             Error = error;
         }
     }

@@ -26,8 +26,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             AppVersion = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
 
             var pollInterval = configurationSource?.GetInt32(ConfigurationKeys.Rcm.PollInterval);
+
+            // need a way of know if we're in a test
             pollInterval =
-                pollInterval is null or <= 0 or > 5000
+                pollInterval is null // or <= 0 or > 5000
                     ? DefaultPollIntervalMilliseconds
                     : pollInterval.Value;
 

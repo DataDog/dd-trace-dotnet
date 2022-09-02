@@ -16,7 +16,12 @@ internal class ApplyDetails
 {
     public string Filename { get; set; }
 
-    public ApplyState ApplyState { get; set; }
+    public uint ApplyState { get; set; } = ApplyStates.ACKNOWLEDGED;
 
     public string Error { get; set; }
+
+    public override string ToString()
+    {
+        return $"{Filename}, {ApplyState}, {Error}";
+    }
 }
