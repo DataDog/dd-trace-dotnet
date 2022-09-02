@@ -101,7 +101,7 @@ namespace BuggyBits.Models
                     ApplyDiscount(product);
                     allProducts.Add(product);
                 }
-                catch (PriceException x)
+                catch (PriceException)
                 {
                     continue;
                 }
