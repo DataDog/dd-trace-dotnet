@@ -15,7 +15,7 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.ProcessEnvironmentVars)]
         public string EnviromentVars { get; set; }
 
-        [Tag(Trace.Tags.ProcesTruncated)]
+        [Tag(Trace.Tags.ProcessTruncated)]
         public string Truncated { get; set; }
     }
 }
