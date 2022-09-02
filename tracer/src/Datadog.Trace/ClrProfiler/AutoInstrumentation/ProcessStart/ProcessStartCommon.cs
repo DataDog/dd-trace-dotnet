@@ -39,15 +39,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 
             try
             {
-                Span parent = tracer.InternalActiveScope?.Span;
-
-                if (parent is { Type: SpanTypes.System } && parent.OperationName == OperationName)
-                {
-                    // we are already instrumenting this,
-                    // don't instrument nested methods that belong to the same stacktrace
-                    return null;
-                }
-
                 var truncated = false;
                 var varsTruncated = EnvironmentVariablesAnalyzer.ScrubbingEnvVariables(envVariables);
                 if (varsTruncated?.Length > MaxCommandLineLength)
