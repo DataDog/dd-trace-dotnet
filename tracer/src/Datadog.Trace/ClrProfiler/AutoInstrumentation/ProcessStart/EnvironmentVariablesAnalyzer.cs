@@ -16,7 +16,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 
         private static bool IsAllowedVariable(string text)
         {
-            return allowedEnvVariables.Contains(text.ToUpper());
+            foreach (var allowedVariable in allowedEnvVariables)
+            {
+                if (string.Equals(allowedVariable, text, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         internal static string ScrubbingEnvVariables(IDictionary<string, string> envVariables)
