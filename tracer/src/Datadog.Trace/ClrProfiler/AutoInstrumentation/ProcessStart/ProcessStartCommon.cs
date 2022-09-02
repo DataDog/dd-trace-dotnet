@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using Datadog.Trace.Configuration;
@@ -24,20 +25,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         {
             if (info != null)
             {
-                return CreateScope(info.FileName, info.UseShellExecute ? null : info.EnvironmentVariables);
+                return CreateScope(info.FileName, info.Environment);
             }
 
             return null;
         }
 
-        internal static Scope CreateScope(string filename, StringDictionary envVariables)
+        internal static Scope CreateScope(string filename, IDictionary<string, string> envVariables)
         {
             var tracer = Tracer.Instance;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !tracer.Settings.IsIntegrationEnabled(IntegrationId.ProcessStart))
-            {
-                // integration disabled, don't create a scope, skip this span
-                return null;
-            }
 
             Scope scope = null;
 

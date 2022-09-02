@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 
@@ -18,18 +19,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             return allowedEnvVariables.Contains(text.ToUpper());
         }
 
-        internal static string ScrubbingEnvVariables(StringDictionary envVariables)
+        internal static string ScrubbingEnvVariables(IDictionary<string, string> envVariables)
         {
             if (envVariables != null)
             {
-                string variableLine = string.Empty;
+                var variableLine = string.Empty;
 
                 foreach (var variable in envVariables.Keys)
                 {
-                    var stringVar = variable.ToString();
-                    if (IsAllowedVariable(stringVar))
+                    if (IsAllowedVariable(variable))
                     {
-                        variableLine += stringVar + "=" + envVariables[stringVar] + "\n";
+                        variableLine += variable + "=" + envVariables[variable] + Environment.NewLine;
                     }
                 }
 
