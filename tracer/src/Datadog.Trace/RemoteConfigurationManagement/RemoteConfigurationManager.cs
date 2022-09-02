@@ -24,7 +24,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         private readonly string _id;
         private readonly RcmClientTracer _rcmTracer;
-        private readonly IDiscoveryService _discoveryService;
         private readonly IRemoteConfigurationApi _remoteConfigurationApi;
         private readonly TimeSpan _pollInterval;
 
@@ -35,6 +34,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private int _targetsVersion;
         private string _lastPollError;
         private bool _isPollingStarted;
+        private bool _isRcmEnabled;
 
         private RemoteConfigurationManager(
             IDiscoveryService discoveryService,
@@ -43,7 +43,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             RcmClientTracer rcmTracer,
             TimeSpan pollInterval)
         {
-            _discoveryService = discoveryService;
             _remoteConfigurationApi = remoteConfigurationApi;
             _rcmTracer = rcmTracer;
             _pollInterval = pollInterval;
@@ -54,6 +53,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             _lastPollError = null;
             _cancellationSource = new CancellationTokenSource();
             _products = new ConcurrentDictionary<string, Product>();
+            discoveryService.SubscribeToChanges(c => _isRcmEnabled = !string.IsNullOrEmpty(c.ConfigurationEndpoint));
         }
 
         public static RemoteConfigurationManager Instance { get; private set; }
@@ -91,7 +91,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
             while (!_cancellationSource.IsCancellationRequested)
             {
-                var isRcmEnabled = !string.IsNullOrEmpty(_discoveryService.ConfigurationEndpoint);
+                var isRcmEnabled = Volatile.Read(ref _isRcmEnabled);
                 var isProductRegistered = _products.Any();
 
                 if (isRcmEnabled && isProductRegistered)

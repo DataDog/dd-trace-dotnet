@@ -20,8 +20,6 @@ using Xunit;
 
 namespace Datadog.Trace.IntegrationTests
 {
-    [Collection(nameof(DiscoveryServiceInstanceTestCollection))]
-    [DiscoveryServiceRestorer]
     public class StatsTests
     {
         private const int StatsComputationIntervalSeconds = 10;

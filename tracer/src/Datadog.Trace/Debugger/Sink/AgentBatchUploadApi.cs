@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -18,12 +19,12 @@ namespace Datadog.Trace.Debugger.Sink
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AgentBatchUploadApi>();
 
         private readonly IApiRequestFactory _apiRequestFactory;
-        private readonly IDiscoveryService _discoveryService;
+        private string? _endpoint = null;
 
         private AgentBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
         {
             _apiRequestFactory = apiRequestFactory;
-            _discoveryService = discoveryService;
+            discoveryService.SubscribeToChanges(c => _endpoint = c.DebuggerEndpoint);
         }
 
         public static AgentBatchUploadApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
@@ -33,7 +34,13 @@ namespace Datadog.Trace.Debugger.Sink
 
         public async Task<bool> SendBatchAsync(ArraySegment<byte> snapshots)
         {
-            var uri = _apiRequestFactory.GetEndpoint(_discoveryService.DebuggerEndpoint);
+            if (Volatile.Read(ref _endpoint) is not { } endpoint)
+            {
+                Log.Warning("Failed to upload snapshot: debugger endpoint not yet retrieved from discovery service");
+                return false;
+            }
+
+            var uri = _apiRequestFactory.GetEndpoint(endpoint);
             var request = _apiRequestFactory.Create(uri);
 
             using var response = await request.PostAsync(snapshots, MimeTypes.Json).ConfigureAwait(false);

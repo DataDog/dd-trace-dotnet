@@ -77,7 +77,7 @@ namespace Datadog.Trace.Agent
             _flushTask.ContinueWith(t => Log.Error(t.Exception, "Error in StatsAggregator"), TaskContinuationOptions.OnlyOnFaulted);
 
             _discoveryService = discoveryService;
-            Task.Run(InitializeAsync);
+            discoveryService.SubscribeToChanges(HandleConfigUpdate);
         }
 
         /// <summary>
@@ -96,6 +96,7 @@ namespace Datadog.Trace.Agent
 
         public Task DisposeAsync()
         {
+            _discoveryService.RemoveSubscription(HandleConfigUpdate);
             _processExit.TrySetResult(true);
             return _flushTask;
         }
@@ -266,27 +267,17 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private async Task InitializeAsync()
+        private void HandleConfigUpdate(AgentConfiguration config)
         {
-            try
-            {
-                var isDiscoverySuccessful = await _discoveryService.DiscoverAsync().ConfigureAwait(false);
-                CanComputeStats = isDiscoverySuccessful && !string.IsNullOrWhiteSpace(_discoveryService.StatsEndpoint) && _discoveryService.ClientDropP0s == true;
+            CanComputeStats = !string.IsNullOrWhiteSpace(config.StatsEndpoint) && config.ClientDropP0s == true;
 
-                if (CanComputeStats.Value)
-                {
-                    Log.Debug("Stats computation has been enabled.");
-                }
-                else
-                {
-                    Log.Warning("Stats computation disabled because the detected agent does not support this feature.");
-                }
+            if (CanComputeStats.Value)
+            {
+                Log.Debug("Stats computation has been enabled.");
             }
-            catch (Exception e)
+            else
             {
-                CanComputeStats = false;
-
-                Log.Error(e, "Initializing stats computation failed.");
+                Log.Warning("Stats computation disabled because the detected agent does not support this feature.");
             }
         }
     }

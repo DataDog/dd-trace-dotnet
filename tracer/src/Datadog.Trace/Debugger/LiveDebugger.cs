@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Debugger.Configurations;
@@ -37,6 +38,7 @@ namespace Datadog.Trace.Debugger
         private readonly ConfigurationUpdater _configurationUpdater;
         private readonly object _instanceLock = new();
         private bool _isInitialized;
+        private bool _isRcmAvailable;
 
         private LiveDebugger(
             DebuggerSettings settings,
@@ -58,6 +60,7 @@ namespace Datadog.Trace.Debugger
             _unboundProbes = new List<ProbeDefinition>();
             Product = new LiveDebuggerProduct(serviceName);
             ServiceName = serviceName;
+            discoveryService?.SubscribeToChanges(DiscoveryCallback);
         }
 
         public static LiveDebugger Instance { get; private set; }
@@ -125,8 +128,7 @@ namespace Datadog.Trace.Debugger
                     return false;
                 }
 
-                var isConfigurationSupported = !string.IsNullOrWhiteSpace(_discoveryService.ConfigurationEndpoint);
-                if (!isConfigurationSupported)
+                if (!Volatile.Read(ref _isRcmAvailable))
                 {
                     Log.Warning("Live Debugger could not be enabled because Remote Configuration Management is not available. Please ensure that you are using datadog-agent version 7.38.0 or higher, and that Remote Configuration Management is enabled in datadog-agent's yaml configuration file.");
                     return false;
@@ -145,6 +147,7 @@ namespace Datadog.Trace.Debugger
 
             void OnShutdown()
             {
+                _discoveryService.RemoveSubscription(DiscoveryCallback);
                 _debuggerSink.Dispose();
                 _probeStatusPoller.Dispose();
             }
@@ -299,6 +302,9 @@ namespace Datadog.Trace.Debugger
         {
             _debuggerSink.AddErrorProbeStatus(probeId, exception, errorMessage);
         }
+
+        private void DiscoveryCallback(AgentConfiguration x)
+            => _isRcmAvailable = !string.IsNullOrEmpty(x.ConfigurationEndpoint);
     }
 }
 
