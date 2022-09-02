@@ -25,6 +25,13 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="RemoteConfigurationSettings.FilePath"/>
             public const string FilePath = "DD_INTERNAL_RCM_FILE";
+
+            /// <summary>
+            /// Configuration key for RCM request file full path on the disk.
+            /// For internal usage only.
+            /// </summary>
+            /// <seealso cref="RemoteConfigurationSettings.RequestFilePath"/>
+            public const string RequestFilePath = "DD_INTERNAL_RCM_REQUEST_FILE";
         }
     }
 }

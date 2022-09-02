@@ -25,12 +25,25 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             Environment = configurationSource?.GetString(ConfigurationKeys.Environment);
             AppVersion = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
             FilePath = configurationSource?.GetString(ConfigurationKeys.Rcm.FilePath);
+            RequestFilePath = configurationSource?.GetString(ConfigurationKeys.Rcm.RequestFilePath);
 
             var pollInterval = configurationSource?.GetInt32(ConfigurationKeys.Rcm.PollInterval);
-            pollInterval =
-                pollInterval is null or <= 0 or > 5000
-                    ? DefaultPollIntervalMilliseconds
-                    : pollInterval.Value;
+
+            // FilePath or RequestFilePath being set indicate we're in a test
+            if (FilePath == null && RequestFilePath == null)
+            {
+                pollInterval =
+                    pollInterval is null or <= 0 or > 5000
+                        ? DefaultPollIntervalMilliseconds
+                        : pollInterval.Value;
+            }
+            else
+            {
+                pollInterval =
+                    pollInterval is null
+                        ? DefaultPollIntervalMilliseconds
+                        : pollInterval.Value;
+            }
 
             PollInterval = TimeSpan.FromMilliseconds(pollInterval.Value);
         }
@@ -48,6 +61,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         public TimeSpan PollInterval { get; }
 
         public string FilePath { get; set; }
+
+        public string RequestFilePath { get; set; }
 
         public static RemoteConfigurationSettings FromSource(IConfigurationSource source)
         {

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -35,16 +36,16 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             var applyDetails = GetOrCreateApplyDetails(filename);
 
             // can only move from unack to ack
-            if (applyDetails.ApplyState == ApplyState.UNACKNOWLEDGED)
+            if (applyDetails.ApplyState == ApplyStates.UNACKNOWLEDGED)
             {
-                applyDetails.ApplyState = ApplyState.ACKNOWLEDGED;
+                applyDetails.ApplyState = ApplyStates.ACKNOWLEDGED;
             }
         }
 
         public void Error(string filename, string error)
         {
             var applyDetails = GetOrCreateApplyDetails(filename);
-            applyDetails.ApplyState = ApplyState.ERROR;
+            applyDetails.ApplyState = ApplyStates.ERROR;
             applyDetails.Error = error;
         }
 

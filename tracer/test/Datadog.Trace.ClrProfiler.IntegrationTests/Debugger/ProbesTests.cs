@@ -36,6 +36,7 @@ public class ProbesTests : RemoteConfigTestHelper, IDisposable
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
     private const string ProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument probes definitions completed.";
     private const string RemoteConfigurationFileName = "rcm_config.json";
+    private const string RemoteConfigurationRequestFileName = "rcm_request.json";
 
     // We are not using a temp file here, but rather writing it directly to the debugger sample project,
     // so that if a test fails, we will be able to simply hit F5 to debug the same probe

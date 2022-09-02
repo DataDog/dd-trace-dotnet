@@ -12,20 +12,25 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 {
     internal class RemoteConfigurationFileApi : IRemoteConfigurationApi
     {
+        private readonly string _requestFilePath;
         private readonly string _filePath;
 
-        private RemoteConfigurationFileApi(string filePath)
+        private RemoteConfigurationFileApi(string requestFilePath, string filePath)
         {
+            _requestFilePath = requestFilePath;
             _filePath = filePath;
         }
 
         public static RemoteConfigurationFileApi Create(RemoteConfigurationSettings settings)
         {
-            return new RemoteConfigurationFileApi(settings.FilePath);
+            return new RemoteConfigurationFileApi(settings.RequestFilePath, settings.FilePath);
         }
 
         public Task<GetRcmResponse> GetConfigs(GetRcmRequest request)
         {
+            var requestString = JsonConvert.SerializeObject(request);
+            File.WriteAllText(_requestFilePath, requestString);
+
             var content = File.ReadAllText(_filePath);
             var config = JsonConvert.DeserializeObject<GetRcmResponse>(content);
 

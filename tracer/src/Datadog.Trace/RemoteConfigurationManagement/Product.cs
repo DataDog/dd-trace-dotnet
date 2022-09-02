@@ -6,12 +6,15 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal abstract class Product
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Product>();
+
         protected Product()
         {
             AppliedConfigurations = new Dictionary<string, RemoteConfigurationCache>();
@@ -59,13 +62,17 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 {
                     switch (result.ApplyState)
                     {
-                        case ApplyState.ACKNOWLEDGED:
+                        case ApplyStates.UNACKNOWLEDGED:
+                            // Do nothing
+                            break;
+                        case ApplyStates.ACKNOWLEDGED:
                             AppliedConfigurations[result.Filename].Applied();
                             break;
-                        case ApplyState.ERROR:
+                        case ApplyStates.ERROR:
                             AppliedConfigurations[result.Filename].ErrorOccured(result.Error);
                             break;
                         default:
+                            Log.Warning("Unexpected ApplyState: {ApplyState}", result.ApplyState);
                             break;
                     }
                 }
