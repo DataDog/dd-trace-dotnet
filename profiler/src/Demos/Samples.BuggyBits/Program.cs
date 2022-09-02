@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Demos.Util;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -30,6 +31,8 @@ namespace BuggyBits
             var sw = new Stopwatch();
 
             WriteLine("Starting at " + DateTime.UtcNow);
+
+            EnvironmentInfo.PrintDescriptionToConsole();
 
             ParseCommandLine(args, out var timeout, out var iterations, out var scenario);
 
