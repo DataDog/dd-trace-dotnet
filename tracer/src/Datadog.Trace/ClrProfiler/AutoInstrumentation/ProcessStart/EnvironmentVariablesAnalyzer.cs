@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Text;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 {
@@ -31,17 +32,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         {
             if (envVariables != null)
             {
-                var variableLine = string.Empty;
+                var variableLine = new StringBuilder();
 
                 foreach (var variable in envVariables)
                 {
                     if (IsAllowedVariable(variable.Key))
                     {
-                        variableLine += variable.Key + "=" + variable.Value + Environment.NewLine;
+                        variableLine.Append(variable.Key).Append("=").AppendLine(variable.Value);
                     }
                 }
 
-                return variableLine;
+                return variableLine.ToString();
             }
 
             return null;
