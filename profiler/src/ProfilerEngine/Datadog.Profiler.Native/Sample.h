@@ -70,7 +70,7 @@ class Sample
 {
 public:
     Sample(std::string_view runtimeId); // only for tests
-    Sample(uint64_t timestamp, std::string_view runtimeId);
+    Sample(uint64_t timestamp, std::string_view runtimeId, size_t framesCount);
     Sample& operator=(const Sample& sample) = delete;
     Sample(Sample&& sample) noexcept;
     Sample& operator=(Sample&& other) noexcept;
@@ -91,7 +91,7 @@ public:
 
     // should be protected if we want to derive classes from Sample such as WallTimeSample
     // but it seems better for encapsulation to do the transformation between collected raw data
-    // and a Sample in each Provider (this is the each behind CollectorBase template class)
+    // and a Sample in each Provider (this is behind CollectorBase template class)
     void AddValue(std::int64_t value, SampleValue index);
     void AddFrame(std::string_view moduleName, std::string_view frame);
 
