@@ -25,11 +25,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             {
                 var variableLine = string.Empty;
 
-                foreach (var variable in envVariables.Keys)
+                foreach (var variable in envVariables)
                 {
-                    if (IsAllowedVariable(variable))
+                    if (IsAllowedVariable(variable.Key))
                     {
-                        variableLine += variable + "=" + envVariables[variable] + Environment.NewLine;
+                        variableLine += variable.Key + "=" + variable.Value + Environment.NewLine;
                     }
                 }
 
