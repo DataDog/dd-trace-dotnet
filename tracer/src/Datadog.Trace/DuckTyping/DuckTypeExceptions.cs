@@ -177,16 +177,16 @@ namespace Datadog.Trace.DuckTyping
     /// </summary>
     internal class DuckTypePropertyOrFieldNotFoundException : DuckTypeException
     {
-        private DuckTypePropertyOrFieldNotFoundException(string name, string duckAttributeName)
-            : base($"The property or field '{duckAttributeName}' for the proxy property '{name}' was not found in the instance.")
+        private DuckTypePropertyOrFieldNotFoundException(string name, string duckAttributeName, string type)
+            : base($"The property or field '{duckAttributeName}' for the proxy property '{name}' was not found in the instance of type '{type}'.")
         {
         }
 
         [DebuggerHidden]
         [DoesNotReturn]
-        internal static void Throw(string name, string duckAttributeName)
+        internal static void Throw(string name, string duckAttributeName, Type type)
         {
-            throw new DuckTypePropertyOrFieldNotFoundException(name, duckAttributeName);
+            throw new DuckTypePropertyOrFieldNotFoundException(name, duckAttributeName, type?.FullName ?? type?.Name ?? "NULL");
         }
     }
 

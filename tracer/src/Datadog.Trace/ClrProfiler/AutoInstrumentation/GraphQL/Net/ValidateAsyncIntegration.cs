@@ -1,4 +1,4 @@
-// <copyright file="ValidateIntegration.cs" company="Datadog">
+// <copyright file="ValidateAsyncIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,7 +7,7 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 {
     /// <summary>
     /// GraphQL.Validation.DocumentValidator calltarget instrumentation
@@ -15,18 +15,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
     [InstrumentMethod(
         AssemblyName = GraphQLCommon.GraphQLAssembly,
         TypeName = "GraphQL.Validation.DocumentValidator",
-        MethodName = "Validate",
-        ReturnTypeName = "GraphQL.Validation.IValidationResult",
+        MethodName = "ValidateAsync",
+        ReturnTypeName = ClrNames.GenericParameterTask,
         ParameterTypeNames = new[] { ClrNames.String, "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]", ClrNames.Ignore, "GraphQL.Inputs" },
-        MinimumVersion = GraphQLCommon.Major2Minor3,
-        MaximumVersion = GraphQLCommon.Major2,
+        MinimumVersion = GraphQLCommon.Major3,
+        MaximumVersion = GraphQLCommon.Major3,
         IntegrationName = GraphQLCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class ValidateIntegration
+    public class ValidateAsyncIntegration
     {
-        private const string ErrorType = "GraphQL.Validation.ValidationError";
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -51,22 +49,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
         }
 
         /// <summary>
-        /// OnMethodEnd callback
+        /// OnAsyncMethodEnd callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <typeparam name="TValidationResult">Type of the validation result value</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="validationResult">IValidationResult instance</param>
+        /// <param name="validationResult">ExecutionResult instance</param>
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static CallTargetReturn<TValidationResult> OnMethodEnd<TTarget, TValidationResult>(TTarget instance, TValidationResult validationResult, Exception exception, in CallTargetState state)
+        internal static TValidationResult OnAsyncMethodEnd<TTarget, TValidationResult>(TTarget instance, TValidationResult validationResult, Exception exception, in CallTargetState state)
             where TValidationResult : IValidationResult
         {
-            Scope scope = state.Scope;
+            var scope = state.Scope;
+
             if (state.Scope is null)
             {
-                return new CallTargetReturn<TValidationResult>(validationResult);
+                return validationResult;
             }
 
             try
@@ -77,7 +76,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 }
                 else
                 {
-                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, ErrorType, validationResult.Errors);
+                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, GraphQLCommon.ValidationErrorType, validationResult.Errors);
                 }
             }
             finally
@@ -85,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 scope.Dispose();
             }
 
-            return new CallTargetReturn<TValidationResult>(validationResult);
+            return validationResult;
         }
     }
 }

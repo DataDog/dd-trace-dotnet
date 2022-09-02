@@ -1,23 +1,23 @@
-// <copyright file="IOperation.cs" company="Datadog">
+// <copyright file="IQueryRequest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 {
     /// <summary>
-    /// GraphQL.Language.AST.Operation interface for ducktyping
+    /// HotChocolate.Execution.IQueryRequest interface for ducktyping
     /// </summary>
-    internal interface IOperation
+    internal interface IQueryRequest
     {
         /// <summary>
-        /// Gets the name of the operation
+        /// Gets the query
         /// </summary>
-        string Name { get; }
+        object Query { get; }
 
         /// <summary>
-        /// Gets the type of the operation
+        /// Gets the operation name
         /// </summary>
-        OperationTypeProxy OperationType { get; }
+        public string OperationName { get; }
     }
 }
