@@ -26,11 +26,7 @@ namespace Datadog.Trace.Coverage.Collector
         private static readonly object PadLock = new();
         private static readonly CultureInfo UsCultureInfo = new("us-US");
         private static readonly Regex NetCorePattern = new(@".NETCoreApp,Version=v(\d.\d)", RegexOptions.Compiled);
-        private static readonly ConstructorInfo CoveredAssemblyAttributeTypeCtor = typeof(CoveredAssemblyAttribute).GetConstructors()[0];
-        private static readonly Type ModuleCoverageMetadataType = typeof(ModuleCoverageMetadata);
-        private static readonly MethodInfo ReportTryGetScopeMethodInfo = typeof(CoverageReporter<>).GetMethod("TryGetScope")!;
-        private static readonly MethodInfo ArrayEmptyMethod = typeof(Array).GetMethod("Empty")!;
-        private static readonly MethodInfo ArrayEmptyOfIntMethod = ArrayEmptyMethod.MakeGenericMethod(typeof(int));
+        private static readonly MethodInfo ArrayEmptyOfIntMethod = typeof(Array).GetMethod("Empty")!.MakeGenericMethod(typeof(int));
         private static readonly Assembly TracerAssembly = typeof(CoverageReporter).Assembly;
 
         private readonly CIVisibilitySettings? _ciVisibilitySettings;
@@ -66,7 +62,8 @@ namespace Datadog.Trace.Coverage.Collector
             {
                 _logger.Debug($"Processing: {_assemblyFilePath}");
 
-                var customResolver = new CustomResolver(_logger);
+                var customResolver = new CustomResolver(_logger, _assemblyFilePath);
+                customResolver.AddSearchDirectory(Path.GetDirectoryName(_assemblyFilePath));
                 using var assemblyDefinition = AssemblyDefinition.ReadAssembly(_assemblyFilePath, new ReaderParameters
                 {
                     ReadSymbols = true,
@@ -114,6 +111,8 @@ namespace Datadog.Trace.Coverage.Collector
                     }
                 }
 
+                using var datadogTracerAssembly = AssemblyDefinition.ReadAssembly(GetDatadogTracer(tracerTarget));
+
                 var isDirty = false;
 
                 // Process all modules in the assembly
@@ -123,32 +122,41 @@ namespace Datadog.Trace.Coverage.Collector
                 // Process all types defined in the module
                 var moduleTypes = module.Types;
 
+                var moduleCoverageMetadataTypeDefinition = datadogTracerAssembly.MainModule.GetType(typeof(ModuleCoverageMetadata).FullName);
+                var moduleCoverageMetadataTypeReference = module.ImportReference(moduleCoverageMetadataTypeDefinition);
+
                 var moduleCoverageMetadataImplTypeDef = new TypeDefinition(
                     typeof(ModuleCoverageMetadata).Namespace + ".Target",
                     "ModuleCoverage",
                     TypeAttributes.Class | TypeAttributes.Public,
-                    module.ImportReference(ModuleCoverageMetadataType));
+                    moduleCoverageMetadataTypeReference);
 
                 var moduleCoverageMetadataImplCtor = new MethodDefinition(
                     ".ctor",
                     MethodAttributes.Public | MethodAttributes.SpecialName | MethodAttributes.HideBySig | MethodAttributes.RTSpecialName,
-                    module.ImportReference(typeof(void)));
+                    module.TypeSystem.Void);
 
                 // Create number of types array
-                var moduleCoverageMetadataImplMetadataField = new FieldReference("Metadata", module.ImportReference(typeof(int[][])), module.ImportReference(ModuleCoverageMetadataType));
+                var moduleCoverageMetadataImplMetadataField = module.ImportReference(moduleCoverageMetadataTypeDefinition.Fields.First(f => f.Name == "Metadata"));
                 moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
                 moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, moduleTypes.Count));
-                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Newarr, module.ImportReference(typeof(int[]))));
+                moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Newarr, new ArrayType(module.TypeSystem.Int32)));
                 moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Stfld, moduleCoverageMetadataImplMetadataField));
 
                 moduleCoverageMetadataImplTypeDef.Methods.Add(moduleCoverageMetadataImplCtor);
 
-                var reportTypeGenericInstance = new GenericInstanceType(module.ImportReference(typeof(CoverageReporter<>)));
+                var coverageReporterTypeDefinition = datadogTracerAssembly.MainModule.GetType(typeof(CoverageReporter<>).FullName);
+                var coverageReporterTypeReference = module.ImportReference(coverageReporterTypeDefinition);
+                var reportTypeGenericInstance = new GenericInstanceType(coverageReporterTypeReference);
                 reportTypeGenericInstance.GenericArguments.Add(moduleCoverageMetadataImplTypeDef);
 
-                var reportTryGetScopeMethod = module.ImportReference(ReportTryGetScopeMethodInfo);
-                reportTryGetScopeMethod.DeclaringType = reportTypeGenericInstance;
+                var reportTryGetScopeMethod = new MethodReference("TryGetScope", module.TypeSystem.Boolean, reportTypeGenericInstance);
+                reportTryGetScopeMethod.HasThis = false;
+                reportTryGetScopeMethod.Parameters.Add(new ParameterDefinition(module.TypeSystem.Int32) { Name = "typeIndex" });
+                reportTryGetScopeMethod.Parameters.Add(new ParameterDefinition(module.TypeSystem.Int32) { Name = "methodIndex" });
+                reportTryGetScopeMethod.Parameters.Add(new ParameterDefinition(new ByReferenceType(new ArrayType(module.TypeSystem.Int32))) { Name = "scope", IsOut = true });
 
+                GenericInstanceMethod? arrayEmptyOfIntMethodReference = null;
                 for (var typeIndex = 0; typeIndex < moduleTypes.Count; typeIndex++)
                 {
                     var moduleType = moduleTypes[typeIndex];
@@ -163,11 +171,23 @@ namespace Datadog.Trace.Coverage.Collector
                     if (moduleTypeMethods.Count > 0)
                     {
                         moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, moduleTypeMethods.Count));
-                        moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Newarr, module.ImportReference(typeof(int))));
+                        moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Newarr,  module.TypeSystem.Int32));
                     }
                     else
                     {
-                        var arrayEmptyOfIntMethodReference = module.ImportReference(ArrayEmptyOfIntMethod);
+                        if (arrayEmptyOfIntMethodReference is null)
+                        {
+                            var assemblyReferences = module.AssemblyReferences.ToArray();
+                            arrayEmptyOfIntMethodReference = (GenericInstanceMethod)module.ImportReference(ArrayEmptyOfIntMethod);
+                            arrayEmptyOfIntMethodReference.DeclaringType.Scope = module.TypeSystem.CoreLibrary;
+                            arrayEmptyOfIntMethodReference.GenericArguments[0] = module.TypeSystem.Int32;
+                            module.AssemblyReferences.Clear();
+                            foreach (var assemblyReference in assemblyReferences)
+                            {
+                                module.AssemblyReferences.Add(assemblyReference);
+                            }
+                        }
+
                         moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Call, arrayEmptyOfIntMethodReference));
                     }
 
@@ -350,7 +370,7 @@ namespace Datadog.Trace.Coverage.Collector
                             }
 
                             // Step 6 - Modify local var to add the Coverage counters instance.
-                            var countersVariable = new VariableDefinition(module.ImportReference(typeof(int[])));
+                            var countersVariable = new VariableDefinition(new ArrayType(module.TypeSystem.Int32));
                             methodBody.Variables.Add(countersVariable);
 
                             // Create methods sequence points array
@@ -378,7 +398,7 @@ namespace Datadog.Trace.Coverage.Collector
                                 currentInstruction.OpCode = OpCodes.Ldloc;
                                 currentInstruction.Operand = countersVariable;
                                 instructions.Insert(currentInstructionIndex + 1, Instruction.Create(OpCodes.Ldc_I4, i));
-                                instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldelema, module.ImportReference(typeof(int))));
+                                instructions.Insert(currentInstructionIndex + 2, Instruction.Create(OpCodes.Ldelema, module.TypeSystem.Int32));
                                 instructions.Insert(currentInstructionIndex + 3, Instruction.Create(OpCodes.Dup));
                                 instructions.Insert(currentInstructionIndex + 4, Instruction.Create(OpCodes.Ldind_I4));
                                 instructions.Insert(currentInstructionIndex + 5, Instruction.Create(OpCodes.Ldc_I4_1));
@@ -406,7 +426,8 @@ namespace Datadog.Trace.Coverage.Collector
                 // Save assembly if we modify it successfully
                 if (isDirty)
                 {
-                    var coveredAssemblyAttributeTypeCtorRef = assemblyDefinition.MainModule.ImportReference(CoveredAssemblyAttributeTypeCtor);
+                    var coveredAssemblyAttributeTypeDefinition = datadogTracerAssembly.MainModule.GetType(typeof(CoveredAssemblyAttribute).FullName);
+                    var coveredAssemblyAttributeTypeCtorRef = module.ImportReference(coveredAssemblyAttributeTypeDefinition.Methods.First(m => m.Name == ".ctor"));
                     var coveredAssemblyAttribute = new CustomAttribute(coveredAssemblyAttributeTypeCtorRef);
                     assemblyDefinition.CustomAttributes.Add(coveredAssemblyAttribute);
 
@@ -477,6 +498,29 @@ namespace Datadog.Trace.Coverage.Collector
             };
         }
 
+        private string GetDatadogTracer(TracerTarget tracerTarget)
+        {
+            // Get the Datadog.Trace path
+            string targetFolder = "net461";
+            switch (tracerTarget)
+            {
+                case TracerTarget.Net461:
+                    targetFolder = "net461";
+                    break;
+                case TracerTarget.Netstandard20:
+                    targetFolder = "netstandard2.0";
+                    break;
+                case TracerTarget.Netcoreapp31:
+                    targetFolder = "netcoreapp3.1";
+                    break;
+                case TracerTarget.Net60:
+                    targetFolder = "net6.0";
+                    break;
+            }
+
+            return Path.Combine(_tracerHome, targetFolder, "Datadog.Trace.dll");
+        }
+
         private string CopyRequiredAssemblies(AssemblyDefinition assemblyDefinition, TracerTarget tracerTarget)
         {
             try
@@ -513,7 +557,7 @@ namespace Datadog.Trace.Coverage.Collector
                     if (!File.Exists(outputAssemblyDllLocation) ||
                         assembly.GetName().Version >= AssemblyName.GetAssemblyName(outputAssemblyDllLocation).Version)
                     {
-                        _logger.Debug($"GetTracerTarget: Writing {outputAssemblyDllLocation} ...");
+                        _logger.Debug($"CopyRequiredAssemblies: Writing ({tracerTarget}) {outputAssemblyDllLocation} ...");
 
                         if (File.Exists(datadogTraceDllPath))
                         {
@@ -579,7 +623,7 @@ namespace Datadog.Trace.Coverage.Collector
             }
 
             var coreLibrary = assemblyDefinition.MainModule.TypeSystem.CoreLibrary;
-            _logger.Debug($"GetTracerTarget: Calculating TracerTarget from: {((AssemblyNameReference)coreLibrary).FullName}");
+            _logger.Debug($"GetTracerTarget: Calculating TracerTarget from: {((AssemblyNameReference)coreLibrary).FullName} in {assemblyDefinition.FullName}");
             switch (coreLibrary.Name)
             {
                 case "netstandard" when coreLibrary is AssemblyNameReference coreAsmRef && coreAsmRef.Version.Major == 2:
@@ -598,11 +642,13 @@ namespace Datadog.Trace.Coverage.Collector
             private readonly ICollectorLogger _logger;
             private DefaultAssemblyResolver _defaultResolver;
             private string _tracerAssemblyLocation;
+            private string _assemblyFilePath;
 
-            public CustomResolver(ICollectorLogger logger)
+            public CustomResolver(ICollectorLogger logger, string assemblyFilePath)
             {
                 _tracerAssemblyLocation = string.Empty;
                 _logger = logger;
+                _assemblyFilePath = assemblyFilePath;
                 _defaultResolver = new DefaultAssemblyResolver();
             }
 
@@ -629,7 +675,15 @@ namespace Datadog.Trace.Coverage.Collector
                     }
                     else
                     {
-                        _logger.Error(ex, $"Error in the Custom Resolver for: {name.FullName}");
+                        var folder = Path.GetDirectoryName(_assemblyFilePath);
+                        var pathTest = Path.Combine(folder, name.Name + ".dll");
+                        _logger.Debug($"Looking for: {pathTest}");
+                        if (File.Exists(pathTest))
+                        {
+                            return AssemblyDefinition.ReadAssembly(pathTest);
+                        }
+
+                        _logger.Error(ex, $"Error in the Custom Resolver processing '{_assemblyFilePath}' for: {name.FullName}");
                         throw;
                     }
                 }
