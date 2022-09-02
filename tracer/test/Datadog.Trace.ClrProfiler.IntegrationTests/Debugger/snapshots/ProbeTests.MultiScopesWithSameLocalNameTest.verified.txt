@@ -57,8 +57,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.MultiScopesWithSameLocalNameTest",
-      "name": "Run",
+      "method": "Run",
+      "name": "Samples.Probes.SmokeTests.MultiScopesWithSameLocalNameTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -124,8 +124,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.MultiScopesWithSameLocalNameTest",
-      "name": "Run",
+      "method": "Run",
+      "name": "Samples.Probes.SmokeTests.MultiScopesWithSameLocalNameTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -191,8 +191,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.MultiScopesWithSameLocalNameTest",
-      "name": "Run",
+      "method": "Run",
+      "name": "Samples.Probes.SmokeTests.MultiScopesWithSameLocalNameTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
@@ -258,8 +258,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.MultiScopesWithSameLocalNameTest",
-      "name": "Run",
+      "method": "Run",
+      "name": "Samples.Probes.SmokeTests.MultiScopesWithSameLocalNameTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"

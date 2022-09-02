@@ -1,0 +1,187 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "i": {
+                "fields": null,
+                "type": "Int32",
+                "value": "0"
+              }
+            },
+            "fields": null
+          },
+          "return": {
+            "arguments": {
+              "i": {
+                "fields": null,
+                "type": "Int32",
+                "value": "1"
+              }
+            },
+            "fields": null,
+            "locals": {
+              "@return": {
+                "fields": null,
+                "type": "Int32",
+                "value": "3"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Recursive",
+            "type": "Samples.Probes.SmokeTests.AsyncRecursiveCall"
+          }
+        },
+        "stack": [],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Recursive",
+      "name": "Samples.Probes.SmokeTests.AsyncRecursiveCall",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "AsyncRecursiveCall+<Recursive>d__1.MoveNext(i=0): 3\r\n@return=3",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "i": {
+                "fields": null,
+                "type": "Int32",
+                "value": "1"
+              }
+            },
+            "fields": null
+          },
+          "return": {
+            "arguments": {
+              "i": {
+                "fields": null,
+                "type": "Int32",
+                "value": "2"
+              }
+            },
+            "fields": null,
+            "locals": {
+              "@return": {
+                "fields": null,
+                "type": "Int32",
+                "value": "3"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Recursive",
+            "type": "Samples.Probes.SmokeTests.AsyncRecursiveCall"
+          }
+        },
+        "stack": [],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Recursive",
+      "name": "Samples.Probes.SmokeTests.AsyncRecursiveCall",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "AsyncRecursiveCall+<Recursive>d__1.MoveNext(i=1): 3\r\n@return=3",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "i": {
+                "fields": null,
+                "type": "Int32",
+                "value": "2"
+              }
+            },
+            "fields": null
+          },
+          "return": {
+            "arguments": {
+              "i": {
+                "fields": null,
+                "type": "Int32",
+                "value": "2"
+              }
+            },
+            "fields": null,
+            "locals": {
+              "@return": {
+                "fields": null,
+                "type": "Int32",
+                "value": "3"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Recursive",
+            "type": "Samples.Probes.SmokeTests.AsyncRecursiveCall"
+          }
+        },
+        "stack": [
+          {
+            "function": "Samples.Probes.SmokeTests.AsyncRecursiveCall.Recursive",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Recursive",
+      "name": "Samples.Probes.SmokeTests.AsyncRecursiveCall",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "AsyncRecursiveCall+<Recursive>d__1.MoveNext(i=2): 3\r\n@return=3",
+    "service": "Probes"
+  }
+]

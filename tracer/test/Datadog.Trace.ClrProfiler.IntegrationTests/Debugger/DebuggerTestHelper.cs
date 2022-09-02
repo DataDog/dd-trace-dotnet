@@ -23,7 +23,8 @@ internal static class DebuggerTestHelper
     {
         return typeof(IRun)
               .Assembly.GetTypes()
-              .Where(t => t.GetInterface(nameof(IRun)) != null)
+              .Where(t => t.GetInterface(nameof(IRun)) != null ||
+                          t.GetInterface(nameof(IRun)) != null)
               .Select(t => new object[] { t });
     }
 

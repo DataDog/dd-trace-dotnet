@@ -1004,4 +1004,15 @@ HRESULT FunctionLocalSignature::TryParse(PCCOR_SIGNATURE pbBase, unsigned len, s
     return S_OK;
 }
 
+HRESULT HasAsyncStateMachineAttribute(const ComPtr<IMetaDataImport2>& metadataImport, const mdMethodDef methodDefToken, bool& hasAsyncAttribute)
+{
+    const void* ppData = nullptr;
+    ULONG pcbData = 0;
+    auto hr = metadataImport->GetCustomAttributeByName(
+        methodDefToken, WStr("System.Runtime.CompilerServices.AsyncStateMachineAttribute"), &ppData, &pcbData);
+
+    IfFailRet(hr);
+    hasAsyncAttribute = pcbData > 0 ? true : false;
+    return hr;
+}
 } // namespace trace

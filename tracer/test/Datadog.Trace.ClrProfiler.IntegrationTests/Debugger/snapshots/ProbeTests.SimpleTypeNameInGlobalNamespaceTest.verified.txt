@@ -100,8 +100,8 @@
       }
     },
     "logger": {
-      "method": "SimpleTypeNameInGlobalNamespaceTest",
-      "name": "MethodToInstrument",
+      "method": "MethodToInstrument",
+      "name": "SimpleTypeNameInGlobalNamespaceTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"

@@ -28,37 +28,7 @@ namespace Datadog.Trace.Coverage.Collector
         private DataCollectorLogger? _logger;
         private DataCollectionEvents? _events;
         private CIVisibilitySettings? _ciVisibilitySettings;
-        private DateTime _dateTime = DateTime.Now;
         private string? _tracerHome;
-
-        private static void Copy(string sourceDirectory, string targetDirectory)
-        {
-            var diSource = new DirectoryInfo(sourceDirectory);
-            var diTarget = new DirectoryInfo(targetDirectory);
-
-            CopyAll(diSource, diTarget);
-        }
-
-        private static void CopyAll(DirectoryInfo source, DirectoryInfo target)
-        {
-            var files = source.GetFiles();
-            var subFolders = source.GetDirectories();
-
-            Directory.CreateDirectory(target.FullName);
-
-            // Copy each file into the new directory.
-            foreach (var fi in files)
-            {
-                fi.CopyTo(Path.Combine(target.FullName, fi.Name), true);
-            }
-
-            // Copy each subdirectory using recursion.
-            foreach (var diSourceSubDir in subFolders)
-            {
-                var nextTargetSubDir = target.CreateSubdirectory(diSourceSubDir.Name);
-                CopyAll(diSourceSubDir, nextTargetSubDir);
-            }
-        }
 
         /// <inheritdoc />
         public override void Initialize(XmlElement configurationElement, DataCollectionEvents events, DataCollectionSink dataSink, DataCollectionLogger logger, DataCollectionEnvironmentContext environmentContext)
@@ -66,25 +36,7 @@ namespace Datadog.Trace.Coverage.Collector
             _events = events;
             _logger = new DataCollectorLogger(logger, environmentContext.SessionDataCollectionContext);
 
-            try
-            {
-                _ciVisibilitySettings = CIVisibilitySettings.FromDefaultSources();
-
-                // Read the DD_DOTNET_TRACER_HOME environment variable
-                _tracerHome = Util.EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
-                if (string.IsNullOrEmpty(_tracerHome) || !Directory.Exists(_tracerHome))
-                {
-                    _logger.Error("Tracer home (DD_DOTNET_TRACER_HOME environment variable) is not defined or folder doesn't exist, coverage has been disabled.");
-
-                    // By not register a handler to SessionStart and SessionEnd the coverage gets disabled (assemblies are not being processed).
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.Error(ex);
-                _ciVisibilitySettings = null;
-            }
+            Initialize();
 
             if (_events is not null)
             {
@@ -103,7 +55,6 @@ namespace Datadog.Trace.Coverage.Collector
                 var outputFolder = Path.GetDirectoryName(testSourceString);
                 if (outputFolder is not null)
                 {
-                    BackupFolder(outputFolder);
                     ProcessFolder(outputFolder, SearchOption.TopDirectoryOnly);
                 }
             }
@@ -115,7 +66,6 @@ namespace Datadog.Trace.Coverage.Collector
                     var outputFolder = Path.GetDirectoryName(source);
                     if (outputFolder is not null)
                     {
-                        BackupFolder(outputFolder);
                         ProcessFolder(outputFolder, SearchOption.TopDirectoryOnly);
                     }
                 }
@@ -123,7 +73,6 @@ namespace Datadog.Trace.Coverage.Collector
             else
             {
                 // Process folder
-                BackupFolder(Environment.CurrentDirectory);
                 ProcessFolder(Environment.CurrentDirectory, SearchOption.AllDirectories);
             }
         }
@@ -133,7 +82,30 @@ namespace Datadog.Trace.Coverage.Collector
             _logger?.SetContext(e.Context);
         }
 
-        private void ProcessFolder(string folder, SearchOption searchOption)
+        internal void Initialize()
+        {
+            try
+            {
+                _ciVisibilitySettings = CIVisibilitySettings.FromDefaultSources();
+
+                // Read the DD_DOTNET_TRACER_HOME environment variable
+                _tracerHome = Util.EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
+                if (string.IsNullOrEmpty(_tracerHome) || !Directory.Exists(_tracerHome))
+                {
+                    _logger?.Error("Tracer home (DD_DOTNET_TRACER_HOME environment variable) is not defined or folder doesn't exist, coverage has been disabled.");
+
+                    // By not register a handler to SessionStart and SessionEnd the coverage gets disabled (assemblies are not being processed).
+                    return;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger?.Error(ex);
+                _ciVisibilitySettings = null;
+            }
+        }
+
+        internal void ProcessFolder(string folder, SearchOption searchOption)
         {
             if (_tracerHome is null)
             {
@@ -149,8 +121,10 @@ namespace Datadog.Trace.Coverage.Collector
                 Directory.EnumerateFiles(folder, "*.*", searchOption),
                 file =>
                 {
+                    var path = Path.GetDirectoryName(file);
+                    var fileWithoutExtension = Path.GetFileNameWithoutExtension(file);
                     // Skip the Datadog.Trace assembly
-                    if (tracerAssemblyName == Path.GetFileNameWithoutExtension(file))
+                    if (tracerAssemblyName == fileWithoutExtension)
                     {
                         return;
                     }
@@ -158,31 +132,34 @@ namespace Datadog.Trace.Coverage.Collector
                     var extension = Path.GetExtension(file).ToLowerInvariant();
                     if (extension is ".dll" or ".exe" or "")
                     {
-                        try
+                        if (File.Exists(Path.Combine(path, fileWithoutExtension + ".pdb")) || File.Exists(Path.Combine(path, fileWithoutExtension + ".PDB")))
                         {
-                            var asmProcessor = new AssemblyProcessor(file, _tracerHome, _logger, _ciVisibilitySettings);
-                            asmProcessor.Process();
-
-                            lock (processedDirectories)
+                            try
                             {
-                                numAssemblies++;
-                                processedDirectories.Add(Path.GetDirectoryName(file) ?? string.Empty);
+                                var asmProcessor = new AssemblyProcessor(file, _tracerHome, _logger, _ciVisibilitySettings);
+                                asmProcessor.Process();
+
+                                lock (processedDirectories)
+                                {
+                                    numAssemblies++;
+                                    processedDirectories.Add(Path.GetDirectoryName(file) ?? string.Empty);
+                                }
                             }
-                        }
-                        catch (PdbNotFoundException)
-                        {
-                            // If the PDB file was not found, we skip the assembly without throwing error.
-                            _logger?.Debug($"{nameof(PdbNotFoundException)} processing file: {file}");
-                        }
-                        catch (BadImageFormatException)
-                        {
-                            // If the Assembly has not the correct format (eg. native dll / exe)
-                            // We skip processing the assembly.
-                            _logger?.Debug($"{nameof(BadImageFormatException)} processing file: {file}");
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger?.Error(ex);
+                            catch (PdbNotFoundException)
+                            {
+                                // If the PDB file was not found, we skip the assembly without throwing error.
+                                _logger?.Debug($"{nameof(PdbNotFoundException)} processing file: {file}");
+                            }
+                            catch (BadImageFormatException)
+                            {
+                                // If the Assembly has not the correct format (eg. native dll / exe)
+                                // We skip processing the assembly.
+                                _logger?.Debug($"{nameof(BadImageFormatException)} processing file: {file}");
+                            }
+                            catch (Exception ex)
+                            {
+                                _logger?.Error(ex);
+                            }
                         }
                     }
                 });
@@ -252,13 +229,6 @@ namespace Datadog.Trace.Coverage.Collector
             }
 
             _logger?.Warning($"Processed {numAssemblies} assemblies in folder: {folder}");
-        }
-
-        private void BackupFolder(string folder)
-        {
-            var destinationFolder = Path.Combine(folder, _dateTime.ToString("yyyyMMddHHmmss"));
-            _logger?.Debug($"Backup folder: {destinationFolder}");
-            Copy(folder, destinationFolder);
         }
 
         /// <inheritdoc />

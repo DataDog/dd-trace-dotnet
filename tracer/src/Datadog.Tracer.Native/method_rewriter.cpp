@@ -182,7 +182,8 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     mdToken exceptionToken = mdTokenNil;
     mdToken callTargetReturnToken = mdTokenNil;
     ILInstr* firstInstruction;
-    tracerTokens->ModifyLocalSigAndInitialize(&reWriterWrapper, caller, &callTargetStateIndex, &exceptionIndex,
+    auto returnType = caller->method_signature.GetReturnValue();
+    tracerTokens->ModifyLocalSigAndInitialize(&reWriterWrapper, &returnType, &callTargetStateIndex, &exceptionIndex,
                                                   &callTargetReturnIndex, &returnValueIndex, &callTargetStateToken,
                                                   &exceptionToken, &callTargetReturnToken, &firstInstruction);
 

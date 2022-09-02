@@ -34,7 +34,6 @@ const WSTRING skip_assemblies[]{WStr("mscorlib"),
                                 WStr("Datadog.AutoInstrumentation.ManagedLoader"),
                                 WStr("ISymWrapper"),
                                 WStr("Datadog.Trace")};
-
 }
 
 #endif // DEBUGGER_CONSTANTS_H

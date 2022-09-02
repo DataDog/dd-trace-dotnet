@@ -6,6 +6,7 @@
 using System;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Debugger.Instrumentation
@@ -69,14 +70,21 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
         }
 
+        public static bool TryCreateIfNotExists(int index, in RuntimeMethodHandle methodHandle, in RuntimeTypeHandle typeHandle)
+        {
+            return TryCreateIfNotExists<object>(null, index, in methodHandle, in typeHandle);
+        }
+
         /// <summary>
         /// Tries to create a new <see cref="MethodMetadataInfo"/> at <paramref name="index"/>.
         /// </summary>
+        /// <param name="targetObject">The target object</param>
         /// <param name="index">The index of the method inside <see cref="_items"/></param>
         /// <param name="methodHandle">The handle of the executing method</param>
         /// <param name="typeHandle">The handle of the type</param>
+        /// <param name="asyncKickOffInfo">The info for the async kickoff method</param>
         /// <returns>true if succeeded (either existed before or just created), false if fails to create</returns>
-        public static bool TryCreateIfNotExists(int index, in RuntimeMethodHandle methodHandle, in RuntimeTypeHandle typeHandle)
+        public static bool TryCreateIfNotExists<TTarget>(TTarget targetObject, int index, in RuntimeMethodHandle methodHandle, in RuntimeTypeHandle typeHandle, AsyncHelper.AsyncKickoffMethodInfo asyncKickOffInfo = default)
         {
             // Check if there's a MetadataMethodInfo associated with the given index
             if (index < _items.Length)
@@ -115,7 +123,16 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return false;
                 }
 
-                var methodMetadataInfo = MethodMetadataInfoFactory.Create(method, type);
+                MethodMetadataInfo methodMetadataInfo;
+                if (targetObject == null)
+                {
+                    methodMetadataInfo = MethodMetadataInfoFactory.Create(method, type);
+                }
+                else
+                {
+                    methodMetadataInfo = MethodMetadataInfoFactory.Create(method, targetObject, type, asyncKickOffInfo);
+                }
+
                 _items[index] = methodMetadataInfo;
             }
 

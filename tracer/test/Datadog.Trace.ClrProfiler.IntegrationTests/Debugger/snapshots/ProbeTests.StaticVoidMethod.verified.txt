@@ -61,8 +61,8 @@
       }
     },
     "logger": {
-      "method": "Samples.Probes.SmokeTests.StaticVoidMethod",
-      "name": "Method",
+      "method": "Method",
+      "name": "Samples.Probes.SmokeTests.StaticVoidMethod",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"

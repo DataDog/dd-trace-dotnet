@@ -6,6 +6,7 @@
 using System;
 using System.Linq;
 using System.Reflection;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
@@ -21,7 +22,20 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
         public static MethodMetadataInfo Create(MethodBase method, Type type)
         {
-            return new MethodMetadataInfo(GetParameterNames(method), GetLocalVariableNames(method), type);
+            return new MethodMetadataInfo(GetParameterNames(method), GetLocalVariableNames(method), type, method);
+        }
+
+        public static MethodMetadataInfo Create<TTarget>(MethodBase method, TTarget targetObject, Type type, AsyncHelper.AsyncKickoffMethodInfo asyncKickOffInfo)
+        {
+            return new MethodMetadataInfo(
+                GetParameterNames(method),
+                GetLocalVariableNames(method),
+                AsyncHelper.GetHoistedLocalsFromStateMachine(targetObject, asyncKickOffInfo),
+                AsyncHelper.GetHoistedArgumentsFromStateMachine(targetObject, GetParameterNames(asyncKickOffInfo.KickoffMethod)),
+                type,
+                method,
+                asyncKickOffInfo.KickoffParentType,
+                asyncKickOffInfo.KickoffMethod);
         }
 
         private static string[] GetParameterNames(MethodBase method)

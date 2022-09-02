@@ -2,48 +2,111 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Ci.Coverage.Models;
+using Datadog.Trace.Logging;
+using Datadog.Trace.Pdb;
+using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 
-namespace Datadog.Trace.Ci.Coverage
+namespace Datadog.Trace.Ci.Coverage;
+
+internal sealed class DefaultCoverageEventHandler : CoverageEventHandler
 {
-    internal sealed class DefaultCoverageEventHandler : CoverageEventHandler
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DefaultCoverageEventHandler));
+
+    protected override object? OnSessionFinished(ModuleValue[] modules)
     {
-        protected override object OnSessionFinished(CoverageInstruction[] coverageInstructions)
+        const int HIDDEN = 0xFEEFEE;
+        Dictionary<string, FileCoverage>? fileDictionary = null;
+        foreach (var moduleValue in modules)
         {
-            if (coverageInstructions == null || coverageInstructions.Length == 0)
+            var moduleDef = MethodSymbolResolver.Instance.GetModuleDef(moduleValue.Module);
+            if (moduleDef is null)
             {
-                return null;
+                continue;
             }
 
-            var groupByFiles = coverageInstructions.GroupBy(i => i.FilePath).ToList();
-            var coveragePayload = new CoveragePayload();
-
-            foreach (var boundariesPerFile in groupByFiles)
+            for (var i = 0; i < moduleValue.Types.Length; i++)
             {
-                var fileName = boundariesPerFile.Key;
-                var coverageFileName = new FileCoverage
+                var currentType = moduleValue.Types[i];
+                if (currentType is null)
                 {
-                    FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(fileName, false)
-                };
+                    continue;
+                }
 
-                coveragePayload.Files.Add(coverageFileName);
+                var typeDef = moduleDef.Types[i];
 
-                foreach (var rangeGroup in boundariesPerFile.GroupBy(i => i.Range))
+                for (var j = 0; j < currentType.Methods.Length; j++)
                 {
-                    var range = rangeGroup.Key;
-                    var endColumn = (ushort)(range & 0xFFFFFF);
-                    var endLine = (ushort)((range >> 16) & 0xFFFFFF);
-                    var startColumn = (ushort)((range >> 32) & 0xFFFFFF);
-                    var startLine = (ushort)((range >> 48) & 0xFFFFFF);
-                    var num = rangeGroup.Count();
-                    coverageFileName.Segments.Add(new[] { startLine, startColumn, endLine, endColumn, (uint)num });
+                    var currentMethod = currentType.Methods[j];
+                    if (currentMethod is null)
+                    {
+                        continue;
+                    }
+
+                    var methodDef = typeDef.Methods[j];
+                    if (methodDef.HasBody && methodDef.Body.HasInstructions && currentMethod.SequencePoints.Length > 0)
+                    {
+                        var seqPoints = new List<SequencePoint>(currentMethod.SequencePoints.Length);
+                        foreach (var instruction in methodDef.Body.Instructions)
+                        {
+                            if (instruction.SequencePoint is null ||
+                                instruction.SequencePoint.StartLine == HIDDEN ||
+                                instruction.SequencePoint.EndLine == HIDDEN)
+                            {
+                                continue;
+                            }
+
+                            seqPoints.Add(instruction.SequencePoint);
+                        }
+
+                        for (var x = 0; x < currentMethod.SequencePoints.Length; x++)
+                        {
+                            var repInSeqPoints = currentMethod.SequencePoints[x];
+                            if (repInSeqPoints == 0)
+                            {
+                                continue;
+                            }
+
+                            var seqPoint = seqPoints[x];
+                            fileDictionary ??= new Dictionary<string, FileCoverage>();
+                            if (!fileDictionary.TryGetValue(seqPoint.Document.Url, out var fileCoverage))
+                            {
+                                fileCoverage = new FileCoverage
+                                {
+                                    FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(seqPoint.Document.Url, false)
+                                };
+
+                                fileDictionary[seqPoint.Document.Url] = fileCoverage;
+                            }
+
+                            fileCoverage.Segments.Add(new[] { (uint)seqPoint.StartLine, (uint)seqPoint.StartColumn, (uint)seqPoint.EndLine, (uint)seqPoint.EndColumn, (uint)repInSeqPoints });
+                        }
+                    }
                 }
             }
-
-            return coveragePayload;
         }
+
+        if (fileDictionary is null || fileDictionary.Count == 0)
+        {
+            return null;
+        }
+
+        var payload = new CoveragePayload
+        {
+            Files = fileDictionary.Values.ToList(),
+        };
+
+        if (Log.IsEnabled(LogEventLevel.Debug))
+        {
+            Log.Debug("Coverage payload: {payload}", JsonConvert.SerializeObject(payload));
+        }
+
+        return payload;
     }
 }

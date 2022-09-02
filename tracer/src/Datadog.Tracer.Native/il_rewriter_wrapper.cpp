@@ -114,6 +114,14 @@ ILInstr* ILRewriterWrapper::LoadArgumentRef(const UINT16 index) const
     return pNewInstr;
 }
 
+void ILRewriterWrapper::LoadFieldAddress(const mdFieldDef field_def) const
+{
+    ILInstr* pNewInstr = m_ILRewriter->NewILInstr();
+    pNewInstr->m_opcode = CEE_LDFLDA;
+    pNewInstr->m_Arg32 = field_def;
+    m_ILRewriter->InsertBefore(m_ILInstr, pNewInstr);
+}
+
 void ILRewriterWrapper::Cast(const mdTypeRef type_ref) const
 {
     ILInstr* pNewInstr = m_ILRewriter->NewILInstr();

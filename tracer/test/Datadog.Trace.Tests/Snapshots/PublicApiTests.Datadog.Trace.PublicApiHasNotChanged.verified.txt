@@ -11,6 +11,14 @@ namespace Datadog.Trace.Ci.Coverage.Attributes
         public CoveredAssemblyAttribute() { }
     }
 }
+namespace Datadog.Trace.Ci.Coverage.Metadata
+{
+    public abstract class ModuleCoverageMetadata
+    {
+        protected readonly int[][] Metadata;
+        protected ModuleCoverageMetadata() { }
+    }
+}
 namespace Datadog.Trace.Configuration
 {
     public class CompositeConfigurationSource : Datadog.Trace.Configuration.IConfigurationSource, System.Collections.Generic.IEnumerable<Datadog.Trace.Configuration.IConfigurationSource>, System.Collections.IEnumerable
