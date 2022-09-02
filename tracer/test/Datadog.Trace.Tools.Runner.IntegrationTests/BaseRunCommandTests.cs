@@ -24,6 +24,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         protected bool EnableCiVisibilityMode { get; }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public void Run()
         {
             string command = null;
@@ -80,6 +81,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public void AdditionalArguments()
         {
             string command = null;
@@ -120,6 +122,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public void EmptyCommand()
         {
             bool callbackInvoked = false;
