@@ -76,6 +76,13 @@ public:
     inline std::uint64_t GetSpanId() const;
     inline bool CanReadTraceContext() const;
 
+    inline std::string GetProfileThreadId();
+    inline std::string GetProfileThreadName();
+
+private:
+    inline void BuildProfileThreadId();
+    inline void BuildProfileThreadName();
+
 private:
     static constexpr std::uint32_t MaxProfilerThreadInfoId = 0xFFFFFF; // = 16,777,215
     static std::atomic<std::uint32_t> s_nextProfilerThreadInfoId;
@@ -101,9 +108,57 @@ private:
     Semaphore _stackWalkLock;
     bool _isThreadDestroyed;
 
+    TraceContextTrackingInfo _traceContextTrackingInfo;
 
-     TraceContextTrackingInfo _traceContextTrackingInfo;
+    //  strings to be used by samples: avoid allocations when rebuilding them over and over again
+    std::string _profileThreadId;
+    std::string _profileThreadName;
 };
+
+
+
+std::string ManagedThreadInfo::GetProfileThreadId()
+{
+    if (_profileThreadId.empty())
+    {
+        BuildProfileThreadId();
+    }
+
+    return _profileThreadId;
+}
+
+std::string ManagedThreadInfo::GetProfileThreadName()
+{
+    if (_profileThreadName.empty())
+    {
+        BuildProfileThreadName();
+    }
+
+    return _profileThreadName;
+}
+
+inline void ManagedThreadInfo::BuildProfileThreadId()
+{
+    std::stringstream builder;
+    builder << "<" << std::dec << _profilerThreadInfoId << "> [#" << _osThreadId << "]";
+    _profileThreadId = std::move(builder.str());
+}
+
+inline void ManagedThreadInfo::BuildProfileThreadName()
+{
+    std::stringstream nameBuilder;
+    if (GetThreadName().empty())
+    {
+        nameBuilder << "Managed thread (name unknown)";
+    }
+    else
+    {
+        nameBuilder << shared::ToString(GetThreadName());
+    }
+    nameBuilder << " [#" << _osThreadId << "]";
+
+    _profileThreadName = nameBuilder.str();
+}
 
 std::uint32_t ManagedThreadInfo::GetProfilerThreadInfoId(void) const
 {
@@ -129,6 +184,8 @@ inline void ManagedThreadInfo::SetOsInfo(DWORD osThreadId, HANDLE osThreadHandle
 {
     _osThreadId = osThreadId;
     _osThreadHandle = osThreadHandle;
+
+    BuildProfileThreadId();
 }
 
 inline const shared::WSTRING& ManagedThreadInfo::GetThreadName(void) const
@@ -139,6 +196,7 @@ inline const shared::WSTRING& ManagedThreadInfo::GetThreadName(void) const
 inline void ManagedThreadInfo::SetThreadName(shared::WSTRING pThreadName)
 {
     _pThreadName = std::move(pThreadName);
+    BuildProfileThreadName();
 }
 
 inline std::uint64_t ManagedThreadInfo::GetLastSampleHighPrecisionTimestampNanoseconds(void) const
