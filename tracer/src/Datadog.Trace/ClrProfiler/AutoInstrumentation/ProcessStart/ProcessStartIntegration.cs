@@ -14,21 +14,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
     /// System.Net.Http.HttpClientHandler calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-   AssemblyName = "System",
-   TypeName = "System.Diagnostics.Process",
-   MethodName = "Start",
-   ReturnTypeName = ClrNames.Process,
-   MinimumVersion = "1.0.0",
-   MaximumVersion = "7.*.*",
-   IntegrationName = nameof(Configuration.IntegrationId.ProcessStart))]
-    [InstrumentMethod(
-   AssemblyName = "System.Diagnostics.Process",
-   TypeName = "System.Diagnostics.Process",
-   MethodName = "Start",
-   ReturnTypeName = ClrNames.Process,
-   MinimumVersion = "1.0.0",
-   MaximumVersion = "7.*.*",
-   IntegrationName = nameof(Configuration.IntegrationId.ProcessStart))]
+       AssemblyNames = new [] { "System", "System.Diagnostics.Process" },
+       TypeName = "System.Diagnostics.Process",
+       MethodName = "Start",
+       ReturnTypeName = ClrNames.Process,
+       MinimumVersion = "1.0.0",
+       MaximumVersion = "7.*.*",
+       IntegrationName = nameof(Configuration.IntegrationId.ProcessStart))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class ProcessStartIntegration
