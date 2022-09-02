@@ -14,11 +14,12 @@ const std::string Sample::ExceptionTypeLabel = "exception type";
 const std::string Sample::ExceptionMessageLabel = "exception message";
 const std::string Sample::AllocationClassLabel = "allocation class";
 
-Sample::Sample(uint64_t timestamp, std::string_view runtimeId) :
+Sample::Sample(uint64_t timestamp, std::string_view runtimeId, size_t framesCount) :
     Sample(runtimeId)
 {
     _timestamp = timestamp;
     _runtimeId = runtimeId;
+    _callstack.reserve(framesCount);
 }
 
 Sample::Sample(std::string_view runtimeId)

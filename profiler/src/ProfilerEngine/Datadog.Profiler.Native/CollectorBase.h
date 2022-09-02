@@ -119,7 +119,7 @@ private:
     {
         auto runtimeId = _pRuntimeIdStore->GetId(rawSample.AppDomainId);
 
-        Sample sample(rawSample.Timestamp, runtimeId == nullptr ? std::string_view() : std::string_view(runtimeId));
+        Sample sample(rawSample.Timestamp, runtimeId == nullptr ? std::string_view() : std::string_view(runtimeId), rawSample.Stack.size());
         if (rawSample.LocalRootSpanId != 0 && rawSample.SpanId != 0)
         {
             sample.AddLabel(Label{Sample::LocalRootSpanIdLabel, std::to_string(rawSample.LocalRootSpanId)});
@@ -153,10 +153,7 @@ private:
         }
 
         sample.SetAppDomainName(appDomainName);
-
-        std::stringstream builder;
-        builder << std::dec << pid;
-        sample.SetPid(builder.str());
+        sample.SetPid(std::to_string(pid));
     }
 
     void SetThreadDetails(const TRawSample& rawSample, Sample& sample)
@@ -170,25 +167,8 @@ private:
             return;
         }
 
-        // build the ID
-        std::stringstream builder;
-        auto profTid = rawSample.ThreadInfo->GetProfilerThreadInfoId();
-        auto osTid = rawSample.ThreadInfo->GetOsThreadId();
-        builder << "<" << std::dec << profTid << "> [#" << osTid << "]";
-        sample.SetThreadId(builder.str());
-
-        // build the name
-        std::stringstream nameBuilder;
-        if (rawSample.ThreadInfo->GetThreadName().empty())
-        {
-            nameBuilder << "Managed thread (name unknown)";
-        }
-        else
-        {
-            nameBuilder << shared::ToString(rawSample.ThreadInfo->GetThreadName());
-        }
-        nameBuilder << " [#" << rawSample.ThreadInfo->GetOsThreadId() << "]";
-        sample.SetThreadName(nameBuilder.str());
+        sample.SetThreadId(rawSample.ThreadInfo->GetProfileThreadId());
+        sample.SetThreadName(rawSample.ThreadInfo->GetProfileThreadName());
 
         // don't forget to release the ManagedThreadInfo
         rawSample.ThreadInfo->Release();
