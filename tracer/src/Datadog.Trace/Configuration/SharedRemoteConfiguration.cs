@@ -15,4 +15,6 @@ namespace Datadog.Trace.Configuration;
 internal class SharedRemoteConfiguration
 {
     public static FeaturesProduct FeaturesProduct { get; } = new();
+
+    public static AsmDataProduct AsmDataProduct { get; } = new();
 }

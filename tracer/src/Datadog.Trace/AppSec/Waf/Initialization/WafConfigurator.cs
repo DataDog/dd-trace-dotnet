@@ -112,7 +112,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 var root = JToken.ReadFrom(jsonReader);
 
                 LogRuleDetailsIfDebugEnabled(root);
-                // applying safety limits during rule parsing could result in trucated rules
+                // applying safety limits during rule parsing could result in truncated rules
                 configObj = encoder.Encode(root, argCache, applySafetyLimits: false);
             }
             catch (Exception ex)

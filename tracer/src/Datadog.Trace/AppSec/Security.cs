@@ -20,6 +20,7 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -92,6 +93,7 @@ namespace Datadog.Trace.AppSec
             try
             {
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
+
                 _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
                 _waf = waf;
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
@@ -261,6 +263,12 @@ namespace Datadog.Trace.AppSec
             _waf?.Dispose();
         }
 
+        private void AsmDataProductOnConfigChanged(object sender, ProductConfigChangedEventArgs e)
+        {
+            var res = e.GetDeserializedConfigurations<JToken>();
+            _waf.UpdateRules(res);
+        }
+
         private void FeaturesProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
             var features = e.GetDeserializedConfigurations<Features>().FirstOrDefault();
@@ -274,6 +282,7 @@ namespace Datadog.Trace.AppSec
         private void UpdateStatus()
         {
             if (_enabled == _settings.Enabled) { return; }
+
             lock (_settings)
             {
                 if (_settings.Enabled)
