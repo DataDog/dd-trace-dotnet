@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DataStreamsMonitoring.Utils;
 
@@ -14,6 +15,11 @@ internal static class BinaryPrimitivesHelper
 #if NETCOREAPP3_1_OR_GREATER
         System.Buffers.Binary.BinaryPrimitives.WriteUInt64LittleEndian(bytes, value);
 #else
+        if (bytes.Length < 8)
+        {
+            ThrowHelper.ThrowArgumentOutOfRangeException(nameof(bytes), "Destination must be at least 8 bytes long");
+        }
+
         // write the bytes one at a time
         if (BitConverter.IsLittleEndian)
         {
@@ -46,6 +52,11 @@ internal static class BinaryPrimitivesHelper
 #if NETCOREAPP3_1_OR_GREATER
         return System.Buffers.Binary.BinaryPrimitives.ReadUInt64LittleEndian(bytes);
 #else
+        if (bytes.Length < 8)
+        {
+            ThrowHelper.ThrowArgumentOutOfRangeException(nameof(bytes), "Source must be at least 8 bytes long");
+        }
+
         // read the bytes one at a time
         if (BitConverter.IsLittleEndian)
         {
