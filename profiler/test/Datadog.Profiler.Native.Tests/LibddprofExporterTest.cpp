@@ -29,7 +29,9 @@ TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
 
-    fs::path pprofTempDir = fs::temp_directory_path() / tmpnam(nullptr);
+    char tempFilename[L_tmpnam_s];
+    tmpnam_s(tempFilename, sizeof(tempFilename));
+    fs::path pprofTempDir = fs::temp_directory_path() / tempFilename;
     EXPECT_CALL(mockConfiguration, GetProfilesOutputDirectory()).Times(1).WillOnce(ReturnRef(pprofTempDir));
 
     std::string agentUrl;
@@ -129,7 +131,9 @@ TEST(LibddprofExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     //
     auto [configuration, mockConfiguration] = CreateConfiguration();
 
-    fs::path pprofTempDir = fs::temp_directory_path() / tmpnam(nullptr);
+    char tempFilename[L_tmpnam_s];
+    tmpnam_s(tempFilename, sizeof(tempFilename));
+    fs::path pprofTempDir = fs::temp_directory_path() / tempFilename;
     EXPECT_CALL(mockConfiguration, GetProfilesOutputDirectory()).Times(1).WillOnce(ReturnRef(pprofTempDir));
 
     std::string agentUrl;
@@ -221,7 +225,9 @@ TEST(LibddprofExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplication
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
 
-    fs::path pprofTempDir = fs::temp_directory_path() / tmpnam(nullptr);
+    char tempFilename[L_tmpnam_s];
+    tmpnam_s(tempFilename, sizeof(tempFilename));
+    fs::path pprofTempDir = fs::temp_directory_path() / tempFilename;
     EXPECT_CALL(mockConfiguration, GetProfilesOutputDirectory()).Times(1).WillOnce(ReturnRef(pprofTempDir));
 
     std::string agentUrl;

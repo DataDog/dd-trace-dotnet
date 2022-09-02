@@ -90,6 +90,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
                         {
                             continue;
                         }
+
                         var size = sample.Value[AllocationSizeSlot];
 
                         var labels = sample.Labels(profile).ToArray();

@@ -115,6 +115,7 @@ namespace Samples.ExceptionGenerator
                         exceptionGeneratorService.StopService();
                     }
                 }
+
                 Console.WriteLine($"{Environment.NewLine} ########### Finishing run at {DateTime.UtcNow}");
             }
         }
