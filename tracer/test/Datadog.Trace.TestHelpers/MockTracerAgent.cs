@@ -785,9 +785,9 @@ namespace Datadog.Trace.TestHelpers
 
             public override void Dispose()
             {
-                System.Threading.Thread.Sleep(1000);
+                System.Threading.Thread.Sleep(2000);
                 base.Dispose();
-                System.Threading.Thread.Sleep(1000);
+                System.Threading.Thread.Sleep(2000);
                 _listener?.Close();
                 _udpClient?.Close();
             }
