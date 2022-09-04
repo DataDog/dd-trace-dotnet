@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Datadog.Trace.Debugger;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Util;
 
