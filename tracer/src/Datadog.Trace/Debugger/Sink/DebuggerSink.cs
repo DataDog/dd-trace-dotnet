@@ -46,7 +46,7 @@ namespace Datadog.Trace.Debugger.Sink
             _cancellationSource = new CancellationTokenSource();
         }
 
-        public static DebuggerSink Create(SnapshotSink snapshotSink, ProbeStatusSink probeStatusSink, ImmutableDebuggerSettings settings, BatchUploader batchUploader)
+        public static DebuggerSink Create(SnapshotSink snapshotSink, ProbeStatusSink probeStatusSink, BatchUploader batchUploader, DebuggerSettings settings)
         {
             var uploadInterval = settings.UploadFlushIntervalMilliseconds;
             var initialInterval =

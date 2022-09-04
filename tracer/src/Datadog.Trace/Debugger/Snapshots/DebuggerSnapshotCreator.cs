@@ -19,8 +19,6 @@ namespace Datadog.Trace.Debugger.Snapshots
         private const string DDSource = "dd_debugger";
         private const string UnknownValue = "Unknown";
 
-        private static readonly ImmutableDebuggerSettings Settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromDefaultSource());
-
         private readonly JsonTextWriter _jsonWriter;
         private readonly StringBuilder _jsonUnderlyingString;
 
