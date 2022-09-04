@@ -786,6 +786,7 @@ namespace Datadog.Trace.TestHelpers
             public override void Dispose()
             {
                 base.Dispose();
+                _listener?.Stop();
                 _listener?.Close();
                 _udpClient?.Close();
             }
