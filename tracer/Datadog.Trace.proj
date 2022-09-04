@@ -18,7 +18,8 @@
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
     <VbSampleLibProject Include="test\test-applications\integrations\**\*.vbproj" />
-    <LiveDebuggerSampleProject Include="test\test-applications\debugger\Samples.Probes\Samples.Probes.csproj" />
+    <LiveDebuggerSampleProject Include="test\test-applications\debugger\**\*.csproj" />
+    <LiveDebuggerSampleLibProject Include="test\test-applications\debugger\dependency-libs\**\*.csproj" />
     <SampleLibProject Include="test\test-applications\integrations\dependency-libs\**\*.csproj" />
     <RegressionSampleLibProject Include="test\test-applications\regression\dependency-libs\**\Datadog.StackExchange.Redis*.csproj" />
   </ItemGroup>
@@ -79,7 +80,7 @@
 
   <!--  Used by CompileDependencyLibs-->
   <Target Name="BuildDependencyLibs">
-    <MSBuild Targets="Build" Projects="@(SampleLibProject);@(VbSampleLibProject)">
+    <MSBuild Targets="Build" Projects="@(SampleLibProject);@(VbSampleLibProject);@(LiveDebuggerSampleLibProject)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
