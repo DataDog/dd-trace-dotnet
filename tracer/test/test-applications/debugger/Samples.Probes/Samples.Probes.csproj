@@ -24,19 +24,4 @@
     <ProjectReference Include="..\dependency-libs\Samples.Probes.External\Samples.Probes.External.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Reference Include="Cake.Common.Tests">
-      <HintPath>C:\ProgramData\Datadog-APM\logs\DotNet\InstrumentationVerification\Samples.Probes_11352_14-08-2022_11-44-46\INPUT_OriginalAssemblies\Cake.Common.Tests.dll</HintPath>
-    </Reference>
-    <Reference Include="nunit.engine">
-      <HintPath>C:\dev\dd-trace-dotnet\exploration-tests\protobuf\csharp\src\Google.Protobuf.Test\bin\Release\net451\nunit.engine.dll</HintPath>
-    </Reference>
-    <Reference Include="nunit.framework">
-      <HintPath>C:\dev\dd-trace-dotnet\exploration-tests\protobuf\csharp\src\Google.Protobuf.Test\bin\Release\net451\nunit.framework.dll</HintPath>
-    </Reference>
-    <Reference Include="xunit.runner.utility.netcoreapp10">
-      <HintPath>C:\Users\matan.green\AppData\Local\JetBrains\Installations\dotCover221\NetCore\xunit.runner.utility.netcoreapp10.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
 </Project>
