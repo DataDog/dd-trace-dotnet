@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
@@ -126,7 +127,14 @@ namespace Benchmarks.Trace
 
             public long ContentLength => 0;
 
+            public Encoding ContentEncoding => Encoding.UTF8;
+
             public string GetHeader(string headerName) => string.Empty;
+
+            public Task<Stream> GetStreamAsync()
+            {
+                throw new NotImplementedException();
+            }
 
             public Task<string> ReadAsStringAsync()
             {
