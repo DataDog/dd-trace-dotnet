@@ -1,0 +1,60 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "caller": {
+                "fields": null,
+                "type": "String",
+                "value": "RunAsync"
+              }
+            },
+            "fields": null
+          },
+          "return": {
+            "arguments": {
+              "caller": {
+                "fields": null,
+                "type": "String",
+                "value": "RunAsync"
+              }
+            },
+            "fields": null,
+            "throwable": {
+              "message": "Exception from RunAsync.Method",
+              "stacktrace": [],
+              "type": "System.InvalidOperationException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.SmokeTests.AsyncThrowException"
+          }
+        },
+        "stack": [],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.SmokeTests.AsyncThrowException",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "AsyncThrowException+<Method>d__1.MoveNext(caller=RunAsync)",
+    "service": "Probes"
+  }
+]

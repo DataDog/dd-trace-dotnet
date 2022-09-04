@@ -1,0 +1,79 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "input": {
+                "fields": null,
+                "type": "String",
+                "value": "AsyncInstanceMethod.RunAsync"
+              }
+            },
+            "fields": {
+              "ClassName": {
+                "fields": null,
+                "type": "String",
+                "value": "AsyncInstanceMethod"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "input": {
+                "fields": null,
+                "type": "String",
+                "value": "AsyncInstanceMethod.RunAsync"
+              }
+            },
+            "fields": {
+              "ClassName": {
+                "fields": null,
+                "type": "String",
+                "value": "AsyncInstanceMethod"
+              }
+            },
+            "locals": {
+              "@return": {
+                "fields": null,
+                "type": "String",
+                "value": "AsyncInstanceMethod.RunAsync.Method"
+              },
+              "output": {
+                "fields": null,
+                "type": "String",
+                "value": "AsyncInstanceMethod.RunAsync."
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.SmokeTests.AsyncInstanceMethod"
+          }
+        },
+        "stack": [],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.SmokeTests.AsyncInstanceMethod",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "AsyncInstanceMethod+<Method>d__2.MoveNext(input=AsyncInstanceMethod.RunAsync): AsyncInstanceMethod.RunAsync.Method\r\n@return=AsyncInstanceMethod.RunAsync.Method, output=AsyncInstanceMethod.RunAsync.",
+    "service": "Probes"
+  }
+]

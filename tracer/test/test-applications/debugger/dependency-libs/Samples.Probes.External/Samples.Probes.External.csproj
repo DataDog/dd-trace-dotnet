@@ -41,6 +41,7 @@
   </PropertyGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <ItemGroup>
+    <Compile Include="Home.cs" />
     <Compile Include="SecurityTransparentTest.cs" />
   </ItemGroup>
   <ItemGroup>

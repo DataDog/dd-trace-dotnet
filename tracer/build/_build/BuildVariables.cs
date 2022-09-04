@@ -15,21 +15,8 @@ partial class Build
         envVars.Add("COMPlus_DbgMiniDumpType", "4");
         envVars.Add("VSTEST_CONNECTION_TIMEOUT", "200");
         envVars.Add("DD_TRACE_DEBUG", "1");
-
-        var path = CreateProbeDefinition(explorationTestName, explorationTestsDirectory);
-        envVars.Add("DD_DEBUGGER_PROBE_FILE", path);
     }
-
-    static string CreateProbeDefinition(ExplorationTestName explorationTestName, AbsolutePath explorationTestsDirectory)
-    {
-        const string ProbesDefinitionFileName = "probes_definition.json";
-        var testDescription = ExplorationTestDescription.GetExplorationTestDescription(explorationTestName);
-        var projectPath = $"{explorationTestsDirectory}/{testDescription.Name}/{testDescription.PathToUnitTestProject}";
-        var path = Path.Combine(projectPath, ProbesDefinitionFileName);
-        File.WriteAllText(path, "{}");
-        return path;
-    }
-
+    
     public void AddContinuousProfilerEnvironmentVariables(Dictionary<string, string> envVars)
     {
         AddTracerEnvironmentVariables(envVars);

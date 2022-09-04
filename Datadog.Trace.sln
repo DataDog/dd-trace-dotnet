@@ -482,6 +482,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.HotChocolate", "tracer\test\test-applications\integrations\Samples.HotChocolate\Samples.HotChocolate.csproj", "{BBAD4449-D414-4A20-BCA2-DE9C40E4A866}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dependency-libs", "dependency-libs", "{3CCB985E-B3A0-4C73-81E9-898E413D59C7}"
+	ProjectSection(SolutionItems) = preProject
+		tracer\test\test-applications\debugger\dependency-libs\Directory.Build.props = tracer\test\test-applications\debugger\dependency-libs\Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Probes.External", "tracer\test\test-applications\debugger\dependency-libs\Samples.Probes.External\Samples.Probes.External.csproj", "{A09D9106-E1F5-4B31-9611-BA6929C5925D}"
 EndProject

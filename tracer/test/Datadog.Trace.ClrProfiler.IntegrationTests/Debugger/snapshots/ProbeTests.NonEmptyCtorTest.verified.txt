@@ -10,25 +10,8 @@
           "entry": {
             "fields": {
               "rnd": {
-                "fields": {
-                  "Shared": {
-                    "fields": {
-                      "_impl": {
-                        "fields": null,
-                        "type": "ImplBase",
-                        "value": "null"
-                      },
-                      "Shared": {
-                        "fields": null,
-                        "type": "Random",
-                        "value": "Random"
-                      }
-                    },
-                    "type": "Random",
-                    "value": "Random"
-                  }
-                },
-                "type": "Random",
+                "fields": null,
+                "type": "Person",
                 "value": "null"
               }
             }
@@ -37,30 +20,60 @@
             "fields": {
               "rnd": {
                 "fields": {
-                  "_impl": {
+                  "_shouldCloned": {
                     "fields": null,
-                    "type": "ImplBase",
-                    "value": "ImplBase"
+                    "type": "Int32",
+                    "value": "35"
                   },
-                  "Shared": {
+                  "Address": {
                     "fields": {
-                      "_impl": {
+                      "City": {
                         "fields": null,
-                        "type": "ImplBase",
-                        "value": "null"
+                        "type": "Place",
+                        "value": "Place"
                       },
-                      "Shared": {
+                      "HomeType": {
                         "fields": null,
-                        "type": "Random",
-                        "value": "Random"
+                        "type": "BuildingType",
+                        "value": "Cottage"
+                      },
+                      "Number": {
+                        "fields": null,
+                        "type": "Int32",
+                        "value": "0"
+                      },
+                      "Street": {
+                        "fields": null,
+                        "type": "String",
+                        "value": "null"
                       }
                     },
-                    "type": "Random",
-                    "value": "Random"
+                    "type": "Address",
+                    "value": "Address"
+                  },
+                  "Age": {
+                    "fields": null,
+                    "type": "Double",
+                    "value": "35"
+                  },
+                  "Children": {
+                    "fields": null,
+                    "type": "List`1",
+                    "value": "null"
+                  },
+                  "Id": {
+                    "fields": null,
+                    "type": "Guid",
+                    "value": "ScrubbedValue"
+                  },
+                  "Name": {
+                    "fields": null,
+                    "type": "String",
+                    "value": "Ashur Thokozani"
                   }
                 },
-                "type": "Random",
-                "value": "Random"
+                "type": "Person",
+                "value": "Person"
               }
             }
           }

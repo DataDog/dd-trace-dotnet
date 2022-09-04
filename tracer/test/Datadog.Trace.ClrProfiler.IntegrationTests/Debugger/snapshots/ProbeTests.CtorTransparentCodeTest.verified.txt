@@ -1,0 +1,79 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "fields": {
+              "_home": {
+                "fields": null,
+                "type": "Home",
+                "value": "null"
+              }
+            }
+          },
+          "return": {
+            "fields": {
+              "_home": {
+                "fields": {
+                  "Name": {
+                    "fields": null,
+                    "type": "String",
+                    "value": "Harry House"
+                  }
+                },
+                "type": "Home",
+                "value": "Home"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": ".ctor",
+            "type": "Samples.Probes.External.SecurityTransparentTest"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "SecurityTransparentTest.cs",
+            "function": "Samples.Probes.External.SecurityTransparentTest..ctor",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "CtorTransparentCodeTest.cs",
+            "function": "Samples.Probes.SmokeTests.CtorTransparentCodeTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": ".ctor",
+      "name": "Samples.Probes.External.SecurityTransparentTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": ".ctor()",
+    "service": "Probes"
+  }
+]

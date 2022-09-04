@@ -12,6 +12,6 @@ namespace Samples.Probes.External
     /// </summary>
     public class SecurityTransparentTest
     {
-        private readonly Random _randomizer = new Random();
+        private readonly Home _home = new Home { Name = "Harry House" };
     }
 }
