@@ -38,7 +38,7 @@ internal class LiveDebuggerFactory
             () => new MinimalAgentHeaderHelper(),
             uri => uri);
 
-        var batchApi = AgentBatchUploadApi.Create(settings, apiFactory, discoveryService);
+        var batchApi = AgentBatchUploadApi.Create(apiFactory, discoveryService);
         var batchUploader = BatchUploader.Create(batchApi);
         var debuggerSink = DebuggerSink.Create(snapshotStatusSink, probeStatusSink, settings, batchUploader);
 
