@@ -60,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 var tags = new ProcessCommandStartTags
                 {
                     EnviromentVars = varsTruncated,
-                    Truncated = truncated ? "true" : null
+                    IsTruncated = truncated ? "true" : null
                 };
 
                 var serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
