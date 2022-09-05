@@ -68,12 +68,14 @@ namespace Datadog.Trace.Coverage.Collector
             {
                 _logger.Debug($"Processing: {_assemblyFilePath}");
 
+                // Check if the assembly is in the ignored assemblies list.
                 var assemblyFullName = Path.GetFileName(_assemblyFilePath);
                 if (Array.Exists(IgnoredAssemblies, i => assemblyFullName == i))
                 {
                     return;
                 }
 
+                // Open the assembly
                 var customResolver = new CustomResolver(_logger, _assemblyFilePath);
                 customResolver.AddSearchDirectory(Path.GetDirectoryName(_assemblyFilePath));
                 using var assemblyDefinition = AssemblyDefinition.ReadAssembly(_assemblyFilePath, new ReaderParameters
