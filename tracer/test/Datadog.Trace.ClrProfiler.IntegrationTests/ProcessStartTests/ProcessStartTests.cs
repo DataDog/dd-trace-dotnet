@@ -5,50 +5,52 @@
 
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [UsesVerify]
     public class ProcessStartTests : TestHelper
     {
+        private static readonly Regex VarsRegex = new(@"      cmd.environment_variables:(\n|\r){1,2}.*(\n|\r){1,2},(\r|\n){1,2}");
+        private static readonly Regex StackRegex = new(@"      error.stack:(\n|\r){1,2}.*(\n|\r){1,2}.*,(\r|\n){1,2}");
+        private static readonly Regex ErrorMsgRegex = new(@"      error.msg:.*,(\r|\n){1,2}");
+
         public ProcessStartTests(ITestOutputHelper output)
             : base("ProcessStart", output)
         {
             SetServiceVersion("1.0.0");
         }
 
-        [SkippableTheory]
-        [MemberData(nameof(PackageVersions.MongoDB), MemberType = typeof(PackageVersions))]
+        [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTraces(string packageVersion)
+        public async Task SubmitsTraces()
         {
             const int expectedSpanCount = 5;
             const string expectedOperationName = "command_execution";
-            const string expectedServiceName = "Samples.ProcessStart-command";
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var process = RunSampleAndWaitForExit(agent);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
 
-            Assert.Equal(expectedSpanCount, spans.Count);
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(VarsRegex, string.Empty);
+            settings.AddRegexScrubber(StackRegex, string.Empty);
+            settings.AddRegexScrubber(ErrorMsgRegex, string.Empty);
+            await VerifyHelper.VerifySpans(spans, settings)
+                              .UseFileName("ProcessStartTests.SubmitsTraces")
+                              .DisableRequireUniquePrefix(); // all package versions should be the same
 
-            foreach (var span in spans)
-            {
-                var result = span.IsProcessStart();
-                Assert.True(result.Success, result.ToString());
-                Assert.Equal(SpanTypes.System, span.Type);
-                Assert.Equal(span.Name, expectedOperationName);
-                Assert.Contains(".exe", span.Resource.ToLower());
-                Assert.Equal(expectedServiceName, span.Service);
-                Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-            }
+            VerifyInstrumentation(process.Process);
 
             telemetry.AssertIntegrationEnabled(IntegrationId.ProcessStart);
         }
