@@ -30,6 +30,10 @@ namespace Datadog.Trace.Coverage.Collector
         private static readonly Regex NetCorePattern = new(@".NETCoreApp,Version=v(\d.\d)", RegexOptions.Compiled);
         private static readonly MethodInfo ArrayEmptyOfIntMethod = typeof(Array).GetMethod("Empty")!.MakeGenericMethod(typeof(int));
         private static readonly Assembly TracerAssembly = typeof(CoverageReporter).Assembly;
+        private static readonly string[] IgnoredAssemblies =
+        {
+            "NUnit3.TestAdapter.dll"
+        };
 
         private readonly CIVisibilitySettings? _ciVisibilitySettings;
         private readonly ICollectorLogger _logger;
@@ -63,6 +67,12 @@ namespace Datadog.Trace.Coverage.Collector
             try
             {
                 _logger.Debug($"Processing: {_assemblyFilePath}");
+
+                var assemblyFullName = Path.GetFileName(_assemblyFilePath);
+                if (Array.Exists(IgnoredAssemblies, i => assemblyFullName == i))
+                {
+                    return;
+                }
 
                 var customResolver = new CustomResolver(_logger, _assemblyFilePath);
                 customResolver.AddSearchDirectory(Path.GetDirectoryName(_assemblyFilePath));
