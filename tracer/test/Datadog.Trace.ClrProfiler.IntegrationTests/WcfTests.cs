@@ -93,7 +93,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var settings = VerifyHelper.GetSpanVerifierSettings(binding, enableNewWcfInstrumentation, enableWcfObfuscation);
 
-                await Verifier.Verify(spans, settings)
+                await VerifyHelper.VerifySpans(spans, settings)
                               .UseMethodName("_");
 
                 foreach (var span in spans)
