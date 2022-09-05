@@ -19,23 +19,21 @@ namespace Datadog.Trace.Debugger.Sink
 
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly IDiscoveryService _discoveryService;
-        private readonly Uri? _snapshotUri;
 
-        private AgentBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, Uri? snapshotUri)
+        private AgentBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
         {
             _apiRequestFactory = apiRequestFactory;
             _discoveryService = discoveryService;
-            _snapshotUri = snapshotUri;
         }
 
-        public static AgentBatchUploadApi Create(ImmutableDebuggerSettings settings, IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
+        public static AgentBatchUploadApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
         {
-            return new AgentBatchUploadApi(apiRequestFactory, discoveryService, settings.SnapshotUri);
+            return new AgentBatchUploadApi(apiRequestFactory, discoveryService);
         }
 
         public async Task<bool> SendBatchAsync(ArraySegment<byte> snapshots)
         {
-            var uri = _snapshotUri ?? _apiRequestFactory.GetEndpoint(_discoveryService.DebuggerEndpoint);
+            var uri = _apiRequestFactory.GetEndpoint(_discoveryService.DebuggerEndpoint);
             var request = _apiRequestFactory.Create(uri);
 
             using var response = await request.PostAsync(snapshots, MimeTypes.Json).ConfigureAwait(false);

@@ -10,11 +10,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 {
     internal partial class GraphQLTags : InstrumentationTags
     {
+        public GraphQLTags()
+        {
+        }
+
+        public GraphQLTags(string instrumentationName)
+        {
+            InstrumentationName = instrumentationName;
+        }
+
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Server;
 
         [Tag(Trace.Tags.InstrumentationName)]
-        public string InstrumentationName => GraphQLCommon.IntegrationName;
+        public string InstrumentationName { get; }
 
         [Tag(Trace.Tags.GraphQLSource)]
         public string Source { get; set; }

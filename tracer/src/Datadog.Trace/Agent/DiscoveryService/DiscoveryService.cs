@@ -10,7 +10,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.Agent.DiscoveryService
@@ -75,8 +74,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                     using var response = await api.GetAsync().ConfigureAwait(false);
                     if (response.StatusCode == 200)
                     {
-                        var content = await response.ReadAsStringAsync().ConfigureAwait(false);
-                        ProcessDiscoveryResponse(content);
+                        await ProcessDiscoveryResponse(response).ConfigureAwait(false);
 
                         _cancellationSource = null;
                         return true;
@@ -104,9 +102,9 @@ namespace Datadog.Trace.Agent.DiscoveryService
             return false;
         }
 
-        private void ProcessDiscoveryResponse(string content)
+        private async Task ProcessDiscoveryResponse(IApiResponse response)
         {
-            var jObject = JsonConvert.DeserializeObject<JObject>(content);
+            var jObject = await response.ReadAsTypeAsync<JObject>().ConfigureAwait(false);
             AgentVersion = jObject["version"]?.Value<string>();
 
             var discoveredEndpoints = (jObject["endpoints"] as JArray)?.Values<string>().ToArray();
