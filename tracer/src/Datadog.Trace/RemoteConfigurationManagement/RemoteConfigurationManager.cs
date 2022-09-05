@@ -4,8 +4,10 @@
 // </copyright>
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -30,6 +32,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         private readonly CancellationTokenSource _cancellationSource;
         private readonly ConcurrentDictionary<string, Product> _products;
+
+        // 32 capablieties ought to be enough for anybody
+        private BitVector32 _capablities = new();
 
         private int _rootVersion;
         private int _targetsVersion;
@@ -121,6 +126,11 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             _products.TryRemove(productName, out _);
         }
 
+        public void SetCapablity(int index, bool available)
+        {
+            _capablities[index] = available;
+        }
+
         private async Task Poll()
         {
             try
@@ -156,7 +166,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
 
             var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, _lastPollError != null, _lastPollError);
-            var rcmClient = new RcmClient(_id, products.Keys, _rcmTracer, rcmState, new byte[] { 0 });
+            var rcmClient = new RcmClient(_id, products.Keys, _rcmTracer, rcmState, BitConverter.GetBytes(_capablities.Data));
             var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
 
             return rcmRequest;
