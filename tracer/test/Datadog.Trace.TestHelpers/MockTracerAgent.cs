@@ -785,9 +785,7 @@ namespace Datadog.Trace.TestHelpers
 
             public override void Dispose()
             {
-                System.Threading.Thread.Sleep(2000);
                 base.Dispose();
-                System.Threading.Thread.Sleep(2000);
                 _listener?.Close();
                 _udpClient?.Close();
             }
@@ -1120,7 +1118,9 @@ namespace Datadog.Trace.TestHelpers
 
             public override void Dispose()
             {
+                System.Threading.Thread.Sleep(2000);
                 base.Dispose();
+                System.Threading.Thread.Sleep(2000);
                 if (_udsTracesSocket != null)
                 {
                     IgnoreException(() => _udsTracesSocket.Shutdown(SocketShutdown.Both));
