@@ -7,9 +7,5 @@
 
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\dependency-libs\Samples.DatabaseHelper\Samples.DatabaseHelper.csproj" />
-    <ProjectReference Include="..\dependency-libs\Samples.DatabaseHelper.netstandard\Samples.DatabaseHelper.netstandard.csproj" />
-  </ItemGroup>
 
 </Project>
