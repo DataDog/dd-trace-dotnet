@@ -36,6 +36,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         };
 
         [SkippableTheory]
+        [Trait("RunOnWindows", "True")]
         [MemberData(nameof(TestData))]
         public async Task DetectAgentUrl((string, string)[] environmentVariables)
         {
@@ -53,6 +54,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public async Task DetectTransportHttp()
         {
             using var agent = MockTracerAgent.Create(Output, TcpPortProvider.GetOpenPort());
@@ -74,6 +76,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
 #if NETCOREAPP3_1_OR_GREATER
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public async Task DetectTransportUds()
         {
             var tracesUdsPath = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
@@ -95,6 +98,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 #endif
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public async Task NoAgent()
         {
             using var console = ConsoleHelper.Redirect();
@@ -109,6 +113,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public async Task FaultyAgent()
         {
             using var console = ConsoleHelper.Redirect();
@@ -125,6 +130,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public async Task DetectVersion()
         {
             const string expectedVersion = "7.66.55";
@@ -143,6 +149,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
 #if NETCOREAPP3_1_OR_GREATER
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public async Task DetectVersionUds()
         {
             const string expectedVersion = "7.66.55";
@@ -168,6 +175,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 #endif
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public async Task NoVersion()
         {
             using var console = ConsoleHelper.Redirect();

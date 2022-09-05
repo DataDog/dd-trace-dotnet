@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.AppSec.Transports;
+using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ClrProfiler;
@@ -17,6 +18,7 @@ using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
+using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.AppSec
 {
@@ -69,10 +71,7 @@ namespace Datadog.Trace.AppSec
 
             ResponseHeaders = new()
             {
-                { "content-length", string.Empty },
-                { "content-type", string.Empty },
-                { "Content-Encoding", string.Empty },
-                { "Content-Language", string.Empty },
+                { "content-length", string.Empty }, { "content-type", string.Empty }, { "Content-Encoding", string.Empty }, { "Content-Language", string.Empty },
             };
         }
 
@@ -97,9 +96,11 @@ namespace Datadog.Trace.AppSec
                     _waf = waf ?? Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules);
                     if (_waf?.InitializedSuccessfully ?? false)
                     {
-                        _instrumentationGateway.EndRequest += RunWaf;
-                        _instrumentationGateway.PathParamsAvailable += AggregateAddressesInContext;
-                        _instrumentationGateway.BodyAvailable += AggregateAddressesInContext;
+                        _instrumentationGateway.StartRequest += RunWafAndReact;
+                        _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
+                        _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
+                        _instrumentationGateway.BodyAvailable += RunWafAndReact;
+                        _instrumentationGateway.BlockingOpportunity += MightStopRequest;
 #if NETFRAMEWORK
                         try
                         {
@@ -125,7 +126,7 @@ namespace Datadog.Trace.AppSec
                         _settings.Enabled = false;
                     }
 
-                    _instrumentationGateway.EndRequest += ReportWafInitInfoOnce;
+                    _instrumentationGateway.StartRequest += ReportWafInitInfoOnce;
                     LifetimeManager.Instance.AddShutdownTask(RunShutdown);
                     _rateLimiter = new AppSecRateLimiter(_settings.TraceRateLimit);
                 }
@@ -142,10 +143,7 @@ namespace Datadog.Trace.AppSec
         /// </summary>
         public static Security Instance
         {
-            get
-            {
-                return LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock);
-            }
+            get => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock);
 
             set
             {
@@ -278,6 +276,11 @@ namespace Datadog.Trace.AppSec
         private void Report(ITransport transport, Span span, IResult result, bool blocked)
         {
             span.SetTag(Tags.AppSecEvent, "true");
+            if (blocked)
+            {
+                span.SetTag(Tags.AppSecBlocked, "true");
+            }
+
             var resultData = result.Data;
             SetTraceSamplingPriority(span);
 
@@ -332,38 +335,53 @@ namespace Datadog.Trace.AppSec
             return additiveContext;
         }
 
-        private void AggregateAddressesInContext(object sender, InstrumentationGatewaySecurityEventArgs e)
+        private void MightStopRequest(object sender, InstrumentationGatewayBlockingEventArgs args)
         {
-            var context = GetOrCreateContext(e.Transport);
-            context.AggregateAddresses(e.EventData, e.OverrideExistingAddress);
+            if (args.Transport.Blocked)
+            {
+                AddResponseHeaderTags(args.Transport, args.Scope.Span);
+                args.InvokeDoBeforeBlocking();
+                var transport = args.Transport;
+                var additiveContext = GetOrCreateContext(transport);
+                additiveContext.Dispose();
+                throw new BlockException();
+            }
         }
 
-        // NOTE: This method disposes of the WAF context, so it should be run once,
-        // and only once, at the end of the request.
-        private void RunWaf(object sender, InstrumentationGatewaySecurityEventArgs e)
+        private void RunWafAndReactAndCleanup(object sender, InstrumentationGatewaySecurityEventArgs e)
+        {
+            RunWafAndReact(sender, e);
+            e.Transport.DisposeAdditiveContext();
+        }
+
+        private void RunWafAndReact(object sender, InstrumentationGatewaySecurityEventArgs e)
         {
             try
             {
-                using var additiveContext = GetOrCreateContext(e.Transport);
-                additiveContext.AggregateAddresses(e.EventData, e.OverrideExistingAddress);
+                if (e.Transport.Blocked)
+                {
+                    return;
+                }
+
+                var additiveContext = GetOrCreateContext(e.Transport);
                 var span = GetLocalRootSpan(e.RelatedSpan);
 
                 AnnotateSpan(span);
 
                 // run the WAF and execute the results
-                using var wafResult = additiveContext.Run(_settings.WafTimeoutMicroSeconds);
-                if (wafResult.ReturnCode == ReturnCode.Monitor || wafResult.ReturnCode == ReturnCode.Block)
+                using var wafResult = additiveContext.Run(e.EventData, _settings.WafTimeoutMicroSeconds);
+                if (wafResult.ReturnCode is ReturnCode.Monitor or ReturnCode.Block)
                 {
-                    var block = wafResult.ReturnCode == ReturnCode.Block;
+                    var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock");
                     if (block)
                     {
-                        // blocking has been removed, waiting a better implementation
+                        e.Transport.WriteBlockedResponse(_settings.BlockedJsonTemplate, _settings.BlockedHtmlTemplate);
                     }
 
                     Report(e.Transport, span, wafResult, block);
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not BlockException)
             {
                 Log.Error(ex, "Call into the security module failed");
             }
@@ -371,7 +389,7 @@ namespace Datadog.Trace.AppSec
 
         private void ReportWafInitInfoOnce(object sender, InstrumentationGatewaySecurityEventArgs e)
         {
-            _instrumentationGateway.EndRequest -= ReportWafInitInfoOnce;
+            _instrumentationGateway.StartRequest -= ReportWafInitInfoOnce;
             var span = e.RelatedSpan.Context.TraceContext.RootSpan ?? e.RelatedSpan;
             span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Asm);
             span.SetMetric(Metrics.AppSecWafInitRulesLoaded, _waf.InitializationResult.LoadedRules);
@@ -388,9 +406,11 @@ namespace Datadog.Trace.AppSec
         {
             if (_instrumentationGateway != null)
             {
-                _instrumentationGateway.PathParamsAvailable -= AggregateAddressesInContext;
-                _instrumentationGateway.BodyAvailable -= AggregateAddressesInContext;
-                _instrumentationGateway.EndRequest -= RunWaf;
+                _instrumentationGateway.PathParamsAvailable -= RunWafAndReact;
+                _instrumentationGateway.BodyAvailable -= RunWafAndReact;
+                _instrumentationGateway.StartRequest -= RunWafAndReact;
+                _instrumentationGateway.EndRequest -= RunWafAndReactAndCleanup;
+                _instrumentationGateway.BlockingOpportunity -= MightStopRequest;
 
 #if NETFRAMEWORK
                 if (_usingIntegratedPipeline)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using dnlib.DotNet;
 using dnlib.DotNet.Writer;
@@ -432,7 +433,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
                 string typeFullName = method.DeclaringType?.FullName;
                 typeFullName = typeFullName == null ? "" : typeFullName + ".";
                 string name = typeFullName + method.Name + ".il";
-                string filePath = Path.Combine(_args.InstrumentedMethodsFolder, new FileInfo(name).CleanFileName("%"));
+                string filePath = Path.Combine(_args.InstrumentedMethodsFolder, Utils.CleanFileName(name, "%"));
                 string instructions = string.Join(Environment.NewLine, method.Body.Instructions);
                 File.WriteAllText(filePath, instructions, Encoding.Unicode);
             }

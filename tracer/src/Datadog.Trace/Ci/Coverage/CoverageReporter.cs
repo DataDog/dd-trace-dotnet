@@ -2,44 +2,34 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
-namespace Datadog.Trace.Ci.Coverage
+namespace Datadog.Trace.Ci.Coverage;
+
+/// <summary>
+/// Coverage Reporter
+/// </summary>
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+public static class CoverageReporter
 {
+    private static CoverageEventHandler _handler = new DefaultCoverageEventHandler();
+
     /// <summary>
-    /// Coverage Reporter
+    /// Gets or sets coverage handler
     /// </summary>
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class CoverageReporter
+    /// <exception cref="ArgumentNullException">If value is null</exception>
+    internal static CoverageEventHandler Handler
     {
-        private static CoverageEventHandler _handler = new DefaultCoverageEventHandler();
-
-        /// <summary>
-        /// Gets or sets coverage handler
-        /// </summary>
-        /// <exception cref="ArgumentNullException">If value is null</exception>
-        internal static CoverageEventHandler Handler
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => _handler;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            set => _handler = value ?? throw new ArgumentNullException(nameof(value));
-        }
-
-        /// <summary>
-        /// Tries to get a coverage scope instance for the current context
-        /// </summary>
-        /// <param name="filePath">Filepath</param>
-        /// <param name="scope">Coverage scope instance</param>
-        /// <returns>True if the scope could be created; otherwise, false.</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool TryGetScope(string filePath, out CoverageScope scope)
-        {
-            return _handler.TryGetScope(filePath, out scope);
-        }
+        get => _handler;
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        set => _handler = value ?? throw new ArgumentNullException(nameof(value));
     }
+
+    internal static CoverageContextContainer? Container => _handler.Container;
 }

@@ -474,6 +474,14 @@ namespace Datadog.Trace.Configuration
             public const string DelayWcfInstrumentationEnabled = "DD_TRACE_DELAY_WCF_INSTRUMENTATION_ENABLED";
 
             /// <summary>
+            /// Feature flag to enable obfuscating the <c>LocalPath</c> of a WCF request that goes
+            /// into the <c>resourceName</c> of a span.
+            /// <para>Note: that this only applies when the WCF action is an empty string.</para>
+            /// </summary>
+            /// <seealso cref="TracerSettings.WcfObfuscationEnabled"/>
+            public const string WcfObfuscationEnabled = "DD_TRACE_WCF_RESOURCE_OBFUSCATION_ENABLED";
+
+            /// <summary>
             /// Enables a fix around header tags normalization.
             /// We used to normalize periods even if a tag was provided for a header, whereas we should not.
             /// This flag defaults to true and is here in case customers need retrocompatibility only

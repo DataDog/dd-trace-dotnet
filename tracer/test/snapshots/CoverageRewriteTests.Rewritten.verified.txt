@@ -6,6 +6,7 @@ using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Coverage.Attributes;
+using Datadog.Trace.Ci.Coverage.Metadata.Target;
 
 [assembly: CompilationRelaxations(8)]
 [assembly: RuntimeCompatibility(WrapNonExceptionThrows = true)]
@@ -28,22 +29,22 @@ namespace CoverageRewriterAssembly
 			[CompilerGenerated]
 			get
 			{
-				if (!CoverageReporter.TryGetScope("/Users/tony.redondo/repos/CoverageRewriterAssembly/CoverageRewriterAssembly/Class1.cs", out var scope))
+				if (!CoverageReporter<ModuleCoverage>.TryGetScope(1, 0, out var counters))
 				{
 					return <MyProperty>k__BackingField;
 				}
-				scope.Report(1407529502703656uL);
+				counters[0]++;
 				return <MyProperty>k__BackingField;
 			}
 			[CompilerGenerated]
 			set
 			{
-				if (!CoverageReporter.TryGetScope("/Users/tony.redondo/repos/CoverageRewriterAssembly/CoverageRewriterAssembly/Class1.cs", out var scope))
+				if (!CoverageReporter<ModuleCoverage>.TryGetScope(1, 1, out var counters))
 				{
 					<MyProperty>k__BackingField = value;
 					return;
 				}
-				scope.Report(1407550977540141uL);
+				counters[0]++;
 				<MyProperty>k__BackingField = value;
 			}
 		}
@@ -51,7 +52,7 @@ namespace CoverageRewriterAssembly
 		public void Main()
 		{
 			int i;
-			if (!CoverageReporter.TryGetScope("/Users/tony.redondo/repos/CoverageRewriterAssembly/CoverageRewriterAssembly/Class1.cs", out var scope))
+			if (!CoverageReporter<ModuleCoverage>.TryGetScope(1, 2, out var counters))
 			{
 				Console.WriteLine("Main Method");
 				for (i = 0; i < 100; i++)
@@ -62,39 +63,50 @@ namespace CoverageRewriterAssembly
 				Console.WriteLine(MyProperty);
 				return;
 			}
-			scope.Report(2251838468915210uL, 2533330625560622uL);
+			counters[0]++;
+			counters[1]++;
 			Console.WriteLine("Main Method");
-			scope.Report(2814827077173275uL);
+			counters[2]++;
 			i = 0;
 			while (true)
 			{
-				scope.Report(2814874321813540uL);
+				counters[7]++;
 				if (i >= 100)
 				{
 					break;
 				}
-				scope.Report(3096280579112974uL, 3377772735758374uL);
+				counters[3]++;
+				counters[4]++;
 				Console.WriteLine(i);
-				scope.Report(3659230532665358uL, 2814912976519209uL);
+				counters[5]++;
+				counters[6]++;
 				i++;
 			}
-			scope.Report(4222180486217762uL);
+			counters[8]++;
 			MyProperty = "Value";
-			scope.Report(4785130439770155uL);
+			counters[9]++;
 			Console.WriteLine(MyProperty);
-			scope.Report(5066588236677130uL);
+			counters[10]++;
 		}
 
-		[AsyncStateMachine(typeof(<MainAsync>d__5))]
-		[DebuggerStepThrough]
-		public Task MainAsync()
+		public async Task MainAsync()
 		{
-			<MainAsync>d__5 stateMachine = new <MainAsync>d__5();
-			stateMachine.<>t__builder = AsyncTaskMethodBuilder.Create();
-			stateMachine.<>4__this = this;
-			stateMachine.<>1__state = -1;
-			stateMachine.<>t__builder.Start(ref stateMachine);
-			return stateMachine.<>t__builder.Task;
+			await Task.Delay(100);
+		}
+	}
+}
+namespace Datadog.Trace.Ci.Coverage.Metadata.Target
+{
+	public class ModuleCoverage : ModuleCoverageMetadata
+	{
+		public ModuleCoverage()
+		{
+			Metadata = new int[2][];
+			Metadata[0] = Array.Empty<int>();
+			Metadata[1] = new int[5];
+			Metadata[1][0] = 1;
+			Metadata[1][1] = 1;
+			Metadata[1][2] = 11;
 		}
 	}
 }

@@ -15,8 +15,6 @@ MetadataInterfaces::MetadataInterfaces(
     m_metadataInterfaces(metadataInterfaces)
 {
     AddRef();
-    // attach from tests, we can do it also with ev and spin
-    // std::this_thread::sleep_for(std::chrono::milliseconds(20000));
 }
 
 MetadataInterfaces::~MetadataInterfaces()

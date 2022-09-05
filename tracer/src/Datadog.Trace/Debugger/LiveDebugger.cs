@@ -7,7 +7,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
@@ -121,12 +120,6 @@ namespace Datadog.Trace.Debugger
                 if (!_settings.Enabled)
                 {
                     Log.Information("Live Debugger is disabled. To enable it, please set DD_DEBUGGER_ENABLED environment variable to 'true'.");
-                    return false;
-                }
-
-                if (_settings.TransportType != TracesTransportType.Default)
-                {
-                    Log.Information("Live Debugger is not currently supported when using Unix Domain Sockets or Named Pipes.");
                     return false;
                 }
 

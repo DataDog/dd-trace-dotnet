@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Globalization;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
@@ -96,6 +97,12 @@ namespace Datadog.Trace
             var rootSpanInNextBatch = false;
             bool shouldKeepTraceFinal = false;
             bool shouldKeepSpan = ShouldKeepSpan(span);
+
+            // Propagate the resource name to the profiler for root web spans
+            if (span.IsRootSpan && span.Type == SpanTypes.Web)
+            {
+                Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
+            }
 
             lock (this)
             {

@@ -11,6 +11,8 @@ namespace Datadog.Trace.ContinuousProfiler
 
         void Set(ulong localRootSpanId, ulong spanId);
 
+        void SetEndpoint(ulong localRootSpanId, string endpoint);
+
         void Reset();
     }
 }

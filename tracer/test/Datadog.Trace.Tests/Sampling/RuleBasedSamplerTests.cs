@@ -135,12 +135,10 @@ namespace Datadog.Trace.Tests.Sampling
             var sampleSize = iterations;
             var autoKeeps = 0;
             var userKeeps = 0;
-            int seed = new Random().Next();
-            var idGenerator = new SpanIdGenerator(seed);
 
             while (sampleSize-- > 0)
             {
-                var traceId = idGenerator.CreateNew();
+                var traceId = SpanIdGenerator.CreateNew();
                 var span = GetMyServiceSpan(traceId);
                 var decision = sampler.MakeSamplingDecision(span);
 
@@ -161,7 +159,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             Assert.True(
                 autoKeepRate >= autoKeepRateLowerLimit && autoKeepRate <= autoKeepRateUpperLimit,
-                $"Sampling AUTO_KEEP rate expected between {autoKeepRateLowerLimit} and {autoKeepRateUpperLimit}, actual rate is {autoKeepRate}. Random generator seeded with {seed}.");
+                $"Sampling AUTO_KEEP rate expected between {autoKeepRateLowerLimit} and {autoKeepRateUpperLimit}, actual rate is {autoKeepRate}.");
 
             // USER_KEEP (aka MANUAL_KEEP)
             var userKeepRate = userKeeps / (float)iterations;
@@ -170,7 +168,7 @@ namespace Datadog.Trace.Tests.Sampling
 
             Assert.True(
                 userKeepRate >= userKeepRateLowerLimit && userKeepRate <= userKeepRateUpperLimit,
-                $"Sampling USER_KEEP rate expected between {userKeepRateLowerLimit} and {userKeepRateUpperLimit}, actual rate is {userKeepRate}. Random generator seeded with {seed}.");
+                $"Sampling USER_KEEP rate expected between {userKeepRateLowerLimit} and {userKeepRateUpperLimit}, actual rate is {userKeepRate}.");
         }
 
         private class NoLimits : IRateLimiter

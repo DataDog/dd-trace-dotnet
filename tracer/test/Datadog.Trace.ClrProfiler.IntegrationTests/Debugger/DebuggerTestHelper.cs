@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -12,11 +13,36 @@ using Datadog.Trace.Pdb;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Samples.Probes;
+using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger;
 
 internal static class DebuggerTestHelper
 {
+    public static IEnumerable<object[]> AllProbeTestTypes()
+    {
+        return typeof(IRun)
+              .Assembly.GetTypes()
+              .Where(t => t.GetInterface(nameof(IRun)) != null ||
+                          t.GetInterface(nameof(IRun)) != null)
+              .Select(t => new object[] { t });
+    }
+
+    public static Type FirstSupportedProbeTestType(string framework)
+    {
+        var type = typeof(IRun)
+                  .Assembly.GetTypes()
+                  .Where(t => t.GetInterface(nameof(IRun)) != null)
+                  .FirstOrDefault(t => DebuggerTestHelper.GetAllProbes(t, framework, unlisted: false, new DeterministicGuidGenerator()).Any());
+
+        if (type == null)
+        {
+            throw new SkipException("No supported test types found.");
+        }
+
+        return type;
+    }
+
     internal static DebuggerSampleProcessHelper StartSample(TestHelper helper, MockTracerAgent agent, string testName)
     {
         var listenPort = TcpPortProvider.GetOpenPort();

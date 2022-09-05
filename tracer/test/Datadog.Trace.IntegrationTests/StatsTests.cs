@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -13,6 +14,7 @@ using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.Stats;
 using FluentAssertions;
+using FluentAssertions.Execution;
 using Xunit;
 
 namespace Datadog.Trace.IntegrationTests
@@ -20,6 +22,249 @@ namespace Datadog.Trace.IntegrationTests
     public class StatsTests
     {
         private const int StatsComputationIntervalSeconds = 10;
+
+        [Fact]
+        public async Task SendsStatsWithProcessing_Normalizer()
+        {
+            string serviceTooLongString = new string('s', 150);
+            string truncatedServiceString = new string('s', 100);
+
+            string serviceInvalidString = "bad$service";
+            string serviceNormalizedString = "bad_service";
+
+            string nameTooLongString = new string('n', 150);
+            string truncatedNameString = new string('n', 100);
+
+            string nameInvalidString = "bad$name";
+            string nameNormalizedString = "bad_name";
+
+            string typeTooLongString = new string('t', 150);
+            string truncatedTypeString = new string('t', 100);
+
+            var beforeY2KDuration = TimeSpan.FromMilliseconds(2000);
+            var year2KDateTime = new DateTime(2000, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+
+            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+
+            var settings = new TracerSettings
+            {
+                StatsComputationEnabled = true,
+                ServiceName = "default-service",
+                ServiceVersion = "v1",
+                Environment = "test",
+                Exporter = new ExporterSettings
+                {
+                    AgentUri = new Uri($"http://localhost:{agent.Port}"),
+                }
+            };
+
+            var immutableSettings = settings.Build();
+            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+            Span span;
+            // SpinWait.SpinUntil(() => tracer.CanComputeStats, 5_000); // TODO: Replace with discovery logic
+
+            // Service
+            // - If service is empty, it is set to DefaultServiceName
+            // - If service is too long, it is truncated to 100 characters
+            // - Normalized to match dogstatsd tag format
+            CreateDefaultSpan(serviceName: serviceTooLongString);
+            CreateDefaultSpan(serviceName: serviceInvalidString);
+
+            // Name
+            // - If empty, it is set to "unnamed_operation"
+            // - If too long, it is truncated to 100 characters
+            // - Normalized to match Datadog metric name normalization
+            CreateDefaultSpan(operationName: string.Empty);
+            CreateDefaultSpan(operationName: nameTooLongString);
+            CreateDefaultSpan(operationName: nameInvalidString);
+
+            // Resource
+            // - If empty, it is set to the same value as Name
+            CreateDefaultSpan(resourceName: string.Empty);
+
+            // Duration
+            // - If smaller than 0, it is set to 0
+            // - If larger than math.MaxInt64 - Start, it is set to 0
+            CreateDefaultSpan(finishOnClose: false).Finish(TimeSpan.FromSeconds(-1));
+            CreateDefaultSpan(finishOnClose: false).Finish(TimeSpan.FromTicks(long.MaxValue / TimeConstants.NanoSecondsPerTick));
+
+            // Start
+            // - If smaller than Y2K, set to (now - Duration) or 0 if the result is negative
+            span = CreateDefaultSpan(finishOnClose: false);
+            span.SetStartTime(year2KDateTime.AddDays(-1));
+            span.Finish(beforeY2KDuration);
+
+            // Type
+            // - If too long, it is truncated to 100 characters
+            CreateDefaultSpan(type: typeTooLongString);
+
+            // Meta
+            // - "http.status_code" key is deleted if it's an invalid numeric value smaller than 100 or bigger than 600
+            CreateDefaultSpan(httpStatusCode: "invalid");
+            CreateDefaultSpan(httpStatusCode: "99");
+            CreateDefaultSpan(httpStatusCode: "600");
+
+            await tracer.FlushAndCloseAsync(); // Flushes and closes both traces and stats
+
+            var statsPayload = agent.WaitForStats(1);
+            var spans = agent.WaitForSpans(13);
+
+            statsPayload.Should().HaveCount(1);
+            statsPayload[0].Stats.Should().HaveCount(1);
+
+            var stats = statsPayload[0].Stats[0].Stats;
+            stats.Sum(stats => stats.Hits).Should().Be(13);
+
+            using var assertionScope = new AssertionScope();
+
+            // Assert normaliztion of service names
+            stats.Where(s => s.Service == truncatedServiceString).Should().ContainSingle("service names are truncated at 100 characters");
+            stats.Where(s => s.Service == serviceNormalizedString).Should().ContainSingle("service names are normalized");
+            stats.Where(s => s.Service != truncatedServiceString && s.Service != serviceNormalizedString).Should().OnlyContain(s => s.Service == "default-service");
+
+            spans.Where(s => s.Service == truncatedServiceString).Should().ContainSingle("service names are truncated at 100 characters");
+            spans.Where(s => s.Service == serviceNormalizedString).Should().ContainSingle("service names are normalized");
+            spans.Where(s => s.Service != truncatedServiceString && s.Service != serviceNormalizedString).Should().OnlyContain(s => s.Service == "default-service");
+
+            // Assert normaliztion of operation names
+            // Note: "-" are replaced with "_" for operation name normalization, which has the Datadog metric name normalization rules
+            stats.Where(s => s.Name == "unnamed_operation").Should().ContainSingle("empty operation names should be set to \"unnamed_operation\"");
+            stats.Where(s => s.Name == truncatedNameString).Should().ContainSingle("operation names are truncated at 100 characters");
+            stats.Where(s => s.Name == nameNormalizedString).Should().ContainSingle("operation names are normalized");
+            stats.Where(s => s.Name != "unnamed_operation" && s.Name != truncatedNameString && s.Name != nameNormalizedString).Should().OnlyContain(s => s.Name == "default_operation");
+
+            spans.Where(s => s.Name == "unnamed_operation").Should().ContainSingle("empty operation names should be set to \"unnamed_operation\"");
+            spans.Where(s => s.Name == truncatedNameString).Should().ContainSingle("operation names are truncated at 100 characters");
+            spans.Where(s => s.Name == nameNormalizedString).Should().ContainSingle("operation names are normalized");
+            spans.Where(s => s.Name != "unnamed_operation" && s.Name != truncatedNameString && s.Name != nameNormalizedString).Should().OnlyContain(s => s.Name == "default_operation");
+
+            // Assert normaliztion of resource names
+            stats.Where(s => s.Resource == "default_operation").Should().ContainSingle("empty resource names should be set to the same value as Name");
+            stats.Where(s => s.Resource != "default_operation").Should().OnlyContain(s => s.Resource == "default-resource");
+
+            spans.Where(s => s.Resource == "default_operation").Should().ContainSingle("empty resource names should be set to the same value as Name");
+            spans.Where(s => s.Resource != "default_operation").Should().OnlyContain(s => s.Resource == "default-resource");
+
+            // Assert normalization of duration
+            // Assert normalization of start
+            var durationStartBuckets = stats.Where(s => s.Name == "default_operation" && s.Resource == "default-resource" && s.Service == "default-service" && s.Synthetics == false && s.Type == "default-type" && s.HttpStatusCode == 200);
+            durationStartBuckets.Should().HaveCount(1);
+            durationStartBuckets.Single().Hits.Should().Be(3);
+            durationStartBuckets.Single().Duration.Should().Be(beforeY2KDuration.ToNanoseconds());
+
+            var durationStartSpans = spans.Where(s => s.Name == "default_operation" && s.Resource == "default-resource" && s.Service == "default-service" && s.GetTag(Tags.Origin) != "synthetics" && s.Type == "default-type" && s.GetTag(Tags.HttpStatusCode) == "200");
+            durationStartSpans.Should().HaveCount(3);
+            durationStartSpans.Sum(s => s.Duration).Should().Be(beforeY2KDuration.ToNanoseconds());
+
+            // Assert normaliztion of types
+            stats.Where(s => s.Type == truncatedTypeString).Should().ContainSingle("types are truncated at 100 characters");
+            stats.Where(s => s.Type != truncatedTypeString).Should().OnlyContain(s => s.Type == "default-type");
+
+            spans.Where(s => s.Type == truncatedTypeString).Should().ContainSingle("types are truncated at 100 characters");
+            spans.Where(s => s.Type != truncatedTypeString).Should().OnlyContain(s => s.Type == "default-type");
+
+            // Assert normaliztion of http status codes
+            stats.Where(s => s.HttpStatusCode == 0).Sum(s => s.Hits).Should().Be(3, "http.status_code key is deleted if it's an invalid numeric value smaller than 100 or bigger than 600");
+            stats.Where(s => s.HttpStatusCode != 0).Should().OnlyContain(s => s.HttpStatusCode == 200);
+
+            spans.Where(s => s.GetTag(Tags.HttpStatusCode) is null).Should().HaveCount(3, "http.status_code key is deleted if it's an invalid numeric value smaller than 100 or bigger than 600");
+            spans.Where(s => s.GetTag(Tags.HttpStatusCode) is not null).Should().OnlyContain(s => s.GetTag(Tags.HttpStatusCode) == "200");
+
+            Span CreateDefaultSpan(string serviceName = null, string operationName = null, string resourceName = null, string type = null, string httpStatusCode = null, bool finishOnClose = true)
+            {
+                using (var scope = tracer.StartActiveInternal(operationName ?? "default-operation", finishOnClose: finishOnClose))
+                {
+                    var span = scope.Span;
+
+                    span.ResourceName = resourceName ?? "default-resource";
+                    span.Type = type ?? "default-type";
+                    span.SetTag(Tags.HttpStatusCode, httpStatusCode ?? "200");
+                    span.ServiceName = serviceName ?? "default-service";
+
+                    return span;
+                }
+            }
+        }
+
+        [Fact]
+        public async Task SendsStatsWithProcessing_Obfuscator()
+        {
+            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+
+            var settings = new TracerSettings
+            {
+                StatsComputationEnabled = true,
+                ServiceName = "default-service",
+                ServiceVersion = "v1",
+                Environment = "test",
+                Exporter = new ExporterSettings
+                {
+                    AgentUri = new Uri($"http://localhost:{agent.Port}"),
+                }
+            };
+
+            var immutableSettings = settings.Build();
+            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+            // SpinWait.SpinUntil(() => tracer.CanComputeStats, 5_000); // TODO: Replace with discovery logic
+
+            CreateDefaultSpan(type: "sql", resource: "SELECT * FROM TABLE WHERE userId = 'abc1287681964'");
+            CreateDefaultSpan(type: "sql", resource: "SELECT * FROM TABLE WHERE userId = 'abc\\'1287\\'681\\'\\'\\'\\'964'");
+
+            CreateDefaultSpan(type: "cassandra", resource: "SELECT * FROM TABLE WHERE userId = 'abc1287681964'");
+            CreateDefaultSpan(type: "cassandra", resource: "SELECT * FROM TABLE WHERE userId = 'abc\\'1287\\'681\\'\\'\\'\\'964'");
+
+            CreateDefaultSpan(type: "redis", resource: "SET le_key le_value");
+            CreateDefaultSpan(type: "redis", resource: "SET another_key another_value");
+
+            await tracer.FlushAndCloseAsync(); // Flushes and closes both traces and stats
+
+            var statsPayload = agent.WaitForStats(1);
+            var spans = agent.WaitForSpans(13);
+
+            statsPayload.Should().HaveCount(1);
+            statsPayload[0].Stats.Should().HaveCount(1);
+
+            var buckets = statsPayload[0].Stats[0].Stats;
+            buckets.Sum(stats => stats.Hits).Should().Be(6);
+            buckets.Should().HaveCount(3, "obfuscator should reduce the cardinality of resource names");
+
+            using var assertionScope = new AssertionScope();
+
+            var sqlBuckets = buckets.Where(stats => stats.Type == "sql");
+            sqlBuckets.Should().ContainSingle();
+            sqlBuckets.Single().Hits.Should().Be(2);
+            sqlBuckets.Single().Resource.Should().Be("SELECT * FROM TABLE WHERE userId = ?");
+            spans.Where(s => s.Type == "sql").Should()
+                .HaveCount(2)
+                .And.OnlyContain(s => s.Resource == "SELECT * FROM TABLE WHERE userId = ?");
+
+            var cassandraBuckets = buckets.Where(stats => stats.Type == "cassandra");
+            cassandraBuckets.Should().ContainSingle();
+            cassandraBuckets.Single().Hits.Should().Be(2);
+            cassandraBuckets.Single().Resource.Should().Be("SELECT * FROM TABLE WHERE userId = ?");
+            spans.Where(s => s.Type == "cassandra").Should()
+                .HaveCount(2)
+                .And.OnlyContain(s => s.Resource == "SELECT * FROM TABLE WHERE userId = ?");
+
+            var redisBuckets = buckets.Where(stats => stats.Type == "redis");
+            redisBuckets.Should().ContainSingle();
+            redisBuckets.Single().Hits.Should().Be(2);
+            redisBuckets.Single().Resource.Should().Be("SET");
+            spans.Where(s => s.Type == "redis").Should()
+                .HaveCount(2)
+                .And.OnlyContain(s => s.Resource == "SET");
+
+            Span CreateDefaultSpan(string type, string resource)
+            {
+                using (var scope = tracer.StartActiveInternal("default-operation"))
+                {
+                    var span = scope.Span;
+                    span.ResourceName = resource;
+                    span.Type = type;
+                    return span;
+                }
+            }
+        }
 
         [Fact]
         public async Task SendStats()

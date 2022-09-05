@@ -5,11 +5,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Processors;
 
 namespace Datadog.Trace.Agent
 {
@@ -24,6 +26,7 @@ namespace Datadog.Trace.Agent
         private readonly StatsBuffer[] _buffers;
 
         private readonly IApi _api;
+        private readonly ITraceProcessor[] _traceProcessors;
 
         private readonly TaskCompletionSource<bool> _processExit;
 
@@ -40,6 +43,11 @@ namespace Datadog.Trace.Agent
             _bucketDuration = TimeSpan.FromSeconds(settings.StatsComputationInterval);
             _keys = new HashSet<StatsAggregationKey>();
             _buffers = new StatsBuffer[BufferCount];
+            _traceProcessors = new ITraceProcessor[]
+            {
+                new Processors.NormalizerTraceProcessor(),
+                new Processors.ObfuscatorTraceProcessor(false),
+            };
 
             var header = new ClientStatsPayload
             {
@@ -99,6 +107,27 @@ namespace Datadog.Trace.Agent
             }
 
             return forceKeep;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public ArraySegment<Span> ProcessTrace(ArraySegment<Span> trace)
+        {
+            if (CanComputeStats == true || CanComputeStats is null)
+            {
+                foreach (var processor in _traceProcessors)
+                {
+                    try
+                    {
+                        trace = processor.Process(trace);
+                    }
+                    catch (Exception e)
+                    {
+                        Log.Error(e, e.Message);
+                    }
+                }
+            }
+
+            return trace;
         }
 
         internal static StatsAggregationKey BuildKey(Span span)

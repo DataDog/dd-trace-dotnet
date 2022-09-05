@@ -14,11 +14,12 @@ const std::string Sample::ExceptionTypeLabel = "exception type";
 const std::string Sample::ExceptionMessageLabel = "exception message";
 const std::string Sample::AllocationClassLabel = "allocation class";
 
-Sample::Sample(uint64_t timestamp, std::string_view runtimeId) :
+Sample::Sample(uint64_t timestamp, std::string_view runtimeId, size_t framesCount) :
     Sample(runtimeId)
 {
     _timestamp = timestamp;
     _runtimeId = runtimeId;
+    _callstack.reserve(framesCount);
 }
 
 Sample::Sample(std::string_view runtimeId)
@@ -85,19 +86,14 @@ void Sample::AddValue(std::int64_t value, SampleValue index)
     _values[pos] = value;
 }
 
-void Sample::AddFrame(const std::string& moduleName, const std::string& frame)
+void Sample::AddFrame(std::string_view moduleName, std::string_view frame)
 {
     _callstack.push_back({moduleName, frame});
 }
 
-const std::vector<std::pair<std::string, std::string>>& Sample::GetCallstack() const
+const CallStack& Sample::GetCallstack() const
 {
     return _callstack;
-}
-
-void Sample::AddLabel(const Label& label)
-{
-    _labels.push_back(label);
 }
 
 std::string_view Sample::GetRuntimeId() const

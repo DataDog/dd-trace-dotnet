@@ -34,10 +34,12 @@ namespace Datadog.Trace.Tests
         public void PushStats()
         {
             var statsAggregator = new Mock<IStatsAggregator>();
+            ArraySegment<Span> trace = CreateTrace(1);
+            statsAggregator.Setup(x => x.ProcessTrace(trace)).Returns(trace);
 
             var agent = new AgentWriter(Mock.Of<IApi>(), statsAggregator.Object, statsd: null, automaticFlush: false);
 
-            agent.WriteTrace(CreateTrace(1), true);
+            agent.WriteTrace(trace, true);
 
             statsAggregator.Verify(s => s.AddRange(It.Is<ArraySegment<Span>>(x => x.Offset == 0 && x.Count == 1)), Times.Once);
         }

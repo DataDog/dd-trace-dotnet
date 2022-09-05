@@ -103,6 +103,9 @@ namespace Datadog.Trace.Tests.Sampling
         [Theory]
         [InlineData("\"rate:0.5, \"name\":\"auth.*\"}]")]
         [InlineData("[{\"name\":\"wat\"}]")]
+        [InlineData("[{\"sample_rate\":0.3, \"service\":\"[\"}]")] // valid config, but invalid service regex
+        [InlineData("[{\"sample_rate\":0.3, \"name\":\"[\"}]")] // valid config, but invalid operation regex
+
         public void Malformed_Rules_Do_Not_Register_Or_Crash(string ruleConfig)
         {
             var rules = CustomSamplingRule.BuildFromConfigurationString(ruleConfig).ToArray();

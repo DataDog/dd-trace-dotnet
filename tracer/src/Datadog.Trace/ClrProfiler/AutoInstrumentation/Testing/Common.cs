@@ -123,7 +123,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             _ = CIEnvironmentValues.Instance;
 
             // Initialize Method Symbol Resolver
-            _ = MethodSymbolResolver.Instance.GetModuleDefFromMethodInfo(methodInfo);
+            _ = MethodSymbolResolver.Instance.GetModuleDef(methodInfo.Module);
         }
     }
 }

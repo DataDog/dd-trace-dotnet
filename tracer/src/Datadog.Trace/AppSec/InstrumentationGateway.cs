@@ -10,6 +10,7 @@ using System.Web;
 using System.Web.Routing;
 #endif
 using Datadog.Trace.AppSec.Transports.Http;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -26,22 +27,32 @@ namespace Datadog.Trace.AppSec
 
         public event EventHandler<InstrumentationGatewaySecurityEventArgs> PathParamsAvailable;
 
+        public event EventHandler<InstrumentationGatewaySecurityEventArgs> StartRequest;
+
         public event EventHandler<InstrumentationGatewaySecurityEventArgs> EndRequest;
 
         public event EventHandler<InstrumentationGatewaySecurityEventArgs> BodyAvailable;
 
         public event EventHandler<InstrumentationGatewayEventArgs> LastChanceToWriteTags;
 
-        public void RaiseEndRequest(HttpContext context, HttpRequest request, Span relatedSpan)
+        public event EventHandler<InstrumentationGatewayBlockingEventArgs> BlockingOpportunity;
+
+        public void RaiseRequestEnd(HttpContext context, HttpRequest request, Span relatedSpan)
         {
             var getEventData = () =>
             {
-                var eventData = request.PrepareArgsForWaf();
+                var eventData = request.PrepareArgsForWaf(relatedSpan);
                 eventData.Add(AddressesConstants.ResponseStatus, context.Response.StatusCode.ToString());
                 return eventData;
             };
 
             RaiseEvent(context, relatedSpan, getEventData, EndRequest);
+        }
+
+        public void RaiseRequestStart(HttpContext context, HttpRequest request, Span relatedSpan)
+        {
+            var getEventData = () => request.PrepareArgsForWaf(relatedSpan);
+            RaiseEvent(context, relatedSpan, getEventData, StartRequest);
         }
 
         public void RaisePathParamsAvailable(HttpContext context, Span relatedSpan, IDictionary<string, object> pathParams, bool eraseExistingAddress = true) => RaiseEvent(context, relatedSpan, () => new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } }, PathParamsAvailable, eraseExistingAddress);
@@ -51,10 +62,7 @@ namespace Datadog.Trace.AppSec
             var getEventData = () =>
             {
                 var keysAndValues = BodyExtractor.Extract(body);
-                var eventData = new Dictionary<string, object>
-                {
-                    { AddressesConstants.RequestBody, keysAndValues }
-                };
+                var eventData = new Dictionary<string, object> { { AddressesConstants.RequestBody, keysAndValues } };
                 return eventData;
             };
 
@@ -95,10 +103,15 @@ namespace Datadog.Trace.AppSec
                 LogAddressIfDebugEnabled(eventData);
                 eventHandler.Invoke(this, new InstrumentationGatewaySecurityEventArgs(eventData, transport, relatedSpan, eraseExistingAddress));
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not BlockException)
             {
                 Log.Error(ex, "DDAS-0004-00: AppSec failed to process request.");
             }
+        }
+
+        internal void RaiseBlockingOpportunity(HttpContext context, Scope scope, ImmutableTracerSettings tracerSettings, Action<InstrumentationGatewayBlockingEventArgs> doBeforeActualBlocking = null)
+        {
+            BlockingOpportunity?.Invoke(this, new InstrumentationGatewayBlockingEventArgs(context, scope, tracerSettings, doBeforeActualBlocking));
         }
     }
 }

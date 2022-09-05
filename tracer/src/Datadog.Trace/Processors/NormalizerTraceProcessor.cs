@@ -126,7 +126,7 @@ namespace Datadog.Trace.Processors
                 string env = span.GetTag("env");
                 if (!string.IsNullOrEmpty(env))
                 {
-                    span.SetTag("env", TraceUtil.NormalizeTag(env));
+                    span.Tags.SetTag("env", TraceUtil.NormalizeTag(env));
                 }
             }
 
@@ -145,7 +145,7 @@ namespace Datadog.Trace.Processors
                 if (!string.IsNullOrEmpty(httpStatusCode) && !TraceUtil.IsValidStatusCode(httpStatusCode))
                 {
                     Log.Debug("Fixing malformed trace. HTTP status code is invalid (reason:invalid_http_status_code), dropping invalid http.status_code={invalidStatusCode}: {span}", httpStatusCode, span);
-                    span.SetTag(Tags.HttpStatusCode, null);
+                    span.Tags.SetTag(Tags.HttpStatusCode, null);
                 }
             }
 

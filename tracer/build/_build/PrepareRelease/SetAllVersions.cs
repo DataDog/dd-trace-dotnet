@@ -322,6 +322,23 @@ namespace PrepareRelease
                     "../profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
                     text => FullVersionReplace(text, "."));
 
+                // Native loader
+
+                SynchronizeVersion(
+                    "../shared/src/Datadog.Trace.ClrProfiler.Native/Resource.rc",
+                    text =>
+                    {
+                        text = FullVersionReplace(text, ",");
+                        text = FullVersionReplace(text, ".");
+                        return text;
+                    });
+
+                SynchronizeVersion(
+                    "../shared/src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
+                    text => FullVersionReplace(text, ".", prefix: "VERSION "));
+
+                // Misc
+
                 SynchronizeVersion(
                     "../.github/scripts/package_and_deploy.sh",
                     text => FullVersionReplace(text, ".", prefix: "current_profiler_version=\""));

@@ -73,7 +73,6 @@ jobs:
         scenario:
           - PiComputation
           - Exceptions
-          - Allocations
     services:
       dd-agent:
         image: 'datadog/agent:latest'
@@ -136,6 +135,80 @@ jobs:
           path: '/var/log/datadog/dotnet'
           retention-days: 7
 
+  benchmark_ClrEvents_linux_x64:
+    name: BMmark ClrEvents Linux Profiler (x64, Release)
+    runs-on: ubuntu-latest
+    needs: build_linux_release_x64
+    strategy:
+    # add scenarios when new profilers based on CLR events are added (like contentions for example)
+      fail-fast: false
+      matrix:
+        framework:
+          - net60
+        scenario:
+          - Allocations
+    services:
+      dd-agent:
+        image: 'datadog/agent:latest'
+        ports:
+          - '8126:8126'
+        env:
+          DD_API_KEY: '${{ secrets.DD_API_KEY }}'
+          DD_INSIDE_CI: true
+          DD_HOSTNAME: dd-profiler-dotnet
+          DD_SERVICE: dd-profiler-dotnet
+
+    steps:
+      - name: Clone dd-trace-dotnet repository
+        uses: actions/checkout@v2
+
+      - name: Download profiler artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: monitoring-home.Linux.Release.x64
+          path: shared/bin/monitoring-home
+
+      - name: Setup Go 1.16.8
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16.8
+
+      - name: Prepare environment to run the application
+        run: |
+          #
+          # set profiler deployment and test output dir folder path for the test
+          #
+          go_tool_dir=$(realpath .)/tools
+          mkdir $go_tool_dir
+          echo "GOPATH=$go_tool_dir" >> $GITHUB_ENV
+          sudo mkdir -p /var/log/datadog/dotnet
+          sudo chmod 777 /var/log/datadog/dotnet
+
+      - name: Install timeit
+        run: go install github.com/tonyredondo/timeit@latest
+
+      - name: Restore sample applications
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
+
+      - name: Build sample applications
+        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+
+      - name: Execute PiComputation benchmark
+        run: |
+          cd profiler/build
+          ./run.sh  ${{ matrix.scenario }} ${{ matrix.framework }}
+
+      - name: Wait 20 seconds to agent flush before finishing pipeline
+        run: sleep 20
+
+      - name: Publish artifact
+        uses: actions/upload-artifact@v2
+        with:
+          if-no-files-found: error
+          name: Benchmark.clrevents.linux.${{ matrix.framework }}.logs
+          path: '/var/log/datadog/dotnet'
+          retention-days: 7
+
   build_linux_asan:
     name: Build Linux Profiler ASAN
     runs-on: ubuntu-latest
@@ -159,6 +232,12 @@ jobs:
 
       - name: Build sample applications
         run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+
+      - name: Run unit tests
+        run: |
+          sudo mkdir -p /var/log/datadog/dotnet
+          sudo chmod a+rwx /var/log/datadog/dotnet
+          ASAN_OPTIONS="detect_leaks=0" ./profiler/_build/bin/Datadog.Profiler.Native.Tests/Datadog.Profiler.Native.Tests
 
       - name: Prepare environment to run the application
         run: |
@@ -213,6 +292,12 @@ jobs:
 
       - name: Build sample applications
         run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+
+      - name: Run unit tests
+        run: |
+          sudo mkdir -p /var/log/datadog/dotnet
+          sudo chmod a+rwx /var/log/datadog/dotnet
+          UBSAN_OPTIONS=print_stacktrace=1 ./profiler/_build/bin/Datadog.Profiler.Native.Tests/Datadog.Profiler.Native.Tests
 
       - name: Prepare environment to run the application
         run: |
@@ -378,7 +463,6 @@ jobs:
         scenario:
           - PiComputation
           - Exceptions
-          - Allocations
     steps:
     
       - uses: actions/setup-dotnet@v2
@@ -449,6 +533,90 @@ jobs:
         with:
           if-no-files-found: error
           name: Benchmark.tests.windows.x64.${{ matrix.framework }}.logs
+          path: '${{ github.workspace }}/tests_output_dir'
+          retention-days: 7
+
+  benchmark_ClrEvents_windows_x64:
+    name: BMmark ClrEvents Windows Profiler x64
+    runs-on: windows-2019
+    needs: build_windows
+    strategy:
+    # add scenarios when new profilers based on CLR events are added (like contentions for example)
+      fail-fast: false
+      matrix:
+        framework:
+          - net60
+        scenario:
+          - Allocations
+    steps:
+
+      - uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: |
+            6.0.100
+
+      - name: Install Datadog agent
+        continue-on-error: false
+        shell: pwsh
+        run: |
+          curl.exe --output datadog-agent-7-latest.amd64.msi --url https://s3.amazonaws.com/ddagent-windows-stable/datadog-agent-7-latest.amd64.msi
+
+          Start-Process -Wait msiexec -ArgumentList '/qn /i datadog-agent-7-latest.amd64.msi APIKEY=${{ secrets.DD_API_KEY }} SITE="datadoghq.com"'
+        env:
+          DD_INSIDE_CI: true
+          DD_HOSTNAME: dd-profiler-dotnet
+          DD_SERVICE: dd-profiler-dotnet
+
+      - name: Support longpaths
+        run: git config --system core.longpaths true
+
+      - name: Clone dd-trace-dotnet repository
+        uses: actions/checkout@v2
+
+      - name: Download profiler artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: monitoring-home.Windows.Release
+          path: shared/bin/monitoring-home
+
+      - name: Setup Go 1.16.8
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.16.8
+
+      - name: Prepare environment to run the application
+        shell: pwsh
+        run: |
+          $tools_dir=(Join-Path -Path $(Resolve-Path .) -ChildPath tools)
+          mkdir $tools_dir
+          echo "GOPATH=$tools_dir" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Install timeit
+        run: go install github.com/tonyredondo/timeit@latest
+
+      - name: Restore sample applications
+        run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
+
+      - name: Build sample applications
+        run: dotnet build -c Release profiler/src/Demos/Datadog.Demos.sln -p:Platform=x64
+
+      - name: Execute Clr Events benchmark
+        env:
+          DD_PROFILING_LOG_DIR: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}'
+          DD_TRACE_LOG_DIRECTORY: '${{ github.workspace }}/tests_output_dir/${{ matrix.framework }}' # for the loader
+        run: |
+          cd profiler\build
+          .\run.cmd  ${{ matrix.scenario }} ${{ matrix.framework }}
+
+      - name: Wait 20 seconds to agent flush before finishing pipeline
+        run: Start-Sleep -s 20
+
+      - name: 'Publish Benchmark log files'
+        uses: actions/upload-artifact@v2
+        if: '${{ always() }}'
+        with:
+          if-no-files-found: error
+          name: Benchmark.clrevents.windows.x64.${{ matrix.framework }}.logs
           path: '${{ github.workspace }}/tests_output_dir'
           retention-days: 7
 

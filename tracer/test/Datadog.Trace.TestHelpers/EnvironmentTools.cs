@@ -69,6 +69,11 @@ namespace Datadog.Trace.TestHelpers
             return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
         }
 
+        public static bool IsLinux()
+        {
+            return RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Linux);
+        }
+
         public static string GetPlatform()
         {
             return RuntimeInformation.ProcessArchitecture.ToString();

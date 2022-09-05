@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using dnlib.DotNet;
 #pragma warning disable CS1570
@@ -18,6 +19,7 @@ internal class MetadataNameParser
 {
     internal static MetadataMember Parse(Token token, string name)
     {
+        // TODO: Add parent type (declaring type) to be able to identify two nested types with the same name (internal ticket id 1029) -- see also ProfilerMetadataImporter.ImportInstrumentedAssemblyMetadata
         switch (token.Table)
         {
             case MetadataTable.MethodSpec:

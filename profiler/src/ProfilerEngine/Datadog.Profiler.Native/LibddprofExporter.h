@@ -36,6 +36,8 @@ public:
     ~LibddprofExporter() override;
     bool Export() override;
     void Add(Sample const& sample) override;
+    void SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint) override;
+
 
 private:
     class SerializedProfile

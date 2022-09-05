@@ -32,7 +32,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             var value = new Dictionary<string, string[]>
                 {
                     {
-                        key, new string[]
+                        key, new[]
                         {
                             fullAttack
                         }
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             using var waf =
                     obfuscate
-                        ? Waf.Create(SecuritySettings.ObfuscationParameterKeyRegexDefault, SecuritySettings.ObfuscationParameterValueRegexDefault)
+                        ? Waf.Create(SecurityConstants.ObfuscationParameterKeyRegexDefault, SecurityConstants.ObfuscationParameterValueRegexDefault)
                         : Waf.Create(string.Empty, string.Empty);
 
             var expectedHighlight = obfuscate ? "<Redacted>" : highlight;
@@ -64,8 +64,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             waf.Should().NotBeNull();
             using var context = waf.CreateContext();
-            context.AggregateAddresses(args, true);
-            var result = context.Run(1_000_000);
+            var result = context.Run(args, 1_000_000);
             result.ReturnCode.Should().Be(ReturnCode.Monitor);
             var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
             resultData.RuleMatches[0].Parameters[0].Address.Should().Be(AddressesConstants.RequestQuery);

@@ -1,0 +1,422 @@
+﻿[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "41": {
+              "arguments": {
+                "callerName": {
+                  "fields": null,
+                  "type": "String",
+                  "value": "Run"
+                }
+              },
+              "fields": null,
+              "locals": {
+                "a": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "0"
+                },
+                "i": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "0"
+                },
+                "sum": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "0"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "LineProbesWithRevertTest.cs",
+            "lines": [
+              41
+            ]
+          }
+        },
+        "stack": [
+          {
+            "fileName": "LineProbesWithRevertTest.cs",
+            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.MethodToInstrument",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "LineProbesWithRevertTest.cs",
+            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.SmokeTests.LineProbesWithRevertTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run)\r\na=0, i=0, sum=0",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "55": {
+              "arguments": {
+                "callerName": {
+                  "fields": null,
+                  "type": "String",
+                  "value": "Run"
+                }
+              },
+              "fields": null,
+              "locals": {
+                "a": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "3"
+                },
+                "i": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "5"
+                },
+                "sum": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "72"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "LineProbesWithRevertTest.cs",
+            "lines": [
+              55
+            ]
+          }
+        },
+        "stack": [
+          {
+            "fileName": "LineProbesWithRevertTest.cs",
+            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.MethodToInstrument",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "LineProbesWithRevertTest.cs",
+            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.SmokeTests.LineProbesWithRevertTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run)\r\na=3, i=5, sum=72",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "56": {
+              "arguments": {
+                "callerName": {
+                  "fields": null,
+                  "type": "String",
+                  "value": "Run"
+                }
+              },
+              "fields": null,
+              "locals": {
+                "a": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "4"
+                },
+                "i": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "5"
+                },
+                "sum": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "72"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "LineProbesWithRevertTest.cs",
+            "lines": [
+              56
+            ]
+          }
+        },
+        "stack": [
+          {
+            "fileName": "LineProbesWithRevertTest.cs",
+            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.MethodToInstrument",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "LineProbesWithRevertTest.cs",
+            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.SmokeTests.LineProbesWithRevertTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run)\r\na=4, i=5, sum=72",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "57": {
+              "arguments": {
+                "callerName": {
+                  "fields": null,
+                  "type": "String",
+                  "value": "Run"
+                }
+              },
+              "fields": null,
+              "locals": {
+                "a": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "5"
+                },
+                "i": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "5"
+                },
+                "sum": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "72"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "LineProbesWithRevertTest.cs",
+            "lines": [
+              57
+            ]
+          }
+        },
+        "stack": [
+          {
+            "fileName": "LineProbesWithRevertTest.cs",
+            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.MethodToInstrument",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "LineProbesWithRevertTest.cs",
+            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.SmokeTests.LineProbesWithRevertTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run)\r\na=5, i=5, sum=72",
+    "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "58": {
+              "arguments": {
+                "callerName": {
+                  "fields": null,
+                  "type": "String",
+                  "value": "Run"
+                }
+              },
+              "fields": null,
+              "locals": {
+                "a": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "6"
+                },
+                "i": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "5"
+                },
+                "sum": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "72"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "LineProbesWithRevertTest.cs",
+            "lines": [
+              58
+            ]
+          }
+        },
+        "stack": [
+          {
+            "fileName": "LineProbesWithRevertTest.cs",
+            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.MethodToInstrument",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "LineProbesWithRevertTest.cs",
+            "function": "Samples.Probes.SmokeTests.LineProbesWithRevertTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.SmokeTests.LineProbesWithRevertTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run)\r\na=6, i=5, sum=72",
+    "service": "Probes"
+  }
+]

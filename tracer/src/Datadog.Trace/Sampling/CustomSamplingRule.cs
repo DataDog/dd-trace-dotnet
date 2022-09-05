@@ -18,8 +18,8 @@ namespace Datadog.Trace.Sampling
         private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
 
         private readonly float _samplingRate;
-        private readonly string _serviceNameRegex;
-        private readonly string _operationNameRegex;
+        private readonly Regex _serviceNameRegex;
+        private readonly Regex _operationNameRegex;
 
         private bool _hasPoisonedRegex;
 
@@ -30,8 +30,37 @@ namespace Datadog.Trace.Sampling
             string operationNameRegex)
         {
             _samplingRate = rate;
-            _serviceNameRegex = WrapWithLineCharacters(serviceNameRegex);
-            _operationNameRegex = WrapWithLineCharacters(operationNameRegex);
+
+            try
+            {
+                _serviceNameRegex = serviceNameRegex is null
+                    ? null
+                    : new(
+                        WrapWithLineCharacters(serviceNameRegex),
+                        RegexOptions.Compiled,
+                        RegexTimeout);
+            }
+            catch (ArgumentException e)
+            {
+                Log.Error("Custom sampling rule regex for service name was invalid.", e);
+                throw;
+            }
+
+            try
+            {
+                _operationNameRegex = operationNameRegex is null
+                                      ? null
+                                      : new(
+                                          WrapWithLineCharacters(operationNameRegex),
+                                          RegexOptions.Compiled,
+                                          RegexTimeout);
+            }
+            catch (ArgumentException e)
+            {
+                Log.Error("Custom sampling rule regex for operation name was invalid.", e);
+                throw;
+            }
+
             RuleName = ruleName;
         }
 
@@ -53,12 +82,14 @@ namespace Datadog.Trace.Sampling
                 {
                     var index = 0;
                     var rules = JsonConvert.DeserializeObject<List<CustomRuleConfig>>(configuration);
-                    return rules.Select(
-                        r =>
-                        {
-                            index++; // Used to create a readable rule name if one is not specified
-                            return new CustomSamplingRule(r.SampleRate, r.RuleName ?? $"config-rule-{index}", r.Service, r.OperationName);
-                        });
+                    var samplingRules = new List<CustomSamplingRule>();
+                    foreach (var r in rules)
+                    {
+                        index++; // Used to create a readable rule name if one is not specified
+                        samplingRules.Add(new CustomSamplingRule(r.SampleRate, r.RuleName ?? $"config-rule-{index}", r.Service, r.OperationName));
+                    }
+
+                    return samplingRules;
                 }
             }
             catch (Exception ex)
@@ -76,17 +107,29 @@ namespace Datadog.Trace.Sampling
                 return false;
             }
 
-            if (DoesNotMatch(input: span.ServiceName, pattern: _serviceNameRegex))
+            // special case where if both regex are null we match
+            if (_serviceNameRegex is null && _operationNameRegex is null)
             {
-                return false;
+                return true;
             }
 
-            if (DoesNotMatch(input: span.OperationName, pattern: _operationNameRegex))
+            try
             {
+                // if the regex is null, we will always match it as we don't care
+                var serviceMatch = _serviceNameRegex?.Match(span.ServiceName).Success ?? true;
+                var operationMatch = _operationNameRegex?.Match(span.OperationName).Success ?? true;
+                return serviceMatch && operationMatch;
+            }
+            catch (RegexMatchTimeoutException e)
+            {
+                _hasPoisonedRegex = true;
+                Log.Error(
+                    e,
+                    "Timeout when trying to match against {Value} on {Pattern}.",
+                    e.Input,
+                    e.Pattern);
                 return false;
             }
-
-            return true;
         }
 
         public float GetSamplingRate(Span span)
@@ -113,33 +156,6 @@ namespace Datadog.Trace.Sampling
             }
 
             return regex;
-        }
-
-        private bool DoesNotMatch(string input, string pattern)
-        {
-            try
-            {
-                if (pattern != null &&
-                    !Regex.IsMatch(
-                        input: input,
-                        pattern: pattern,
-                        options: RegexOptions.None,
-                        matchTimeout: RegexTimeout))
-                {
-                    return true;
-                }
-            }
-            catch (RegexMatchTimeoutException timeoutEx)
-            {
-                _hasPoisonedRegex = true;
-                Log.Error(
-                    timeoutEx,
-                    "Timeout when trying to match against {Value} on {Pattern}.",
-                    input,
-                    pattern);
-            }
-
-            return false;
         }
 
         [Serializable]

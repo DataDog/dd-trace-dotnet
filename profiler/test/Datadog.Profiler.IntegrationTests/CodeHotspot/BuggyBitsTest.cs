@@ -7,11 +7,13 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.SmokeTests;
 using Datadog.Trace;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using MessagePack;
 using Perftools.Profiles;
 using Xunit;
@@ -32,7 +34,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         [TestAppFact("Samples.BuggyBits")]
         public void CheckSpanContextAreAttached(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 1");
             // By default, the codehotspot feature is activated
 
             using var agent = new MockDatadogAgent(_output);
@@ -76,7 +78,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         [TestAppFact("Samples.BuggyBits")]
         public void NoTraceContextAttachedIfFeatureDeactivated(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 1");
             runner.Environment.SetVariable(EnvironmentVariables.CodeHotSpotsEnable, "0");
 
             using var agent = new MockDatadogAgent(_output);
@@ -87,6 +89,43 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             var tracingContexts = GetTracingContextsFromPprofFiles(runner.Environment.PprofDir);
             Assert.Empty(tracingContexts);
+        }
+
+        [TestAppFact("Samples.BuggyBits")]
+        public void CheckEndpointsAreAttached(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 1");
+            runner.TestDurationInSeconds = 20;
+
+            // By default, the endpoint profiling feature is activated
+
+            using var agent = new MockDatadogAgent(_output);
+
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            var endpoints = GetEndpointsFromPprofFiles(runner.Environment.PprofDir);
+
+            endpoints.Distinct().Should().BeEquivalentTo("GET /products/index");
+        }
+
+        [TestAppFact("Samples.BuggyBits")]
+        public void NoEndpointsAttachedIfFeatureDeactivated(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 1");
+            runner.TestDurationInSeconds = 20;
+            runner.Environment.SetVariable(EnvironmentVariables.EndpointProfilerEnabled, "0");
+
+            using var agent = new MockDatadogAgent(_output);
+
+            runner.Run(agent);
+
+            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
+
+            var endpoints = GetEndpointsFromPprofFiles(runner.Environment.PprofDir).Distinct();
+
+            endpoints.Should().BeEmpty();
         }
 
         private static HashSet<string> ExtractRuntimeIdsFromTracerRequest(HttpListenerRequest request)
@@ -119,6 +158,23 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             var match = RuntimeIdPattern.Match(text);
             return match.Groups["runtimeId"].Value;
+        }
+
+        private static IEnumerable<string> GetEndpointsFromPprofFiles(string pprofDir)
+        {
+            foreach (var file in Directory.EnumerateFiles(pprofDir, "*.pprof", SearchOption.AllDirectories))
+            {
+                using var s = File.OpenRead(file);
+                var profile = Profile.Parser.ParseFrom(s);
+
+                foreach (var label in profile.Labels().SelectMany(_ => _))
+                {
+                    if (label.Name == "trace endpoint")
+                    {
+                        yield return label.Value;
+                    }
+                }
+            }
         }
 
         private static List<(ulong LocalRootSpanId, ulong SpanId)> GetTracingContextsFromPprofFiles(string pprofDir)

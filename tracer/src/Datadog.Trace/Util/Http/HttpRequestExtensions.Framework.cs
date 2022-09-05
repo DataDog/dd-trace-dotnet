@@ -20,7 +20,7 @@ namespace Datadog.Trace.Util.Http
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HttpRequestExtensions));
 
-        internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request)
+        internal static Dictionary<string, object> PrepareArgsForWaf(this HttpRequest request, Span relatedSpan)
         {
             var headersDic = new Dictionary<string, string[]>(request.Headers.Keys.Count);
             var headerKeys = request.Headers.Keys;
@@ -87,7 +87,8 @@ namespace Datadog.Trace.Util.Http
                 { AddressesConstants.RequestUriRaw, request.Url.AbsoluteUri },
                 { AddressesConstants.RequestQuery, queryDic },
                 { AddressesConstants.RequestHeaderNoCookies, headersDic },
-                { AddressesConstants.RequestCookies, cookiesDic }
+                { AddressesConstants.RequestCookies, cookiesDic },
+                { AddressesConstants.RequestClientIp, relatedSpan.GetTag(Trace.Tags.HttpClientIp) }
             };
 
             return dict;

@@ -12,6 +12,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.StatsdClient;
 
@@ -154,21 +155,7 @@ namespace Datadog.Trace.Agent
                     }
 
                     // Before retry delay
-                    bool isSocketException = false;
-                    Exception innerException = exception;
-
-                    while (innerException != null)
-                    {
-                        if (innerException is SocketException)
-                        {
-                            isSocketException = true;
-                            break;
-                        }
-
-                        innerException = innerException.InnerException;
-                    }
-
-                    if (isSocketException)
+                    if (exception.IsSocketException())
                     {
                         _log.Debug(exception, "Unable to communicate with the trace agent at {AgentEndpoint}", _apiRequestFactory.Info(endpoint));
                     }

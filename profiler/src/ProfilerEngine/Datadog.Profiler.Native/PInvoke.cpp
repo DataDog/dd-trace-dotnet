@@ -11,31 +11,9 @@
 
 #include "shared/src/native-src/loader.h"
 
-// There is a race condition when dealing with CLR shutdown:
-// it could happen AFTER the CorProfilerCallback::GetClrLifetime()->IsRunning() check
-// In that case, exceptions could be thrown when ICorProfilerInfo methods are called
-// These macros deal with that scenario by catching exceptions
-//
-#define PROTECT_ENTER \
-    try               \
-    {
-#define PROTECT_LEAVE(name)                                \
-    }                                                      \
-    catch (...)                                            \
-    {                                                      \
-        Log::Info(name, " is called AFTER CLR shutdown."); \
-    }                                                      \
-    return FALSE;
-
-//
-// P/Invoke calls are "protected" against being called AFTER ICorProfilerCallback::Shutdown
-// Error message is added to the log as Info and not Error so the CI is not blocked when
-// this happens
-//
-
 extern "C" void __stdcall ThreadsCpuManager_Map(std::uint32_t threadId, const WCHAR* pName)
 {
-    auto profiler = CorProfilerCallback::GetInstance();
+    const auto profiler = CorProfilerCallback::GetInstance();
     if (profiler == nullptr)
     {
         Log::Error("ThreadsCpuManager_Map is called BEFORE CLR initialize");
@@ -47,7 +25,15 @@ extern "C" void __stdcall ThreadsCpuManager_Map(std::uint32_t threadId, const WC
 
 extern "C" void* __stdcall GetNativeProfilerIsReadyPtr()
 {
-    if (!CorProfilerCallback::GetClrLifetime()->IsRunning())
+    const auto profiler = CorProfilerCallback::GetInstance();
+
+    if (profiler == nullptr)
+    {
+        Log::Error("GetNativeProfilerIsReadyPtr is called BEFORE CLR initialize");
+        return nullptr;
+    }
+
+    if (!profiler->GetClrLifetime()->IsRunning())
     {
         return nullptr;
     }
@@ -57,19 +43,20 @@ extern "C" void* __stdcall GetNativeProfilerIsReadyPtr()
 
 extern "C" void* __stdcall GetPointerToNativeTraceContext()
 {
-    if (!CorProfilerCallback::GetClrLifetime()->IsRunning())
-    {
-        return nullptr;
-    }
+    const auto profiler = CorProfilerCallback::GetInstance();
 
-    // Engine is active. Get info for current thread.
-    auto profiler = CorProfilerCallback::GetInstance();
     if (profiler == nullptr)
     {
         Log::Error("GetPointerToNativeTraceContext is called BEFORE CLR initialize");
         return nullptr;
     }
 
+    if (!profiler->GetClrLifetime()->IsRunning())
+    {
+        return nullptr;
+    }
+
+    // Engine is active. Get info for current thread.
     ManagedThreadInfo* pCurrentThreadInfo;
     HRESULT hr = profiler->GetManagedThreadList()->TryGetCurrentThreadInfo(&pCurrentThreadInfo);
     if (FAILED(hr))
@@ -90,12 +77,6 @@ extern "C" void* __stdcall GetPointerToNativeTraceContext()
 
 extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, const char* serviceName, const char* environment, const char* version)
 {
-    if (!CorProfilerCallback::GetClrLifetime()->IsRunning())
-    {
-        return;
-    }
-
-    // Engine is active. Get info for current thread.
     const auto profiler = CorProfilerCallback::GetInstance();
 
     if (profiler == nullptr)
@@ -104,9 +85,47 @@ extern "C" void __stdcall SetApplicationInfoForAppDomain(const char* runtimeId, 
         return;
     }
 
+    if (!profiler->GetClrLifetime()->IsRunning())
+    {
+        return;
+    }
+
+    // Engine is active. Get info for current thread.
     profiler->GetApplicationStore()->SetApplicationInfo(
         runtimeId ? runtimeId : std::string(),
         serviceName ? serviceName : std::string(),
         environment ? environment : std::string(),
         version ? version : std::string());
+}
+
+extern "C" void __stdcall SetEndpointForTrace(const char* runtimeId, uint64_t traceId, const char* endpoint)
+{
+    const auto profiler = CorProfilerCallback::GetInstance();
+
+    if (profiler == nullptr)
+    {
+        Log::Error("SetEndpointForTrace is called BEFORE CLR initialize");
+        return;
+    }
+
+    if (!profiler->GetClrLifetime()->IsRunning())
+    {
+        return;
+    }
+
+    if (runtimeId == nullptr)
+    {
+        Log::Error("SetEndpointForTrace was called with an empty runtime id");
+        return;
+    }
+
+    if (endpoint == nullptr)
+    {
+        // It could happen that the endpoint is empty, but the tracer should check before making the call,
+        // to avoid the cost of the p/invoke
+        Log::Warn("SetEndpointForTrace was called with an empty endpoint");
+        return;
+    }
+
+    profiler->GetExporter()->SetEndpoint(runtimeId, traceId, endpoint);
 }

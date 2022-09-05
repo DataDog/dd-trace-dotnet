@@ -5,6 +5,7 @@
 
 using System;
 using System.Threading;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Debugger.RateLimiting
@@ -64,8 +65,6 @@ namespace Datadog.Trace.Debugger.RateLimiting
         private Timer _timer;
         private Action _rollWindowCallback;
 
-        private ThreadLocal<Random> _rng;
-
         internal AdaptiveSampler(
             TimeSpan windowDuration,
             int samplesPerWindow,
@@ -76,7 +75,6 @@ namespace Datadog.Trace.Debugger.RateLimiting
             _timer = new Timer(state => RollWindow(), state: null, windowDuration, windowDuration);
             _totalCountRunningAverage = 0;
             _rollWindowCallback = rollWindowCallback;
-            _rng = new ThreadLocal<Random>(() => new Random());
             _avgSamples = 0;
             _countsSlots = new Counts[2] { new(), new() };
             if (averageLookback < 1)
@@ -131,7 +129,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
 
         internal double NextDouble()
         {
-            return _rng.Value.NextDouble();
+            return ThreadSafeRandom.NextDouble();
         }
 
         private double ComputeIntervalAlpha(int lookback)

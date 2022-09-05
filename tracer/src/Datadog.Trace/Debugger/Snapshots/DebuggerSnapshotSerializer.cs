@@ -309,6 +309,12 @@ namespace Datadog.Trace.Debugger.Snapshots
                 WriteLimitReachedNotification(jsonWriter, type.Name, ReachedTimeoutMessage, false);
                 jsonWriter.WriteEndArray();
             }
+            catch (InvalidOperationException e)
+            {
+                // Collection was modified, enumeration operation may not execute
+                Log.Error(e.ToString());
+                jsonWriter.WriteEndArray();
+            }
             catch (Exception e)
             {
                 Log.Error(e.ToString());

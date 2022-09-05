@@ -46,6 +46,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public async Task DetectRuntime()
         {
             using var helper = await StartConsole(enableProfiler: false);
@@ -67,6 +68,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public async Task VersionConflict1X()
         {
             var environmentHelper = new EnvironmentHelper("VersionConflict.1x", typeof(TestHelper), Output);
@@ -87,6 +89,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public async Task NoEnvironmentVariables()
         {
             using var helper = await StartConsole(enableProfiler: false);
@@ -119,6 +122,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public async Task WrongEnvironmentVariables()
         {
             using var helper = await StartConsole(
@@ -154,6 +158,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public async Task Working()
         {
             using var helper = await StartConsole(enableProfiler: true);
@@ -189,6 +194,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public void GoodRegistry()
         {
             var registryService = MockRegistryService(Array.Empty<string>(), ProfilerPath);
@@ -205,6 +211,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
         [SkippableTheory]
+        [Trait("RunOnWindows", "True")]
         [InlineData(true)]
         [InlineData(false)]
         public void BadRegistryKey(bool wow64)
@@ -223,6 +230,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public void ProfilerNotRegistered()
         {
             var registryService = MockRegistryService(Array.Empty<string>(), null);
@@ -237,6 +245,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public void ProfilerNotFoundRegistry()
         {
             var registryService = MockRegistryService(Array.Empty<string>(), "dummyPath/" + Path.GetFileName(ProfilerPath));
@@ -252,6 +261,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         }
 
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public void WrongProfilerRegistry()
         {
             var registryService = MockRegistryService(Array.Empty<string>(), "wrongProfiler.dll");
