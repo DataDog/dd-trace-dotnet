@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Http;
 using System.Text.Json;
@@ -66,7 +67,44 @@ namespace BuggyBits.Models
             var allProducts = new List<Product>();
             for (int i = 0; i < 10000; i++)
             {
-                allProducts.Add(new Product { ProductName = "Product" + i, Description = "Description for product" + i, Price = "$100" });
+                allProducts.Add(GetProduct(i));
+            }
+
+            return allProducts;
+        }
+
+        public void ApplyDiscount(Product product)
+        {
+            try
+            {
+                // apply a 25% discount if price is less than $200
+                var price = int.Parse(product.Price, System.Globalization.CultureInfo.InvariantCulture);
+                if (price < 200)
+                {
+                    product.Price = (price * 0.75).ToString();
+                }
+            }
+            catch (System.FormatException)
+            {
+                throw new PriceException(product.Price, "Invalid price number");
+            }
+        }
+
+        public List<Product> GetProductsOnSale()
+        {
+            var allProducts = new List<Product>(10000);
+            for (int i = 0; i < 10000; i++)
+            {
+                var product = GetProduct(i);
+                try
+                {
+                    ApplyDiscount(product);
+                    allProducts.Add(product);
+                }
+                catch (PriceException)
+                {
+                    continue;
+                }
             }
 
             return allProducts;
@@ -168,7 +206,14 @@ namespace BuggyBits.Models
 
         public Product GetProduct(int index)
         {
-            return new Product { ProductName = "Product" + index, Description = "Description for product" + index, Price = "$100" };
+            if (index % 2 == 0)
+            {
+                return new Product { ProductName = "Product" + index, Description = "Description for product" + index, Price = "119,99" };
+            }
+            else
+            {
+                return new Product { ProductName = "Product" + index, Description = "Description for product" + index, Price = "99" };
+            }
         }
 
         public List<Link> GetAllLinks()
@@ -190,6 +235,27 @@ namespace BuggyBits.Models
         private string GetProductInfoRoot(string rootPath)
         {
             return $"{rootPath}/Products/Info";
+        }
+
+        public class PriceException : Exception
+        {
+            public PriceException(string price, string message)
+                : base(message)
+            {
+                Price = price;
+            }
+
+            public PriceException(string message)
+                : base(message)
+            {
+            }
+
+            public PriceException(string message, Exception inner)
+                : base(message, inner)
+            {
+            }
+
+            public string Price { get; private set; }
         }
     }
 }

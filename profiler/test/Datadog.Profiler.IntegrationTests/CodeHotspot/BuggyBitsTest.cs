@@ -34,7 +34,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         [TestAppFact("Samples.BuggyBits")]
         public void CheckSpanContextAreAttached(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 1");
             // By default, the codehotspot feature is activated
 
             using var agent = new MockDatadogAgent(_output);
@@ -78,7 +78,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         [TestAppFact("Samples.BuggyBits")]
         public void NoTraceContextAttachedIfFeatureDeactivated(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 1");
             runner.Environment.SetVariable(EnvironmentVariables.CodeHotSpotsEnable, "0");
 
             using var agent = new MockDatadogAgent(_output);
@@ -94,7 +94,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         [TestAppFact("Samples.BuggyBits")]
         public void CheckEndpointsAreAttached(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 1");
             runner.TestDurationInSeconds = 20;
 
             // By default, the endpoint profiling feature is activated
@@ -113,7 +113,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         [TestAppFact("Samples.BuggyBits")]
         public void NoEndpointsAttachedIfFeatureDeactivated(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 1");
             runner.TestDurationInSeconds = 20;
             runner.Environment.SetVariable(EnvironmentVariables.EndpointProfilerEnabled, "0");
 

@@ -27,7 +27,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
         [TestAppFact("Samples.BuggyBits")]
         public void EnsureProfilerIsDeactivatedIfNoWrapperLibrary(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1");
 
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", string.Empty);
@@ -46,7 +46,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
         [TestAppFact("Samples.BuggyBits")]
         public void EnsureProfilerIsDeactivatedIfWrongPathToWrapperLibrary(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: "--scenario 1");
 
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", "/mnt/does_not_exist/Datadog.Linux.Wrapper.x64.so");
@@ -65,7 +65,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
         [TestAppFact("Samples.BuggyBits")]
         public void EnsureAppDoesNotCrashIfProfilerDeactivateAndTracerActivated(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true);
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 1");
 
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", string.Empty);

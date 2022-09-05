@@ -595,7 +595,7 @@ namespace Datadog.Trace.DuckTyping
                                 var getMethod = proxyProperty.GetMethod;
                                 if (getMethod.IsAbstract || getMethod.IsVirtual)
                                 {
-                                    DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name);
+                                    DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name, targetType);
                                 }
                             }
 
@@ -604,7 +604,7 @@ namespace Datadog.Trace.DuckTyping
                                 var setMethod = proxyProperty.SetMethod;
                                 if (setMethod.IsAbstract || setMethod.IsVirtual)
                                 {
-                                    DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name);
+                                    DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name, targetType);
                                 }
                             }
 
@@ -671,7 +671,7 @@ namespace Datadog.Trace.DuckTyping
                         FieldInfo? targetField = targetType.GetField(duckAttribute.Name, duckAttribute.BindingFlags);
                         if (targetField is null)
                         {
-                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name);
+                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyProperty.Name, duckAttribute.Name, targetType);
                             continue;
                         }
 
@@ -761,7 +761,7 @@ namespace Datadog.Trace.DuckTyping
 
                 if (overriddenProperty is null)
                 {
-                    DuckTypePropertyOrFieldNotFoundException.Throw(implementationProperty.Name, duckAttribute.Name);
+                    DuckTypePropertyOrFieldNotFoundException.Throw(implementationProperty.Name, duckAttribute.Name, typeToDeriveFrom);
                     continue;
                 }
 
@@ -864,7 +864,7 @@ namespace Datadog.Trace.DuckTyping
                         PropertyInfo? targetProperty = targetType.GetProperty(duckAttribute.Name, duckAttribute.BindingFlags);
                         if (targetProperty is null)
                         {
-                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name);
+                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name, targetType);
                             continue;
                         }
 
@@ -896,7 +896,7 @@ namespace Datadog.Trace.DuckTyping
                         FieldInfo? targetField = targetType.GetField(duckAttribute.Name, duckAttribute.BindingFlags);
                         if (targetField is null)
                         {
-                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name);
+                            DuckTypePropertyOrFieldNotFoundException.Throw(proxyFieldInfo.Name, duckAttribute.Name, targetType);
                             continue;
                         }
 

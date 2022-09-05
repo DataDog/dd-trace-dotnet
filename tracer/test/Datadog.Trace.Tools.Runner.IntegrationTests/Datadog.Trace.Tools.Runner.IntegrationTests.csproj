@@ -22,11 +22,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
-
-    <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
+    <!-- Note, not referencing coverlet.collector because it has file locking issues -->
+    <!-- Somebody should look into that... -->
   </ItemGroup>
 
   <ItemGroup>

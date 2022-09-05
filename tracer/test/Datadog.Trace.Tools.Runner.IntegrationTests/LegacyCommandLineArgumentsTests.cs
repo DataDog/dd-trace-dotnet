@@ -16,6 +16,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
     public class LegacyCommandLineArgumentsTests
     {
         [SkippableFact]
+        [Trait("RunOnWindows", "True")]
         public void InvalidArgument()
         {
             // This test makes sure that wrong arguments will return a non-zero exit code
@@ -29,6 +30,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         [SkippableTheory]
+        [Trait("RunOnWindows", "True")]
         [InlineData(true)]
         [InlineData(false)]
         public void Run(bool withArguments)
@@ -94,6 +96,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
         }
 
         [SkippableTheory]
+        [Trait("RunOnWindows", "True")]
         [InlineData(' ')]
         [InlineData('=')]
         public void SetCi(char separator)

@@ -9,9 +9,9 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 {
-    internal class GraphQLCommon
+    internal class GraphQLCommon : GraphQLCommonBase
     {
         internal const string ExecuteAsyncMethodName = "ExecuteAsync";
         internal const string ReturnTypeName = "System.Threading.Tasks.Task`1<GraphQL.ExecutionResult>";
@@ -26,12 +26,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.GraphQL);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.GraphQL;
-
-        private const string ServiceName = "graphql";
-        private const string ParseOperationName = "graphql.parse"; // Instrumentation not yet implemented
-        private const string ValidateOperationName = "graphql.validate";
-        private const string ExecuteOperationName = "graphql.execute";
-        private const string ResolveOperationName = "graphql.resolve"; // Instrumentation not yet implemented
 
         internal const string ExecuteErrorType = "GraphQL.ExecutionError";
         internal const string ValidationErrorType = "GraphQL.Validation.ValidationError";
@@ -50,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
 
             try
             {
-                var tags = new GraphQLTags();
+                var tags = new GraphQLTags(GraphQLCommon.IntegrationName);
                 string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
                 scope = tracer.StartActiveInternal(ValidateOperationName, serviceName: serviceName, tags: tags);
 
@@ -84,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 string source = executionContext.Document.OriginalQuery;
                 string operationName = executionContext.Operation.Name;
                 var operationType = executionContext.Operation.OperationType.ToString();
-                scope = CreateScopeFromExecuteAsync(tracer, operationName, source, operationType);
+                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(GraphQLCommon.IntegrationName), ServiceName, operationName, source, operationType);
             }
             catch (Exception ex)
             {
@@ -109,7 +103,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                 string source = executionContext.Document.Source.ToString();
                 string operationName = executionContext.Operation.Name.StringValue;
                 string operationType = executionContext.Operation.Operation.ToString();
-                scope = CreateScopeFromExecuteAsync(tracer, operationName, source, operationType);
+                scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(GraphQLCommon.IntegrationName), ServiceName, operationName, source, operationType);
             }
             catch (Exception ex)
             {
@@ -119,38 +113,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
             return scope;
         }
 
-        private static Scope CreateScopeFromExecuteAsync(Tracer tracer, string operationName, string source, string operationType)
-        {
-            Scope scope;
-
-            var tags = new GraphQLTags();
-            string serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
-            scope = tracer.StartActiveInternal(ExecuteOperationName, serviceName: serviceName, tags: tags);
-
-            var span = scope.Span;
-            span.Type = SpanTypes.GraphQL;
-            span.ResourceName = $"{operationType} {operationName ?? "operation"}";
-
-            tags.Source = source;
-            tags.OperationName = operationName;
-            tags.OperationType = operationType;
-
-            tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
-            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            return scope;
-        }
-
         internal static void RecordExecutionErrorsIfPresent(Span span, string errorType, IExecutionErrors executionErrors)
         {
             var errorCount = executionErrors?.Count ?? 0;
 
             if (errorCount > 0)
             {
-                span.Error = true;
-
-                span.SetTag(Trace.Tags.ErrorMsg, $"{errorCount} error(s)");
-                span.SetTag(Trace.Tags.ErrorType, errorType);
-                span.SetTag(Trace.Tags.ErrorStack, ConstructErrorMessage(executionErrors));
+                RecordExecutionErrors(span, errorType, errorCount, ConstructErrorMessage(executionErrors));
             }
         }
 
@@ -192,23 +161,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL
                         builder.AppendLine($"{tab + tab}\"code\": \"{code}\",");
                     }
 
-                    builder.AppendLine($"{tab + tab}\"locations\": [");
-                    var locations = executionError.Locations;
-                    if (locations != null)
-                    {
-                        foreach (var location in locations)
-                        {
-                            if (location.TryDuckCast<ErrorLocationStruct>(out var locationProxy))
-                            {
-                                builder.AppendLine($"{tab + tab + tab}{{");
-                                builder.AppendLine($"{tab + tab + tab + tab}\"line\": {locationProxy.Line},");
-                                builder.AppendLine($"{tab + tab + tab + tab}\"column\": {locationProxy.Column}");
-                                builder.AppendLine($"{tab + tab + tab}}},");
-                            }
-                        }
-                    }
-
-                    builder.AppendLine($"{tab + tab}]");
+                    ConstructErrorLocationsMessage(builder, tab, executionError.Locations);
                     builder.AppendLine($"{tab}}},");
                 }
 

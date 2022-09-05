@@ -18,7 +18,6 @@ namespace Datadog.Trace.Debugger
             string? environment,
             int maxSerializationTimeInMilliseconds,
             int maximumDepthOfMembersToCopy,
-            Uri? snapshotUri,
             int uploadBatchSize,
             int diagnosticsIntervalSeconds,
             int uploadFlushIntervalMilliseconds)
@@ -28,7 +27,6 @@ namespace Datadog.Trace.Debugger
             Environment = environment;
             MaxSerializationTimeInMilliseconds = maxSerializationTimeInMilliseconds;
             MaximumDepthOfMembersOfMembersToCopy = maximumDepthOfMembersToCopy;
-            SnapshotUri = snapshotUri;
             UploadBatchSize = uploadBatchSize;
             DiagnosticsIntervalSeconds = diagnosticsIntervalSeconds;
             UploadFlushIntervalMilliseconds = uploadFlushIntervalMilliseconds;
@@ -39,8 +37,6 @@ namespace Datadog.Trace.Debugger
         public string? ServiceVersion { get; }
 
         public string? Environment { get; }
-
-        public Uri? SnapshotUri { get; set; }
 
         public int MaxSerializationTimeInMilliseconds { get; }
 
@@ -62,7 +58,6 @@ namespace Datadog.Trace.Debugger
                 debuggerSettings.Environment,
                 debuggerSettings.MaxSerializationTimeInMilliseconds,
                 debuggerSettings.MaximumDepthOfMembersToCopy,
-                debuggerSettings.SnapshotUri,
                 debuggerSettings.UploadBatchSize,
                 debuggerSettings.DiagnosticsIntervalSeconds,
                 debuggerSettings.UploadFlushIntervalMilliseconds);
@@ -73,7 +68,6 @@ namespace Datadog.Trace.Debugger
             string? environment,
             int maxSerializationTimeInMilliseconds,
             int maximumDepthOfMembersOfMembersToCopy,
-            Uri? snapshotUri,
             int uploadBatchSize,
             int diagnosticsIntervalSeconds,
             int uploadFlushIntervalMilliseconds) =>
@@ -83,7 +77,6 @@ namespace Datadog.Trace.Debugger
                 environment,
                 maxSerializationTimeInMilliseconds,
                 maximumDepthOfMembersOfMembersToCopy,
-                snapshotUri,
                 uploadBatchSize,
                 diagnosticsIntervalSeconds,
                 uploadFlushIntervalMilliseconds);
