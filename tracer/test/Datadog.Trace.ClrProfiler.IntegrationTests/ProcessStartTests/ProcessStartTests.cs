@@ -46,9 +46,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             settings.AddRegexScrubber(VarsRegex, string.Empty);
             settings.AddRegexScrubber(StackRegex, string.Empty);
             settings.AddRegexScrubber(ErrorMsgRegex, string.Empty);
+            var filename = OperatingSystem.IsLinux ? "ProcessStartTests.SubmitsTracesLinux" : "ProcessStartTests.SubmitsTraces";
             await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName("ProcessStartTests.SubmitsTraces")
-                              .DisableRequireUniquePrefix(); // all package versions should be the same
+                              .UseFileName(filename)
+                              .DisableRequireUniquePrefix();
 
             VerifyInstrumentation(process.Process);
 

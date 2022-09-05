@@ -27,12 +27,14 @@ namespace Samples.ProcessStart
                 Process.Start("nonexisting3.exe", "arg1", "user", new SecureString(), "domain");
             }
             catch (Win32Exception) { }
+            catch (PlatformNotSupportedException) { }           
 
             try
             {
                 Process.Start("nonexisting4.exe", "user", new SecureString(), "domain");
             }
             catch (Win32Exception) { }
+            catch (PlatformNotSupportedException) { }
 
             try
             {
