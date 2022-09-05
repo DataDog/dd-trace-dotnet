@@ -130,6 +130,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 
             // Initialize Method Symbol Resolver
             _ = MethodSymbolResolver.Instance.GetModuleDef(methodInfo.Module);
+
+            // Pre JIT the target method before calling it (trying to have a better span duration measurement)
+            System.Runtime.CompilerServices.RuntimeHelpers.PrepareMethod(methodInfo.MethodHandle);
         }
     }
 }
