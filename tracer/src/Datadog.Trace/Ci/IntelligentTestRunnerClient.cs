@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -43,6 +44,7 @@ internal class IntelligentTestRunnerClient
     private static readonly Regex ShaRegex = new Regex("[0-9a-f]+", RegexOptions.Compiled);
     private static readonly JsonSerializerSettings SerializerSettings = new() { DefaultValueHandling = DefaultValueHandling.Ignore };
 
+    private readonly string _id;
     private readonly CIVisibilitySettings _settings;
     private readonly string _workingDirectory;
     private readonly IApiRequestFactory _apiRequestFactory;
@@ -53,6 +55,7 @@ internal class IntelligentTestRunnerClient
 
     public IntelligentTestRunnerClient(string workingDirectory, CIVisibilitySettings? settings = null)
     {
+        _id = SpanIdGenerator.CreateNew().ToString(CultureInfo.InvariantCulture);
         _settings = settings ?? CIVisibility.Settings;
 
         _workingDirectory = workingDirectory;
@@ -163,6 +166,8 @@ internal class IntelligentTestRunnerClient
             var request = _apiRequestFactory.Create(_skippeableTestsUrl);
             request.AddHeader(ApiKeyHeader, _settings.ApiKey);
             request.AddHeader(ApplicationKeyHeader, _settings.ApplicationKey);
+            request.AddHeader(HttpHeaderNames.TraceId, _id);
+            request.AddHeader(HttpHeaderNames.ParentId, _id);
             Log.Debug("ITR: Searching skippeable tests from: {url}", _skippeableTestsUrl.ToString());
             var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
@@ -227,6 +232,8 @@ internal class IntelligentTestRunnerClient
         {
             var request = _apiRequestFactory.Create(_searchCommitsUrl);
             request.AddHeader(ApiKeyHeader, _settings.ApiKey);
+            request.AddHeader(HttpHeaderNames.TraceId, _id);
+            request.AddHeader(HttpHeaderNames.ParentId, _id);
             Log.Debug("ITR: Searching commits from: {url}", _searchCommitsUrl.ToString());
             using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
@@ -311,8 +318,11 @@ internal class IntelligentTestRunnerClient
 
         async Task<long> InternalSendObjectsPackFileAsync(string packFile, bool finalTry)
         {
+            var invariantCulture = CultureInfo.InvariantCulture;
             var request = _apiRequestFactory.Create(_packFileUrl);
             request.AddHeader(ApiKeyHeader, _settings.ApiKey);
+            request.AddHeader(HttpHeaderNames.TraceId, _id);
+            request.AddHeader(HttpHeaderNames.ParentId, _id);
             var multipartRequest = (IMultipartApiRequest)request;
 
             using var fileStream = File.Open(packFile, FileMode.Open, FileAccess.Read, FileShare.Read);

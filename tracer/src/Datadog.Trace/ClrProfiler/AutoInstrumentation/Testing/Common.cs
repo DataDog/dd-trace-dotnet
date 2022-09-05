@@ -89,6 +89,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             span.SetTag(CommonTags.OSArchitecture, framework.OSArchitecture);
             span.SetTag(CommonTags.OSPlatform, framework.OSPlatform);
             span.SetTag(CommonTags.OSVersion, Environment.OSVersion.VersionString);
+
+            // Check if Intelligent Test Runner
+            if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
+            {
+                span.SetTag("_dd.ci.itr", "true");
+            }
         }
 
         internal static void StartCoverage()
