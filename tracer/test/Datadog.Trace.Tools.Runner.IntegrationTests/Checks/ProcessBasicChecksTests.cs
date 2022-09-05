@@ -180,7 +180,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             result.Should().BeTrue();
 
-            console.Output.Should().Contain(TracerVersion(TracerConstants.AssemblyVersion));
+            console.Output.Should().Contain(
+                TracerVersion(TracerConstants.AssemblyVersion),
+                ContinuousProfilerNotSet);
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -190,7 +192,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().NotContainAny(
                 NativeTracerNotLoaded,
                 TracerNotLoaded,
-                ContinuousProfilerNotSet,
                 "DD_DOTNET_TRACER_HOME",
                 CorProfilerKey,
                 CorEnableKey,
