@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using System.Text;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 {
@@ -32,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         {
             if (envVariables != null)
             {
-                var variableLine = new StringBuilder();
+                var variableLine = StringBuilderCache.Acquire(0);
 
                 foreach (var variable in envVariables)
                 {
