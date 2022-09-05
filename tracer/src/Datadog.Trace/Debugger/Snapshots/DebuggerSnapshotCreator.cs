@@ -311,7 +311,7 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         public DebuggerSnapshotCreator AddMessage()
         {
-            var snapshotObject = JsonConvert.DeserializeObject<Snapshot>(_jsonUnderlyingString.ToString() + "}");
+            var snapshotObject = JsonConvert.DeserializeObject<Snapshot>($"{_jsonUnderlyingString}}}");
             var message = SnapshotSummary.FormatMessage(snapshotObject);
             _jsonWriter.WritePropertyName("message");
             _jsonWriter.WriteValue(message);

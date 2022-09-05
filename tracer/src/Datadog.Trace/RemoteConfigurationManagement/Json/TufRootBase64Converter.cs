@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.IO;
 using System.Text;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -19,9 +20,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Json
                 return null;
             }
 
-            var contentDecode = Encoding.UTF8.GetString(Convert.FromBase64String((string)reader.Value));
+            var contentDecode = Convert.FromBase64String((string)reader.Value);
 
-            return JsonConvert.DeserializeObject<TufRoot>(contentDecode);
+            using var stream = new MemoryStream(contentDecode);
+            using var streamReader = new StreamReader(stream);
+            using var jsonReader = new JsonTextReader(streamReader);
+            return JsonSerializer.CreateDefault().Deserialize<TufRoot>(jsonReader);
         }
 
         public override void WriteJson(JsonWriter writer, TufRoot value, JsonSerializer serializer)
