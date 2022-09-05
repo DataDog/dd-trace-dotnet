@@ -128,6 +128,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             using var helper = await StartConsole(
                 enableProfiler: false,
+                ("DD_PROFILING_ENABLED", "1"),
                 ("DD_DOTNET_TRACER_HOME", "TheDirectoryDoesNotExist"),
                 (CorProfilerKey, Guid.Empty.ToString("B")),
                 (CorEnableKey, "0"),
@@ -148,6 +149,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 LoaderNotLoaded,
                 NativeTracerNotLoaded,
                 TracerNotLoaded,
+                ContinuousProfilerEnabled,
+                ContinuousProfilerNotLoaded,
                 TracerHomeNotFoundFormat("TheDirectoryDoesNotExist"),
                 WrongEnvironmentVariableFormat(CorProfilerKey, Utils.Profilerid, Guid.Empty.ToString("B")),
                 WrongEnvironmentVariableFormat(CorEnableKey, "1", "0"),
@@ -163,7 +166,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [Trait("RunOnWindows", "True")]
         public async Task Working()
         {
-            using var helper = await StartConsole(enableProfiler: true, ("DD_PROFILING_ENABLED", "1"));
+            using var helper = await StartConsole(enableProfiler: true);
             var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
 
             processInfo.Should().NotBeNull();
@@ -184,12 +187,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 console.Output.Should().Contain(ProfilerVersion(TracerConstants.AssemblyVersion));
             }
 
-            console.Output.Should().Contain(ContinuousProfilerEnabled);
-
             console.Output.Should().NotContainAny(
                 NativeTracerNotLoaded,
                 TracerNotLoaded,
-                ContinuousProfilerNotLoaded,
+                ContinuousProfilerNotSet,
                 "DD_DOTNET_TRACER_HOME",
                 CorProfilerKey,
                 CorEnableKey,
@@ -198,8 +199,71 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 CorProfilerPath64Key);
         }
 
+        [SkippableFact]
+        public async Task WorkingWithContinuousProfiler()
+        {
+            var apiWrapperPath = Path.Combine(EnvironmentHelper.MonitoringHome, "continuousprofiler", "Datadog.Linux.ApiWrapper.x64.so");
+
+            using var helper = await StartConsole(
+                                   enableProfiler: true,
+                                   ("DD_PROFILING_ENABLED", "1"),
+                                   ("LD_PRELOAD", apiWrapperPath));
+            var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
+
+            processInfo.Should().NotBeNull();
+
+            using var console = ConsoleHelper.Redirect();
+
+            var result = ProcessBasicCheck.Run(processInfo, MockRegistryService(Array.Empty<string>(), ProfilerPath));
+
+            using var scope = new AssertionScope();
+            scope.AddReportable("Output", console.Output);
+
+            result.Should().BeTrue();
+
+            console.Output.Should().ContainAll(
+                TracerVersion(TracerConstants.AssemblyVersion),
+                ContinuousProfilerEnabled);
+
+            console.Output.Should().NotContainAny(
+                NativeTracerNotLoaded,
+                TracerNotLoaded,
+                ContinuousProfilerNotSet,
+                ContinuousProfilerNotLoaded,
+                "LD_PRELOAD",
+                "DD_DOTNET_TRACER_HOME",
+                CorProfilerKey,
+                CorEnableKey,
+                CorProfilerPathKey,
+                CorProfilerPath32Key,
+                CorProfilerPath64Key);
+        }
+
+        [SkippableFact]
+        public async Task WrongLdPreload()
+        {
+            using var helper = await StartConsole(
+                                   enableProfiler: true,
+                                   ("DD_PROFILING_ENABLED", "1"),
+                                   ("LD_PRELOAD", "/dummyPath"));
+
+            var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
+
+            processInfo.Should().NotBeNull();
+
+            using var console = ConsoleHelper.Redirect();
+
+            var result = ProcessBasicCheck.Run(processInfo, MockRegistryService(Array.Empty<string>(), ProfilerPath));
+
+            using var scope = new AssertionScope();
+            scope.AddReportable("Output", console.Output);
+
+            result.Should().BeFalse();
+
+            console.Output.Should().Contain(ApiWrapperNotFound("/dummyPath"));
+        }
+
         [SkippableTheory]
-        [Trait("RunOnWindows", "True")]
         [InlineData(true)]
         [InlineData(false)]
         [InlineData(null)]
@@ -219,8 +283,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var scope = new AssertionScope();
             scope.AddReportable("Output", console.Output);
-
-            result.Should().BeTrue();
 
             if (enabled == null)
             {
