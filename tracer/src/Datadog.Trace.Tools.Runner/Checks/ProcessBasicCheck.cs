@@ -352,7 +352,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 var fileName = Path.GetFileName(module);
 
                 if (fileName.Equals("Datadog.Trace.ClrProfiler.Native.dll", StringComparison.OrdinalIgnoreCase)
-                 || fileName.Equals("Datadog.Trace.ClrProfiler.Native.so", StringComparison.OrdinalIgnoreCase))
+                 || fileName.Equals("Datadog.Trace.ClrProfiler.Native.so", StringComparison.Ordinal))
                 {
                     // This could be either the native tracer or the loader.
                     // If it's the loader then there should be a loader.conf file next to it.
@@ -365,7 +365,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 }
                 else if (fileName.Equals("Datadog.AutoInstrumentation.NativeLoader.x64.dll", StringComparison.OrdinalIgnoreCase)
                       || fileName.Equals("Datadog.AutoInstrumentation.NativeLoader.x86.dll", StringComparison.OrdinalIgnoreCase)
-                      || fileName.Equals("Datadog.AutoInstrumentation.NativeLoader.so", StringComparison.OrdinalIgnoreCase))
+                      || fileName.Equals("Datadog.AutoInstrumentation.NativeLoader.so", StringComparison.Ordinal))
                 {
                     return module;
                 }

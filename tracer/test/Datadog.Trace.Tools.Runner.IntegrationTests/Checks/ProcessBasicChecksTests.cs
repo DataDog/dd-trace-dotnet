@@ -203,7 +203,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [SkippableFact]
         public async Task WorkingWithContinuousProfiler()
         {
-            var apiWrapperPath = Path.Combine(EnvironmentHelper.MonitoringHome, "continuousprofiler", "Datadog.Linux.ApiWrapper.x64.so");
+            var apiWrapperPath = Path.Combine(EnvironmentHelper.MonitoringHome, "linux-x64", "Datadog.Linux.ApiWrapper.x64.so");
 
             using var helper = await StartConsole(
                                    enableProfiler: true,
