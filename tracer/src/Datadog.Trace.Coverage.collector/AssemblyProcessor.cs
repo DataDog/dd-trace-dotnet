@@ -9,6 +9,7 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage;
@@ -16,6 +17,7 @@ using Datadog.Trace.Ci.Coverage.Attributes;
 using Datadog.Trace.Ci.Coverage.Metadata;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using CallSite = Mono.Cecil.CallSite;
 using MethodAttributes = Mono.Cecil.MethodAttributes;
 using TypeAttributes = Mono.Cecil.TypeAttributes;
 
@@ -73,6 +75,8 @@ namespace Datadog.Trace.Coverage.Collector
 
                 var avoidCoverageAttributeFullName = typeof(AvoidCoverageAttribute).FullName;
                 var coveredAssemblyAttributeFullName = typeof(CoveredAssemblyAttribute).FullName;
+                var internalsVisibleToAttributeFullName = typeof(InternalsVisibleToAttribute).FullName;
+                var hasInternalsVisibleAttribute = false;
                 foreach (var cAttr in assemblyDefinition.CustomAttributes)
                 {
                     var attrFullName = cAttr.Constructor.DeclaringType.FullName;
@@ -87,6 +91,8 @@ namespace Datadog.Trace.Coverage.Collector
                         _logger.Debug($"Assembly: {FilePath}, already have coverage information.");
                         return;
                     }
+
+                    hasInternalsVisibleAttribute |= attrFullName == internalsVisibleToAttributeFullName;
                 }
 
                 // Gets the Datadog.Trace target framework
@@ -106,11 +112,18 @@ namespace Datadog.Trace.Coverage.Collector
                     }
                     else if (tracerTarget == TracerTarget.Net461)
                     {
-                        _logger.Debug($"Assembly: {FilePath}, is a net461 signed assembly, a .snk file is required ({Configuration.ConfigurationKeys.CIVisibility.CodeCoverageSnkFile} environment variable).");
+                        _logger.Warning($"Assembly: {FilePath}, is a net461 signed assembly, a .snk file is required ({Configuration.ConfigurationKeys.CIVisibility.CodeCoverageSnkFile} environment variable).");
+                        return;
+                    }
+                    else if (hasInternalsVisibleAttribute)
+                    {
+                        _logger.Warning($"Assembly: {FilePath}, is a signed assembly with the InternalsVisibleTo attribute. A .snk file is required ({Configuration.ConfigurationKeys.CIVisibility.CodeCoverageSnkFile} environment variable).");
                         return;
                     }
                 }
 
+                // We open the exact datadog assembly to be copied to the target, this is because the AssemblyReference lists
+                // differs depends on the target runtime. (netstandard, .NET 5.0 or .NET 4.6.2)
                 using var datadogTracerAssembly = AssemblyDefinition.ReadAssembly(GetDatadogTracer(tracerTarget));
 
                 var isDirty = false;
@@ -137,7 +150,7 @@ namespace Datadog.Trace.Coverage.Collector
                     module.TypeSystem.Void);
 
                 // Create number of types array
-                var moduleCoverageMetadataImplMetadataField = module.ImportReference(moduleCoverageMetadataTypeDefinition.Fields.First(f => f.Name == "Metadata"));
+                var moduleCoverageMetadataImplMetadataField = new FieldReference("Metadata", new ArrayType(new ArrayType(module.TypeSystem.Int32)), moduleCoverageMetadataTypeReference);
                 moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldarg_0));
                 moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Ldc_I4, moduleTypes.Count));
                 moduleCoverageMetadataImplCtor.Body.Instructions.Add(Instruction.Create(OpCodes.Newarr, new ArrayType(module.TypeSystem.Int32)));
@@ -175,16 +188,23 @@ namespace Datadog.Trace.Coverage.Collector
                     }
                     else
                     {
+                        // Emit Array.Empty<int>() call
                         if (arrayEmptyOfIntMethodReference is null)
                         {
                             var assemblyReferences = module.AssemblyReferences.ToArray();
                             arrayEmptyOfIntMethodReference = (GenericInstanceMethod)module.ImportReference(ArrayEmptyOfIntMethod);
                             arrayEmptyOfIntMethodReference.DeclaringType.Scope = module.TypeSystem.CoreLibrary;
                             arrayEmptyOfIntMethodReference.GenericArguments[0] = module.TypeSystem.Int32;
-                            module.AssemblyReferences.Clear();
-                            foreach (var assemblyReference in assemblyReferences)
+
+                            // If the `ImportReference` sentence add a new assembly reference (cross runtime versions)
+                            // we revert the reference list at the previous state.
+                            if (assemblyReferences.Length != module.AssemblyReferences.Count)
                             {
-                                module.AssemblyReferences.Add(assemblyReference);
+                                module.AssemblyReferences.Clear();
+                                foreach (var assemblyReference in assemblyReferences)
+                                {
+                                    module.AssemblyReferences.Add(assemblyReference);
+                                }
                             }
                         }
 
@@ -426,10 +446,11 @@ namespace Datadog.Trace.Coverage.Collector
                 // Save assembly if we modify it successfully
                 if (isDirty)
                 {
-                    var coveredAssemblyAttributeTypeDefinition = datadogTracerAssembly.MainModule.GetType(typeof(CoveredAssemblyAttribute).FullName);
-                    var coveredAssemblyAttributeTypeCtorRef = module.ImportReference(coveredAssemblyAttributeTypeDefinition.Methods.First(m => m.Name == ".ctor"));
-                    var coveredAssemblyAttribute = new CustomAttribute(coveredAssemblyAttributeTypeCtorRef);
-                    assemblyDefinition.CustomAttributes.Add(coveredAssemblyAttribute);
+                    var coveredAssemblyAttributeTypeReference = module.ImportReference(datadogTracerAssembly.MainModule.GetType(typeof(CoveredAssemblyAttribute).FullName));
+                    assemblyDefinition.CustomAttributes.Add(new CustomAttribute(new MethodReference(".ctor", module.TypeSystem.Void, coveredAssemblyAttributeTypeReference)
+                    {
+                        HasThis = true
+                    }));
 
                     _logger.Debug($"Saving assembly: {_assemblyFilePath}");
 
