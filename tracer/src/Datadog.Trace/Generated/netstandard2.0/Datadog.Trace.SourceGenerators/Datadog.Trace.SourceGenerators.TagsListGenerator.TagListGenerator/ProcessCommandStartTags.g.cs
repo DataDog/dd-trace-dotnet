@@ -12,8 +12,8 @@ namespace Datadog.Trace.Tagging
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
         // EnviromentVarsBytes = System.Text.Encoding.UTF8.GetBytes("cmd.environment_variables");
         private static readonly byte[] EnviromentVarsBytes = new byte[] { 99, 109, 100, 46, 101, 110, 118, 105, 114, 111, 110, 109, 101, 110, 116, 95, 118, 97, 114, 105, 97, 98, 108, 101, 115 };
-        // TruncatedBytes = System.Text.Encoding.UTF8.GetBytes("cmd.truncated");
-        private static readonly byte[] TruncatedBytes = new byte[] { 99, 109, 100, 46, 116, 114, 117, 110, 99, 97, 116, 101, 100 };
+        // IsTruncatedBytes = System.Text.Encoding.UTF8.GetBytes("cmd.truncated");
+        private static readonly byte[] IsTruncatedBytes = new byte[] { 99, 109, 100, 46, 116, 114, 117, 110, 99, 97, 116, 101, 100 };
 
         public override string? GetTag(string key)
         {
@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tagging
             {
                 "span.kind" => SpanKind,
                 "cmd.environment_variables" => EnviromentVars,
-                "cmd.truncated" => Truncated,
+                "cmd.truncated" => IsTruncated,
                 _ => base.GetTag(key),
             };
         }
@@ -34,7 +34,7 @@ namespace Datadog.Trace.Tagging
                     EnviromentVars = value;
                     break;
                 case "cmd.truncated": 
-                    Truncated = value;
+                    IsTruncated = value;
                     break;
                 default: 
                     base.SetTag(key, value);
@@ -54,9 +54,9 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("cmd.environment_variables", EnviromentVars, EnviromentVarsBytes));
             }
 
-            if (Truncated is not null)
+            if (IsTruncated is not null)
             {
-                processor.Process(new TagItem<string>("cmd.truncated", Truncated, TruncatedBytes));
+                processor.Process(new TagItem<string>("cmd.truncated", IsTruncated, IsTruncatedBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -78,10 +78,10 @@ namespace Datadog.Trace.Tagging
                   .Append(',');
             }
 
-            if (Truncated is not null)
+            if (IsTruncated is not null)
             {
                 sb.Append("cmd.truncated (tag):")
-                  .Append(Truncated)
+                  .Append(IsTruncated)
                   .Append(',');
             }
 

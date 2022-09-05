@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
     /// System.Net.Http.HttpClientHandler calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-       AssemblyNames = new [] { "System", "System.Diagnostics.Process" },
+       AssemblyNames = new[] { "System", "System.Diagnostics.Process" },
        TypeName = "System.Diagnostics.Process",
        MethodName = "Start",
        ReturnTypeName = ClrNames.Process,
