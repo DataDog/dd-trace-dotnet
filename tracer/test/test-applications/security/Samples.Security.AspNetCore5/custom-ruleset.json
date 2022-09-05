@@ -30,6 +30,29 @@
       ]
     },
     {
+      "id": "block_users",
+      "name": "Block authenticated users",
+      "tags": {
+        "type": "users",
+        "category": "blocking"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              { "address": "usr.id" }
+            ],
+            "data": "blocked_users"
+          },
+          "operator": "exact_match"
+        }
+      ],
+      "transformers": [],
+      "on_match": [
+        "block"
+      ]
+    },
+    {
       "id": "ublock-600-12x",
       "name": "Hello",
       "tags": {

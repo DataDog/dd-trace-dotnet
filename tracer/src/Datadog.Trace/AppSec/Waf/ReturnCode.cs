@@ -17,6 +17,7 @@ namespace Datadog.Trace.AppSec.Waf
         ErrorTimeout = -1,
         Ok = 0,
         Match = 1,
+        // has been removed since 1.5.0 because actions tell what to do now. but keep for back for backward compatibility
         Block = 2
     }
 }

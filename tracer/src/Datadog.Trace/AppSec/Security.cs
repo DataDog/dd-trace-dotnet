@@ -479,7 +479,7 @@ namespace Datadog.Trace.AppSec
                 using var wafResult = additiveContext.Run(e.EventData, _settings.WafTimeoutMicroSeconds);
                 if (wafResult.ReturnCode == ReturnCode.Match || wafResult.ReturnCode == ReturnCode.Block)
                 {
-                    var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock");
+                    var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock") || wafResult.Actions.Contains("block");
                     if (block)
                     {
                         e.Transport.WriteBlockedResponse(_settings.BlockedJsonTemplate, _settings.BlockedHtmlTemplate);
