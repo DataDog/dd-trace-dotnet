@@ -286,7 +286,7 @@ namespace Datadog.Trace.AppSec
         private void AsmDDProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
             var asmDD = e.GetDeserializedConfigurations<string>().FirstOrDefault();
-            if (asmDD != null)
+            if (!string.IsNullOrEmpty(asmDD))
             {
                 _remoteRulesJson = asmDD;
                 UpdateStatus(true);
@@ -424,64 +424,6 @@ namespace Datadog.Trace.AppSec
                 _enabled = false;
 
                 Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {enableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
-            }
-        }
-
-        private void UpdateStatus()
-        {
-            lock (_settings)
-            {
-                if (_enabled == _settings.Enabled) { return; }
-                if (_settings.Enabled)
-                {
-                    _waf = _waf ?? Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules);
-                    if (_waf?.InitializedSuccessfully ?? false)
-                    {
-                        _instrumentationGateway.EndRequest += RunWaf;
-                        _instrumentationGateway.PathParamsAvailable += AggregateAddressesInContext;
-                        _instrumentationGateway.BodyAvailable += AggregateAddressesInContext;
-#if NETFRAMEWORK
-                        try
-                        {
-                            _usingIntegratedPipeline = TryGetUsingIntegratedPipelineBool();
-                        }
-                        catch (Exception ex)
-                        {
-                            _usingIntegratedPipeline = false;
-                            Log.Error(ex, "Unable to query the IIS pipeline. Request and response information may be limited.");
-                        }
-
-                        if (_usingIntegratedPipeline)
-                        {
-                            _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
-                        }
-#else
-                        _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
-#endif
-                        AddAppsecSpecificInstrumentations();
-
-                        _instrumentationGateway.EndRequest += ReportWafInitInfoOnce;
-                        LifetimeManager.Instance.AddShutdownTask(RunShutdown);
-                        _rateLimiter = _rateLimiter ?? new AppSecRateLimiter(_settings.TraceRateLimit);
-                    }
-                    else
-                    {
-                        _settings.Enabled = false;
-                    }
-                }
-
-                if (!_settings.Enabled)
-                {
-                    _instrumentationGateway.EndRequest -= RunWaf;
-                    _instrumentationGateway.PathParamsAvailable -= AggregateAddressesInContext;
-                    _instrumentationGateway.BodyAvailable -= AggregateAddressesInContext;
-                    _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
-                    _instrumentationGateway.EndRequest -= ReportWafInitInfoOnce;
-
-                    AddAppsecSpecificInstrumentations(false);
-                }
-
-                _enabled = _settings.Enabled;
             }
         }
 
