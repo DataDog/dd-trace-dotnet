@@ -23,4 +23,7 @@
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\Util\Datadog.Demos.Util.csproj" />
+  </ItemGroup>
 </Project>

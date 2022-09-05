@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Demos.Util;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -15,10 +16,12 @@ namespace BuggyBits
 {
     public enum Scenario
     {
-        StringConcat,
-        StringBuilder,
-        Parallel,
-        Async,
+        None,
+        StringConcat,    // using += / String.Concat
+        StringBuilder,   // using StringBuilder
+        Parallel,        // using parallel code
+        Async,           // using async code
+        FormatExceptions // generating FormatExceptions for prices
     }
 
     public class Program
@@ -28,6 +31,8 @@ namespace BuggyBits
             var sw = new Stopwatch();
 
             WriteLine("Starting at " + DateTime.UtcNow);
+
+            EnvironmentInfo.PrintDescriptionToConsole();
 
             ParseCommandLine(args, out var timeout, out var iterations, out var scenario);
 
@@ -166,6 +171,12 @@ namespace BuggyBits
                 {
                     timeout = Timeout.InfiniteTimeSpan;
                 }
+            }
+
+            // sanity checks
+            if ((scenario == 0) && (iterations > 0))
+            {
+                throw new InvalidOperationException("It is not possible to iterate on scenario 0");
             }
         }
 

@@ -1504,7 +1504,7 @@ partial class Build
        .Description("Reads the logs from build_data and checks for error lines")
        .Executes(() =>
        {
-           // we expect to see _some_ errors, so explcitly ignore them
+           // we expect to see _some_ errors, so explicitly ignore them
            var knownPatterns = new List<Regex>
            {
                new(@".*Unable to resolve method MongoDB\..*", RegexOptions.Compiled),
@@ -1514,6 +1514,9 @@ partial class Build
                new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsVoidIntegration\.OnMethodBegin.*", RegexOptions.Compiled),
                new(@".*at CallTargetNativeTest\.NoOp\.Noop\dArgumentsVoidIntegration\.OnMethodEnd.*", RegexOptions.Compiled),
                new(@".*System.Threading.ThreadAbortException: Thread was being aborted\.", RegexOptions.Compiled),
+               // This one is annoying but we _think_ due to a dodgy named pipes implementation, so ignoring for now
+               new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\trace-.*The operation has timed out.*", RegexOptions.Compiled),
+               new(@".*An error occurred while sending data to the agent at \\\\\.\\pipe\\metrics-.*The operation has timed out.*", RegexOptions.Compiled),
            };
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: false, minLogLevel: LogLevel.Error);
