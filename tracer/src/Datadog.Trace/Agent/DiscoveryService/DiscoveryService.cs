@@ -93,8 +93,15 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
             if (Volatile.Read(ref _configuration) is { } currentConfig)
             {
-                // If we already have fetched the config, call this immediately
-                callback(currentConfig);
+                try
+                {
+                    // If we already have fetched the config, call this immediately
+                    callback(currentConfig);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error notifying subscriber of initial discovered configuration");
+                }
             }
         }
 
@@ -121,7 +128,14 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
             foreach (var subscriber in subscribers)
             {
-                subscriber(newConfig);
+                try
+                {
+                    subscriber(newConfig);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error notifying subscriber of configuration change");
+                }
             }
         }
 

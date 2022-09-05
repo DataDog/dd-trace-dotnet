@@ -24,6 +24,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         private readonly string _id;
         private readonly RcmClientTracer _rcmTracer;
+        private readonly IDiscoveryService _discoveryService;
         private readonly IRemoteConfigurationApi _remoteConfigurationApi;
         private readonly TimeSpan _pollInterval;
 
@@ -43,6 +44,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             RcmClientTracer rcmTracer,
             TimeSpan pollInterval)
         {
+            _discoveryService = discoveryService;
             _remoteConfigurationApi = remoteConfigurationApi;
             _rcmTracer = rcmTracer;
             _pollInterval = pollInterval;
@@ -53,7 +55,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             _lastPollError = null;
             _cancellationSource = new CancellationTokenSource();
             _products = new ConcurrentDictionary<string, Product>();
-            discoveryService.SubscribeToChanges(c => _isRcmEnabled = !string.IsNullOrEmpty(c.ConfigurationEndpoint));
+            discoveryService.SubscribeToChanges(SetRcmEnabled);
         }
 
         public static RemoteConfigurationManager Instance { get; private set; }
@@ -119,6 +121,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         public void UnregisterProduct(string productName)
         {
             _products.TryRemove(productName, out _);
+        }
+
+        public void OnShutdown()
+        {
+            _discoveryService.RemoveSubscription(SetRcmEnabled);
+            _cancellationSource.Cancel();
         }
 
         private async Task Poll()
@@ -265,9 +273,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
         }
 
-        public void OnShutdown()
+        private void SetRcmEnabled(AgentConfiguration c)
         {
-            _cancellationSource.Cancel();
+            _isRcmEnabled = !string.IsNullOrEmpty(c.ConfigurationEndpoint);
         }
     }
 }
