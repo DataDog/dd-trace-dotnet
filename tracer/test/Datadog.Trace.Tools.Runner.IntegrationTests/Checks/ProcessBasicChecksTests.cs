@@ -163,7 +163,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [Trait("RunOnWindows", "True")]
         public async Task Working()
         {
-            using var helper = await StartConsole(enableProfiler: true);
+            using var helper = await StartConsole(enableProfiler: true, ("DD_PROFILING_ENABLED", "1"));
             var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
 
             processInfo.Should().NotBeNull();
@@ -184,15 +184,56 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 console.Output.Should().Contain(ProfilerVersion(TracerConstants.AssemblyVersion));
             }
 
+            console.Output.Should().Contain(ContinuousProfilerEnabled);
+
             console.Output.Should().NotContainAny(
                 NativeTracerNotLoaded,
                 TracerNotLoaded,
+                ContinuousProfilerNotLoaded,
                 "DD_DOTNET_TRACER_HOME",
                 CorProfilerKey,
                 CorEnableKey,
                 CorProfilerPathKey,
                 CorProfilerPath32Key,
                 CorProfilerPath64Key);
+        }
+
+        [SkippableTheory]
+        [Trait("RunOnWindows", "True")]
+        [InlineData(true)]
+        [InlineData(false)]
+        [InlineData(null)]
+        public async Task DetectContinousProfilerState(bool? enabled)
+        {
+            var environmentVariables = enabled == null ? Array.Empty<(string, string)>()
+                : new[] { ("DD_PROFILING_ENABLED", enabled == true ? "1" : "0") };
+
+            using var helper = await StartConsole(enableProfiler: true, environmentVariables);
+            var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
+
+            processInfo.Should().NotBeNull();
+
+            using var console = ConsoleHelper.Redirect();
+
+            var result = ProcessBasicCheck.Run(processInfo, MockRegistryService(Array.Empty<string>(), ProfilerPath));
+
+            using var scope = new AssertionScope();
+            scope.AddReportable("Output", console.Output);
+
+            result.Should().BeTrue();
+
+            if (enabled == null)
+            {
+                console.Output.Should().Contain(ContinuousProfilerNotSet);
+            }
+            else if (enabled == true)
+            {
+                console.Output.Should().Contain(ContinuousProfilerEnabled);
+            }
+            else
+            {
+                console.Output.Should().Contain(ContinuousProfilerDisabled);
+            }
         }
 
         [SkippableFact]

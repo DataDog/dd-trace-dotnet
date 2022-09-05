@@ -46,18 +46,18 @@ namespace Datadog.Trace.Tools.Runner.Checks
             {
                 if (ParseBooleanConfigurationValue(profilingEnabled))
                 {
-                    AnsiConsole.WriteLine(ContinousProfilerEnabled);
+                    AnsiConsole.WriteLine(ContinuousProfilerEnabled);
                     isContinuousProfilerEnabled = true;
                 }
                 else
                 {
-                    AnsiConsole.WriteLine(ContinousProfilerDisabled);
+                    AnsiConsole.WriteLine(ContinuousProfilerDisabled);
                     isContinuousProfilerEnabled = false;
                 }
             }
             else
             {
-                AnsiConsole.WriteLine(ContinousProfilerNotSet);
+                AnsiConsole.WriteLine(ContinuousProfilerNotSet);
                 isContinuousProfilerEnabled = false;
             }
 
@@ -186,13 +186,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             if (continuousProfilerModule == null)
             {
-                Utils.WriteWarning(ContinousProfilerNotLoaded);
+                Utils.WriteWarning(ContinuousProfilerNotLoaded);
                 ok = false;
             }
 
             if (loaderModule == null)
             {
-                Utils.WriteError(ContinousProfilerWithoutLoader);
+                Utils.WriteError(ContinuousProfilerWithoutLoader);
                 ok = false;
             }
 

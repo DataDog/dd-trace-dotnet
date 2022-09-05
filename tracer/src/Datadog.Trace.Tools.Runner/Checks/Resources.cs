@@ -33,11 +33,11 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string AspNetCoreProcessNotFound = "Could not find the ASP.NET Core applicative process.";
         public const string VersionConflict = "Tracer version 1.x can't be loaded simultaneously with other versions and will produce orphaned traces. Make sure to synchronize the Datadog.Trace NuGet version with the installed automatic instrumentation package version.";
 
-        public const string ContinousProfilerEnabled = "DD_PROFILING_ENABLED is set.";
-        public const string ContinousProfilerDisabled = "The continous profiler is explicitly disabled through DD_PROFILING_ENABLED.";
-        public const string ContinousProfilerNotSet = "DD_PROFILING_ENABLED is not set, the continous profiler is disabled.";
-        public const string ContinousProfilerNotLoaded = "The continuous profiler library is not loaded into the process.";
-        public const string ContinousProfilerWithoutLoader = "The continous profiler needs the Datadog.Trace.ClrProfiler.Native module and the loader.conf file to work. Try reinstalling the tracer in version 2.14+.";
+        public const string ContinuousProfilerEnabled = "DD_PROFILING_ENABLED is set.";
+        public const string ContinuousProfilerDisabled = "The continuous profiler is explicitly disabled through DD_PROFILING_ENABLED.";
+        public const string ContinuousProfilerNotSet = "DD_PROFILING_ENABLED is not set, the continuous profiler is disabled.";
+        public const string ContinuousProfilerNotLoaded = "The continuous profiler library is not loaded into the process.";
+        public const string ContinuousProfilerWithoutLoader = "The continuous profiler needs the Datadog.Trace.ClrProfiler.Native module and the loader.conf file to work. Try reinstalling the tracer in version 2.14+.";
 
         public const string LdPreloadNotSet = "The environment variable LD_PRELOAD is not set. Check the Datadog .NET Profiler documentation to set it properly.";
 

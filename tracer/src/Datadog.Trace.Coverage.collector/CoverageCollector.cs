@@ -121,7 +121,7 @@ namespace Datadog.Trace.Coverage.Collector
                 Directory.EnumerateFiles(folder, "*.*", searchOption),
                 file =>
                 {
-                    var path = Path.GetDirectoryName(file);
+                    var path = Path.GetDirectoryName(file)!;
                     var fileWithoutExtension = Path.GetFileNameWithoutExtension(file);
                     // Skip the Datadog.Trace assembly
                     if (tracerAssemblyName == fileWithoutExtension)
