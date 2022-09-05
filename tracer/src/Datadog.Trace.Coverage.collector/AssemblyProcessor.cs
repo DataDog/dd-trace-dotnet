@@ -141,7 +141,7 @@ namespace Datadog.Trace.Coverage.Collector
                 var moduleCoverageMetadataImplTypeDef = new TypeDefinition(
                     typeof(ModuleCoverageMetadata).Namespace + ".Target",
                     "ModuleCoverage",
-                    TypeAttributes.Class | TypeAttributes.Public,
+                    TypeAttributes.Class | TypeAttributes.Sealed | TypeAttributes.NotPublic,
                     moduleCoverageMetadataTypeReference);
 
                 var moduleCoverageMetadataImplCtor = new MethodDefinition(
