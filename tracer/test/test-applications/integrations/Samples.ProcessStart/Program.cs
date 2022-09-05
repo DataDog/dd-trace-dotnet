@@ -12,32 +12,32 @@ namespace Samples.ProcessStart
         {
             try
             {
-                Process.Start("nonexisting.exe");
+                Process.Start("nonexisting1.exe");
             }
             catch (Win32Exception) { }
 
             try
             {
-                Process.Start("nonexisting.exe", "arg1");
+                Process.Start("nonexisting2.exe", "arg1");
             }
             catch (Win32Exception) { }
 
             try
             {
-                Process.Start("nonexisting.exe", "arg1", "user", new SecureString(), "domain");
+                Process.Start("nonexisting3.exe", "arg1", "user", new SecureString(), "domain");
             }
             catch (Win32Exception) { }
 
             try
             {
-                Process.Start("nonexisting.exe", "user", new SecureString(), "domain");
+                Process.Start("nonexisting4.exe", "user", new SecureString(), "domain");
             }
             catch (Win32Exception) { }
 
             try
             {
                 Process process = new Process();
-                process.StartInfo = new ProcessStartInfo("nonexisting.exe", "args");
+                process.StartInfo = new ProcessStartInfo("nonexisting5.exe", "args");
                 process.StartInfo.UseShellExecute = false;
                 process.Start();
             }
