@@ -156,31 +156,8 @@ internal class IntelligentTestRunnerClient
         var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
         Log.Debug("ITR: JSON RQ = {json}", jsonQuery);
 
-        // _ = MockTestsAsync(jsonQueryBytes, true);
         return await WithRetries(InternalGetSkippeableTestsAsync, jsonQueryBytes, MaxRetries).ConfigureAwait(false);
-        // _ = InternalGetSkippeableTestsAsync(jsonQueryBytes, true);
-        // return await WithRetries(MockTestsAsync, jsonQueryBytes, MaxRetries).ConfigureAwait(false);
-/*
-        async Task<SkippeableTest[]> MockTestsAsync(byte[] state, bool finalTry)
-        {
-            await Task.Yield();
-            var responseContent = File.ReadAllText("/Users/tony.redondo/body.json");
-            Log.Debug("ITR: JSON MOCK = {json}", responseContent);
-            var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<SkippeableTest>>>(responseContent);
-            if (deserializedResult.Data is null)
-            {
-                return null;
-            }
 
-            var testAttributes = new SkippeableTest[deserializedResult.Data.Length];
-            for (var i = 0; i < deserializedResult.Data.Length; i++)
-            {
-                testAttributes[i] = deserializedResult.Data[i].Attributes;
-            }
-
-            return testAttributes;
-        }
-*/
         async Task<SkippeableTest[]> InternalGetSkippeableTestsAsync(byte[] state, bool finalTry)
         {
             var request = _apiRequestFactory.Create(_skippeableTestsUrl);
@@ -201,7 +178,7 @@ internal class IntelligentTestRunnerClient
 
             Log.Debug("ITR: JSON RS = {json}", responseContent);
             var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<SkippeableTest>>>(responseContent);
-            if (deserializedResult.Data is null)
+            if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
             {
                 return Array.Empty<SkippeableTest>();
             }
@@ -225,10 +202,18 @@ internal class IntelligentTestRunnerClient
 
         Log.Debug("ITR: Searching commits...");
 
-        var commitRequests = new Data<object>[localCommits.Length];
-        for (var i = 0; i < localCommits.Length; i++)
+        Data<object>[] commitRequests;
+        if (localCommits.Length == 0)
         {
-            commitRequests[i] = new Data<object>(localCommits[i], CommitType, default);
+            commitRequests = Array.Empty<Data<object>>();
+        }
+        else
+        {
+            commitRequests = new Data<object>[localCommits.Length];
+            for (var i = 0; i < localCommits.Length; i++)
+            {
+                commitRequests[i] = new Data<object>(localCommits[i], CommitType, default);
+            }
         }
 
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
@@ -264,7 +249,7 @@ internal class IntelligentTestRunnerClient
 
             Log.Debug("ITR: JSON RS = {json}", responseContent);
             var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<object>>>(responseContent);
-            if (deserializedResult.Data is null)
+            if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
             {
                 return Array.Empty<string>();
             }
