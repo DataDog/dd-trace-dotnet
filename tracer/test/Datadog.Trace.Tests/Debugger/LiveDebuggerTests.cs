@@ -51,7 +51,7 @@ public class LiveDebuggerTests
     {
         var settings = DebuggerSettings.FromSource(new NameValueConfigurationSource(new()
         {
-            { ConfigurationKeys.Debugger.Enabled, "1" },
+            { ConfigurationKeys.Debugger.Enabled, "0" },
         }));
 
         var discoveryService = new DiscoveryServiceMock();
