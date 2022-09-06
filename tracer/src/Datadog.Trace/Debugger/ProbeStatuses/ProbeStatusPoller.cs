@@ -30,7 +30,7 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
             _period = period;
         }
 
-        internal static ProbeStatusPoller Create(ImmutableDebuggerSettings settings, ProbeStatusSink probeStatusSink)
+        internal static ProbeStatusPoller Create(ProbeStatusSink probeStatusSink, DebuggerSettings settings)
         {
             return new ProbeStatusPoller(probeStatusSink, TimeSpan.FromSeconds(settings.DiagnosticsIntervalSeconds));
         }
