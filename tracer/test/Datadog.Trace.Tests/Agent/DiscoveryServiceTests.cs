@@ -243,6 +243,39 @@ public class DiscoveryServiceTests
         task.Should().Be(dispose, "Should dispose in a timely manner but took >5s");
     }
 
+    [Fact]
+    public void AgentConfigurationComparesByValue()
+    {
+        var config1 = new AgentConfiguration(
+            configurationEndpoint: "ConfigurationEndpoint",
+            debuggerEndpoint: "DebuggerEndpoint",
+            agentVersion: "AgentVersion",
+            statsEndpoint: "StatsEndpoint",
+            dataStreamsMonitoringEndpoint: "DataStreamsMonitoringEndpoint",
+            clientDropP0: false);
+
+        // same config
+        var config2 = new AgentConfiguration(
+            configurationEndpoint: "ConfigurationEndpoint",
+            debuggerEndpoint: "DebuggerEndpoint",
+            agentVersion: "AgentVersion",
+            statsEndpoint: "StatsEndpoint",
+            dataStreamsMonitoringEndpoint: "DataStreamsMonitoringEndpoint",
+            clientDropP0: false);
+
+        // different
+        var config3 = new AgentConfiguration(
+            configurationEndpoint: "DIFFERENT",
+            debuggerEndpoint: "DebuggerEndpoint",
+            agentVersion: "AgentVersion",
+            statsEndpoint: "StatsEndpoint",
+            dataStreamsMonitoringEndpoint: "DataStreamsMonitoringEndpoint",
+            clientDropP0: false);
+
+        config1.Equals(config2).Should().BeTrue();
+        config1.Equals(config3).Should().BeFalse();
+    }
+
     private string GetConfig(bool dropP0 = true, string version = null)
         => JsonConvert.SerializeObject(new MockTracerAgent.AgentConfiguration() { ClientDropP0s = dropP0, AgentVersion = version });
 }

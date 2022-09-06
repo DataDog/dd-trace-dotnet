@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.Agent.DiscoveryService;
 
-internal class AgentConfiguration
+internal record AgentConfiguration
 {
     public AgentConfiguration(
         string? configurationEndpoint,

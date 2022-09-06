@@ -233,23 +233,18 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
             var existingConfiguration = _configuration;
 
-            if (existingConfiguration is null
-             || agentVersion != existingConfiguration.AgentVersion
-             || clientDropP0 != existingConfiguration.ClientDropP0s
-             || configurationEndpoint != existingConfiguration.ConfigurationEndpoint
-             || debuggerEndpoint != existingConfiguration.DebuggerEndpoint
-             || statsEndpoint != existingConfiguration.StatsEndpoint
-             || dataStreamsMonitoringEndpoint != existingConfiguration.DataStreamsMonitoringEndpoint)
-            {
-                // config has changed
-                var newConfig = new AgentConfiguration(
-                    configurationEndpoint: configurationEndpoint,
-                    debuggerEndpoint: debuggerEndpoint,
-                    agentVersion: agentVersion,
-                    statsEndpoint: statsEndpoint,
-                    dataStreamsMonitoringEndpoint: dataStreamsMonitoringEndpoint,
-                    clientDropP0: clientDropP0);
+            var newConfig = new AgentConfiguration(
+                configurationEndpoint: configurationEndpoint,
+                debuggerEndpoint: debuggerEndpoint,
+                agentVersion: agentVersion,
+                statsEndpoint: statsEndpoint,
+                dataStreamsMonitoringEndpoint: dataStreamsMonitoringEndpoint,
+                clientDropP0: clientDropP0);
 
+            // AgentConfiguration is a record, so this compares by value
+            if (existingConfiguration is null || !newConfig.Equals(existingConfiguration))
+            {
+                Log.Debug("Discovery configuration updated, notifying subscribers: {Configuration}", newConfig);
                 NotifySubscribers(newConfig);
             }
         }
