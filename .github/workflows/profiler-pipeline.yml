@@ -718,16 +718,21 @@ jobs:
           echo "DD_PROFILING_LOG_DIR=$(Join-Path -Path $tests_output -ChildPath logs)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "DD_PROFILING_OUTPUT_DIR=$(Join-Path -Path $tests_output -ChildPath pprofs)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "DD_TRACE_ENABLED=0" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CORECLR_ENABLE_PROFILING=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "CORECLR_PROFILER_PATH=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home/win-${{ matrix.platform }}/Datadog.Trace.ClrProfiler.Native.dll)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "COR_ENABLE_PROFILING=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "COR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "COR_PROFILER_PATH=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home/win-${{ matrix.platform }}/Datadog.Trace.ClrProfiler.Native.dll)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
           echo "DD_DOTNET_PROFILER_HOME=$(Join-Path -Path $(Resolve-Path .) -ChildPath shared/bin/monitoring-home)" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_PROFILING_ALLOCATION_ENABLED=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          echo "DD_PROFILING_ENABLED=1" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Run Computer01 for 2min
         shell: cmd
         run: >
-          cd profiler\_build\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Samples.Computer01\net45 &&
-          Samples.Computer01.exe --scenario 1 --timeout 120
+          cd profiler\_build\bin\Release-${{ matrix.platform }}\profiler\src\Demos\Samples.Computer01\net6.0 &&
+          Samples.Computer01.exe --scenario 9 --timeout 120
 
       - name: 'Publish Test results, Logs and PProf files'
         uses: actions/upload-artifact@v2
