@@ -140,13 +140,14 @@ jobs:
     runs-on: ubuntu-latest
     needs: build_linux_release_x64
     strategy:
-    # add scenarios when new profilers based on CLR events are added (like contentions for example)
+    # add scenarios when new profilers based on CLR events are added
       fail-fast: false
       matrix:
         framework:
           - net60
         scenario:
           - Allocations
+          - Contention
     services:
       dd-agent:
         image: 'datadog/agent:latest'
@@ -541,13 +542,14 @@ jobs:
     runs-on: windows-2019
     needs: build_windows
     strategy:
-    # add scenarios when new profilers based on CLR events are added (like contentions for example)
+    # add scenarios when new profilers based on CLR events are added
       fail-fast: false
       matrix:
         framework:
           - net60
         scenario:
           - Allocations
+          - Contention
     steps:
 
       - uses: actions/setup-dotnet@v2

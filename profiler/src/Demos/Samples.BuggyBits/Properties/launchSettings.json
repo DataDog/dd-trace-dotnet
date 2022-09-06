@@ -37,7 +37,7 @@
     },
     "BuggyBits+Tracer": {
       "commandName": "Project",
-      "commandLineArgs": "--timeout 600",
+      "commandLineArgs": "--timeout 600 --scenario 1",
       "launchBrowser": true,
       "environmentVariables": {
         "COR_ENABLE_PROFILING": "1",
