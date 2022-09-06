@@ -15,7 +15,8 @@
       "tracer\\test\\Datadog.Trace.ClrProfiler.Managed.Tests\\Datadog.Trace.ClrProfiler.Managed.Tests.csproj",
       "tracer\\test\\Datadog.Trace.TestHelpers\\Datadog.Trace.TestHelpers.csproj",
       "tracer\\test\\Datadog.Trace.Tests\\Datadog.Trace.Tests.csproj",
-      "tracer\\test\\test-applications\\debugger\\Samples.Probes\\Samples.Probes.csproj"
+      "tracer\\test\\test-applications\\debugger\\Samples.Probes\\Samples.Probes.csproj",
+	  "tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.External\\Samples.Probes.External.csproj"
     ]
   }
 }
