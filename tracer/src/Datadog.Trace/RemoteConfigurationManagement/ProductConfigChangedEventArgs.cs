@@ -60,7 +60,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         private ApplyDetails GetOrCreateApplyDetails(string filename)
         {
-            ApplyDetails applyDetails = null;
+            ApplyDetails applyDetails = default;
             if (!applyStates.TryGetValue(filename, out applyDetails))
             {
                 applyDetails = new ApplyDetails() { Filename = filename };
