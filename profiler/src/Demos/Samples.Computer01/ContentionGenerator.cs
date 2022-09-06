@@ -13,13 +13,15 @@ namespace Samples.Computer01
     internal class ContentionGenerator
     {
         private readonly int _nbThreads;
+        private readonly int _lockDuration;
         private readonly object _obj = new object();
         private ManualResetEvent _stopEvent;
         private List<Task> _activeTasks;
 
-        public ContentionGenerator(int nbThreads)
+        public ContentionGenerator(int nbThreads, int lockDuration)
         {
             _nbThreads = nbThreads;
+            _lockDuration = lockDuration;
         }
 
         public void Start()
@@ -82,7 +84,7 @@ namespace Samples.Computer01
             lock (_obj)
             {
                 Console.WriteLine($"Thread {Environment.CurrentManagedThreadId} acquired the lock");
-                Thread.Sleep(TimeSpan.FromMilliseconds(300));
+                Thread.Sleep(TimeSpan.FromMilliseconds(_lockDuration));
             }
 
             Console.WriteLine($"Thread {Environment.CurrentManagedThreadId} released the lock");

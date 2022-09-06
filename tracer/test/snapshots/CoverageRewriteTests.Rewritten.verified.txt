@@ -97,7 +97,7 @@ namespace CoverageRewriterAssembly
 }
 namespace Datadog.Trace.Ci.Coverage.Metadata.Target
 {
-	public class ModuleCoverage : ModuleCoverageMetadata
+	internal sealed class ModuleCoverage : ModuleCoverageMetadata
 	{
 		public ModuleCoverage()
 		{
