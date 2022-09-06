@@ -48,6 +48,9 @@ namespace Datadog.Trace.TestHelpers
                 File.Delete(path);
                 Directory.CreateDirectory(path);
                 path = Path.Combine(path, "rcm_config.json");
+
+                SetEnvironmentVariable(ConfigurationKeys.Rcm.RequestFilePath, Path.Combine(path, "rcm_request.json"));
+
                 if (File.Exists(path)) { File.Delete(path); }
             }
 
@@ -60,6 +63,12 @@ namespace Datadog.Trace.TestHelpers
             {
                 if (File.Exists(rcmConfigPath)) { File.Delete(rcmConfigPath); }
                 EnvironmentHelper.CustomEnvironmentVariables.Remove(ConfigurationKeys.Rcm.FilePath);
+            }
+
+            if (EnvironmentHelper.CustomEnvironmentVariables.TryGetValue(ConfigurationKeys.Rcm.RequestFilePath, out var rcmRequestPath))
+            {
+                if (File.Exists(rcmRequestPath)) { File.Delete(rcmRequestPath); }
+                EnvironmentHelper.CustomEnvironmentVariables.Remove(ConfigurationKeys.Rcm.RequestFilePath);
             }
         }
 

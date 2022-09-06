@@ -77,7 +77,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var spans1 = await SendRequestsAsync(agent, url);
 
-            SetRcmConfiguration(new[] { ((object)"haha, you weren't expect this!", "1") }, "FEATURES");
+            WriteRcmFile(new[] { ((object)"haha, you weren't expect this!", "1") }, "FEATURES");
             await Task.Delay(1000);
 
             CheckAckState(ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.Configuration.Features'. Path '', line 1, position 32.", "First RCM call");
