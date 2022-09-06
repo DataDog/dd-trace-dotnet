@@ -8,26 +8,27 @@
       "snapshot": {
         "captures": {
           "entry": {
-            "fields": {
-              "_home": {
-                "fields": null,
-                "type": "Home",
-                "value": "null"
-              }
-            }
+            "fields": null
           },
           "return": {
-            "fields": {
-              "_home": {
+            "fields": null,
+            "locals": {
+              "instance": {
                 "fields": {
-                  "Name": {
-                    "fields": null,
-                    "type": "String",
-                    "value": "Harry House"
+                  "_home": {
+                    "fields": {
+                      "Name": {
+                        "fields": null,
+                        "type": "String",
+                        "value": "Harry House"
+                      }
+                    },
+                    "type": "Home",
+                    "value": "Home"
                   }
                 },
-                "type": "Home",
-                "value": "Home"
+                "type": "SecurityTransparentTest",
+                "value": "SecurityTransparentTest"
               }
             }
           }
@@ -38,16 +39,11 @@
         "probe": {
           "id": "ScrubbedValue",
           "location": {
-            "method": ".ctor",
-            "type": "Samples.Probes.External.SecurityTransparentTest"
+            "method": "Run",
+            "type": "Samples.Probes.SmokeTests.CtorTransparentCodeTest"
           }
         },
         "stack": [
-          {
-            "fileName": "SecurityTransparentTest.cs",
-            "function": "Samples.Probes.External.SecurityTransparentTest..ctor",
-            "lineNumber": "ScrubbedValue"
-          },
           {
             "fileName": "CtorTransparentCodeTest.cs",
             "function": "Samples.Probes.SmokeTests.CtorTransparentCodeTest.Run",
@@ -67,13 +63,13 @@
       }
     },
     "logger": {
-      "method": ".ctor",
-      "name": "Samples.Probes.External.SecurityTransparentTest",
+      "method": "Run",
+      "name": "Samples.Probes.SmokeTests.CtorTransparentCodeTest",
       "thread_id": "ScrubbedValue",
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": ".ctor()",
+    "message": "CtorTransparentCodeTest.Run()\r\ninstance=SecurityTransparentTest",
     "service": "Probes"
   }
 ]

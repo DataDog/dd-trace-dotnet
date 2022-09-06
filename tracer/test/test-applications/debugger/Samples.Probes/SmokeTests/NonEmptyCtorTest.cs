@@ -11,7 +11,7 @@ namespace Samples.Probes.SmokeTests
     {
         private Person rnd = new Person("Ashur Thokozani", 35, new Address(), Guid.Empty, null);
 
-        [MethodProbeTestData]
+        [MethodProbeTestData(expectedNumberOfSnapshots: 0)]
         public NonEmptyCtorTest()
         {
         }

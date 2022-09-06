@@ -1209,6 +1209,14 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     std::vector<TypeSignature> methodArguments = caller->method_signature.GetMethodArguments();
     int numArgs = caller->method_signature.NumberOfArguments();
 
+    if (retTypeFlags & TypeFlagByRef || caller->name == WStr(".ctor") || caller->name == WStr(".cctor"))
+    {
+        // Internal Jira ticket: DEBUG-1063, DEBUG-1065.
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Placing probes on a method with ref return/constructor is not supported for now. token=",
+                     function_token, " caller_name=", caller->type.name, ".", caller->name, "()");
+        return E_NOTIMPL;
+    }
+
     // First we check if the managed profiler has not been loaded yet
     if (!corProfiler->ProfilerAssemblyIsLoadedIntoAppDomain(module_metadata.app_domain_id))
     {
@@ -1217,13 +1225,6 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                      module_metadata.app_domain_id, " token=", function_token, " caller_name=", caller->type.name, ".",
                      caller->name, "()");
         return S_FALSE;
-    }
-
-    if (retTypeFlags & TypeFlagByRef)
-    {
-        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() ref return is not supported for now. token=",
-                     function_token, " caller_name=", caller->type.name, ".", caller->name, "()");
-        return E_NOTIMPL;
     }
 
     // *** Create rewriter
