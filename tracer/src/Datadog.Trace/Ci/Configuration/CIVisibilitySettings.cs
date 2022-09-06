@@ -105,13 +105,12 @@ namespace Datadog.Trace.Ci.Configuration
 
         public static CIVisibilitySettings FromDefaultSources()
         {
-            var source = GlobalSettings.CreateDefaultConfigurationSource();
-            return new CIVisibilitySettings(source);
+            return new CIVisibilitySettings(GlobalSettings.ConfigurationSource);
         }
 
         private TracerSettings InitializeTracerSettings()
         {
-            var tracerSettings = new TracerSettings(GlobalSettings.CreateDefaultConfigurationSource());
+            var tracerSettings = new TracerSettings(GlobalSettings.ConfigurationSource);
 
             if (Logs)
             {

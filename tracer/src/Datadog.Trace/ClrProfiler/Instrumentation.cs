@@ -244,7 +244,7 @@ namespace Datadog.Trace.ClrProfiler
 #if !NETFRAMEWORK
             try
             {
-                if (GlobalSettings.Source.DiagnosticSourceEnabled)
+                if (GlobalSettings.Instance.DiagnosticSourceEnabled)
                 {
                     // check if DiagnosticSource is available before trying to use it
                     var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
@@ -328,7 +328,6 @@ namespace Datadog.Trace.ClrProfiler
         private static void InitRemoteConfigurationManagement(Tracer tracer)
         {
             var serviceName = tracer.Settings.ServiceName ?? tracer.DefaultServiceName;
-            var exporterSettings = tracer.Settings.Exporter;
             var discoveryService = tracer.TracerManager.DiscoveryService;
 
             Task.Run(
@@ -340,9 +339,9 @@ namespace Datadog.Trace.ClrProfiler
                     if (isDiscoverySuccessful)
                     {
                         var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
-                        var rcmApi = RemoteConfigurationApiFactory.Create(exporterSettings, rcmSettings, discoveryService);
+                        var rcmApi = RemoteConfigurationApiFactory.Create(tracer.Settings.Exporter, rcmSettings, discoveryService);
 
-                        var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName);
+                        var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, tracer.Settings.Environment, tracer.Settings.ServiceVersion);
                         configurationManager.RegisterProduct(SharedRemoteConfiguration.FeaturesProduct);
 
                         var liveDebugger = LiveDebuggerFactory.Create(discoveryService, configurationManager, tracer.Settings, serviceName);

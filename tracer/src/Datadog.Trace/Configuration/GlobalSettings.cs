@@ -48,9 +48,14 @@ namespace Datadog.Trace.Configuration
         public bool DebugEnabled { get; private set; }
 
         /// <summary>
-        /// Gets or sets the global settings instance.
+        /// Gets the configuration source instance.
         /// </summary>
-        internal static GlobalSettings Source { get; set; } = FromDefaultSources();
+        internal static IConfigurationSource ConfigurationSource { get; private set; } = CreateDefaultConfigurationSource();
+
+        /// <summary>
+        /// Gets the global settings instance.
+        /// </summary>
+        internal static GlobalSettings Instance { get; private set; } = FromDefaultSources();
 
         /// <summary>
         /// Gets a value indicating whether the use
@@ -67,7 +72,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="enabled">Whether debug is enabled.</param>
         public static void SetDebugEnabled(bool enabled)
         {
-            Source.DebugEnabled = enabled;
+            Instance.DebugEnabled = enabled;
 
             if (enabled)
             {
@@ -86,18 +91,18 @@ namespace Datadog.Trace.Configuration
         public static void Reload()
         {
             DatadogLogging.Reset();
-            Source = FromDefaultSources();
+            Instance = FromDefaultSources();
+            ConfigurationSource = CreateDefaultConfigurationSource();
         }
 
         /// <summary>
         /// Create a <see cref="GlobalSettings"/> populated from the default sources
-        /// returned by <see cref="CreateDefaultConfigurationSource"/>.
+        /// returned by <see cref="ConfigurationSource"/>.
         /// </summary>
         /// <returns>A <see cref="TracerSettings"/> populated from the default sources.</returns>
         public static GlobalSettings FromDefaultSources()
         {
-            var source = CreateDefaultConfigurationSource();
-            return new GlobalSettings(source);
+            return new GlobalSettings(ConfigurationSource);
         }
 
         /// <summary>

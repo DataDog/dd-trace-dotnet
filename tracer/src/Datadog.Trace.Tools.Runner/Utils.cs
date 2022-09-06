@@ -243,9 +243,13 @@ namespace Datadog.Trace.Tools.Runner
                 env["DD_TRACE_AGENT_URL"] = agentUrl;
             }
 
-            var globalSettings = GlobalSettings.CreateDefaultConfigurationSource();
-            globalSettings.Add(new NameValueConfigurationSource(env));
-            var tracerSettings = new TracerSettings(globalSettings);
+            var configurationSource = new CompositeConfigurationSource()
+            {
+                GlobalSettings.ConfigurationSource,
+                new NameValueConfigurationSource(env)
+            };
+
+            var tracerSettings = new TracerSettings(configurationSource);
             var settings = tracerSettings.Build();
             var discoveryService = DiscoveryService.Create(settings.Exporter);
 

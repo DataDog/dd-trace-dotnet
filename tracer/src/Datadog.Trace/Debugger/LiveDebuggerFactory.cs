@@ -23,8 +23,7 @@ internal class LiveDebuggerFactory
 
     public static LiveDebugger Create(IDiscoveryService discoveryService, IRemoteConfigurationManager remoteConfigurationManager, ImmutableTracerSettings tracerSettings, string serviceName)
     {
-        var source = GlobalSettings.CreateDefaultConfigurationSource();
-        var settings = DebuggerSettings.FromSource(source);
+        var settings = DebuggerSettings.FromSource(GlobalSettings.ConfigurationSource);
         if (!settings.Enabled)
         {
             Log.Information("Live Debugger is disabled. To enable it, please set DD_DEBUGGER_ENABLED environment variable to 'true'.");
