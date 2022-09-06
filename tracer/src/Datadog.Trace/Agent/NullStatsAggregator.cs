@@ -20,7 +20,7 @@ namespace Datadog.Trace.Agent
         {
         }
 
-        public bool RunSamplers(ArraySegment<Span> spans) => true;
+        public bool ShouldKeepTrace(ArraySegment<Span> spans) => true;
 
         public ArraySegment<Span> ProcessTrace(ArraySegment<Span> trace) => trace;
 

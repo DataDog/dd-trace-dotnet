@@ -113,7 +113,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        public bool RunSamplers(ArraySegment<Span> trace)
+        public bool ShouldKeepTrace(ArraySegment<Span> trace)
         {
             // TODO: Add ability to disable the RareSampler, which the trace agent has
             // Run the RareSampler early to make sure the signature gets counted

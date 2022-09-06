@@ -36,7 +36,7 @@ namespace Datadog.Trace.Agent
         /// </summary>
         /// <param name="spans">The trace chunk to sample</param>
         /// <returns>True if the trace chunk should be sampled, false otherwise.</returns>
-        bool RunSamplers(ArraySegment<Span> spans);
+        bool ShouldKeepTrace(ArraySegment<Span> spans);
 
         ArraySegment<Span> ProcessTrace(ArraySegment<Span> trace);
 

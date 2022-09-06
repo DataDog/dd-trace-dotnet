@@ -393,7 +393,7 @@ namespace Datadog.Trace.Agent
             trace = _statsAggregator?.ProcessTrace(trace) ?? trace;
             if (CanComputeStats)
             {
-                bool shouldSendTrace = _statsAggregator?.RunSamplers(trace) ?? true;
+                bool shouldSendTrace = _statsAggregator?.ShouldKeepTrace(trace) ?? true;
                 _statsAggregator?.AddRange(trace);
 
                 // If stats computation determined that we can drop the P0 Trace,
