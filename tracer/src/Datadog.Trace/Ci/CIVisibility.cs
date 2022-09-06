@@ -148,6 +148,11 @@ namespace Datadog.Trace.Ci
             }
         }
 
+        internal static bool HasSkippableTests()
+        {
+            return _skippableTestsBySuiteAndName?.Count > 0;
+        }
+
         internal static string GetServiceNameFromRepository(string repository)
         {
             if (!string.IsNullOrEmpty(repository))

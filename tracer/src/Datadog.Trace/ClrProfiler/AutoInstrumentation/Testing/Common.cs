@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             span.SetTag(CommonTags.OSVersion, Environment.OSVersion.VersionString);
 
             // Check if Intelligent Test Runner
-            if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
+            if (CIVisibility.HasSkippableTests())
             {
                 span.SetTag("_dd.ci.itr", "true");
             }
