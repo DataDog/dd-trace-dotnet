@@ -14,58 +14,84 @@ namespace Datadog.Trace.Agent.TraceSamplers
         private const string RareKey = "_dd.rare";
         private readonly HashSet<StatsAggregationKey> _keys = new();
 
+        public bool IsEnabled => true; // TODO: Add ability to disable the RareSampler, which the trace agent has
+
+        /// <summary>
+        /// Samples the trace chunk with the following rules:
+        /// 1) If the sampling priority is > 0, only update the seen spans and return false.
+        /// 2) Iterate through the trace chunk and sample each span (see <see cref="SampleSpan(Span)"/> for the current logic). As soon as span is kept, stop iterating through the trace chunk.
+        /// 3) If a span was kept, update the seen spans.
+        /// 4) Return whether a span was sampled.
+        /// </summary>
+        /// <param name="trace">The input trace chunk</param>
+        /// <returns>true when a rare span is found, false otherwise</returns>
         public bool Sample(ArraySegment<Span> trace)
         {
-            return SamplingHelpers.IsKeptBySamplingPriority(trace) switch
+            if (SamplingHelpers.IsKeptBySamplingPriority(trace))
             {
-                true => HandlePriorityTrace(trace),
-                false => HandleTrace(trace)
-            };
-        }
-
-        private bool HandlePriorityTrace(ArraySegment<Span> trace)
-        {
-            for (int i = 0; i < trace.Count; i++)
-            {
-                var span = trace.Array[i + trace.Offset];
-                if (span.IsTopLevel || span.GetMetric(Tags.Measured) == 1.0 || span.GetMetric(Tags.PartialSnapshot) > 0)
-                {
-                    // Do not return immediately, as we might have multiple spans in this chunk that are rare
-                    var key = StatsAggregator.BuildKey(span);
-                    _keys.Add(key);
-                }
+                UpdateSeenSpans(trace);
+                return false;
             }
 
-            return false;
+            return SampleSpansAndUpdateSeenSpansIfKept(trace);
         }
 
-        private bool HandleTrace(ArraySegment<Span> trace)
+        private void UpdateSeenSpans(ArraySegment<Span> trace)
         {
-            bool sampled = false;
             for (int i = 0; i < trace.Count; i++)
             {
                 var span = trace.Array[i + trace.Offset];
                 if (span.IsTopLevel || span.GetMetric(Tags.Measured) == 1.0 || span.GetMetric(Tags.PartialSnapshot) > 0)
                 {
-                    var key = StatsAggregator.BuildKey(span);
-                    sampled = _keys.Add(key);
+                    UpdateSpan(span);
+                }
+            }
+        }
 
+        private bool SampleSpansAndUpdateSeenSpansIfKept(ArraySegment<Span> trace)
+        {
+            bool rareSpanFound = false;
+
+            for (int i = 0; i < trace.Count; i++)
+            {
+                var span = trace.Array[i + trace.Offset];
+                if (span.IsTopLevel || span.GetMetric(Tags.Measured) == 1.0 || span.GetMetric(Tags.PartialSnapshot) > 0)
+                {
                     // Follow agent implementation to mark and exit on first sampled span
                     // Source: https://github.com/DataDog/datadog-agent/blob/bc4902fe62838b02e9ef7f2082d0cab6c24724fa/pkg/trace/sampler/rare_sampler.go#L106
-                    if (sampled)
+                    rareSpanFound = SampleSpan(span);
+                    if (rareSpanFound)
                     {
-                        span.Tags.SetMetric(RareKey, 1);
                         break;
                     }
                 }
             }
 
-            if (sampled)
+            if (rareSpanFound)
             {
-                HandlePriorityTrace(trace);
+                UpdateSeenSpans(trace);
             }
 
-            return sampled;
+            return rareSpanFound;
+        }
+
+        private bool SampleSpan(Span span)
+        {
+            var key = StatsAggregator.BuildKey(span);
+            var rareSpanFound = _keys.Add(key);
+
+            if (rareSpanFound)
+            {
+                span.Tags.SetMetric(RareKey, 1);
+            }
+
+            return rareSpanFound;
+        }
+
+        private void UpdateSpan(Span span)
+        {
+            var key = StatsAggregator.BuildKey(span);
+            _keys.Add(key);
         }
     }
 }

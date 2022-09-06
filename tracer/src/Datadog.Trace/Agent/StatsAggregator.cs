@@ -13,6 +13,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent
 {
@@ -115,26 +116,15 @@ namespace Datadog.Trace.Agent
 
         public bool ShouldKeepTrace(ArraySegment<Span> trace)
         {
-            // TODO: Add ability to disable the RareSampler, which the trace agent has
-            // Run the RareSampler early to make sure the signature gets counted
-            var rare = _rareSampler.Sample(trace);
+            // Note: The RareSampler must be run before all other samplers so that
+            // the first rare span in the trace chunk (if any) is marked with "_dd.rare".
+            // The sampling decision is only used if no other samplers choose to keep the trace chunk.
+            bool rareSpanFound = _rareSampler.IsEnabled && _rareSampler.Sample(trace);
 
-            if (_prioritySampler.Sample(trace))
-            {
-                return true;
-            }
-
-            if (_errorSampler.Sample(trace))
-            {
-                return true;
-            }
-
-            if (_analyticsEventSampler.Sample(trace))
-            {
-                return true;
-            }
-
-            return rare;
+            return _prioritySampler.Sample(trace)
+                || _errorSampler.Sample(trace)
+                || _analyticsEventSampler.Sample(trace)
+                || rareSpanFound;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
