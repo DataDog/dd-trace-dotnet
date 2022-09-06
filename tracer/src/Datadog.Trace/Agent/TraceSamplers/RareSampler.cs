@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.TraceSamplers
 {
@@ -15,8 +16,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
         public bool Sample(ArraySegment<Span> trace)
         {
-            bool priorityGreaterThan0 = trace.Array[trace.Offset].Context.TraceContext.SamplingPriority is int p && p > 0;
-            return priorityGreaterThan0 switch
+            return SamplingHelpers.IsKeptBySamplingPriority(trace) switch
             {
                 true => HandlePriorityTrace(trace),
                 false => HandleTrace(trace)

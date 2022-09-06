@@ -4,14 +4,13 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.TraceSamplers
 {
     internal class PrioritySampler : ITraceSampler
     {
-        public bool Sample(ArraySegment<Span> trace)
-        {
-            return trace.Array[trace.Offset].Context.TraceContext.SamplingPriority is int p && p > 0;
-        }
+        public bool Sample(ArraySegment<Span> trace) =>
+            SamplingHelpers.IsKeptBySamplingPriority(trace);
     }
 }
