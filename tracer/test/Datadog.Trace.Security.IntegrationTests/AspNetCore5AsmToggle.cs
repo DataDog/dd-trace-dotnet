@@ -32,11 +32,11 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
 
         [SkippableTheory]
-        [InlineData(true, ApplyStates.ACKNOWLEDGED)]
-        [InlineData(false, ApplyStates.UNACKNOWLEDGED)]
-        [InlineData(null, ApplyStates.ACKNOWLEDGED)]
+        [InlineData(true, ApplyStates.ACKNOWLEDGED, RcmCapablitiesIndices.AsmActivation | RcmCapablitiesIndices.AsmIpBlocking | RcmCapablitiesIndices.AsmDdRules)]
+        [InlineData(false, ApplyStates.UNACKNOWLEDGED, RcmCapablitiesIndices.AsmIpBlocking | RcmCapablitiesIndices.AsmDdRules)]
+        [InlineData(null, ApplyStates.ACKNOWLEDGED, RcmCapablitiesIndices.AsmActivation | RcmCapablitiesIndices.AsmIpBlocking | RcmCapablitiesIndices.AsmDdRules)]
         [Trait("RunOnWindows", "True")]
-        public async Task TestSecurityToggling(bool? enableSecurity, uint expectedState)
+        public async Task TestSecurityToggling(bool? enableSecurity, uint expectedState, byte expectedCapablities)
         {
             var url = "/Health/?[$slice]=value";
             var agent = await RunOnSelfHosted(enableSecurity);
@@ -48,6 +48,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var request1 = await agent.WaitRcmRequestAndReturnLast();
             CheckAckState(request1, expectedState, null, "First RCM call");
+            CheckCapabilities(request1, expectedCapablities, "First RCM call");
             // even the request show the applied state seems extra time is needed before it's active
             await Task.Delay(1500);
 
@@ -57,6 +58,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var request2 = await agent.WaitRcmRequestAndReturnLast();
             CheckAckState(request2, expectedState, null, "Second RCM call");
+            CheckCapabilities(request2, expectedCapablities, "Second RCM call");
             // even the request show the applied state seems extra time is needed before it's active
             await Task.Delay(1500);
 
@@ -96,6 +98,13 @@ namespace Datadog.Trace.Security.IntegrationTests
             state.Should().NotBeNull();
             state.ApplyState.Should().Be(expectedState, message);
             state.ApplyError.Should().Be(expectedError, message);
+        }
+
+        private void CheckCapabilities(GetRcmRequest request, byte expectedState, string message)
+        {
+            Output.WriteLine("request?.Client?.Capabilities: " + request?.Client?.Capabilities);
+            var capablities = BitConverter.ToInt32(request?.Client?.Capabilities);
+            capablities.Should().Be(expectedState, message);
         }
     }
 }
