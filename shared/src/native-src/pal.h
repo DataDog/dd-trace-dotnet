@@ -88,6 +88,36 @@ inline WSTRING GetCurrentProcessName()
 #endif
 }
 
+inline WSTRING GetProcessImageName()
+{
+#ifdef _WIN32
+    const auto handle = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, (DWORD) _getpid());
+    if (handle != INVALID_HANDLE_VALUE)
+    {
+        DWORD length = 260;
+        WCHAR buffer[260]{};
+
+        if (QueryFullProcessImageName(handle, 0, buffer, &length))
+        {
+            const WSTRING current_process_image_name(buffer);
+            return current_process_image_name;
+        }    
+    }
+#elif MACOS
+    char path[260];
+    uint32_t size = sizeof(path);
+    _NSGetExecutablePath(path, &size);
+    return ToWSTRING(std::string(path));
+#else
+    std::fstream comm("/proc/self/cmdline");
+    std::string name;
+    std::getline(comm, name);
+    return ToWSTRING(name);
+#endif
+
+    return EmptyWStr;
+}
+
 inline int GetPID()
 {
 #ifdef _WIN32
