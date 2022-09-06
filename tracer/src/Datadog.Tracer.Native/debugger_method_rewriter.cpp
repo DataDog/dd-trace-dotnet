@@ -1389,10 +1389,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
 
     // *** Add the new EH clauses
     ehCount += newClausesCount;
-
-    std::sort(newClauses.begin(), newClauses.end(),
-              [](EHClause a, EHClause b) { return a.m_pTryBegin->m_offset < b.m_pTryBegin->m_offset; });
-
+    
     for (auto ehClauseIndex = 0; ehClauseIndex < newClausesCount; ehClauseIndex++)
     {
         newEHClauses[ehCount - newClausesCount + ehClauseIndex] = newClauses[ehClauseIndex];
