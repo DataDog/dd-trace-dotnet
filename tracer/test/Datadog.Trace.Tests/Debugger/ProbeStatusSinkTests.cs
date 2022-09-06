@@ -18,15 +18,15 @@ namespace Datadog.Trace.Tests.Debugger
     {
         private readonly TimeLord _timeLord;
         private readonly ProbeStatusSink _sink;
-        private readonly ImmutableDebuggerSettings _settings;
+        private readonly DebuggerSettings _settings;
 
         public ProbeStatusSinkTests()
         {
             _timeLord = new TimeLord();
             Clock.SetForCurrentThread(_timeLord);
 
-            _settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromDefaultSource());
-            _sink = ProbeStatusSink.Create(_settings, nameof(ProbeStatusSinkTests));
+            _settings = DebuggerSettings.FromDefaultSource();
+            _sink = ProbeStatusSink.Create(nameof(ProbeStatusSinkTests), _settings);
         }
 
         [Fact]

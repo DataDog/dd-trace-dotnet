@@ -18,12 +18,19 @@ namespace Datadog.Trace.Debugger.Snapshots
         private const string ReachedTimeoutMessage = "Reached timeout";
         private const string ReachedNumberOfObjectsMessage = "Reached the maximum number of objects";
         private const string ReachedNumberOfItemsMessage = "Reached the maximum number of items";
-        private const int MaximumNumberOfItemsInCollectionToCopy = 100;
-        private const int MaximumNumberOfFieldsToCopy = 1000;
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(DebuggerSnapshotSerializer));
-        private static readonly ImmutableDebuggerSettings DebuggerSettings = ImmutableDebuggerSettings.Create(Debugger.DebuggerSettings.FromDefaultSource());
-        private static readonly int MaximumDepthOfMembersToCopy = DebuggerSettings.MaximumDepthOfMembersOfMembersToCopy;
-        private static readonly int MillisecondsToCancel = DebuggerSettings.MaxSerializationTimeInMilliseconds;
+
+        private static int _maximumNumberOfItemsInCollectionToCopy = DebuggerSettings.DefaultMaxNumberOfItemsInCollectionToCopy;
+        private static int _maximumNumberOfFieldsToCopy = DebuggerSettings.DefaultMaxNumberOfFieldsToCopy;
+        private static int _maximumDepthOfMembersToCopy = DebuggerSettings.DefaultMaxNumberOfFieldsToCopy;
+        private static int _maximumSerializationTime = DebuggerSettings.DefaultMaxSerializationTimeInMilliseconds;
+
+        internal static void SetConfig(DebuggerSettings debuggerSettings)
+        {
+            _maximumDepthOfMembersToCopy = debuggerSettings.MaximumDepthOfMembersToCopy;
+            _maximumSerializationTime = debuggerSettings.MaxSerializationTimeInMilliseconds;
+        }
 
         /// <summary>
         /// Note: implemented recursively. We might want to consider an iterative approach for performance gain (Serialize takes part in the MethodDebuggerInvoker process).
@@ -181,7 +188,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             int currentDepth,
             ref int totalObjects)
         {
-            if (currentDepth >= MaximumDepthOfMembersToCopy || SupportedTypesService.IsSafeToCallToString(type))
+            if (currentDepth >= _maximumDepthOfMembersToCopy || SupportedTypesService.IsSafeToCallToString(type))
             {
                 jsonWriter.WritePropertyName("fields");
                 jsonWriter.WriteNull();
@@ -190,13 +197,13 @@ namespace Datadog.Trace.Debugger.Snapshots
 
             int index = 0;
             var selector = SnapshotSerializerFieldsAndPropsSelector.CreateDeepClonerFieldsAndPropsSelector(type);
-            var fields = selector.GetFieldsAndProps(type, source, MaximumDepthOfMembersToCopy, MaximumNumberOfFieldsToCopy, cts);
+            var fields = selector.GetFieldsAndProps(type, source, _maximumDepthOfMembersToCopy, _maximumNumberOfFieldsToCopy, cts);
 
             foreach (var field in fields)
             {
                 var fieldOrPropertyName = GetAutoPropertyOrFieldName(field.Name);
 
-                if (totalObjects >= MaximumNumberOfFieldsToCopy)
+                if (totalObjects >= _maximumNumberOfFieldsToCopy)
                 {
                     WriteLimitReachedNotification(jsonWriter, fieldOrPropertyName ?? type.Name, ReachedNumberOfObjectsMessage, index > 0);
                     return;
@@ -264,8 +271,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                     var itemIndex = 0;
                     var enumerator = enumerable.GetEnumerator();
 
-                    while (itemIndex < MaximumNumberOfItemsInCollectionToCopy &&
-                           totalObjects < MaximumNumberOfFieldsToCopy &&
+                    while (itemIndex < _maximumNumberOfItemsInCollectionToCopy &&
+                           totalObjects < _maximumNumberOfFieldsToCopy &&
                            enumerator.MoveNext())
                     {
                         cts.Token.ThrowIfCancellationRequested();
@@ -397,7 +404,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         private static CancellationTokenSource CreateCancellationTimeout()
         {
             var cts = new CancellationTokenSource();
-            cts.CancelAfter(MillisecondsToCancel);
+            cts.CancelAfter(_maximumSerializationTime);
             return cts;
         }
     }

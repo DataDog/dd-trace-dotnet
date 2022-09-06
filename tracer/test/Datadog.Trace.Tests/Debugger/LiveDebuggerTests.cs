@@ -5,7 +5,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -27,18 +26,17 @@ public class LiveDebuggerTests
     [Fact]
     public async Task DebuggerEnabled_ServicesCalled()
     {
-        var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
+        var settings = DebuggerSettings.FromSource(new NameValueConfigurationSource(new()
         {
             { ConfigurationKeys.Debugger.Enabled, "1" },
         }));
 
-        var settings = ImmutableDebuggerSettings.Create(tracerSettings);
         var discoveryService = new DiscoveryServiceMock();
         var managerMock = new RemoteConfigurationManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
-        var updater = ConfigurationUpdater.Create(settings);
+        var updater = ConfigurationUpdater.Create("env", "version");
 
         var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, managerMock, lineProbeResolver, debuggerSink, probeStatusPoller, updater);
         await debugger.InitializeAsync();
@@ -51,18 +49,17 @@ public class LiveDebuggerTests
     [Fact]
     public async Task DebuggerDisabled_ServicesNotCalled()
     {
-        var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
+        var settings = DebuggerSettings.FromSource(new NameValueConfigurationSource(new()
         {
             { ConfigurationKeys.Debugger.Enabled, "0" },
         }));
 
-        var settings = ImmutableDebuggerSettings.Create(tracerSettings);
         var discoveryService = new DiscoveryServiceMock();
         var managerMock = new RemoteConfigurationManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
-        var updater = ConfigurationUpdater.Create(settings);
+        var updater = ConfigurationUpdater.Create(string.Empty, string.Empty);
 
         var debugger = LiveDebugger.Create(settings, string.Empty, discoveryService, managerMock, lineProbeResolver, debuggerSink, probeStatusPoller, updater);
         await debugger.InitializeAsync();

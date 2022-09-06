@@ -12,13 +12,6 @@ namespace Datadog.Trace.Configuration
         internal static class Debugger
         {
             /// <summary>
-            /// Used to send Live Debugger snapshots directly to our backend.
-            /// This can only be used if DD_API_KEY is also available.
-            /// </summary>
-            /// <seealso cref="DebuggerSettings.SnapshotUri"/>
-            public const string SnapshotUrl = "DD_DEBUGGER_SNAPSHOT_URL";
-
-            /// <summary>
             /// Configuration key for enabling or disabling Live Debugger.
             /// Default value is false (disabled).
             /// </summary>

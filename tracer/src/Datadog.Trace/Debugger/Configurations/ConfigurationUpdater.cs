@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Linq;
 using Datadog.Trace.Debugger.Configurations.Models;
@@ -14,21 +15,21 @@ namespace Datadog.Trace.Debugger.Configurations
     {
         private const int MaxAllowedSnapshotProbes = 100;
         private const int MaxAllowedMetricProbes = 100;
-        private readonly string _env;
-        private readonly string _version;
+        private readonly string? _env;
+        private readonly string? _version;
 
         private ProbeConfiguration _currentConfiguration;
 
-        private ConfigurationUpdater(string env, string version)
+        private ConfigurationUpdater(string? env, string? version)
         {
             _env = env;
             _version = version;
             _currentConfiguration = new ProbeConfiguration();
         }
 
-        public static ConfigurationUpdater Create(ImmutableDebuggerSettings settings)
+        public static ConfigurationUpdater Create(string? environment, string? serviceVersion)
         {
-            return new ConfigurationUpdater(settings.Environment, settings.ServiceVersion);
+            return new ConfigurationUpdater(environment, serviceVersion);
         }
 
         public bool Accept(ProbeConfiguration configuration)

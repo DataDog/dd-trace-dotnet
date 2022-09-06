@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using Datadog.Trace.Debugger;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Util;
 
@@ -76,7 +75,6 @@ namespace Datadog.Trace.Configuration
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
             // Logs injection is enabled by default if direct log submission is enabled, otherwise disabled by default
             LogsInjectionEnabled = settings.LogSubmissionSettings.LogsInjectionEnabled ?? LogSubmissionSettings.IsEnabled;
-            DebuggerSettings = ImmutableDebuggerSettings.Create(settings.DebuggerSettings);
 
             // we cached the static instance here, because is being used in the hotpath
             // by IsIntegrationEnabled method (called from all integrations)
@@ -291,8 +289,6 @@ namespace Datadog.Trace.Configuration
         internal double ObfuscationQueryStringRegexTimeout { get; }
 
         internal ImmutableDirectLogSubmissionSettings LogSubmissionSettings { get; }
-
-        internal ImmutableDebuggerSettings DebuggerSettings { get; }
 
         /// <summary>
         /// Gets a value indicating whether to enable the updated WCF instrumentation that delays execution

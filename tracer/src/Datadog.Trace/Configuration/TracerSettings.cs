@@ -226,8 +226,6 @@ namespace Datadog.Trace.Configuration
                     PropagationStyleInject = PropagationStyleInject.Concat(nameof(Propagators.ContextPropagators.Names.W3C));
                 }
             }
-
-            DebuggerSettings = new DebuggerSettings(source);
         }
 
         /// <summary>
@@ -483,11 +481,6 @@ namespace Datadog.Trace.Configuration
         /// when <see cref="RouteTemplateResourceNamesEnabled"/> is <code>true</code>.
         /// </summary>
         internal bool ExpandRouteTemplatesEnabled { get; }
-
-        /// <summary>
-        /// Gets or sets the debugger settings.
-        /// </summary>
-        internal DebuggerSettings DebuggerSettings { get; set; }
 
         /// <summary>
         /// Gets or sets the direct log submission settings.

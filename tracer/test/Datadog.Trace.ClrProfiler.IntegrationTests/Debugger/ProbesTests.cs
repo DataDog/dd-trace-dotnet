@@ -307,7 +307,6 @@ public class ProbesTests : TestHelper, IDisposable
         var testName = isMultiPhase ? $"{testType.Name}_#{phaseNumber}." : testType.Name;
         settings.UseFileName($"{nameof(ProbeTests)}.{testName}");
         settings.DisableRequireUniquePrefix();
-        settings.AutoVerify();
 
         settings.ScrubEmptyLines();
         settings.AddScrubber(ScrubSnapshotJson);
