@@ -21,7 +21,7 @@ namespace Datadog.Trace.Debugger.Sink
             _queue = new BoundedConcurrentQueue<string>(DefaultQueueLimit);
         }
 
-        public static SnapshotSink Create(ImmutableDebuggerSettings settings)
+        public static SnapshotSink Create(DebuggerSettings settings)
         {
             return new SnapshotSink(settings.UploadBatchSize);
         }

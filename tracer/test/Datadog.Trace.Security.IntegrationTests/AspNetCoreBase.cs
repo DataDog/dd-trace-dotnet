@@ -49,7 +49,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, enableSecurity, (int)expectedStatusCode, sanitisedUrl);
-            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings, useragent: "Hello/V");
+            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings, userAgent: "Hello/V");
         }
 
         [SkippableTheory]

@@ -55,6 +55,19 @@ namespace Datadog.Trace.ClrProfiler
             };
         }
 
+        internal static void Dispose()
+        {
+            foreach (var def in InstrumentationsNatives)
+            {
+                def.Dispose();
+            }
+
+            foreach (var def in DerivedInstrumentationsNatives)
+            {
+                def.Dispose();
+            }
+        }
+
         internal struct Payload
         {
             public string DefinitionsId { get; set; }
