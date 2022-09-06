@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -30,11 +31,11 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
 
         [SkippableTheory]
-        [InlineData(true, ApplyStates.ACKNOWLEDGED)]
-        [InlineData(false, ApplyStates.UNACKNOWLEDGED)]
-        [InlineData(null, ApplyStates.ACKNOWLEDGED)]
+        [InlineData(true, ApplyStates.ACKNOWLEDGED, RcmCapablitiesIndices.AsmActivation | RcmCapablitiesIndices.AsmIpBlocking | RcmCapablitiesIndices.AsmDdRules)]
+        [InlineData(false, ApplyStates.UNACKNOWLEDGED, RcmCapablitiesIndices.AsmIpBlocking | RcmCapablitiesIndices.AsmDdRules)]
+        [InlineData(null, ApplyStates.ACKNOWLEDGED, RcmCapablitiesIndices.AsmActivation | RcmCapablitiesIndices.AsmIpBlocking | RcmCapablitiesIndices.AsmDdRules)]
         [Trait("RunOnWindows", "True")]
-        public async Task TestSecurityToggling(bool? enableSecurity, uint expectedState)
+        public async Task TestSecurityToggling(bool? enableSecurity, uint expectedState, byte expectedCapablities)
         {
             SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
             var url = "/Health/?[$slice]=value";
@@ -46,14 +47,18 @@ namespace Datadog.Trace.Security.IntegrationTests
             agent.SetupRcm(Output, new[] { ((object)new Features() { Asm = new Asm() { Enabled = false } }, "1") }, "FEATURES");
             await Task.Delay(1000);
 
-            CheckAckState(agent, expectedState, null, "First RCM call");
+            var request1 = agent.GetLastRcmRequest();
+            CheckAckState(request1, expectedState, null, "First RCM call");
+            CheckCapabilities(request1, expectedCapablities, "First RCM call");
 
             var spans2 = await SendRequestsAsync(agent, url);
 
             agent.SetupRcm(Output, new[] { ((object)new Features() { Asm = new Asm() { Enabled = true } }, "2") }, "FEATURES");
             await Task.Delay(1000);
 
-            CheckAckState(agent, expectedState, null, "Second RCM call");
+            var request2 = agent.GetLastRcmRequest();
+            CheckAckState(request2, expectedState, null, "Second RCM call");
+            CheckCapabilities(request2, expectedCapablities, "Second RCM call");
 
             var spans3 = await SendRequestsAsync(agent, url);
 
@@ -80,17 +85,24 @@ namespace Datadog.Trace.Security.IntegrationTests
             agent.SetupRcm(Output, new[] { ((object)"haha, you weren't expect this!", "1") }, "FEATURES");
             await Task.Delay(1000);
 
-            CheckAckState(agent, ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.Configuration.Features'. Path '', line 1, position 32.", "First RCM call");
+            var request = agent.GetLastRcmRequest();
+            CheckAckState(request, ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.Configuration.Features'. Path '', line 1, position 32.", "First RCM call");
 
             await VerifySpans(spans1.ToImmutableList(), settings, true);
         }
 
-        private void CheckAckState(MockTracerAgent agent, uint expectedState, string expectedError, string message)
+        private void CheckAckState(GetRcmRequest request, uint expectedState, string expectedError, string message)
         {
-            var request = agent.GetLastRcmRequest();
             var state = request?.Client?.State?.ConfigStates?.FirstOrDefault(x => x.Product == "FEATURES");
             state?.ApplyState.Should().Be(expectedState, message);
             state?.ApplyError.Should().Be(expectedError, message);
+        }
+
+        private void CheckCapabilities(GetRcmRequest request, byte expectedState, string message)
+        {
+            Output.WriteLine("request?.Client?.Capabilities: " + request?.Client?.Capabilities);
+            var capablities = BitConverter.ToInt32(request?.Client?.Capabilities);
+            capablities.Should().Be(expectedState, message);
         }
     }
 }
