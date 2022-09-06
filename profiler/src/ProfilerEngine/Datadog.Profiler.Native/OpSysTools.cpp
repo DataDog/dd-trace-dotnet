@@ -335,10 +335,11 @@ std::string OpSysTools::GetProcessName()
 
 bool OpSysTools::IsSafeToStartProfiler(double coresThreshold)
 {
-#ifdef _WINDOWS
+#if defined(_WINDOWS) || defined(DD_SANITIZER)
     // Today we do not have any specific check before starting the profiler on Windows.
     return true;
 #else
+
     // For linux, we check that the wrapper library is loaded and the default `dl_iterate_phdr` is
     // the one provided by our library.
 

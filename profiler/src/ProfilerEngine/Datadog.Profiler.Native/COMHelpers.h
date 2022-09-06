@@ -7,9 +7,13 @@
 
 #define CALL(x)                                                                                               \
     {                                                                                                         \
+        static bool dd_already_logged = false;                                                                     \
         HRESULT hr = x;                                                                                       \
         if (FAILED(hr))                                                                                       \
         {                                                                                                     \
+        if (dd_already_logged) \
+           return; \
+            dd_already_logged = true;                                                                         \
             Log::Warn("Profiler call failed with result ", HResultConverter::ToStringWithCode(hr), ": ", #x); \
             return;                                                                                           \
         }                                                                                                     \
@@ -17,9 +21,13 @@
 
 #define INVOKE(x)                                                                                             \
     {                                                                                                         \
+        static bool dd_already_logged = false;                                                                     \
         HRESULT hr = x;                                                                                       \
         if (FAILED(hr))                                                                                       \
         {                                                                                                     \
+        if (dd_already_logged) \
+           return false; \
+            dd_already_logged = true;                                                                         \
             Log::Warn("Profiler call failed with result ", HResultConverter::ToStringWithCode(hr), ": ", #x); \
             return false;                                                                                     \
         }                                                                                                     \

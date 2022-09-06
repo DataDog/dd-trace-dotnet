@@ -20,11 +20,11 @@ add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 
 if (RUN_ASAN)
-    add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer)
+    add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer -DDD_SANITIZER)
 endif()
 
 if (RUN_UBSAN)
-    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all)
+    add_compile_options(-fsanitize=undefined -g -fno-omit-frame-pointer -fno-sanitize-recover=all -DD_SANITIZER)
 endif()
 
 if(ISLINUX)
