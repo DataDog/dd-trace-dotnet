@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger;
 [CollectionDefinition(nameof(ProbesTests), DisableParallelization = true)]
 [Collection(nameof(ProbesTests))]
 [UsesVerify]
-public class ProbesTests : TestHelper, IDisposable
+public class ProbesTests : RemoteConfigTestHelper, IDisposable
 {
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
     private const string ProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument probes definitions completed.";
@@ -50,6 +50,7 @@ public class ProbesTests : TestHelper, IDisposable
     {
         SetServiceVersion("1.0.0");
         _rcmPath = Path.Combine(EnvironmentHelper.GetSampleProjectDirectory(), RemoteConfigurationFileName);
+        SetupRcm(_rcmPath);
     }
 
     public static IEnumerable<object[]> ProbeTests()
@@ -72,18 +73,18 @@ public class ProbesTests : TestHelper, IDisposable
             throw new InvalidOperationException($"{nameof(InstallAndUninstallMethodProbeWithOverloadsTest)} expected one probe request to exist, but found {probes.Length} probes.");
         }
 
-        var agent = GetMockAgent();
-
+        using var agent = EnvironmentHelper.GetMockAgent();
         SetDebuggerEnvironment();
         using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
-        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
-
-        SetProbeConfiguration(probes.Select(p => p.Probe).ToArray());
-        await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
-
-        await sample.RunCodeSample();
         try
         {
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
+
+            SetProbeConfiguration(probes.Select(p => p.Probe).ToArray());
+            await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
+
+            await sample.RunCodeSample();
+
             var snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
             Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
             await ApproveSnapshots(snapshots, testType, isMultiPhase: true, phaseNumber: 1);
@@ -113,18 +114,19 @@ public class ProbesTests : TestHelper, IDisposable
         const int expectedNumberOfSnapshots = 100;
 
         var probes = GetProbeConfiguration(testType, true, new DeterministicGuidGenerator());
-        var agent = GetMockAgent();
 
+        using var agent = EnvironmentHelper.GetMockAgent();
         SetDebuggerEnvironment();
         using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
-        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
-
-        SetProbeConfiguration(probes.Select(p => p.Probe).ToArray());
-        await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
-
-        await sample.RunCodeSample();
         try
         {
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
+
+            SetProbeConfiguration(probes.Select(p => p.Probe).ToArray());
+            await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
+
+            await sample.RunCodeSample();
+
             var statuses = await agent.WaitForProbesStatuses(probes.Length);
             Assert.Equal(probes.Length, statuses?.Length);
 
@@ -187,32 +189,17 @@ public class ProbesTests : TestHelper, IDisposable
     }
 #endif
 
-    public void Dispose()
-    {
-        try
-        {
-            if (File.Exists(_rcmPath))
-            {
-                File.Delete(_rcmPath);
-            }
-        }
-        catch (Exception ex)
-        {
-            Output?.WriteLine("ProbesTests.Cleanup - failed to clean prob file between tests: " + ex);
-        }
-    }
-
     private async Task RunMethodProbeTests(Type testType)
     {
         var probes = GetProbeConfiguration(testType, false, new DeterministicGuidGenerator());
-        var agent = GetMockAgent();
 
+        using var agent = EnvironmentHelper.GetMockAgent();
         SetDebuggerEnvironment();
         using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
-        using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
-
         try
         {
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
+
             var isSinglePhase = probes.Select(p => p.ProbeTestData.Phase).Distinct().Count() == 1;
             if (isSinglePhase)
             {
@@ -222,64 +209,64 @@ public class ProbesTests : TestHelper, IDisposable
             {
                 await PerformMultiPhasesProbeTest();
             }
+
+            async Task PerformSinglePhaseProbeTest()
+            {
+                var snapshotProbes = probes.Select(p => p.Probe).ToArray();
+                var probeData = probes.Select(p => p.ProbeTestData).ToArray();
+
+                await RunPhase(snapshotProbes, probeData);
+            }
+
+            async Task PerformMultiPhasesProbeTest()
+            {
+                var phaseNumber = 0;
+                var groupedPhases =
+                    probes
+                       .GroupBy(p => p.ProbeTestData.Phase)
+                       .OrderBy(group => group.Key);
+
+                foreach (var groupedPhase in groupedPhases)
+                {
+                    phaseNumber++;
+
+                    var snapshotProbes = groupedPhase.Select(p => p.Probe).ToArray();
+                    var probeData = groupedPhase.Select(p => p.ProbeTestData).ToArray();
+                    await RunPhase(snapshotProbes, probeData, isMultiPhase: true, phaseNumber);
+                }
+            }
+
+            async Task RunPhase(SnapshotProbe[] snapshotProbes, ProbeAttributeBase[] probeData, bool isMultiPhase = false, int phaseNumber = 1)
+            {
+                SetProbeConfiguration(snapshotProbes);
+                await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
+
+                await sample.RunCodeSample();
+
+                var expectedNumberOfSnapshots = DebuggerTestHelper.CalculateExpectedNumberOfSnapshots(probeData);
+                string[] snapshots;
+                if (expectedNumberOfSnapshots == 0)
+                {
+                    Assert.True(await agent.WaitForNoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
+                }
+                else
+                {
+                    snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
+                    Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
+                    await ApproveSnapshots(snapshots, testType, isMultiPhase, phaseNumber);
+                    agent.ClearSnapshots();
+                }
+
+                var statuses = await agent.WaitForProbesStatuses(probeData.Length);
+
+                Assert.Equal(probeData.Length, statuses?.Length);
+                await ApproveStatuses(statuses, testType, isMultiPhase, phaseNumber);
+                agent.ClearProbeStatuses();
+            }
         }
         finally
         {
             await sample.StopSample();
-        }
-
-        async Task PerformSinglePhaseProbeTest()
-        {
-            var snapshotProbes = probes.Select(p => p.Probe).ToArray();
-            var probeData = probes.Select(p => p.ProbeTestData).ToArray();
-
-            await RunPhase(snapshotProbes, probeData);
-        }
-
-        async Task PerformMultiPhasesProbeTest()
-        {
-            var phaseNumber = 0;
-            var groupedPhases =
-                probes
-                   .GroupBy(p => p.ProbeTestData.Phase)
-                   .OrderBy(group => group.Key);
-
-            foreach (var groupedPhase in groupedPhases)
-            {
-                phaseNumber++;
-
-                var snapshotProbes = groupedPhase.Select(p => p.Probe).ToArray();
-                var probeData = groupedPhase.Select(p => p.ProbeTestData).ToArray();
-                await RunPhase(snapshotProbes, probeData, isMultiPhase: true, phaseNumber);
-            }
-        }
-
-        async Task RunPhase(SnapshotProbe[] snapshotProbes, ProbeAttributeBase[] probeData, bool isMultiPhase = false, int phaseNumber = 1)
-        {
-            SetProbeConfiguration(snapshotProbes);
-            await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
-
-            await sample.RunCodeSample();
-
-            var expectedNumberOfSnapshots = DebuggerTestHelper.CalculateExpectedNumberOfSnapshots(probeData);
-            string[] snapshots;
-            if (expectedNumberOfSnapshots == 0)
-            {
-                Assert.True(await agent.WaitForNoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
-            }
-            else
-            {
-                snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
-                Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
-                await ApproveSnapshots(snapshots, testType, isMultiPhase, phaseNumber);
-                agent.ClearSnapshots();
-            }
-
-            var statuses = await agent.WaitForProbesStatuses(probeData.Length);
-
-            Assert.Equal(probeData.Length, statuses?.Length);
-            await ApproveStatuses(statuses, testType, isMultiPhase, phaseNumber);
-            agent.ClearProbeStatuses();
         }
     }
 
@@ -306,7 +293,6 @@ public class ProbesTests : TestHelper, IDisposable
         var testName = isMultiPhase ? $"{testType.Name}_#{phaseNumber}." : testType.Name;
         settings.UseFileName($"{nameof(ProbeTests)}.{testName}");
         settings.DisableRequireUniquePrefix();
-        settings.AutoVerify();
 
         settings.ScrubEmptyLines();
         settings.AddScrubber(ScrubSnapshotJson);
@@ -434,65 +420,11 @@ public class ProbesTests : TestHelper, IDisposable
             new(probeConfiguration, EnvironmentHelper.SampleName.ToUUID())
         };
 
-        SetRcmConfiguration(configurations);
+        WriteRcmFile(configurations);
     }
 
-    private void SetRcmConfiguration(IEnumerable<(object Config, string Id)> configurations)
+    private void WriteRcmFile(IEnumerable<(object Config, string Id)> configurations)
     {
-        var targetFiles = new List<RcmFile>();
-        var targets = new Dictionary<string, Target>();
-        var clientConfigs = new List<string>();
-
-        foreach (var configuration in configurations)
-        {
-            var path = $"datadog/2/{LiveDebuggerProduct.ProductName}/{configuration.Id}/config";
-            var content = JsonConvert.SerializeObject(configuration.Config);
-
-            clientConfigs.Add(path);
-
-            targetFiles.Add(new RcmFile()
-            {
-                Path = path,
-                Raw = Encoding.UTF8.GetBytes(content)
-            });
-
-            targets.Add(path, new Target()
-            {
-                Hashes = new Dictionary<string, string> { { "guid", Guid.NewGuid().ToString() } }
-            });
-        }
-
-        var root = new TufRoot()
-        {
-            Signed = new Signed()
-            {
-                Targets = targets
-            }
-        };
-
-        var response = new GetRcmResponse()
-        {
-            ClientConfigs = clientConfigs,
-            TargetFiles = targetFiles,
-            Targets = root
-        };
-
-        var json = JsonConvert.SerializeObject(response);
-        if (EnvironmentHelper.CustomEnvironmentVariables.TryGetValue(ConfigurationKeys.Rcm.FilePath, out var rcmConfigPath))
-        {
-            File.WriteAllText(rcmConfigPath, json);
-        }
-        else
-        {
-            throw new InvalidOperationException("Path for remote configurations is not set.");
-        }
-    }
-
-    private MockTracerAgent GetMockAgent()
-    {
-        var mockAgent = EnvironmentHelper.GetMockAgent();
-
-        mockAgent.ShouldDeserializeTraces = false;
-        return mockAgent;
+        WriteRcmFile(configurations, LiveDebuggerProduct.ProductName);
     }
 }

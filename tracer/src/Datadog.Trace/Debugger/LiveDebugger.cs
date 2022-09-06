@@ -16,6 +16,7 @@ using Datadog.Trace.Debugger.PInvoke;
 using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Debugger.Sink;
+using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 
@@ -26,7 +27,7 @@ namespace Datadog.Trace.Debugger
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebugger));
         private static readonly object GlobalLock = new();
 
-        private readonly ImmutableDebuggerSettings _settings;
+        private readonly DebuggerSettings _settings;
         private readonly IDiscoveryService _discoveryService;
         private readonly IRemoteConfigurationManager _remoteConfigurationManager;
         private readonly IDebuggerSink _debuggerSink;
@@ -38,7 +39,7 @@ namespace Datadog.Trace.Debugger
         private bool _isInitialized;
 
         private LiveDebugger(
-            ImmutableDebuggerSettings settings,
+            DebuggerSettings settings,
             string serviceName,
             IDiscoveryService discoveryService,
             IRemoteConfigurationManager remoteConfigurationManager,
@@ -66,7 +67,7 @@ namespace Datadog.Trace.Debugger
         public string ServiceName { get; }
 
         public static LiveDebugger Create(
-            ImmutableDebuggerSettings settings,
+            DebuggerSettings settings,
             string serviceName,
             IDiscoveryService discoveryService,
             IRemoteConfigurationManager remoteConfigurationManager,
@@ -99,6 +100,7 @@ namespace Datadog.Trace.Debugger
 
                 _remoteConfigurationManager.RegisterProduct(Product);
 
+                DebuggerSnapshotSerializer.SetConfig(_settings);
                 Product.ConfigChanged += (sender, args) => AcceptConfiguration(args);
                 AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
                 AppDomain.CurrentDomain.DomainUnload += (sender, args) => _lineProbeResolver.OnDomainUnloaded();

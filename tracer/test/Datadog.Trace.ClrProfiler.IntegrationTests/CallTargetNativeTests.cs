@@ -173,5 +173,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 VerifyInstrumentation(processResult.Process);
             }
         }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        public void RemoveIntegrations()
+        {
+            SetInstrumentationVerification();
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var processResult = RunSampleAndWaitForExit(agent, arguments: "remove"))
+            {
+                int beginMethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\(").Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+                int notInstrumentedMethodCount = Regex.Matches(processResult.StandardOutput, "OK: Not instrumented").Count;
+
+                // Enabled, Disabled, Enabled -> 2 functions per cycle
+                Assert.Equal(4, beginMethodCount);
+                Assert.Equal(4, endMethodCount);
+                Assert.Equal(2, notInstrumentedMethodCount);
+
+                Assert.Contains(".VoidMethod", processResult.StandardOutput);
+
+                VerifyInstrumentation(processResult.Process);
+            }
+        }
     }
 }

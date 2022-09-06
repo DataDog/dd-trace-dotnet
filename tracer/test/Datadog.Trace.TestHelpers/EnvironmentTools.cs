@@ -30,7 +30,7 @@ namespace Datadog.Trace.TestHelpers
             if (_solutionDirectory == null)
             {
                 var startDirectory = Environment.CurrentDirectory;
-                var currentDirectory = Directory.GetParent(startDirectory);
+                var currentDirectory = new DirectoryInfo(startDirectory);
                 const string searchItem = @"Datadog.Trace.sln";
 
                 while (true)

@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             { "/handled-exception", 500 },
         };
 
-        public void Dispose()
+        public override void Dispose()
         {
             Fixture.SetOutput(null);
         }
