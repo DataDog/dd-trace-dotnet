@@ -32,7 +32,15 @@ namespace Datadog.Trace.Coverage.Collector
         private static readonly Assembly TracerAssembly = typeof(CoverageReporter).Assembly;
         private static readonly string[] IgnoredAssemblies =
         {
-            "NUnit3.TestAdapter.dll"
+            "NUnit3.TestAdapter.dll",
+            "xunit.abstractions.dll",
+            "xunit.assert.dll",
+            "xunit.core.dll",
+            "xunit.execution.dotnet.dll",
+            "xunit.runner.reporters.netcoreapp10.dll",
+            "xunit.runner.utility.netcoreapp10.dll",
+            "xunit.runner.visualstudio.dotnetcore.testadapter.dll",
+            "Xunit.SkippableFact.dll",
         };
 
         private readonly CIVisibilitySettings? _ciVisibilitySettings;
@@ -534,7 +542,14 @@ namespace Datadog.Trace.Coverage.Collector
         private string GetDatadogTracer(TracerTarget tracerTarget)
         {
             // Get the Datadog.Trace path
-            string targetFolder = "net461";
+
+            if (string.IsNullOrEmpty(_tracerHome))
+            {
+                // If tracer home is empty then we try to load the Datadog.Trace.dll in the current folder.
+                return "Datadog.Trace.dll";
+            }
+
+            var targetFolder = "net461";
             switch (tracerTarget)
             {
                 case TracerTarget.Net461:
