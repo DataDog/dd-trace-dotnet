@@ -5,6 +5,7 @@
 
 using System;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
@@ -46,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             settings.AddRegexScrubber(VarsRegex, string.Empty);
             settings.AddRegexScrubber(StackRegex, string.Empty);
             settings.AddRegexScrubber(ErrorMsgRegex, string.Empty);
-            var filename = OperatingSystem.IsLinux ? "ProcessStartTests.SubmitsTracesLinux" : "ProcessStartTests.SubmitsTraces";
+            var filename = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "ProcessStartTests.SubmitsTracesLinux" : "ProcessStartTests.SubmitsTraces";
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();
