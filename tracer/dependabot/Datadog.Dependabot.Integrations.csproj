@@ -18,8 +18,8 @@
 
     <!-- Integration: AerospikeClient -->
     <!-- Assembly: AerospikeClient -->
-    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/5.2.0 -->
-    <PackageReference Include="Aerospike.Client" Version="5.2.0" />
+    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/5.2.2 -->
+    <PackageReference Include="Aerospike.Client" Version="5.2.2" />
 
     <!-- Integration: System.Web.Mvc -->
     <!-- Assembly: System.Web.Mvc -->
@@ -53,7 +53,7 @@
 
     <!-- Integration: GraphQL -->
     <!-- Assembly: GraphQL -->
-    <!-- Latest package https://www.nuget.org/packages/GraphQL/5.3.3 -->
+    <!-- Latest package https://www.nuget.org/packages/GraphQL/7.0.1 -->
     <PackageReference Include="GraphQL" Version="5.3.3" />
 
     <!-- Integration: GraphQL.SystemReactive -->
@@ -69,7 +69,7 @@
     <!-- Integration: HotChocolate.Execution -->
     <!-- Assembly: HotChocolate.Execution -->
     <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/12.12.1 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="12.12.1" />
+    <PackageReference Include="HotChocolate.AspNetCore" Version="12.13.1" />
 
     <!-- Integration: System.Net.Http -->
     <!-- Assembly: System.Net.Http -->
@@ -128,13 +128,13 @@
 
     <!-- Integration: MySqlConnector -->
     <!-- Assembly: MySqlConnector -->
-    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.1.11 -->
-    <PackageReference Include="MySqlConnector" Version="2.1.11" />
+    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.1.12 -->
+    <PackageReference Include="MySqlConnector" Version="2.1.12" />
 
     <!-- Integration: NLog -->
     <!-- Assembly: NLog -->
-    <!-- Latest package https://www.nuget.org/packages/NLog/5.0.1 -->
-    <PackageReference Include="NLog" Version="5.0.1" />
+    <!-- Latest package https://www.nuget.org/packages/NLog/5.0.2 -->
+    <PackageReference Include="NLog" Version="5.0.2" />
 
     <!-- Integration: Npgsql -->
     <!-- Assembly: Npgsql -->
@@ -153,8 +153,8 @@
 
     <!-- Integration: Oracle.ManagedDataAccess -->
     <!-- Assembly: Oracle.ManagedDataAccess -->
-    <!-- Latest package https://www.nuget.org/packages/Oracle.ManagedDataAccess/21.6.1 -->
-    <PackageReference Include="Oracle.ManagedDataAccess" Version="21.6.1" />
+    <!-- Latest package https://www.nuget.org/packages/Oracle.ManagedDataAccess/21.7.0 -->
+    <PackageReference Include="Oracle.ManagedDataAccess" Version="21.7.0" />
 
     <!-- Integration: RabbitMQ.Client -->
     <!-- Assembly: RabbitMQ.Client -->
@@ -173,7 +173,7 @@
 
     <!-- Integration: Microsoft.Data.SqlClient -->
     <!-- Assembly: Microsoft.Data.SqlClient -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.SqlClient/4.1.0 -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.SqlClient/5.0.0 -->
     <PackageReference Include="Microsoft.Data.SqlClient" Version="4.1.0" />
 
     <!-- Integration: System.Data.SqlClient -->
@@ -183,8 +183,8 @@
 
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!-- Assembly: Microsoft.Data.Sqlite -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/6.0.7 -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.7" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/6.0.8 -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="6.0.8" />
 
     <!-- Integration: System.Data.SQLite -->
     <!-- Assembly: System.Data.SQLite -->
