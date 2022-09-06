@@ -32,7 +32,7 @@ namespace Datadog.Trace.Debugger.Sink
             _queue = new BoundedConcurrentQueue<ProbeStatus>(QueueLimit);
         }
 
-        public static ProbeStatusSink Create(ImmutableDebuggerSettings settings, string serviceName)
+        public static ProbeStatusSink Create(string serviceName, DebuggerSettings settings)
         {
             return new ProbeStatusSink(serviceName, settings.UploadBatchSize, TimeSpan.FromSeconds(settings.DiagnosticsIntervalSeconds));
         }

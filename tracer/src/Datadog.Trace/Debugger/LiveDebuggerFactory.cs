@@ -12,26 +12,30 @@ using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.HttpOverStreams;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 
 namespace Datadog.Trace.Debugger;
 
 internal class LiveDebuggerFactory
 {
-    public static LiveDebugger Create(IDiscoveryService discoveryService, IRemoteConfigurationManager remoteConfigurationManager, ImmutableExporterSettings exporterSettings, string serviceName)
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LiveDebuggerFactory));
+
+    public static LiveDebugger Create(IDiscoveryService discoveryService, IRemoteConfigurationManager remoteConfigurationManager, ImmutableTracerSettings tracerSettings, string serviceName)
     {
         var source = GlobalSettings.CreateDefaultConfigurationSource();
-        var settings = ImmutableDebuggerSettings.Create(DebuggerSettings.FromSource(source));
+        var settings = DebuggerSettings.FromSource(source);
         if (!settings.Enabled)
         {
+            Log.Information("Live Debugger is disabled. To enable it, please set DD_DEBUGGER_ENABLED environment variable to 'true'.");
             return LiveDebugger.Create(settings, string.Empty, null, null, null, null, null, null);
         }
 
         var snapshotStatusSink = SnapshotSink.Create(settings);
-        var probeStatusSink = ProbeStatusSink.Create(settings, serviceName);
+        var probeStatusSink = ProbeStatusSink.Create(serviceName, settings);
 
         var apiFactory = AgentTransportStrategy.Get(
-            exporterSettings,
+            tracerSettings.Exporter,
             productName: "debugger",
             tcpTimeout: TimeSpan.FromSeconds(15),
             AgentHttpHeaderNames.MinimalHeaders,
@@ -40,12 +44,12 @@ internal class LiveDebuggerFactory
 
         var batchApi = AgentBatchUploadApi.Create(apiFactory, discoveryService);
         var batchUploader = BatchUploader.Create(batchApi);
-        var debuggerSink = DebuggerSink.Create(snapshotStatusSink, probeStatusSink, settings, batchUploader);
+        var debuggerSink = DebuggerSink.Create(snapshotStatusSink, probeStatusSink, batchUploader, settings);
 
         var lineProbeResolver = LineProbeResolver.Create();
-        var probeStatusPoller = ProbeStatusPoller.Create(settings, probeStatusSink);
+        var probeStatusPoller = ProbeStatusPoller.Create(probeStatusSink, settings);
 
-        var configurationUpdater = ConfigurationUpdater.Create(settings);
+        var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.Environment, tracerSettings.ServiceVersion);
         return LiveDebugger.Create(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, probeStatusPoller, configurationUpdater);
     }
 }
