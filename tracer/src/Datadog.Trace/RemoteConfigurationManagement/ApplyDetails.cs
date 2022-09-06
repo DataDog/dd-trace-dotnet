@@ -12,11 +12,18 @@ using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 
 namespace Datadog.Trace.RemoteConfigurationManagement;
 
-internal class ApplyDetails
+internal struct ApplyDetails
 {
+    public ApplyDetails()
+    {
+        Filename = null;
+        ApplyState = ApplyStates.ACKNOWLEDGED;
+        Error = null;
+    }
+
     public string Filename { get; set; }
 
-    public uint ApplyState { get; set; } = ApplyStates.ACKNOWLEDGED;
+    public uint ApplyState { get; set; }
 
     public string Error { get; set; }
 
