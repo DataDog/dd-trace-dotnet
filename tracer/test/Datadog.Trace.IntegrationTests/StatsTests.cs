@@ -342,8 +342,9 @@ namespace Datadog.Trace.IntegrationTests
 
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
 
-            // Scenario 1: Send server span with 200 status code (success).
-            // ClientDropP0s + UserReject Expectation: Kept because it is a "rare" trace
+            // Scenario 1: Send the common span, but add an error
+            // ClientDropP0s + UserReject Expectation: Kept because the trace contains error spans
+            // Note: This is also a "rare" trace, which will be asserted later
             tracesCount++;
             spansCount++;
 
@@ -351,11 +352,12 @@ namespace Datadog.Trace.IntegrationTests
             using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, immutableSettings))
             {
                 span1 = scope.Span;
+                span1.Error = true;
             }
 
             await tracer.FlushAsync();
 
-            // Scenario 2: Send the same server span as before
+            // Scenario 2: Send the common span
             // ClientDropP0s + UserReject Expectation: Dropped because it is not a "rare" trace (this same stats point was seen before) and it does not contain any error spans
             tracesCount++;
             spansCount++;
@@ -369,7 +371,7 @@ namespace Datadog.Trace.IntegrationTests
 
             await tracer.FlushAsync();
 
-            // Scenario 3: Send the same server span as before, but with an error
+            // Scenario 3: Send the common span, but add an error
             // ClientDropP0s + UserReject Expectation: Kept because the trace contains error spans
             tracesCount++;
             spansCount++;
@@ -383,7 +385,7 @@ namespace Datadog.Trace.IntegrationTests
 
             await tracer.FlushAsync();
 
-            // Scenario 4: Send the server span as before, but with a child span that has an error
+            // Scenario 4: Send the common span, but with a child span that has an error
             // ClientDropP0s + UserReject Expectation: Kept because the trace contains error spans
             tracesCount++;
             spansCount += 2;
@@ -399,7 +401,7 @@ namespace Datadog.Trace.IntegrationTests
 
             await tracer.FlushAsync();
 
-            // Scenario 5: Send the server span as before, but with a child span that has an "analytic event" sample rate set to 0
+            // Scenario 5: Send the common span, but with a child span that has an "analytic event" sample rate set to 0
             // ClientDropP0s + UserReject Expectation: Dropped because the trace was not kept by any samplers and the span with an "analytic event" sample rate was not sampled
             tracesCount++;
             spansCount += 2;
@@ -416,7 +418,7 @@ namespace Datadog.Trace.IntegrationTests
 
             await tracer.FlushAsync();
 
-            // Scenario 6: Send the server span as before, but with a child span that has an "analytic event" sample rate set to 1
+            // Scenario 6: Send the common span, but with a child span that has an "analytic event" sample rate set to 1
             // ClientDropP0s + UserReject Expectation: Kept because the trace contains a span that was sampled by its "analytic event" sample rate
             tracesCount++;
             spansCount += 2;
@@ -565,7 +567,7 @@ namespace Datadog.Trace.IntegrationTests
 
                 group.DbType.Should().BeNull();
                 group.Duration.Should().Be(totalDuration);
-                group.Errors.Should().Be(1);
+                group.Errors.Should().Be(2);
                 group.ErrorSummary.Should().NotBeEmpty();
                 group.Hits.Should().Be(tracesCount);
                 group.HttpStatusCode.Should().Be(int.Parse(span.GetTag(Tags.HttpStatusCode)));
