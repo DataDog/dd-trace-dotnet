@@ -5,7 +5,6 @@
 
 using System;
 using System.ComponentModel;
-using System.Diagnostics;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
