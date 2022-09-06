@@ -8,7 +8,7 @@ namespace Samples.Probes.SmokeTests
 {
     internal class EmptyCtorTest : IRun
     {
-        [MethodProbeTestData]
+        [MethodProbeTestData(expectedNumberOfSnapshots: 0)]
         public EmptyCtorTest()
         {
         }
