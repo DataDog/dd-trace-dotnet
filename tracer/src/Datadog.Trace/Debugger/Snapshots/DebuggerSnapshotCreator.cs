@@ -313,6 +313,8 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             _jsonUnderlyingString.Append('}');
             var snapshotObject = JsonConvert.DeserializeObject<Snapshot>(_jsonUnderlyingString.ToString());
+            _jsonUnderlyingString.Remove(_jsonUnderlyingString.Length - 1, 1);
+
             var message = SnapshotSummary.FormatMessage(snapshotObject);
             _jsonWriter.WritePropertyName("message");
             _jsonWriter.WriteValue(message);
