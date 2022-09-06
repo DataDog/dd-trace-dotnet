@@ -60,7 +60,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [Trait("Category", "ArmUnsupported")]
         public void IntegrationDisabled()
         {
             const int totalSpanCount = 5;
@@ -69,9 +68,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.ProcessStart)}_ENABLED", "false");
 
             using var telemetry = this.ConfigureTelemetry();
-            string packageVersion = PackageVersions.MicrosoftDataSqlite.First()[0] as string;
             using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
+            using var process = RunSampleAndWaitForExit(agent);
             var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 
             Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
