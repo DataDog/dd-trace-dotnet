@@ -105,7 +105,7 @@ private:
     //
     // Initialization methods
     //
-    void InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived);
+    void InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived, bool enable = true);
 
 public:
     CorProfiler() = default;
@@ -163,6 +163,7 @@ public:
     // Add Integrations methods
     //
     void InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int size);
+    void RemoveCallTargetDefinitions(WCHAR* id, CallTargetDefinition* items, int size);
     void EnableByRefInstrumentation();
     void EnableCallTargetStateByRef();
     void AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* items, int size);

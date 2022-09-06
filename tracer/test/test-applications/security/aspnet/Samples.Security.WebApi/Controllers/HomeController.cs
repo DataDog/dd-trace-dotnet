@@ -9,5 +9,11 @@ namespace Samples.Security.WebApi.Controllers
         public void Post([FromBody] MiscModel miscModel)
         {
         }
+
+        [AcceptVerbs("GET")]
+        public string Shutdown()
+        {
+            return "Ok";
+        }
     }
 }
