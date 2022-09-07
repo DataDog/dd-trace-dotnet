@@ -28,8 +28,11 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 
         public Task<GetRcmResponse> GetConfigs(GetRcmRequest request)
         {
-            var requestString = JsonConvert.SerializeObject(request);
-            File.WriteAllText(_requestFilePath, requestString);
+            if (!string.IsNullOrWhiteSpace(_requestFilePath))
+            {
+                var requestString = JsonConvert.SerializeObject(request);
+                File.WriteAllText(_requestFilePath, requestString);
+            }
 
             var content = File.ReadAllText(_filePath);
             var config = JsonConvert.DeserializeObject<GetRcmResponse>(content);

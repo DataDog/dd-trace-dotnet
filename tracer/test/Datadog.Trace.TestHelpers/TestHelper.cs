@@ -404,21 +404,6 @@ namespace Datadog.Trace.TestHelpers
             EnvironmentHelper.CustomEnvironmentVariables[key] = value;
         }
 
-        internal GetRcmRequest GetRcmRequest()
-        {
-            if (EnvironmentHelper.CustomEnvironmentVariables.TryGetValue(ConfigurationKeys.Rcm.RequestFilePath, out var rcmRequestPath))
-            {
-                var json = File.ReadAllText(rcmRequestPath);
-                Console.WriteLine($"Read Remote Config request: {json}");
-                var request = JsonConvert.DeserializeObject<GetRcmRequest>(json);
-                return request;
-            }
-            else
-            {
-                throw new InvalidOperationException("Path for remote configurations is not set.");
-            }
-        }
-
         protected void ValidateSpans<T>(IEnumerable<MockSpan> spans, Func<MockSpan, T> mapper, IEnumerable<T> expected)
         {
             var spanLookup = new Dictionary<T, int>();

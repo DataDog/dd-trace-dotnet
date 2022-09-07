@@ -33,20 +33,27 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public void Acknowldge(string filename)
         {
-            var applyDetails = GetOrCreateApplyDetails(filename);
-
-            // can only move from unack to ack
-            if (applyDetails.ApplyState == ApplyStates.UNACKNOWLEDGED)
+            GetOrCreateApplyDetails(filename, applyDetails =>
             {
-                applyDetails.ApplyState = ApplyStates.ACKNOWLEDGED;
-            }
+                // can only move from unack to ack
+                if (applyDetails.ApplyState == ApplyStates.UNACKNOWLEDGED)
+                {
+                    applyDetails.ApplyState = ApplyStates.ACKNOWLEDGED;
+                }
+
+                return applyDetails;
+            });
         }
 
         public void Error(string filename, string error)
         {
-            var applyDetails = GetOrCreateApplyDetails(filename);
-            applyDetails.ApplyState = ApplyStates.ERROR;
-            applyDetails.Error = error;
+            GetOrCreateApplyDetails(filename, applyDetails =>
+            {
+                applyDetails.ApplyState = ApplyStates.ERROR;
+                applyDetails.Error = error;
+
+                return applyDetails;
+            });
         }
 
         public IEnumerable<ApplyDetails> GetResults()
@@ -54,16 +61,17 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             return applyStates.Values;
         }
 
-        private ApplyDetails GetOrCreateApplyDetails(string filename)
+        private void GetOrCreateApplyDetails(string filename, Func<ApplyDetails, ApplyDetails> update)
         {
             ApplyDetails applyDetails = default;
             if (!applyStates.TryGetValue(filename, out applyDetails))
             {
                 applyDetails = new ApplyDetails() { Filename = filename };
-                applyStates.Add(filename, applyDetails);
             }
 
-            return applyDetails;
+            applyDetails = update(applyDetails);
+
+            applyStates[filename] = applyDetails;
         }
     }
 }

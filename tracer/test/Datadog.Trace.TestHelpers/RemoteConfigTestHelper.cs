@@ -40,6 +40,21 @@ namespace Datadog.Trace.TestHelpers
             SetupRcm();
         }
 
+        internal GetRcmRequest GetRcmRequest()
+        {
+            if (EnvironmentHelper.CustomEnvironmentVariables.TryGetValue(ConfigurationKeys.Rcm.RequestFilePath, out var rcmRequestPath))
+            {
+                var json = File.ReadAllText(rcmRequestPath);
+                Console.WriteLine($"Read Remote Config Request from: {rcmRequestPath}");
+                var request = JsonConvert.DeserializeObject<GetRcmRequest>(json);
+                return request;
+            }
+            else
+            {
+                throw new InvalidOperationException("Path for remote configurations is not set.");
+            }
+        }
+
         protected void SetupRcm(string path = null)
         {
             if (path == null)
@@ -47,10 +62,10 @@ namespace Datadog.Trace.TestHelpers
                 path = Path.GetTempFileName();
                 File.Delete(path);
                 Directory.CreateDirectory(path);
-                path = Path.Combine(path, "rcm_config.json");
 
                 SetEnvironmentVariable(ConfigurationKeys.Rcm.RequestFilePath, Path.Combine(path, "rcm_request.json"));
 
+                path = Path.Combine(path, "rcm_config.json");
                 if (File.Exists(path)) { File.Delete(path); }
             }
 
