@@ -122,17 +122,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 
         internal static void Prepare(MethodInfo methodInfo)
         {
-            // Initialize FrameworkDescription
-            _ = FrameworkDescription.Instance;
-
-            // Initialize CIEnvironment
-            _ = CIEnvironmentValues.Instance;
-
             // Initialize Method Symbol Resolver
             _ = MethodSymbolResolver.Instance.GetModuleDef(methodInfo.Module);
-
-            // Pre JIT the target method before calling it (trying to have a better span duration measurement)
-            System.Runtime.CompilerServices.RuntimeHelpers.PrepareMethod(methodInfo.MethodHandle);
         }
     }
 }

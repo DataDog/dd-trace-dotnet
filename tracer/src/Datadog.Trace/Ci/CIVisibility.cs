@@ -268,6 +268,12 @@ namespace Datadog.Trace.Ci
             TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings));
             _ = Tracer.Instance;
 
+            // Initialize FrameworkDescription
+            _ = FrameworkDescription.Instance;
+
+            // Initialize CIEnvironment
+            _ = CIEnvironmentValues.Instance;
+
 #if !NETFRAMEWORK
             try
             {
