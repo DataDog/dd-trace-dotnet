@@ -106,7 +106,7 @@ namespace Datadog.Trace.AppSec
                     Log.Information("AppSec remote enabling not allowed (DD_APPSEC_ENABLED=false).");
                 }
 
-                SetRemoteConfigCapabilites(settings);
+                SetRemoteConfigCapabilites();
             }
             catch (Exception ex)
             {
@@ -147,19 +147,6 @@ namespace Datadog.Trace.AppSec
         internal SecuritySettings Settings => _settings;
 
         internal Version DdlibWafVersion => _waf?.Version;
-
-        private static void SetRemoteConfigCapabilites(SecuritySettings settings)
-        {
-            var rcm = RemoteConfigurationManager.Instance;
-            if (rcm != null)
-            {
-                // Enabled is a nullable bool
-                var canActivate = settings.Enabled != false;
-                rcm.SetCapablity(RcmCapablitiesIndices.AsmActivation, canActivate);
-                rcm.SetCapablity(RcmCapablitiesIndices.AsmDdRules, settings.Rules == null);
-                rcm.SetCapablity(RcmCapablitiesIndices.AsmDdRules, true);
-            }
-        }
 
         private static void AnnotateSpan(Span span)
         {
@@ -274,6 +261,34 @@ namespace Datadog.Trace.AppSec
         public void Dispose()
         {
             _waf?.Dispose();
+        }
+
+        private void SetRemoteConfigCapabilites()
+        {
+            Log.Information("SetRemoteConfigCapabilites starting");
+
+            var rcm = RemoteConfigurationManager.Instance;
+            if (rcm != null)
+            {
+                Set(rcm);
+            }
+            else
+            {
+                RemoteConfigurationManager.Initialized += (sender, ea) =>
+                {
+                    Set((RemoteConfigurationManager)sender);
+                };
+            }
+
+            void Set(RemoteConfigurationManager rcm)
+            {
+                Log.Information("SetRemoteConfigCapabilites got instance: " + (rcm != null));
+                rcm.SetCapablity(RcmCapablitiesIndices.AsmActivation, _settings.CanBeEnabled);
+                rcm.SetCapablity(RcmCapablitiesIndices.AsmDdRules, _settings.Rules == null);
+                rcm.SetCapablity(RcmCapablitiesIndices.AsmIpBlocking, true);
+            }
+
+            Log.Information("SetRemoteConfigCapabilites ended");
         }
 
         private void FeaturesProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
