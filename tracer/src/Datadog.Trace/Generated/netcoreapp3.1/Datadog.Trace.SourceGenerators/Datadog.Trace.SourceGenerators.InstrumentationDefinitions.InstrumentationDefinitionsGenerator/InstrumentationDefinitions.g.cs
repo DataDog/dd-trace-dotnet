@@ -165,10 +165,10 @@ namespace Datadog.Trace.ClrProfiler
 
                 // InsecureHashing
                new ("mscorlib", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.Byte[]", "System.Int32", "System.Int32" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing.InsecureHashingIntegration"),
+               new ("mscorlib", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.IO.Stream" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing.InsecureHashingIntegrationBis"),
                new ("mscorlib", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.Byte[]" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing.InsecureHashingIntegrationBis"),
-               new ("System.Security.Cryptography.Algorithms", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.Byte[]", "System.Int32", "System.Int32" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing.InsecureHashingIntegration"),
-               new ("System.Security.Cryptography.Algorithms", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.Byte[]" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing.InsecureHashingIntegrationBis"),
                new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.Byte[]", "System.Int32", "System.Int32" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing.InsecureHashingIntegration"),
+               new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.IO.Stream" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing.InsecureHashingIntegrationBis"),
                new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.Byte[]" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing.InsecureHashingIntegrationBis"),
 
                 // Kafka
@@ -628,9 +628,9 @@ namespace Datadog.Trace.ClrProfiler
                     => Datadog.Trace.Configuration.IntegrationId.ILogger,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing.InsecureHashingIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing.InsecureHashingIntegrationBis"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing.InsecureHashingIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing.InsecureHashingIntegrationBis"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing.InsecureHashingIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing.InsecureHashingIntegrationBis"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing.InsecureHashingIntegrationBis"
                     => Datadog.Trace.Configuration.IntegrationId.InsecureHashing,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaConsumerConstructorIntegration"

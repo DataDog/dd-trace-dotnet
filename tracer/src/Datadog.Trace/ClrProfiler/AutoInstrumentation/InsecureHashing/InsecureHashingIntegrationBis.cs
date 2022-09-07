@@ -14,7 +14,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing
     /// System.Net.Http.HttpClientHandler calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-       AssemblyNames = new[] { "mscorlib", "System.Security.Cryptography.Algorithms", "System.Security.Cryptography.Primitives" },
+       AssemblyNames = new[] { "mscorlib", "System.Security.Cryptography.Primitives" },
+       TypeNames = new[] { "System.Security.Cryptography.HashAlgorithm" },
+       ParameterTypeNames = new[] { "System.IO.Stream" },
+       MethodName = "ComputeHash",
+       ReturnTypeName = ClrNames.ByteArray,
+       MinimumVersion = "1.0.0",
+       MaximumVersion = "7.*.*",
+       IntegrationName = nameof(Configuration.IntegrationId.InsecureHashing))]
+    [InstrumentMethod(
+       AssemblyNames = new[] { "mscorlib", "System.Security.Cryptography.Primitives" },
        TypeNames = new[] { "System.Security.Cryptography.HashAlgorithm" },
        ParameterTypeNames = new[] { ClrNames.ByteArray },
        MethodName = "ComputeHash",
@@ -34,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing
         /// <param name="array">The input to compute the hash code for.</param>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, byte[] array)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object array)
         {
             if (instance is HashAlgorithm algorithm)
             {
