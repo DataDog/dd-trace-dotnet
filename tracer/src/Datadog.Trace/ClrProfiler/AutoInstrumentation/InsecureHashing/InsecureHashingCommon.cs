@@ -22,9 +22,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing
         internal static Scope CreateScope(HashAlgorithm instance)
         {
             var tracer = Tracer.Instance;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !InvalidHashAlgorithm(instance))
             {
-                // integration disabled, don't create a scope, skip this span
+                // skip this span
                 return null;
             }
 
@@ -49,6 +49,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing
             }
 
             return scope;
+        }
+
+        private static bool InvalidHashAlgorithm(HashAlgorithm target)
+        {
+            return (target is HMACMD5) || (target is MD5) || (target is HMACSHA1) || (target is SHA1);
         }
     }
 }
