@@ -31,7 +31,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                    .Select(c => new NamedTypedFile<T>(c.Name, JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(c.RawFile))));
         }
 
-        public void Acknowldge(string filename)
+        public void Acknowledge(string filename)
         {
             GetOrCreateApplyDetails(filename, applyDetails =>
             {

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,11 +23,11 @@ internal struct ApplyDetails
         Error = null;
     }
 
-    public string Filename { get; set; }
+    public string? Filename { get; set; }
 
     public uint ApplyState { get; set; }
 
-    public string Error { get; set; }
+    public string? Error { get; set; }
 
     public override string ToString()
     {

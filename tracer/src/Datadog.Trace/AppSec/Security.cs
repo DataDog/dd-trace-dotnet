@@ -270,7 +270,7 @@ namespace Datadog.Trace.AppSec
                 UpdateStatus();
             }
 
-            e.Acknowldge(features.Name);
+            e.Acknowledge(features.Name);
         }
 
         private void UpdateStatus()
