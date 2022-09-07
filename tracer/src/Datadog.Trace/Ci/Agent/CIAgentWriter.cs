@@ -25,7 +25,7 @@ namespace Datadog.Trace.Ci.Agent
         private static Span[] _spanArray;
         private readonly AgentWriter _agentWriter;
 
-        public CIAgentWriter(ImmutableTracerSettings settings, ISampler sampler, IDiscoveryService discoveryService = null, int maxBufferSize = DefaultMaxBufferSize)
+        public CIAgentWriter(ImmutableTracerSettings settings, ISampler sampler, IDiscoveryService discoveryService, int maxBufferSize = DefaultMaxBufferSize)
         {
             var partialFlushEnabled = settings.Exporter.PartialFlushEnabled;
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
