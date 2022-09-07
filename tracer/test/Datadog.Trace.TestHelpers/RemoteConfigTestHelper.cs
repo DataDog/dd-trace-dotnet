@@ -26,6 +26,7 @@ namespace Datadog.Trace.TestHelpers
         // doing multiple things here, waiting for the request and return the latest one
         internal static async Task<GetRcmRequest> WaitRcmRequestAndReturnLast(this MockTracerAgent agent, int timeoutInMilliseconds = 50000)
         {
+<<<<<<< HEAD
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
 
             GetRcmRequest request = null;
@@ -51,6 +52,12 @@ namespace Datadog.Trace.TestHelpers
                         return request;
                     }
                 }
+=======
+            string lastRemoteConfigPayload = null;
+            while (agent.RemoteConfigRequests.TryDequeue(out var next))
+            {
+                lastRemoteConfigPayload = next;
+>>>>>>> 63e3610d6 (fix tests)
             }
 
             // eventually return a request that might be null or has no config states

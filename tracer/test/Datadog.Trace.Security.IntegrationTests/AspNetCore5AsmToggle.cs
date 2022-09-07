@@ -102,7 +102,6 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         private void CheckCapabilities(GetRcmRequest request, byte expectedState, string message)
         {
-            Output.WriteLine("request?.Client?.Capabilities: " + request?.Client?.Capabilities);
             var capablities = BitConverter.ToInt32(request?.Client?.Capabilities);
             capablities.Should().Be(expectedState, message);
         }
