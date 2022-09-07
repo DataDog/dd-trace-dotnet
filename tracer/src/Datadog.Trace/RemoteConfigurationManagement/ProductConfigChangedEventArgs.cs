@@ -35,7 +35,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
         }
 
-        public void Acknowldge(string filename)
+        public void Acknowledge(string filename)
         {
             GetOrCreateApplyDetails(filename, applyDetails =>
             {
