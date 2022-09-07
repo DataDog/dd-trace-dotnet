@@ -12,7 +12,7 @@
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: consumer,
+      span.kind: internal,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -36,7 +36,7 @@
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: consumer,
+      span.kind: internal,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -60,7 +60,7 @@
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
       runtime-id: Guid_1,
-      span.kind: consumer,
+      span.kind: internal,
       _dd.p.dm: -0
     },
     Metrics: {
