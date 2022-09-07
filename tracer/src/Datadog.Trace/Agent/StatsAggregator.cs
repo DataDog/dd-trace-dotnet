@@ -7,11 +7,13 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.TraceSamplers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Processors;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent
 {
@@ -20,8 +22,6 @@ namespace Datadog.Trace.Agent
         private const int BufferCount = 2;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<StatsAggregator>();
-
-        private readonly HashSet<StatsAggregationKey> _keys;
 
         private readonly StatsBuffer[] _buffers;
 
@@ -34,6 +34,11 @@ namespace Datadog.Trace.Agent
 
         private readonly Task _flushTask;
 
+        private readonly PrioritySampler _prioritySampler;
+        private readonly ErrorSampler _errorSampler;
+        private readonly RareSampler _rareSampler;
+        private readonly AnalyticsEventsSampler _analyticsEventSampler;
+
         private int _currentBuffer;
 
         internal StatsAggregator(IApi api, ImmutableTracerSettings settings)
@@ -41,13 +46,17 @@ namespace Datadog.Trace.Agent
             _api = api;
             _processExit = new TaskCompletionSource<bool>();
             _bucketDuration = TimeSpan.FromSeconds(settings.StatsComputationInterval);
-            _keys = new HashSet<StatsAggregationKey>();
             _buffers = new StatsBuffer[BufferCount];
             _traceProcessors = new ITraceProcessor[]
             {
                 new Processors.NormalizerTraceProcessor(),
                 new Processors.ObfuscatorTraceProcessor(false),
             };
+
+            _prioritySampler = new PrioritySampler();
+            _errorSampler = new ErrorSampler();
+            _rareSampler = new RareSampler();
+            _analyticsEventSampler = new AnalyticsEventsSampler();
 
             var header = new ClientStatsPayload
             {
@@ -85,15 +94,13 @@ namespace Datadog.Trace.Agent
             return _flushTask;
         }
 
-        public bool Add(params Span[] spans)
+        public void Add(params Span[] spans)
         {
-            return AddRange(new ArraySegment<Span>(spans, 0, spans.Length));
+            AddRange(new ArraySegment<Span>(spans, 0, spans.Length));
         }
 
-        public bool AddRange(ArraySegment<Span> spans)
+        public void AddRange(ArraySegment<Span> spans)
         {
-            var forceKeep = false;
-
             // Contention around this lock is expected to be very small:
             // AddRange is called from the serialization thread, and concurrent serialization
             // of traces is a rare corner-case (happening only during shutdown).
@@ -102,11 +109,22 @@ namespace Datadog.Trace.Agent
             {
                 for (int i = 0; i < spans.Count; i++)
                 {
-                    forceKeep |= AddToBuffer(spans.Array[i + spans.Offset]);
+                    AddToBuffer(spans.Array[i + spans.Offset]);
                 }
             }
+        }
 
-            return forceKeep;
+        public bool ShouldKeepTrace(ArraySegment<Span> trace)
+        {
+            // Note: The RareSampler must be run before all other samplers so that
+            // the first rare span in the trace chunk (if any) is marked with "_dd.rare".
+            // The sampling decision is only used if no other samplers choose to keep the trace chunk.
+            bool rareSpanFound = _rareSampler.IsEnabled && _rareSampler.Sample(trace);
+
+            return _prioritySampler.Sample(trace)
+                || _errorSampler.Sample(trace)
+                || _analyticsEventSampler.Sample(trace)
+                || rareSpanFound;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -196,16 +214,14 @@ namespace Datadog.Trace.Agent
             return ns << shift;
         }
 
-        private bool AddToBuffer(Span span)
+        private void AddToBuffer(Span span)
         {
             if ((!span.IsTopLevel && span.GetMetric(Tags.Measured) != 1.0) || span.GetMetric(Tags.PartialSnapshot) > 0)
             {
-                return false;
+                return;
             }
 
             var key = BuildKey(span);
-
-            var isNewKey = _keys.Add(key);
 
             var buffer = CurrentBuffer;
 
@@ -235,9 +251,6 @@ namespace Datadog.Trace.Agent
             {
                 bucket.OkSummary.Add(ConvertTimestamp(duration));
             }
-
-            // This simple "RareSampler" keeps brand new stats points and errors
-            return isNewKey || span.Error;
         }
     }
 }

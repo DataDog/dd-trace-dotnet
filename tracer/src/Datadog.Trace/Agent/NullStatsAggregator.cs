@@ -12,9 +12,15 @@ namespace Datadog.Trace.Agent
     {
         public bool? CanComputeStats => false;
 
-        public bool Add(params Span[] spans) => false;
+        public void Add(params Span[] spans)
+        {
+        }
 
-        public bool AddRange(ArraySegment<Span> spans) => false;
+        public void AddRange(ArraySegment<Span> spans)
+        {
+        }
+
+        public bool ShouldKeepTrace(ArraySegment<Span> spans) => true;
 
         public ArraySegment<Span> ProcessTrace(ArraySegment<Span> trace) => trace;
 

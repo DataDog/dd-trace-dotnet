@@ -5,6 +5,7 @@
 
 using System.Collections.Generic;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Sampling
 {
@@ -79,7 +80,7 @@ namespace Datadog.Trace.Sampling
         private SamplingDecision MakeSamplingDecision(Span span, float rate, int mechanism)
         {
             // make a sampling decision as a function of traceId and sampling rate
-            var sample = ((span.TraceId * KnuthFactor) % TracerConstants.MaxTraceId) <= (rate * TracerConstants.MaxTraceId);
+            var sample = SamplingHelpers.SampleByRate(span.TraceId, rate);
 
             var priority = mechanism switch
                            {
