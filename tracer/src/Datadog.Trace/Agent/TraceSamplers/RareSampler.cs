@@ -12,7 +12,10 @@ namespace Datadog.Trace.Agent.TraceSamplers
     internal class RareSampler : ITraceSampler
     {
         private const string RareKey = "_dd.rare";
+        private const int CacheLimit = 200; // Uses default value of 200 as found in the trace agent
+
         private readonly HashSet<StatsAggregationKey> _keys = new();
+        private readonly Queue<StatsAggregationKey> _cache = new();
 
         public bool IsEnabled => true; // TODO: Add ability to disable the RareSampler, which the trace agent has
 
@@ -78,20 +81,37 @@ namespace Datadog.Trace.Agent.TraceSamplers
         private bool SampleSpan(Span span)
         {
             var key = StatsAggregator.BuildKey(span);
-            var rareSpanFound = _keys.Add(key);
+            var isNewKey = _keys.Add(key);
 
-            if (rareSpanFound)
+            if (isNewKey)
             {
                 span.Tags.SetMetric(RareKey, 1);
+                UpdateCache(key);
             }
 
-            return rareSpanFound;
+            return isNewKey;
         }
 
         private void UpdateSpan(Span span)
         {
             var key = StatsAggregator.BuildKey(span);
-            _keys.Add(key);
+            var isNewKey = _keys.Add(key);
+
+            if (isNewKey)
+            {
+                UpdateCache(key);
+            }
+        }
+
+        private void UpdateCache(StatsAggregationKey key)
+        {
+            if (_cache.Count == CacheLimit)
+            {
+                var oldKey = _cache.Dequeue();
+                _keys.Remove(oldKey);
+            }
+
+            _cache.Enqueue(key);
         }
     }
 }
