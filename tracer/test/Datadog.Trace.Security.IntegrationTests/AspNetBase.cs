@@ -29,7 +29,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.Security.IntegrationTests
 {
     [UsesVerify]
-    public class AspNetBase : TestHelper
+    public class AspNetBase : RemoteConfigTestHelper
     {
         protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
         protected const string DefaultRuleFile = "ruleset.3.0.json";
@@ -61,7 +61,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_WAF_TIMEOUT", 10_000_000.ToString());
         }
 
-        public Task<MockTracerAgent> RunOnSelfHosted(bool enableSecurity, string externalRulesFile = null, int? traceRateLimit = null)
+        public Task<MockTracerAgent> RunOnSelfHosted(bool? enableSecurity, string externalRulesFile = null, int? traceRateLimit = null)
         {
             if (_agent == null)
             {
@@ -79,8 +79,10 @@ namespace Datadog.Trace.Security.IntegrationTests
             return Task.FromResult(_agent);
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
+            base.Dispose();
+
             var request = WebRequest.CreateHttp($"http://localhost:{_httpPort}{_shutdownPath}");
             request.GetResponse().Close();
 
@@ -107,27 +109,28 @@ namespace Datadog.Trace.Security.IntegrationTests
             _agent?.Dispose();
         }
 
-        public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string useragent = null)
+        public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null)
         {
-            var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType, useragent);
+            var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType, userAgent);
+            await VerifySpans(spans, settings, testInit);
+        }
 
-            settings.ModifySerialization(
-                serializationSettings =>
+        public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false)
+        {
+            settings.ModifySerialization(serializationSettings =>
+            {
+                serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(sp => sp.Tags, (target, value) =>
                 {
-                    serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(
-                        sp => sp.Tags,
-                        (target, value) =>
-                        {
-                            if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
-                            {
-                                var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
-                                var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
-                                target.Tags[Tags.AppSecJson] = orderedAppSecJson;
-                            }
+                    if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
+                    {
+                        var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
+                        var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
+                        target.Tags[Tags.AppSecJson] = orderedAppSecJson;
+                    }
 
-                            return VerifyHelper.ScrubStackTraceForErrors(target, target.Tags);
-                        });
+                    return VerifyHelper.ScrubStackTraceForErrors(target, target.Tags);
                 });
+            });
             settings.AddRegexScrubber(AppSecWafDuration, "_dd.appsec.waf.duration: 0.0");
             settings.AddRegexScrubber(AppSecWafDurationWithBindings, "_dd.appsec.waf.duration_ext: 0.0");
             if (!testInit)
@@ -262,12 +265,23 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected virtual string GetTestName() => _testName;
 
-        private async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, string body, int numberOfAttacks, int expectedSpans, string phase, string contentType = null, string userAgent = null)
+        protected async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, string body, int numberOfAttacks, int expectedSpans, string phase, string contentType = null, string userAgent = null)
         {
             var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
             await SendRequestsAsyncNoWaitForSpans(url, body, numberOfAttacks, contentType, userAgent);
 
             return WaitForSpans(agent, expectedSpans, phase, minDateTime, url);
+        }
+
+        protected async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, params string[] urls)
+        {
+            var spans = new List<MockSpan>();
+            foreach (var url in urls)
+            {
+                spans.AddRange(await SendRequestsAsync(agent, url, null, 1, 1, string.Empty, null));
+            }
+
+            return spans.ToImmutableList();
         }
 
         private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null, string userAgent = null)
@@ -306,7 +320,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             string arguments,
             string packageVersion = "",
             string framework = "",
-            bool enableSecurity = true,
+            bool? enableSecurity = true,
             string externalRulesFile = null,
             int? traceRateLimit = null)
         {

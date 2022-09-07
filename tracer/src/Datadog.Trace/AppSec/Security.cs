@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.AppSec.Transports;
@@ -12,9 +13,11 @@ using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -36,13 +39,14 @@ namespace Datadog.Trace.AppSec
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
 
-        private readonly AppSecRateLimiter _rateLimiter;
-        private readonly IWaf _waf;
         private readonly InstrumentationGateway _instrumentationGateway;
         private readonly SecuritySettings _settings;
+        private IWaf _waf;
+        private AppSecRateLimiter _rateLimiter;
+        private bool _enabled = false;
 
 #if NETFRAMEWORK
-        private readonly bool _usingIntegratedPipeline;
+        private bool? _usingIntegratedPipeline = null;
 #endif
 
         static Security()
@@ -88,47 +92,18 @@ namespace Datadog.Trace.AppSec
             try
             {
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
-
                 _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
+                _waf = waf;
+                LifetimeManager.Instance.AddShutdownTask(RunShutdown);
 
-                if (_settings.Enabled)
+                if (_settings.CanBeEnabled)
                 {
-                    _waf = waf ?? Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules);
-                    if (_waf?.InitializedSuccessfully ?? false)
-                    {
-                        _instrumentationGateway.StartRequest += RunWafAndReact;
-                        _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
-                        _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
-                        _instrumentationGateway.BodyAvailable += RunWafAndReact;
-                        _instrumentationGateway.BlockingOpportunity += MightStopRequest;
-#if NETFRAMEWORK
-                        try
-                        {
-                            _usingIntegratedPipeline = TryGetUsingIntegratedPipelineBool();
-                        }
-                        catch (Exception ex)
-                        {
-                            _usingIntegratedPipeline = false;
-                            Log.Error(ex, "Unable to query the IIS pipeline. Request and response information may be limited.");
-                        }
-
-                        if (_usingIntegratedPipeline)
-                        {
-                            _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
-                        }
-#else
-                        _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
-#endif
-                        AddAppsecSpecificInstrumentations();
-                    }
-                    else
-                    {
-                        _settings.Enabled = false;
-                    }
-
-                    _instrumentationGateway.StartRequest += ReportWafInitInfoOnce;
-                    LifetimeManager.Instance.AddShutdownTask(RunShutdown);
-                    _rateLimiter = new AppSecRateLimiter(_settings.TraceRateLimit);
+                    UpdateStatus();
+                    SharedRemoteConfiguration.FeaturesProduct.ConfigChanged += FeaturesProductConfigChanged;
+                }
+                else
+                {
+                    Log.Information("AppSec remote enabling not allowed (DD_APPSEC_ENABLED=false).");
                 }
             }
             catch (Exception ex)
@@ -222,17 +197,13 @@ namespace Datadog.Trace.AppSec
 
         private static void AddAppsecSpecificInstrumentations()
         {
+            int defs = 0, derived = 0;
             try
             {
-                Log.Debug("Sending CallTarget AppSec integration definitions to native library.");
+                Log.Debug("Adding CallTarget AppSec integration definitions to native library.");
                 var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.AppSec);
                 NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-                foreach (var def in payload.Definitions)
-                {
-                    def.Dispose();
-                }
-
-                Log.Information<int>("The profiler has been initialized with {count} AppSec definitions.", payload.Definitions.Length);
+                defs = payload.Definitions.Length;
             }
             catch (Exception ex)
             {
@@ -241,28 +212,155 @@ namespace Datadog.Trace.AppSec
 
             try
             {
-                Log.Debug("Sending CallTarget appsec derived integration definitions to native library.");
+                Log.Debug("Adding CallTarget appsec derived integration definitions to native library.");
                 var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.AppSec);
                 NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
-                foreach (var def in payload.Definitions)
-                {
-                    def.Dispose();
-                }
-
-                Log.Information<int>("The profiler has been initialized with {count} AppSec derived definitions.", payload.Definitions.Length);
+                derived = payload.Definitions.Length;
             }
             catch (Exception ex)
             {
                 Log.Error(ex, ex.Message);
             }
+
+            Log.Information($"{defs} AppSec definitions and {derived} AppSec derived definitions added to the profiler.");
         }
 
-        /// <summary>
-        /// Frees resources
-        /// </summary>
+        private static void RemoveAppsecSpecificInstrumentations()
+        {
+            int defs = 0, derived = 0;
+            try
+            {
+                Log.Debug("Removing CallTarget AppSec integration definitions from native library.");
+                var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.AppSec);
+                NativeMethods.RemoveCallTargetDefinitions(payload.DefinitionsId, payload.Definitions);
+                defs = payload.Definitions.Length;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
+            try
+            {
+                Log.Debug("Removing CallTarget appsec derived integration definitions from native library.");
+                var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.AppSec);
+                NativeMethods.RemoveCallTargetDefinitions(payload.DefinitionsId, payload.Definitions);
+                derived = payload.Definitions.Length;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
+            Log.Information($"{defs} AppSec definitions and {derived} AppSec derived definitions removed from the profiler.");
+        }
+
+        /// <summary> Frees resources </summary>
         public void Dispose()
         {
             _waf?.Dispose();
+        }
+
+        private void FeaturesProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
+        {
+            var features = e.GetDeserializedConfigurations<Features>().FirstOrDefault();
+            if (features != null)
+            {
+                _settings.Enabled = features.Asm.Enabled;
+                UpdateStatus();
+            }
+        }
+
+        private void UpdateStatus()
+        {
+            if (_enabled == _settings.Enabled) { return; }
+            lock (_settings)
+            {
+                if (_settings.Enabled)
+                {
+                    if (_waf != null)
+                    {
+                        _waf.Dispose();
+                    }
+
+                    _waf = Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules);
+                    if (_waf?.InitializedSuccessfully ?? false)
+                    {
+                        EnableWaf();
+                    }
+                    else
+                    {
+                        _settings.Enabled = false;
+                    }
+                }
+
+                if (!_settings.Enabled)
+                {
+                    DisableWaf();
+                }
+            }
+        }
+
+        private void EnableWaf()
+        {
+            if (!_enabled)
+            {
+                Log.Information("AppSec Enabled");
+
+                _instrumentationGateway.StartRequest += RunWafAndReact;
+                _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
+                _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
+                _instrumentationGateway.BodyAvailable += RunWafAndReact;
+                _instrumentationGateway.BlockingOpportunity += MightStopRequest;
+#if NETFRAMEWORK
+                if (_usingIntegratedPipeline == null)
+                {
+                    try
+                    {
+                        _usingIntegratedPipeline = TryGetUsingIntegratedPipelineBool();
+                    }
+                    catch (Exception ex)
+                    {
+                        _usingIntegratedPipeline = false;
+                        Log.Error(ex, "Unable to query the IIS pipeline. Request and response information may be limited.");
+                    }
+                }
+
+                if (_usingIntegratedPipeline.Value)
+                {
+                    _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
+                }
+
+#else
+                _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
+#endif
+                AddAppsecSpecificInstrumentations();
+
+                _instrumentationGateway.StartRequest += ReportWafInitInfoOnce;
+                _rateLimiter = _rateLimiter ?? new AppSecRateLimiter(_settings.TraceRateLimit);
+
+                _enabled = true;
+            }
+        }
+
+        private void DisableWaf()
+        {
+            if (_enabled)
+            {
+                Log.Information("AppSec Disabled");
+
+                _instrumentationGateway.StartRequest -= RunWafAndReact;
+                _instrumentationGateway.EndRequest -= RunWafAndReactAndCleanup;
+                _instrumentationGateway.PathParamsAvailable -= RunWafAndReact;
+                _instrumentationGateway.BodyAvailable -= RunWafAndReact;
+                _instrumentationGateway.BlockingOpportunity -= MightStopRequest;
+                _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
+                _instrumentationGateway.StartRequest -= ReportWafInitInfoOnce;
+
+                RemoveAppsecSpecificInstrumentations();
+
+                _enabled = false;
+            }
         }
 
         private void InstrumentationGateway_AddHeadersResponseTags(object sender, InstrumentationGatewayEventArgs e)
@@ -411,15 +509,7 @@ namespace Datadog.Trace.AppSec
                 _instrumentationGateway.StartRequest -= RunWafAndReact;
                 _instrumentationGateway.EndRequest -= RunWafAndReactAndCleanup;
                 _instrumentationGateway.BlockingOpportunity -= MightStopRequest;
-
-#if NETFRAMEWORK
-                if (_usingIntegratedPipeline)
-                {
-                    _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
-                }
-#else
                 _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
-#endif
             }
 
             Dispose();

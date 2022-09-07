@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Linq;
+using System.Text;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
@@ -69,6 +71,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis
             }
 
             return scope;
+        }
+
+        internal static string GetRawCommand(byte[][] cmdWithBinaryArgs)
+        {
+            return string.Join(
+                " ",
+                cmdWithBinaryArgs.Select(
+                    bs =>
+                    {
+                        try
+                        {
+                            return Encoding.UTF8.GetString(bs);
+                        }
+                        catch
+                        {
+                            return string.Empty;
+                        }
+                    }));
         }
     }
 }

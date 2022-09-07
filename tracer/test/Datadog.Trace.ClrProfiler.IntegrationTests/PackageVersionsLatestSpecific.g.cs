@@ -19,45 +19,45 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
     public class PackageVersionsLatestSpecific
     {
-        public static IEnumerable<object[]> AwsSqs =>
+      public static IEnumerable<object[]> AwsSqs =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
 #if NET461
                 new object[] { "3.1.0.13" },
                 new object[] { "3.3.103.26" },
-                new object[] { "3.7.2.81" },
+                new object[] { "3.7.2.97" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "3.3.103.26" },
-                new object[] { "3.7.2.81" },
+                new object[] { "3.7.2.97" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "3.3.103.26" },
-                new object[] { "3.7.2.81" },
+                new object[] { "3.7.2.97" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "3.3.103.26" },
-                new object[] { "3.7.2.81" },
+                new object[] { "3.7.2.97" },
 #endif
 #if NET5_0
                 new object[] { "3.3.103.26" },
-                new object[] { "3.7.2.81" },
+                new object[] { "3.7.2.97" },
 #endif
 #if NET6_0
                 new object[] { "3.3.103.26" },
-                new object[] { "3.7.2.81" },
+                new object[] { "3.7.2.97" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> MongoDB =>
+      public static IEnumerable<object[]> MongoDB =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
@@ -65,40 +65,40 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.0.2" },
                 new object[] { "2.5.1" },
                 new object[] { "2.14.1" },
-                new object[] { "2.17.0" },
+                new object[] { "2.17.1" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "2.5.1" },
                 new object[] { "2.14.1" },
-                new object[] { "2.17.0" },
+                new object[] { "2.17.1" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "2.5.1" },
                 new object[] { "2.14.1" },
-                new object[] { "2.17.0" },
+                new object[] { "2.17.1" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "2.5.1" },
                 new object[] { "2.14.1" },
-                new object[] { "2.17.0" },
+                new object[] { "2.17.1" },
 #endif
 #if NET5_0
                 new object[] { "2.5.1" },
                 new object[] { "2.14.1" },
-                new object[] { "2.17.0" },
+                new object[] { "2.17.1" },
 #endif
 #if NET6_0
                 new object[] { "2.5.1" },
                 new object[] { "2.14.1" },
-                new object[] { "2.17.0" },
+                new object[] { "2.17.1" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> ElasticSearch7 =>
+      public static IEnumerable<object[]> ElasticSearch7 =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
@@ -133,12 +133,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "7.17.4" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> ElasticSearch6 =>
+      public static IEnumerable<object[]> ElasticSearch6 =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
@@ -167,12 +167,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.8.11" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> ElasticSearch5 =>
+      public static IEnumerable<object[]> ElasticSearch5 =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
@@ -207,12 +207,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.6.6" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> GraphQL =>
+      public static IEnumerable<object[]> GraphQL =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
@@ -235,41 +235,41 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "5.3.3" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> HotChocolate =>
+      public static IEnumerable<object[]> HotChocolate =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
 #if NET5_0
                 new object[] { "11.3.8" },
-                new object[] { "12.12.1" },
+                new object[] { "12.13.1" },
 #endif
 #if NET6_0
                 new object[] { "11.3.8" },
-                new object[] { "12.12.1" },
+                new object[] { "12.13.1" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "11.3.8" },
-                new object[] { "12.12.1" },
+                new object[] { "12.13.1" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> Npgsql =>
+      public static IEnumerable<object[]> Npgsql =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
 #if NET461
                 new object[] { "4.1.12" },
                 new object[] { "5.0.14" },
-                new object[] { "6.0.5" },
+                new object[] { "6.0.6" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "4.1.12" },
@@ -282,25 +282,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETCOREAPP3_1
                 new object[] { "4.1.12" },
                 new object[] { "5.0.14" },
-                new object[] { "6.0.5" },
+                new object[] { "6.0.6" },
 #endif
 #if NET5_0
                 new object[] { "4.1.12" },
                 new object[] { "5.0.14" },
-                new object[] { "6.0.5" },
+                new object[] { "6.0.6" },
 #endif
 #if NET6_0
                 new object[] { "4.1.12" },
                 new object[] { "5.0.14" },
-                new object[] { "6.0.5" },
+                new object[] { "6.0.6" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> RabbitMQ =>
+      public static IEnumerable<object[]> RabbitMQ =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
@@ -341,12 +341,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "6.4.0" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> SystemDataSqlClient =>
+      public static IEnumerable<object[]> SystemDataSqlClient =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
@@ -381,65 +381,65 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.8.3" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> MicrosoftDataSqlClient =>
+      public static IEnumerable<object[]> MicrosoftDataSqlClient =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
 #if NET461
                 new object[] { "1.1.4" },
-                new object[] { "2.1.4" },
-                new object[] { "3.1.0" },
+                new object[] { "2.1.5" },
+                new object[] { "3.1.1" },
                 new object[] { "4.1.0" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "1.1.4" },
-                new object[] { "2.1.4" },
-                new object[] { "3.1.0" },
+                new object[] { "2.1.5" },
+                new object[] { "3.1.1" },
                 new object[] { "4.1.0" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "1.1.4" },
-                new object[] { "2.1.4" },
-                new object[] { "3.1.0" },
+                new object[] { "2.1.5" },
+                new object[] { "3.1.1" },
                 new object[] { "4.1.0" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "1.1.4" },
-                new object[] { "2.1.4" },
-                new object[] { "3.1.0" },
+                new object[] { "2.1.5" },
+                new object[] { "3.1.1" },
                 new object[] { "4.1.0" },
 #endif
 #if NET5_0
                 new object[] { "1.1.4" },
-                new object[] { "2.1.4" },
-                new object[] { "3.1.0" },
+                new object[] { "2.1.5" },
+                new object[] { "3.1.1" },
                 new object[] { "4.1.0" },
 #endif
 #if NET6_0
                 new object[] { "1.1.4" },
-                new object[] { "2.1.4" },
-                new object[] { "3.1.0" },
+                new object[] { "2.1.5" },
+                new object[] { "3.1.1" },
                 new object[] { "4.1.0" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> StackExchangeRedis =>
+      public static IEnumerable<object[]> StackExchangeRedis =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
 #if NET461
                 new object[] { "1.0.488" },
                 new object[] { "1.2.6" },
-                new object[] { "2.6.48" },
+                new object[] { "2.6.66" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "1.2.6" },
@@ -447,34 +447,34 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
 #if NETCOREAPP3_0
                 new object[] { "1.2.6" },
-                new object[] { "2.6.48" },
+                new object[] { "2.6.66" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "1.2.6" },
-                new object[] { "2.6.48" },
+                new object[] { "2.6.66" },
 #endif
 #if NET5_0
                 new object[] { "1.2.6" },
-                new object[] { "2.6.48" },
+                new object[] { "2.6.66" },
 #endif
 #if NET6_0
                 new object[] { "1.2.6" },
-                new object[] { "2.6.48" },
+                new object[] { "2.6.66" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> ServiceStackRedis =>
+      public static IEnumerable<object[]> ServiceStackRedis =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
 #if NET461
                 new object[] { "4.5.14" },
                 new object[] { "5.14.0" },
-                new object[] { "6.1.0" },
+                new object[] { "6.3.0" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "5.14.0" },
@@ -486,63 +486,63 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
 #if NETCOREAPP3_1
                 new object[] { "5.14.0" },
-                new object[] { "6.1.0" },
+                new object[] { "6.3.0" },
 #endif
 #if NET5_0
                 new object[] { "5.14.0" },
-                new object[] { "6.1.0" },
+                new object[] { "6.3.0" },
 #endif
 #if NET6_0
                 new object[] { "5.14.0" },
-                new object[] { "6.1.0" },
+                new object[] { "6.3.0" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> MySqlData =>
+      public static IEnumerable<object[]> MySqlData =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
 #if NET461
                 new object[] { "6.7.9" },
                 new object[] { "6.10.9" },
-                new object[] { "8.0.29" },
+                new object[] { "8.0.30" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "6.7.9" },
                 new object[] { "6.10.9" },
-                new object[] { "8.0.29" },
+                new object[] { "8.0.30" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "6.7.9" },
                 new object[] { "6.10.9" },
-                new object[] { "8.0.29" },
+                new object[] { "8.0.30" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "6.7.9" },
                 new object[] { "6.10.9" },
-                new object[] { "8.0.29" },
+                new object[] { "8.0.30" },
 #endif
 #if NET5_0
                 new object[] { "6.7.9" },
                 new object[] { "6.10.9" },
-                new object[] { "8.0.29" },
+                new object[] { "8.0.30" },
 #endif
 #if NET6_0
                 new object[] { "6.7.9" },
                 new object[] { "6.10.9" },
-                new object[] { "8.0.29" },
+                new object[] { "8.0.30" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> MySqlConnector =>
+      public static IEnumerable<object[]> MySqlConnector =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
@@ -550,125 +550,125 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "0.61.0" },
                 new object[] { "1.0.1" },
                 new object[] { "1.3.14" },
-                new object[] { "2.1.11" },
+                new object[] { "2.1.13" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "0.61.0" },
                 new object[] { "1.0.1" },
                 new object[] { "1.3.14" },
-                new object[] { "2.1.11" },
+                new object[] { "2.1.13" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "0.61.0" },
                 new object[] { "1.0.1" },
                 new object[] { "1.3.14" },
-                new object[] { "2.1.11" },
+                new object[] { "2.1.13" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "0.61.0" },
                 new object[] { "1.0.1" },
                 new object[] { "1.3.14" },
-                new object[] { "2.1.11" },
+                new object[] { "2.1.13" },
 #endif
 #if NET5_0
                 new object[] { "0.61.0" },
                 new object[] { "1.0.1" },
                 new object[] { "1.3.14" },
-                new object[] { "2.1.11" },
+                new object[] { "2.1.13" },
 #endif
 #if NET6_0
                 new object[] { "0.61.0" },
                 new object[] { "1.0.1" },
                 new object[] { "1.3.14" },
-                new object[] { "2.1.11" },
+                new object[] { "2.1.13" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> MicrosoftDataSqlite =>
+      public static IEnumerable<object[]> MicrosoftDataSqlite =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
 #if NET461
                 new object[] { "2.2.6" },
-                new object[] { "3.1.27" },
+                new object[] { "3.1.28" },
                 new object[] { "5.0.17" },
-                new object[] { "6.0.7" },
+                new object[] { "6.0.8" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "2.2.6" },
-                new object[] { "3.1.27" },
+                new object[] { "3.1.28" },
                 new object[] { "5.0.17" },
-                new object[] { "6.0.7" },
+                new object[] { "6.0.8" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "2.2.6" },
-                new object[] { "3.1.27" },
+                new object[] { "3.1.28" },
                 new object[] { "5.0.17" },
-                new object[] { "6.0.7" },
+                new object[] { "6.0.8" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "2.2.6" },
-                new object[] { "3.1.27" },
+                new object[] { "3.1.28" },
                 new object[] { "5.0.17" },
-                new object[] { "6.0.7" },
+                new object[] { "6.0.8" },
 #endif
 #if NET5_0
                 new object[] { "2.2.6" },
-                new object[] { "3.1.27" },
+                new object[] { "3.1.28" },
                 new object[] { "5.0.17" },
-                new object[] { "6.0.7" },
+                new object[] { "6.0.8" },
 #endif
 #if NET6_0
                 new object[] { "2.2.6" },
-                new object[] { "3.1.27" },
+                new object[] { "3.1.28" },
                 new object[] { "5.0.17" },
-                new object[] { "6.0.7" },
+                new object[] { "6.0.8" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> XUnit =>
+      public static IEnumerable<object[]> XUnit =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
 #if NET461
                 new object[] { "2.2.0" },
-                new object[] { "2.4.1" },
+                new object[] { "2.4.2" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "2.2.0" },
-                new object[] { "2.4.1" },
+                new object[] { "2.4.2" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "2.2.0" },
-                new object[] { "2.4.1" },
+                new object[] { "2.4.2" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "2.2.0" },
-                new object[] { "2.4.1" },
+                new object[] { "2.4.2" },
 #endif
 #if NET5_0
                 new object[] { "2.2.0" },
-                new object[] { "2.4.1" },
+                new object[] { "2.4.2" },
 #endif
 #if NET6_0
                 new object[] { "2.2.0" },
-                new object[] { "2.4.1" },
+                new object[] { "2.4.2" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> NUnit =>
+      public static IEnumerable<object[]> NUnit =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
@@ -703,12 +703,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "3.13.3" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> MSTest =>
+      public static IEnumerable<object[]> MSTest =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
@@ -737,52 +737,52 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.2.10" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> Kafka =>
+      public static IEnumerable<object[]> Kafka =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
 #if NET461
                 new object[] { "1.4.4" },
-                new object[] { "1.9.0" },
+                new object[] { "1.9.2" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "1.4.4" },
-                new object[] { "1.9.0" },
+                new object[] { "1.9.2" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "1.4.4" },
-                new object[] { "1.9.0" },
+                new object[] { "1.9.2" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "1.4.4" },
-                new object[] { "1.9.0" },
+                new object[] { "1.9.2" },
 #endif
 #if NET5_0
                 new object[] { "1.4.4" },
-                new object[] { "1.9.0" },
+                new object[] { "1.9.2" },
 #endif
 #if NET6_0
                 new object[] { "1.4.4" },
-                new object[] { "1.9.0" },
+                new object[] { "1.9.2" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> CosmosDb =>
+      public static IEnumerable<object[]> CosmosDb =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
 #if NET461
                 new object[] { "3.6.0" },
-                new object[] { "3.29.0" },
+                new object[] { "3.30.1" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "3.6.0" },
@@ -794,23 +794,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
 #if NETCOREAPP3_1
                 new object[] { "3.6.0" },
-                new object[] { "3.29.0" },
+                new object[] { "3.30.1" },
 #endif
 #if NET5_0
                 new object[] { "3.6.0" },
-                new object[] { "3.29.0" },
+                new object[] { "3.30.1" },
 #endif
 #if NET6_0
                 new object[] { "3.6.0" },
-                new object[] { "3.29.0" },
+                new object[] { "3.30.1" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> Serilog =>
+      public static IEnumerable<object[]> Serilog =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
@@ -835,12 +835,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.11.0" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> NLog =>
+      public static IEnumerable<object[]> NLog =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
@@ -849,64 +849,64 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.1.0" },
                 new object[] { "3.2.1" },
                 new object[] { "4.7.15" },
-                new object[] { "5.0.1" },
+                new object[] { "5.0.4" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "4.7.15" },
-                new object[] { "5.0.1" },
+                new object[] { "5.0.4" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "4.7.15" },
-                new object[] { "5.0.1" },
+                new object[] { "5.0.4" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "4.7.15" },
-                new object[] { "5.0.1" },
+                new object[] { "5.0.4" },
 #endif
 #if NET5_0
                 new object[] { "4.7.15" },
-                new object[] { "5.0.1" },
+                new object[] { "5.0.4" },
 #endif
 #if NET6_0
                 new object[] { "4.7.15" },
-                new object[] { "5.0.1" },
+                new object[] { "5.0.4" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> log4net =>
+      public static IEnumerable<object[]> log4net =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
 #if NET461
                 new object[] { "1.2.11" },
-                new object[] { "2.0.14" },
+                new object[] { "2.0.15" },
 #endif
 #if NETCOREAPP2_1
-                new object[] { "2.0.14" },
+                new object[] { "2.0.15" },
 #endif
 #if NETCOREAPP3_0
-                new object[] { "2.0.14" },
+                new object[] { "2.0.15" },
 #endif
 #if NETCOREAPP3_1
-                new object[] { "2.0.14" },
+                new object[] { "2.0.15" },
 #endif
 #if NET5_0
-                new object[] { "2.0.14" },
+                new object[] { "2.0.15" },
 #endif
 #if NET6_0
-                new object[] { "2.0.14" },
+                new object[] { "2.0.15" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> Aerospike =>
+      public static IEnumerable<object[]> Aerospike =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
@@ -917,35 +917,35 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETCOREAPP2_1
                 new object[] { "4.0.3" },
                 new object[] { "4.2.7" },
-                new object[] { "5.2.0" },
+                new object[] { "5.2.2" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "4.0.3" },
                 new object[] { "4.2.7" },
-                new object[] { "5.2.0" },
+                new object[] { "5.2.2" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "4.0.3" },
                 new object[] { "4.2.7" },
-                new object[] { "5.2.0" },
+                new object[] { "5.2.2" },
 #endif
 #if NET5_0
                 new object[] { "4.0.3" },
                 new object[] { "4.2.7" },
-                new object[] { "5.2.0" },
+                new object[] { "5.2.2" },
 #endif
 #if NET6_0
                 new object[] { "4.0.3" },
                 new object[] { "4.2.7" },
-                new object[] { "5.2.0" },
+                new object[] { "5.2.2" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> Couchbase =>
+      public static IEnumerable<object[]> Couchbase =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
@@ -974,18 +974,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.7.27" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> Couchbase3 =>
+      public static IEnumerable<object[]> Couchbase3 =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
 #if NET461
                 new object[] { "3.0.7" },
-                new object[] { "3.3.3" },
+                new object[] { "3.3.4" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "3.0.7" },
@@ -997,53 +997,53 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
 #if NETCOREAPP3_1
                 new object[] { "3.0.7" },
-                new object[] { "3.3.3" },
+                new object[] { "3.3.4" },
 #endif
 #if NET5_0
                 new object[] { "3.0.7" },
-                new object[] { "3.3.3" },
+                new object[] { "3.3.4" },
 #endif
 #if NET6_0
                 new object[] { "3.0.7" },
-                new object[] { "3.3.3" },
+                new object[] { "3.3.4" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> Grpc =>
+      public static IEnumerable<object[]> Grpc =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
 #if NETCOREAPP3_0
                 new object[] { "2.29.0" },
                 new object[] { "2.30.0" },
-                new object[] { "2.47.0" },
+                new object[] { "2.48.0" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "2.29.0" },
                 new object[] { "2.30.0" },
-                new object[] { "2.47.0" },
+                new object[] { "2.48.0" },
 #endif
 #if NET5_0
                 new object[] { "2.29.0" },
                 new object[] { "2.30.0" },
-                new object[] { "2.47.0" },
+                new object[] { "2.48.0" },
 #endif
 #if NET6_0
                 new object[] { "2.29.0" },
                 new object[] { "2.30.0" },
-                new object[] { "2.47.0" },
+                new object[] { "2.48.0" },
 #endif
 #endif
-              };
+            };
 
-        public static IEnumerable<object[]> GrpcLegacy =>
+      public static IEnumerable<object[]> GrpcLegacy =>
 
-              new List<object[]>
-              {
+            new List<object[]>
+            {
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
@@ -1078,7 +1078,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.46.3" },
 #endif
 #endif
-              };
+            };
 
     }
 }

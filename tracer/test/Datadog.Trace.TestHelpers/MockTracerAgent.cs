@@ -83,6 +83,8 @@ namespace Datadog.Trace.TestHelpers
 
         public IImmutableList<NameValueCollection> TelemetryRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
+        public ConcurrentQueue<string> RemoteConfigRequests { get; } = new();
+
         /// <summary>
         /// Gets or sets a value indicating whether to skip deserialization of traces.
         /// </summary>
@@ -371,6 +373,11 @@ namespace Datadog.Trace.TestHelpers
                 HandlePotentialStatsData(request);
                 return "{}";
             }
+            else if (request.PathAndQuery.StartsWith("/v0.7/config"))
+            {
+                HandlePotentialRemoteConfig(request);
+                return "{}";
+            }
             else
             {
                 HandlePotentialTraces(request);
@@ -502,6 +509,32 @@ namespace Datadog.Trace.TestHelpers
                     {
                         Stats = Stats.Add(statsPayload);
                     }
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message.ToLowerInvariant();
+
+                    if (message.Contains("beyond the end of the stream"))
+                    {
+                        // Accept call is likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                        return;
+                    }
+
+                    throw;
+                }
+            }
+        }
+
+        private void HandlePotentialRemoteConfig(MockHttpParser.MockHttpRequest request)
+        {
+            if (request.ContentLength >= 1)
+            {
+                try
+                {
+                    var body = ReadStreamBody(request);
+                    var rc = Encoding.UTF8.GetString(body);
+                    RemoteConfigRequests.Enqueue(rc);
                 }
                 catch (Exception ex)
                 {
