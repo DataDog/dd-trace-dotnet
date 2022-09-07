@@ -12,7 +12,7 @@ using Datadog.Trace.RemoteConfigurationManagement;
 
 namespace Datadog.Trace.Configuration;
 
-internal class SharedRemoteConfiguration
+internal static class SharedRemoteConfiguration
 {
     public static FeaturesProduct FeaturesProduct { get; } = new();
 

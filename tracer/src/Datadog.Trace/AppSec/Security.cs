@@ -93,7 +93,6 @@ namespace Datadog.Trace.AppSec
             try
             {
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
-
                 _instrumentationGateway = instrumentationGateway ?? new InstrumentationGateway();
                 _waf = waf;
                 LifetimeManager.Instance.AddShutdownTask(RunShutdown);
@@ -263,7 +262,7 @@ namespace Datadog.Trace.AppSec
             _waf?.Dispose();
         }
 
-        private void AsmDataProductOnConfigChanged(object sender, ProductConfigChangedEventArgs e)
+        private void AsmDataProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
             var res = e.GetDeserializedConfigurations<JToken>();
             _waf.UpdateRules(res);
@@ -312,44 +311,46 @@ namespace Datadog.Trace.AppSec
 
         private void EnableWaf()
         {
-            if (!_enabled)
+            if (_enabled)
             {
-                Log.Information("AppSec Enabled");
+                return;
+            }
 
-                _instrumentationGateway.StartRequest += RunWafAndReact;
-                _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
-                _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
-                _instrumentationGateway.BodyAvailable += RunWafAndReact;
-                _instrumentationGateway.BlockingOpportunity += MightStopRequest;
+            Log.Information("AppSec Enabled");
+            SharedRemoteConfiguration.AsmDataProduct.ConfigChanged += AsmDataProductConfigChanged;
+            _instrumentationGateway.StartRequest += RunWafAndReact;
+            _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
+            _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
+            _instrumentationGateway.BodyAvailable += RunWafAndReact;
+            _instrumentationGateway.BlockingOpportunity += MightStopRequest;
 #if NETFRAMEWORK
-                if (_usingIntegratedPipeline == null)
+            if (_usingIntegratedPipeline == null)
+            {
+                try
                 {
-                    try
-                    {
-                        _usingIntegratedPipeline = TryGetUsingIntegratedPipelineBool();
-                    }
-                    catch (Exception ex)
-                    {
-                        _usingIntegratedPipeline = false;
-                        Log.Error(ex, "Unable to query the IIS pipeline. Request and response information may be limited.");
-                    }
+                    _usingIntegratedPipeline = TryGetUsingIntegratedPipelineBool();
                 }
+                catch (Exception ex)
+                {
+                    _usingIntegratedPipeline = false;
+                    Log.Error(ex, "Unable to query the IIS pipeline. Request and response information may be limited.");
+                }
+            }
 
-                if (_usingIntegratedPipeline.Value)
-                {
-                    _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
-                }
+            if (_usingIntegratedPipeline.Value)
+            {
+                _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
+            }
 
 #else
                 _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
 #endif
-                AddAppsecSpecificInstrumentations();
+            AddAppsecSpecificInstrumentations();
 
-                _instrumentationGateway.StartRequest += ReportWafInitInfoOnce;
-                _rateLimiter = _rateLimiter ?? new AppSecRateLimiter(_settings.TraceRateLimit);
+            _instrumentationGateway.StartRequest += ReportWafInitInfoOnce;
+            _rateLimiter ??= new AppSecRateLimiter(_settings.TraceRateLimit);
 
-                _enabled = true;
-            }
+            _enabled = true;
         }
 
         private void DisableWaf()
@@ -506,7 +507,7 @@ namespace Datadog.Trace.AppSec
                 span.SetTag(Tags.AppSecWafInitRuleErrors, _waf.InitializationResult.ErrorMessage);
             }
 
-            span.SetTag(Tags.AppSecWafVersion, _waf.Version.ToString());
+            span.SetTag(Tags.AppSecWafVersion, _waf.Version);
         }
 
         private void RunShutdown()
@@ -519,6 +520,8 @@ namespace Datadog.Trace.AppSec
                 _instrumentationGateway.EndRequest -= RunWafAndReactAndCleanup;
                 _instrumentationGateway.BlockingOpportunity -= MightStopRequest;
                 _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
+                SharedRemoteConfiguration.FeaturesProduct.ConfigChanged -= FeaturesProductConfigChanged;
+                SharedRemoteConfiguration.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
             }
 
             Dispose();
