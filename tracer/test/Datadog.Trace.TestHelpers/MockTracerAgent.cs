@@ -55,6 +55,8 @@ namespace Datadog.Trace.TestHelpers
 
         public bool TelemetryEnabled { get; }
 
+        public string RcmResponse { get; set; }
+
         /// <summary>
         /// Gets the filters used to filter out spans we don't want to look at for a test.
         /// </summary>
@@ -376,7 +378,7 @@ namespace Datadog.Trace.TestHelpers
             else if (request.PathAndQuery.StartsWith("/v0.7/config"))
             {
                 HandlePotentialRemoteConfig(request);
-                return "{}";
+                return RcmResponse ?? "{}";
             }
             else
             {
