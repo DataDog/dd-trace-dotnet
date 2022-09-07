@@ -14,7 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing
     /// System.Net.Http.HttpClientHandler calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
-       AssemblyNames = new[] { "mscorlib", "System.Security.Cryptography.Algorithms", "System.Security.Cryptography.Primitives" },
+       AssemblyNames = new[] { "mscorlib", "System.Security.Cryptography.Primitives" },
        TypeNames = new[] { "System.Security.Cryptography.HashAlgorithm" },
        ParameterTypeNames = new[] { ClrNames.ByteArray, ClrNames.Int32, ClrNames.Int32 },
        MethodName = "ComputeHash",
