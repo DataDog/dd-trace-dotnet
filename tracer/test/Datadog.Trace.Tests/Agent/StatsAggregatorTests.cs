@@ -43,7 +43,7 @@ namespace Datadog.Trace.Tests.Agent
                     })
                 .Returns(Task.FromResult(true));
 
-            // Mock the DiscoveryService so StatsAggregator.CanCompute = true and Api.SendStatsAsync will be called
+            // Mock the DiscoveryService so StatsAggregator.CanComputeStats = true and Api.SendStatsAsync will be called
             var discoveryService = new Mock<IDiscoveryService>();
             discoveryService.Setup(s => s.DiscoverAsync()).Returns(Task.FromResult(true));
             discoveryService.Setup(s => s.StatsEndpoint).Returns("StatsEndpoint");
@@ -82,7 +82,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var api = new Mock<IApi>();
 
-            // Mock the DiscoveryService so StatsAggregator.CanCompute = true and Api.SendStatsAsync will be called
+            // Mock the DiscoveryService so StatsAggregator.CanComputeStats = true and Api.SendStatsAsync will be called
             var discoveryService = new Mock<IDiscoveryService>();
             discoveryService.Setup(s => s.DiscoverAsync()).Returns(Task.FromResult(true));
             discoveryService.Setup(s => s.StatsEndpoint).Returns("StatsEndpoint");
