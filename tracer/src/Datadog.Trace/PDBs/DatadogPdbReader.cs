@@ -6,9 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.MD;
+using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable;
@@ -53,7 +55,11 @@ namespace Datadog.Trace.Pdb
         {
             var rid = MDToken.ToRID(methodMetadataToken);
             var mdMethod = _module.ResolveMethod(rid);
-            return _symbolReader.GetMethod(mdMethod, version: 1);
+            var asyncDebugInfo = mdMethod.CustomDebugInfos.OfType<PdbStateMachineTypeNameCustomDebugInfo>().FirstOrDefault();
+            var t = asyncDebugInfo.Type.FindMethod("MoveNext").CustomDebugInfos.OfType<PdbAsyncMethodCustomDebugInfo>().First();
+            // var steps = t.StepInfos.Select(s => s.BreakpointInstruction.Offset).ToList();
+            return _symbolReader.GetMethod(t.StepInfos.First().BreakpointMethod, version: 1);
+            // return _symbolReader.GetMethod(mdMethod, version: 1);
         }
 
         public SymbolMethod GetContainingMethodAndOffset(string filePath, int line, int column, out int? bytecodeOffset)
