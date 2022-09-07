@@ -14,11 +14,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 {
     internal static class EnvironmentVariablesAnalyzer
     {
-        private static string[] allowedEnvVariables = new string[] { "LD_PRELOAD", "LD_LIBRARY_PATH", "PATH" };
+        private static string[] allowedEnvironmentVariables = new string[] { "LD_PRELOAD", "LD_LIBRARY_PATH", "PATH" };
 
         private static bool IsAllowedVariable(string text)
         {
-            foreach (var allowedVariable in allowedEnvVariables)
+            foreach (var allowedVariable in allowedEnvironmentVariables)
             {
                 if (string.Equals(allowedVariable, text, StringComparison.OrdinalIgnoreCase))
                 {
@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             return false;
         }
 
-        internal static string ScrubbingEnvVariables(IDictionary<string, string> envVariables)
+        internal static string ScrubEnvironmentVariables(IDictionary<string, string> envVariables)
         {
             if (envVariables != null)
             {

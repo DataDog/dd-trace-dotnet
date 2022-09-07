@@ -509,8 +509,7 @@ namespace Datadog.Trace
         internal const string GrpcMethodName = "grpc.method.name";
         internal const string GrpcStatusCode = "grpc.status.code";
 
-        internal const string ProcessTruncated = "cmd.truncated";
-        internal const string ProcessEnvironmentVars = "cmd.environment_variables";
+        internal const string ProcessEnvironmentVariables = "cmd.environment_variables";
 
         internal const string TagPropagationError = "_dd.propagation_error";
 

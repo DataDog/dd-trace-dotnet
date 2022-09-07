@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         {
             if (info != null)
             {
-                // In FF, we need to have the UseShellExecute property set to false in order to use environment variables.
+                // In .NET framework, we need to have the UseShellExecute property set to false in order to use environment variables.
 #if !NETCOREAPP
                 return CreateScope(info.FileName, info.UseShellExecute ? null : info.Environment);
 #else
@@ -39,7 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         internal static Scope CreateScope(string filename, IDictionary<string, string> envVariables)
         {
             var tracer = Tracer.Instance;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !tracer.Settings.IsIntegrationEnabled(IntegrationId.ProcessStart))
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this span
                 return null;
@@ -49,18 +49,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 
             try
             {
-                var truncated = false;
-                var varsTruncated = EnvironmentVariablesAnalyzer.ScrubbingEnvVariables(envVariables);
+                var varsTruncated = EnvironmentVariablesAnalyzer.ScrubEnvironmentVariables(envVariables);
                 if (varsTruncated?.Length > MaxCommandLineLength)
                 {
                     varsTruncated = Truncate(varsTruncated, MaxCommandLineLength);
-                    truncated = true;
                 }
 
                 var tags = new ProcessCommandStartTags
                 {
                     EnviromentVars = varsTruncated,
-                    IsTruncated = truncated ? "true" : null
                 };
 
                 var serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
