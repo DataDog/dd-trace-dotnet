@@ -343,7 +343,7 @@ namespace Datadog.Trace.AppSec
             }
 
 #else
-                _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
+            _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
 #endif
             AddAppsecSpecificInstrumentations();
 
