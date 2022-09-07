@@ -167,7 +167,13 @@ namespace BuggyBits.Controllers
         {
             var sw = new Stopwatch();
             sw.Start();
+
+            // Exception-driven code
             var products = dataLayer.GetProductsOnSale();
+
+            // Fix:
+            //var products = dataLayer.GetProductsOnSaleEx();
+
             var productsTable = new StringBuilder(1000 * 80);  // try to avoid LOH allocations
             productsTable.Append("<table><tr><th>Product Name</th><th>Description</th><th>Price</th></tr>");
             foreach (var product in products)
