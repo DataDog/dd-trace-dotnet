@@ -17,7 +17,7 @@ internal struct ApplyDetails
     public ApplyDetails()
     {
         Filename = null;
-        ApplyState = ApplyStates.ACKNOWLEDGED;
+        ApplyState = ApplyStates.UNACKNOWLEDGED;
         Error = null;
     }
 
