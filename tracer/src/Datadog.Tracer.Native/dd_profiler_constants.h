@@ -26,6 +26,7 @@ const shared::WSTRING env_vars_to_display[]{environment::tracing_enabled,
                                     environment::clr_enable_inlining,
                                     environment::clr_enable_ngen,
                                     environment::dump_il_rewrite_enabled,
+                                    environment::ci_visibility_enabled,
                                     environment::azure_app_services,
                                     environment::azure_app_services_app_pool_id,
                                     environment::azure_app_services_cli_telemetry_profile_value};

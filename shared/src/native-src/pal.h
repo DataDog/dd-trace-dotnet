@@ -15,6 +15,7 @@
 
 #if MACOS
 #include <libproc.h>
+#include <crt_externs.h>
 #endif
 
 #include "dd_filesystem.hpp"
@@ -93,10 +94,14 @@ inline WSTRING GetCurrentProcessCommandLine()
 #ifdef _WIN32
     return WSTRING(GetCommandLine());
 #elif MACOS
-    char path[260];
-    uint32_t size = sizeof(path);
-    _NSGetExecutablePath(path, &size);
-    return ToWSTRING(std::string(path));
+    std::string name;
+    int argCount = *_NSGetArgc();
+    char ** arguments = *_NSGetArgv();
+    for (int i = 0; i < argCount; i++) {
+        char* currentArg = arguments[i];
+        name = name + " " + std::string(currentArg);
+    }
+    return Trim(ToWSTRING(name));
 #else
     std::string cmdline;
     char buf[1024];

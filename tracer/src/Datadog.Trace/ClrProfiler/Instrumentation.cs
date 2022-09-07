@@ -76,21 +76,9 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
-            if (CIVisibility.Settings.Enabled && !CIVisibility.Enabled)
+            if (CIVisibility.Enabled)
             {
-                // If CI Visibility is enabled by configuration
-                // we check if is the testhost.dll process
-                // we avoid instrumenting other process started from dotnet test.
-                try
-                {
-                    Log.Information("Disabling tracer clr profiler.");
-                    NativeMethods.DisableTracerCLRProfiler();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "DisableTracerCLRProfiler returned an error: ");
-                }
-
+                CIVisibility.Initialize();
                 return;
             }
 
@@ -235,14 +223,8 @@ namespace Datadog.Trace.ClrProfiler
             try
             {
                 // ensure global instance is created if it's not already
-                if (CIVisibility.Enabled)
-                {
-                    CIVisibility.Initialize();
-                }
-                else
-                {
-                    Log.Debug("Initializing tracer singleton instance.");
-                }
+                Log.Debug("Initializing tracer singleton instance.");
+                _ = Tracer.Instance;
             }
             catch (Exception ex)
             {
@@ -325,7 +307,7 @@ namespace Datadog.Trace.ClrProfiler
         }
 
 #if !NETFRAMEWORK
-        private static void StartDiagnosticManager()
+        internal static void StartDiagnosticManager()
         {
             var observers = new List<DiagnosticObserver>();
 

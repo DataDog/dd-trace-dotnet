@@ -37,7 +37,7 @@ namespace Datadog.Trace.Ci.Agent
      *         │   │  Event Queue  │     │ │ └────────────────────────────┘ │   │
      * IEvent  │   │               │     │ │                                │   │
      *  ───────┼──►│               ├─────┤►│ ┌────────────────────────────┐ │   │
-     *         │   │   Max: 2500   │     │ │ │ CICodeCoveragePayload Buf. │ │   │
+     *         │   │   Max: 25000  │     │ │ │ CICodeCoveragePayload Buf. │ │   │
      *         │   │               │     │ │ │                            │ │   │
      *         │   └───────────────┘     │ │ │      CoveragePayload       │ │   │  CICodeCoveragePayload Url
      *         │                         │ │ │                            ├─┼───┼────────────────────────────►
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Ci.Agent
     internal sealed class CIAgentlessWriter : IEventWriter
     {
         private const int DefaultBatchInterval = 1000;
-        private const int DefaultMaxItemsInQueue = 2500;
+        private const int DefaultMaxItemsInQueue = 25000;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIAgentlessWriter>();
 

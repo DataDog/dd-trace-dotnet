@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
@@ -57,39 +58,8 @@ namespace Datadog.Trace.Ci
                 return;
             }
 
-            Log.Information("Initializing CI Visibility");
-
-            LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
-
-            TracerSettings tracerSettings = _settings.TracerSettings;
-
-            // Set the service name if empty
-            Log.Information("Setting up the service name");
-            if (string.IsNullOrEmpty(tracerSettings.ServiceName))
-            {
-                // Extract repository name from the git url and use it as a default service name.
-                tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
-            }
-
-            // Intelligent Test Runner
-            if (_settings.IntelligentTestRunnerEnabled)
-            {
-                Log.Information("ITR: Update and uploading git tree metadata and getting skippeable tests.");
-                _skippableTask = GetIntelligentTestRunnerSkippableTestsAsync();
-                LifetimeManager.Instance.AddAsyncShutdownTask(() => _skippableTask);
-            }
-            else if (_settings.GitUploadEnabled)
-            {
-                // Update and upload git tree metadata.
-                Log.Information("ITR: Update and uploading git tree metadata.");
-                var tskItrUpdate = UploadGitMetadataAsync();
-                LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
-            }
-
-            // Initialize Tracer
-            Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings));
-            _ = Tracer.Instance;
+            InitializeNative();
+            InitializeManagedSide();
         }
 
         internal static void FlushSpans()
@@ -223,6 +193,99 @@ namespace Datadog.Trace.Ci
             }
 
             return factory;
+        }
+
+        private static void InitializeNative()
+        {
+            try
+            {
+                NativeMethods.EnableByRefInstrumentation();
+                NativeMethods.EnableCallTargetStateByRef();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "ByRef instrumentation or CallTarget state ByRef cannot be enabled: ");
+            }
+
+            try
+            {
+                var payload = InstrumentationDefinitions.GetAllDefinitions();
+                NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                Log.Debug<int>("The profiler has been initialized with {count} definitions.", payload.Definitions.Length);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
+            try
+            {
+                var payload = InstrumentationDefinitions.GetDerivedDefinitions();
+                NativeMethods.AddDerivedInstrumentations(payload.DefinitionsId, payload.Definitions);
+                Log.Debug<int>("The profiler has been initialized with {count} derived definitions.", payload.Definitions.Length);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
+            LifetimeManager.Instance.AddShutdownTask(InstrumentationDefinitions.Dispose);
+        }
+
+        private static void InitializeManagedSide()
+        {
+            Log.Information("Initializing CI Visibility");
+
+            LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
+
+            TracerSettings tracerSettings = _settings.TracerSettings;
+
+            // Set the service name if empty
+            Log.Debug("Setting up the service name");
+            if (string.IsNullOrEmpty(tracerSettings.ServiceName))
+            {
+                // Extract repository name from the git url and use it as a default service name.
+                tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
+            }
+
+            // Intelligent Test Runner
+            if (_settings.IntelligentTestRunnerEnabled)
+            {
+                Log.Information("ITR: Update and uploading git tree metadata and getting skippeable tests.");
+                _skippableTask = GetIntelligentTestRunnerSkippableTestsAsync();
+                LifetimeManager.Instance.AddAsyncShutdownTask(() => _skippableTask);
+            }
+            else if (_settings.GitUploadEnabled)
+            {
+                // Update and upload git tree metadata.
+                Log.Information("ITR: Update and uploading git tree metadata.");
+                var tskItrUpdate = UploadGitMetadataAsync();
+                LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
+            }
+
+            // Initialize Tracer
+            Log.Information("Initialize Test Tracer instance");
+            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings));
+            _ = Tracer.Instance;
+
+#if !NETFRAMEWORK
+            try
+            {
+                if (GlobalSettings.Source.DiagnosticSourceEnabled)
+                {
+                    // check if DiagnosticSource is available before trying to use it
+                    var type = Type.GetType("System.Diagnostics.DiagnosticSource, System.Diagnostics.DiagnosticSource", throwOnError: false);
+                    if (type != null)
+                    {
+                        Instrumentation.StartDiagnosticManager();
+                    }
+                }
+            }
+            catch
+            {
+                // ignore
+            }
+#endif
         }
 
         private static async Task InternalFlushAsync()

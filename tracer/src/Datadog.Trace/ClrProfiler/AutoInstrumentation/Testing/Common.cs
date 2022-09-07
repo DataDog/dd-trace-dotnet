@@ -93,7 +93,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             // Check if Intelligent Test Runner
             if (CIVisibility.HasSkippableTests())
             {
-                span.SetTag("_dd.ci.itr", "true");
+                span.SetTag("_dd.ci.itr.tests_skipped", "true");
             }
         }
 
