@@ -12,7 +12,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 {
-    internal static class EnvironmentVariablesAnalyzer
+    internal static class EnvironmentVariablesScrubber
     {
         private static string[] allowedEnvironmentVariables = new string[] { "LD_PRELOAD", "LD_LIBRARY_PATH", "PATH" };
 

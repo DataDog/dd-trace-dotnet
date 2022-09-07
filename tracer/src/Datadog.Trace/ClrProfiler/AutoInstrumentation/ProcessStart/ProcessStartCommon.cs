@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 
             try
             {
-                var varsTruncated = EnvironmentVariablesAnalyzer.ScrubEnvironmentVariables(envVariables);
+                var varsTruncated = EnvironmentVariablesScrubber.ScrubEnvironmentVariables(envVariables);
                 if (varsTruncated?.Length > MaxCommandLineLength)
                 {
                     varsTruncated = Truncate(varsTruncated, MaxCommandLineLength);
