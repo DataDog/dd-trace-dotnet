@@ -90,6 +90,7 @@ private:  // global helpers
         mdMethodDef mdTokenFunc
         );
     static std::pair<std::string, std::string> GetManagedTypeName(ICorProfilerInfo4* pInfo, ClassID classId);
+    static void ConcatUnknownGenericType(std::stringstream& builder, bool isEncoded);
 
 private:
     ICorProfilerInfo4* _pCorProfilerInfo;
