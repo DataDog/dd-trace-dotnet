@@ -65,6 +65,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             discoveryService.SubscribeToChanges(SetRcmEnabled);
         }
 
+        public static event EventHandler Initialized;
+
         public static RemoteConfigurationManager? Instance { get; private set; }
 
         public static RemoteConfigurationManager Create(
@@ -77,13 +79,17 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         {
             lock (LockObject)
             {
-                return Instance ??= new RemoteConfigurationManager(
+                Instance ??= new RemoteConfigurationManager(
                     discoveryService,
                     remoteConfigurationApi,
                     id: settings.Id,
                     rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, environment, serviceVersion),
                     pollInterval: settings.PollInterval);
             }
+
+            Initialized?.Invoke(Instance, EventArgs.Empty);
+
+            return Instance;
         }
 
         public async Task StartPollingAsync()

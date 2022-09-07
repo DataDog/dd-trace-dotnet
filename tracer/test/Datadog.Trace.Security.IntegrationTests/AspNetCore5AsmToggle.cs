@@ -40,7 +40,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             var url = "/Health/?[$slice]=value";
             var agent = await RunOnSelfHosted(enableSecurity);
-            var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, expectedState);
+            var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, expectedState, expectedCapablities);
 
             var spans1 = await SendRequestsAsync(agent, url);
 
