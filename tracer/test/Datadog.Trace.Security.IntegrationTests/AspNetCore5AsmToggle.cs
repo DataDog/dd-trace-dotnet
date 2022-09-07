@@ -94,13 +94,12 @@ namespace Datadog.Trace.Security.IntegrationTests
         private void CheckAckState(GetRcmRequest request, uint expectedState, string expectedError, string message)
         {
             var state = request?.Client?.State?.ConfigStates?.FirstOrDefault(x => x.Product == "FEATURES");
-            state?.ApplyState.Should().Be(expectedState, message);
-            state?.ApplyError.Should().Be(expectedError, message);
+            state.ApplyState.Should().Be(expectedState, message);
+            state.ApplyError.Should().Be(expectedError, message);
         }
 
         private void CheckCapabilities(GetRcmRequest request, byte expectedState, string message)
         {
-            Output.WriteLine("request?.Client?.Capabilities: " + request?.Client?.Capabilities);
             var capablities = BitConverter.ToInt32(request?.Client?.Capabilities);
             capablities.Should().Be(expectedState, message);
         }
