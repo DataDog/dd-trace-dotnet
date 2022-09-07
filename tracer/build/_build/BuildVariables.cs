@@ -6,7 +6,7 @@ using Nuke.Common.IO;
 
 partial class Build
 {
-    public void AddDebuggerEnvironmentVariables(Dictionary<string, string> envVars, ExplorationTestName explorationTestName, AbsolutePath explorationTestsDirectory)
+    public void AddDebuggerEnvironmentVariables(Dictionary<string, string> envVars)
     {
         AddTracerEnvironmentVariables(envVars);
         envVars.Add("DD_DEBUGGER_ENABLED", "1");
@@ -16,7 +16,7 @@ partial class Build
         envVars.Add("VSTEST_CONNECTION_TIMEOUT", "200");
         envVars.Add("DD_TRACE_DEBUG", "1");
     }
-    
+
     public void AddContinuousProfilerEnvironmentVariables(Dictionary<string, string> envVars)
     {
         AddTracerEnvironmentVariables(envVars);

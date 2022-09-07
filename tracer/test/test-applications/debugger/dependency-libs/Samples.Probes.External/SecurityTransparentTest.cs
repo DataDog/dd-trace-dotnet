@@ -4,7 +4,6 @@ using System.Diagnostics;
 using System.Security;
 
 [assembly: SecurityTransparent]
-//[assembly: SecurityRules(SecurityRuleSet.Level2)]
 namespace Samples.Probes.External
 {
     /// <summary>
