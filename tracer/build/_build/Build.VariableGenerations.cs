@@ -32,8 +32,8 @@ partial class Build : NukeBuild
 
             void GenerateConditionVariables()
             {
-                GenerateConditionVariableBasedOnGitChange("isTracerChanged", new[] { "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation", "tracer/src/Datadog.Tracer.Native" }, new[] { "tracer/src/Datadog.Tracer.Native/Debugger" });
-                GenerateConditionVariableBasedOnGitChange("isDebuggerChanged", new[] { "tracer/src/Datadog.Tracer.Native/Debugger" }, new string[] { });
+                GenerateConditionVariableBasedOnGitChange("isTracerChanged", new[] { "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation", "tracer/src/Datadog.Tracer.Native" }, new string[] {  });
+                GenerateConditionVariableBasedOnGitChange("isDebuggerChanged", new[] { "tracer/src/Datadog.Trace/Debugger/Instrumentation", "tracer/src/Datadog.Tracer.Native" }, new string[] { });
                 GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[] { "profiler/src" }, new string[] { });
 
                 void GenerateConditionVariableBasedOnGitChange(string variableName, string[] filters, string[] exclusionFilters)

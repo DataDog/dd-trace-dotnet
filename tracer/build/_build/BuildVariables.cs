@@ -9,7 +9,7 @@ partial class Build
     public void AddDebuggerEnvironmentVariables(Dictionary<string, string> envVars, ExplorationTestName explorationTestName, AbsolutePath explorationTestsDirectory)
     {
         AddTracerEnvironmentVariables(envVars);
-        envVars.Add("DD_INTERNAL_DEBUGGER_ENABLED", "1");
+        envVars.Add("DD_DEBUGGER_ENABLED", "1");
         envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL", "1");
         envVars.Add("COMPlus_DbgEnableMiniDump", "1");
         envVars.Add("COMPlus_DbgMiniDumpType", "4");
