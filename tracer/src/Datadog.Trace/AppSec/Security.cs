@@ -216,10 +216,7 @@ namespace Datadog.Trace.AppSec
             {
                 Log.Error(ex, ex.Message);
             }
-        }
 
-        private static void RemoveAppsecSpecificInstrumentations()
-        {
             try
             {
                 Log.Debug("Adding CallTarget appsec derived integration definitions to native library.");
