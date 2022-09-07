@@ -91,7 +91,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     const auto& process_name = shared::GetCurrentProcessName();
     Logger::Info("ProcessName: ", process_name);
 
-    const auto& process_image = shared::GetProcessImageName();
+    const auto& process_image = shared::GetCurrentProcessCommandLine();
     Logger::Info("ProcessImage: ", process_image);
 
     const auto& include_process_names = shared::GetEnvironmentValues(environment::include_process_names);
