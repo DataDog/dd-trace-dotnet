@@ -28,18 +28,18 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.12.17 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.12.17" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.12.29 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.12.29" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2.85 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.85" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.2.97 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.2.97" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.29.0 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.29.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.30.1 -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.30.1" />
 
     <!-- Integration: Couchbase.NetClient -->
     <!-- Assembly: Couchbase.NetClient -->
@@ -53,7 +53,7 @@
 
     <!-- Integration: GraphQL -->
     <!-- Assembly: GraphQL -->
-    <!-- Latest package https://www.nuget.org/packages/GraphQL/7.0.1 -->
+    <!-- Latest package https://www.nuget.org/packages/GraphQL/7.0.2 -->
     <PackageReference Include="GraphQL" Version="5.3.3" />
 
     <!-- Integration: GraphQL.SystemReactive -->
@@ -68,8 +68,8 @@
 
     <!-- Integration: HotChocolate.Execution -->
     <!-- Assembly: HotChocolate.Execution -->
-    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/12.12.1 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="12.12.1" />
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/12.13.1 -->
+    <PackageReference Include="HotChocolate.AspNetCore" Version="12.13.1" />
 
     <!-- Integration: System.Net.Http -->
     <!-- Assembly: System.Net.Http -->
@@ -128,13 +128,13 @@
 
     <!-- Integration: MySqlConnector -->
     <!-- Assembly: MySqlConnector -->
-    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.1.12 -->
-    <PackageReference Include="MySqlConnector" Version="2.1.12" />
+    <!-- Latest package https://www.nuget.org/packages/MySqlConnector/2.1.13 -->
+    <PackageReference Include="MySqlConnector" Version="2.1.13" />
 
     <!-- Integration: NLog -->
     <!-- Assembly: NLog -->
-    <!-- Latest package https://www.nuget.org/packages/NLog/5.0.2 -->
-    <PackageReference Include="NLog" Version="5.0.2" />
+    <!-- Latest package https://www.nuget.org/packages/NLog/5.0.4 -->
+    <PackageReference Include="NLog" Version="5.0.4" />
 
     <!-- Integration: Npgsql -->
     <!-- Assembly: Npgsql -->
@@ -168,8 +168,8 @@
 
     <!-- Integration: ServiceStack.Redis -->
     <!-- Assembly: ServiceStack.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/6.2.0 -->
-    <PackageReference Include="ServiceStack.Redis" Version="6.2.0" />
+    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/6.3.0 -->
+    <PackageReference Include="ServiceStack.Redis" Version="6.3.0" />
 
     <!-- Integration: Microsoft.Data.SqlClient -->
     <!-- Assembly: Microsoft.Data.SqlClient -->
@@ -193,8 +193,8 @@
 
     <!-- Integration: StackExchange.Redis -->
     <!-- Assembly: StackExchange.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.6.48 -->
-    <PackageReference Include="StackExchange.Redis" Version="2.6.48" />
+    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.6.66 -->
+    <PackageReference Include="StackExchange.Redis" Version="2.6.66" />
 
     <!-- Integration: StackExchange.Redis.StrongName -->
     <!-- Assembly: StackExchange.Redis.StrongName -->
@@ -203,8 +203,8 @@
 
     <!-- Integration: System.ServiceModel -->
     <!-- Assembly: System.ServiceModel -->
-    <!-- Latest package https://www.nuget.org/packages/System.ServiceModel.Http/4.9.0 -->
-    <PackageReference Include="System.ServiceModel.Http" Version="4.9.0" />
+    <!-- Latest package https://www.nuget.org/packages/System.ServiceModel.Http/4.10.0 -->
+    <PackageReference Include="System.ServiceModel.Http" Version="4.10.0" />
 
     <!-- Integration: System.Net.Requests -->
     <!-- Assembly: System.Net.Requests -->
@@ -228,13 +228,13 @@
 
     <!-- Integration: Grpc.AspNetCore.Server -->
     <!-- Assembly: Grpc.AspNetCore.Server -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.47.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.47.0" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.48.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.48.0" />
 
     <!-- Integration: Grpc.Net.Client -->
     <!-- Assembly: Grpc.Net.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.47.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.47.0" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.48.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.48.0" />
 
     <!-- Integration: Microsoft.AspNetCore.Mvc.Core -->
     <!-- Assembly: Microsoft.AspNetCore.Mvc.Core -->
