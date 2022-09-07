@@ -207,14 +207,14 @@ HRESULT DebuggerMethodRewriter::LoadInstanceIntoStack(FunctionInfo* caller, bool
                 }
                 else
                 {
-                    // Generic struct instrumentation is not supported
-                    // IMetaDataImport::GetMemberProps and IMetaDataImport::GetMemberRefProps returns
-                    // The parent token as mdTypeDef and not as a mdTypeSpec
-                    // that's because the method definition is stored in the mdTypeDef
-                    // The problem is that we don't have the exact Spec of that generic
-                    // We can't emit LoadObj or Box because that would result in an invalid IL.
-                    // This problem doesn't occur on a class type because we can always relay in the
-                    // object type.
+                    // Generic struct instrumentation is currently not supported.
+                    // IMetaDataImport::GetMemberProps and IMetaDataImport::GetMemberRefProps return
+                    // the parent token as mdTypeDef and not as a mdTypeSpec,
+                    // because the method definition is stored in the mdTypeDef.
+                    // The problem is that we don't have the exact Spec of that generic instantiation,  and so
+                    // we can't emit LoadObj or Box because that would result in producing invalid IL.
+                    // This problem doesn't occur on a  reference types because we can always rely on the System.Object
+                    // type.
                     return E_FAIL;
                 }
             }
@@ -701,8 +701,8 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
                 rewriterWrapper.SetILPosition(pInstr);
                 rewriterWrapper.StLocal(returnValueIndex);
 
-                // unconditional branching instructions (`br`) are not popping any value from the top of the stack.
-                // other conditional branches, though, are mutating the evaluation stack (e.g `brtrue` pops
+                // Unconditional branching instructions (`br`) do not pop any value from the top of the stack.
+                // Other conditional branches, though, do mutate the evaluation stack (e.g `brtrue` pops
                 // the top of the stack and jumps to the target if it's non-zero/true).
                 // If we are dealing with conditional branches that changes the evaluation stack, we fix
                 // the evaluation stack accordingly by loading it back in case we are not branching.
