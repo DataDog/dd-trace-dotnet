@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
-    internal struct NamedRawFile
+    internal readonly struct NamedRawFile
     {
         public NamedRawFile(string name, byte[] value)
         {

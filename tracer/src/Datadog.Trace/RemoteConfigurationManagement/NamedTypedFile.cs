@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
-    internal struct NamedTypedFile<T>
+    internal readonly struct NamedTypedFile<T>
     {
         public NamedTypedFile(string name, T value)
         {
