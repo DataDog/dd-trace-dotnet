@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var runInAas = ReadBooleanEnvironmentVariable(AzureAppServicesKey, false);
             if (!runInAas)
             {
-                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize");
+                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
                 return;
             }
 
@@ -60,13 +60,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             if (automaticTraceEnabled)
             {
                 StartupLogger.Log("Invoking managed tracer.");
-                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize");
+                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
             }
         }
 
         internal static string ManagedProfilerDirectory { get; }
 
-        private static void TryInvokeManagedMethod(string typeName, string methodName)
+        private static void TryInvokeManagedMethod(string typeName, string methodName, string loaderHelperTypeName = null)
         {
             try
             {
@@ -76,6 +76,18 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
                 {
                     StartupLogger.Log("Assembly '{0}' cannot be loaded. The managed method ({1}.{2}) cannot be invoked", AssemblyName, typeName, methodName);
                     return;
+                }
+
+                if (loaderHelperTypeName is not null)
+                {
+                    // The loader helper type name is a class that calls the initialization in the .ctor
+                    // this way we avoid the reflection invoke call.
+                    var loaderHelperType = assembly.GetType(loaderHelperTypeName, throwOnError: false);
+                    if (loaderHelperType is not null)
+                    {
+                        Activator.CreateInstance(loaderHelperType);
+                        return;
+                    }
                 }
 
                 var type = assembly.GetType(typeName, throwOnError: false);
