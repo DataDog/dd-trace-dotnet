@@ -44,6 +44,13 @@ internal class DataStreamsManager
                       : null;
     }
 
+    /// <summary>
+    /// Gets the tags to use when setting a checkpoint on a "producer",
+    /// which requires setting the <c>type:internal</c> edge tags.
+    /// Rather than creating a new array each time, this provides a cache.
+    /// </summary>
+    public static string[] InternalEdgeTags { get; } = { "type:internal" };
+
     public bool IsEnabled => Volatile.Read(ref _isEnabled);
 
     public static DataStreamsManager Create(
