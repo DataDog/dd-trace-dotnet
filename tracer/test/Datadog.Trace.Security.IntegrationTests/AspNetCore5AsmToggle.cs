@@ -30,10 +30,14 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
         }
 
+        // TODO addjust third parameter as the following PRs are merged:
+        // * https://github.com/DataDog/dd-trace-dotnet/pull/3120
+        // * https://github.com/DataDog/dd-trace-dotnet/pull/3171
+        // the verify file names will need adjusting too
         [SkippableTheory]
-        [InlineData(true, ApplyStates.ACKNOWLEDGED, RcmCapablitiesIndices.AsmActivation | RcmCapablitiesIndices.AsmIpBlocking | RcmCapablitiesIndices.AsmDdRules)]
-        [InlineData(false, ApplyStates.UNACKNOWLEDGED, RcmCapablitiesIndices.AsmIpBlocking | RcmCapablitiesIndices.AsmDdRules)]
-        [InlineData(null, ApplyStates.ACKNOWLEDGED, RcmCapablitiesIndices.AsmActivation | RcmCapablitiesIndices.AsmIpBlocking | RcmCapablitiesIndices.AsmDdRules)]
+        [InlineData(true, ApplyStates.ACKNOWLEDGED,  RcmCapablitiesIndices.AsmActivation)] // RcmCapablitiesIndices.AsmActivation | RcmCapablitiesIndices.AsmIpBlocking | RcmCapablitiesIndices.AsmDdRules)]
+        [InlineData(false, ApplyStates.UNACKNOWLEDGED, 0)] // RcmCapablitiesIndices.AsmIpBlocking | RcmCapablitiesIndices.AsmDdRules)]
+        [InlineData(null, ApplyStates.ACKNOWLEDGED, RcmCapablitiesIndices.AsmActivation)] // RcmCapablitiesIndices.AsmActivation | RcmCapablitiesIndices.AsmIpBlocking | RcmCapablitiesIndices.AsmDdRules)]
         [Trait("RunOnWindows", "True")]
         public async Task TestSecurityToggling(bool? enableSecurity, uint expectedState, byte expectedCapablities)
         {
