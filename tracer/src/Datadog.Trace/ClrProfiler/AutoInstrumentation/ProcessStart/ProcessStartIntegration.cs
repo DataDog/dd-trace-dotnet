@@ -32,9 +32,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-            if (instance is System.Diagnostics.Process process)
+            if (instance is System.Diagnostics.Process process && process.StartInfo is var startInfo)
             {
-                return new CallTargetState(scope: ProcessStartCommon.CreateScope(process.StartInfo));
+                return new CallTargetState(scope: ProcessStartCommon.CreateScope(startInfo));
             }
 
             return CallTargetState.GetDefault();
