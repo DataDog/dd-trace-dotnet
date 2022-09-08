@@ -29,7 +29,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.Security.IntegrationTests
 {
     [UsesVerify]
-    public class AspNetBase : RemoteConfigTestHelper
+    public class AspNetBase : TestHelper
     {
         protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
         protected const string DefaultRuleFile = "ruleset.3.0.json";
