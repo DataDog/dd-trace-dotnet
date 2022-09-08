@@ -25,8 +25,9 @@ namespace Datadog.Trace.TestHelpers
         internal static GetRcmRequest GetLastRcmRequest(this MockTracerAgent agent)
         {
             string lastRemoteConfigPayload = null;
-            while (agent.RemoteConfigRequests.TryDequeue(out lastRemoteConfigPayload))
+            while (agent.RemoteConfigRequests.TryDequeue(out var next))
             {
+                lastRemoteConfigPayload = next;
             }
 
             if (lastRemoteConfigPayload == null)

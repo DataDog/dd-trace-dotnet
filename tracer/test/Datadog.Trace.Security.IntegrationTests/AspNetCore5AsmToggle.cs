@@ -89,8 +89,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             var request = agent.GetLastRcmRequest();
             var state = request?.Client?.State?.ConfigStates?.FirstOrDefault(x => x.Product == "FEATURES");
-            state?.ApplyState.Should().Be(expectedState, message);
-            state?.ApplyError.Should().Be(expectedError, message);
+            state.ApplyState.Should().Be(expectedState, message);
+            state.ApplyError.Should().Be(expectedError, message);
         }
     }
 }
