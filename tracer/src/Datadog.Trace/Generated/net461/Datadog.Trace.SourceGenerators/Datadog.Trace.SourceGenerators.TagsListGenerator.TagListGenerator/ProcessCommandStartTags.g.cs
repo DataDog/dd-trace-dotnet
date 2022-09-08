@@ -10,15 +10,15 @@ namespace Datadog.Trace.Tagging
     {
         // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
         private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-        // EnviromentVarsBytes = System.Text.Encoding.UTF8.GetBytes("cmd.environment_variables");
-        private static readonly byte[] EnviromentVarsBytes = new byte[] { 99, 109, 100, 46, 101, 110, 118, 105, 114, 111, 110, 109, 101, 110, 116, 95, 118, 97, 114, 105, 97, 98, 108, 101, 115 };
+        // EnvironmentVariablesBytes = System.Text.Encoding.UTF8.GetBytes("cmd.environment_variables");
+        private static readonly byte[] EnvironmentVariablesBytes = new byte[] { 99, 109, 100, 46, 101, 110, 118, 105, 114, 111, 110, 109, 101, 110, 116, 95, 118, 97, 114, 105, 97, 98, 108, 101, 115 };
 
         public override string? GetTag(string key)
         {
             return key switch
             {
                 "span.kind" => SpanKind,
-                "cmd.environment_variables" => EnviromentVars,
+                "cmd.environment_variables" => EnvironmentVariables,
                 _ => base.GetTag(key),
             };
         }
@@ -28,7 +28,7 @@ namespace Datadog.Trace.Tagging
             switch(key)
             {
                 case "cmd.environment_variables": 
-                    EnviromentVars = value;
+                    EnvironmentVariables = value;
                     break;
                 default: 
                     base.SetTag(key, value);
@@ -43,9 +43,9 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
             }
 
-            if (EnviromentVars is not null)
+            if (EnvironmentVariables is not null)
             {
-                processor.Process(new TagItem<string>("cmd.environment_variables", EnviromentVars, EnviromentVarsBytes));
+                processor.Process(new TagItem<string>("cmd.environment_variables", EnvironmentVariables, EnvironmentVariablesBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -60,10 +60,10 @@ namespace Datadog.Trace.Tagging
                   .Append(',');
             }
 
-            if (EnviromentVars is not null)
+            if (EnvironmentVariables is not null)
             {
                 sb.Append("cmd.environment_variables (tag):")
-                  .Append(EnviromentVars)
+                  .Append(EnvironmentVariables)
                   .Append(',');
             }
 

@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             return null;
         }
 
-        internal static Scope CreateScope(string filename, IDictionary<string, string> envVariables)
+        internal static Scope CreateScope(string filename, IDictionary<string, string> environmentVariables)
         {
             var tracer = Tracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
@@ -49,15 +49,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 
             try
             {
-                var varsTruncated = EnvironmentVariablesScrubber.ScrubEnvironmentVariables(envVariables);
-                if (varsTruncated?.Length > MaxCommandLineLength)
+                var variablesTruncated = EnvironmentVariablesScrubber.ScrubEnvironmentVariables(environmentVariables);
+                if (variablesTruncated?.Length > MaxCommandLineLength)
                 {
-                    varsTruncated = Truncate(varsTruncated, MaxCommandLineLength);
+                    variablesTruncated = Truncate(variablesTruncated, MaxCommandLineLength);
                 }
 
                 var tags = new ProcessCommandStartTags
                 {
-                    EnviromentVars = varsTruncated,
+                    EnvironmentVariables = variablesTruncated,
                 };
 
                 var serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
