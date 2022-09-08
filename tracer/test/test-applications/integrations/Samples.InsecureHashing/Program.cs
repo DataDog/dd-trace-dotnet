@@ -2,6 +2,7 @@ using System.Collections;
 using System.IO;
 using System.Runtime.InteropServices.ComTypes;
 using System.Security.Cryptography;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Samples.InsecureHash
@@ -48,7 +49,7 @@ namespace Samples.InsecureHash
             algorithm.ComputeHash(byteArg);
             algorithm.ComputeHash(stream);
 #if NET50 || NET60
-            _ = algorithm.ComputeHashAsync(stream).Result;
+            _ = algorithm.ComputeHashAsync(stream, CancellationToken.None).Result;
 #endif
         }
     }
