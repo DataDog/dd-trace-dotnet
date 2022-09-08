@@ -25,7 +25,7 @@ public class DDSketchPoolTests
         pool.Release(sketch2);
 
         var sketch3 = pool.Get();
-        sketch2.Should().Be(sketch);
+        sketch3.Should().Be(sketch);
         pool.Release(sketch3);
     }
 
