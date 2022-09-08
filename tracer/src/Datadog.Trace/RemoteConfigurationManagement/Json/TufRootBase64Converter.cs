@@ -25,7 +25,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Json
             using var stream = new MemoryStream(contentDecode);
             using var streamReader = new StreamReader(stream);
             using var jsonReader = new JsonTextReader(streamReader);
-            return JsonSerializer.CreateDefault().Deserialize<TufRoot>(jsonReader);
+            return serializer.Deserialize<TufRoot>(jsonReader);
         }
 
         public override void WriteJson(JsonWriter writer, TufRoot value, JsonSerializer serializer)
