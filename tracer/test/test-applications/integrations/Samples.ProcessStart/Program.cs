@@ -10,7 +10,7 @@ namespace Samples.ProcessStart
     {
         private static void Main()
         {
-            Environment.SetEnvironmentVariable("PATH", "testPath");
+            Environment.SetEnvironmentVariable("Path", "testPath");
             try
             {
                 Process.Start(new ProcessStartInfo("nonexisting1.exe") { UseShellExecute = false });
