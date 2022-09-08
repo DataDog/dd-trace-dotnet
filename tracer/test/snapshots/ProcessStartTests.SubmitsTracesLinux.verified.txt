@@ -8,6 +8,9 @@
     Type: system,
     Error: 1,
     Tags: {
+      cmd.environment_variables:
+Path=testPath
+,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
@@ -32,6 +35,9 @@
     Type: system,
     Error: 1,
     Tags: {
+      cmd.environment_variables:
+Path=testPath
+,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
@@ -56,6 +62,9 @@
     Type: system,
     Error: 1,
     Tags: {
+      cmd.environment_variables:
+Path=testPath
+,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,

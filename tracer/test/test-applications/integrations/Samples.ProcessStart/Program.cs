@@ -10,15 +10,16 @@ namespace Samples.ProcessStart
     {
         private static void Main()
         {
+            Environment.SetEnvironmentVariable("PATH", "testPath");
             try
             {
-                Process.Start("nonexisting1.exe");
+                Process.Start(new ProcessStartInfo("nonexisting1.exe") { UseShellExecute = false });
             }
             catch (Win32Exception) { }
 
             try
             {
-                Process.Start("nonexisting2.exe", "arg1");
+                Process.Start(new ProcessStartInfo("nonexisting2.exe", "arg1") { UseShellExecute = false});
             }
             catch (Win32Exception) { }
 

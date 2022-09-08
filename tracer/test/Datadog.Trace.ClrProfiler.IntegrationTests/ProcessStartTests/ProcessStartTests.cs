@@ -20,7 +20,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public class ProcessStartTests : TestHelper
     {
-        private static readonly Regex VarsRegex = new(@"      cmd.environment_variables:(\n|\r){1,2}.*(\n|\r){1,2},(\r|\n){1,2}");
         private static readonly Regex StackRegex = new(@"      error.stack:(\n|\r){1,2}.*(\n|\r){1,2}.*,(\r|\n){1,2}");
         private static readonly Regex ErrorMsgRegex = new(@"      error.msg:.*,(\r|\n){1,2}");
 
@@ -44,7 +43,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddRegexScrubber(VarsRegex, string.Empty);
             settings.AddRegexScrubber(StackRegex, string.Empty);
             settings.AddRegexScrubber(ErrorMsgRegex, string.Empty);
             var filename = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "ProcessStartTests.SubmitsTracesLinux" : "ProcessStartTests.SubmitsTraces";
