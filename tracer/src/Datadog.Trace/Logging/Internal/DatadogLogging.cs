@@ -68,7 +68,7 @@ namespace Datadog.Trace.Logging
                 var domainMetadata = DomainMetadata.Instance;
 
                 // Ends in a dash because of the date postfix
-                var managedLogPath = Path.Combine(logDirectory, $"dotnet-tracer-managed-{domainMetadata.ProcessName}-.log");
+                var managedLogPath = Path.Combine(logDirectory, $"dotnet-tracer-managed-{domainMetadata.ProcessName}-{domainMetadata.ProcessId}-.log");
 
                 var loggerConfiguration =
                     new LoggerConfiguration()
