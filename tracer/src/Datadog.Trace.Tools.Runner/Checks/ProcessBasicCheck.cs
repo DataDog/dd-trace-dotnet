@@ -87,7 +87,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             if (isContinuousProfilerEnabled)
             {
-                CheckContinousProfiler(process, loaderModule);
+                ok &= CheckContinousProfiler(process, loaderModule);
             }
 
             var tracerModules = FindTracerModules(process).ToArray();
