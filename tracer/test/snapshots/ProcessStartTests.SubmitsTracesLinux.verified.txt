@@ -9,7 +9,7 @@
     Error: 1,
     Tags: {
       cmd.environment_variables:
-Path=testPath
+PATH=testPath
 ,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
@@ -36,7 +36,7 @@ Path=testPath
     Error: 1,
     Tags: {
       cmd.environment_variables:
-Path=testPath
+PATH=testPath
 ,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
@@ -63,7 +63,7 @@ Path=testPath
     Error: 1,
     Tags: {
       cmd.environment_variables:
-Path=testPath
+PATH=testPath
 ,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
