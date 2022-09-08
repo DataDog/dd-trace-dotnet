@@ -288,7 +288,7 @@ namespace Datadog.Trace.Tools.Runner
             AnsiConsole.MarkupLine($"[green]{message.EscapeMarkup()}[/]");
         }
 
-        private static bool IsAlpine()
+        internal static bool IsAlpine()
         {
             try
             {
