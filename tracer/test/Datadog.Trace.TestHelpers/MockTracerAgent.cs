@@ -83,6 +83,8 @@ namespace Datadog.Trace.TestHelpers
 
         public ITestOutputHelper Output { get; set; }
 
+        public AgentConfiguration Configuration { get; set; }
+
         public IImmutableList<NameValueCollection> TelemetryRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
         public ConcurrentQueue<string> RemoteConfigRequests { get; } = new();
@@ -92,14 +94,14 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         public bool ShouldDeserializeTraces { get; set; } = true;
 
-        public static TcpUdpAgent Create(ITestOutputHelper output, int port = 8126, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null, bool useTelemetry = false)
-            => new TcpUdpAgent(port, retries, useStatsd, doNotBindPorts, requestedStatsDPort, useTelemetry) { Output = output };
+        public static TcpUdpAgent Create(ITestOutputHelper output, int port = 8126, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null, bool useTelemetry = false, AgentConfiguration agentConfiguration = null)
+            => new TcpUdpAgent(port, retries, useStatsd, doNotBindPorts, requestedStatsDPort, useTelemetry) { Output = output, Configuration = agentConfiguration ?? new() };
 
 #if NETCOREAPP3_1_OR_GREATER
-        public static UdsAgent Create(ITestOutputHelper output, UnixDomainSocketConfig config) => new UdsAgent(config) { Output = output };
+        public static UdsAgent Create(ITestOutputHelper output, UnixDomainSocketConfig config, AgentConfiguration agentConfiguration = null) => new UdsAgent(config) { Output = output, Configuration = agentConfiguration ?? new() };
 #endif
 
-        public static NamedPipeAgent Create(ITestOutputHelper output, WindowsPipesConfig config) => new NamedPipeAgent(config) { Output = output };
+        public static NamedPipeAgent Create(ITestOutputHelper output, WindowsPipesConfig config, AgentConfiguration agentConfiguration = null) => new NamedPipeAgent(config) { Output = output, Configuration = agentConfiguration ?? new() };
 
         /// <summary>
         /// Wait for the given number of spans to appear.
@@ -363,7 +365,7 @@ namespace Datadog.Trace.TestHelpers
             }
             else if (request.PathAndQuery.EndsWith("/info"))
             {
-                return $"{{\"endpoints\":{JsonConvert.SerializeObject(DiscoveryService.AllSupportedEndpoints)}}}";
+                return JsonConvert.SerializeObject(Configuration);
             }
             else if (request.PathAndQuery.StartsWith("/debugger/v1/input"))
             {
@@ -672,6 +674,15 @@ namespace Datadog.Trace.TestHelpers
             // solely rely on that.
             ProbesStatuses = probeStatuses.Values.ToList();
             Snapshots.AddRange(snapshots);
+        }
+
+        public class AgentConfiguration
+        {
+            [JsonProperty("endpoints")]
+            public string[] Endpoints { get; set; } = DiscoveryService.AllSupportedEndpoints.Select(s => s.StartsWith("/") ? s : "/" + s).ToArray();
+
+            [JsonProperty("client_drop_p0s")]
+            public bool ClientDropP0s { get; set; } = true;
         }
 
         public class TcpUdpAgent : MockTracerAgent

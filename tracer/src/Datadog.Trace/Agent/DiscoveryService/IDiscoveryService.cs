@@ -16,7 +16,11 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         string DebuggerEndpoint { get; }
 
+        string StatsEndpoint { get; }
+
         string AgentVersion { get; }
+
+        bool? ClientDropP0s { get; }
 
         Task<bool> DiscoverAsync();
     }

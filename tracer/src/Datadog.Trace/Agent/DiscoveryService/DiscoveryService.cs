@@ -18,6 +18,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
     {
         private static readonly string[] SupportedDebuggerEndpoints = { "debugger/v1/input" };
         private static readonly string[] SupportedConfigurationEndpoints = { "v0.7/config" };
+        private static readonly string[] SupportedStatsEndpoints = { "v0.6/stats" };
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DiscoveryService>();
         private static readonly object GlobalLock = new();
@@ -35,13 +36,17 @@ namespace Datadog.Trace.Agent.DiscoveryService
 
         public static DiscoveryService Instance { get; private set; }
 
-        public static string[] AllSupportedEndpoints => SupportedDebuggerEndpoints.Concat(SupportedConfigurationEndpoints).ToArray();
+        public static string[] AllSupportedEndpoints => SupportedDebuggerEndpoints.Concat(SupportedConfigurationEndpoints).Concat(SupportedStatsEndpoints).ToArray();
 
         public string ConfigurationEndpoint { get; private set; }
 
         public string DebuggerEndpoint { get; private set; }
 
+        public string StatsEndpoint { get; private set; }
+
         public string AgentVersion { get; private set; }
+
+        public bool? ClientDropP0s { get; private set;  }
 
         public static DiscoveryService Create(ImmutableExporterSettings exporterSettings)
         {
@@ -55,6 +60,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                     () => new MinimalAgentHeaderHelper(),
                     uri => uri);
 
+                // TODO: If custom instrumentation updates the exporterSettings, we need to refresh the DiscoveryService instance and make sure all users get updated
                 return Instance ??= new DiscoveryService(apiRequestFactory);
             }
         }
@@ -102,6 +108,19 @@ namespace Datadog.Trace.Agent.DiscoveryService
             return false;
         }
 
+        /// <summary>
+        /// Sets the DiscoveryService instance.
+        /// Intended use is for unit testing
+        /// </summary>
+        /// <param name="discoveryService">DiscoveryService instance</param>
+        internal static void SetDiscoveryService(DiscoveryService discoveryService)
+        {
+            lock (GlobalLock)
+            {
+                Instance = discoveryService;
+            }
+        }
+
         private async Task ProcessDiscoveryResponse(IApiResponse response)
         {
             var jObject = await response.ReadAsTypeAsync<JObject>().ConfigureAwait(false);
@@ -122,6 +141,13 @@ namespace Datadog.Trace.Agent.DiscoveryService
                .FirstOrDefault(
                     supportedEndpoint => discoveredEndpoints.Any(
                         endpoint => endpoint.Trim('/').Equals(supportedEndpoint, StringComparison.OrdinalIgnoreCase)));
+
+            StatsEndpoint = SupportedStatsEndpoints
+               .FirstOrDefault(
+                    supportedEndpoint => discoveredEndpoints.Any(
+                        endpoint => endpoint.Trim('/').Equals(supportedEndpoint, StringComparison.OrdinalIgnoreCase)));
+
+            ClientDropP0s = jObject["client_drop_p0s"]?.Value<bool>() ?? false;
         }
 
         private void OnShutdown()

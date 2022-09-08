@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using FluentAssertions;
@@ -42,7 +43,13 @@ namespace Datadog.Trace.Tests.Agent
                     })
                 .Returns(Task.FromResult(true));
 
-            var aggregator = new StatsAggregator(api.Object, GetSettings(bucketDurationSeconds));
+            // Mock the DiscoveryService so StatsAggregator.CanComputeStats = true and Api.SendStatsAsync will be called
+            var discoveryService = new Mock<IDiscoveryService>();
+            discoveryService.Setup(s => s.DiscoverAsync()).Returns(Task.FromResult(true));
+            discoveryService.Setup(s => s.StatsEndpoint).Returns("StatsEndpoint");
+            discoveryService.Setup(s => s.ClientDropP0s).Returns(true);
+
+            var aggregator = new StatsAggregator(api.Object, GetSettings(bucketDurationSeconds), discoveryService.Object);
 
             try
             {
@@ -75,9 +82,15 @@ namespace Datadog.Trace.Tests.Agent
         {
             var api = new Mock<IApi>();
 
+            // Mock the DiscoveryService so StatsAggregator.CanComputeStats = true and Api.SendStatsAsync will be called
+            var discoveryService = new Mock<IDiscoveryService>();
+            discoveryService.Setup(s => s.DiscoverAsync()).Returns(Task.FromResult(true));
+            discoveryService.Setup(s => s.StatsEndpoint).Returns("StatsEndpoint");
+            discoveryService.Setup(s => s.ClientDropP0s).Returns(true);
+
             // First, validate that Flush does call SendStatsAsync even if disposed
             // If this behavior change then the test needs to be rewritten
-            var aggregator = new StatsAggregator(api.Object, GetSettings());
+            var aggregator = new StatsAggregator(api.Object, GetSettings(), discoveryService.Object);
 
             // Dispose immediately to make Flush complete without delay
             await aggregator.DisposeAsync();
@@ -91,7 +104,7 @@ namespace Datadog.Trace.Tests.Agent
             api.Reset();
 
             // Now the actual test
-            aggregator = new StatsAggregator(api.Object, GetSettings());
+            aggregator = new StatsAggregator(api.Object, GetSettings(), discoveryService.Object);
             await aggregator.DisposeAsync();
 
             await aggregator.Flush();
@@ -110,7 +123,7 @@ namespace Datadog.Trace.Tests.Agent
             ulong id = 0;
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings());
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
 
             try
             {
@@ -190,7 +203,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings());
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
 
             try
             {
@@ -253,7 +266,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings());
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
 
             try
             {
@@ -323,7 +336,7 @@ namespace Datadog.Trace.Tests.Agent
 
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings());
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
 
             try
             {
@@ -366,7 +379,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var start = DateTimeOffset.UtcNow;
 
-            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings());
+            var aggregator = new StatsAggregator(Mock.Of<IApi>(), GetSettings(), Mock.Of<IDiscoveryService>());
 
             try
             {
