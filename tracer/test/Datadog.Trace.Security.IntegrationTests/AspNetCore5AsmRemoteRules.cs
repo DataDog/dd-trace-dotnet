@@ -19,18 +19,11 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCore5AsmRemoteRules : AspNetBase, IDisposable
+    public class AspNetCore5AsmRemoteRules : AspNetBase
     {
         public AspNetCore5AsmRemoteRules(ITestOutputHelper outputHelper)
             : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5AsmRemoteRules))
         {
-            SetupRcm();
-        }
-
-        public override void Dispose()
-        {
-            base.Dispose();
-            CleanupRcm();
         }
 
         [SkippableFact]
@@ -45,12 +38,12 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var spans1 = await SendRequestsAsync(agent, url);
 
-            WriteRcmFile(new[] { ((object)GetRules("2.22.222"), "1") }, "ASM_DD");
+            agent.SetupRcm(Output, new[] { ((object)GetRules("2.22.222"), "1") }, "ASM_DD");
             await Task.Delay(1000);
 
             var spans2 = await SendRequestsAsync(agent, url);
 
-            WriteRcmFile(new[] { ((object)GetRules("3.33.333"), "2") }, "ASM_DD");
+            agent.SetupRcm(Output, new[] { ((object)GetRules("3.33.333"), "2") }, "ASM_DD");
             await Task.Delay(1000);
 
             var spans3 = await SendRequestsAsync(agent, url);
