@@ -499,6 +499,8 @@ services:
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
+      - COMPlus_DbgEnableMiniDump=1
+      - COMPlus_DbgMiniDumpType=4
       - MONGO_HOST=mongo
       - SERVICESTACK_REDIS_HOST=servicestackredis:6379
       - STACKEXCHANGE_REDIS_HOST=stackexchangeredis:6379
@@ -626,6 +628,8 @@ services:
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
+      - COMPlus_DbgEnableMiniDump=1
+      - COMPlus_DbgMiniDumpType=4
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - MONGO_HOST=mongo_arm64
       - SERVICESTACK_REDIS_HOST=servicestackredis_arm64:6379

@@ -41,6 +41,8 @@ steps:
         --env TestAllPackageVersions=$(TestAllPackageVersions) \
         --env IncludeMinorPackageVersions=$(IncludeMinorPackageVersions) \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
+        --env COMPlus_DbgEnableMiniDump=1 \
+        --env COMPlus_DbgMiniDumpType=4 \
         ${{ parameters.extraArgs }} \
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
