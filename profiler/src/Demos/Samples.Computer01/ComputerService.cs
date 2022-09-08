@@ -29,7 +29,7 @@ namespace Samples.Computer01
         private GenericsAllocation _genericsAllocation;
         private ContentionGenerator _contentionGenerator;
 
-        public void StartService(Scenario scenario, int nbThreads)
+        public void StartService(Scenario scenario, int nbThreads, int parameter)
         {
             _scenario = scenario;
 
@@ -84,7 +84,7 @@ namespace Samples.Computer01
                     break;
 
                 case Scenario.ContentionGenerator:
-                    StartContentionGenerator(nbThreads);
+                    StartContentionGenerator(nbThreads, parameter);
                     break;
 
                 default:
@@ -147,7 +147,7 @@ namespace Samples.Computer01
             }
         }
 
-        public void Run(Scenario scenario, int iterations, int nbThreads = 1)
+        public void Run(Scenario scenario, int iterations, int nbThreads, int parameter)
         {
             Console.WriteLine($"Running {iterations} iterations of {scenario.ToString()} on {nbThreads} thread(s)");
             var sw = new Stopwatch();
@@ -202,7 +202,7 @@ namespace Samples.Computer01
                         break;
 
                     case Scenario.ContentionGenerator:
-                        RunContentionGenerator(nbThreads);
+                        RunContentionGenerator(nbThreads, parameter);
                         break;
 
                     default:
@@ -213,9 +213,9 @@ namespace Samples.Computer01
             Console.WriteLine($"End of {iterations} iterations of {scenario.ToString()} in {sw.Elapsed}");
         }
 
-        public void RunAsService(TimeSpan timeout, Scenario scenario)
+        public void RunAsService(TimeSpan timeout, Scenario scenario, int parameter)
         {
-            var windowsService = new WindowsService(this, timeout, scenario);
+            var windowsService = new WindowsService(this, timeout, scenario, parameter);
             ServiceBase.Run(windowsService);
         }
 
@@ -275,9 +275,15 @@ namespace Samples.Computer01
             _genericsAllocation.Start();
         }
 
-        private void StartContentionGenerator(int nbThreads)
+        private void StartContentionGenerator(int nbThreads, int parameter)
         {
-            _contentionGenerator = new ContentionGenerator(nbThreads);
+            if (parameter == int.MaxValue)
+            {
+                // 300 ms contention by default
+                parameter = 300;
+            }
+
+            _contentionGenerator = new ContentionGenerator(nbThreads, parameter);
             _contentionGenerator.Start();
         }
 
@@ -401,9 +407,15 @@ namespace Samples.Computer01
             allocations.Run();
         }
 
-        private void RunContentionGenerator(int nbThreads)
+        private void RunContentionGenerator(int nbThreads, int parameter)
         {
-            var contentionGenerator = new ContentionGenerator(nbThreads);
+            if (parameter == int.MaxValue)
+            {
+                // 300 ms contention by default
+                parameter = 300;
+            }
+
+            var contentionGenerator = new ContentionGenerator(nbThreads, parameter);
             contentionGenerator.Run();
         }
 
@@ -419,17 +431,19 @@ namespace Samples.Computer01
         {
             private ComputerService _computerService;
             private Scenario _scenario;
+            private int _parameter;
 
-            public WindowsService(ComputerService service, TimeSpan timeout, Scenario scenario)
+            public WindowsService(ComputerService service, TimeSpan timeout, Scenario scenario, int parameter)
             {
                 _computerService = service;
                 _scenario = scenario;
+                _parameter = parameter;
                 Task.Delay(timeout).ContinueWith(t => Stop());
             }
 
             protected override void OnStart(string[] args)
             {
-                _computerService.StartService(_scenario, nbThreads: 1);
+                _computerService.StartService(_scenario, nbThreads: 1, _parameter);
                 base.OnStart(args);
             }
 

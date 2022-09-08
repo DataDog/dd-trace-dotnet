@@ -12,9 +12,14 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.NetworkInformation;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -24,7 +29,7 @@ using Datadog.Trace.ExtensionMethods; // needed for Dictionary<K,V>.GetValueOrDe
 
 namespace Datadog.Trace.TestHelpers
 {
-    public abstract class TestHelper
+    public abstract class TestHelper : IDisposable
     {
         protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
             : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides), output)
@@ -58,6 +63,10 @@ namespace Datadog.Trace.TestHelpers
         protected string TestPrefix => $"{EnvironmentTools.GetBuildConfiguration()}.{EnvironmentHelper.GetTargetFramework()}";
 
         protected ITestOutputHelper Output { get; }
+
+        public virtual void Dispose()
+        {
+        }
 
         public Process StartDotnetTestSample(MockTracerAgent agent, string arguments, string packageVersion, int aspNetCorePort, string framework = "")
         {

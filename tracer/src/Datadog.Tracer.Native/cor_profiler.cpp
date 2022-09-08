@@ -1389,7 +1389,19 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 
     if (size > 0)
     {
-        InternalAddInstrumentation(id, items, size, false);
+        InternalAddInstrumentation(id, items, size, false, true);
+    }
+}
+
+void CorProfiler::RemoveCallTargetDefinitions(WCHAR* id, CallTargetDefinition* items, int size)
+{
+    shared::WSTRING definitionsId = shared::WSTRING(id);
+    Logger::Info("RemoveCallTargetDefinitions: received id: ", definitionsId, " from managed side with ", size,
+                 " integrations.");
+
+    if (size > 0)
+    {
+        InternalAddInstrumentation(id, items, size, false, false);
     }
 }
 
@@ -1428,14 +1440,20 @@ void CorProfiler::AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* it
     }
 }
 
-void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived)
+void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived, bool enable)
 {
     shared::WSTRING definitionsId = shared::WSTRING(id);
     std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
 
-    if (definitions_ids_.find(definitionsId) != definitions_ids_.end())
+    auto defsIdFound = definitions_ids_.find(definitionsId) != definitions_ids_.end();
+    if (enable && defsIdFound)
     {
         Logger::Info("InitializeProfiler: Id already processed.");
+        return;
+    }
+    if (!enable && !defsIdFound)
+    {
+        Logger::Info("UninitializeProfiler: Id not processed.");
         return;
     }
 
@@ -1487,24 +1505,61 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
 
         std::scoped_lock<std::mutex> moduleLock(module_ids_lock_);
 
-        definitions_ids_.emplace(definitionsId);
-
-        Logger::Info("Total number of modules to analyze: ", module_ids_.size());
-        if (rejit_handler != nullptr)
+        if (enable)
         {
-            std::promise<ULONG> promise;
-            std::future<ULONG> future = promise.get_future();
-            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(module_ids_, integrationDefinitions, &promise);
-
-            // wait and get the value from the future<int>
-            const auto& numReJITs = future.get();
-            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+            definitions_ids_.emplace(definitionsId);
+        }
+        else
+        {
+            definitions_ids_.erase(definitionsId);
         }
 
-        integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
-        for (const auto& integration : integrationDefinitions)
+        if (enable)
         {
-            integration_definitions_.push_back(integration);
+            integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
+            for (const auto& integration : integrationDefinitions)
+            {
+                integration_definitions_.push_back(integration);
+            }
+
+            Logger::Info("Total number of modules to analyze: ", module_ids_.size());
+            if (rejit_handler != nullptr)
+            {
+                std::promise<ULONG> promise;
+                std::future<ULONG> future = promise.get_future();
+                tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(module_ids_,
+                                                                                     integrationDefinitions, &promise);
+
+                // wait and get the value from the future<int>
+                const auto& numReJITs = future.get();
+                Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+            }
+        }
+        else
+        {
+            // remove the call target definitions
+            std::vector<IntegrationDefinition> integration_definitions = integration_definitions_;
+            integration_definitions_.clear();
+            for (const auto& integration : integration_definitions)
+            {
+                if (std::find(integrationDefinitions.begin(), integrationDefinitions.end(), integration) == integrationDefinitions.end())
+                {
+                    integration_definitions_.push_back(integration);
+                }
+            }
+
+            Logger::Info("Total number of modules to analyze: ", module_ids_.size());
+            if (rejit_handler != nullptr)
+            {
+                std::promise<ULONG> promise;
+                std::future<ULONG> future = promise.get_future();
+                tracer_integration_preprocessor->EnqueueRequestRevertForLoadedModules(module_ids_,
+                                                                                     integrationDefinitions, &promise);
+
+                // wait and get the value from the future<int>
+                const auto& numReJITs = future.get();
+                Logger::Debug("Total number of Revert Requested: ", numReJITs);
+            }
         }
 
         Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_.size());

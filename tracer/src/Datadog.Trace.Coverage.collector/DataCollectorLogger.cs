@@ -5,12 +5,15 @@
 
 using System;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
 using Microsoft.VisualStudio.TestPlatform.ObjectModel.DataCollection;
 
 namespace Datadog.Trace.Coverage.Collector
 {
     internal class DataCollectorLogger : ICollectorLogger
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataCollectorLogger>();
+
         private readonly DataCollectionLogger _logger;
         private readonly bool _isDebugEnabled;
         private DataCollectionContext _collectionContext;
@@ -27,21 +30,25 @@ namespace Datadog.Trace.Coverage.Collector
         public void Error(string? text)
         {
             _logger.LogError(_collectionContext, text ?? string.Empty);
+            Log.Error(text);
         }
 
         public void Error(Exception exception)
         {
             _logger.LogError(_collectionContext, exception);
+            Log.Error(exception, exception.Message);
         }
 
         public void Error(Exception exception, string? text)
         {
             _logger.LogError(_collectionContext, text ?? string.Empty, exception);
+            Log.Error(exception, text);
         }
 
         public void Warning(string? text)
         {
             _logger.LogWarning(_collectionContext, text ?? string.Empty);
+            Log.Warning(text);
         }
 
         public void Debug(string? text)
@@ -49,6 +56,7 @@ namespace Datadog.Trace.Coverage.Collector
             if (_isDebugEnabled)
             {
                 _logger.LogWarning(_collectionContext, text ?? string.Empty);
+                Log.Debug(text);
             }
         }
 

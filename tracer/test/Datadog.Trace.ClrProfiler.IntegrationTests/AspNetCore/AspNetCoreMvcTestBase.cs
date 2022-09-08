@@ -38,6 +38,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             _enableRouteTemplateResourceNames = enableRouteTemplateResourceNames;
             SetEnvironmentVariable(ConfigurationKeys.HeaderTags, $"{HeaderName1UpperWithMapping}:{HeaderTagName1WithMapping},{HeaderName2},{HeaderName3}");
             SetEnvironmentVariable(ConfigurationKeys.HttpServerErrorStatusCodes, "400-403, 500-503");
+            EnableDebugMode();
 
             SetServiceVersion("1.0.0");
 
@@ -66,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             { "/handled-exception", 500 },
         };
 
-        public void Dispose()
+        public override void Dispose()
         {
             Fixture.SetOutput(null);
         }
