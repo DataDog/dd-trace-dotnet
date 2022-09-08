@@ -49,7 +49,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public static RemoteConfigurationSettings FromDefaultSource()
         {
-            return FromSource(GlobalSettings.ConfigurationSource);
+            return FromSource(GlobalConfigurationSource.Instance);
         }
     }
 }

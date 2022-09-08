@@ -30,7 +30,7 @@ namespace Datadog.Trace.Telemetry
 
         public AgentlessSettings? Agentless { get; }
 
-        public static TelemetrySettings FromDefaultSources() => FromSource(GlobalSettings.ConfigurationSource);
+        public static TelemetrySettings FromDefaultSources() => FromSource(GlobalConfigurationSource.Instance);
 
         public static TelemetrySettings FromSource(IConfigurationSource? source)
         {

@@ -334,12 +334,12 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources
-        /// returned by <see cref="GlobalSettings.ConfigurationSource"/>.
+        /// returned by <see cref="GlobalConfigurationSource.Instance"/>.
         /// </summary>
         /// <returns>A <see cref="ImmutableTracerSettings"/> populated from the default sources.</returns>
         public static ImmutableTracerSettings FromDefaultSources()
         {
-            return new ImmutableTracerSettings(GlobalSettings.ConfigurationSource);
+            return new ImmutableTracerSettings(GlobalConfigurationSource.Instance);
         }
 
         internal bool IsErrorStatusCode(int statusCode, bool serverStatusCode)

@@ -78,7 +78,7 @@ namespace Datadog.Trace.Debugger
 
         public static DebuggerSettings FromDefaultSource()
         {
-            return FromSource(GlobalSettings.ConfigurationSource);
+            return FromSource(GlobalConfigurationSource.Instance);
         }
     }
 }

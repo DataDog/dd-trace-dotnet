@@ -122,7 +122,7 @@ namespace Datadog.Trace.AppSec
 
         public static SecuritySettings FromDefaultSources()
         {
-            return new SecuritySettings(GlobalSettings.ConfigurationSource);
+            return new SecuritySettings(GlobalConfigurationSource.Instance);
         }
 
         private static int ParseWafTimeout(string wafTimeoutString)

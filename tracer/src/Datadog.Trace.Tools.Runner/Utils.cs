@@ -245,7 +245,7 @@ namespace Datadog.Trace.Tools.Runner
 
             var configurationSource = new CompositeConfigurationSource()
             {
-                GlobalSettings.ConfigurationSource,
+                GlobalConfigurationSource.Instance,
                 new NameValueConfigurationSource(env)
             };
 
