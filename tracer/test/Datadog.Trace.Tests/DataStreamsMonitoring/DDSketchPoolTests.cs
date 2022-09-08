@@ -34,17 +34,35 @@ public class DDSketchPoolTests
     {
         const int maxPoolSize = 10;
         var pool = new DDSketchPool(maxPoolSize);
-        var pools = new List<DDSketch>(maxPoolSize);
+        var sketches = new List<DDSketch>(maxPoolSize + 1);
 
-        for (var i = 0; i < maxPoolSize; i++)
+        // Fetch 11 sketches. These are all unique
+        for (var i = 0; i < sketches.Count; i++)
         {
-            pools.Add(pool.Get());
+            sketches.Add(pool.Get());
         }
 
-        pools.Should().OnlyHaveUniqueItems();
+        // Release all the sketches. The last sketch is _not_ saved in the pool
+        foreach (var sketch in sketches)
+        {
+            pool.Release(sketch);
+        }
 
-        var sketch = pool.Get();
-        pools.Should().NotContain(sketch);
+        // Fetch all the sketches out of the pool
+        // We have seen all of these sketches before
+        var sketches2 = new List<DDSketch>(maxPoolSize);
+        for (var i = 0; i < sketches2.Count; i++)
+        {
+            sketches2.Add(pool.Get());
+        }
+
+        sketches.Should().OnlyHaveUniqueItems();
+        sketches2.Should().OnlyHaveUniqueItems();
+        sketches2.Should().BeSubsetOf(sketches);
+
+        // This one should be new
+        var newSketch = pool.Get();
+        sketches.Should().NotContain(newSketch);
     }
 
     [Fact]
