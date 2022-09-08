@@ -48,7 +48,7 @@ public class DDSketchPoolTests
     }
 
     [Fact]
-    public void WhenPoolReleased_ItIsCleared()
+    public void WhenSketchIsReleasedToPool_ItIsCleared()
     {
         var pool = new DDSketchPool();
         var sketch = pool.Get();
