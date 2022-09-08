@@ -10,16 +10,16 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
 {
     internal class InsecureHashingCommon
     {
-        internal const IntegrationId IntegrationId = Configuration.IntegrationId.InsecureHashing;
+        internal const IntegrationId IntegrationId = Configuration.IntegrationId.HashAlgorithm;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InsecureHashingCommon));
         internal const string OperationName = "insecure_hashing";
         internal const string ServiceName = "hash";
 
-        internal static Scope CreateScope(HashAlgorithm instance)
+        internal static Scope CreateScope(System.Security.Cryptography.HashAlgorithm instance)
         {
             var tracer = Tracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !InvalidHashAlgorithm(instance))
@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing
             return scope;
         }
 
-        private static bool InvalidHashAlgorithm(HashAlgorithm target)
+        private static bool InvalidHashAlgorithm(System.Security.Cryptography.HashAlgorithm target)
         {
             return (target is HMACMD5) || (target is MD5) || (target is HMACSHA1) || (target is SHA1);
         }
