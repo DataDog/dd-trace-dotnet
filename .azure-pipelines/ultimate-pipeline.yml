@@ -2598,11 +2598,22 @@ stages:
         displayName: Run tests over UDS
         env:
           DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
-
+        
       - publish: system-tests/logs_uds
         condition: always()
         displayName: System tests UDS logs
         artifact: system-tests-uds_$(System.JobAttempt)
+        
+      - script: ./run.sh REMOTE_CONFIG_MOCKED_BACKEND_LIVE_DEBUGGING
+        workingDirectory: system-tests
+        displayName: Run RCM tests
+        env:
+          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
+
+      - publish: system-tests/logs_remote_config_mocked_backend_live_debugging
+        condition: always()
+        displayName: RCM tests logs
+        artifact: system-tests-rcm_$(System.JobAttempt)
 
 - stage: installer_smoke_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
