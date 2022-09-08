@@ -8,10 +8,10 @@ using System.ComponentModel;
 using System.Security.Cryptography;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
 {
     /// <summary>
-    /// System.Net.Http.HttpClientHandler calltarget instrumentation
+    /// System.Security.Cryptography.HashAlgorithm instrumentation
     /// </summary>
     [InstrumentMethod(
        AssemblyNames = new[] { "mscorlib", "System.Security.Cryptography.Primitives" },
@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing
        ReturnTypeName = ClrNames.ByteArray,
        MinimumVersion = "1.0.0",
        MaximumVersion = "7.*.*",
-       IntegrationName = nameof(Configuration.IntegrationId.InsecureHashing))]
+       IntegrationName = nameof(Configuration.IntegrationId.HashAlgorithm))]
 
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, byte[] array, int offset, int count)
         {
-            if (instance is HashAlgorithm algorithm)
+            if (instance is System.Security.Cryptography.HashAlgorithm algorithm)
             {
                 return new CallTargetState(scope: InsecureHashingCommon.CreateScope(algorithm));
             }
