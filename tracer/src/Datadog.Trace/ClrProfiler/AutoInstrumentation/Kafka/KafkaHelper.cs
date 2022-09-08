@@ -257,8 +257,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (dataStreamsManager.IsEnabled)
                 {
-                    // TODO: optimise the edge tags here, no need to use a list, or at least cache it/make it a singleton
-                    context.SetCheckpoint(dataStreamsManager, new[] { "type:internal" });
+                    context.SetCheckpoint(dataStreamsManager, DataStreamsManager.InternalEdgeTags);
                     dataStreamsManager.InjectPathwayContext(context.PathwayContext, adapter);
                 }
             }
