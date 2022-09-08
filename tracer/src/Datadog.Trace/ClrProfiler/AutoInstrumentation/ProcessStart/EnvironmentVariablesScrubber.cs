@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                     }
                 }
 
-                return variableLine.ToString();
+                return StringBuilderCache.GetStringAndRelease(variableLine);
             }
 
             return null;
