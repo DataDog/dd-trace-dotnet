@@ -203,7 +203,16 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [SkippableFact]
         public async Task WorkingWithContinuousProfiler()
         {
-            var archFolder = Utils.IsAlpine() ? "linux-musl-x64" : "linux-x64";
+            string archFolder;
+
+            if (FrameworkDescription.Instance.ProcessArchitecture == ProcessArchitecture.Arm64)
+            {
+                archFolder = "linux-arm64";
+            }
+            else
+            {
+                archFolder = Utils.IsAlpine() ? "linux-musl-x64" : "linux-x64";
+            }
 
             var apiWrapperPath = Path.Combine(EnvironmentHelper.MonitoringHome, archFolder, "Datadog.Linux.ApiWrapper.x64.so");
 
