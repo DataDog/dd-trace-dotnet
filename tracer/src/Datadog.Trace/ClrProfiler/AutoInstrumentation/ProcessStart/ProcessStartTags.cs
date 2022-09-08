@@ -13,6 +13,6 @@ namespace Datadog.Trace.Tagging
         public override string SpanKind => SpanKinds.Internal;
 
         [Tag(Trace.Tags.ProcessEnvironmentVariables)]
-        public string EnviromentVars { get; set; }
+        public string EnvironmentVariables { get; set; }
     }
 }

@@ -48,6 +48,6 @@ namespace Datadog.Trace.Configuration
         NLog,
         TraceAnnotations,
         Grpc,
-        ProcessStart
+        Process
     }
 }

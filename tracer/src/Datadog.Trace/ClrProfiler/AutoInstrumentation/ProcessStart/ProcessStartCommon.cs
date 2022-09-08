@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 {
     internal static class ProcessStartCommon
     {
-        internal const IntegrationId IntegrationId = Configuration.IntegrationId.ProcessStart;
+        internal const IntegrationId IntegrationId = Configuration.IntegrationId.Process;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessStartCommon));
         internal const string OperationName = "command_execution";
         internal const string ServiceName = "command";

@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             VerifyInstrumentation(process.Process);
 
-            telemetry.AssertIntegrationEnabled(IntegrationId.ProcessStart);
+            telemetry.AssertIntegrationEnabled(IntegrationId.Process);
         }
 
         [SkippableFact]
@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             const int totalSpanCount = 5;
             const string expectedOperationName = "command_execution";
 
-            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.ProcessStart)}_ENABLED", "false");
+            SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.Process)}_ENABLED", "false");
 
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
 
             Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
-            telemetry.AssertIntegrationDisabled(IntegrationId.ProcessStart);
+            telemetry.AssertIntegrationDisabled(IntegrationId.Process);
         }
     }
 }
