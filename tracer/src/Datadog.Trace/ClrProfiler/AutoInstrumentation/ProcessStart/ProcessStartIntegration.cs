@@ -10,7 +10,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 {
     /// <summary>
-    /// System.Net.Http.HttpClientHandler calltarget instrumentation
+    /// System.Diagnostics.Process calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
        AssemblyNames = new[] { "System", "System.Diagnostics.Process" },
