@@ -284,8 +284,10 @@ namespace Datadog.Trace.AppSec
             {
                 Log.Information("SetRemoteConfigCapabilites got instance: " + (rcm != null));
                 rcm.SetCapablity(RcmCapablitiesIndices.AsmActivation, _settings.CanBeEnabled);
-                rcm.SetCapablity(RcmCapablitiesIndices.AsmDdRules, _settings.Rules == null);
-                rcm.SetCapablity(RcmCapablitiesIndices.AsmIpBlocking, true);
+                // TODO set to '_settings.Rules == null' when https://github.com/DataDog/dd-trace-dotnet/pull/3120 is merged
+                rcm.SetCapablity(RcmCapablitiesIndices.AsmDdRules, false);
+                // TODO set to true when https://github.com/DataDog/dd-trace-dotnet/pull/3171 is merged
+                rcm.SetCapablity(RcmCapablitiesIndices.AsmIpBlocking, false);
             }
 
             Log.Information("SetRemoteConfigCapabilites ended");
