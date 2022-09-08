@@ -356,7 +356,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 {
                     // This could be either the native tracer or the loader.
                     // If it's the loader then there should be a loader.conf file next to it.
-                    var folder = Path.GetDirectoryName(fileName)!;
+                    var folder = Path.GetDirectoryName(module)!;
 
                     if (File.Exists(Path.Combine(folder, "loader.conf")))
                     {
