@@ -144,13 +144,7 @@ namespace Datadog.Trace.ClrProfiler
                new ("Grpc.Net.Client", "Grpc.Net.Client.Internal.GrpcCall`2", "RunCall",  new[] { "System.Threading.Tasks.Task", "System.Net.Http.HttpRequestMessage", "System.Nullable`1[System.TimeSpan]" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient.GrpcCallRunCallIntegration"),
 
                 // HashAlgorithm
-               new ("mscorlib", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.Byte[]", "System.Int32", "System.Int32" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegration"),
-               new ("mscorlib", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.IO.Stream" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationBis"),
-               new ("mscorlib", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.Byte[]" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationBis"),
                new ("mscorlib", "System.Security.Cryptography.HashAlgorithm", "ComputeHashAsync",  new[] { "System.Threading.Tasks.Task", "System.IO.Stream", "System.Threading.CancellationToken" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationTier"),
-               new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.Byte[]", "System.Int32", "System.Int32" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegration"),
-               new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.IO.Stream" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationBis"),
-               new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.Byte[]" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationBis"),
                new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHashAsync",  new[] { "System.Threading.Tasks.Task", "System.IO.Stream", "System.Threading.CancellationToken" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationTier"),
 
                 // HotChocolate
@@ -654,10 +648,12 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient.GrpcCallFinishCallPre243Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient.GrpcCallRunCallIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Grpc,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationTier"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationBis"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationBis"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationTer"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationTier"
                     => Datadog.Trace.Configuration.IntegrationId.HashAlgorithm,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"
