@@ -88,6 +88,47 @@ inline WSTRING GetCurrentProcessName()
 #endif
 }
 
+inline WSTRING GetCurrentProcessCommandLine()
+{
+#ifdef _WIN32
+    return WSTRING(GetCommandLine());
+#elif MACOS
+    std::string name;
+    int argCount = *_NSGetArgc();
+    char ** arguments = *_NSGetArgv();
+    for (int i = 0; i < argCount; i++) {
+        char* currentArg = arguments[i];
+        name = name + " " + std::string(currentArg);
+    }
+    return Trim(ToWSTRING(name));
+#else
+    std::string cmdline;
+    char buf[1024];
+    size_t len;
+    FILE* fp = fopen("/proc/self/cmdline", "rb");
+    if (fp)
+    {
+        while ((len = fread(buf, 1, sizeof(buf), fp)) > 0)
+        {
+            cmdline.append(buf, len);
+        }
+    }
+
+    std::string name;
+    std::stringstream tokens(cmdline);
+    std::string tmp;
+    while (getline(tokens, tmp, '\0'))
+    {
+        name = name + " " + tmp;
+    }
+    fclose(fp);
+    
+    return Trim(ToWSTRING(name));
+#endif
+
+    return EmptyWStr;
+}
+
 inline int GetPID()
 {
 #ifdef _WIN32
