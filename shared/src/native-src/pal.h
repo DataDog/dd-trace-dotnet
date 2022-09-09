@@ -15,6 +15,7 @@
 
 #if MACOS
 #include <libproc.h>
+#include <crt_externs.h>
 #endif
 
 #include "dd_filesystem.hpp"
