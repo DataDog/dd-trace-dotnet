@@ -6,9 +6,12 @@
 #nullable enable
 
 using System;
+using System.Diagnostics;
+using System.Security.Cryptography;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
 {
@@ -16,6 +19,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
     {
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.HashAlgorithm;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HashAlgorithmIntegrationCommon));
+        internal const string OperationName = "insecure_hashing";
+        internal const string ServiceName = "hash";
 
         internal static Scope? CreateScope<TTarget>(TTarget instance)
         {
@@ -24,15 +29,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
                 var iast = Iast.Iast.Instance;
                 if (!iast.Settings.Enabled || algorithm == null)
                 {
-                    return null;
-                }
+                return null;
+            }
 
-                try
-                {
+            Scope scope = null;
+
+            try
+            {
                     return IastModule.OnHashingAlgorithm(GetAlgorithmName(algorithm.GetType()), IntegrationId, iast);
-                }
-                catch (Exception ex)
-                {
+            }
+            catch (Exception ex)
+            {
                     Log.Error(ex, "Error creating or populating hash algorithm scope.");
                     return null;
                 }
