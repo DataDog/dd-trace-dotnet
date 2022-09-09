@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.IO;
 using System.Runtime.InteropServices.ComTypes;
@@ -38,6 +39,7 @@ namespace Samples.InsecureHash
             testHashAlgorithm(new MACTripleDES());
             testHashAlgorithm(MACTripleDES.Create());
 #endif
+            File.WriteAllText("c:\\t.txt", DateTime.Now.ToString());
         }
 
         private static void testHashAlgorithm(HashAlgorithm algorithm)
