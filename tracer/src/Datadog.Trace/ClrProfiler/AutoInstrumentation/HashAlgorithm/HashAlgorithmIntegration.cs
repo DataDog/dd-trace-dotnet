@@ -9,7 +9,6 @@
 
 using System;
 using System.ComponentModel;
-using System.Security.Cryptography;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
