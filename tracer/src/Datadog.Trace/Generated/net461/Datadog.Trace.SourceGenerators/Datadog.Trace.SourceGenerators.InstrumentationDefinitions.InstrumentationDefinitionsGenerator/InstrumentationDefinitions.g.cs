@@ -440,7 +440,7 @@ namespace Datadog.Trace.ClrProfiler
                 // root types for InstrumentationCategory IAST
                 payload = new Payload
                 {
-                    DefinitionsId = "18ADCFBDCCF14141B3473C7D3B1E9494<",
+                    DefinitionsId = "18ADCFBDCCF14141B3473C7D3B1E9494",
                     Definitions = new NativeCallTargetDefinition[]
                     {
                     }
