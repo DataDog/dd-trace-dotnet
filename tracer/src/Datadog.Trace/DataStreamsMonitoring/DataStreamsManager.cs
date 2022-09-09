@@ -7,11 +7,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
-using Datadog.Trace.DataStreamsMonitoring.Transport;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -26,22 +25,34 @@ internal class DataStreamsManager
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsManager>();
     private readonly NodeHashBase _nodeHashBase;
+    private readonly IDiscoveryService _discoveryService;
     private bool _isEnabled;
+    private int _isSupported;
     private DataStreamsWriter? _writer;
 
     public DataStreamsManager(
-        bool enabled,
         string env,
         string defaultServiceName,
-        IApiRequestFactory apiRequestFactory)
+        DataStreamsWriter? writer,
+        IDiscoveryService discoveryService)
     {
         // We don't yet support primary tag in .NET yet
         _nodeHashBase = HashHelper.CalculateNodeHashBase(defaultServiceName, env, primaryTag: null);
-        // TODO: dynamically enable/disable based on discovery service
-        _isEnabled = enabled;
-        _writer = enabled
-                      ? _writer = CreateWriter(env, defaultServiceName, apiRequestFactory)
-                      : null;
+        _isEnabled = writer is not null;
+        _writer = writer;
+        _isSupported = (int)SupportState.Unknown;
+        _discoveryService = discoveryService;
+        if (_isEnabled)
+        {
+            _discoveryService.SubscribeToChanges(HandleConfigUpdate);
+        }
+    }
+
+    private enum SupportState
+    {
+        Unknown,
+        Supported,
+        Unsupported
     }
 
     /// <summary>
@@ -55,15 +66,17 @@ internal class DataStreamsManager
 
     public static DataStreamsManager Create(
         ImmutableTracerSettings settings,
+        IDiscoveryService discoveryService,
         string defaultServiceName)
         => new(
-            settings.IsDataStreamsMonitoringEnabled,
             settings.Environment,
             defaultServiceName,
-            DataStreamsTransportStrategy.GetAgentIntakeFactory(settings.Exporter));
+            settings.IsDataStreamsMonitoringEnabled ? DataStreamsWriter.Create(settings, defaultServiceName) : null,
+            discoveryService);
 
     public async Task DisposeAsync()
     {
+        _discoveryService.RemoveSubscription(HandleConfigUpdate);
         Volatile.Write(ref _isEnabled, false);
         var writer = Interlocked.Exchange(ref _writer, null);
 
@@ -132,15 +145,18 @@ internal class DataStreamsManager
             var parentHash = parentPathway?.Hash ?? default;
             var pathwayHash = HashHelper.CalculatePathwayHash(nodeHash, parentHash);
 
-            var writer = Volatile.Read(ref _writer);
-            writer?.Add(
-                new StatsPoint(
-                    edgeTags: edgeTags,
-                    hash: pathwayHash,
-                    parentHash: parentHash,
-                    timestampNs: edgeStartNs,
-                    pathwayLatencyNs: edgeStartNs - pathwayStartNs,
-                    edgeLatencyNs: edgeStartNs - (parentPathway?.EdgeStart ?? edgeStartNs)));
+            if ((SupportState)Volatile.Read(ref _isSupported) == SupportState.Supported
+                && Volatile.Read(ref _writer) is { } writer)
+            {
+                writer.Add(
+                    new StatsPoint(
+                        edgeTags: edgeTags,
+                        hash: pathwayHash,
+                        parentHash: parentHash,
+                        timestampNs: edgeStartNs,
+                        pathwayLatencyNs: edgeStartNs - pathwayStartNs,
+                        edgeLatencyNs: edgeStartNs - (parentPathway?.EdgeStart ?? edgeStartNs)));
+            }
 
             var pathway = new PathwayContext(
                 hash: pathwayHash,
@@ -169,14 +185,24 @@ internal class DataStreamsManager
         }
     }
 
-    private static DataStreamsWriter CreateWriter(
-        string env,
-        string defaultServiceName,
-        IApiRequestFactory requestFactory) =>
-        new DataStreamsWriter(
-            new DataStreamsAggregator(
-                new DataStreamsMessagePackFormatter(env, defaultServiceName),
-                bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs),
-            new DataStreamsApi(requestFactory),
-            bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs);
+    private void HandleConfigUpdate(AgentConfiguration config)
+    {
+        var isSupported = string.IsNullOrEmpty(config.DataStreamsMonitoringEndpoint)
+                              ? SupportState.Unsupported
+                              : SupportState.Supported;
+        var wasSupported = (SupportState)Volatile.Read(ref _isSupported);
+
+        if (isSupported != wasSupported)
+        {
+            _isSupported = (int)isSupported;
+            if (isSupported == SupportState.Supported)
+            {
+                Log.Information("Data streams monitoring supported, enabling stats collection");
+            }
+            else
+            {
+                Log.Warning("Data streams monitoring was enabled but is not supported by the Agent. Disabling stats collection");
+            }
+        }
+    }
 }

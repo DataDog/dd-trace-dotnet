@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.TestHelpers.TransportHelpers;
+using Datadog.Trace.Tests.Agent;
 using FluentAssertions;
 using Xunit;
 
@@ -14,10 +15,15 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring;
 
 public class DataStreamsManagerTests
 {
-    [Fact]
-    public void WhenDisabled_DoesNotInjectContext()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [InlineData(null)]
+    public void WhenDisabled_DoesNotInjectContext(bool? dsmSupported)
     {
-        var dsm = GetDataStreamManager(false);
+        var dsm = GetDataStreamManager(false, out var discovery);
+        TriggerSupportUpdate(discovery, dsmSupported);
+
         var headers = new TestHeadersCollection();
         var context = new PathwayContext(new PathwayHash(123), 1234, 5678);
 
@@ -26,10 +32,15 @@ public class DataStreamsManagerTests
         headers.Values.Should().BeEmpty();
     }
 
-    [Fact]
-    public void WhenEnabled_InjectsContext()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [InlineData(null)]
+    public void WhenEnabled_RegardlessOfSupport_InjectsContext(bool? isSupported)
     {
-        var dsm = GetDataStreamManager(true);
+        var dsm = GetDataStreamManager(true, out var discovery);
+        TriggerSupportUpdate(discovery, isSupported);
+
         var headers = new TestHeadersCollection();
         var context = new PathwayContext(new PathwayHash(123), 1234, 5678);
 
@@ -38,11 +49,17 @@ public class DataStreamsManagerTests
         headers.Values.Should().NotBeEmpty();
     }
 
-    [Fact]
-    public void WhenDisabled_DoesNotExtractContext()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [InlineData(null)]
+    public void WhenDisabled_DoesNotExtractContext(bool? dsmSupported)
     {
-        var enabledDsm = GetDataStreamManager(true);
-        var disabledDsm = GetDataStreamManager(false);
+        var enabledDsm = GetDataStreamManager(true, out var enabledDiscovery);
+        enabledDiscovery.TriggerChange();
+        var disabledDsm = GetDataStreamManager(false, out var discovery);
+        TriggerSupportUpdate(discovery, dsmSupported);
+
         var headers = new TestHeadersCollection();
         var context = new PathwayContext(new PathwayHash(123), 1234, 5678);
 
@@ -52,10 +69,15 @@ public class DataStreamsManagerTests
         disabledDsm.ExtractPathwayContext(headers).Should().BeNull();
     }
 
-    [Fact]
-    public void WhenEnabled_ExtractsContext()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    [InlineData(null)]
+    public void WhenEnabled_RegardlessOfSupport_ExtractsContext(bool? isSupported)
     {
-        var dsm = GetDataStreamManager(true);
+        var dsm = GetDataStreamManager(true, out var discovery);
+        TriggerSupportUpdate(discovery, isSupported);
+
         var headers = new TestHeadersCollection();
         var context = new PathwayContext(new PathwayHash(123), 12340000, 56780000);
 
@@ -72,7 +94,8 @@ public class DataStreamsManagerTests
     [Fact]
     public void WhenEnabled_AndNoContext_ReturnsNewContext()
     {
-        var dsm = GetDataStreamManager(true);
+        var dsm = GetDataStreamManager(true, out var discovery);
+        discovery.TriggerChange();
 
         var context = dsm.SetCheckpoint(parentPathway: null, new[] { "some-tags" });
         context.Should().NotBeNull();
@@ -84,7 +107,8 @@ public class DataStreamsManagerTests
         var env = "foo";
         var service = "bar";
         var edgeTags = new[] { "some-tags" };
-        var dsm = GetDataStreamManager(true);
+        var dsm = GetDataStreamManager(true, out var discovery);
+        discovery.TriggerChange();
 
         var context = dsm.SetCheckpoint(parentPathway: null, edgeTags);
         context.Should().NotBeNull();
@@ -102,7 +126,8 @@ public class DataStreamsManagerTests
         var env = "foo";
         var service = "bar";
         var edgeTags = new[] { "some-tags" };
-        var dsm = GetDataStreamManager(true);
+        var dsm = GetDataStreamManager(true, out var discovery);
+        discovery.TriggerChange();
         var parent = new PathwayContext(new PathwayHash(123), 12340000, 56780000);
 
         var context = dsm.SetCheckpoint(parent, edgeTags);
@@ -118,7 +143,7 @@ public class DataStreamsManagerTests
     [Fact]
     public void WhenDisabled_SetCheckpoint_ReturnsNull()
     {
-        var dsm = GetDataStreamManager(false);
+        var dsm = GetDataStreamManager(false, out _);
         var parent = new PathwayContext(new PathwayHash(123), 12340000, 56780000);
 
         var context = dsm.SetCheckpoint(parent, new[] { "some-tags" });
@@ -128,7 +153,8 @@ public class DataStreamsManagerTests
     [Fact]
     public async Task DisposeAsync_DisablesDsm()
     {
-        var dsm = GetDataStreamManager(true);
+        var dsm = GetDataStreamManager(true, out var discovery);
+        discovery.TriggerChange();
         var parent = new PathwayContext(new PathwayHash(123), 12340000, 56780000);
 
         dsm.IsEnabled.Should().BeTrue();
@@ -140,10 +166,113 @@ public class DataStreamsManagerTests
         context.Should().BeNull();
     }
 
-    private static DataStreamsManager GetDataStreamManager(bool enabled)
-        => new DataStreamsManager(
-            enabled,
+    [Fact]
+    public async Task DisposeAsync_IgnoresDiscoveryChanges()
+    {
+        var dsm = GetDataStreamManager(true, out var discovery);
+        discovery.TriggerChange();
+        dsm.IsEnabled.Should().BeTrue();
+
+        await dsm.DisposeAsync();
+        dsm.IsEnabled.Should().BeFalse();
+        discovery.TriggerChange();
+        dsm.IsEnabled.Should().BeFalse();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    [InlineData(null)]
+    public async Task WhenDisabled_DoesNotSendPointsToWriter(bool? dsmSupported)
+    {
+        var dsm = GetDataStreamManager(enabled: false, out var discovery, out var requestFactory);
+        TriggerSupportUpdate(discovery, dsmSupported);
+
+        dsm.SetCheckpoint(parentPathway: null, new[] { "edge" });
+
+        await dsm.DisposeAsync();
+
+        requestFactory.RequestsSent.Should().BeEmpty();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(null)]
+    public async Task WhenEnabled_AndSupportUnknownOrUnsupported_DoesNotSendPointsToWriter(bool? dsmSupported)
+    {
+        var dsm = GetDataStreamManager(enabled: true, out var discovery, out var requestFactory);
+        TriggerSupportUpdate(discovery, dsmSupported);
+
+        dsm.SetCheckpoint(parentPathway: null, new[] { "edge" });
+
+        await dsm.DisposeAsync();
+
+        requestFactory.RequestsSent.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task WhenEnabled_AndSupported_SendsPointsToWriter()
+    {
+        var dsm = GetDataStreamManager(enabled: true, out var discovery, out var requestFactory);
+        TriggerSupportUpdate(discovery, isSupported: true);
+
+        dsm.SetCheckpoint(parentPathway: null, new[] { "edge" });
+
+        await dsm.DisposeAsync();
+
+        requestFactory.RequestsSent.Should().NotBeEmpty();
+    }
+
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    public async Task WhenEnabled_AndSupportChanges_SendsPointsToWriter(bool? initialSupport, bool finalSupport)
+    {
+        var dsm = GetDataStreamManager(true, out var discovery, out var requestFactory);
+        TriggerSupportUpdate(discovery, isSupported: initialSupport);
+
+        // preconditions
+        dsm.SetCheckpoint(parentPathway: null, new[] { "edge-1" });
+
+        TriggerSupportUpdate(discovery, isSupported: finalSupport); // change in support
+        dsm.SetCheckpoint(parentPathway: null, new[] { "edge-2" });
+
+        await dsm.DisposeAsync();
+        // can't easily validate that we only sent the second one without extra mocks + interfaces,
+        // but the logic is simple enough that it's not a bit issue IMO
+        requestFactory.RequestsSent.Should().NotBeEmpty();
+    }
+
+    private static void TriggerSupportUpdate(DiscoveryServiceMock discovery, bool? isSupported)
+    {
+        if (isSupported == true)
+        {
+            discovery.TriggerChange();
+        }
+        else if (isSupported == false)
+        {
+            discovery.TriggerChange(dataStreamsMonitoringEndpoint: null);
+        }
+    }
+
+    private static DataStreamsManager GetDataStreamManager(bool enabled, out DiscoveryServiceMock discoveryService)
+        => GetDataStreamManager(enabled, out discoveryService, out _);
+
+    private static DataStreamsManager GetDataStreamManager(
+        bool enabled,
+        out DiscoveryServiceMock discoveryService,
+        out TestRequestFactory requestFactory)
+    {
+        discoveryService = new DiscoveryServiceMock();
+        requestFactory = new TestRequestFactory();
+        var writer = enabled
+                         ? DataStreamsWriter.Create("foo", "bar", requestFactory)
+                         : null;
+        return new DataStreamsManager(
             env: "foo",
             defaultServiceName: "bar",
-            new TestRequestFactory());
+            writer,
+            discoveryService);
+    }
 }

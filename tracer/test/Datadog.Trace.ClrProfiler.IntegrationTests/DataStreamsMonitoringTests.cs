@@ -194,6 +194,22 @@ public class DataStreamsMonitoringTests : TestHelper
         dataStreams.Should().BeEmpty();
     }
 
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")]
+    public void WhenNotSupported_DoesNotSubmitDataStreams()
+    {
+        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        agent.Configuration = new MockTracerAgent.AgentConfiguration { Endpoints = Array.Empty<string>() };
+        using var processResult = RunSampleAndWaitForExit(agent);
+
+        using var assertionScope = new AssertionScope();
+        var dataStreams = agent.DataStreams;
+        dataStreams.Should().BeEmpty();
+    }
+
     private byte[] ScrubByteArray(MockDataStreamsStatsPoint target, byte[] value)
     {
         if (value is null || value.Length == 0)

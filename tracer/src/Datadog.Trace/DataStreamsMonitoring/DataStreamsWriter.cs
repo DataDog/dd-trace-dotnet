@@ -7,6 +7,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Transport;
 using Datadog.Trace.ExtensionMethods;
@@ -47,6 +49,25 @@ internal class DataStreamsWriter
             dueTime: bucketDurationMs,
             period: bucketDurationMs);
     }
+
+    public static DataStreamsWriter Create(
+        ImmutableTracerSettings settings,
+        string defaultServiceName)
+        => Create(
+            env: settings.Environment,
+            defaultServiceName: defaultServiceName,
+            requestFactory: DataStreamsTransportStrategy.GetAgentIntakeFactory(settings.Exporter));
+
+    public static DataStreamsWriter Create(
+        string env,
+        string defaultServiceName,
+        IApiRequestFactory requestFactory)
+        => new DataStreamsWriter(
+            new DataStreamsAggregator(
+                new DataStreamsMessagePackFormatter(env, defaultServiceName),
+                bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs),
+            new DataStreamsApi(requestFactory),
+            bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs);
 
     public void Add(in StatsPoint point)
     {
