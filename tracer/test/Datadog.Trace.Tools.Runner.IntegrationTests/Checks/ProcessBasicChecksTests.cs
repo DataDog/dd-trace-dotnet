@@ -272,6 +272,31 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             result.Should().BeFalse();
 
+            console.Output.Should().NotContain(ApiWrapperNotFound("/dummyPath"));
+            console.Output.Should().Contain(Resources.WrongLdPreload("/dummyPath"));
+        }
+
+        [SkippableFact]
+        public async Task LdPreloadNotFound()
+        {
+            using var helper = await StartConsole(
+                                   enableProfiler: true,
+                                   ("DD_PROFILING_ENABLED", "1"),
+                                   ("LD_PRELOAD", "/dummyPath/Datadog.Linux.ApiWrapper.x64.so"));
+
+            var processInfo = ProcessInfo.GetProcessInfo(helper.Process.Id);
+
+            processInfo.Should().NotBeNull();
+
+            using var console = ConsoleHelper.Redirect();
+
+            var result = ProcessBasicCheck.Run(processInfo, MockRegistryService(Array.Empty<string>(), ProfilerPath));
+
+            using var scope = new AssertionScope();
+            scope.AddReportable("Output", console.Output);
+
+            result.Should().BeFalse();
+
             console.Output.Should().Contain(ApiWrapperNotFound("/dummyPath"));
             console.Output.Should().NotContain(Resources.WrongLdPreload("/dummyPath"));
         }
