@@ -8,14 +8,14 @@ namespace Datadog.Trace.Tagging
 {
     partial class InsecureHashingTags
     {
-        // SpanKindBytes = System.Text.Encoding.UTF8.GetBytes("span.kind");
-        private static readonly byte[] SpanKindBytes = new byte[] { 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+        // IastJsonBytes = System.Text.Encoding.UTF8.GetBytes("_dd.iast.json");
+        private static readonly byte[] IastJsonBytes = new byte[] { 95, 100, 100, 46, 105, 97, 115, 116, 46, 106, 115, 111, 110 };
 
         public override string? GetTag(string key)
         {
             return key switch
             {
-                "span.kind" => SpanKind,
+                "_dd.iast.json" => IastJson,
                 _ => base.GetTag(key),
             };
         }
@@ -24,6 +24,9 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
+                case "_dd.iast.json": 
+                    IastJson = value;
+                    break;
                 default: 
                     base.SetTag(key, value);
                     break;
@@ -32,9 +35,9 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
-            if (SpanKind is not null)
+            if (IastJson is not null)
             {
-                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
+                processor.Process(new TagItem<string>("_dd.iast.json", IastJson, IastJsonBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -42,10 +45,10 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (SpanKind is not null)
+            if (IastJson is not null)
             {
-                sb.Append("span.kind (tag):")
-                  .Append(SpanKind)
+                sb.Append("_dd.iast.json (tag):")
+                  .Append(IastJson)
                   .Append(',');
             }
 
