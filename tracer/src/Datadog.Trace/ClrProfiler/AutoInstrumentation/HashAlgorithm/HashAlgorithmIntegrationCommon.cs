@@ -1,4 +1,4 @@
-// <copyright file="InsecureHashingCommon.cs" company="Datadog">
+// <copyright file="HashAlgorithmIntegrationCommon.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,10 +12,10 @@ using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
 {
-    internal class InsecureHashingCommon
+    internal class HashAlgorithmIntegrationCommon
     {
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.HashAlgorithm;
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InsecureHashingCommon));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HashAlgorithmIntegrationCommon));
         internal const string OperationName = "insecure_hashing";
         internal const string ServiceName = "hash";
 
@@ -37,7 +37,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
                 };
 
                 var serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
-                tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
                 scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
                 scope.Span.ResourceName = "hashing";
                 scope.Span.Type = "type";

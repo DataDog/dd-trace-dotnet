@@ -1,4 +1,4 @@
-// <copyright file="InsecureHashingIntegrationTier.cs" company="Datadog">
+// <copyright file="HashAlgorithmIntegrationTier.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
 
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class InsecureHashingIntegrationTier
+    public class HashAlgorithmIntegrationTier
     {
         /// <summary>
         /// OnMethodBegin callback
@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
         {
             if (instance is System.Security.Cryptography.HashAlgorithm algorithm)
             {
-                return new CallTargetState(scope: InsecureHashingCommon.CreateScope(algorithm));
+                return new CallTargetState(scope: HashAlgorithmIntegrationCommon.CreateScope(algorithm));
             }
 
             return CallTargetState.GetDefault();

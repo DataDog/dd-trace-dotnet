@@ -478,6 +478,11 @@ namespace Datadog.Trace
         internal const string ActorIp = "actor.ip";
 
         /// <summary>
+        /// Should contain the public IP of the host initiating the request.
+        /// </summary>
+        internal const string IastJson = "_dd.iast.json";
+
+        /// <summary>
         /// The ip as reported by the framework.
         /// </summary>
         internal const string NetworkClientIp = "network.client.ip";

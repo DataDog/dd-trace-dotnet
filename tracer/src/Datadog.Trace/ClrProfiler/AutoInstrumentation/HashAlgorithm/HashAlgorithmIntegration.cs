@@ -1,4 +1,4 @@
-// <copyright file="InsecureHashingIntegrationBis.cs" company="Datadog">
+// <copyright file="HashAlgorithmIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,16 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
     [InstrumentMethod(
        AssemblyNames = new[] { "mscorlib", "System.Security.Cryptography.Primitives" },
        TypeNames = new[] { "System.Security.Cryptography.HashAlgorithm" },
-       ParameterTypeNames = new[] { "System.IO.Stream" },
-       MethodName = "ComputeHash",
-       ReturnTypeName = ClrNames.ByteArray,
-       MinimumVersion = "1.0.0",
-       MaximumVersion = "7.*.*",
-       IntegrationName = nameof(Configuration.IntegrationId.HashAlgorithm))]
-    [InstrumentMethod(
-       AssemblyNames = new[] { "mscorlib", "System.Security.Cryptography.Primitives" },
-       TypeNames = new[] { "System.Security.Cryptography.HashAlgorithm" },
-       ParameterTypeNames = new[] { ClrNames.ByteArray },
+       ParameterTypeNames = new[] { ClrNames.ByteArray, ClrNames.Int32, ClrNames.Int32 },
        MethodName = "ComputeHash",
        ReturnTypeName = ClrNames.ByteArray,
        MinimumVersion = "1.0.0",
@@ -34,20 +25,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
 
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class InsecureHashingIntegrationBis
+    public class HashAlgorithmIntegration
     {
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="array">The input to compute the hash code for.</param>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <param name="offset">The offset into the byte array from which to begin using data.</param>
+        /// <param name="count">The number of bytes in the array to use as data.</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, object array)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, byte[] array, int offset, int count)
         {
             if (instance is System.Security.Cryptography.HashAlgorithm algorithm)
             {
-                return new CallTargetState(scope: InsecureHashingCommon.CreateScope(algorithm));
+                return new CallTargetState(scope: HashAlgorithmIntegrationCommon.CreateScope(algorithm));
             }
 
             return CallTargetState.GetDefault();
