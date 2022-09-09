@@ -85,7 +85,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 // available in the span object itself, like its position in the trace chunk
                 // or if its parent can also be found in the same chunk
                 bool isLocalRoot = parentSpanId == 0 || span == span.Context.TraceContext.RootSpan;
-                bool isOrphan = parentSpanId > 0 && !spanIds.Contains(parentSpanId);
+                bool isOrphan = isLocalRoot || !spanIds.Contains(parentSpanId);
                 bool isFirst = i == 0;
 
                 var spanModel = new SpanModel(span, value, isLocalRoot, isOrphan, isFirst);
