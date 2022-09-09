@@ -23,7 +23,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
         {
             var tracer = Tracer.Instance;
             var iast = Datadog.Trace.IAST.IAST.Instance;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !iast.Settings.Enabled || !iast.Settings.InsecureHashingAlgorithmEnabled || !InvalidHashAlgorithm(instance))
+            if (!iast.Settings.Enabled || !iast.Settings.InsecureHashingAlgorithmEnabled || !InvalidHashAlgorithm(instance))
             {
                 // skip this span
                 return null;

@@ -5,7 +5,6 @@
 
 using System;
 using System.ComponentModel;
-using System.Security.Cryptography;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
@@ -14,13 +13,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
     /// System.Security.Cryptography.HashAlgorithm instrumentation
     /// </summary>
     [InstrumentMethod(
-       AssemblyNames = new[] { "mscorlib", "System.Security.Cryptography.Primitives" },
+       AssemblyNames = new[] { "System.Security.Cryptography.Primitives" },
        TypeNames = new[] { "System.Security.Cryptography.HashAlgorithm" },
        ParameterTypeNames = new[] { ClrNames.ByteArray, ClrNames.Int32, ClrNames.Int32 },
        MethodName = "ComputeHash",
        ReturnTypeName = ClrNames.ByteArray,
        MinimumVersion = "1.0.0",
        MaximumVersion = "7.*.*",
+       InstrumentationCategory = InstrumentationCategory.IAST,
        IntegrationName = nameof(Configuration.IntegrationId.HashAlgorithm))]
 
     [Browsable(false)]
