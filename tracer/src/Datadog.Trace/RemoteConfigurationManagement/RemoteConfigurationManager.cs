@@ -35,6 +35,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private int _targetsVersion;
         private string _lastPollError;
         private bool _isPollingStarted;
+        private bool _isRcmEnabled;
 
         private RemoteConfigurationManager(
             IDiscoveryService discoveryService,
@@ -54,6 +55,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             _lastPollError = null;
             _cancellationSource = new CancellationTokenSource();
             _products = new ConcurrentDictionary<string, Product>();
+            discoveryService.SubscribeToChanges(SetRcmEnabled);
         }
 
         public static RemoteConfigurationManager Instance { get; private set; }
@@ -91,7 +93,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
             while (!_cancellationSource.IsCancellationRequested)
             {
-                var isRcmEnabled = !string.IsNullOrEmpty(_discoveryService.ConfigurationEndpoint);
+                var isRcmEnabled = Volatile.Read(ref _isRcmEnabled);
                 var isProductRegistered = _products.Any();
 
                 if (isRcmEnabled && isProductRegistered)
@@ -119,6 +121,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         public void UnregisterProduct(string productName)
         {
             _products.TryRemove(productName, out _);
+        }
+
+        public void OnShutdown()
+        {
+            _discoveryService.RemoveSubscription(SetRcmEnabled);
+            _cancellationSource.Cancel();
         }
 
         private async Task Poll()
@@ -265,9 +273,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
         }
 
-        public void OnShutdown()
+        private void SetRcmEnabled(AgentConfiguration c)
         {
-            _cancellationSource.Cancel();
+            _isRcmEnabled = !string.IsNullOrEmpty(c.ConfigurationEndpoint);
         }
     }
 }

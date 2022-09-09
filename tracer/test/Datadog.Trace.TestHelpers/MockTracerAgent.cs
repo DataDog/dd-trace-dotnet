@@ -683,6 +683,9 @@ namespace Datadog.Trace.TestHelpers
 
             [JsonProperty("client_drop_p0s")]
             public bool ClientDropP0s { get; set; } = true;
+
+            [JsonProperty("version")]
+            public string AgentVersion { get; set; }
         }
 
         public class TcpUdpAgent : MockTracerAgent

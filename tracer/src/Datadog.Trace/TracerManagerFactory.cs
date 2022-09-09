@@ -51,7 +51,8 @@ namespace Datadog.Trace
                 statsd: null,
                 runtimeMetrics: null,
                 logSubmissionManager: previous?.DirectLogSubmission,
-                telemetry: null);
+                telemetry: null,
+                discoveryService: null);
 
             try
             {
@@ -73,7 +74,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Internal for use in tests that create "standalone" <see cref="TracerManager"/> by
-        /// <see cref="Tracer(TracerSettings, IAgentWriter, ISampler, IScopeManager, IDogStatsd, ITelemetryController)"/>
+        /// <see cref="Tracer(TracerSettings, IAgentWriter, ISampler, IScopeManager, IDogStatsd, ITelemetryController, IDiscoveryService)"/>
         /// </summary>
         internal TracerManager CreateTracerManager(
             ImmutableTracerSettings settings,
@@ -83,7 +84,8 @@ namespace Datadog.Trace
             IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetrics,
             DirectLogSubmissionManager logSubmissionManager,
-            ITelemetryController telemetry)
+            ITelemetryController telemetry,
+            IDiscoveryService discoveryService)
         {
             settings ??= ImmutableTracerSettings.FromDefaultSources();
 
@@ -91,7 +93,7 @@ namespace Datadog.Trace
                                      GetApplicationName() ??
                                      UnknownServiceName;
 
-            var discoveryService = DiscoveryService.Create(settings.Exporter);
+            discoveryService ??= DiscoveryService.Create(settings.Exporter);
 
             statsd = settings.TracerMetricsEnabled
                          ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName))
@@ -119,7 +121,7 @@ namespace Datadog.Trace
 
             SpanContextPropagator.Instance = ContextPropagators.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract);
 
-            var tracerManager = CreateTracerManagerFrom(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, defaultServiceName);
+            var tracerManager = CreateTracerManagerFrom(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, defaultServiceName);
             return tracerManager;
         }
 
@@ -135,8 +137,9 @@ namespace Datadog.Trace
             RuntimeMetricsWriter runtimeMetrics,
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
+            IDiscoveryService discoveryService,
             string defaultServiceName)
-            => new TracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, defaultServiceName);
+            => new TracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, defaultServiceName);
 
         protected virtual ISampler GetSampler(ImmutableTracerSettings settings)
         {

@@ -3,6 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
+using System;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Agent.DiscoveryService
@@ -12,16 +15,19 @@ namespace Datadog.Trace.Agent.DiscoveryService
     /// </summary>
     internal interface IDiscoveryService
     {
-        string ConfigurationEndpoint { get; }
+        /// <summary>
+        /// Subscribe to changes in the agent configuration. The callback should exit quickly when called.
+        /// If an <see cref="AgentConfiguration"/> has already been fetched when <see cref="SubscribeToChanges"/>
+        /// is called, <paramref name="callback"/> is called immediately with the latest configuration
+        /// </summary>
+        void SubscribeToChanges(Action<AgentConfiguration> callback);
 
-        string DebuggerEndpoint { get; }
+        /// <summary>
+        /// Remove a subscription for agent configuration changes. This callback should be the same
+        /// object passed to <see cref="SubscribeToChanges"/>
+        /// </summary>
+        void RemoveSubscription(Action<AgentConfiguration> callback);
 
-        string StatsEndpoint { get; }
-
-        string AgentVersion { get; }
-
-        bool? ClientDropP0s { get; }
-
-        Task<bool> DiscoverAsync();
+        Task DisposeAsync();
     }
 }

@@ -10,6 +10,7 @@ using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
@@ -56,6 +57,7 @@ namespace Datadog.Trace
             RuntimeMetricsWriter runtimeMetricsWriter,
             DirectLogSubmissionManager directLogSubmission,
             ITelemetryController telemetry,
+            IDiscoveryService discoveryService,
             string defaultServiceName,
             ITraceProcessor[] traceProcessors = null)
         {
@@ -68,6 +70,7 @@ namespace Datadog.Trace
             DefaultServiceName = defaultServiceName;
             DirectLogSubmission = directLogSubmission;
             Telemetry = telemetry;
+            DiscoveryService = discoveryService;
             TraceProcessors = traceProcessors ?? Array.Empty<ITraceProcessor>();
             QueryStringManager = new(settings?.QueryStringReportingEnabled ?? true, settings?.ObfuscationQueryStringRegexTimeout ?? 100, settings?.ObfuscationQueryStringRegex ?? TracerSettings.DefaultObfuscationQueryStringRegex);
             var lstTagProcessors = new List<ITagProcessor>(TraceProcessors.Length);
@@ -131,6 +134,8 @@ namespace Datadog.Trace
         public ITagProcessor[] TagProcessors { get; }
 
         public ITelemetryController Telemetry { get; }
+
+        public IDiscoveryService DiscoveryService { get; }
 
         private RuntimeMetricsWriter RuntimeMetrics { get; }
 
@@ -216,10 +221,17 @@ namespace Datadog.Trace
                     await oldManager.Telemetry.DisposeAsync(sendAppClosingTelemetry: false).ConfigureAwait(false);
                 }
 
+                var discoveryReplaced = false;
+                if (oldManager.DiscoveryService != newManager.DiscoveryService && oldManager.DiscoveryService is not null)
+                {
+                    discoveryReplaced = true;
+                    await oldManager.DiscoveryService.DisposeAsync().ConfigureAwait(false);
+                }
+
                 Log.Information(
                     exception: null,
-                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Telemetry: {TelemetryReplaced}",
-                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, telemetryReplaced });
+                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Telemetry: {TelemetryReplaced}, Discovery: {DiscoveryReplaced}",
+                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, telemetryReplaced, discoveryReplaced });
             }
             catch (Exception ex)
             {
@@ -506,9 +518,11 @@ namespace Datadog.Trace
                     var logSubmissionTask = _instance.DirectLogSubmission?.DisposeAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing Telemetry.");
                     var telemetryTask = _instance.Telemetry?.DisposeAsync() ?? Task.CompletedTask;
+                    Log.Debug("Disposing DiscoveryService.");
+                    var discoveryService = _instance.DiscoveryService?.DisposeAsync() ?? Task.CompletedTask;
 
                     Log.Debug("Waiting for disposals.");
-                    await Task.WhenAll(flushTracesTask, logSubmissionTask, telemetryTask).ConfigureAwait(false);
+                    await Task.WhenAll(flushTracesTask, logSubmissionTask, telemetryTask, discoveryService).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)

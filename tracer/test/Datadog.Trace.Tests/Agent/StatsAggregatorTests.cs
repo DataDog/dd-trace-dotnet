@@ -44,12 +44,7 @@ namespace Datadog.Trace.Tests.Agent
                 .Returns(Task.FromResult(true));
 
             // Mock the DiscoveryService so StatsAggregator.CanComputeStats = true and Api.SendStatsAsync will be called
-            var discoveryService = new Mock<IDiscoveryService>();
-            discoveryService.Setup(s => s.DiscoverAsync()).Returns(Task.FromResult(true));
-            discoveryService.Setup(s => s.StatsEndpoint).Returns("StatsEndpoint");
-            discoveryService.Setup(s => s.ClientDropP0s).Returns(true);
-
-            var aggregator = new StatsAggregator(api.Object, GetSettings(bucketDurationSeconds), discoveryService.Object);
+            var aggregator = new StatsAggregator(api.Object, GetSettings(bucketDurationSeconds), new StubDiscoveryService());
 
             try
             {
@@ -82,15 +77,9 @@ namespace Datadog.Trace.Tests.Agent
         {
             var api = new Mock<IApi>();
 
-            // Mock the DiscoveryService so StatsAggregator.CanComputeStats = true and Api.SendStatsAsync will be called
-            var discoveryService = new Mock<IDiscoveryService>();
-            discoveryService.Setup(s => s.DiscoverAsync()).Returns(Task.FromResult(true));
-            discoveryService.Setup(s => s.StatsEndpoint).Returns("StatsEndpoint");
-            discoveryService.Setup(s => s.ClientDropP0s).Returns(true);
-
             // First, validate that Flush does call SendStatsAsync even if disposed
             // If this behavior change then the test needs to be rewritten
-            var aggregator = new StatsAggregator(api.Object, GetSettings(), discoveryService.Object);
+            var aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService());
 
             // Dispose immediately to make Flush complete without delay
             await aggregator.DisposeAsync();
@@ -104,7 +93,7 @@ namespace Datadog.Trace.Tests.Agent
             api.Reset();
 
             // Now the actual test
-            aggregator = new StatsAggregator(api.Object, GetSettings(), discoveryService.Object);
+            aggregator = new StatsAggregator(api.Object, GetSettings(), new StubDiscoveryService());
             await aggregator.DisposeAsync();
 
             await aggregator.Flush();
@@ -451,6 +440,26 @@ namespace Datadog.Trace.Tests.Agent
             }
 
             return ns << shift;
+        }
+
+        private class StubDiscoveryService : IDiscoveryService
+        {
+            public void SubscribeToChanges(Action<AgentConfiguration> callback)
+            {
+                callback(new AgentConfiguration(
+                             configurationEndpoint: "configurationEndpoint",
+                             debuggerEndpoint: "debuggerEndpoint",
+                             agentVersion: "agentVersion",
+                             statsEndpoint: "traceStatsEndpoint",
+                             dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
+                             clientDropP0: true));
+            }
+
+            public void RemoveSubscription(Action<AgentConfiguration> callback)
+            {
+            }
+
+            public Task DisposeAsync() => Task.CompletedTask;
         }
     }
 }
