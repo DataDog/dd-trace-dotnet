@@ -1,4 +1,4 @@
-// <copyright file="InsecureHashingIntegrationBis.cs" company="Datadog">
+// <copyright file="HashAlgorithmIntegrationBis.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing
 
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class InsecureHashingIntegrationBis
+    public class HashAlgorithmIntegrationBis
     {
         /// <summary>
         /// OnMethodBegin callback
@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.InsecureHashing
         {
             if (instance is HashAlgorithm algorithm)
             {
-                return new CallTargetState(scope: InsecureHashingCommon.CreateScope(algorithm));
+                return new CallTargetState(scope: HashAlgorithmIntegrationCommon.CreateScope(algorithm));
             }
 
             return CallTargetState.GetDefault();
