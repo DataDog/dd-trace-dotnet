@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             if (info != null)
             {
                 // In .NET framework, we need to have the UseShellExecute property set to false in order to use environment variables.
-#if NETFRAMEWORK 
+#if NETFRAMEWORK
                 return CreateScope(info.FileName, info.UseShellExecute ? null : info.Environment);
 #else
                 return CreateScope(info.FileName, info.Environment);

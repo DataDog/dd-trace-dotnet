@@ -369,13 +369,5 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.url")
                 .MatchesOneOf("component", "HttpMessageHandler", "WebRequest")
                 .Matches("span.kind", "client"));
-
-        public static Result IsProcessStart(this MockSpan span) => Result.FromSpan(span)
-            .Properties(s => s
-                .Matches(Name, "command_execution")
-                .Matches(Type, "system"))
-            .Tags(s => s
-                .IsOptional("cmd.environment_variables")
-                .IsOptional("cmd.truncated"));
     }
 }
