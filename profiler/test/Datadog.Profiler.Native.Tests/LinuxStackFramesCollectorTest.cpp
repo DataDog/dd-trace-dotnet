@@ -456,7 +456,6 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckThatProfilerHandlerAndOtherHandler
 
 TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHandlerKeepsChanging)
 {
-    // 2nd install profiler handler
     auto collector = LinuxStackFramesCollector();
 
     const auto threadId = GetWorkerThreadId();
@@ -473,7 +472,6 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
         EXPECT_GT(buffer->GetFramesCount(), 0);
     }
 
-    // 1st installed Test handler
     InstallHandler(SA_SIGINFO);
 
     {

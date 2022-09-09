@@ -94,7 +94,8 @@ bool LinuxStackFramesCollector::IsProfilerSignalHandlerInstalled()
 
     sigaction(s_signalToSend, nullptr, &currentAction);
 
-    return currentAction.sa_sigaction == LinuxStackFramesCollector::CollectStackSampleSignalHandler;
+    return (currentAction.sa_flags & SA_SIGINFO) == SA_SIGINFO &&
+           currentAction.sa_sigaction == LinuxStackFramesCollector::CollectStackSampleSignalHandler;
 }
 
 std::int64_t LinuxStackFramesCollector::SendSignal(pid_t threadId) const
@@ -116,7 +117,7 @@ bool LinuxStackFramesCollector::CheckSignalHandler()
             return false;
 
         alreadyLogged = true;
-        Log::Warn("Profiler signal handler was replaced again. As of now, we will stopped restoring it to avoid issues.");
+        Log::Warn("Profiler signal handler was replaced again. As of now, we will stopped restoring it to avoid issues: the profiler is disabled.");
         return false;
     }
 
@@ -125,7 +126,7 @@ bool LinuxStackFramesCollector::CheckSignalHandler()
     // restore profiler handler
     if (!SetupSignalHandler())
     {
-        Log::Debug("Fail to restore profiler signal handler.");
+        Log::Warn("Fail to restore profiler signal handler.");
         return false;
     }
 
@@ -162,7 +163,10 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 #endif
         s_pInstanceCurrentlyStackWalking = this;
 
-        on_leave { s_pInstanceCurrentlyStackWalking = nullptr; };
+        on_leave
+        {
+            s_pInstanceCurrentlyStackWalking = nullptr;
+        };
 
         _stackWalkFinished = false;
 
@@ -176,21 +180,18 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
         }
         else
         {
-            do
+            // release the lock and wait for a notification or the 2s timeout
+            auto status =_stackWalkInProgressWaiter.wait_for(stackWalkInProgressLock, 2s);
+
+            // The lock is reacquired, but we might have faced an issue:
+            // - the thread is dead and the lock released
+            // - the profiler signal handler was replaced
+
+            if (status == std::cv_status::timeout)
             {
-                // This loop ensures that the sampling thread does not get stuck:
-                //  - When the currently walked thread is terminated and we are not notified.
-                //    This can happen when the CLR shuts down.
-                //  - When the signal handler is replaced by a 3rd party library.
-                //
-                // It will exit when the stack walk finishes as expected or if we detect one of the previous cases.
-                _stackWalkInProgressWaiter.wait_for(stackWalkInProgressLock, 50ms);
-                if (!IsThreadAlive(_processId, threadId) || !IsProfilerSignalHandlerInstalled())
-                {
-                    _lastStackWalkErrorCode = E_ABORT;
-                    break;
-                }
-            } while (!_stackWalkFinished);
+                _lastStackWalkErrorCode = E_ABORT;
+            }
+
             errorCode = _lastStackWalkErrorCode;
         }
     }
@@ -228,7 +229,6 @@ bool LinuxStackFramesCollector::SetupSignalHandler()
     int32_t result = sigaction(s_signalToSend, &sampleAction, &s_previousAction);
     if (result != 0)
     {
-        sigdelset(&sampleAction.sa_mask, s_signalToSend);
         Log::Error("LinuxStackFramesCollector::SetupSignalHandler: Failed to setup signal handler for SIGUSR1 signals. Reason: ",
                    strerror(errno), ".");
         return false;
@@ -339,25 +339,34 @@ bool LinuxStackFramesCollector::CanCollect(int32_t threadId, pid_t processId) co
 
 void LinuxStackFramesCollector::CallOrignalHandler(int32_t signal, siginfo_t* info, void* context)
 {
-    static thread_local bool alreadyExecuted = false;
-    if (s_previousAction.sa_handler == SIG_DFL || s_previousAction.sa_handler == SIG_IGN)
+    static thread_local bool isExecuting = false;
+
+    if (isExecuting)
         return;
 
-    if (alreadyExecuted)
-        return;
+    isExecuting = true;
 
-    alreadyExecuted = true;
-    if ((s_previousAction.sa_flags & SA_SIGINFO) == 0)
+    try
     {
-        assert(s_previousAction.sa_handler != nullptr);
-        s_previousAction.sa_handler(signal);
+        if ((s_previousAction.sa_flags & SA_SIGINFO) == SA_SIGINFO && s_previousAction.sa_sigaction != nullptr)
+        {
+            assert(s_previousAction.sa_sigaction != nullptr);
+            s_previousAction.sa_sigaction(signal, info, context);
+        }
+        else
+        {
+            if (s_previousAction.sa_handler != SIG_DFL && s_previousAction.sa_handler != SIG_IGN)
+            {
+                assert(s_previousAction.sa_handler != nullptr);
+                s_previousAction.sa_handler(signal);
+            }
+        }
     }
-    else
+    catch (...)
     {
-        assert(s_previousAction.sa_sigaction != nullptr);
-        s_previousAction.sa_sigaction(signal, info, context);
     }
-    alreadyExecuted = false;
+
+    isExecuting = false;
 }
 
 void LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal, siginfo_t* info, void* context)
@@ -405,7 +414,9 @@ void LinuxStackFramesCollector::ErrorStatistics::Log()
     if (!_stats.empty())
     {
         std::stringstream ss;
-        ss << std::setfill(' ') << std::setw(13) << "# occurrences" << "  |  " << "Error message\n";
+        ss << std::setfill(' ') << std::setw(13) << "# occurrences"
+           << "  |  "
+           << "Error message\n";
         for (auto& errorCodeAndStats : _stats)
         {
             ss << std::setfill(' ') << std::setw(10) << errorCodeAndStats.second << "  |  " << ErrorCodeToString(errorCodeAndStats.first) << " (" << errorCodeAndStats.first << ")\n";

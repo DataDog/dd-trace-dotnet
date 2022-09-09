@@ -29,7 +29,7 @@ namespace Samples.Computer01
         private GenericsAllocation _genericsAllocation;
         private ContentionGenerator _contentionGenerator;
 
-#if Linux && NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
         private LinuxSignalHandler _linuxSignalHandler;
 #endif
 
@@ -91,7 +91,7 @@ namespace Samples.Computer01
                     StartContentionGenerator(nbThreads, parameter);
                     break;
 
-#if Linux && NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
                 case Scenario.LinuxSignalHandler:
                     StartLinuxSignalHandler();
                     break;
@@ -155,7 +155,7 @@ namespace Samples.Computer01
                     StopContentionGenerator();
                     break;
 
-#if Linux && NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
                 case Scenario.LinuxSignalHandler:
                     StopLinuxSignalHandler();
                     break;
@@ -221,7 +221,7 @@ namespace Samples.Computer01
                         RunContentionGenerator(nbThreads, parameter);
                         break;
 
-#if Linux && NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
                     case Scenario.LinuxSignalHandler:
                         RunLinuxSignalHandler();
                         break;
@@ -309,7 +309,7 @@ namespace Samples.Computer01
             _contentionGenerator.Start();
         }
 
-#if Linux && NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
         private void StartLinuxSignalHandler()
         {
             _linuxSignalHandler = new LinuxSignalHandler();
@@ -381,7 +381,7 @@ namespace Samples.Computer01
             _contentionGenerator.Stop();
         }
 
-#if Linux && NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
         private void StopLinuxSignalHandler()
         {
             _linuxSignalHandler.Stop();
@@ -456,7 +456,7 @@ namespace Samples.Computer01
             contentionGenerator.Run();
         }
 
-#if Linux && NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
         private void RunLinuxSignalHandler()
         {
             var linuxSignalHandler = new LinuxSignalHandler();

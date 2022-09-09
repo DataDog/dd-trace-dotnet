@@ -3,10 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-#if Linux && NET6_0_OR_GREATER
+#if NET6_0_OR_GREATER
 
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -85,7 +84,7 @@ namespace Samples.Computer01
 
         private static void SendSignal()
         {
-            var result = Process.GetCurrentProcess().Kill(10);
+            var result = Process.GetCurrentProcess().SendSignal((int)SIGUSR1);
             if (result != 0)
             {
                 return;
@@ -97,6 +96,7 @@ namespace Samples.Computer01
         private static void SignalHandler(PosixSignalContext ctx)
         {
             Interlocked.Increment(ref _nbHandlerExecutions);
+            ctx.Cancel = true;
         }
 
         private void SetupSignalHandler()
@@ -114,7 +114,6 @@ namespace Samples.Computer01
         {
             Console.WriteLine("Signal scenario stats:");
 
-            // Use "[Error] XX" pattern to fail integration tests
             if (_nbSignalsSent == 0)
             {
                 Console.WriteLine("[Error] no signal was sent for the last period of time.");
