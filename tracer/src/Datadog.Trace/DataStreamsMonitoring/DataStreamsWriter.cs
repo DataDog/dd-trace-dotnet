@@ -7,6 +7,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Transport;
 using Datadog.Trace.ExtensionMethods;
@@ -15,7 +17,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DataStreamsMonitoring;
 
-internal class DataStreamsWriter
+internal class DataStreamsWriter : IDataStreamsWriter
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsWriter>();
 
@@ -24,19 +26,24 @@ internal class DataStreamsWriter
     private readonly ManualResetEventSlim _processingMutex = new(initialState: false, spinCount: 0);
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly DataStreamsAggregator _aggregator;
+    private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
     private readonly Timer _flushTimer;
     private byte[]? _serializationBuffer;
     private long _pointsDropped;
     private int _flushRequested;
+    private int _isSupported = (int)SupportState.Unknown;
 
     public DataStreamsWriter(
         DataStreamsAggregator aggregator,
         IDataStreamsApi api,
-        long bucketDurationMs)
+        long bucketDurationMs,
+        IDiscoveryService discoveryService)
     {
         _aggregator = aggregator;
         _api = api;
+        _discoveryService = discoveryService;
+        _discoveryService.SubscribeToChanges(HandleConfigUpdate);
 
         _processTask = Task.Run(ProcessQueueLoopAsync);
         _processTask.ContinueWith(t => Log.Error(t.Exception, "Error in processing task"), TaskContinuationOptions.OnlyOnFaulted);
@@ -47,6 +54,30 @@ internal class DataStreamsWriter
             dueTime: bucketDurationMs,
             period: bucketDurationMs);
     }
+
+    /// <summary>
+    /// Public for testing only
+    /// </summary>
+    public event EventHandler<EventArgs>? FlushComplete;
+
+    private enum SupportState
+    {
+        Unknown,
+        Supported,
+        Unsupported
+    }
+
+    public static DataStreamsWriter Create(
+        ImmutableTracerSettings settings,
+        IDiscoveryService discoveryService,
+        string defaultServiceName)
+        => new DataStreamsWriter(
+            new DataStreamsAggregator(
+                new DataStreamsMessagePackFormatter(settings.Environment, defaultServiceName),
+                bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs),
+            new DataStreamsApi(DataStreamsTransportStrategy.GetAgentIntakeFactory(settings.Exporter)),
+            bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs,
+            discoveryService);
 
     public void Add(in StatsPoint point)
     {
@@ -66,6 +97,7 @@ internal class DataStreamsWriter
 
     public async Task DisposeAsync()
     {
+        _discoveryService.RemoveSubscription(HandleConfigUpdate);
 #if NETCOREAPP3_1_OR_GREATER
         await _flushTimer.DisposeAsync().ConfigureAwait(false);
 #else
@@ -122,7 +154,7 @@ internal class DataStreamsWriter
         const int offset = 0;
         var bytesWritten = _aggregator.Serialize(ref _serializationBuffer, offset: offset, flushTimeNs);
 
-        if (bytesWritten > 0)
+        if (bytesWritten > 0 && (Volatile.Read(ref _isSupported) == (int)SupportState.Supported))
         {
             // This flushes on the same thread as the processing loop
             var data = new ArraySegment<byte>(_serializationBuffer, offset, bytesWritten);
@@ -156,6 +188,7 @@ internal class DataStreamsWriter
                 if (flushRequested == 1)
                 {
                     await WriteToApiAsync().ConfigureAwait(false);
+                    FlushComplete?.Invoke(this, EventArgs.Empty);
                 }
             }
             catch (Exception ex)
@@ -170,6 +203,27 @@ internal class DataStreamsWriter
 
             _processingMutex.Wait();
             _processingMutex.Reset();
+        }
+    }
+
+    private void HandleConfigUpdate(AgentConfiguration config)
+    {
+        var isSupported = string.IsNullOrEmpty(config.DataStreamsMonitoringEndpoint)
+                              ? SupportState.Unsupported
+                              : SupportState.Supported;
+        var wasSupported = (SupportState)Volatile.Read(ref _isSupported);
+
+        if (isSupported != wasSupported)
+        {
+            _isSupported = (int)isSupported;
+            if (isSupported == SupportState.Supported)
+            {
+                Log.Information("Data streams monitoring supported, enabling flush");
+            }
+            else
+            {
+                Log.Warning("Data streams monitoring was enabled but is not supported by the Agent. Disabling flush");
+            }
         }
     }
 }
