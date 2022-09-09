@@ -13,7 +13,7 @@ namespace Samples.ProcessStart
             Environment.SetEnvironmentVariable("PATH", "testPath");
             try
             {
-                Process.Start(new ProcessStartInfo("nonexisting1.exe") { UseShellExecute = false });
+                Process.Start(new ProcessStartInfo("nonexisting1.exe") { UseShellExecute = true });
             }
             catch (Win32Exception) { }
 

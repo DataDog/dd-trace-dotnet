@@ -8,9 +8,6 @@
     Type: system,
     Error: 1,
     Tags: {
-      cmd.environment_variables:
-PATH=testPath
-,
       env: integration_tests,
       error.type: System.ComponentModel.Win32Exception,
       language: dotnet,
