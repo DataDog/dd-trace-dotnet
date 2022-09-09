@@ -5,6 +5,7 @@
 
 using System;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -20,12 +21,16 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationApi));
 
         private readonly IApiRequestFactory _apiRequestFactory;
-        private readonly IDiscoveryService _discoveryService;
+        private string _configEndpoint = null;
 
         private RemoteConfigurationApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
         {
             _apiRequestFactory = apiRequestFactory;
-            _discoveryService = discoveryService;
+            discoveryService.SubscribeToChanges(
+                config =>
+                {
+                    _configEndpoint = config.ConfigurationEndpoint;
+                });
         }
 
         public static RemoteConfigurationApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
@@ -35,7 +40,14 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
 
         public async Task<GetRcmResponse> GetConfigs(GetRcmRequest request)
         {
-            var uri = _apiRequestFactory.GetEndpoint(_discoveryService.ConfigurationEndpoint);
+            var configEndpoint = Volatile.Read(ref _configEndpoint);
+            if (string.IsNullOrEmpty(configEndpoint))
+            {
+                Log.Debug("Waiting for discovery service to retrieve configuration.");
+                return null;
+            }
+
+            var uri = _apiRequestFactory.GetEndpoint(configEndpoint);
             var apiRequest = _apiRequestFactory.Create(uri);
 
             var requestContent = JsonConvert.SerializeObject(request);
