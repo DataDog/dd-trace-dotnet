@@ -7,9 +7,9 @@ using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
 {
-    internal partial class InsecureHashingTags : InstrumentationTags
+    internal partial class InsecureHashingTags : CommonTags
     {
-        [Tag(Trace.Tags.SpanKind)]
-        public override string SpanKind => SpanKinds.Consumer;
+        [Tag(Trace.Tags.IastJson)]
+        public string IastJson { get; set; }
     }
 }
