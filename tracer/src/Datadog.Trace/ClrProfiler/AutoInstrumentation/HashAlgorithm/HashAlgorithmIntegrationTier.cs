@@ -1,11 +1,13 @@
-// <copyright file="InsecureHashingIntegration.cs" company="Datadog">
+// <copyright file="HashAlgorithmIntegrationTier.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using System.ComponentModel;
+using System.IO;
 using System.Security.Cryptography;
+using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
@@ -16,30 +18,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
     [InstrumentMethod(
        AssemblyNames = new[] { "mscorlib", "System.Security.Cryptography.Primitives" },
        TypeNames = new[] { "System.Security.Cryptography.HashAlgorithm" },
-       ParameterTypeNames = new[] { ClrNames.ByteArray, ClrNames.Int32, ClrNames.Int32 },
-       MethodName = "ComputeHash",
-       ReturnTypeName = ClrNames.ByteArray,
+       ParameterTypeNames = new[] { ClrNames.Stream, ClrNames.CancellationToken },
+       MethodName = "ComputeHashAsync",
+       ReturnTypeName = ClrNames.Task,
        MinimumVersion = "1.0.0",
        MaximumVersion = "7.*.*",
        IntegrationName = nameof(Configuration.IntegrationId.HashAlgorithm))]
 
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class InsecureHashingIntegration
+    public class HashAlgorithmIntegrationTier
     {
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="array">The input to compute the hash code for.</param>
-        /// <param name="offset">The offset into the byte array from which to begin using data.</param>
-        /// <param name="count">The number of bytes in the array to use as data.</param>
+        /// <param name="data">The input to compute the hash code for.</param>
+        /// <param name="token">The token to monitor for cancellation requests.</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, byte[] array, int offset, int count)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, Stream data, CancellationToken token)
         {
             if (instance is System.Security.Cryptography.HashAlgorithm algorithm)
             {
-                return new CallTargetState(scope: InsecureHashingCommon.CreateScope(algorithm));
+                return new CallTargetState(scope: HashAlgorithmIntegrationCommon.CreateScope(algorithm));
             }
 
             return CallTargetState.GetDefault();
