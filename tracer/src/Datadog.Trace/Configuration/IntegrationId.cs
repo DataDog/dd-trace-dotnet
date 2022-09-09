@@ -49,6 +49,6 @@ namespace Datadog.Trace.Configuration
         TraceAnnotations,
         Grpc,
         Process,
-        InsecureHashing,
+        HashAlgorithm,
     }
 }

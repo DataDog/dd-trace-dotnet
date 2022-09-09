@@ -4,9 +4,9 @@
 // </copyright>
 
 using System;
-using System.Diagnostics;
 using System.Security.Cryptography;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.IAST;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -22,7 +22,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
         internal static Scope CreateScope(System.Security.Cryptography.HashAlgorithm instance)
         {
             var tracer = Tracer.Instance;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !InvalidHashAlgorithm(instance))
+            var iast = Datadog.Trace.IAST.IAST.Instance;
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) || !iast.Settings.Enabled || !iast.Settings.InsecureHashingAlgorithmEnabled || !InvalidHashAlgorithm(instance))
             {
                 // skip this span
                 return null;
