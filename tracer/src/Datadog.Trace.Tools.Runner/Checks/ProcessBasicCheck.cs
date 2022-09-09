@@ -207,7 +207,12 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 }
                 else
                 {
-                    if (!File.Exists(ldPreload))
+                    if (Path.GetFileName(ldPreload) != "Datadog.Linux.ApiWrapper.x64.so")
+                    {
+                        Utils.WriteError(WrongLdPreload(ldPreload));
+                        ok = false;
+                    }
+                    else if (!File.Exists(ldPreload))
                     {
                         Utils.WriteError(ApiWrapperNotFound(ldPreload));
                         ok = false;

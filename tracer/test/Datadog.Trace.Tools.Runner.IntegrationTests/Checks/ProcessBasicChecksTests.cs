@@ -273,6 +273,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             result.Should().BeFalse();
 
             console.Output.Should().Contain(ApiWrapperNotFound("/dummyPath"));
+            console.Output.Should().NotContain(Resources.WrongLdPreload("/dummyPath"));
         }
 
         [SkippableTheory]
