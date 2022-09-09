@@ -381,7 +381,9 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 var fileName = Path.GetFileName(module);
 
                 if (fileName.Equals("Datadog.Profiler.Native.dll", StringComparison.OrdinalIgnoreCase)
-                 || fileName.Equals("Datadog.Profiler.Native.so", StringComparison.OrdinalIgnoreCase))
+                 || fileName.Equals("Datadog.Profiler.Native.so", StringComparison.OrdinalIgnoreCase)
+                 || fileName.Equals("Datadog.AutoInstrumentation.Profiler.Native.x64.dll", StringComparison.OrdinalIgnoreCase)
+                 || fileName.Equals("Datadog.AutoInstrumentation.Profiler.Native.x86.dll", StringComparison.OrdinalIgnoreCase))
                 {
                     return module;
                 }
