@@ -50,10 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             try
             {
                 var variablesTruncated = EnvironmentVariablesScrubber.ScrubEnvironmentVariables(environmentVariables);
-                if (variablesTruncated?.Length > MaxCommandLineLength)
-                {
-                    variablesTruncated = Truncate(variablesTruncated, MaxCommandLineLength);
-                }
+                variablesTruncated = Truncate(variablesTruncated, MaxCommandLineLength);
 
                 var tags = new ProcessCommandStartTags
                 {
