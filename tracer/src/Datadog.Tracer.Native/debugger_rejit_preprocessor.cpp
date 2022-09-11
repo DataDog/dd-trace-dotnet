@@ -252,6 +252,15 @@ void DebuggerRejitPreprocessor::UpdateMethod(RejitHandlerModuleMethod* methodHan
 void DebuggerRejitPreprocessor::UpdateMethod(RejitHandlerModuleMethod* methodHandler, const ProbeDefinition_S& probe)
 {
     const auto debuggerMethodHandler = dynamic_cast<DebuggerRejitHandlerModuleMethod*>(methodHandler);
+
+    if (debuggerMethodHandler == nullptr)
+    {
+        Logger::Warn("Tried to place Debugger Probe on a method that have been instrumented already be the Tracer/Ci instrumentation.",
+            "ProbeId: ", probe->probeId);
+        ProbesMetadataTracker::Instance()->SetProbeStatus(probe->probeId, ProbeStatus::_ERROR);
+        return;
+    }
+
     debuggerMethodHandler->AddProbe(probe);
     ProbesMetadataTracker::Instance()->AddMethodToProbe(
         probe->probeId, debuggerMethodHandler->GetModule()->GetModuleId(), debuggerMethodHandler->GetMethodDef());
