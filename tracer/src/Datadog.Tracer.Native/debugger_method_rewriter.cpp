@@ -1009,7 +1009,7 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
     rewriterWrapper.LoadToken(functionToken);
     rewriterWrapper.LoadToken(caller->type.id);
     rewriterWrapper.LoadInt32(instrumentedMethodIndex);
-    LoadInstanceIntoStack(caller, isStatic, rewriterWrapper, &loadInstanceInstr, debuggerTokens);
+    loadInstanceInstr = rewriterWrapper.LoadArgument(0);
     rewriterWrapper.LoadFieldAddress(debuggerTokens->GetIsFirstEntryToMoveNextFieldToken(caller->type.id));
 
     ILInstr* beginCallInstruction;

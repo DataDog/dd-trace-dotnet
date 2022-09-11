@@ -1032,17 +1032,16 @@ HRESULT DebuggerTokens::GetDebuggerLocals(void* rewriterWrapperPtr, ULONG* callT
 mdFieldDef DebuggerTokens::GetIsFirstEntryToMoveNextFieldToken(const mdToken type)
 {
     const ModuleMetadata* module_metadata = GetMetadata();
-    mdFieldDef token;
+    mdMemberRef rMembers;
     ULONG cTokens;
     HCORENUM henum = nullptr;
-    const HRESULT hr = module_metadata->metadata_import->EnumFieldsWithName (
+    const HRESULT hr = module_metadata->metadata_import->EnumMembersWithName(
         &henum, type, 
-        managed_profiler_debugger_is_first_entry_field_name.c_str(),
-        &token, 1, &cTokens);
+        managed_profiler_debugger_is_first_entry_field_name.c_str(), &rMembers, 1, &cTokens);
     module_metadata->metadata_import->CloseEnum(henum);
     if (SUCCEEDED(hr))
     {
-        return token;
+        return rMembers;
     }
     
     return mdFieldDefNil;
