@@ -24,7 +24,7 @@ internal static class DebuggerTestHelper
         return typeof(IRun)
               .Assembly.GetTypes()
               .Where(t => t.GetInterface(nameof(IRun)) != null ||
-                          t.GetInterface(nameof(IRun)) != null)
+                          t.GetInterface(nameof(IAsyncRun)) != null)
               .Select(t => new object[] { t });
     }
 
