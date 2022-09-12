@@ -18,8 +18,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
     {
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.HashAlgorithm;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HashAlgorithmIntegrationCommon));
-        internal const string OperationName = "insecure_hashing";
-        internal const string ServiceName = "hash";
 
         internal static Scope? CreateScope<TTarget>(TTarget instance)
         {
@@ -30,8 +28,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
                 {
                 return null;
             }
-
-            Scope scope = null;
 
             try
             {
