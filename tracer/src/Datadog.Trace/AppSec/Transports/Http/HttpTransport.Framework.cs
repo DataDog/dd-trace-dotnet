@@ -6,6 +6,7 @@
 #if NETFRAMEWORK
 using System;
 using System.Collections.Specialized;
+using System.Text;
 using System.Threading.Tasks;
 using System.Web;
 using Datadog.Trace.AppSec.Waf;
@@ -23,13 +24,15 @@ namespace Datadog.Trace.AppSec.Transports.Http
 
         public HttpTransport(HttpContext context) => _context = context;
 
-        public bool Blocked => false;
+        public bool Blocked => _context.Items["block"] is bool blocked && blocked;
 
         public bool IsSecureConnection => _context.Request.IsSecureConnection;
 
         public Func<string, string> GetHeader => key => _context.Request.Headers[key];
 
         public IContext GetAdditiveContext() => _context.Items[WafKey] as IContext;
+
+        public void DisposeAdditiveContext() => GetAdditiveContext()?.Dispose();
 
         public void SetAdditiveContext(IContext additiveContext)
         {
@@ -67,17 +70,26 @@ namespace Datadog.Trace.AppSec.Transports.Http
 
         public void WriteBlockedResponse(string templateJson, string templateHtml)
         {
-            // todo
-        }
+            _context.Items["block"] = true;
+            var httpResponse = _context.Response;
+            httpResponse.Clear();
+            httpResponse.Headers.Clear();
+            httpResponse.StatusCode = 403;
 
-        public void StopRequestMovingFurther()
-        {
-            // todo
-        }
+            var template = templateJson;
+            if (_context.Request.Headers["Accept"] == "application/json")
+            {
+                httpResponse.ContentType = "application/json";
+            }
+            else
+            {
+                httpResponse.ContentType = "text/html";
+                template = templateHtml;
+            }
 
-        public void DisposeAdditiveContext()
-        {
-            // todo
+            httpResponse.Write(template);
+            httpResponse.Flush();
+            httpResponse.Close();
         }
     }
 }
