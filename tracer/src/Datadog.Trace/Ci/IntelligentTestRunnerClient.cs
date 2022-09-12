@@ -50,7 +50,7 @@ internal class IntelligentTestRunnerClient
     private readonly IApiRequestFactory _apiRequestFactory;
     private readonly Uri _searchCommitsUrl;
     private readonly Uri _packFileUrl;
-    private readonly Uri _skippeableTestsUrl;
+    private readonly Uri _skippableTestsUrl;
     private readonly Task<string> _getRepositoryUrlTask;
 
     public IntelligentTestRunnerClient(string workingDirectory, CIVisibilitySettings? settings = null)
@@ -78,7 +78,7 @@ internal class IntelligentTestRunnerClient
                 Path = "api/v2/git/repository/packfile"
             }.Uri;
 
-            _skippeableTestsUrl = new UriBuilder(agentlessUrl)
+            _skippableTestsUrl = new UriBuilder(agentlessUrl)
             {
                 Path = $"api/v2/ci/environment/{HttpUtility.UrlEncode(environment)}/service/{HttpUtility.UrlEncode(serviceName)}/tests/skippable"
             }.Uri;
@@ -97,7 +97,7 @@ internal class IntelligentTestRunnerClient
                 port: 443,
                 pathValue: "api/v2/git/repository/packfile").Uri;
 
-            _skippeableTestsUrl = new UriBuilder(
+            _skippableTestsUrl = new UriBuilder(
                 scheme: "https",
                 host: "api." + _settings.Site,
                 port: 443,
@@ -127,27 +127,27 @@ internal class IntelligentTestRunnerClient
         return await SendObjectsPackFileAsync(localCommits[0], remoteCommitsData).ConfigureAwait(false);
     }
 
-    public async Task<SkippeableTest[]> GetSkippeableTestsAsync()
+    public async Task<SkippableTest[]> GetSkippableTestsAsync()
     {
-        Log.Debug("ITR: Getting skippeable tests...");
+        Log.Debug("ITR: Getting skippable tests...");
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var currentSha = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse HEAD", _workingDirectory)).ConfigureAwait(false);
         if (currentSha is null)
         {
             Log.Warning("ITR: 'git rev-parse HEAD' command is null");
-            return Array.Empty<SkippeableTest>();
+            return Array.Empty<SkippableTest>();
         }
 
         currentSha = currentSha.Replace("\n", string.Empty);
-        var query = new DataEnvelope<Data<SkippeableTestsQuery>>(
-            new Data<SkippeableTestsQuery>(
+        var query = new DataEnvelope<Data<SkippableTestsQuery>>(
+            new Data<SkippableTestsQuery>(
                 default,
                 TestParamsType,
-                new SkippeableTestsQuery(
+                new SkippableTestsQuery(
                     repository,
                     currentSha,
-                    new SkippeableTestsConfigurations(
+                    new SkippableTestsConfigurations(
                         framework.OSPlatform,
                         Environment.OSVersion.VersionString,
                         framework.OSArchitecture,
@@ -159,36 +159,36 @@ internal class IntelligentTestRunnerClient
         var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
         Log.Debug("ITR: JSON RQ = {json}", jsonQuery);
 
-        return await WithRetries(InternalGetSkippeableTestsAsync, jsonQueryBytes, MaxRetries).ConfigureAwait(false);
+        return await WithRetries(InternalGetSkippableTestsAsync, jsonQueryBytes, MaxRetries).ConfigureAwait(false);
 
-        async Task<SkippeableTest[]> InternalGetSkippeableTestsAsync(byte[] state, bool finalTry)
+        async Task<SkippableTest[]> InternalGetSkippableTestsAsync(byte[] state, bool finalTry)
         {
-            var request = _apiRequestFactory.Create(_skippeableTestsUrl);
+            var request = _apiRequestFactory.Create(_skippableTestsUrl);
             request.AddHeader(ApiKeyHeader, _settings.ApiKey);
             request.AddHeader(ApplicationKeyHeader, _settings.ApplicationKey);
             request.AddHeader(HttpHeaderNames.TraceId, _id);
             request.AddHeader(HttpHeaderNames.ParentId, _id);
-            Log.Debug("ITR: Searching skippeable tests from: {url}", _skippeableTestsUrl.ToString());
+            Log.Debug("ITR: Searching skippable tests from: {url}", _skippableTestsUrl.ToString());
             var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
             if (response.StatusCode is < 200 or >= 300 && response.StatusCode != 404)
             {
                 if (finalTry)
                 {
-                    Log.Error<int, string>("Failed to get skippeable tests with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
+                    Log.Error<int, string>("Failed to get skippable tests with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
                 }
 
                 throw new WebException($"Status: {response.StatusCode}, Content: {responseContent}");
             }
 
             Log.Debug("ITR: JSON RS = {json}", responseContent);
-            var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<SkippeableTest>>>(responseContent);
+            var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<SkippableTest>>>(responseContent);
             if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
             {
-                return Array.Empty<SkippeableTest>();
+                return Array.Empty<SkippableTest>();
             }
 
-            var testAttributes = new SkippeableTest[deserializedResult.Data.Length];
+            var testAttributes = new SkippableTest[deserializedResult.Data.Length];
             for (var i = 0; i < deserializedResult.Data.Length; i++)
             {
                 testAttributes[i] = deserializedResult.Data[i].Attributes;
@@ -533,7 +533,7 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-    private readonly struct SkippeableTestsQuery
+    private readonly struct SkippableTestsQuery
     {
         [JsonProperty("repository_url")]
         public readonly string RepositoryUrl;
@@ -542,9 +542,9 @@ internal class IntelligentTestRunnerClient
         public readonly string Sha;
 
         [JsonProperty("configurations")]
-        public readonly SkippeableTestsConfigurations Configurations;
+        public readonly SkippableTestsConfigurations Configurations;
 
-        public SkippeableTestsQuery(string repositoryUrl, string sha, SkippeableTestsConfigurations configurations)
+        public SkippableTestsQuery(string repositoryUrl, string sha, SkippableTestsConfigurations configurations)
         {
             RepositoryUrl = repositoryUrl;
             Sha = sha;
@@ -552,7 +552,7 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-    private readonly struct SkippeableTestsConfigurations
+    private readonly struct SkippableTestsConfigurations
     {
         [JsonProperty(CommonTags.OSPlatform)]
         public readonly string OSPlatform;
@@ -572,7 +572,7 @@ internal class IntelligentTestRunnerClient
         [JsonProperty(CommonTags.RuntimeArchitecture)]
         public readonly string RuntimeArchitecture;
 
-        public SkippeableTestsConfigurations(string osPlatform, string osVersion, string osArchitecture, string runtimeName, string runtimeVersion, string runtimeArchitecture)
+        public SkippableTestsConfigurations(string osPlatform, string osVersion, string osArchitecture, string runtimeName, string runtimeVersion, string runtimeArchitecture)
         {
             OSPlatform = osPlatform;
             OSVersion = osVersion;

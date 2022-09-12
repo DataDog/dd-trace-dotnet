@@ -27,7 +27,7 @@ namespace Datadog.Trace.Ci
         private static int _firstInitialization = 1;
         private static Lazy<bool> _enabledLazy = new Lazy<bool>(() => InternalEnabled(), true);
         private static Task? _skippableTask;
-        private static Dictionary<string, Dictionary<string, IList<SkippeableTest>>>? _skippableTestsBySuiteAndName;
+        private static Dictionary<string, Dictionary<string, IList<SkippableTest>>>? _skippableTestsBySuiteAndName;
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
 
@@ -116,7 +116,7 @@ namespace Datadog.Trace.Ci
             }
         }
 
-        internal static Task<IList<SkippeableTest>> GetSkippableTestsFromSuiteAndNameAsync(string suite, string name)
+        internal static Task<IList<SkippableTest>> GetSkippableTestsFromSuiteAndNameAsync(string suite, string name)
         {
             if (_skippableTask is { } skippableTask)
             {
@@ -128,9 +128,9 @@ namespace Datadog.Trace.Ci
                 return SlowGetSkippableTestsFromSuiteAndNameAsync(suite, name);
             }
 
-            return Task.FromResult((IList<SkippeableTest>)Array.Empty<SkippeableTest>());
+            return Task.FromResult((IList<SkippableTest>)Array.Empty<SkippableTest>());
 
-            static async Task<IList<SkippeableTest>> SlowGetSkippableTestsFromSuiteAndNameAsync(string suite, string name)
+            static async Task<IList<SkippableTest>> SlowGetSkippableTestsFromSuiteAndNameAsync(string suite, string name)
             {
                 if (_skippableTask is { } skippableTask)
                 {
@@ -140,7 +140,7 @@ namespace Datadog.Trace.Ci
                 return GetSkippableTestsFromSuiteAndName(suite, name);
             }
 
-            static IList<SkippeableTest> GetSkippableTestsFromSuiteAndName(string suite, string name)
+            static IList<SkippableTest> GetSkippableTestsFromSuiteAndName(string suite, string name)
             {
                 if (_skippableTestsBySuiteAndName is { } skippeableTestBySuite)
                 {
@@ -151,7 +151,7 @@ namespace Datadog.Trace.Ci
                     }
                 }
 
-                return Array.Empty<SkippeableTest>();
+                return Array.Empty<SkippableTest>();
             }
         }
 
@@ -339,21 +339,21 @@ namespace Datadog.Trace.Ci
             {
                 var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
                 await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
-                var skippeableTests = await itrClient.GetSkippeableTestsAsync().ConfigureAwait(false);
+                var skippeableTests = await itrClient.GetSkippableTestsAsync().ConfigureAwait(false);
                 Log.Information<int>("ITR: SkippableTests = {length}.", skippeableTests.Length);
 
-                var skippableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippeableTest>>>();
+                var skippableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippableTest>>>();
                 foreach (var item in skippeableTests)
                 {
                     if (!skippableTestsBySuiteAndName.TryGetValue(item.Suite, out var suite))
                     {
-                        suite = new Dictionary<string, IList<SkippeableTest>>();
+                        suite = new Dictionary<string, IList<SkippableTest>>();
                         skippableTestsBySuiteAndName[item.Suite] = suite;
                     }
 
                     if (!suite.TryGetValue(item.Name, out var name))
                     {
-                        name = new List<SkippeableTest>();
+                        name = new List<SkippableTest>();
                         suite[item.Name] = name;
                     }
 
