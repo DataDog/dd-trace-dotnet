@@ -3,9 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
+using System;
 using DiffPlex.DiffBuilder;
-using DiffPlex.DiffBuilder.Model;
+using FluentAssertions;
 using FluentAssertions.Execution;
 using FluentAssertions.Primitives;
 
@@ -13,48 +13,17 @@ namespace Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 
 public static class StringExtensions
 {
+    [CustomAssertion]
     public static StringAssertions HaveEmptyDiffWhenComparedTo(this StringAssertions value, string expected, string because = "", params object[] becauseArgs)
     {
         Execute.Assertion
                .BecauseOf(because, becauseArgs)
-               .Given(() => Diff(expected, value.Subject))
-               .ForCondition(diffLines => diffLines?.Count > 0)
+               .Given(() => InlineDiffBuilder.Diff(expected, value.Subject))
+               .ForCondition(diffModel => !diffModel.HasDifferences)
                .FailWith(
-                    "{context:string} has differences from expected value {reason}:{0}",
-                    diffLines => diffLines);
+                    "{context:string} has differences from expected value{reason}. Diff:{0}",
+                    diffModel => diffModel);
 
         return value;
-    }
-
-    private static List<string> Diff(string expected, string actual)
-    {
-        var diff = InlineDiffBuilder.Diff(expected, actual);
-
-        if (diff.HasDifferences)
-        {
-            var diffs = new List<string>();
-
-            for (var i = 0; i < diff.Lines.Count; i++)
-            {
-                var line = diff.Lines[i];
-
-                switch (line.Type)
-                {
-                    case ChangeType.Inserted:
-                        diffs.Add($"{line.Position} + {line.Text}");
-                        break;
-                    case ChangeType.Deleted:
-                        diffs.Add($"{line.Position} - {line.Text}");
-                        break;
-                    case ChangeType.Modified:
-                        diffs.Add($"{line.Position} ~ {line.Text}");
-                        break;
-                }
-            }
-
-            return diffs;
-        }
-
-        return null;
     }
 }
