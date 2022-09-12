@@ -83,7 +83,13 @@ schedules:
         - /benchmarks/*
       exclude:
         - release/1.x
+    always: true
 
+  - cron: "*/6 1 * * Sat"
+    displayName: Saturday CI, every 6 minutes from 1am
+    branches:
+      include:
+        - master
     always: true
 
 # Global variables
