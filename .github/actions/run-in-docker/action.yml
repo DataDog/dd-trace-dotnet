@@ -13,7 +13,7 @@ runs:
       shell: bash
       run: |
         docker build \
-          --build-arg DOTNETSDK_VERSION=6.0.100 \
+          --build-arg DOTNETSDK_VERSION=7.0.100-preview.7 \
           --tag dd-trace-dotnet/debian-builder \
           --target builder \
           --file "${GITHUB_WORKSPACE}/tracer/build/_build/docker/debian.dockerfile" \

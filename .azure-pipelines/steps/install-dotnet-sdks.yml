@@ -33,6 +33,13 @@ steps:
   retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
+  displayName: install dotnet core sdk 6
+  inputs:
+    packageType: sdk
+    version: 6.0.x
+  retryCountOnTaskFailure: 5
+
+- task: UseDotNet@2
   displayName: install latest dotnet core sdk
   inputs:
     packageType: sdk
@@ -53,6 +60,9 @@ steps:
     - template: install-dotnet-sdk-32bit.yml
       parameters:
         channel: 5.0
+    - template: install-dotnet-sdk-32bit.yml
+      parameters:
+        channel: 6.0
     - template: install-dotnet-sdk-32bit.yml
       parameters:
         sdkVersion: $(dotnetCoreSdkLatestVersion)

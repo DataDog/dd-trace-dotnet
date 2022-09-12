@@ -22,7 +22,7 @@ steps:
 - ${{ if eq(parameters.build, true) }}:
   - script: |
       docker build \
-        --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+        --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkDockerVersion) \
         --tag dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         --target ${{ parameters.target }} \
         --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/${{ parameters.baseImage }}.dockerfile" \

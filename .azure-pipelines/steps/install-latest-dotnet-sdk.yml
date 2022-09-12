@@ -5,7 +5,7 @@ parameters:
 
 steps:
 - task: UseDotNet@2
-  displayName: install dotnet core sdk 6
+  displayName: install latest dotnet core sdk
   inputs:
     packageType: sdk
     version: $(dotnetCoreSdkLatestVersion)

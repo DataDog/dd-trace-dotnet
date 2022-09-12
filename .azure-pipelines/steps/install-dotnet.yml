@@ -28,8 +28,16 @@ steps:
   retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
+  displayName: install dotnet core runtime 6.0
+  inputs:
+    packageType: runtime
+    version: 6.0.x
+  retryCountOnTaskFailure: 5
+
+- task: UseDotNet@2
   displayName: install latest dotnet core sdk
   inputs:
     packageType: sdk
     version: $(dotnetCoreSdkLatestVersion)
+    includePreviewVersions: true
   retryCountOnTaskFailure: 5
