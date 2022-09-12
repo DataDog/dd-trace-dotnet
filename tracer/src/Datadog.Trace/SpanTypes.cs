@@ -86,5 +86,10 @@ namespace Datadog.Trace
         /// The span type for GRPC integrations
         /// </summary>
         internal const string Grpc = "grpc";
+
+        /// <summary>
+        /// The span type for System integrations
+        /// </summary>
+        internal const string System = "system";
     }
 }
