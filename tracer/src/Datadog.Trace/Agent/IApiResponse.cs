@@ -42,7 +42,10 @@ namespace Datadog.Trace.Agent
         private static async Task<StreamReader> GetStreamReader(IApiResponse apiResponse)
         {
             var stream = await apiResponse.GetStreamAsync().ConfigureAwait(false);
-            return new StreamReader(stream, apiResponse.ContentEncoding, detectEncodingFromByteOrderMarks: false, (int)apiResponse.ContentLength, leaveOpen: true);
+            // Server may not send the content length, in that case we use a default value.
+            // https://source.dot.net/#System.Private.CoreLib/src/libraries/System.Private.CoreLib/src/System/IO/StreamReader.cs,25
+            var length = apiResponse.ContentLength > 0 ? (int)apiResponse.ContentLength : 1024;
+            return new StreamReader(stream, apiResponse.ContentEncoding, detectEncodingFromByteOrderMarks: false, length, leaveOpen: true);
         }
     }
 }
