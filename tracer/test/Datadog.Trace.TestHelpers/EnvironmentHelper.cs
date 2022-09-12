@@ -69,7 +69,7 @@ namespace Datadog.Trace.TestHelpers
 
         public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
 
-        public string SampleName { get; }
+        public string SampleName { get; set; }
 
         public string LogDirectory { get; }
 

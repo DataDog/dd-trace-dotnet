@@ -1,0 +1,299 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "fields": {
+              "StateArray": {
+                "Collection": [
+                  {
+                    "Collection": [
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      }
+                    ],
+                    "type": "State[]",
+                    "value": "count: 10"
+                  },
+                  {
+                    "Collection": [
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      }
+                    ],
+                    "type": "State[]",
+                    "value": "count: 10"
+                  }
+                ],
+                "type": "State[][]",
+                "value": "count: 2"
+              }
+            }
+          },
+          "return": {
+            "fields": {
+              "StateArray": {
+                "Collection": [
+                  {
+                    "Collection": [
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      }
+                    ],
+                    "type": "State[]",
+                    "value": "count: 10"
+                  },
+                  {
+                    "Collection": [
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      },
+                      {
+                        "fields": null,
+                        "type": "State",
+                        "value": "Error"
+                      }
+                    ],
+                    "type": "State[]",
+                    "value": "count: 10"
+                  }
+                ],
+                "type": "State[][]",
+                "value": "count: 2"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.Contracts.SmokeTests.MultidimensionalArrayTest"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "MultidimensionalArrayTest.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.MultidimensionalArrayTest.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "MultidimensionalArrayTest.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.MultidimensionalArrayTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Samples.Probes.Shared.SampleHelper.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "SampleHelper.cs",
+            "function": "Samples.Probes.Shared.SampleHelper+<>c__DisplayClass2_0.<RunTest>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.Contracts.SmokeTests.MultidimensionalArrayTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "MultidimensionalArrayTest.Method()",
+    "service": "ProbesTests"
+  }
+]

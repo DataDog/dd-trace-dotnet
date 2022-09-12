@@ -1,0 +1,315 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "num": {
+                "fields": null,
+                "type": "Int32",
+                "value": "7"
+              }
+            },
+            "fields": {
+              "Number": {
+                "fields": null,
+                "type": "Int32",
+                "value": "7"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "num": {
+                "fields": null,
+                "type": "Int32",
+                "value": "7"
+              }
+            },
+            "fields": {
+              "Number": {
+                "fields": null,
+                "type": "Int32",
+                "value": "7"
+              }
+            },
+            "locals": {
+              "@return": {
+                "fields": null,
+                "type": "String",
+                "value": "00:00:07"
+              },
+              "timeSpan": {
+                "fields": null,
+                "type": "TimeSpan",
+                "value": "00:00:07"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.Contracts.SmokeTests.HasLocalsAndReturnValue"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "HasLocalsAndReturnValue.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.HasLocalsAndReturnValue.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "HasLocalsAndReturnValue.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.HasLocalsAndReturnValue.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Samples.Probes.Shared.SampleHelper.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "SampleHelper.cs",
+            "function": "Samples.Probes.Shared.SampleHelper+<>c__DisplayClass2_0.<RunTest>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.Contracts.SmokeTests.HasLocalsAndReturnValue",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "HasLocalsAndReturnValue.Method(num=7): 00:00:07\r\n@return=00:00:07, timeSpan=00:00:07",
+    "service": "ProbesTests"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "21": {
+              "fields": {
+                "Number": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "7"
+                }
+              },
+              "locals": {
+                "result": {
+                  "fields": null,
+                  "type": "String",
+                  "value": "null"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "HasLocalsAndReturnValue.cs",
+            "lines": [
+              21
+            ]
+          }
+        },
+        "stack": [
+          {
+            "fileName": "HasLocalsAndReturnValue.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.HasLocalsAndReturnValue.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Samples.Probes.Shared.SampleHelper.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "SampleHelper.cs",
+            "function": "Samples.Probes.Shared.SampleHelper+<>c__DisplayClass2_0.<RunTest>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.Contracts.SmokeTests.HasLocalsAndReturnValue",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "HasLocalsAndReturnValue.Run()\r\nresult=null",
+    "service": "ProbesTests"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "22": {
+              "fields": {
+                "Number": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "7"
+                }
+              },
+              "locals": {
+                "result": {
+                  "fields": null,
+                  "type": "String",
+                  "value": "00:00:07"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "HasLocalsAndReturnValue.cs",
+            "lines": [
+              22
+            ]
+          }
+        },
+        "stack": [
+          {
+            "fileName": "HasLocalsAndReturnValue.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.HasLocalsAndReturnValue.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Samples.Probes.Shared.SampleHelper.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "SampleHelper.cs",
+            "function": "Samples.Probes.Shared.SampleHelper+<>c__DisplayClass2_0.<RunTest>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.Contracts.SmokeTests.HasLocalsAndReturnValue",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "HasLocalsAndReturnValue.Run()\r\nresult=00:00:07",
+    "service": "ProbesTests"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "30": {
+              "arguments": {
+                "num": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "7"
+                }
+              },
+              "fields": {
+                "Number": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "7"
+                }
+              },
+              "locals": {
+                "timeSpan": {
+                  "fields": null,
+                  "type": "TimeSpan",
+                  "value": "00:00:07"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "HasLocalsAndReturnValue.cs",
+            "lines": [
+              30
+            ]
+          }
+        },
+        "stack": [
+          {
+            "fileName": "HasLocalsAndReturnValue.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.HasLocalsAndReturnValue.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "HasLocalsAndReturnValue.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.HasLocalsAndReturnValue.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Samples.Probes.Shared.SampleHelper.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "SampleHelper.cs",
+            "function": "Samples.Probes.Shared.SampleHelper+<>c__DisplayClass2_0.<RunTest>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.Contracts.SmokeTests.HasLocalsAndReturnValue",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "HasLocalsAndReturnValue.Method(num=7)\r\ntimeSpan=00:00:07",
+    "service": "ProbesTests"
+  }
+]

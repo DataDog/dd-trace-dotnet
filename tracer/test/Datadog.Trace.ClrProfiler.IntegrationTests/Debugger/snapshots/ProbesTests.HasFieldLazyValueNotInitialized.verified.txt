@@ -1,0 +1,106 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "lastName": {
+                "fields": null,
+                "type": "String",
+                "value": "Last"
+              }
+            },
+            "fields": {
+              "FirstName": {
+                "fields": {
+                  "IsValueCreated": {
+                    "fields": null,
+                    "type": "Boolean",
+                    "value": "False"
+                  }
+                },
+                "type": "Lazy`1",
+                "value": "Lazy`1"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "lastName": {
+                "fields": null,
+                "type": "String",
+                "value": "Last"
+              }
+            },
+            "fields": {
+              "FirstName": {
+                "fields": {
+                  "IsValueCreated": {
+                    "fields": null,
+                    "type": "Boolean",
+                    "value": "False"
+                  }
+                },
+                "type": "Lazy`1",
+                "value": "Lazy`1"
+              }
+            },
+            "locals": {
+              "@return": {
+                "fields": null,
+                "type": "String",
+                "value": "Last"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.Contracts.SmokeTests.HasFieldLazyValueNotInitialized"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "HasFieldLazyValueNotInitialized.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.HasFieldLazyValueNotInitialized.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "HasFieldLazyValueNotInitialized.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.HasFieldLazyValueNotInitialized.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Samples.Probes.Shared.SampleHelper.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "SampleHelper.cs",
+            "function": "Samples.Probes.Shared.SampleHelper+<>c__DisplayClass2_0.<RunTest>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.Contracts.SmokeTests.HasFieldLazyValueNotInitialized",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "HasFieldLazyValueNotInitialized.Method(lastName=Last): Last\r\n@return=Last",
+    "service": "ProbesTests"
+  }
+]

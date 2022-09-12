@@ -1,0 +1,112 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "callerName": {
+                "fields": null,
+                "type": "String",
+                "value": "Run"
+              }
+            },
+            "fields": null
+          },
+          "return": {
+            "arguments": {
+              "callerName": {
+                "fields": null,
+                "type": "String",
+                "value": "Run"
+              }
+            },
+            "fields": null,
+            "locals": {
+              "arr": {
+                "Collection": [
+                  {
+                    "fields": null,
+                    "type": "String",
+                    "value": "Run"
+                  },
+                  {
+                    "fields": null,
+                    "type": "String",
+                    "value": "MethodToInstrument"
+                  },
+                  {
+                    "fields": null,
+                    "type": "String",
+                    "value": "SimpleTypeNameTest"
+                  }
+                ],
+                "type": "String[]",
+                "value": "count: 3"
+              }
+            },
+            "throwable": {
+              "message": "Same length.",
+              "stacktrace": [
+                {
+                  "function": "Samples.Probes.Contracts.SmokeTests.SimpleTypeNameInGlobalNamespaceTest.MethodToInstrument",
+                  "lineNumber": "ScrubbedValue"
+                },
+                {
+                  "function": "Samples.Probes.Contracts.SmokeTests.SimpleTypeNameInGlobalNamespaceTest.Run",
+                  "lineNumber": "ScrubbedValue"
+                }
+              ],
+              "type": "Samples.Probes.Contracts.Shared.IntentionalDebuggerException"
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "MethodToInstrument",
+            "type": "Samples.Probes.Contracts.SmokeTests.SimpleTypeNameInGlobalNamespaceTest"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "SimpleTypeNameInGlobalNamespaceTest.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.SimpleTypeNameInGlobalNamespaceTest.MethodToInstrument",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "SimpleTypeNameInGlobalNamespaceTest.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.SimpleTypeNameInGlobalNamespaceTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Samples.Probes.Shared.SampleHelper.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "SampleHelper.cs",
+            "function": "Samples.Probes.Shared.SampleHelper+<>c__DisplayClass2_0.<RunTest>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.Contracts.SmokeTests.SimpleTypeNameInGlobalNamespaceTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "SimpleTypeNameInGlobalNamespaceTest.MethodToInstrument(callerName=Run)\r\narr=count: 3",
+    "service": "ProbesTests"
+  }
+]

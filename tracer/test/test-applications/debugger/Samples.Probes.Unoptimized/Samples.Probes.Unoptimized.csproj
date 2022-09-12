@@ -1,0 +1,10 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+  </PropertyGroup>
+
+  <Import Project="..\dependency-libs\Samples.Probes.Contracts\Samples.Probes.Contracts.projitems" Label="Shared" />
+
+</Project>

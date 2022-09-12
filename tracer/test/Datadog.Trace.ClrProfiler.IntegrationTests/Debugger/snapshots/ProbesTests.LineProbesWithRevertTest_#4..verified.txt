@@ -1,0 +1,86 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "60": {
+              "arguments": {
+                "callerName": {
+                  "fields": null,
+                  "type": "String",
+                  "value": "Run"
+                }
+              },
+              "fields": null,
+              "locals": {
+                "a": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "3"
+                },
+                "i": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "5"
+                },
+                "sum": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "72"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "LineProbesWithRevertTest.cs",
+            "lines": [
+              60
+            ]
+          }
+        },
+        "stack": [
+          {
+            "fileName": "LineProbesWithRevertTest.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.LineProbesWithRevertTest.MethodToInstrument",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "LineProbesWithRevertTest.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.LineProbesWithRevertTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Samples.Probes.Shared.SampleHelper.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "SampleHelper.cs",
+            "function": "Samples.Probes.Shared.SampleHelper+<>c__DisplayClass2_0.<RunTest>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MethodToInstrument",
+      "name": "Samples.Probes.Contracts.SmokeTests.LineProbesWithRevertTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run)\r\na=3, i=5, sum=72",
+    "service": "ProbesTests"
+  }
+]

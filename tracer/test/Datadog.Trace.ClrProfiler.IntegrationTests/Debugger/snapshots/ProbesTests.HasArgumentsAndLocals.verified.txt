@@ -1,0 +1,94 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "lastName": {
+                "fields": null,
+                "type": "String",
+                "value": "Last"
+              }
+            },
+            "fields": {
+              "FirstName": {
+                "fields": null,
+                "type": "String",
+                "value": "null"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "lastName": {
+                "fields": null,
+                "type": "String",
+                "value": "Last"
+              }
+            },
+            "fields": {
+              "FirstName": {
+                "fields": null,
+                "type": "String",
+                "value": "First"
+              }
+            },
+            "locals": {
+              "@return": {
+                "fields": null,
+                "type": "String",
+                "value": "First Last"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.Contracts.SmokeTests.HasArgumentsAndLocals"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "HasArgumentsAndLocals.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.HasArgumentsAndLocals.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "HasArgumentsAndLocals.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.HasArgumentsAndLocals.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Samples.Probes.Shared.SampleHelper.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "SampleHelper.cs",
+            "function": "Samples.Probes.Shared.SampleHelper+<>c__DisplayClass2_0.<RunTest>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.Contracts.SmokeTests.HasArgumentsAndLocals",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "HasArgumentsAndLocals.Method(lastName=Last): First Last\r\n@return=First Last",
+    "service": "ProbesTests"
+  }
+]

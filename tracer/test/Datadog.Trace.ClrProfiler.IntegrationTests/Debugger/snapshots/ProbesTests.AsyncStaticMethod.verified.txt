@@ -1,0 +1,79 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "input": {
+                "fields": null,
+                "type": "String",
+                "value": "AsyncStaticMethod.RunAsync"
+              }
+            },
+            "fields": {
+              "ClassName": {
+                "fields": null,
+                "type": "String",
+                "value": "AsyncStaticMethod"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "input": {
+                "fields": null,
+                "type": "String",
+                "value": "AsyncStaticMethod.RunAsync"
+              }
+            },
+            "fields": {
+              "ClassName": {
+                "fields": null,
+                "type": "String",
+                "value": "AsyncStaticMethod"
+              }
+            },
+            "locals": {
+              "@return": {
+                "fields": null,
+                "type": "String",
+                "value": "AsyncStaticMethod.RunAsync.Method"
+              },
+              "output": {
+                "fields": null,
+                "type": "String",
+                "value": "AsyncStaticMethod.RunAsync."
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.Contracts.SmokeTests.AsyncStaticMethod"
+          }
+        },
+        "stack": [],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.Contracts.SmokeTests.AsyncStaticMethod",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "AsyncStaticMethod+<Method>d__1.MoveNext(input=AsyncStaticMethod.RunAsync): AsyncStaticMethod.RunAsync.Method\r\n@return=AsyncStaticMethod.RunAsync.Method, output=AsyncStaticMethod.RunAsync.",
+    "service": "ProbesTests"
+  }
+]

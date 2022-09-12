@@ -22,7 +22,6 @@
     <ProjectReference Include="..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers.AutoInstrumentation\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
-    <ProjectReference Include="..\test-applications\debugger\Samples.Probes\Samples.Probes.csproj" />
 
     <PackageReference Include="coverlet.collector" Version="3.0.4-preview.32">
       <PrivateAssets>all</PrivateAssets>
@@ -58,4 +57,6 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+
+  <Import Project="..\test-applications\debugger\dependency-libs\Samples.Probes.Contracts\Samples.Probes.Contracts.projitems" Label="Shared" />
 </Project>

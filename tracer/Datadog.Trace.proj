@@ -18,8 +18,6 @@
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
     <VbSampleLibProject Include="test\test-applications\integrations\**\*.vbproj" />
-    <LiveDebuggerSampleProject Include="test\test-applications\debugger\**\*.csproj" />
-    <LiveDebuggerSampleLibProject Include="test\test-applications\debugger\dependency-libs\**\*.csproj" />
     <SampleLibProject Include="test\test-applications\integrations\dependency-libs\**\*.csproj" />
     <RegressionSampleLibProject Include="test\test-applications\regression\dependency-libs\**\Datadog.StackExchange.Redis*.csproj" />
   </ItemGroup>
@@ -62,7 +60,6 @@
     <!-- Filter the sample projects by TargetFramework -->
     <ItemGroup>
       <IntegrationTestProjects Include="@(RazorPagesProject)" Condition="!$(TargetFramework.StartsWith('net4'))" />
-      <IntegrationTestProjects Include="@(LiveDebuggerSampleProject)" />
       <IntegrationTestProjects Include="@(CsharpIntegrationTestProject);@(CsharpIntegrationTestRegressionProject);@(ExcludeExpenseItDemoProject);@(ExcludeLegacyRedisProject)" />
     </ItemGroup>
 

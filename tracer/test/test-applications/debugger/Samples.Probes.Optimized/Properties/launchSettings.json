@@ -1,0 +1,24 @@
+{
+    "profiles": {
+      "Samples.Probes": {
+        "commandName": "Project",
+        "commandLineArgs": "--test-name Samples.Probes.Contracts.SmokeTests.AsyncCallChain --listen-url http://127.0.0.1:1234/",
+        "environmentVariables": {
+          "DD_LOG_LEVEL": "DEBUG",
+          "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\Datadog.AutoInstrumentation.NativeLoader.x64.dll",
+          "CORECLR_PROFILER_PATH_64": "$(SolutionDir)shared\\bin\\monitoring-home\\Datadog.AutoInstrumentation.NativeLoader.x64.dll",
+          "COR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\Datadog.AutoInstrumentation.NativeLoader.x64.dll",
+          "COR_PROFILER_PATH_64": "$(SolutionDir)shared\\bin\\monitoring-home\\Datadog.AutoInstrumentation.NativeLoader.x64.dll",
+          "COR_ENABLE_PROFILING": "1",
+          "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+          "CORECLR_ENABLE_PROFILING": "1",
+          "DD_DEBUGGER_ENABLED": "1",
+          "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer",
+          "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+          "DD_DUMP_ILREWRITE_ENABLED": "1",
+          "DD_WRITE_INSTRUMENTATION_TO_DISK": "1"
+        },
+        "nativeDebugging": true
+      }
+    }
+}

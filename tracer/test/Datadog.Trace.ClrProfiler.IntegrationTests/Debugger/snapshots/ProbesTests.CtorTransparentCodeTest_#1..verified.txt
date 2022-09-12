@@ -1,0 +1,75 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "fields": null
+          },
+          "return": {
+            "fields": null,
+            "locals": {
+              "instance": {
+                "fields": {
+                  "_home": {
+                    "fields": {
+                      "Name": {
+                        "fields": null,
+                        "type": "String",
+                        "value": "Harry House"
+                      }
+                    },
+                    "type": "Home",
+                    "value": "Home"
+                  }
+                },
+                "type": "SecurityTransparentTest",
+                "value": "SecurityTransparentTest"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Run",
+            "type": "Samples.Probes.Contracts.SmokeTests.CtorTransparentCodeTest"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "CtorTransparentCodeTest.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.CtorTransparentCodeTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Samples.Probes.Shared.SampleHelper.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "SampleHelper.cs",
+            "function": "Samples.Probes.Shared.SampleHelper+<>c__DisplayClass2_0.<RunTest>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.Contracts.SmokeTests.CtorTransparentCodeTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "CtorTransparentCodeTest.Run()\r\ninstance=SecurityTransparentTest",
+    "service": "ProbesTests"
+  }
+]

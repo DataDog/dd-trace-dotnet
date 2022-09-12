@@ -1,0 +1,80 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "fields": {
+              "Number": {
+                "fields": null,
+                "type": "Int32",
+                "value": "0"
+              }
+            }
+          },
+          "return": {
+            "fields": {
+              "Number": {
+                "fields": null,
+                "type": "Int32",
+                "value": "7"
+              }
+            },
+            "locals": {
+              "@return": {
+                "fields": null,
+                "type": "String",
+                "value": "7"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.Contracts.SmokeTests.HasReturnValue"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "HasReturnValue.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.HasReturnValue.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "HasReturnValue.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.HasReturnValue.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Samples.Probes.Shared.SampleHelper.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "SampleHelper.cs",
+            "function": "Samples.Probes.Shared.SampleHelper+<>c__DisplayClass2_0.<RunTest>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.Contracts.SmokeTests.HasReturnValue",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "HasReturnValue.Method(): 7\r\n@return=7",
+    "service": "ProbesTests"
+  }
+]

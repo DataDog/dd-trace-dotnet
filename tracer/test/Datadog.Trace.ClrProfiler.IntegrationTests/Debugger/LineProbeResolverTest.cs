@@ -8,7 +8,7 @@ using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Models;
 using FluentAssertions;
-using Samples.Probes.SmokeTests;
+using Samples.Probes.Contracts.SmokeTests;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger;

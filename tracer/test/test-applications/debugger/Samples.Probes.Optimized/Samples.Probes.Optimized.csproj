@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <DebugType>full</DebugType>
+    <Optimize>true</Optimize>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Samples.Probes.Unoptimized\Shared\*.cs">
+      <Link>Shared\%(FileName)%(Extension)</Link>
+    </Compile>
+  </ItemGroup>
+
+  <Import Project="..\dependency-libs\Samples.Probes.Contracts\Samples.Probes.Contracts.projitems" Label="Shared" />
+
+</Project>

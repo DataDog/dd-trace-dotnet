@@ -1,0 +1,270 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "31": {
+              "fields": null,
+              "locals": {
+                "i": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "0"
+                },
+                "localInFor": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "0"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "MultiScopesWithSameLocalNameTest.cs",
+            "lines": [
+              31
+            ]
+          }
+        },
+        "stack": [
+          {
+            "fileName": "MultiScopesWithSameLocalNameTest.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.MultiScopesWithSameLocalNameTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Samples.Probes.Shared.SampleHelper.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "SampleHelper.cs",
+            "function": "Samples.Probes.Shared.SampleHelper+<>c__DisplayClass2_0.<RunTest>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.Contracts.SmokeTests.MultiScopesWithSameLocalNameTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "MultiScopesWithSameLocalNameTest.Run()\r\ni=0, localInFor=0",
+    "service": "ProbesTests"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "31": {
+              "fields": null,
+              "locals": {
+                "i": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "0"
+                },
+                "localInFor": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "0"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "MultiScopesWithSameLocalNameTest.cs",
+            "lines": [
+              31
+            ]
+          }
+        },
+        "stack": [
+          {
+            "fileName": "MultiScopesWithSameLocalNameTest.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.MultiScopesWithSameLocalNameTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Samples.Probes.Shared.SampleHelper.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "SampleHelper.cs",
+            "function": "Samples.Probes.Shared.SampleHelper+<>c__DisplayClass2_0.<RunTest>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.Contracts.SmokeTests.MultiScopesWithSameLocalNameTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "MultiScopesWithSameLocalNameTest.Run()\r\ni=0, localInFor=0",
+    "service": "ProbesTests"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "38": {
+              "fields": null,
+              "locals": {
+                "i": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "0"
+                },
+                "localInFor": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "9"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "MultiScopesWithSameLocalNameTest.cs",
+            "lines": [
+              38
+            ]
+          }
+        },
+        "stack": [
+          {
+            "fileName": "MultiScopesWithSameLocalNameTest.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.MultiScopesWithSameLocalNameTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Samples.Probes.Shared.SampleHelper.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "SampleHelper.cs",
+            "function": "Samples.Probes.Shared.SampleHelper+<>c__DisplayClass2_0.<RunTest>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.Contracts.SmokeTests.MultiScopesWithSameLocalNameTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "MultiScopesWithSameLocalNameTest.Run()\r\ni=0, localInFor=9",
+    "service": "ProbesTests"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "38": {
+              "fields": null,
+              "locals": {
+                "i": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "1"
+                },
+                "localInFor": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "10"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "MultiScopesWithSameLocalNameTest.cs",
+            "lines": [
+              38
+            ]
+          }
+        },
+        "stack": [
+          {
+            "fileName": "MultiScopesWithSameLocalNameTest.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.MultiScopesWithSameLocalNameTest.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Samples.Probes.Shared.SampleHelper.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "SampleHelper.cs",
+            "function": "Samples.Probes.Shared.SampleHelper+<>c__DisplayClass2_0.<RunTest>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Run",
+      "name": "Samples.Probes.Contracts.SmokeTests.MultiScopesWithSameLocalNameTest",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "MultiScopesWithSameLocalNameTest.Run()\r\ni=1, localInFor=10",
+    "service": "ProbesTests"
+  }
+]

@@ -1,0 +1,69 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <MSBuildAllProjects Condition="'$(MSBuildVersion)' == '' Or '$(MSBuildVersion)' &lt; '16.0'">$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
+    <HasSharedItems>true</HasSharedItems>
+    <SharedGUID>71587c37-7342-4559-905f-f0f7da0e0cf3</SharedGUID>
+  </PropertyGroup>
+  <PropertyGroup Label="Configuration">
+    <Import_RootNamespace>Samples.Probes.Contracts</Import_RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(MSBuildThisFileDirectory)IAsyncRun.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)IRun.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)LineProbeTestDataAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)MethodProbeTestDataAttribute.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)ProbeAttributeBase.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\Address.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\SecurityTransparentTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\Generic.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\IGeneric.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\IntentionalDebuggerException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)Shared\Person.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\AsyncCallChain.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\AsyncGenericClass.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\AsyncGenericMethod.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\AsyncGenericStruct.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\AsyncInstanceMethod.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\AsyncMethodInsideTaskRun.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\AsyncRecursiveCall.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\AsyncStaticMethod.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\AsyncThrowException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\AsyncThrowExceptionAsyncVoid.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\AsyncVoid.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\AsyncWithGenericArgumentAndLocal.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\AsyncMethodInGenericClassTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\CtorTransparentCodeTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\Emit100LineProbeSnapshotsTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\GenericMethodWithArguments.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\HasArgumentsAndLocals.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\HasException.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\HasFieldLazyValueInitialized.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\HasFieldLazyValueNotInitialized.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\HasLocalListOfObjects.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\HasLocalsAndArgumentsInGenericNestedType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\HasLocalsAndReturnValue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\HasLocalTaskCompleted.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\HasLocalTaskNotCompleted.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\HasReturnValue.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\HasVarAndMvar.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\InstanceMethodWithArguments.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\InstanceVoidMethod.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\LambdaSingleLine.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\LineProbesWithRevertTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\MethodThrowExceptionTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\MultidimensionalArrayTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\MultipleLineProbes.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\MultiScopesWithSameLocalNameTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\NonSupportedInstrumentationTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\OpenGenericMethodInDerivedGenericType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\OverloadAndSimpleNameTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\SimpleNestedTypeNameInGlobalNamespaceTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\SimpleNestedTypeNameTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\SimpleTypeNameInGlobalNamespaceTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\SimpleTypeNameTest.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\StaticMethodWithArguments.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\StaticType.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)SmokeTests\StaticVoidMethod.cs" />
+  </ItemGroup>
+</Project>

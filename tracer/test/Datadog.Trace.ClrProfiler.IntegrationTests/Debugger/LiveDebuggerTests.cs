@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,7 +12,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.TestHelpers;
-using Samples.Probes;
+using Samples.Probes.Contracts;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -28,7 +29,7 @@ public class LiveDebuggerTests : TestHelper
     private const string LiveDebuggerDisabledLogEntry = "Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.";
 
     public LiveDebuggerTests(ITestOutputHelper output)
-        : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
+        : base("Probes.Unoptimized", Path.Combine("test", "test-applications", "debugger"), output)
     {
         SetServiceVersion("1.0.0");
     }
@@ -56,7 +57,7 @@ public class LiveDebuggerTests : TestHelper
 
     private async Task RunTest()
     {
-        var testType = DebuggerTestHelper.FirstSupportedProbeTestType(EnvironmentHelper.GetTargetFramework());
+        var testType = typeof(IAsyncRun);
 
         using var agent = EnvironmentHelper.GetMockAgent();
         using var sample = StartSample(agent, $"--test-name {testType.FullName}", string.Empty, aspNetCorePort: 5000);

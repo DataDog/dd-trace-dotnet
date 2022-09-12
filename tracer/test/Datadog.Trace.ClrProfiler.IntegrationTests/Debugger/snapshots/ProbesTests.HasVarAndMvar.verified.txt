@@ -1,0 +1,127 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "k": {
+                "fields": {
+                  "Message": {
+                    "fields": null,
+                    "type": "String",
+                    "value": "Hello"
+                  }
+                },
+                "type": "Generic",
+                "value": "Generic"
+              }
+            },
+            "fields": null
+          },
+          "return": {
+            "arguments": {
+              "k": {
+                "fields": {
+                  "Message": {
+                    "fields": null,
+                    "type": "String",
+                    "value": "Hello"
+                  }
+                },
+                "type": "Generic",
+                "value": "Generic"
+              }
+            },
+            "fields": null,
+            "locals": {
+              "@return": {
+                "Collection": [
+                  {
+                    "fields": null,
+                    "type": "Test`1",
+                    "value": "Test`1"
+                  }
+                ],
+                "type": "List`1",
+                "value": "count: 1"
+              },
+              "kk": {
+                "Collection": [
+                  {
+                    "fields": null,
+                    "type": "Test`1",
+                    "value": "Test`1"
+                  }
+                ],
+                "type": "List`1",
+                "value": "count: 1"
+              },
+              "string": {
+                "fields": null,
+                "type": "String",
+                "value": "Samples.Probes.Contracts.Shared.Generic"
+              },
+              "tt": {
+                "Collection": [
+                  {
+                    "fields": null,
+                    "type": "Test`1",
+                    "value": "Test`1"
+                  }
+                ],
+                "type": "List`1",
+                "value": "count: 1"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Method",
+            "type": "Samples.Probes.Contracts.SmokeTests.HasVarAndMvar+Test`1"
+          }
+        },
+        "stack": [
+          {
+            "fileName": "HasVarAndMvar.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.HasVarAndMvar+Test`1.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "HasVarAndMvar.cs",
+            "function": "Samples.Probes.Contracts.SmokeTests.HasVarAndMvar.Run",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Samples.Probes.Shared.SampleHelper.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "SampleHelper.cs",
+            "function": "Samples.Probes.Shared.SampleHelper+<>c__DisplayClass2_0.<RunTest>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Method",
+      "name": "Samples.Probes.Contracts.SmokeTests.HasVarAndMvar+Test`1",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "HasVarAndMvar+Test`1.Method(k=Generic): count: 1\r\n@return=count: 1, kk=count: 1, string=Samples.Probes.Contracts.Shared.Generic, tt=count: 1",
+    "service": "ProbesTests"
+  }
+]
