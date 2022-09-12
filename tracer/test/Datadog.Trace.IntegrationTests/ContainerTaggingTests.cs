@@ -4,10 +4,12 @@
 // </copyright>
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -43,9 +45,10 @@ namespace Datadog.Trace.IntegrationTests
                 Assert.Equal(expected: 1, spans.Count);
 
                 // we don't extract the containerId on Windows (yet?)
-                Assert.Equal(expected: 1, agent.TraceRequestHeaders.Count);
                 var expectedContainedId = EnvironmentTools.IsWindows() ? null : ContainerMetadata.GetContainerId();
-                Assert.All(agent.TraceRequestHeaders, headers => Assert.Equal(expectedContainedId, headers[AgentHttpHeaderNames.ContainerId]));
+
+                var headers = agent.TraceRequestHeaders.Should().ContainSingle().Subject;
+                headers.AllKeys.ToDictionary(x => x, x => headers[x]).Should().Contain(AgentHttpHeaderNames.ContainerId, expectedContainedId);
             }
         }
     }
