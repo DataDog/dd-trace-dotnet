@@ -5,10 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Datadog.Trace.Logging;
-using Datadog.Trace.RemoteConfigurationManagement.Protocol;
+using System.IO;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
@@ -28,10 +25,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         {
             foreach (var configContent in _configContents)
             {
-                using var stream = new MemoryStream(configContent);
+                using var stream = new MemoryStream(configContent.RawFile);
                 using var streamReader = new StreamReader(stream);
                 using var jsonReader = new JsonTextReader(streamReader);
-                yield return new NamedTypedFile<T>(c.Name, JsonSerializer.CreateDefault().Deserialize<T>(jsonReader));
+                yield return new NamedTypedFile<T>(configContent.Name, JsonSerializer.CreateDefault().Deserialize<T>(jsonReader));
             }
         }
 
