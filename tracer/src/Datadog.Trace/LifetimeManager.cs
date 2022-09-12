@@ -98,7 +98,11 @@ namespace Datadog.Trace
             var current = SynchronizationContext.Current;
             try
             {
-                SynchronizationContext.SetSynchronizationContext(null);
+                if (current is not null)
+                {
+                    SetSynchronizationContext(null);
+                }
+
                 while (_shutdownHooks.TryDequeue(out var actionOrFunc))
                 {
                     if (actionOrFunc is Action action)
@@ -117,7 +121,28 @@ namespace Datadog.Trace
             }
             finally
             {
-                SynchronizationContext.SetSynchronizationContext(current);
+                if (current is not null)
+                {
+                    SetSynchronizationContext(current);
+                }
+            }
+
+            static void SetSynchronizationContext(SynchronizationContext context)
+            {
+                if (!AppDomain.CurrentDomain.IsFullyTrusted)
+                {
+                    // Fix MethodAccessException when the Assembly is loaded as partially trusted.
+                    return;
+                }
+
+                try
+                {
+                    SynchronizationContext.SetSynchronizationContext(context);
+                }
+                catch (MethodAccessException)
+                {
+                    // Access to security critical method has failed.
+                }
             }
         }
     }
