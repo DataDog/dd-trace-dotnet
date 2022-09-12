@@ -15,9 +15,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         public IntPtr Data;
 
-        public IntPtr Array;
+        public IntPtr ActionsArray;
 
-        public uint Size;
+        public uint ActionsSize;
 
         /// <summary>
         /// Total WAF runtime in nanoseconds
