@@ -33,6 +33,8 @@ namespace Datadog.Trace.TestHelpers
     {
         private readonly CancellationTokenSource _cancellationTokenSource = new();
 
+        private AgentBehaviour behaviour = AgentBehaviour.NORMAL;
+
         protected MockTracerAgent(bool telemetryEnabled, TestTransports transport)
         {
             TelemetryEnabled = telemetryEnabled;
@@ -323,6 +325,8 @@ namespace Datadog.Trace.TestHelpers
         {
             _cancellationTokenSource.Cancel();
         }
+
+        public void SetBehaviour(AgentBehaviour behaviour) => this.behaviour = behaviour;
 
         protected void IgnoreException(Action action)
         {
@@ -822,11 +826,28 @@ namespace Datadog.Trace.TestHelpers
                                 ctx.Response.AddHeader("Datadog-Agent-Version", Version);
                             }
 
-                            var response = HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request));
-                            var buffer = Encoding.UTF8.GetBytes(response);
+                            byte[] buffer;
+                            if (behaviour == AgentBehaviour.WRONG_ANSWER)
+                            {
+                                buffer = Encoding.UTF8.GetBytes("WRONG DATA");
+                            }
+                            else
+                            {
+                                buffer = Encoding.UTF8.GetBytes(HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request)));
+                            }
+
                             ctx.Response.ContentType = "application/json";
                             ctx.Response.ContentLength64 = buffer.LongLength;
-                            ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
+
+                            if (behaviour == AgentBehaviour.SLOW_ANSWER)
+                            {
+                                System.Threading.Thread.Sleep(10000);
+                            }
+
+                            if (behaviour != AgentBehaviour.NO_ANSWER)
+                            {
+                                ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
+                            }
                         }
                         catch (Exception ex)
                         {
