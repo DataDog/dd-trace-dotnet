@@ -76,12 +76,6 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
-            if (CIVisibility.Enabled)
-            {
-                CIVisibility.Initialize();
-                return;
-            }
-
             Log.Debug("Initialization started.");
 
             try
@@ -223,8 +217,14 @@ namespace Datadog.Trace.ClrProfiler
             try
             {
                 // ensure global instance is created if it's not already
-                Log.Debug("Initializing tracer singleton instance.");
-                _ = Tracer.Instance;
+                if (CIVisibility.Enabled)
+                {
+                    CIVisibility.Initialize();
+                }
+                else
+                {
+                    Log.Debug("Initializing tracer singleton instance.");
+                }
             }
             catch (Exception ex)
             {

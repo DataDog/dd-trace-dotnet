@@ -111,7 +111,7 @@ inline WSTRING GetCurrentProcessCommandLine()
     {
         while ((len = fread(buf, 1, sizeof(buf), fp)) > 0)
         {
-            cmdline.append(buf, len); // note: `len` here is very important
+            cmdline.append(buf, len);
         }
     }
 

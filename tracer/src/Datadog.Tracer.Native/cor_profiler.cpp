@@ -62,19 +62,24 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         }
     }
 
-    const auto& process_name = shared::GetCurrentProcessName();
+    const auto process_name = shared::GetCurrentProcessName();
     Logger::Info("ProcessName: ", process_name);
 
-    const auto& process_command_line = shared::GetCurrentProcessCommandLine();
+    const auto process_command_line = shared::GetCurrentProcessCommandLine();
     Logger::Info("Process CommandLine: ", process_command_line);
 
     // CI visibility checks
     if (!process_command_line.empty())
     {
         bool is_ci_visibility_enabled = false;
-        if (shared::TryParseBooleanEnvironmentValue(shared::GetEnvironmentValue(environment::ci_visibility_enabled), is_ci_visibility_enabled) && is_ci_visibility_enabled) {
-            if (process_name == WStr("dotnet") && process_command_line.find(WStr("testhost.dll")) == WSTRING::npos) {
-                Logger::Info("The Tracer Profiler has been disabled because the process is running in CI Visibility mode, the name is 'dotnet' but the commandline doesn't contain 'testhost.dll'");
+        if (shared::TryParseBooleanEnvironmentValue(shared::GetEnvironmentValue(environment::ci_visibility_enabled),
+                                                    is_ci_visibility_enabled) &&
+            is_ci_visibility_enabled)
+        {
+            if (process_name == WStr("dotnet") && process_command_line.find(WStr("testhost.dll")) == WSTRING::npos)
+            {
+                Logger::Info("The Tracer Profiler has been disabled because the process is running in CI Visibility "
+                             "mode, the name is 'dotnet' but the commandline doesn't contain 'testhost.dll'");
                 return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
             }
         }
