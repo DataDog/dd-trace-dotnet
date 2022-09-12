@@ -111,6 +111,7 @@ variables:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   relativeNugetPackageDirectory: packages
   # For scheduled builds, only run benchmarks and throughput (and deps). Always do a full build on master.
+  isScheduledBuildOnMain: ${{ and(eq(variables['Build.Reason'], 'Schedule'), in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')) }}
   isBenchmarksOnlyBuild: ${{ and(eq(variables['Build.Reason'], 'Schedule'), not(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'))) }} # only works if you have a main branch
   dotnetToolTag: build-dotnet-tool
   Verify_DisableClipboard: true
@@ -1467,6 +1468,7 @@ stages:
       succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       or(
+        eq(variables['isScheduledBuildOnMain'], 'True'),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'],'True'),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
@@ -1524,6 +1526,7 @@ stages:
       succeeded(),
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       or(
+        eq(variables['isScheduledBuildOnMain'], 'True'),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'],'True'),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True'),
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
