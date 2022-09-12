@@ -297,8 +297,8 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             result.Should().BeFalse();
 
-            console.Output.Should().Contain(ApiWrapperNotFound("/dummyPath"));
-            console.Output.Should().NotContain(Resources.WrongLdPreload("/dummyPath"));
+            console.Output.Should().Contain(ApiWrapperNotFound("/dummyPath/Datadog.Linux.ApiWrapper.x64.so"));
+            console.Output.Should().NotContain(Resources.WrongLdPreload("/dummyPath/Datadog.Linux.ApiWrapper.x64.so"));
         }
 
         [SkippableTheory]
