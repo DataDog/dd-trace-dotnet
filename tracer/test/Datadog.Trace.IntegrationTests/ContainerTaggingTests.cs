@@ -46,15 +46,17 @@ namespace Datadog.Trace.IntegrationTests
 
                 var headers = agent.TraceRequestHeaders.Should().ContainSingle().Subject;
 
-                if (EnvironmentTools.IsWindows())
-                {
-                    // we don't extract the containerId on Windows (yet?)
-                    headers.AllKeys.Should().NotContain(AgentHttpHeaderNames.ContainerId);
-                    return;
-                }
-
                 var expectedContainedId = ContainerMetadata.GetContainerId();
-                headers.AllKeys.ToDictionary(x => x, x => headers[x]).Should().Contain(AgentHttpHeaderNames.ContainerId, expectedContainedId);
+                if (expectedContainedId == null)
+                {
+                    // we don't extract the containerId in some cases, such as when running on Windows.
+                    // In these cases, it should not appear in the headers at all.
+                    headers.AllKeys.Should().NotContain(AgentHttpHeaderNames.ContainerId);
+                }
+                else
+                {
+                    headers.AllKeys.ToDictionary(x => x, x => headers[x]).Should().Contain(AgentHttpHeaderNames.ContainerId, expectedContainedId);
+                }
             }
         }
     }
