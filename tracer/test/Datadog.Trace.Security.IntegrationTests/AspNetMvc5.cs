@@ -4,6 +4,7 @@
 // </copyright>
 
 #if NET461
+using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.TestHelpers;
@@ -88,6 +89,19 @@ namespace Datadog.Trace.Security.IntegrationTests
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
             return TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 2, settings, "application/json");
+        }
+
+        [SkippableTheory]
+        [InlineData("blocking", true, 403, "/")]
+        [InlineData("blocking", false, 200, "/")]
+        [Trait("RunOnWindows", "True")]
+        public async Task TestBlockedRequest(string test, bool enableSecurity, int expectedStatusCode, string url = DefaultAttackUrl)
+        {
+            var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: DefaultRuleFile);
+
+            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+            var settings = VerifyHelper.GetSpanVerifierSettings(test, enableSecurity, expectedStatusCode, sanitisedUrl);
+            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings, userAgent: "Hello/V");
         }
 
         protected override string GetTestName() => _testName;

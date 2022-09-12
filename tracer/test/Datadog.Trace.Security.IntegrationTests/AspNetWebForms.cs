@@ -4,6 +4,7 @@
 // </copyright>
 
 #if NET461
+using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit;
