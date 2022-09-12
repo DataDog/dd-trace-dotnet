@@ -62,10 +62,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
         }
     }
 
-    const auto& process_name = shared::GetCurrentProcessName();
+    const auto process_name = shared::GetCurrentProcessName();
     Logger::Info("ProcessName: ", process_name);
 
-    const auto& process_command_line = shared::GetCurrentProcessCommandLine();
+    const auto process_command_line = shared::GetCurrentProcessCommandLine();
     Logger::Info("Process CommandLine: ", process_command_line);
 
     // CI visibility checks
