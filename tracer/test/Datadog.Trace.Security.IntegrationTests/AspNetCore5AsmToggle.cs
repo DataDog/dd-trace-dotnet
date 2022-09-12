@@ -49,7 +49,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var request1 = await agent.WaitRcmRequestAndReturnLast();
             CheckAckState(request1, expectedState, null, "First RCM call");
             // even the request show the applied state seems extra time is needed before it's active
-            await Task.Delay(500);
+            await Task.Delay(1500);
 
             var spans2 = await SendRequestsAsync(agent, url);
 
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var request2 = await agent.WaitRcmRequestAndReturnLast();
             CheckAckState(request2, expectedState, null, "Second RCM call");
             // even the request show the applied state seems extra time is needed before it's active
-            await Task.Delay(500);
+            await Task.Delay(1500);
 
             var spans3 = await SendRequestsAsync(agent, url);
 
