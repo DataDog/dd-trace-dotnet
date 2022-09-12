@@ -16,45 +16,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
     {
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.HashAlgorithm;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HashAlgorithmIntegrationCommon));
-        internal const string OperationName = "insecure_hashing";
-        internal const string ServiceName = "hash";
 
         internal static Scope CreateScope(System.Security.Cryptography.HashAlgorithm instance)
         {
-            var tracer = Tracer.Instance;
             var iast = Datadog.Trace.IAST.IAST.Instance;
-            if (!iast.Settings.Enabled || !iast.Settings.InsecureHashingAlgorithmEnabled || !InvalidHashAlgorithm(instance))
+            if (!iast.Settings.Enabled || !iast.Settings.InsecureHashingAlgorithmEnabled)
             {
-                // skip this span
                 return null;
             }
 
-            Scope scope = null;
-
             try
             {
-                var tags = new InsecureHashingTags
-                {
-                    IastJson = null
-                };
-
-                var serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
-                scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
-                scope.Span.ResourceName = "hashing";
-                scope.Span.Type = "type";
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+                return IastModule.OnHashingAlgorithm(instance.GetType().Name, IntegrationId);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error creating or populating insecure hashing scope.");
+                Log.Error(ex, "Error creating or populating hash algorithm scope.");
+                return null;
             }
-
-            return scope;
-        }
-
-        private static bool InvalidHashAlgorithm(System.Security.Cryptography.HashAlgorithm target)
-        {
-            return IASTSettings.InsecureHashingAlgorithms.Contains(target.GetType().Name);
         }
     }
 }
