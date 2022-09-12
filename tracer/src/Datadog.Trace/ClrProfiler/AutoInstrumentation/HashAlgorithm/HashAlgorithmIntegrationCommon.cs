@@ -4,7 +4,7 @@
 // </copyright>
 
 using System;
-using System.Security.Cryptography;
+using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.IAST;
 using Datadog.Trace.Logging;
@@ -35,6 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
             {
                 var tags = new InsecureHashingTags
                 {
+                    IastJson = null
                 };
 
                 var serviceName = tracer.Settings.GetServiceName(tracer, ServiceName);
@@ -53,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
 
         private static bool InvalidHashAlgorithm(System.Security.Cryptography.HashAlgorithm target)
         {
-            return (target is HMACMD5) || (target is MD5) || (target is HMACSHA1) || (target is SHA1);
+            return IASTSettings.InsecureHashingAlgorithms.Contains(target.GetType().Name);
         }
     }
 }
