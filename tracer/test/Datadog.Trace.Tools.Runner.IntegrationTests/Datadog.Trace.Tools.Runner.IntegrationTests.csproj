@@ -21,6 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace.TestHelpers.AutoInstrumentation\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj" />
     <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
     <!-- Note, not referencing coverlet.collector because it has file locking issues -->
     <!-- Somebody should look into that... -->
