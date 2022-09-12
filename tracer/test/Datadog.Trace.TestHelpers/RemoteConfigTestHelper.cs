@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Threading.Tasks;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -22,20 +23,37 @@ namespace Datadog.Trace.TestHelpers
             output.WriteLine("Using RCM response: " + response);
         }
 
-        internal static GetRcmRequest GetLastRcmRequest(this MockTracerAgent agent)
+        // doing multiple things here, waiting for the request and return the latest one
+        internal static async Task<GetRcmRequest> WaitRcmRequestAndReturnLast(this MockTracerAgent agent, int timeoutInMilliseconds = 50000)
         {
-            string lastRemoteConfigPayload = null;
-            while (agent.RemoteConfigRequests.TryDequeue(out var next))
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
+
+            GetRcmRequest request = null;
+            while (DateTime.UtcNow < deadline)
             {
-                lastRemoteConfigPayload = next;
+                while (agent.RemoteConfigRequests.IsEmpty)
+                {
+                    await Task.Delay(200);
+                }
+
+                string lastRemoteConfigPayload = null;
+                while (agent.RemoteConfigRequests.TryDequeue(out var next))
+                {
+                    lastRemoteConfigPayload = next;
+                }
+
+                if (lastRemoteConfigPayload != null)
+                {
+                    // prefer a request that has been processed, meaning the config states have been filled in
+                    request = JsonConvert.DeserializeObject<GetRcmRequest>(lastRemoteConfigPayload);
+                    if (request?.Client?.State?.ConfigStates?.Count is not null and > 0)
+                    {
+                        return request;
+                    }
+                }
             }
 
-            if (lastRemoteConfigPayload == null)
-            {
-                return null;
-            }
-
-            var request = JsonConvert.DeserializeObject<GetRcmRequest>(lastRemoteConfigPayload);
+            // eventually return a request that might be null or has no config states
             return request;
         }
 

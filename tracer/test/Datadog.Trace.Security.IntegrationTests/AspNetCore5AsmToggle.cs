@@ -15,6 +15,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -27,6 +28,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         public AspNetCore5AsmToggle(ITestOutputHelper outputHelper)
             : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5AsmToggle))
         {
+            SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "500");
         }
 
         [SkippableTheory]
@@ -36,7 +38,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestSecurityToggling(bool? enableSecurity, uint expectedState)
         {
-            SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
             var url = "/Health/?[$slice]=value";
             var agent = await RunOnSelfHosted(enableSecurity);
             var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, expectedState);
@@ -44,16 +45,20 @@ namespace Datadog.Trace.Security.IntegrationTests
             var spans1 = await SendRequestsAsync(agent, url);
 
             agent.SetupRcm(Output, new[] { ((object)new Features() { Asm = new Asm() { Enabled = false } }, "1") }, "FEATURES");
-            await Task.Delay(1000);
 
-            CheckAckState(agent, expectedState, null, "First RCM call");
+            var request1 = await agent.WaitRcmRequestAndReturnLast();
+            CheckAckState(request1, expectedState, null, "First RCM call");
+            // even the request show the applied state seems extra time is needed before it's active
+            await Task.Delay(500);
 
             var spans2 = await SendRequestsAsync(agent, url);
 
             agent.SetupRcm(Output, new[] { ((object)new Features() { Asm = new Asm() { Enabled = true } }, "2") }, "FEATURES");
-            await Task.Delay(1000);
 
-            CheckAckState(agent, expectedState, null, "Second RCM call");
+            var request2 = await agent.WaitRcmRequestAndReturnLast();
+            CheckAckState(request2, expectedState, null, "Second RCM call");
+            // even the request show the applied state seems extra time is needed before it's active
+            await Task.Delay(500);
 
             var spans3 = await SendRequestsAsync(agent, url);
 
@@ -70,7 +75,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TestRemoteConfigError()
         {
             var enableSecurity = true;
-            SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
             var url = "/Health/?[$slice]=value";
             var agent = await RunOnSelfHosted(enableSecurity);
             var settings = VerifyHelper.GetSpanVerifierSettings();
@@ -78,17 +82,18 @@ namespace Datadog.Trace.Security.IntegrationTests
             var spans1 = await SendRequestsAsync(agent, url);
 
             agent.SetupRcm(Output, new[] { ((object)"haha, you weren't expect this!", "1") }, "FEATURES");
-            await Task.Delay(1000);
 
-            CheckAckState(agent, ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.Configuration.Features'. Path '', line 1, position 32.", "First RCM call");
+            var request = await agent.WaitRcmRequestAndReturnLast();
+            CheckAckState(request, ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.Configuration.Features'. Path '', line 1, position 32.", "First RCM call");
 
             await VerifySpans(spans1.ToImmutableList(), settings, true);
         }
 
-        private void CheckAckState(MockTracerAgent agent, uint expectedState, string expectedError, string message)
+        private void CheckAckState(GetRcmRequest request, uint expectedState, string expectedError, string message)
         {
-            var request = agent.GetLastRcmRequest();
             var state = request?.Client?.State?.ConfigStates?.FirstOrDefault(x => x.Product == "FEATURES");
+
+            state.Should().NotBeNull();
             state.ApplyState.Should().Be(expectedState, message);
             state.ApplyError.Should().Be(expectedError, message);
         }
