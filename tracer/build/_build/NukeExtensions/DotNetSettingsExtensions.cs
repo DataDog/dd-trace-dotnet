@@ -94,7 +94,7 @@ internal static partial class DotNetSettingsExtensions
     public static DotNetTestSettings EnableTrxLogOutput(this DotNetTestSettings settings, string resultsDirectory)
     {
         return settings
-            .SetLogger("trx")
+            .SetLoggers("trx")
             .SetResultsDirectory(resultsDirectory);
     }
 

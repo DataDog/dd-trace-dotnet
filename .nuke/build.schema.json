@@ -1,0 +1,535 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "Build Schema",
+  "$ref": "#/definitions/build",
+  "definitions": {
+    "build": {
+      "type": "object",
+      "properties": {
+        "Artifacts": {
+          "type": "string",
+          "description": "The location to place NuGet packages and other packages. Default is ./bin/artifacts "
+        },
+        "AZURE_DEVOPS_PIPELINE_ID": {
+          "type": "integer",
+          "description": "Azure Devops pipeline id"
+        },
+        "AZURE_DEVOPS_PROJECT_ID": {
+          "type": "string",
+          "description": "Azure Devops project id"
+        },
+        "AZURE_DEVOPS_TOKEN": {
+          "type": "string",
+          "description": "An Azure Devops PAT (for use in GitHub Actions)"
+        },
+        "BuildConfiguration": {
+          "type": "string",
+          "description": "Configuration to build - Default is 'Release'",
+          "enum": [
+            "Debug",
+            "Release"
+          ]
+        },
+        "BuildId": {
+          "type": "string",
+          "description": "The id of a build in AzureDevops"
+        },
+        "CodeCoverage": {
+          "type": "boolean",
+          "description": "Enables code coverage"
+        },
+        "CommitSha": {
+          "type": "string",
+          "description": "The specific commit sha to use"
+        },
+        "Continue": {
+          "type": "boolean",
+          "description": "Indicates to continue a previously failed build attempt"
+        },
+        "ExpectChangelogUpdate": {
+          "type": "boolean",
+          "description": "Is the ChangeLog expected to change?"
+        },
+        "ExplorationTestCloneLatest": {
+          "type": "boolean",
+          "description": "Indicates whether exploration tests should run on latest repository commit. Useful if you want to update tested repositories to the latest tags. Default false"
+        },
+        "ExplorationTestName": {
+          "type": "string",
+          "description": "Indicates name of exploration test to run. If not specified, will run all tests sequentially",
+          "enum": [
+            "automapper",
+            "cake",
+            "eShopOnWeb",
+            "paket",
+            "polly",
+            "protobuf",
+            "RestSharp",
+            "serilog",
+            "swashbuckle"
+          ]
+        },
+        "ExplorationTestUseCase": {
+          "type": "string",
+          "description": "Indicates use case of exploration test to run",
+          "enum": [
+            "ContinuousProfiler",
+            "Debugger",
+            "Tracer"
+          ]
+        },
+        "ExtraEnvVars": {
+          "type": "array",
+          "description": "Additional environment variables, in the format KEY1=Value1 Key2=Value2 to use when running the IIS Sample",
+          "items": {
+            "type": "string"
+          }
+        },
+        "Filter": {
+          "type": "string",
+          "description": "Override the default test filters for integration tests. (Optional)"
+        },
+        "Framework": {
+          "type": "string",
+          "description": "The TargetFramework to execute when running or building a sample app, or linux integration tests",
+          "enum": [
+            "NET461",
+            "NET5_0",
+            "NET6_0",
+            "NETCOREAPP2_1",
+            "NETCOREAPP3_0",
+            "NETCOREAPP3_1",
+            "NETSTANDARD2_0"
+          ]
+        },
+        "GITHUB_REPOSITORY_NAME": {
+          "type": "string",
+          "description": "Git repository name"
+        },
+        "GITHUB_TOKEN": {
+          "type": "string",
+          "description": "A GitHub token (for use in GitHub Actions)"
+        },
+        "Help": {
+          "type": "boolean",
+          "description": "Shows the help text for this build assembly"
+        },
+        "Host": {
+          "type": "string",
+          "description": "Host for execution. Default is 'automatic'",
+          "enum": [
+            "AppVeyor",
+            "AzurePipelines",
+            "Bamboo",
+            "Bitbucket",
+            "Bitrise",
+            "GitHubActions",
+            "GitLab",
+            "Jenkins",
+            "Rider",
+            "SpaceAutomation",
+            "TeamCity",
+            "Terminal",
+            "TravisCI",
+            "VisualStudio",
+            "VSCode"
+          ]
+        },
+        "IncludeMinorPackageVersions": {
+          "type": "boolean",
+          "description": "Should minor versions of integration NuGet packages be included"
+        },
+        "IncludeTestsRequiringDocker": {
+          "type": "boolean",
+          "description": "Should we build and run tests that require docker. true = only docker integration tests, false = no docker integration tests, null = all"
+        },
+        "IsAlpine": {
+          "type": "boolean",
+          "description": "Is the build running on Alpine linux? Default is 'false'"
+        },
+        "IsPrerelease": {
+          "type": "boolean",
+          "description": "Whether the current build version is a prerelease(for packaging purposes)"
+        },
+        "MonitoringHome": {
+          "type": "string",
+          "description": "The location to create the monitoring home directory. Default is ./shared/bin/monitoring-home "
+        },
+        "NewIsPrerelease": {
+          "type": "boolean",
+          "description": "Whether the new build version is a prerelease(for packaging purposes)"
+        },
+        "NewVersion": {
+          "type": "string",
+          "description": "The new build version to set"
+        },
+        "NoLogo": {
+          "type": "boolean",
+          "description": "Disables displaying the NUKE logo"
+        },
+        "NugetPackageDirectory": {
+          "type": "string",
+          "description": "The location to restore Nuget packages (optional) "
+        },
+        "Partition": {
+          "type": "string",
+          "description": "Partition to use on CI"
+        },
+        "Plan": {
+          "type": "boolean",
+          "description": "Shows the execution plan (HTML)"
+        },
+        "PrintDriveSpace": {
+          "type": "boolean",
+          "description": "Prints the available drive space before executing each target. Defaults to false"
+        },
+        "Profile": {
+          "type": "array",
+          "description": "Defines the profiles to load",
+          "items": {
+            "type": "string"
+          }
+        },
+        "ProfilerSamplesSolution": {
+          "type": "string",
+          "description": "Path to a solution file that is automatically loaded. Default is profiler/src/Demos/Datadog.Demos.sln"
+        },
+        "ProfilerSolution": {
+          "type": "string",
+          "description": "Path to a solution file that is automatically loaded. Default is Datadog.Profiler.sln"
+        },
+        "PullRequestNumber": {
+          "type": "integer",
+          "description": "The Pull Request number for GitHub Actions"
+        },
+        "Root": {
+          "type": "string",
+          "description": "Root directory during build execution"
+        },
+        "SampleName": {
+          "type": "string",
+          "description": "The sample name to execute when running or building sample apps"
+        },
+        "Skip": {
+          "type": "array",
+          "description": "List of targets to be skipped. Empty list skips all dependencies",
+          "items": {
+            "type": "string",
+            "enum": [
+              "AssignLabelsToPullRequest",
+              "AssignPullRequestToMilestone",
+              "BuildAndRunLinuxIntegrationTests",
+              "BuildAndRunManagedUnitTests",
+              "BuildAndRunNativeUnitTests",
+              "BuildAndRunProfilerLinuxIntegrationTests",
+              "BuildAndRunToolArtifactTests",
+              "BuildAndRunWindowsIntegrationTests",
+              "BuildAndRunWindowsRegressionTests",
+              "BuildAspNetIntegrationTests",
+              "BuildDistributionNuget",
+              "BuildIisSampleApp",
+              "BuildLinuxIntegrationTests",
+              "BuildMsi",
+              "BuildNativeLoader",
+              "BuildProfilerHome",
+              "BuildProfilerLinuxIntegrationTests",
+              "BuildRunnerTool",
+              "BuildStandaloneTool",
+              "BuildToolArtifactTests",
+              "BuildTracerHome",
+              "BuildWindowsIntegrationTests",
+              "BuildWindowsRegressionTests",
+              "CalculateNextVersion",
+              "CheckBuildLogsForErrors",
+              "CheckSmokeTestsForErrors",
+              "Clean",
+              "CleanObjFiles",
+              "CloseMilestone",
+              "CompareBenchmarksResults",
+              "CompareCodeCoverageReports",
+              "CompileDependencyLibs",
+              "CompileFrameworkReproductions",
+              "CompileInstrumentationVerificationLibrary",
+              "CompileIntegrationTests",
+              "CompileLinuxIntegrationTests",
+              "CompileManagedSrc",
+              "CompileManagedTestHelpers",
+              "CompileManagedUnitTests",
+              "CompileMultiApiPackageVersionSamples",
+              "CompileNativeLoader",
+              "CompileNativeLoaderLinux",
+              "CompileNativeLoaderOsx",
+              "CompileNativeLoaderWindows",
+              "CompileNativeSrc",
+              "CompileNativeSrcLinux",
+              "CompileNativeSrcMacOs",
+              "CompileNativeSrcWindows",
+              "CompileNativeTests",
+              "CompileNativeTestsLinux",
+              "CompileNativeTestsWindows",
+              "CompileProfilerLinuxIntegrationTests",
+              "CompileProfilerNativeSrc",
+              "CompileProfilerNativeSrcAndTestLinux",
+              "CompileProfilerNativeSrcWindows",
+              "CompileProfilerNativeTestsWindows",
+              "CompileProfilerSamplesLinux",
+              "CompileRegressionDependencyLibs",
+              "CompileRegressionSamples",
+              "CompileSamplesLinux",
+              "CompileSamplesWindows",
+              "CopyLibDdwaf",
+              "CopyNativeFilesForAppSecUnitTests",
+              "CreateDistributionHome",
+              "CreatePlatformlessSymlinks",
+              "CreateRequiredDirectories",
+              "DownloadAzurePipelineAndGitlabArtifacts",
+              "DownloadLibDdwaf",
+              "ExtractDebugInfoLinux",
+              "GacAdd",
+              "GacRemove",
+              "GenerateNoopStages",
+              "GeneratePackageVersions",
+              "GenerateReleaseNotes",
+              "GenerateSpanDocumentation",
+              "GenerateVariables",
+              "Info",
+              "InstallDdTraceTool",
+              "OutputCurrentVersionToGitHub",
+              "PackageTracerHome",
+              "PackNuGet",
+              "PublishIisSamples",
+              "PublishManagedTracer",
+              "PublishNativeLoader",
+              "PublishNativeLoaderUnix",
+              "PublishNativeLoaderWindows",
+              "PublishNativeSymbolsWindows",
+              "PublishNativeTracer",
+              "PublishNativeTracerUnix",
+              "PublishNativeTracerWindows",
+              "PublishProfiler",
+              "PublishProfilerLinux",
+              "PublishProfilerWindows",
+              "RenameVNextMilestone",
+              "Restore",
+              "RunBenchmarks",
+              "RunDotNetSample",
+              "RunExplorationTests",
+              "RunIisSample",
+              "RunLinuxIntegrationTests",
+              "RunManagedUnitTests",
+              "RunNativeTests",
+              "RunNativeTestsLinux",
+              "RunNativeTestsWindows",
+              "RunProfilerCpuLimitTests",
+              "RunProfilerLinuxIntegrationTests",
+              "RunProfilerNativeUnitTestsLinux",
+              "RunProfilerNativeUnitTestsWindows",
+              "RunToolArtifactTests",
+              "RunWindowsIntegrationTests",
+              "RunWindowsMsiIntegrationTests",
+              "RunWindowsRegressionTests",
+              "RunWindowsSecurityIisIntegrationTests",
+              "RunWindowsTracerIisIntegrationTests",
+              "SetUpExplorationTests",
+              "SignDlls",
+              "SignMsiAndNupkg",
+              "SummaryOfSnapshotChanges",
+              "UpdateChangeLog",
+              "UpdateSnapshots",
+              "UpdateSnapshotsFromBuild",
+              "UpdateVendoredCode",
+              "UpdateVersion",
+              "VerifyChangedFilesFromVersionBump",
+              "ZipMonitoringHome",
+              "ZipMonitoringHomeLinux",
+              "ZipMonitoringHomeWindows",
+              "ZipSymbols"
+            ]
+          }
+        },
+        "Solution": {
+          "type": "string",
+          "description": "Path to a solution file that is automatically loaded. Default is Datadog.Trace.sln"
+        },
+        "Target": {
+          "type": "array",
+          "description": "List of targets to be invoked. Default is '{default_target}'",
+          "items": {
+            "type": "string",
+            "enum": [
+              "AssignLabelsToPullRequest",
+              "AssignPullRequestToMilestone",
+              "BuildAndRunLinuxIntegrationTests",
+              "BuildAndRunManagedUnitTests",
+              "BuildAndRunNativeUnitTests",
+              "BuildAndRunProfilerLinuxIntegrationTests",
+              "BuildAndRunToolArtifactTests",
+              "BuildAndRunWindowsIntegrationTests",
+              "BuildAndRunWindowsRegressionTests",
+              "BuildAspNetIntegrationTests",
+              "BuildDistributionNuget",
+              "BuildIisSampleApp",
+              "BuildLinuxIntegrationTests",
+              "BuildMsi",
+              "BuildNativeLoader",
+              "BuildProfilerHome",
+              "BuildProfilerLinuxIntegrationTests",
+              "BuildRunnerTool",
+              "BuildStandaloneTool",
+              "BuildToolArtifactTests",
+              "BuildTracerHome",
+              "BuildWindowsIntegrationTests",
+              "BuildWindowsRegressionTests",
+              "CalculateNextVersion",
+              "CheckBuildLogsForErrors",
+              "CheckSmokeTestsForErrors",
+              "Clean",
+              "CleanObjFiles",
+              "CloseMilestone",
+              "CompareBenchmarksResults",
+              "CompareCodeCoverageReports",
+              "CompileDependencyLibs",
+              "CompileFrameworkReproductions",
+              "CompileInstrumentationVerificationLibrary",
+              "CompileIntegrationTests",
+              "CompileLinuxIntegrationTests",
+              "CompileManagedSrc",
+              "CompileManagedTestHelpers",
+              "CompileManagedUnitTests",
+              "CompileMultiApiPackageVersionSamples",
+              "CompileNativeLoader",
+              "CompileNativeLoaderLinux",
+              "CompileNativeLoaderOsx",
+              "CompileNativeLoaderWindows",
+              "CompileNativeSrc",
+              "CompileNativeSrcLinux",
+              "CompileNativeSrcMacOs",
+              "CompileNativeSrcWindows",
+              "CompileNativeTests",
+              "CompileNativeTestsLinux",
+              "CompileNativeTestsWindows",
+              "CompileProfilerLinuxIntegrationTests",
+              "CompileProfilerNativeSrc",
+              "CompileProfilerNativeSrcAndTestLinux",
+              "CompileProfilerNativeSrcWindows",
+              "CompileProfilerNativeTestsWindows",
+              "CompileProfilerSamplesLinux",
+              "CompileRegressionDependencyLibs",
+              "CompileRegressionSamples",
+              "CompileSamplesLinux",
+              "CompileSamplesWindows",
+              "CopyLibDdwaf",
+              "CopyNativeFilesForAppSecUnitTests",
+              "CreateDistributionHome",
+              "CreatePlatformlessSymlinks",
+              "CreateRequiredDirectories",
+              "DownloadAzurePipelineAndGitlabArtifacts",
+              "DownloadLibDdwaf",
+              "ExtractDebugInfoLinux",
+              "GacAdd",
+              "GacRemove",
+              "GenerateNoopStages",
+              "GeneratePackageVersions",
+              "GenerateReleaseNotes",
+              "GenerateSpanDocumentation",
+              "GenerateVariables",
+              "Info",
+              "InstallDdTraceTool",
+              "OutputCurrentVersionToGitHub",
+              "PackageTracerHome",
+              "PackNuGet",
+              "PublishIisSamples",
+              "PublishManagedTracer",
+              "PublishNativeLoader",
+              "PublishNativeLoaderUnix",
+              "PublishNativeLoaderWindows",
+              "PublishNativeSymbolsWindows",
+              "PublishNativeTracer",
+              "PublishNativeTracerUnix",
+              "PublishNativeTracerWindows",
+              "PublishProfiler",
+              "PublishProfilerLinux",
+              "PublishProfilerWindows",
+              "RenameVNextMilestone",
+              "Restore",
+              "RunBenchmarks",
+              "RunDotNetSample",
+              "RunExplorationTests",
+              "RunIisSample",
+              "RunLinuxIntegrationTests",
+              "RunManagedUnitTests",
+              "RunNativeTests",
+              "RunNativeTestsLinux",
+              "RunNativeTestsWindows",
+              "RunProfilerCpuLimitTests",
+              "RunProfilerLinuxIntegrationTests",
+              "RunProfilerNativeUnitTestsLinux",
+              "RunProfilerNativeUnitTestsWindows",
+              "RunToolArtifactTests",
+              "RunWindowsIntegrationTests",
+              "RunWindowsMsiIntegrationTests",
+              "RunWindowsRegressionTests",
+              "RunWindowsSecurityIisIntegrationTests",
+              "RunWindowsTracerIisIntegrationTests",
+              "SetUpExplorationTests",
+              "SignDlls",
+              "SignMsiAndNupkg",
+              "SummaryOfSnapshotChanges",
+              "UpdateChangeLog",
+              "UpdateSnapshots",
+              "UpdateSnapshotsFromBuild",
+              "UpdateVendoredCode",
+              "UpdateVersion",
+              "VerifyChangedFilesFromVersionBump",
+              "ZipMonitoringHome",
+              "ZipMonitoringHomeLinux",
+              "ZipMonitoringHomeWindows",
+              "ZipSymbols"
+            ]
+          }
+        },
+        "TargetBranch": {
+          "type": "string",
+          "description": "The git branch to use"
+        },
+        "TargetPlatform": {
+          "type": "string",
+          "description": "Platform to build - x86 or x64. Default is x64",
+          "enum": [
+            "arm",
+            "MSIL",
+            "Win32",
+            "x64",
+            "x86"
+          ]
+        },
+        "TestAllPackageVersions": {
+          "type": "boolean",
+          "description": "Should all versions of integration NuGet packages be tested"
+        },
+        "ToolDestination": {
+          "type": "string",
+          "description": "The directory to install the tool to"
+        },
+        "ToolSource": {
+          "type": "string",
+          "description": "The directory containing the tool .nupkg file"
+        },
+        "Verbosity": {
+          "type": "string",
+          "description": "Logging verbosity during build execution. Default is 'Normal'",
+          "enum": [
+            "Minimal",
+            "Normal",
+            "Quiet",
+            "Verbose"
+          ]
+        },
+        "Version": {
+          "type": "string",
+          "description": "The current version of the source and build"
+        }
+      }
+    }
+  }
+}
