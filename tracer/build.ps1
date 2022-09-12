@@ -25,6 +25,7 @@ function ExecSafe([scriptblock] $cmd) {
 }
 
 # If dotnet CLI is installed globally and it matches requested version, use for execution
+$env:NUKE_TELEMETRY_OPTOUT=1
 $env:DOTNET_EXE = (Get-Command "dotnet").Path
 
 Write-Output "Microsoft (R) .NET Core SDK version $(& $env:DOTNET_EXE --version)"

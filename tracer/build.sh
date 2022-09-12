@@ -16,6 +16,7 @@ BUILD_PROJECT_FILE="$SCRIPT_DIR/build/_build/_build.csproj"
 ###########################################################################
 
 export DOTNET_EXE="$(command -v dotnet)"
+export NUKE_TELEMETRY_OPTOUT=1
 
 echo "Microsoft (R) .NET Core SDK version $("$DOTNET_EXE" --version)"
 
