@@ -4,21 +4,8 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
 using System.Threading;
-using Datadog.Trace.AppSec.Transports;
-using Datadog.Trace.AppSec.Transports.Http;
-using Datadog.Trace.AppSec.Waf;
-using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
-using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Sampling;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
-using Datadog.Trace.Vendors.Serilog.Events;
-using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.IAST
 {

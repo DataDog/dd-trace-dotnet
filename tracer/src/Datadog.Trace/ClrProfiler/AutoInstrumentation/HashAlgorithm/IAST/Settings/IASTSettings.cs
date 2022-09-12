@@ -14,6 +14,8 @@ namespace Datadog.Trace.IAST
 {
     internal class IASTSettings
     {
+        public static readonly string[] InsecureHashingAlgorithms = { "HMACMD5", "MD5", "HMACSHA1", "SHA1" };
+
         public IASTSettings(IConfigurationSource source)
         {
             Enabled = source?.GetBool(ConfigurationKeys.IAST.Enabled) ?? false;
