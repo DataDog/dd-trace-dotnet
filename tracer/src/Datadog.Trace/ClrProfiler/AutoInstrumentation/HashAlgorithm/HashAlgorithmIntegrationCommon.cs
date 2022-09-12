@@ -6,7 +6,7 @@
 #nullable enable
 
 using System;
-using System.Security.Cryptography;
+using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
