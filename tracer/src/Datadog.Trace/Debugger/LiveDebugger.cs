@@ -106,7 +106,6 @@ namespace Datadog.Trace.Debugger
                 DebuggerSnapshotSerializer.SetConfig(_settings);
                 Product.ConfigChanged += (sender, args) => AcceptConfiguration(args);
                 AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
-                AppDomain.CurrentDomain.DomainUnload += (sender, args) => _lineProbeResolver.OnDomainUnloaded();
 
                 await StartAsync().ConfigureAwait(false);
             }
@@ -139,17 +138,18 @@ namespace Datadog.Trace.Debugger
 
             Task StartAsync()
             {
-                LifetimeManager.Instance.AddShutdownTask(OnShutdown);
+                AddShutdownTask();
 
                 _probeStatusPoller.StartPolling();
                 return _debuggerSink.StartFlushingAsync();
             }
 
-            void OnShutdown()
+            void AddShutdownTask()
             {
-                _discoveryService.RemoveSubscription(DiscoveryCallback);
-                _debuggerSink.Dispose();
-                _probeStatusPoller.Dispose();
+                LifetimeManager.Instance.AddShutdownTask(() => _discoveryService.RemoveSubscription(DiscoveryCallback));
+                LifetimeManager.Instance.AddShutdownTask(_debuggerSink.Dispose);
+                LifetimeManager.Instance.AddShutdownTask(_probeStatusPoller.Dispose);
+                LifetimeManager.Instance.AddShutdownTask(_lineProbeResolver.OnDomainUnloaded);
             }
         }
 
