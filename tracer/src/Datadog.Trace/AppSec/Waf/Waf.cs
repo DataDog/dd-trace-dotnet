@@ -4,10 +4,14 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using System.Linq;
+using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypesManaged;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -42,10 +46,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public string Version
         {
-            get
-            {
-                return wafNative.GetVersion();
-            }
+            get { return wafNative.GetVersion(); }
         }
 
         /// <summary>
@@ -88,6 +89,40 @@ namespace Datadog.Trace.AppSec.Waf
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        public bool UpdateRules(IEnumerable<RuleData[]> res)
+        {
+            var finalRuleDatas = MergeRuleDatas(res);
+
+            var encoded = encoder.Encode(finalRuleDatas, new List<Obj>(), false);
+
+            var ret = wafNative.UpdateRuleData(ruleHandle.Value, encoded.RawPtr);
+            return ret == DDWAF_RET_CODE.DDWAF_OK;
+        }
+
+        internal static List<object> MergeRuleDatas(IEnumerable<RuleData[]> res)
+        {
+            var finalRuleDatas = new List<object>();
+            var groups = res.SelectMany(r => r).GroupBy(r => r.Id + r.Type);
+            foreach (var ruleDatas in groups)
+            {
+                var datasByValue = ruleDatas.SelectMany(d => d.Data).GroupBy(d => d.Value);
+                var mergedDatas = new List<object>();
+                foreach (var data in datasByValue)
+                {
+                    var longestLastingIp = data.OrderByDescending(d => d.Expiration ?? long.MaxValue).First();
+                    var dataIp = new Dictionary<string, object>();
+                    dataIp.Add("expiration", longestLastingIp.Expiration);
+                    dataIp.Add("value", longestLastingIp.Value);
+                    mergedDatas.Add(dataIp);
+                }
+
+                var ruleData = ruleDatas.First();
+                finalRuleDatas.Add(new Dictionary<string, object> { { "id", ruleData.Id }, { "type", ruleData.Type }, { "data", mergedDatas } });
+            }
+
+            return finalRuleDatas;
         }
 
         private void Dispose(bool disposing)

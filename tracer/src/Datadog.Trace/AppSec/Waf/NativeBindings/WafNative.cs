@@ -23,6 +23,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private readonly GetVersionDelegate _getVersionField;
         private readonly InitDelegate _initField;
+        private readonly UpdateRuleDelegate _updateRuleField;
         private readonly InitContextDelegate _initContextField;
         private readonly RunDelegate _runField;
         private readonly DestroyDelegate _destroyField;
@@ -68,6 +69,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _freeResultField = GetDelegateForNativeFunction<FreeResultDelegate>(handle, "ddwaf_result_free");
             _rulesetInfoFreeField = GetDelegateForNativeFunction<FreeRulesetInfoDelegate>(handle, "ddwaf_ruleset_info_free");
             _getVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(handle, "ddwaf_get_version");
+            _updateRuleField = GetDelegateForNativeFunction<UpdateRuleDelegate>(handle, "ddwaf_update_rule_data");
             // setup logging
             var setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(handle, "ddwaf_set_log_cb");
             // convert to a delegate and attempt to pin it by assigning it to  field
@@ -84,6 +86,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private delegate void FreeRulesetInfoDelegate(ref DdwafRuleSetInfoStruct output);
 
         private delegate IntPtr InitDelegate(IntPtr wafRule, ref DdwafConfigStruct config, ref DdwafRuleSetInfoStruct ruleSetInfo);
+
+        private delegate DDWAF_RET_CODE UpdateRuleDelegate(IntPtr powerwafHandle, IntPtr data);
 
         private delegate IntPtr InitContextDelegate(IntPtr powerwafHandle);
 
@@ -148,6 +152,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         }
 
         internal IntPtr Init(IntPtr wafRule, ref DdwafConfigStruct config, ref DdwafRuleSetInfoStruct ruleSetInfo) => _initField(wafRule, ref config, ref ruleSetInfo);
+
+        internal DDWAF_RET_CODE UpdateRuleData(IntPtr powerwafHandle, IntPtr data) => _updateRuleField(powerwafHandle, data);
 
         internal IntPtr InitContext(IntPtr powerwafHandle) => _initContextField(powerwafHandle);
 
