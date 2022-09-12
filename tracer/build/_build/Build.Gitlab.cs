@@ -13,6 +13,7 @@ using Nuke.Common.Tools.SignTool;
 using Nuke.Common.Utilities.Collections;
 using static Nuke.Common.EnvironmentInfo;
 using Target = Nuke.Common.Target;
+using Logger = Serilog.Log;
 
 partial class Build
 {
@@ -66,7 +67,7 @@ partial class Build
                                                ? (@"test_cert.pfx", "Passw0rd")
                                                : await GetSigningMaterial(tempFileName);
 
-            Logger.Info("Signing material retrieved");
+            Logger.Information("Signing material retrieved");
 
             var binaries = filesToSign
                .Where(x => !x.ToString().EndsWith(".nupkg"))
@@ -74,9 +75,9 @@ partial class Build
 
             if (binaries.Any())
             {
-                Logger.Info("Signing binaries...");
+                Logger.Information("Signing binaries...");
                 binaries.ForEach(file => SignBinary(certPath, certPassword, file));
-                Logger.Info("Binary signing complete");
+                Logger.Information("Binary signing complete");
             }
 
             var nupkgs = filesToSign
@@ -85,9 +86,9 @@ partial class Build
 
             if (nupkgs.Any())
             {
-                Logger.Info("Signing NuGet packages...");
+                Logger.Information("Signing NuGet packages...");
                 nupkgs.ForEach(file => SignNuGet(certPath, certPassword, file));
-                Logger.Info("NuGet signing complete");
+                Logger.Information("NuGet signing complete");
             }
         }
         finally
@@ -99,7 +100,7 @@ partial class Build
 
         void SignBinary(string certPath, string certPassword, AbsolutePath binaryPath)
         {
-            Logger.Info($"Signing {binaryPath}");
+            Logger.Information($"Signing {binaryPath}");
 
             SignToolTasks.SignTool(
                 x => x
@@ -112,7 +113,7 @@ partial class Build
 
         void SignNuGet(string certPath, string certPassword, AbsolutePath binaryPath)
         {
-            Logger.Info($"Signing {binaryPath}");
+            Logger.Information($"Signing {binaryPath}");
 
             // nuke doesn't expose the sign tool
             try
@@ -142,13 +143,13 @@ partial class Build
 
             var pfxB64Encoded = pfxB64EncodedPart1 + pfxB64EncodedPart2;
 
-            Logger.Info($"Retrieved base64 encoded pfx. Length: {pfxB64Encoded.Length}");
+            Logger.Information($"Retrieved base64 encoded pfx. Length: {pfxB64Encoded.Length}");
             var pfxB64Decoded = Convert.FromBase64String(pfxB64Encoded);
 
-            Logger.Info($"Writing key material to temporary file {keyFile}");
+            Logger.Information($"Writing key material to temporary file {keyFile}");
             File.WriteAllBytes(keyFile, pfxB64Decoded);
 
-            Logger.Info("Verifying key material");
+            Logger.Information("Verifying key material");
             var file = new X509Certificate2(keyFile, pfxPassword);
             file.Verify();
 
@@ -170,7 +171,7 @@ partial class Build
                     try
                     {
                         var response = await client.GetParameterAsync(request);
-                        Logger.Info($"Retrieved {filename} from SSM");
+                        Logger.Information($"Retrieved {filename} from SSM");
                         return response.Parameter.Value;
                     }
                     catch (Exception ex)

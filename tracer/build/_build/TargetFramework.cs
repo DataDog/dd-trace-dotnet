@@ -44,7 +44,7 @@ public class TargetFramework : Enumeration
                 var matchingFields = AllTargetFrameworks
                     .Where(x=> string.Equals(x.Value, stringValue, StringComparison.OrdinalIgnoreCase))
                     .ToList();
-                ControlFlow.Assert(matchingFields.Count == 1, "matchingFields.Count == 1");
+                Assert.True(matchingFields.Count == 1, "matchingFields.Count == 1");
                 return matchingFields.Single();
             }
 

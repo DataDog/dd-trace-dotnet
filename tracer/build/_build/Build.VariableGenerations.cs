@@ -12,6 +12,7 @@ using Nuke.Common.Tools.Git;
 using Nuke.Common.Tools.MSBuild;
 using NukeExtensions;
 using YamlDotNet.Serialization.NamingConventions;
+using Logger = Serilog.Log;
 
 partial class Build : NukeBuild
 {
@@ -42,7 +43,7 @@ partial class Build : NukeBuild
                     var forceExplorationTestsWithVariableName = $"force_exploration_tests_with_{variableName}";
                     if (bool.Parse(Environment.GetEnvironmentVariable(forceExplorationTestsWithVariableName) ?? "false"))
                     {
-                        Logger.Info($"{forceExplorationTestsWithVariableName} was set - forcing exploration tests");
+                        Serilog.Log.Information($"{forceExplorationTestsWithVariableName} was set - forcing exploration tests");
                         isChanged = true;
                     }
                     else
@@ -53,7 +54,7 @@ partial class Build : NukeBuild
                         isChanged = changedFiles.Any(s => filters.Any(filter => s.Contains(filter)) && !exclusionFilters.Any(filter => s.Contains(filter)));
                     }
 
-                    Logger.Info($"{variableName} - {isChanged}");
+                    Logger.Information($"{variableName} - {isChanged}");
 
                     var variableValue = isChanged.ToString();
                     EnvironmentInfo.SetVariable(variableName, variableValue);
@@ -83,8 +84,8 @@ partial class Build : NukeBuild
                     }
                 }
 
-                Logger.Info($"Integration test windows matrix");
-                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                Logger.Information($"Integration test windows matrix");
+                Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                 AzurePipelines.Instance.SetVariable("integration_tests_windows_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
@@ -102,8 +103,8 @@ partial class Build : NukeBuild
                     }
                 }
 
-                Logger.Info($"Integration test windows IIS matrix");
-                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                Logger.Information($"Integration test windows IIS matrix");
+                Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                 AzurePipelines.Instance.SetVariable("integration_tests_windows_iis_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
@@ -121,8 +122,8 @@ partial class Build : NukeBuild
                     }
                 }
 
-                Logger.Info($"Integration test windows MSI matrix");
-                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                Logger.Information($"Integration test windows MSI matrix");
+                Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                 AzurePipelines.Instance.SetVariable("integration_tests_windows_msi_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
@@ -141,8 +142,8 @@ partial class Build : NukeBuild
                     }
                 }
 
-                Logger.Info($"Integration test linux matrix");
-                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                Logger.Information($"Integration test linux matrix");
+                Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                 AzurePipelines.Instance.SetVariable("integration_tests_linux_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
@@ -186,8 +187,8 @@ partial class Build : NukeBuild
                     }
                 }
 
-                Logger.Info($"Exploration test windows matrix");
-                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                Logger.Information($"Exploration test windows matrix");
+                Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                 AzurePipelines.Instance.SetVariable("exploration_tests_windows_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
@@ -219,8 +220,8 @@ partial class Build : NukeBuild
                     }
                 }
 
-                Logger.Info($"Exploration test linux matrix");
-                Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                Logger.Information($"Exploration test linux matrix");
+                Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                 AzurePipelines.Instance.SetVariable("exploration_tests_linux_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
             }
 
@@ -368,8 +369,8 @@ partial class Build : NukeBuild
                         dockerName: "andrewlock/dotnet-opensuse"
                     );
 
-                    Logger.Info($"Installer smoke tests matrix");
-                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    Logger.Information($"Installer smoke tests matrix");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetVariable("installer_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
@@ -392,8 +393,8 @@ partial class Build : NukeBuild
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
-                    Logger.Info($"Installer smoke tests matrix");
-                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    Logger.Information($"Installer smoke tests matrix");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetVariable("installer_smoke_tests_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
@@ -501,8 +502,8 @@ partial class Build : NukeBuild
                         dockerName: "andrewlock/dotnet-opensuse"
                     );
 
-                    Logger.Info($"Installer smoke tests matrix");
-                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    Logger.Information($"Installer smoke tests matrix");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetVariable("nuget_installer_linux_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
@@ -525,8 +526,8 @@ partial class Build : NukeBuild
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
-                    Logger.Info($"Installer smoke tests nuget matrix ARM64");
-                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    Logger.Information($"Installer smoke tests nuget matrix ARM64");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetVariable("nuget_installer_linux_smoke_tests_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
@@ -629,8 +630,8 @@ partial class Build : NukeBuild
                         dockerName: "andrewlock/dotnet-opensuse"
                     );
 
-                    Logger.Info($"Installer smoke tests dotnet-tool matrix Linux");
-                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    Logger.Information($"Installer smoke tests dotnet-tool matrix Linux");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetVariable("dotnet_tool_installer_linux_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
@@ -652,8 +653,8 @@ partial class Build : NukeBuild
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
-                    Logger.Info($"Installer smoke tests dotnet-tool matrix Arm64");
-                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    Logger.Information($"Installer smoke tests dotnet-tool matrix Arm64");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetVariable("dotnet_tool_installer_smoke_tests_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
@@ -685,8 +686,8 @@ partial class Build : NukeBuild
                         dockerName: "mcr.microsoft.com/dotnet/sdk"
                     );
 
-                    Logger.Info($"Installer smoke tests dotnet-tool NuGet matrix Linux");
-                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    Logger.Information($"Installer smoke tests dotnet-tool NuGet matrix Linux");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetVariable("dotnet_tool_nuget_installer_linux_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
@@ -744,8 +745,8 @@ partial class Build : NukeBuild
                                          channel32Bit = channel32Bit,
                                      }).ToDictionary(x=>x.dockerTag, x => x);
 
-                    Logger.Info($"Installer smoke tests MSI matrix Windows");
-                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    Logger.Information($"Installer smoke tests MSI matrix Windows");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetVariable("msi_installer_windows_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
@@ -777,8 +778,8 @@ partial class Build : NukeBuild
                                          channel32Bit = channel32Bit,
                                      }).ToDictionary(x=>x.dockerTag, x => x);
 
-                    Logger.Info($"Installer smoke tests tracer-home matrix Windows");
-                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    Logger.Information($"Installer smoke tests tracer-home matrix Windows");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetVariable("tracer_home_installer_windows_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
                 
@@ -810,8 +811,8 @@ partial class Build : NukeBuild
                                          channel32Bit = channel32Bit,
                                      }).ToDictionary(x=>x.dockerTag, x => x);
 
-                    Logger.Info($"Installer smoke tests NuGet matrix Windows");
-                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    Logger.Information($"Installer smoke tests NuGet matrix Windows");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetVariable("nuget_installer_windows_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
@@ -842,8 +843,8 @@ partial class Build : NukeBuild
                                          channel32Bit = channel32Bit,
                                      }).ToDictionary(x=>x.dockerTag, x => x);
 
-                    Logger.Info($"Installer smoke tests dotnet-tool matrix Windows");
-                    Logger.Info(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    Logger.Information($"Installer smoke tests dotnet-tool matrix Windows");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetVariable("dotnet_tool_installer_windows_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
             }
@@ -858,10 +859,10 @@ partial class Build : NukeBuild
            // If it wasn't a pull request, then we should compare against "HEAD~", but the noop pipeline
            // only runs on pull requests
            var baseBranch = $"origin/{TargetBranch}";
-           Logger.Info($"Generating variables for base branch: {baseBranch}");
+           Logger.Information($"Generating variables for base branch: {baseBranch}");
 
            var gitChanges = GetGitChangedFiles(baseBranch);
-           Logger.Info($"Found {gitChanges.Length} modified paths");
+           Logger.Information($"Found {gitChanges.Length} modified paths");
 
            var profilerStagesToSkip = GetProfilerStagesThatWillNotRun(gitChanges);
            var tracerStagesToSkip = GetTracerStagesThatWillNotRun(gitChanges);
@@ -876,8 +877,8 @@ partial class Build : NukeBuild
 
            var allStages = string.Join(";", profilerStagesToSkip.Concat(tracerStagesToSkip));
 
-           Logger.Info(message);
-           Logger.Info("Setting noop_stages: " + allStages);
+           Logger.Information(message);
+           Logger.Information("Setting noop_stages: " + allStages);
 
            AzurePipelines.Instance.SetVariable("noop_run_skip_stages", string.IsNullOrEmpty(allStages) ? "false" : "true");
            AzurePipelines.Instance.SetVariable("noop_stages", allStages);
@@ -887,7 +888,7 @@ partial class Build : NukeBuild
                var tracerConfig = GetTracerPipelineDefinition();
 
                var tracerExcludePaths = tracerConfig.Pr?.Paths?.Exclude ?? Array.Empty<string>();
-               Logger.Info($"Found {tracerExcludePaths.Length} exclude paths for the tracer");
+               Logger.Information($"Found {tracerExcludePaths.Length} exclude paths for the tracer");
 
                var willTracerPipelineRun = gitChanges.Any(
                    changed => !tracerExcludePaths.Any(prefix => changed.StartsWith(prefix)));
@@ -906,7 +907,7 @@ partial class Build : NukeBuild
                profilerPathMatcher.AddInclude("**");
                profilerPathMatcher.AddExcludePatterns(profilerExcludePaths);
 
-               Logger.Info($"Found {profilerExcludePaths.Length} exclude paths for the profiler");
+               Logger.Information($"Found {profilerExcludePaths.Length} exclude paths for the profiler");
 
                var willProfilerPipelineRun = profilerPathMatcher.Match(gitChanges).HasMatches;
 
@@ -918,7 +919,7 @@ partial class Build : NukeBuild
            PipelineDefinition GetTracerPipelineDefinition()
            {
                var consolidatedPipelineYaml = RootDirectory / ".azure-pipelines" / "ultimate-pipeline.yml";
-               Logger.Info($"Reading {consolidatedPipelineYaml} YAML file");
+               Logger.Information($"Reading {consolidatedPipelineYaml} YAML file");
                var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
                                  .WithNamingConvention(CamelCaseNamingConvention.Instance)
                                  .IgnoreUnmatchedProperties()
@@ -931,7 +932,7 @@ partial class Build : NukeBuild
            ProfilerPipelineDefinition GetProfilerPipelineDefinition()
            {
                var profilerPipelineYaml = RootDirectory / ".github" / "workflows" / "profiler-pipeline.yml";
-               Logger.Info($"Reading {profilerPipelineYaml} YAML file");
+               Logger.Information($"Reading {profilerPipelineYaml} YAML file");
                var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
                                  .WithNamingConvention(CamelCaseNamingConvention.Instance)
                                  .IgnoreUnmatchedProperties()

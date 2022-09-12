@@ -12,6 +12,7 @@ using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using Nuke.Common.Tools.NuGet;
+using Logger = Serilog.Log;
 
 partial class Build
 {

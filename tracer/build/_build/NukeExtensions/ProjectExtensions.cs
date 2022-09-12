@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Nuke.Common;
 using Nuke.Common.ProjectModel;
+using Logger = Serilog.Log;
 
 public static class ProjectExtensions
 {
@@ -13,7 +14,7 @@ public static class ProjectExtensions
         }
         catch (Exception ex)
         {
-            Logger.Info($"Error fetching target frameworks for {project?.Name}: {ex}");
+            Logger.Information($"Error fetching target frameworks for {project?.Name}: {ex}");
             return null;
         }
     }
@@ -27,7 +28,7 @@ public static class ProjectExtensions
         }
         catch (Exception ex)
         {
-            Logger.Info($"Error checking RequiresDockerDependency for {project?.Name}: {ex}");
+            Logger.Information($"Error checking RequiresDockerDependency for {project?.Name}: {ex}");
             return false;
         }
     }

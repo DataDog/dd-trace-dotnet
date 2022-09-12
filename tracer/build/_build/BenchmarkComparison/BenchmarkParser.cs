@@ -10,6 +10,7 @@ using System.IO;
 using System.Linq;
 using Newtonsoft.Json;
 using Nuke.Common;
+using Logger = Serilog.Log;
 
 namespace BenchmarkComparison
 {

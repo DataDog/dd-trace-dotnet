@@ -26,6 +26,7 @@ using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
 using Target = Nuke.Common.Target;
+using Logger = Serilog.Log;
 
 // #pragma warning disable SA1306
 // #pragma warning disable SA1134
@@ -107,7 +108,7 @@ partial class Build
             AddTracerEnvironmentVariables(envVars);
             AddExtraEnvVariables(envVars, ExtraEnvVars);
 
-            Logger.Info($"Running sample '{SampleName}' in IIS Express");
+            Logger.Information($"Running sample '{SampleName}' in IIS Express");
             IisExpress.Value(
                 arguments: $"/config:\"{IisExpressApplicationConfig}\" /site:{SampleName} /appPool:Clr4IntegratedAppPool",
                 environmentVariables: envVars);
@@ -126,12 +127,12 @@ partial class Build
             string project = Solution.GetProject(SampleName)?.Path;
             if (project is not null)
             {
-                Logger.Info($"Running sample '{SampleName}'");
+                Logger.Information($"Running sample '{SampleName}'");
             }
             else if (System.IO.File.Exists(SampleName))
             {
                 project = SampleName;
-                Logger.Info($"Running project '{SampleName}'");
+                Logger.Information($"Running project '{SampleName}'");
             }
             else
             {
@@ -285,13 +286,13 @@ partial class Build
             var fileName = Path.GetFileNameWithoutExtension(source);
             if (!fileName.EndsWith("received"))
             {
-                Logger.Warn($"Skipping file '{source}' as filename did not end with 'received'");
+                Logger.Warning($"Skipping file '{source}' as filename did not end with 'received'");
                 continue;
             }
 
             if (fileName.Contains("VersionMismatchNewerNugetTests"))
             {
-                Logger.Warn("Updated snapshots contain a version mismatch test. You may need to upgrade your code in the Azure public feed.");
+                Logger.Warning("Updated snapshots contain a version mismatch test. You may need to upgrade your code in the Azure public feed.");
             }
 
             var trimmedName = fileName.Substring(0, fileName.Length - suffixLength);

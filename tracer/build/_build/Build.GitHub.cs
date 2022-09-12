@@ -29,6 +29,7 @@ using static Octokit.GraphQL.Variable;
 using Environment = System.Environment;
 using Milestone = Octokit.Milestone;
 using Release = Octokit.Release;
+using Logger = Serilog.Log;
 
 partial class Build
 {
@@ -239,7 +240,7 @@ partial class Build
             }
             catch(Exception ex)
             {
-                Logger.Warn($"An error happened while updating the labels on the PR: {ex}");
+                Logger.Warning($"An error happened while updating the labels on the PR: {ex}");
             }
 
             Console.WriteLine($"PR labels updated");
@@ -275,7 +276,7 @@ partial class Build
                     }
                     catch(Exception ex)
                     {
-                        Logger.Warn($"There was an error trying to check labels: {ex}");
+                        Logger.Warning($"There was an error trying to check labels: {ex}");
                     }
                 }
                 return updatedLabels;
@@ -284,7 +285,7 @@ partial class Build
            LabbelerConfiguration GetLabellerConfiguration()
            {
                var labellerConfigYaml = RootDirectory / ".github" / "labeller.yml";
-               Logger.Info($"Reading {labellerConfigYaml} YAML file");
+               Logger.Information($"Reading {labellerConfigYaml} YAML file");
                var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
                                  .WithNamingConvention(CamelCaseNamingConvention.Instance)
                                  .IgnoreUnmatchedProperties()
@@ -452,7 +453,7 @@ partial class Build
                 expectedFileChanges.Insert(0, "docs/CHANGELOG.md");
             }
 
-            Logger.Info("Verifying that all expected files changed...");
+            Logger.Information("Verifying that all expected files changed...");
             var changes = GitTasks.Git("diff --name-only");
             var stagedChanges = GitTasks.Git("diff --name-only --staged");
 
@@ -772,7 +773,7 @@ partial class Build
                 }
 
 
-                Logger.Info($"Finding build for commit sha: {CommitSha}");
+                Logger.Information($"Finding build for commit sha: {CommitSha}");
                 var build = builds
                    .FirstOrDefault(b => string.Equals(b.SourceVersion, CommitSha, StringComparison.OrdinalIgnoreCase));
                 if (build is null)
@@ -796,7 +797,7 @@ partial class Build
             }
             else
             {
-                Logger.Info($"Checking builds for artifact called: {artifactName}");
+                Logger.Information($"Checking builds for artifact called: {artifactName}");
 
                 // start from the current commit, and keep looking backwards until we find a commit that has a build
                 // that has successful artifacts. Should only be called from branches with a linear history (i.e. single parent)
@@ -811,7 +812,7 @@ partial class Build
                                         .FirstOrDefault(x => x.Type == OutputType.Std)
                                         .Text;
 
-                    Logger.Info($"Looking for builds for {commitSha}");
+                    Logger.Information($"Looking for builds for {commitSha}");
 
                     foreach (var build in builds)
                     {
@@ -855,7 +856,7 @@ partial class Build
                 throw new Exception("Could not find any artifacts to create a release");
             }
 
-            Logger.Info("Release artifacts found, downloading...");
+            Logger.Information("Release artifacts found, downloading...");
 
             await DownloadAzureArtifact(OutputDirectory, artifact, AzureDevopsToken);
             var resourceDownloadUrl = artifact.Resource.DownloadUrl;
@@ -937,7 +938,7 @@ partial class Build
          {
              if (!int.TryParse(Environment.GetEnvironmentVariable("PR_NUMBER"), out var prNumber))
              {
-                 Logger.Warn("No PR_NUMBER variable found. Skipping benchmark comparison");
+                 Logger.Warning("No PR_NUMBER variable found. Skipping benchmark comparison");
                  return;
              }
 
@@ -1036,7 +1037,7 @@ partial class Build
                 }
                 catch (Exception ex)
                 {
-                    Logger.Warn($"Error minimising comment with ID {issueComment.Id}: {ex}");
+                    Logger.Warning($"Error minimising comment with ID {issueComment.Id}: {ex}");
                 }
             }
 
@@ -1044,7 +1045,7 @@ partial class Build
         }
         catch (Exception ex)
         {
-            Logger.Warn($"There was an error trying to minimise old comments with prefix '{prefix}': {ex}");
+            Logger.Warning($"There was an error trying to minimise old comments with prefix '{prefix}': {ex}");
         }
     }
 
