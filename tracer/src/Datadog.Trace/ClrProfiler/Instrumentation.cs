@@ -307,7 +307,7 @@ namespace Datadog.Trace.ClrProfiler
         }
 
 #if !NETFRAMEWORK
-        internal static void StartDiagnosticManager()
+        private static void StartDiagnosticManager()
         {
             var observers = new List<DiagnosticObserver>();
 
