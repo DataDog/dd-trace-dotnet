@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.PlatformHelpers;
@@ -61,7 +62,10 @@ namespace Datadog.Trace.IntegrationTests
             var immutableSettings = settings.Build();
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
             Span span;
-            // SpinWait.SpinUntil(() => tracer.CanComputeStats, 5_000); // TODO: Replace with discovery logic
+
+            // Wait until the discovery service has been reached and we've confirmed that we can send stats
+            var spinSucceeded = SpinWait.SpinUntil(() => tracer.TracerManager.AgentWriter is AgentWriter { CanComputeStats: true }, 5_000);
+            spinSucceeded.Should().BeTrue();
 
             // Service
             // - If service is empty, it is set to DefaultServiceName
@@ -205,7 +209,10 @@ namespace Datadog.Trace.IntegrationTests
 
             var immutableSettings = settings.Build();
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
-            // SpinWait.SpinUntil(() => tracer.CanComputeStats, 5_000); // TODO: Replace with discovery logic
+
+            // Wait until the discovery service has been reached and we've confirmed that we can send stats
+            var spinSucceeded = SpinWait.SpinUntil(() => tracer.TracerManager.AgentWriter is AgentWriter { CanComputeStats: true }, 5_000);
+            spinSucceeded.Should().BeTrue();
 
             CreateDefaultSpan(type: "sql", resource: "SELECT * FROM TABLE WHERE userId = 'abc1287681964'");
             CreateDefaultSpan(type: "sql", resource: "SELECT * FROM TABLE WHERE userId = 'abc\\'1287\\'681\\'\\'\\'\\'964'");
@@ -290,13 +297,38 @@ namespace Datadog.Trace.IntegrationTests
             await SendStatsHelper(statsComputationEnabled: false, expectStats: false);
         }
 
-        private async Task SendStatsHelper(bool statsComputationEnabled, bool expectStats, double? globalSamplingRate = null, bool expectAllTraces = true, bool finishSpansOnClose = true)
+        [Fact]
+        public async Task IsDisabledWhenIncompatibleAgentDetected_TS011()
+        {
+            await SendStatsHelper(statsComputationEnabled: true, expectStats: false, statsEndpointEnabled: false);
+        }
+
+        [Fact]
+        public async Task IsDisabledWhenAgentDropP0sIsFalse()
+        {
+            await SendStatsHelper(statsComputationEnabled: true, expectStats: false, expectAllTraces: true, globalSamplingRate: 0.0, clientDropP0sEnabled: false);
+        }
+
+        private async Task SendStatsHelper(bool statsComputationEnabled, bool expectStats, double? globalSamplingRate = null, bool expectAllTraces = true, bool finishSpansOnClose = true, bool statsEndpointEnabled = true, bool clientDropP0sEnabled = true)
         {
             expectStats &= statsComputationEnabled && finishSpansOnClose;
             var statsWaitEvent = new AutoResetEvent(false);
             var tracesWaitEvent = new AutoResetEvent(false);
 
-            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort());
+            // Counters
+            int tracesCount = 0;
+            int spansCount = 0;
+            int p0DroppedSpansCount = 0;
+
+            // Configure the mock agent
+            var agentConfiguration = new MockTracerAgent.AgentConfiguration();
+            agentConfiguration.ClientDropP0s = clientDropP0sEnabled;
+            if (!statsEndpointEnabled)
+            {
+                agentConfiguration.Endpoints = agentConfiguration.Endpoints.Where(s => s != "/v0.6/stats").ToArray();
+            }
+
+            using var agent = MockTracerAgent.Create(null, TcpPortProvider.GetOpenPort(), agentConfiguration: agentConfiguration);
 
             List<string> droppedP0TracesHeaderValues = new();
             List<string> droppedP0SpansHeaderValues = new();
@@ -337,45 +369,107 @@ namespace Datadog.Trace.IntegrationTests
 
             var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
 
-            // Scenario 1: Send server span with 200 status code (success). This is a unique stats point so this trace is kept
+            // Wait until the discovery service has been reached and we've confirmed that we can send stats
+            if (expectStats)
+            {
+                var spinSucceeded = SpinWait.SpinUntil(() => tracer.TracerManager.AgentWriter is AgentWriter { CanComputeStats: true }, 5_000);
+                spinSucceeded.Should().BeTrue();
+            }
+
+            // Scenario 1: Send the common span, but add an error
+            // ClientDropP0s + UserReject Expectation: Kept because the trace contains error spans
+            // Note: This is also a "rare" trace, which will be asserted later
+            tracesCount++;
+            spansCount++;
+
             Span span1;
-            using (var scope = tracer.StartActiveInternal("operationName", finishOnClose: finishSpansOnClose))
+            using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, immutableSettings))
             {
                 span1 = scope.Span;
-                span1.ResourceName = "resourceName";
-                span1.SetHttpStatusCode(200, isServer: true, immutableSettings);
-                span1.Type = "span1";
+                span1.Error = true;
             }
 
             await tracer.FlushAsync();
 
-            // Scenario 2: Send the same server span as before, but it is not an error and it is not a new point,
-            // so this trace can be dropped when ClientDropP0s is true
+            // Scenario 2: Send the common span
+            // ClientDropP0s + UserReject Expectation: Dropped because it is not a "rare" trace (this same stats point was seen before) and it does not contain any error spans
+            tracesCount++;
+            spansCount++;
+            p0DroppedSpansCount++;
+
             Span span2;
-            using (var scope = tracer.StartActiveInternal("operationName", finishOnClose: finishSpansOnClose))
+            using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, immutableSettings))
             {
                 span2 = scope.Span;
-                span2.ResourceName = "resourceName";
-                span2.SetHttpStatusCode(200, isServer: true, immutableSettings);
-                span2.Type = "span1";
             }
 
             await tracer.FlushAsync();
 
-            // Scenario 3: Send server span with 200 status code but with an error
+            // Scenario 3: Send the common span, but add an error
+            // ClientDropP0s + UserReject Expectation: Kept because the trace contains error spans
+            tracesCount++;
+            spansCount++;
+
             Span span3;
-            using (var scope = tracer.StartActiveInternal("operationName", finishOnClose: finishSpansOnClose))
+            using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, immutableSettings))
             {
                 span3 = scope.Span;
-                span3.ResourceName = "resourceName";
-                span3.SetHttpStatusCode(200, isServer: true, immutableSettings);
-                span3.Type = "span1";
                 span3.Error = true;
             }
 
             await tracer.FlushAsync();
-            await tracer.FlushAndCloseAsync(); // Flushes and closes both traces and stats
 
+            // Scenario 4: Send the common span, but with a child span that has an error
+            // ClientDropP0s + UserReject Expectation: Kept because the trace contains error spans
+            tracesCount++;
+            spansCount += 2;
+
+            Span span4;
+            using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, immutableSettings))
+            {
+                span4 = scope.Span;
+
+                using var innerScope = tracer.StartActiveInternal("child", finishOnClose: finishSpansOnClose);
+                innerScope.Span.Error = true;
+            }
+
+            await tracer.FlushAsync();
+
+            // Scenario 5: Send the common span, but with a child span that has an "analytic event" sample rate set to 0
+            // ClientDropP0s + UserReject Expectation: Dropped because the trace was not kept by any samplers and the span with an "analytic event" sample rate was not sampled
+            tracesCount++;
+            spansCount += 2;
+            p0DroppedSpansCount += 2;
+
+            Span span5;
+            using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, immutableSettings))
+            {
+                span5 = scope.Span;
+
+                using var innerScope = tracer.StartActiveInternal("child", finishOnClose: finishSpansOnClose);
+                innerScope.Span.SetMetric(Tags.Analytics, 0);
+            }
+
+            await tracer.FlushAsync();
+
+            // Scenario 6: Send the common span, but with a child span that has an "analytic event" sample rate set to 1
+            // ClientDropP0s + UserReject Expectation: Kept because the trace contains a span that was sampled by its "analytic event" sample rate
+            tracesCount++;
+            spansCount += 2;
+
+            Span span6;
+            using (var scope = CreateCommonSpan(tracer, finishSpansOnClose, immutableSettings))
+            {
+                span6 = scope.Span;
+
+                using var innerScope = tracer.StartActiveInternal("child", finishOnClose: finishSpansOnClose);
+                innerScope.Span.SetMetric(Tags.Analytics, 1);
+            }
+
+            await tracer.FlushAsync();
+
+            // Flush and close both traces and stats
+            await tracer.FlushAndCloseAsync();
             WaitForStats(statsWaitEvent, expectStats);
             WaitForTraces(tracesWaitEvent, finishSpansOnClose); // The last span was an error, so we expect to receive it as long as it closed
 
@@ -387,8 +481,23 @@ namespace Datadog.Trace.IntegrationTests
                 var stats1 = payload[0];
                 stats1.Sequence.Should().Be(1);
 
-                var totalDuration = span1.Duration.ToNanoseconds() + span2.Duration.ToNanoseconds() + span3.Duration.ToNanoseconds();
+                var totalDuration = span1.Duration.ToNanoseconds()
+                                    + span2.Duration.ToNanoseconds()
+                                    + span3.Duration.ToNanoseconds()
+                                    + span4.Duration.ToNanoseconds()
+                                    + span5.Duration.ToNanoseconds()
+                                    + span6.Duration.ToNanoseconds();
                 AssertStats(stats1, span1, totalDuration);
+            }
+
+            // Make assertions when we send stats for completed traces
+            if (finishSpansOnClose)
+            {
+                var numberOfSpans = expectAllTraces ? spansCount : spansCount - p0DroppedSpansCount;
+                var payload = agent.WaitForSpans(numberOfSpans);
+                payload.Should().HaveCount(numberOfSpans);
+
+                AssertTraces(payload, expectStats);
             }
 
             // Assert header values
@@ -401,19 +510,30 @@ namespace Datadog.Trace.IntegrationTests
             else if (!expectStats)
             {
                 // If we don't send stats, then we won't add the headers
-                droppedP0TracesHeaderValues.Should().BeEquivalentTo(new string[] { null, null, null });
-                droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { null, null, null });
+                droppedP0TracesHeaderValues.Should().HaveCount(tracesCount).And.OnlyContain(s => s == null);
+                droppedP0SpansHeaderValues.Should().HaveCount(tracesCount).And.OnlyContain(s => s == null);
             }
             else if (expectAllTraces)
             {
                 // If we still expect all the traces to come in, each request will have 0 dropped traces/spans
-                droppedP0TracesHeaderValues.Should().BeEquivalentTo(new string[] { "0", "0", "0" });
-                droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { "0", "0", "0" });
+                droppedP0TracesHeaderValues.Should().HaveCount(tracesCount).And.OnlyContain(s => s == "0");
+                droppedP0SpansHeaderValues.Should().HaveCount(tracesCount).And.OnlyContain(s => s == "0");
             }
             else
             {
-                droppedP0TracesHeaderValues.Should().BeEquivalentTo(new string[] { "0", "1" });
-                droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { "0", "1" });
+                droppedP0TracesHeaderValues.Should().BeEquivalentTo(new string[] { "0", "1", "0", "1" });
+                droppedP0SpansHeaderValues.Should().BeEquivalentTo(new string[] { "0", "1", "0", "2" });
+            }
+
+            Scope CreateCommonSpan(Tracer tracer, bool finishSpansOnClose, ImmutableTracerSettings tracerSettings)
+            {
+                var scope = tracer.StartActiveInternal("operationName", finishOnClose: finishSpansOnClose);
+                var span = scope.Span;
+                span.ResourceName = "resourceName";
+                span.SetHttpStatusCode(200, isServer: true, tracerSettings);
+                span.Type = "span1";
+
+                return scope;
             }
 
             void WaitForTraces(AutoResetEvent e, bool expected)
@@ -440,6 +560,25 @@ namespace Datadog.Trace.IntegrationTests
                 }
             }
 
+            void AssertTraces(IReadOnlyList<MockSpan> payload, bool expectStats)
+            {
+                // All the spans generate the same stats point, so only the first
+                // occurrence would be considered "rare". However, the RareSampler
+                // only runs after the PrioritySampler, so assert the metric "_dd.rare"
+                // based on the SamplingPriority
+                bool expectRareMetric = expectStats && payload[0].GetMetric(Metrics.SamplingPriority) <= 0;
+                if (expectRareMetric)
+                {
+                    payload[0].GetMetric("_dd.rare").Should().Be(1);
+                }
+                else
+                {
+                    payload[0].GetMetric("_dd.rare").Should().BeNull();
+                }
+
+                payload.Skip(1).Should().OnlyContain(span => span.GetMetric("_dd.rare") == null);
+            }
+
             void AssertStats(MockClientStatsPayload stats, Span span, long totalDuration)
             {
                 stats.Env.Should().Be(settings.Environment);
@@ -462,14 +601,14 @@ namespace Datadog.Trace.IntegrationTests
 
                 group.DbType.Should().BeNull();
                 group.Duration.Should().Be(totalDuration);
-                group.Errors.Should().Be(1);
+                group.Errors.Should().Be(2);
                 group.ErrorSummary.Should().NotBeEmpty();
-                group.Hits.Should().Be(3);
+                group.Hits.Should().Be(tracesCount);
                 group.HttpStatusCode.Should().Be(int.Parse(span.GetTag(Tags.HttpStatusCode)));
                 group.Name.Should().Be(span.OperationName);
                 group.OkSummary.Should().NotBeEmpty();
                 group.Synthetics.Should().Be(false);
-                group.TopLevelHits.Should().Be(3);
+                group.TopLevelHits.Should().Be(tracesCount);
                 group.Type.Should().Be(span.Type);
             }
         }

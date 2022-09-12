@@ -577,6 +577,19 @@ std::string FrameStore::FormatGenericTypeParameters(IMetaDataImport2* pMetadata,
     return builder.str();
 }
 
+
+void FrameStore::ConcatUnknownGenericType(std::stringstream& builder, bool isEncoded)
+{
+    if (isEncoded)
+    {
+        builder << "|ns: |ct:T";
+    }
+    else
+    {
+        builder << "T";
+    }
+}
+
 std::string FrameStore::FormatGenericParameters(
     ICorProfilerInfo4* pInfo,
     ULONG32 numGenericTypeArgs,
@@ -588,37 +601,46 @@ std::string FrameStore::FormatGenericParameters(
 
     for (size_t currentGenericArg = 0; currentGenericArg < numGenericTypeArgs; currentGenericArg++)
     {
-
         ClassID argClassId = genericTypeArgs[currentGenericArg];
-        ModuleID argModuleId;
-        mdTypeDef mdType;
-        pInfo->GetClassIDInfo2(argClassId, &argModuleId, &mdType, nullptr, 0, nullptr, nullptr);
-
-        ComPtr<IMetaDataImport2> pMetadata;
-        HRESULT hr = pInfo->GetModuleMetaData(argModuleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(&pMetadata));
-        if (FAILED(hr))
+        if (argClassId == 0)
         {
-            if (isEncoded)
-            {
-                builder << "|ns: |ct:T";
-            }
+            ConcatUnknownGenericType(builder, isEncoded);
         }
         else
         {
-            auto [ns, ct] = GetManagedTypeName(pInfo, pMetadata.Get(), argModuleId, argClassId, mdType, isEncoded);
-            if (isEncoded)
+            ModuleID argModuleId;
+            mdTypeDef mdType;
+            HRESULT hr = pInfo->GetClassIDInfo2(argClassId, &argModuleId, &mdType, nullptr, 0, nullptr, nullptr);
+            if (FAILED(hr))
             {
-                builder << "|ns:" << ns << " |ct:" << ct;
+                ConcatUnknownGenericType(builder, isEncoded);
             }
             else
             {
-                if (ns.empty())
+                ComPtr<IMetaDataImport2> pMetadata;
+                hr = pInfo->GetModuleMetaData(argModuleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(&pMetadata));
+                if (FAILED(hr))
                 {
-                    builder << ct;
+                    ConcatUnknownGenericType(builder, isEncoded);
                 }
                 else
                 {
-                    builder << ns << "." << ct;
+                    auto [ns, ct] = GetManagedTypeName(pInfo, pMetadata.Get(), argModuleId, argClassId, mdType, isEncoded);
+                    if (isEncoded)
+                    {
+                        builder << "|ns:" << ns << " |ct:" << ct;
+                    }
+                    else
+                    {
+                        if (ns.empty())
+                        {
+                            builder << ct;
+                        }
+                        else
+                        {
+                            builder << ns << "." << ct;
+                        }
+                    }
                 }
             }
         }

@@ -15,14 +15,12 @@ namespace Datadog.Trace
     /// </summary>
     internal interface IDatadogTracer
     {
-        bool CanDropP0s { get; }
-
         string DefaultServiceName { get; }
 
         ISampler Sampler { get; }
 
         ImmutableTracerSettings Settings { get; }
 
-        void Write(ArraySegment<Span> span, bool shouldSerializeSpans);
+        void Write(ArraySegment<Span> span);
     }
 }

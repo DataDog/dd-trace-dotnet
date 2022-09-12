@@ -14,6 +14,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.Agent
@@ -152,6 +153,10 @@ namespace Datadog.Trace.Agent
                         // stop retrying
                         _log.Error(exception, "An error occurred while sending data to the agent at {AgentEndpoint}", _apiRequestFactory.Info(endpoint));
                         return false;
+                    }
+                    else if (_log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        _log.Debug(exception, "An error occurred while sending data to the agent at {AgentEndpoint}. Retrying.", _apiRequestFactory.Info(endpoint));
                     }
 
                     // Before retry delay

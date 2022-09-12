@@ -31,16 +31,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger;
 [CollectionDefinition(nameof(ProbesTests), DisableParallelization = true)]
 [Collection(nameof(ProbesTests))]
 [UsesVerify]
-public class ProbesTests : RemoteConfigTestHelper, IDisposable
+public class ProbesTests : TestHelper, IDisposable
 {
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
     private const string ProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument probes definitions completed.";
-    private const string RemoteConfigurationFileName = "rcm_config.json";
-
-    // We are not using a temp file here, but rather writing it directly to the debugger sample project,
-    // so that if a test fails, we will be able to simply hit F5 to debug the same probe
-    // configuration (launchsettings.json references the same file).
-    private readonly string _rcmPath;
 
     private readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };
     private readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber", "thread_name", "thread_id" };
@@ -49,8 +43,6 @@ public class ProbesTests : RemoteConfigTestHelper, IDisposable
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
     {
         SetServiceVersion("1.0.0");
-        _rcmPath = Path.Combine(EnvironmentHelper.GetSampleProjectDirectory(), RemoteConfigurationFileName);
-        SetupRcm(_rcmPath);
     }
 
     public static IEnumerable<object[]> ProbeTests()
@@ -74,13 +66,13 @@ public class ProbesTests : RemoteConfigTestHelper, IDisposable
         }
 
         using var agent = EnvironmentHelper.GetMockAgent();
-        SetDebuggerEnvironment();
+        SetDebuggerEnvironment(agent);
         using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
         try
         {
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
 
-            SetProbeConfiguration(probes.Select(p => p.Probe).ToArray());
+            SetProbeConfiguration(agent, probes.Select(p => p.Probe).ToArray());
             await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
 
             await sample.RunCodeSample();
@@ -95,7 +87,7 @@ public class ProbesTests : RemoteConfigTestHelper, IDisposable
             await ApproveStatuses(statuses, testType, isMultiPhase: true, phaseNumber: 1);
             agent.ClearProbeStatuses();
 
-            SetProbeConfiguration(Array.Empty<SnapshotProbe>());
+            SetProbeConfiguration(agent, Array.Empty<SnapshotProbe>());
             await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
             Assert.True(await agent.WaitForNoSnapshots(6000), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
         }
@@ -116,13 +108,13 @@ public class ProbesTests : RemoteConfigTestHelper, IDisposable
         var probes = GetProbeConfiguration(testType, true, new DeterministicGuidGenerator());
 
         using var agent = EnvironmentHelper.GetMockAgent();
-        SetDebuggerEnvironment();
+        SetDebuggerEnvironment(agent);
         using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
         try
         {
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
 
-            SetProbeConfiguration(probes.Select(p => p.Probe).ToArray());
+            SetProbeConfiguration(agent, probes.Select(p => p.Probe).ToArray());
             await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
 
             await sample.RunCodeSample();
@@ -194,7 +186,7 @@ public class ProbesTests : RemoteConfigTestHelper, IDisposable
         var probes = GetProbeConfiguration(testType, false, new DeterministicGuidGenerator());
 
         using var agent = EnvironmentHelper.GetMockAgent();
-        SetDebuggerEnvironment();
+        SetDebuggerEnvironment(agent);
         using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
         try
         {
@@ -238,7 +230,7 @@ public class ProbesTests : RemoteConfigTestHelper, IDisposable
 
             async Task RunPhase(SnapshotProbe[] snapshotProbes, ProbeAttributeBase[] probeData, bool isMultiPhase = false, int phaseNumber = 1)
             {
-                SetProbeConfiguration(snapshotProbes);
+                SetProbeConfiguration(agent, snapshotProbes);
                 await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
 
                 await sample.RunCodeSample();
@@ -400,19 +392,18 @@ public class ProbesTests : RemoteConfigTestHelper, IDisposable
         return probes;
     }
 
-    private void SetDebuggerEnvironment()
+    private void SetDebuggerEnvironment(MockTracerAgent agent)
     {
         SetEnvironmentVariable(ConfigurationKeys.ServiceName, EnvironmentHelper.SampleName);
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "100");
-        SetEnvironmentVariable(ConfigurationKeys.Rcm.FilePath, _rcmPath);
         SetEnvironmentVariable(ConfigurationKeys.Debugger.Enabled, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxDepthToSerialize, "3");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.DiagnosticsInterval, "1");
         SetEnvironmentVariable(ConfigurationKeys.Debugger.MaxTimeToSerialize, "1000");
-        SetProbeConfiguration(Array.Empty<SnapshotProbe>());
+        SetProbeConfiguration(agent, Array.Empty<SnapshotProbe>());
     }
 
-    private void SetProbeConfiguration(SnapshotProbe[] snapshotProbes)
+    private void SetProbeConfiguration(MockTracerAgent agent, SnapshotProbe[] snapshotProbes)
     {
         var probeConfiguration = new ProbeConfiguration { Id = Guid.Empty.ToString(), SnapshotProbes = snapshotProbes };
         var configurations = new List<(object Config, string Id)>
@@ -420,11 +411,6 @@ public class ProbesTests : RemoteConfigTestHelper, IDisposable
             new(probeConfiguration, EnvironmentHelper.SampleName.ToUUID())
         };
 
-        WriteRcmFile(configurations);
-    }
-
-    private void WriteRcmFile(IEnumerable<(object Config, string Id)> configurations)
-    {
-        WriteRcmFile(configurations, LiveDebuggerProduct.ProductName);
+        agent.SetupRcm(Output, configurations, LiveDebuggerProduct.ProductName);
     }
 }

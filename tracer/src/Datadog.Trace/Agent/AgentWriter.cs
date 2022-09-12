@@ -104,14 +104,14 @@ namespace Datadog.Trace.Agent
 
         internal SpanBuffer BackBuffer => _backBuffer;
 
-        public bool CanComputeStats => _statsAggregator?.CanComputeStats ?? false;
+        public bool CanComputeStats => _statsAggregator?.CanComputeStats == true;
 
         public Task<bool> Ping()
         {
             return _api.SendTracesAsync(EmptyPayload, 0, false, 0, 0);
         }
 
-        public void WriteTrace(ArraySegment<Span> trace, bool shouldSerializeSpans)
+        public void WriteTrace(ArraySegment<Span> trace)
         {
             if (trace.Count == 0)
             {
@@ -122,11 +122,11 @@ namespace Datadog.Trace.Agent
             if (_serializationTask.IsCompleted)
             {
                 // Serialization thread is not running, serialize the trace in the current thread
-                SerializeTrace(trace, shouldSerializeSpans);
+                SerializeTrace(trace);
             }
             else
             {
-                _pendingTraces.Enqueue(new WorkItem(trace, shouldSerializeSpans));
+                _pendingTraces.Enqueue(new WorkItem(trace));
 
                 if (!_serializationMutex.IsSet)
                 {
@@ -359,7 +359,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private void SerializeTrace(ArraySegment<Span> trace, bool shouldSerializeSpans)
+        private void SerializeTrace(ArraySegment<Span> trace)
         {
             // Declaring as inline method because only safe to invoke in the context of SerializeTrace
             SpanBuffer SwapBuffers()
@@ -384,16 +384,26 @@ namespace Datadog.Trace.Agent
                 return null;
             }
 
-            trace = _statsAggregator?.ProcessTrace(trace) ?? trace;
-            bool forceKeep = _statsAggregator?.AddRange(trace) ?? false;
-
-            // If stats computation determined that we can drop the P0 Trace,
-            // skip all other processing
-            if (!shouldSerializeSpans && CanComputeStats && !forceKeep)
+            // Eagerly return if the trace is empty
+            if (trace.Count == 0)
             {
-                Interlocked.Increment(ref _droppedP0Traces);
-                Interlocked.Add(ref _droppedP0Spans, trace.Count);
                 return;
+            }
+
+            if (CanComputeStats)
+            {
+                trace = _statsAggregator?.ProcessTrace(trace) ?? trace;
+                bool shouldSendTrace = _statsAggregator?.ShouldKeepTrace(trace) ?? true;
+                _statsAggregator?.AddRange(trace);
+
+                // If stats computation determined that we can drop the P0 Trace,
+                // skip all other processing
+                if (!shouldSendTrace)
+                {
+                    Interlocked.Increment(ref _droppedP0Traces);
+                    Interlocked.Add(ref _droppedP0Spans, trace.Count);
+                    return;
+                }
             }
 
             // Add the current keep rate to the root span
@@ -477,7 +487,7 @@ namespace Datadog.Trace.Agent
                         }
 
                         hasDequeuedTraces = true;
-                        SerializeTrace(item.Trace, item.ShouldSerializeSpans);
+                        SerializeTrace(item.Trace);
                     }
                 }
                 catch (Exception ex)
@@ -506,20 +516,17 @@ namespace Datadog.Trace.Agent
         private readonly struct WorkItem
         {
             public readonly ArraySegment<Span> Trace;
-            public readonly bool ShouldSerializeSpans;
             public readonly Action Callback;
 
-            public WorkItem(ArraySegment<Span> trace, bool shouldSerializeSpans)
+            public WorkItem(ArraySegment<Span> trace)
             {
                 Trace = trace;
-                ShouldSerializeSpans = shouldSerializeSpans;
                 Callback = null;
             }
 
             public WorkItem(Action callback)
             {
                 Trace = default;
-                ShouldSerializeSpans = default;
                 Callback = callback;
             }
         }

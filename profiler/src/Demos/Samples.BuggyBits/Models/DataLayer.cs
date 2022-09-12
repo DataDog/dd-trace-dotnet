@@ -75,10 +75,12 @@ namespace BuggyBits.Models
 
         public void ApplyDiscount(Product product)
         {
+            // apply a 25% discount if price is less than $200
+
+            // Sub-optimal: use exception to check format and handle error
             try
             {
-                // apply a 25% discount if price is less than $200
-                var price = int.Parse(product.Price, System.Globalization.CultureInfo.InvariantCulture);
+                var price = double.Parse(product.Price, System.Globalization.NumberStyles.AllowDecimalPoint, System.Globalization.CultureInfo.InvariantCulture);
                 if (price < 200)
                 {
                     product.Price = (price * 0.75).ToString();
@@ -103,7 +105,47 @@ namespace BuggyBits.Models
                 }
                 catch (PriceException)
                 {
+                    // TODO: log
+
                     continue;
+                }
+            }
+
+            return allProducts;
+        }
+
+        public bool TryApplyDiscount(Product product)
+        {
+            // apply a 25% discount if price is less than $200
+
+            // Fix: use TryParse
+            double price;
+            if (double.TryParse(product.Price, System.Globalization.NumberStyles.AllowDecimalPoint, System.Globalization.CultureInfo.InvariantCulture, out price))
+            {
+                if (price < 200)
+                {
+                    product.Price = (price * 0.75).ToString();
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        public List<Product> GetProductsOnSaleEx()
+        {
+            var allProducts = new List<Product>(10000);
+            for (int i = 0; i < 10000; i++)
+            {
+                var product = GetProduct(i);
+                if (TryApplyDiscount(product))
+                {
+                    allProducts.Add(product);
+                }
+                else
+                {
+                    // TODO: log
                 }
             }
 

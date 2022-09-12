@@ -5,8 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+using System.IO;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
@@ -22,9 +21,13 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public IEnumerable<T> GetDeserializedConfigurations<T>()
         {
-            return
-                _configContents
-                   .Select(bytes => JsonConvert.DeserializeObject<T>(Encoding.UTF8.GetString(bytes)));
+            foreach (var configContent in _configContents)
+            {
+                using var stream = new MemoryStream(configContent);
+                using var streamReader = new StreamReader(stream);
+                using var jsonReader = new JsonTextReader(streamReader);
+                yield return JsonSerializer.CreateDefault().Deserialize<T>(jsonReader);
+            }
         }
     }
 }

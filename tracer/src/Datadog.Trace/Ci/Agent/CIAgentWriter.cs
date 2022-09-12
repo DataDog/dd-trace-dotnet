@@ -7,6 +7,7 @@ using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
@@ -24,12 +25,12 @@ namespace Datadog.Trace.Ci.Agent
         private static Span[] _spanArray;
         private readonly AgentWriter _agentWriter;
 
-        public CIAgentWriter(ImmutableTracerSettings settings, ISampler sampler, int maxBufferSize = DefaultMaxBufferSize)
+        public CIAgentWriter(ImmutableTracerSettings settings, ISampler sampler, IDiscoveryService discoveryService, int maxBufferSize = DefaultMaxBufferSize)
         {
             var partialFlushEnabled = settings.Exporter.PartialFlushEnabled;
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
             var api = new Api(apiRequestFactory, null, rates => sampler.SetDefaultSampleRates(rates), partialFlushEnabled);
-            var statsAggregator = StatsAggregator.Create(api, settings);
+            var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
             _agentWriter = new AgentWriter(api, statsAggregator, null, maxBufferSize: maxBufferSize);
         }
@@ -53,12 +54,12 @@ namespace Datadog.Trace.Ci.Agent
             if (@event is TestEvent testEvent)
             {
                 spanArray[0] = testEvent.Content;
-                WriteTrace(new ArraySegment<Span>(spanArray), true);
+                WriteTrace(new ArraySegment<Span>(spanArray));
             }
             else if (@event is SpanEvent spanEvent)
             {
                 spanArray[0] = spanEvent.Content;
-                WriteTrace(new ArraySegment<Span>(spanArray), true);
+                WriteTrace(new ArraySegment<Span>(spanArray));
             }
         }
 
@@ -77,9 +78,9 @@ namespace Datadog.Trace.Ci.Agent
             return _agentWriter.Ping();
         }
 
-        public void WriteTrace(ArraySegment<Span> trace, bool shouldSerializeSpans)
+        public void WriteTrace(ArraySegment<Span> trace)
         {
-            _agentWriter.WriteTrace(trace, shouldSerializeSpans);
+            _agentWriter.WriteTrace(trace);
         }
     }
 }

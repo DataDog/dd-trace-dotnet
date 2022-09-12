@@ -35,5 +35,11 @@ namespace Datadog.Trace
         /// </summary>
         /// <seealso cref="Tags.SpanKind"/>
         public const string Consumer = "consumer";
+
+        /// <summary>
+        /// A span that represents an internal operation within an application.
+        /// </summary>
+        /// <seealso cref="Tags.SpanKind"/>
+        public const string Internal = "internal";
     }
 }

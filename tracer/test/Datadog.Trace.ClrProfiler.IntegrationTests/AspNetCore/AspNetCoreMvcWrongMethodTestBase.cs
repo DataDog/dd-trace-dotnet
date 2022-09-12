@@ -27,6 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
             this.fixture = fixture;
             _testName = testName;
+            EnableDebugMode();
         }
 
         public async Task TestIncorrectMethod(string path)

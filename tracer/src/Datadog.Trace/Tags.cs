@@ -58,26 +58,6 @@ namespace Datadog.Trace
         public const string HttpStatusCode = "http.status_code";
 
         /// <summary>
-        /// The end point requested
-        /// </summary>
-        internal const string HttpEndpoint = "http.endpoint";
-
-        /// <summary>
-        /// Only when span.kind: server. The matched route(path template).
-        /// </summary>
-        internal const string HttpRoute = "http.route";
-
-        /// <summary>
-        /// Only when span.kind: server. The user agent header received with the request.
-        /// </summary>
-        internal const string HttpUserAgent = "http.useragent";
-
-        /// <summary>
-        /// The IP address of the original client behind all proxies, if known (e.g. from X-Forwarded-For).
-        /// </summary>
-        internal const string HttpClientIp = "http.client_ip";
-
-        /// <summary>
         /// The error message of an exception
         /// </summary>
         public const string ErrorMsg = "error.msg";
@@ -116,6 +96,61 @@ namespace Datadog.Trace
         /// The number of rows returned by a query
         /// </summary>
         public const string SqlRows = "sql.rows";
+
+        /// <summary>
+        /// The hostname of a outgoing server connection.
+        /// </summary>
+        public const string OutHost = "out.host";
+
+        /// <summary>
+        /// The port of a outgoing server connection.
+        /// </summary>
+        public const string OutPort = "out.port";
+
+        /// <summary>
+        /// The size of the message.
+        /// </summary>
+        public const string MessageSize = "message.size";
+
+        /// <summary>
+        /// The sampling priority for the entire trace.
+        /// </summary>
+        public const string SamplingPriority = "sampling.priority";
+
+        /// <summary>
+        /// A user-friendly tag that sets the sampling priority to <see cref="Trace.SamplingPriority.UserKeep"/>.
+        /// </summary>
+        public const string ManualKeep = "manual.keep";
+
+        /// <summary>
+        /// A user-friendly tag that sets the sampling priority to <see cref="Trace.SamplingPriority.UserReject"/>.
+        /// </summary>
+        public const string ManualDrop = "manual.drop";
+
+        /// <summary>
+        /// Language tag, applied to root spans that are .NET runtime (e.g., ASP.NET)
+        /// </summary>
+        public const string Language = "language";
+
+        /// <summary>
+        /// The end point requested
+        /// </summary>
+        internal const string HttpEndpoint = "http.endpoint";
+
+        /// <summary>
+        /// Only when span.kind: server. The matched route(path template).
+        /// </summary>
+        internal const string HttpRoute = "http.route";
+
+        /// <summary>
+        /// Only when span.kind: server. The user agent header received with the request.
+        /// </summary>
+        internal const string HttpUserAgent = "http.useragent";
+
+        /// <summary>
+        /// The IP address of the original client behind all proxies, if known (e.g. from X-Forwarded-For).
+        /// </summary>
+        internal const string HttpClientIp = "http.client_ip";
 
         /// <summary>
         /// The ASP.NET routing template.
@@ -166,16 +201,6 @@ namespace Datadog.Trace
         /// The Endpoint name in ASP.NET Core endpoint routing.
         /// </summary>
         internal const string AspNetCoreEndpoint = "aspnet_core.endpoint";
-
-        /// <summary>
-        /// The hostname of a outgoing server connection.
-        /// </summary>
-        public const string OutHost = "out.host";
-
-        /// <summary>
-        /// The port of a outgoing server connection.
-        /// </summary>
-        public const string OutPort = "out.port";
 
         /// <summary>
         /// The raw command sent to Redis.
@@ -253,11 +278,6 @@ namespace Datadog.Trace
         internal const string KafkaTombstone = "kafka.tombstone";
 
         /// <summary>
-        /// The size of the message.
-        /// </summary>
-        public const string MessageSize = "message.size";
-
-        /// <summary>
         /// The agent that instrumented the associated AWS SDK span.
         /// </summary>
         internal const string AwsAgentName = "aws.agent";
@@ -293,29 +313,9 @@ namespace Datadog.Trace
         internal const string AwsQueueUrl = "aws.queue.url";
 
         /// <summary>
-        /// The sampling priority for the entire trace.
-        /// </summary>
-        public const string SamplingPriority = "sampling.priority";
-
-        /// <summary>
-        /// A user-friendly tag that sets the sampling priority to <see cref="Trace.SamplingPriority.UserKeep"/>.
-        /// </summary>
-        public const string ManualKeep = "manual.keep";
-
-        /// <summary>
-        /// A user-friendly tag that sets the sampling priority to <see cref="Trace.SamplingPriority.UserReject"/>.
-        /// </summary>
-        public const string ManualDrop = "manual.drop";
-
-        /// <summary>
         /// Configures Trace Analytics.
         /// </summary>
         internal const string Analytics = "_dd1.sr.eausr";
-
-        /// <summary>
-        /// Language tag, applied to root spans that are .NET runtime (e.g., ASP.NET)
-        /// </summary>
-        public const string Language = "language";
 
         /// <summary>
         /// The runtime family tag, it will be placed on the service entry span, the first span opened for a
@@ -508,6 +508,8 @@ namespace Datadog.Trace
         internal const string GrpcMethodService = "grpc.method.service";
         internal const string GrpcMethodName = "grpc.method.name";
         internal const string GrpcStatusCode = "grpc.status.code";
+
+        internal const string ProcessEnvironmentVariables = "cmd.environment_variables";
 
         internal const string TagPropagationError = "_dd.propagation_error";
 

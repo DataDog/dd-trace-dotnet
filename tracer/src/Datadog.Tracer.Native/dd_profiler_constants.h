@@ -55,6 +55,7 @@ const shared::WSTRING skip_assembly_prefixes[]{
 const shared::WSTRING include_assemblies[]{
     WStr("Microsoft.Extensions.Logging"),
     WStr("Microsoft.Extensions.Logging.Abstractions"),
+    WStr("System.Diagnostics.Process"),
 };
 
 const shared::WSTRING skip_traceattribute_assembly_prefixes[]{

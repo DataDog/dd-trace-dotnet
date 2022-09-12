@@ -18,10 +18,6 @@ This repository contains the sources for the client-side components of the Datad
 
 Build status on `master`: [![Build](https://dev.azure.com/datadoghq/dd-trace-dotnet/_apis/build/status/consolidated-pipeline?branchName=master&stageName=build_windows_tracer)](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build/latest?definitionId=54&branchName=master)
 
-## Get in touch
-
-If you have questions, feedback, or feature requests, reach our [support](https://docs.datadoghq.com/help).
-
 ## Copyright
 
 Copyright (c) 2017 Datadog
@@ -30,3 +26,13 @@ Copyright (c) 2017 Datadog
 ## License
 
 See [license information](../LICENSE).
+
+## Contact us
+
+### Security Vulnerabilities
+
+If you have found a security issue, please contact the security team directly at [security@datadoghq.com](mailto:security@datadoghq.com).
+
+### Other feedback
+
+If you have questions, feedback, or feature requests, reach our [support](https://docs.datadoghq.com/help).
