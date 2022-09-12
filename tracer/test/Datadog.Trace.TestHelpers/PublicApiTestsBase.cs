@@ -13,6 +13,7 @@ using System.Runtime.Versioning;
 using System.Text;
 using Datadog.Trace.Ci.Coverage.Attributes;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 using FluentAssertions;
 using PublicApiGenerator;
 using Xunit;
@@ -60,7 +61,7 @@ namespace Datadog.Trace.Tests
 
             var expected = GetExpected(publicApi);
 
-            publicApi.Should().Be(expected, "Public API should match the verified API. Update verified snapshot when the public API changes as appropriate");
+            publicApi.Should().HaveEmptyDiffWhenComparedTo(expected, "Public API should match the verified API. Update verified snapshot when the public API changes as appropriate");
         }
 
         [Fact]
@@ -84,7 +85,7 @@ namespace Datadog.Trace.Tests
             string frameworkName = EnvironmentTools.GetTracerTargetFrameworkDirectory();
             var expected = GetExpected(referencedAssemblyOutput, frameworkName);
 
-            referencedAssemblyOutput.Should().Be(expected, "Assembly references should match the verified list of assembly references. Update the verified snapshot when the assembly references change");
+            referencedAssemblyOutput.Should().HaveEmptyDiffWhenComparedTo(expected, "Assembly references should match the verified list of assembly references. Update the verified snapshot when the assembly references change");
         }
 
         [Theory]

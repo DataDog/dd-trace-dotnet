@@ -5,6 +5,7 @@
     <PackageReference Include="System.Collections.Immutable" Version="5.0.0" />
     <PackageReference Include="MessagePack" Version="1.9.11" />
     <PackageReference Include="PublicApiGenerator" Version="10.2.0" />
+    <PackageReference Include="DiffPlex" Version="1.7.1" />
   </ItemGroup>
 
   <ItemGroup>
