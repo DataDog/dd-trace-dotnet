@@ -62,7 +62,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             ParameterInfo[] onMethodBeginParameters = onMethodBeginMethodInfo.GetParameters();
             if (onMethodBeginParameters.Length < argumentsTypes.Length)
             {
-                ThrowHelper.ThrowArgumentException($"The method: {BeginMethodName} with {onMethodBeginParameters.Length} parameters in type: {integrationType.FullName} has less parameters than required.");
+                // TODO - this message is misleading now....
+                Log.Information("The method {BeginMethodName} with {NumParams} parameters in type: {TypeName} has fewer parameters than required.", nameof(BeginMethodName), onMethodBeginParameters.Length, integrationType.FullName);
             }
             else if (onMethodBeginParameters.Length > argumentsTypes.Length + 1)
             {
@@ -75,6 +76,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             List<Type> callGenericTypes = new List<Type>();
 
+            // TODO this might be an issue now that onMethodBeginParameters doesn't need all params in argumentTypes
             bool mustLoadInstance = onMethodBeginParameters.Length != argumentsTypes.Length;
             Type instanceGenericType = genericArgumentsTypes[0];
             Type instanceGenericConstraint = instanceGenericType.GetGenericParameterConstraints().FirstOrDefault();
