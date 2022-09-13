@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Processors;
@@ -64,20 +63,7 @@ namespace Datadog.Trace.Agent.MessagePack
         {
             int originalOffset = offset;
             var spans = value.Spans;
-
-#if NET472_OR_GREATER || NETCOREAPP2_0_OR_GREATER
-            var spanIds = new HashSet<ulong>(spans.Count);
-#else // NETFX < 4.7.2 || NETSTANDARD < 2.1
-            var spanIds = new HashSet<ulong>();
-#endif
-
-            // Using a for loop to avoid the boxing allocation on ArraySegment.GetEnumerator
-            for (var i = 0; i < spans.Count; i++)
-            {
-                // get all span ids for quick lookup below
-                var span = spans.Array![i + spans.Offset];
-                spanIds.Add(span.SpanId);
-            }
+            var spanIds = new SpanIdLookup(in spans);
 
             // start writing span[]
             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, spans.Count);
