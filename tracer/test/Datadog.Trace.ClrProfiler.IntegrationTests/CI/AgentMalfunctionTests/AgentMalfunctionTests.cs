@@ -29,57 +29,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        [SkippableFact]
+        [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void SubmitsTracesWhenAgentDoesNotAnswer()
+        [InlineData(AgentBehaviour.NO_ANSWER)
+        [InlineData(AgentBehaviour.SLOW_ANSWER)
+        [InlineData(AgentBehaviour.WRONG_ANSWER)
+        [InlineData(AgentBehaviour.RETURN_404)
+        [InlineData(AgentBehaviour.RETURN_500)
+        public void SubmitsTraces(AgentBehaviour behaviour)
         {
             using var agent = EnvironmentHelper.GetMockAgent();
-            agent.SetBehaviour(AgentBehaviour.NO_ANSWER);
+            agent.SetBehaviour(behaviour);
             TestInstrumentation(agent);
-        }
-
-        [SkippableFact]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        public void SubmitsTracesWhenAgentAnswersSlowly()
-        {
-            using var agent = EnvironmentHelper.GetMockAgent();
-            agent.SetBehaviour(AgentBehaviour.SLOW_ANSWER);
-            TestInstrumentation(agent);
-        }
-
-        [SkippableFact]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        public void SubmitsTracesWhenAgentSendsWrongMessages()
-        {
-            using var agent = EnvironmentHelper.GetMockAgent();
-            agent.SetBehaviour(AgentBehaviour.WRONG_ANSWER);
-            TestInstrumentation(agent);
-        }
-
-        [SkippableFact]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        public void SubmitsTracesWhenAgentReturns404()
-        {
-            using var agent = EnvironmentHelper.GetMockAgent();
-            agent.SetBehaviour(AgentBehaviour.RETURN_404);
-            TestInstrumentation(agent);
-        }
-
-        [SkippableFact]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        public void SubmitsTracesWhenAgentReturns500()
-        {
-            using var agent = EnvironmentHelper.GetMockAgent();
-            agent.SetBehaviour(AgentBehaviour.RETURN_500);
-            TestInstrumentation(agent);
-        }
-
-        private async void TestInstrumentation(MockTracerAgent agent)
         {
             const int expectedSpanCount = 5;
             const string expectedOperationName = "command_execution";
