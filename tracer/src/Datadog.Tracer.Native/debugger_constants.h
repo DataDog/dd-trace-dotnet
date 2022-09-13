@@ -23,7 +23,8 @@ const WSTRING skip_assembly_prefixes[]{
     WStr("VBCSCompiler"),
     WStr("csc"),
     WStr("DuckTypeNotVisibleAssembly"),
-    WStr("Datadog.Trace")};
+    WStr("Datadog.Trace"),
+    WStr("Newtonsoft.Json")};
 
 const WSTRING skip_assemblies[]{WStr("mscorlib"),
                                 WStr("netstandard"),
@@ -33,7 +34,8 @@ const WSTRING skip_assemblies[]{WStr("mscorlib"),
                                 WStr("Anonymously Hosted DynamicMethods Assembly"),
                                 WStr("Datadog.AutoInstrumentation.ManagedLoader"),
                                 WStr("ISymWrapper"),
-                                WStr("Datadog.Trace")};
+                                WStr("Datadog.Trace"),
+                                WStr("MSBuild")};
 }
 
 #endif // DEBUGGER_CONSTANTS_H

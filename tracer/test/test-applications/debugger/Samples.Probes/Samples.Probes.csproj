@@ -6,7 +6,6 @@
     <DebugType>full</DebugType>
     <Optimize>false</Optimize>
     <Platforms>x86;x64</Platforms>
-    <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
 
   <PropertyGroup>

@@ -1010,7 +1010,19 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
     rewriterWrapper.LoadToken(caller->type.id);
     rewriterWrapper.LoadInt32(instrumentedMethodIndex);
     loadInstanceInstr = rewriterWrapper.LoadArgument(0);
-    rewriterWrapper.LoadFieldAddress(debuggerTokens->GetIsFirstEntryToMoveNextFieldToken(caller->type.id));
+
+    mdFieldDef isReEntryFieldTok;
+    hr = debuggerTokens->GetIsFirstEntryToMoveNextFieldToken(caller->type.id, isReEntryFieldTok);
+    IfFailRet(hr);
+
+    if (isReEntryFieldTok == mdFieldDefNil)
+    {
+        Logger::Info("isReEntryField token is nil. Aborting an async instrumentation. module id:", moduleId, " method: ", caller->type.name, ".",
+                     caller->name);
+        return E_FAIL;
+    }
+
+    rewriterWrapper.LoadFieldAddress(isReEntryFieldTok);
 
     ILInstr* beginCallInstruction;
     hr = debuggerTokens->WriteBeginMethod_StartMarker(&rewriterWrapper, &caller->type, &beginCallInstruction,

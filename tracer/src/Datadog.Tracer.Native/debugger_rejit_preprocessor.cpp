@@ -362,20 +362,6 @@ std::tuple<HRESULT, mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::Transf
                                                     const ComPtr<IMetaDataImport2>& metadataImport, const ComPtr<IMetaDataEmit2>& metadataEmit,
                                                     mdMethodDef moveNextMethod, mdTypeDef nestedAsyncClassOrStruct)
 {
-    // this is an async method and we found the generated nested state machine type,
-    // define a new boolean field in the state machine object to indicate whether we have already entered the MoveNext method
-    // (if we have, it means we are re-entering the method as a continuation in a subsequent `await` operation, 
-    // and should not capture the method parameter values as we do the first time around).
-    constexpr BYTE fieldSignature[] = {IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_BOOLEAN};
-    mdFieldDef isFirstEntry = mdFieldDefNil;
-    auto hr = metadataEmit->DefineField(nestedAsyncClassOrStruct, managed_profiler_debugger_is_first_entry_field_name.c_str(), fdPrivate, fieldSignature,
-                                   sizeof(fieldSignature), 0, nullptr, 0, &isFirstEntry);
-    if (FAILED(hr))
-    {
-        Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: DefineField _isFirstEntry failed");
-        return {hr, mdMethodDefNil, FunctionInfo()};
-    }
-
     // save the MoveNext method and create a function info for it
     auto caller = GetFunctionInfo(metadataImport, moveNextMethod);
     if (!caller.IsValid())
@@ -385,7 +371,7 @@ std::tuple<HRESULT, mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::Transf
         return {E_FAIL, mdMethodDefNil, FunctionInfo()};
     }
 
-    hr = caller.method_signature.TryParse();
+    const auto hr = caller.method_signature.TryParse();
     if (FAILED(hr))
     {
         Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: The method signature: ",

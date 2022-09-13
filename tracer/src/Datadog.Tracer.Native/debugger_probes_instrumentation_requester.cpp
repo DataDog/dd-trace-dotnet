@@ -9,6 +9,7 @@
 #include "debugger_rejit_preprocessor.h"
 #include "debugger_constants.h"
 #include "debugger_environment_variables_util.h"
+#include "debugger_method_rewriter.h"
 #include "debugger_rejit_handler_module_method.h"
 #include "probes_tracker.h"
 
@@ -21,15 +22,15 @@ namespace debugger
  * \param assemblyName the name of the assembly we're trying to rewrite using Debugger's Instrumentation
  * \return true if the given assembly is viable for instrument-all, false otherwise.
  */
-bool DebuggerProbesInstrumentationRequester::ShouldPerformInstrumentAll(const WSTRING& assemblyName)
+bool DebuggerProbesInstrumentationRequester::IsCoreLibOr3rdParty(const WSTRING& assemblyName)
 {
     for (auto&& skip_assembly_pattern : skip_assembly_prefixes)
     {
         if (assemblyName.rfind(skip_assembly_pattern, 0) == 0)
         {
-            Logger::Debug("DebuggerInstrumentAllHelper::ShouldPerformInstrumentAll skipping module by pattern: Name=",
+            Logger::Debug("DebuggerInstrumentAllHelper::IsCoreLibOr3rdParty skipping module by pattern: Name=",
                           assemblyName);
-            return false;
+            return true;
         }
     }
 
@@ -37,13 +38,13 @@ bool DebuggerProbesInstrumentationRequester::ShouldPerformInstrumentAll(const WS
     {
         if (assemblyName == skip_assembly)
         {
-            Logger::Debug("DebuggerInstrumentAllHelper::ShouldPerformInstrumentAll skipping module by exact name: Name= ",
+            Logger::Debug("DebuggerInstrumentAllHelper::IsCoreLibOr3rdParty skipping module by exact name: Name= ",
                           assemblyName);
-            return false;
+            return true;
         }
     }
 
-    return true;
+    return false;
 }
 
 /**
@@ -63,7 +64,7 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
     const auto& module_info = GetModuleInfo(corProfiler->info_, module_id);
     const auto assembly_name = module_info.assembly.name;
 
-    if (ShouldPerformInstrumentAll(assembly_name))
+    if (!IsCoreLibOr3rdParty(assembly_name))
     {
         ComPtr<IUnknown> metadataInterfaces;
         auto hr = corProfiler->info_->GetModuleMetaData(module_id, ofRead | ofWrite, IID_IMetaDataImport2,
@@ -141,6 +142,7 @@ DebuggerProbesInstrumentationRequester::DebuggerProbesInstrumentationRequester(
     m_rejit_handler(rejit_handler), m_work_offloader(work_offloader)
 {
     m_debugger_rejit_preprocessor = std::make_unique<DebuggerRejitPreprocessor>(rejit_handler, work_offloader);
+    is_debugger_enabled = IsDebuggerEnabled();
 }
 
 void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemoveProbesDefinition* removeProbes,
@@ -552,7 +554,7 @@ DebuggerRejitPreprocessor* DebuggerProbesInstrumentationRequester::GetPreprocess
     return m_debugger_rejit_preprocessor.get();
 }
 
-ULONG DebuggerProbesInstrumentationRequester::RequestRejitForLoadedModule(const ModuleID moduleId)
+void DebuggerProbesInstrumentationRequester::RequestRejitForLoadedModule(const ModuleID moduleId)
 {
     std::vector<MethodProbeDefinition> methodProbes;
 
@@ -566,14 +568,142 @@ ULONG DebuggerProbesInstrumentationRequester::RequestRejitForLoadedModule(const 
             methodProbes.emplace_back(*methodProbe);
         }
     }
-
+    
     if (methodProbes.empty())
     {
-        return 0;
+        Logger::Debug("[Debugger] There are no Method Probes");
+        return;
+    }
+    
+    const auto numReJITs = m_debugger_rejit_preprocessor->RequestRejitForLoadedModules(std::vector<ModuleID>{moduleId}, methodProbes);
+    // TODO do it also for line probes (scenario: module loaded (line probe request arrived) & unloaded & loaded)
+
+    Logger::Debug("[Debugger] Total number of ReJIT Requested: ", numReJITs);
+}
+
+void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule(const ModuleID moduleId) const
+{
+    auto corProfilerInfo = m_rejit_handler->GetCorProfilerInfo();
+
+    if (corProfilerInfo == nullptr)
+    {
+        Logger::Error("DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule CorProfilerInfo is null. ");
+        return;
     }
 
-    return m_debugger_rejit_preprocessor->RequestRejitForLoadedModules(std::vector<ModuleID>{moduleId}, methodProbes);
-    // TODO do it also for line probes (scenario: module loaded (line probe request arrived) & unloaded & loaded)
+    const auto& moduleInfo = GetModuleInfo(corProfilerInfo, moduleId);
+
+    if (moduleInfo.IsNGEN() || moduleInfo.IsDynamic() || IsCoreLibOr3rdParty(moduleInfo.assembly.name))
+    {
+        return;
+    }
+
+    Logger::Debug("Requesting Rejit for Module: ", moduleInfo.assembly.name);
+
+    ComPtr<IUnknown> metadataInterfaces;
+
+    Logger::Debug("  Loading Assembly Metadata...");
+    auto hr = corProfilerInfo->GetModuleMetaData(moduleInfo.id, ofRead | ofWrite, IID_IMetaDataImport2,
+                                                 metadataInterfaces.GetAddressOf());
+    if (FAILED(hr))
+    {
+        Logger::Warn("DebuggerProbesInstrumentationRequester::sAddMetadataToModule failed to get metadata interface for ",
+                     moduleInfo.id, " ", moduleInfo.assembly.name);
+        return;
+    }
+
+    ComPtr<IMetaDataImport2> metadataImport = metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+    ComPtr<IMetaDataEmit2> metadataEmit = metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+    ComPtr<IMetaDataAssemblyImport> assemblyImport =
+        metadataInterfaces.As<IMetaDataAssemblyImport>(IID_IMetaDataAssemblyImport);
+    ComPtr<IMetaDataAssemblyEmit> assemblyEmit =
+        metadataInterfaces.As<IMetaDataAssemblyEmit>(IID_IMetaDataAssemblyEmit);
+    std::unique_ptr<AssemblyMetadata> assemblyMetadata =
+        std::make_unique<AssemblyMetadata>(GetAssemblyImportMetadata(assemblyImport));
+    Logger::Debug("  Assembly Metadata loaded for: ", assemblyMetadata->name, "(", assemblyMetadata->version.str(),
+                  ").");
+
+    // Enumerate the types of the module
+    auto typeDefEnum = EnumTypeDefs(metadataImport);
+    auto typeDefIterator = typeDefEnum.begin();
+    for (; typeDefIterator != typeDefEnum.end(); typeDefIterator = ++typeDefIterator)
+    {
+        auto typeDef = *typeDefIterator;
+
+        // check if it is a nested type and the parent is our type
+        mdTypeDef parentType;
+        if (metadataImport->GetNestedClassProps(typeDef, &parentType) != S_OK)
+        {
+            // not a nested type
+            continue;
+        }
+
+        bool isImplementStateMAchineInterface = false;
+        // check if the nested type implement the IAsyncStateMachine interface
+        hr = DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine(metadataImport, typeDef, isImplementStateMAchineInterface);
+        if (FAILED(hr))
+        {
+            Logger::Warn("DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule: failed in call to "
+                          "DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine");
+            continue;
+        }
+
+        if (!isImplementStateMAchineInterface)
+        {
+            continue;
+        }
+
+        const auto typeInfo = GetTypeInfo(metadataImport, typeDef);
+
+        if (typeInfo.isGeneric)
+        {
+            Logger::Info(
+                "Skipping IsFirstEntry field addition as we don't support generic async methods yet. [ModuleId=",
+                moduleInfo.id, ", Assembly=", moduleInfo.assembly.name, ", Type=", typeInfo.name,
+                ", IsValueType=", typeInfo.valueType, "]");
+            continue;
+        }
+
+        if (typeInfo.IsStaticClass())
+        {
+            Logger::Info(
+                "skipping IsFirstEntry field addition as we encountered a static class. [ModuleId=",
+                moduleInfo.id, ", Assembly=", moduleInfo.assembly.name, ", Type=", typeInfo.name,
+                ", IsValueType=", typeInfo.valueType, "]");
+            continue;
+        }
+
+        // The type implements IAsyncStateMachine, we assume it's a state machine generated by the compiler for async method transformation.
+
+        // define a new boolean field in the state machine object to indicate whether we have already entered the
+        // MoveNext method (if we have, it means we are re-entering the method as a continuation in a subsequent
+        // `await` operation, and should not capture the method parameter values as we do the first time around).
+        BYTE fieldSignature[] = {IMAGE_CEE_CS_CALLCONV_FIELD, ELEMENT_TYPE_BOOLEAN};
+        mdFieldDef isFirstEntry = mdFieldDefNil;
+        hr = metadataEmit->DefineField(typeDef, managed_profiler_debugger_is_first_entry_field_name.c_str(),
+                                       fdPrivate | mdHideBySig | fdSpecialName,
+                                            fieldSignature, sizeof(fieldSignature), 0, nullptr, 0, &isFirstEntry);
+        if (FAILED(hr))
+        {
+            Logger::Error("DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule: DefineField _isFirstEntry failed");
+        }
+
+        Logger::Debug("Added IsFirstEntry field [ModuleId=", moduleInfo.id, ", Assembly=", moduleInfo.assembly.name,
+        ", Type=", typeInfo.name, ", IsValueType=", typeInfo.valueType, "]");
+    }
+}
+
+HRESULT STDMETHODCALLTYPE DebuggerProbesInstrumentationRequester::ModuleLoadFinished(const ModuleID moduleId)
+{
+    if (!is_debugger_enabled)
+    {
+        return S_OK;    
+    }
+
+    // IMPORTANT: The call to `ModuleLoadFinished_AddMetadataToModule` must be in `ModuleLoadFinished` as mutating the layout of types is only feasible prior the type is loaded.s
+    ModuleLoadFinished_AddMetadataToModule(moduleId);
+    RequestRejitForLoadedModule(moduleId);
+    return S_OK;
 }
 
 HRESULT DebuggerProbesInstrumentationRequester::NotifyReJITError(ModuleID moduleId, mdMethodDef methodId,

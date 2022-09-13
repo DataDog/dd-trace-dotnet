@@ -17,8 +17,9 @@ private:
     std::unique_ptr<DebuggerRejitPreprocessor> m_debugger_rejit_preprocessor = nullptr;
     std::shared_ptr<RejitHandler> m_rejit_handler = nullptr;
     std::shared_ptr<RejitWorkOffloader> m_work_offloader = nullptr;
+    bool is_debugger_enabled = false;
 
-    static bool ShouldPerformInstrumentAll(const WSTRING& assemblyName);
+    static bool IsCoreLibOr3rdParty(const WSTRING& assemblyName);
 
     void RemoveProbes(debugger::DebuggerRemoveProbesDefinition* removeProbes, int removeProbesLength,
                       std::set<MethodIdentifier>& revertRequests);
@@ -39,7 +40,9 @@ public:
     void PerformInstrumentAllIfNeeded(const ModuleID& module_id, const mdToken& function_token);
     const std::vector<std::shared_ptr<ProbeDefinition>>& GetProbes() const;
     DebuggerRejitPreprocessor* GetPreprocessor();
-    ULONG RequestRejitForLoadedModule(const ModuleID moduleId);
+    void RequestRejitForLoadedModule(const ModuleID moduleId);
+    void ModuleLoadFinished_AddMetadataToModule(const ModuleID moduleId) const;
+    HRESULT STDMETHODCALLTYPE ModuleLoadFinished(const ModuleID moduleId);
 
     static HRESULT NotifyReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId, HRESULT hrStatus);
 };

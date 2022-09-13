@@ -199,6 +199,12 @@ partial class Build
             throw new InvalidOperationException($"The framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
         }
 
+        if (ExplorationTestUseCase == global::ExplorationTestUseCase.Debugger &&
+            testDescription.Name is not global::ExplorationTestName.protobuf or global::ExplorationTestName.cake or global::ExplorationTestName.paket or global::ExplorationTestName.polly)
+        {
+            return;
+        }
+
         DotNetTest(
             x =>
             {
@@ -210,7 +216,7 @@ partial class Build
                    .When(Framework != null, settings => settings.SetFramework(Framework))
                    .SetProcessEnvironmentVariables(envVariables)
                    .SetIgnoreFilter(testDescription.TestsToIgnore)
-                   .WithMemoryDumpAfter(1)
+                   .WithMemoryDumpAfter(100)
                     ;
 
                 return x;
