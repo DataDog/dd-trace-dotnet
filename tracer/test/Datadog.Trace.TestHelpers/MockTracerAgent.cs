@@ -847,7 +847,7 @@ namespace Datadog.Trace.TestHelpers
 
                             if (behaviour == AgentBehaviour.SlowAnswer)
                             {
-                                System.Threading.Thread.Sleep(10000);
+                                System.Threading.Thread.Sleep(120000);
                             }
 
                             if (behaviour != AgentBehaviour.NoAnswer)
