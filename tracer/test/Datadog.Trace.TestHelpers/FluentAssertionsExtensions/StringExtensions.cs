@@ -14,8 +14,14 @@ namespace Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 public static class StringExtensions
 {
     [CustomAssertion]
-    public static StringAssertions HaveEmptyDiffWhenComparedTo(this StringAssertions value, string expected, string because = "", params object[] becauseArgs)
+    public static AndConstraint<StringAssertions> Be(this StringAssertions value, string expected, bool outputDiffOnly, string because = "", params object[] becauseArgs)
     {
+        if (!outputDiffOnly)
+        {
+            // fallback to Be()'s default behavior (show full strings instead of diffs)
+            return value.Be(expected, because, becauseArgs);
+        }
+
         Execute.Assertion
                .BecauseOf(because, becauseArgs)
                .Given(() => InlineDiffBuilder.Diff(expected, value.Subject))
@@ -24,6 +30,6 @@ public static class StringExtensions
                     "{context:string} has differences from expected value{reason}. Diff:{0}",
                     diffModel => diffModel);
 
-        return value;
+        return new AndConstraint<StringAssertions>(value);
     }
 }
