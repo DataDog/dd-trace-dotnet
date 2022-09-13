@@ -10,7 +10,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Http;
 
-namespace Datadog.Trace.IAST
+namespace Datadog.Trace.IAST.Settings
 {
     internal class IASTSettings
     {

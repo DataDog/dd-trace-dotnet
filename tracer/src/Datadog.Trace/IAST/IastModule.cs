@@ -7,6 +7,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.IAST.Settings;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 

@@ -5,6 +5,7 @@
 
 using System;
 using System.Threading;
+using Datadog.Trace.IAST.Settings;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.IAST
