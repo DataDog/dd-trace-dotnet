@@ -142,65 +142,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                 return false;
             }
 
-            MethodInfo testMethod = runnerInstance.TestMethod;
-
-            string testSuite = runnerInstance.TestClass.ToString();
-            string testName = testMethod.Name;
-
-            var currentContext = SynchronizationContext.Current;
-            try
-            {
-                SynchronizationContext.SetSynchronizationContext(null);
-                var skippeableTests = CIVisibility.GetSkippableTestsFromSuiteAndNameAsync(testSuite, testName).GetAwaiter().GetResult();
-                if (skippeableTests.Count > 0)
-                {
-                    object[] testMethodArguments = runnerInstance.TestMethodArguments;
-                    ParameterInfo[]? methodParameters = null;
-                    foreach (var skippeableTest in skippeableTests)
-                    {
-                        var parameters = skippeableTest.GetParameters();
-
-                        // Same test name and no parameters
-                        if ((parameters?.Arguments is null || parameters?.Arguments.Count == 0) &&
-                            (testMethodArguments is null || testMethodArguments.Length == 0))
-                        {
-                            return true;
-                        }
-
-                        if (parameters?.Arguments is not null)
-                        {
-                            methodParameters ??= testMethod.GetParameters();
-                            bool matchSignature = true;
-                            for (var i = 0; i < methodParameters.Length; i++)
-                            {
-                                var targetValue = "(default)";
-                                if (i < testMethodArguments.Length)
-                                {
-                                    targetValue = Common.GetParametersValueData(testMethodArguments[i]);
-                                }
-
-                                if (!parameters.Arguments.TryGetValue(methodParameters[i].Name, out var argValue) ||
-                                    (string)argValue != targetValue)
-                                {
-                                    matchSignature = false;
-                                    break;
-                                }
-                            }
-
-                            if (matchSignature)
-                            {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-            finally
-            {
-                SynchronizationContext.SetSynchronizationContext(currentContext);
-            }
-
-            return false;
+            var testMethod = runnerInstance.TestMethod;
+            return Common.ShouldSkip(runnerInstance.TestClass.ToString(), testMethod.Name, runnerInstance.TestMethodArguments, testMethod.GetParameters());
         }
     }
 }

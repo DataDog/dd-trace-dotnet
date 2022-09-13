@@ -5,6 +5,7 @@
 
 using System;
 using System.Reflection;
+using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
@@ -32,6 +33,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             if (paramValue is null)
             {
                 return "(null)";
+            }
+
+            if (paramValue is string strValue)
+            {
+                return strValue;
             }
 
             if (paramValue is Array pValueArray)
@@ -124,6 +130,61 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
         {
             // Initialize Method Symbol Resolver
             _ = MethodSymbolResolver.Instance.GetModuleDef(methodInfo.Module);
+        }
+
+        internal static bool ShouldSkip(string testSuite, string testName, object[] testMethodArguments, ParameterInfo[] methodParameters)
+        {
+            var currentContext = SynchronizationContext.Current;
+            try
+            {
+                SynchronizationContext.SetSynchronizationContext(null);
+                var skippableTests = CIVisibility.GetSkippableTestsFromSuiteAndNameAsync(testSuite, testName).GetAwaiter().GetResult();
+                if (skippableTests.Count > 0)
+                {
+                    foreach (var skippableTest in skippableTests)
+                    {
+                        var parameters = skippableTest.GetParameters();
+
+                        // Same test name and no parameters
+                        if ((parameters?.Arguments is null || parameters.Arguments.Count == 0) &&
+                            (testMethodArguments is null || testMethodArguments.Length == 0))
+                        {
+                            return true;
+                        }
+
+                        if (parameters?.Arguments is not null)
+                        {
+                            var matchSignature = true;
+                            for (var i = 0; i < methodParameters.Length; i++)
+                            {
+                                var targetValue = "(default)";
+                                if (i < testMethodArguments.Length)
+                                {
+                                    targetValue = GetParametersValueData(testMethodArguments[i]);
+                                }
+
+                                if (!parameters.Arguments.TryGetValue(methodParameters[i].Name ?? string.Empty, out var argValue) ||
+                                    (string)argValue != targetValue)
+                                {
+                                    matchSignature = false;
+                                    break;
+                                }
+                            }
+
+                            if (matchSignature)
+                            {
+                                return true;
+                            }
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(currentContext);
+            }
+
+            return false;
         }
     }
 }
