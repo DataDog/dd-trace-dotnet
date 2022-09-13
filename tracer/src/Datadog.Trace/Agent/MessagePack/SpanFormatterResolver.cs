@@ -29,12 +29,11 @@ namespace Datadog.Trace.Agent.MessagePack
                 return (IMessagePackFormatter<T>)_formatter;
             }
 
-            // IMessagePackFormatter<ArraySegment<Span>> is deprecated, use IMessagePackFormatter<TraceMessageChunk>
-            // IMessagePackFormatter<Span> is deprecated, use IMessagePackFormatter<SpanModel>
-            if (typeof(T) == typeof(ArraySegment<Span>) ||
-                typeof(T) == typeof(Span))
+            if (typeof(T) == typeof(Span))
             {
-                return (IMessagePackFormatter<T>)_formatter;
+                // We block IMessagePackFormatter<Span> since it can return wrong results and we want to catch any tests trying to use it.
+                // Note that this also covers Span collections, like Span[] and ArraySegment<Span>.
+                throw new NotSupportedException("Serializing Span with IMessagePackFormatter<Span> is not supported. Use IMessagePackFormatter<SpanModel> instead.");
             }
 
             return StandardResolver.Instance.GetFormatter<T>();
