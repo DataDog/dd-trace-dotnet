@@ -6,11 +6,9 @@
 #nullable enable
 
 using System;
-using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
 {
