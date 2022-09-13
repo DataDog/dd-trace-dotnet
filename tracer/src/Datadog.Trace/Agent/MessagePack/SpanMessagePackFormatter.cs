@@ -91,7 +91,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 // when serializing each span, we need additional information that is not
                 // available in the span object itself, like its position in the trace chunk
                 // or if its parent can also be found in the same chunk
-                bool isLocalRoot = parentSpanId == 0 || span == span.Context.TraceContext.RootSpan;
+                bool isLocalRoot = parentSpanId == 0 || spans.Count == 1 || span == span.Context.TraceContext.RootSpan;
                 bool isOrphan = isLocalRoot || !spanIds.Contains(parentSpanId);
                 bool isFirst = i == 0;
 
