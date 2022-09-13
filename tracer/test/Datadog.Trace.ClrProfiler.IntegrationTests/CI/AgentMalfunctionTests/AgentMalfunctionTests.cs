@@ -32,16 +32,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [InlineData(AgentBehaviour.NO_ANSWER)
-        [InlineData(AgentBehaviour.SLOW_ANSWER)
-        [InlineData(AgentBehaviour.WRONG_ANSWER)
-        [InlineData(AgentBehaviour.RETURN_404)
-        [InlineData(AgentBehaviour.RETURN_500)
+        [InlineData(AgentBehaviour.NoAnswer)]
+        [InlineData(AgentBehaviour.SlowAnswer)]
+        [InlineData(AgentBehaviour.WrongAnswer)]
+        [InlineData(AgentBehaviour.Return404)]
+        [InlineData(AgentBehaviour.Return500)]
         public void SubmitsTraces(AgentBehaviour behaviour)
         {
             using var agent = EnvironmentHelper.GetMockAgent();
             agent.SetBehaviour(behaviour);
             TestInstrumentation(agent);
+        }
+
+        private async void TestInstrumentation(MockTracerAgent agent)
         {
             const int expectedSpanCount = 5;
             const string expectedOperationName = "command_execution";

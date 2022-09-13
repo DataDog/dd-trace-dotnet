@@ -33,7 +33,7 @@ namespace Datadog.Trace.TestHelpers
     {
         private readonly CancellationTokenSource _cancellationTokenSource = new();
 
-        private AgentBehaviour behaviour = AgentBehaviour.NORMAL;
+        private AgentBehaviour behaviour = AgentBehaviour.Normal;
 
         protected MockTracerAgent(bool telemetryEnabled, TestTransports transport)
         {
@@ -827,16 +827,16 @@ namespace Datadog.Trace.TestHelpers
                             }
 
                             var response = HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request));
-                            var buffer = behaviour == AgentBehaviour.WRONG_ANSWER ? Encoding.UTF8.GetBytes("WRONG DATA") : Encoding.UTF8.GetBytes(response);
+                            var buffer = behaviour == AgentBehaviour.WrongAnswer ? Encoding.UTF8.GetBytes("WRONG DATA") : Encoding.UTF8.GetBytes(response);
 
                             if (!ctx.Request.RawUrl.ToLower().Contains("/traces"))
                             {
-                                if (behaviour == AgentBehaviour.RETURN_404)
+                                if (behaviour == AgentBehaviour.Return404)
                                 {
                                     ctx.Response.StatusCode = 404;
                                 }
 
-                                if (behaviour == AgentBehaviour.RETURN_500)
+                                if (behaviour == AgentBehaviour.Return500)
                                 {
                                     ctx.Response.StatusCode = 500;
                                 }
@@ -845,12 +845,12 @@ namespace Datadog.Trace.TestHelpers
                             ctx.Response.ContentType = "application/json";
                             ctx.Response.ContentLength64 = buffer.LongLength;
 
-                            if (behaviour == AgentBehaviour.SLOW_ANSWER)
+                            if (behaviour == AgentBehaviour.SlowAnswer)
                             {
                                 System.Threading.Thread.Sleep(10000);
                             }
 
-                            if (behaviour != AgentBehaviour.NO_ANSWER)
+                            if (behaviour != AgentBehaviour.NoAnswer)
                             {
                                 ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
                             }
