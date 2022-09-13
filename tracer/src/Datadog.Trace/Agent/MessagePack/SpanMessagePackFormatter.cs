@@ -53,7 +53,14 @@ namespace Datadog.Trace.Agent.MessagePack
             _processIdValueBytes = processId > 0 ? MessagePackSerializer.Serialize(processId) : null;
         }
 
-        public int Serialize(ref byte[] bytes, int offset, TraceChunkModel value, IFormatterResolver formatterResolver)
+        // this method creates a TraceChunkModel copy so try to avoid it
+        int IMessagePackFormatter<TraceChunkModel>.Serialize(ref byte[] bytes, int offset, TraceChunkModel value, IFormatterResolver formatterResolver)
+        {
+            return Serialize(ref bytes, offset, value, formatterResolver);
+        }
+
+        // a version of IMessagePackFormatter<TraceChunkModel>.Serialize() with `in` modifier on `TraceChunkModel` parameter
+        public int Serialize(ref byte[] bytes, int offset, in TraceChunkModel value, IFormatterResolver formatterResolver)
         {
             int originalOffset = offset;
             var spans = value.Spans;
@@ -89,13 +96,20 @@ namespace Datadog.Trace.Agent.MessagePack
                 bool isFirst = i == 0;
 
                 var spanModel = new SpanModel(span, value, isLocalRoot, isOrphan, isFirst);
-                offset += Serialize(ref bytes, offset, spanModel, formatterResolver);
+                offset += Serialize(ref bytes, offset, in spanModel, formatterResolver);
             }
 
             return offset - originalOffset;
         }
 
-        public int Serialize(ref byte[] bytes, int offset, SpanModel value, IFormatterResolver formatterResolver)
+        // this method creates a SpanModel copy so try to avoid it
+        int IMessagePackFormatter<SpanModel>.Serialize(ref byte[] bytes, int offset, SpanModel value, IFormatterResolver formatterResolver)
+        {
+            return Serialize(ref bytes, offset, in value, formatterResolver);
+        }
+
+        // a version of IMessagePackFormatter<SpanModel>.Serialize() with `in` modifier on `SpanModel` parameter
+        public int Serialize(ref byte[] bytes, int offset, in SpanModel value, IFormatterResolver formatterResolver)
         {
             var span = value.Span;
 

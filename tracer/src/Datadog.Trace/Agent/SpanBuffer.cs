@@ -82,7 +82,16 @@ namespace Datadog.Trace.Agent
 
                 // We don't know what the serialized size of the payload will be,
                 // so we need to write to a temporary buffer first
-                var size = _formatter.Serialize(ref temporaryBuffer, 0, traceChunk, _formatterResolver);
+                int size;
+
+                if (_formatter is SpanMessagePackFormatter spanFormatter)
+                {
+                    size = spanFormatter.Serialize(ref temporaryBuffer, 0, in traceChunk, _formatterResolver);
+                }
+                else
+                {
+                    size = _formatter.Serialize(ref temporaryBuffer, 0, traceChunk, _formatterResolver);
+                }
 
                 if (!EnsureCapacity(size + _offset))
                 {
