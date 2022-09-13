@@ -25,7 +25,7 @@ namespace Datadog.Trace.Ci
     {
         private static readonly CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
         private static int _firstInitialization = 1;
-        private static Lazy<bool> _enabledLazy = new Lazy<bool>(() => InternalEnabled(), true);
+        private static Lazy<bool> _enabledLazy = new(() => InternalEnabled(), true);
         private static Task? _skippableTask;
         private static Dictionary<string, Dictionary<string, IList<SkippableTest>>>? _skippableTestsBySuiteAndName;
 
@@ -192,7 +192,7 @@ namespace Datadog.Trace.Ci
         internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings)
         {
             IApiRequestFactory? factory = null;
-            TimeSpan agentlessTimeout = TimeSpan.FromSeconds(45);
+            TimeSpan agentlessTimeout = !_settings.IntelligentTestRunnerEnabled ? TimeSpan.FromSeconds(15) : TimeSpan.FromSeconds(45);
 
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
