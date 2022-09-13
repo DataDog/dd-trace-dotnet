@@ -68,7 +68,7 @@ namespace Datadog.Trace.TestHelpers
 
         public IImmutableList<MockClientStatsPayload> Stats { get; private set; } = ImmutableList<MockClientStatsPayload>.Empty;
 
-        public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
+        public IImmutableList<NameValueCollection> TraceRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
         public List<string> Snapshots { get; private set; } = new();
 
@@ -139,7 +139,7 @@ namespace Datadog.Trace.TestHelpers
                 Thread.Sleep(500);
             }
 
-            foreach (var headers in RequestHeaders)
+            foreach (var headers in TraceRequestHeaders)
             {
                 // This is the place to check against headers we expect
                 AssertHeader(
@@ -412,7 +412,7 @@ namespace Datadog.Trace.TestHelpers
                             headerCollection.Add(header.Name, header.Value);
                         }
 
-                        RequestHeaders = RequestHeaders.Add(headerCollection);
+                        TraceRequestHeaders = TraceRequestHeaders.Add(headerCollection);
                     }
                 }
                 catch (Exception ex)
