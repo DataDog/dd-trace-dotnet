@@ -191,15 +191,19 @@ namespace Datadog.Trace.Ci
 
         internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings)
         {
+            return GetRequestFactory(settings, TimeSpan.FromSeconds(15));
+        }
+
+        internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings, TimeSpan timeout)
+        {
             IApiRequestFactory? factory = null;
-            TimeSpan agentlessTimeout = !_settings.IntelligentTestRunnerEnabled ? TimeSpan.FromSeconds(15) : TimeSpan.FromSeconds(45);
 
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
-            factory = new HttpClientRequestFactory(settings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: agentlessTimeout);
+            factory = new HttpClientRequestFactory(settings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
 #else
             Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-            factory = new ApiWebRequestFactory(settings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: agentlessTimeout);
+            factory = new ApiWebRequestFactory(settings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
 #endif
 
             if (!string.IsNullOrWhiteSpace(_settings.ProxyHttps))

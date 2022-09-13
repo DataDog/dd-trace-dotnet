@@ -60,7 +60,7 @@ internal class IntelligentTestRunnerClient
 
         _workingDirectory = workingDirectory;
         _getRepositoryUrlTask = GetRepositoryUrlAsync();
-        _apiRequestFactory = CIVisibility.GetRequestFactory(_settings.TracerSettings.Build());
+        _apiRequestFactory = CIVisibility.GetRequestFactory(_settings.TracerSettings.Build(), TimeSpan.FromSeconds(45));
 
         var environment = TraceUtil.NormalizeTag(_settings.TracerSettings.Environment ?? string.Empty);
         var serviceName = NormalizerTraceProcessor.NormalizeService(_settings.TracerSettings.ServiceName);
@@ -318,7 +318,6 @@ internal class IntelligentTestRunnerClient
 
         async Task<long> InternalSendObjectsPackFileAsync(string packFile, bool finalTry)
         {
-            var invariantCulture = CultureInfo.InvariantCulture;
             var request = _apiRequestFactory.Create(_packFileUrl);
             request.AddHeader(ApiKeyHeader, _settings.ApiKey);
             request.AddHeader(HttpHeaderNames.TraceId, _id);
