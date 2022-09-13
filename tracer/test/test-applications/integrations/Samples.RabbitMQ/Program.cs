@@ -202,18 +202,7 @@ namespace Samples.RabbitMQ
                                     arguments: null);
 
                 var queue = new BlockingCollection<BasicDeliverEventArgs>();
-                var consumer = new EventingBasicConsumer(channel);
-                consumer.Received += (model, ea) =>
-                {
-                    if (useQueue)
-                    {
-                        queue.Add(ea);
-                    }
-                    else
-                    {
-                        TraceOnTheReceivingEnd(ea);
-                    }
-                };
+                var consumer = CreateConsumer(channel, queue, useQueue: useQueue, useCustomConsumer: useQueue);
                 channel.BasicConsume("hello",
                                     true,
                                     consumer);
@@ -237,6 +226,36 @@ namespace Samples.RabbitMQ
                 }
 
                 Console.WriteLine("[Receive] Exiting Thread.");
+            }
+        }
+
+        private static IBasicConsumer CreateConsumer(IModel channel, BlockingCollection<BasicDeliverEventArgs> queue, bool useQueue, bool useCustomConsumer)
+        {
+            void HandleEvent(object sender, BasicDeliverEventArgs ea)
+            {
+                if (useQueue)
+                {
+                    queue.Add(ea);
+                }
+                else
+                {
+                    TraceOnTheReceivingEnd(ea);
+                }
+            }
+
+            if (useCustomConsumer)
+            {
+                // Using a custom type tests that interface integration methods work correctly for interfaces defined in another assembly
+                var customConsumer = new CustomConsumer(channel);
+                customConsumer.Received += HandleEvent;
+                return customConsumer;
+            }
+            else
+            {
+                // Using the library type tests that interface integration methods work correctly for interfaces defined in the same assembly
+                var eventingBasicConsumer = new EventingBasicConsumer(channel);
+                eventingBasicConsumer.Received += HandleEvent;
+                return eventingBasicConsumer;
             }
         }
 
@@ -274,6 +293,63 @@ namespace Samples.RabbitMQ
                 }
 
                 return Enumerable.Empty<string>();
+            }
+        }
+
+        // Implement a custom consumer class whose implementation is nearly
+        // identical to the implementation of RabbitMQ.Client.Events.EventingBasicConsumer.
+        // This will test that we can properly instrument RabbitMQ.Client.IBasicConsumer.HandleBasicDeliver
+        class CustomConsumer : IBasicConsumer
+        {
+            private readonly DefaultBasicConsumer _consumer;
+            private readonly IModel _model;
+
+            public CustomConsumer(IModel model)
+            {
+                _consumer = new DefaultBasicConsumer(model);
+                _model = model;
+            }
+
+            public IModel Model => _model;
+
+            public event EventHandler<BasicDeliverEventArgs> Received;
+
+            public event EventHandler<ConsumerEventArgs> Registered;
+
+            public event EventHandler<ShutdownEventArgs> Shutdown;
+
+            public event EventHandler<ConsumerEventArgs> Unregistered;
+
+            public event EventHandler<ConsumerEventArgs> ConsumerCancelled;
+
+            public void HandleBasicCancel(string consumerTag)
+            {
+                _consumer.HandleBasicCancel(consumerTag);
+            }
+
+            public void HandleBasicCancelOk(string consumerTag)
+            {
+                _consumer.HandleBasicCancelOk(consumerTag);
+                Unregistered?.Invoke(this, new ConsumerEventArgs(new[] { consumerTag }));
+            }
+
+            public void HandleBasicConsumeOk(string consumerTag)
+            {
+                _consumer.HandleBasicConsumeOk(consumerTag);
+                Registered?.Invoke(this, new ConsumerEventArgs(new[] { consumerTag }));
+            }
+
+            public void HandleBasicDeliver(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IBasicProperties properties, ReadOnlyMemory<byte> body)
+            {
+                Received?.Invoke(
+                    this,
+                    new BasicDeliverEventArgs(consumerTag, deliveryTag, redelivered, exchange, routingKey, properties, body));
+            }
+
+            public void HandleModelShutdown(object model, ShutdownEventArgs reason)
+            {
+                _consumer.HandleModelShutdown(model, reason);
+                Shutdown?.Invoke(this, reason);
             }
         }
     }
