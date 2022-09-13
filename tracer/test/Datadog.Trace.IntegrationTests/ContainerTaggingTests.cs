@@ -4,10 +4,12 @@
 // </copyright>
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -25,24 +27,11 @@ namespace Datadog.Trace.IntegrationTests
         [SkippableFact]
         public async Task Http_Headers_Contain_ContainerId()
         {
-            string expectedContainedId = ContainerMetadata.GetContainerId();
-            string actualContainerId = null;
             var agentPort = TcpPortProvider.GetOpenPort();
 
             using (var agent = MockTracerAgent.Create(_output, agentPort))
             {
-                agent.RequestReceived += (sender, args) =>
-                {
-                    actualContainerId = args.Value.Request.Headers[AgentHttpHeaderNames.ContainerId];
-                };
-
-                var settings = new TracerSettings
-                {
-                    Exporter = new ExporterSettings()
-                    {
-                        AgentUri = new Uri($"http://localhost:{agent.Port}"),
-                    }
-                };
+                var settings = new TracerSettings { Exporter = new ExporterSettings() { AgentUri = new Uri($"http://localhost:{agent.Port}") } };
                 var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
 
                 using (var scope = tracer.StartActive("operationName"))
@@ -52,14 +41,21 @@ namespace Datadog.Trace.IntegrationTests
 
                 await tracer.FlushAsync();
 
-                var spans = agent.WaitForSpans(1);
-                Assert.Equal(1, spans.Count);
-                Assert.Equal(expectedContainedId, actualContainerId);
+                var spans = agent.WaitForSpans(count: 1);
+                Assert.Equal(expected: 1, spans.Count);
 
-                if (EnvironmentTools.IsWindows())
+                var headers = agent.TraceRequestHeaders.Should().ContainSingle().Subject;
+
+                var expectedContainedId = ContainerMetadata.GetContainerId();
+                if (expectedContainedId == null)
                 {
-                    // we don't extract the containerId on Windows (yet?)
-                    Assert.Null(actualContainerId);
+                    // we don't extract the containerId in some cases, such as when running on Windows.
+                    // In these cases, it should not appear in the headers at all.
+                    headers.AllKeys.Should().NotContain(AgentHttpHeaderNames.ContainerId);
+                }
+                else
+                {
+                    headers.AllKeys.ToDictionary(x => x, x => headers[x]).Should().Contain(AgentHttpHeaderNames.ContainerId, expectedContainedId);
                 }
             }
         }
