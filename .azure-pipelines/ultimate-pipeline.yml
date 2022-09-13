@@ -220,7 +220,7 @@ stages:
 
   - job: build
     pool:
-      vmImage: windows-2022
+      vmImage: windows-2019 # profiler doesn't build on windows-2022 currently: "The Windows SDK version 10.0.18362.0 was not found"
     steps:
     - template: steps/clone-repo.yml
       parameters:
