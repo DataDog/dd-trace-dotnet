@@ -139,9 +139,9 @@ namespace Datadog.Trace
                 {
                     SynchronizationContext.SetSynchronizationContext(context);
                 }
-                catch (MethodAccessException)
+                catch (MethodAccessException mae)
                 {
-                    // Access to security critical method has failed.
+                    Log.Warning(mae, "Access to security crital method SynchronizationContext.SetSynchronizationContext has failed.");
                 }
             }
         }
