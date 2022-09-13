@@ -1,5 +1,6 @@
 ﻿ARG DOTNETSDK_VERSION
-FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-alpine3.16 as base
+# YUK. Needs reverting to use the DOTNETSDK_VERSION once .NET 7 is GA
+FROM mcr.microsoft.com/dotnet/sdk:7.0.100-preview.7-alpine3.16 as base
 
 RUN apk update \
     && apk upgrade \

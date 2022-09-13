@@ -7,7 +7,7 @@ pr:
 
 # Global variables
 variables:
-  dotnetCoreSdkDockerVersion: 7.0.100-preview.7
+  dotnetCoreSdkLatestVersion: 7.0.100-preview.7.22377.5
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])] # required by update-github-status
   TargetBranch: $[variables['System.PullRequest.TargetBranch']]
 
