@@ -15,7 +15,6 @@ using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using System.Web;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
@@ -62,9 +61,6 @@ internal class IntelligentTestRunnerClient
         _getRepositoryUrlTask = GetRepositoryUrlAsync();
         _apiRequestFactory = CIVisibility.GetRequestFactory(_settings.TracerSettings.Build(), TimeSpan.FromSeconds(45));
 
-        var environment = TraceUtil.NormalizeTag(_settings.TracerSettings.Environment ?? string.Empty);
-        var serviceName = NormalizerTraceProcessor.NormalizeService(_settings.TracerSettings.ServiceName);
-
         var agentlessUrl = _settings.AgentlessUrl;
         if (!string.IsNullOrWhiteSpace(agentlessUrl))
         {
@@ -80,7 +76,7 @@ internal class IntelligentTestRunnerClient
 
             _skippableTestsUrl = new UriBuilder(agentlessUrl)
             {
-                Path = $"api/v2/ci/environment/{HttpUtility.UrlEncode(environment)}/service/{HttpUtility.UrlEncode(serviceName)}/tests/skippable"
+                Path = "api/v2/ci/tests/skippable"
             }.Uri;
         }
         else
@@ -101,7 +97,7 @@ internal class IntelligentTestRunnerClient
                 scheme: "https",
                 host: "api." + _settings.Site,
                 port: 443,
-                pathValue: $"api/v2/ci/environment/{HttpUtility.UrlEncode(environment)}/service/{HttpUtility.UrlEncode(serviceName)}/tests/skippable").Uri;
+                pathValue: "api/v2/ci/tests/skippable").Uri;
         }
     }
 
@@ -140,6 +136,9 @@ internal class IntelligentTestRunnerClient
         }
 
         currentSha = currentSha.Replace("\n", string.Empty);
+        var environment = TraceUtil.NormalizeTag(_settings.TracerSettings.Environment ?? string.Empty) ?? string.Empty;
+        var serviceName = NormalizerTraceProcessor.NormalizeService(_settings.TracerSettings.ServiceName) ?? string.Empty;
+
         var query = new DataEnvelope<Data<SkippableTestsQuery>>(
             new Data<SkippableTestsQuery>(
                 default,
@@ -147,6 +146,8 @@ internal class IntelligentTestRunnerClient
                 new SkippableTestsQuery(
                     repository,
                     currentSha,
+                    environment,
+                    serviceName,
                     new SkippableTestsConfigurations(
                         framework.OSPlatform,
                         Environment.OSVersion.VersionString,
@@ -540,13 +541,21 @@ internal class IntelligentTestRunnerClient
         [JsonProperty("sha")]
         public readonly string Sha;
 
+        [JsonProperty("env")]
+        public readonly string Environment;
+
+        [JsonProperty("service")]
+        public readonly string Service;
+
         [JsonProperty("configurations")]
         public readonly SkippableTestsConfigurations Configurations;
 
-        public SkippableTestsQuery(string repositoryUrl, string sha, SkippableTestsConfigurations configurations)
+        public SkippableTestsQuery(string repositoryUrl, string sha, string environment, string service, SkippableTestsConfigurations configurations)
         {
             RepositoryUrl = repositoryUrl;
             Sha = sha;
+            Environment = environment;
+            Service = service;
             Configurations = configurations;
         }
     }
