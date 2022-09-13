@@ -360,37 +360,71 @@ namespace Datadog.Trace.TestHelpers
             MetricsReceived?.Invoke(this, new EventArgs<string>(stats));
         }
 
-        private protected string HandleHttpRequest(MockHttpParser.MockHttpRequest request)
+        private protected MockTracerResponse HandleHttpRequest(MockHttpParser.MockHttpRequest request)
         {
+            string response;
+            int statusCode;
+            bool sendResponse;
+            var isTraceCommand = false;
+
             if (TelemetryEnabled && request.PathAndQuery.StartsWith("/" + TelemetryConstants.AgentTelemetryEndpoint))
             {
                 HandlePotentialTelemetryData(request);
-                return "{}";
+                response = "{}";
             }
             else if (request.PathAndQuery.EndsWith("/info"))
             {
-                return JsonConvert.SerializeObject(Configuration);
+                response = JsonConvert.SerializeObject(Configuration);
             }
             else if (request.PathAndQuery.StartsWith("/debugger/v1/input"))
             {
                 HandlePotentialDebuggerData(request);
-                return "{}";
+                response = "{}";
             }
             else if (request.PathAndQuery.StartsWith("/v0.6/stats"))
             {
                 HandlePotentialStatsData(request);
-                return "{}";
+                response = "{}";
             }
             else if (request.PathAndQuery.StartsWith("/v0.7/config"))
             {
                 HandlePotentialRemoteConfig(request);
-                return RcmResponse ?? "{}";
+                response = RcmResponse ?? "{}";
             }
             else
             {
                 HandlePotentialTraces(request);
-                return "{}";
+                response = "{}";
+                isTraceCommand = true;
             }
+
+            if (isTraceCommand)
+            {
+                statusCode = 200;
+                sendResponse = true;
+            }
+            else
+            {
+                if (behaviour == AgentBehaviour.WrongAnswer)
+                {
+                    response = "WRONG_ANSWER";
+                }
+
+                sendResponse = behaviour != AgentBehaviour.NoAnswer;
+                statusCode = behaviour == AgentBehaviour.Return500 ? 500 : (behaviour == AgentBehaviour.Return404 ? 404 : 200);
+            }
+
+            if (behaviour == AgentBehaviour.SlowAnswer)
+            {
+                System.Threading.Thread.Sleep(10000);
+            }
+
+            return new MockTracerResponse()
+            {
+                Response = response,
+                SendResponse = sendResponse,
+                StatusCode = statusCode
+            };
         }
 
         private void HandlePotentialTraces(MockHttpParser.MockHttpRequest request)
@@ -826,32 +860,14 @@ namespace Datadog.Trace.TestHelpers
                                 ctx.Response.AddHeader("Datadog-Agent-Version", Version);
                             }
 
-                            var response = HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request));
-                            var buffer = behaviour == AgentBehaviour.WrongAnswer ? Encoding.UTF8.GetBytes("WRONG DATA") : Encoding.UTF8.GetBytes(response);
+                            var mockTracerResponse = HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request));
 
-                            if (!ctx.Request.RawUrl.ToLower().Contains("/traces"))
+                            if (mockTracerResponse.SendResponse)
                             {
-                                if (behaviour == AgentBehaviour.Return404)
-                                {
-                                    ctx.Response.StatusCode = 404;
-                                }
-
-                                if (behaviour == AgentBehaviour.Return500)
-                                {
-                                    ctx.Response.StatusCode = 500;
-                                }
-                            }
-
-                            ctx.Response.ContentType = "application/json";
-                            ctx.Response.ContentLength64 = buffer.LongLength;
-
-                            if (behaviour == AgentBehaviour.SlowAnswer)
-                            {
-                                System.Threading.Thread.Sleep(120000);
-                            }
-
-                            if (behaviour != AgentBehaviour.NoAnswer)
-                            {
+                                var buffer = Encoding.UTF8.GetBytes(mockTracerResponse.Response);
+                                ctx.Response.StatusCode = mockTracerResponse.StatusCode;
+                                ctx.Response.ContentType = "application/json";
+                                ctx.Response.ContentLength64 = buffer.LongLength;
                                 ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
                             }
                         }
@@ -997,10 +1013,13 @@ namespace Datadog.Trace.TestHelpers
             private async Task HandleNamedPipeTraces(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
             {
                 var request = await MockHttpParser.ReadRequest(namedPipeServerStream);
-                var response = HandleHttpRequest(request);
+                var mockTracerResponse = HandleHttpRequest(request);
 
-                var responseBytes = GetResponseBytes(body: response);
-                await namedPipeServerStream.WriteAsync(responseBytes, offset: 0, count: responseBytes.Length);
+                if (mockTracerResponse.SendResponse)
+                {
+                    var responseBytes = GetResponseBytes(body: mockTracerResponse.Response);
+                    await namedPipeServerStream.WriteAsync(responseBytes, offset: 0, count: responseBytes.Length);
+                }
             }
 
             internal class PipeServer : IDisposable
@@ -1214,9 +1233,12 @@ namespace Datadog.Trace.TestHelpers
                         using var stream = new NetworkStream(handler);
 
                         var request = await MockHttpParser.ReadRequest(stream);
-                        var response = HandleHttpRequest(request);
+                        var mockTracerResponse = HandleHttpRequest(request);
 
-                        await stream.WriteAsync(GetResponseBytes(body: response));
+                        if (mockTracerResponse.SendResponse)
+                        {
+                            await stream.WriteAsync(GetResponseBytes(body: mockTracerResponse.Response));
+                        }
 
                         handler.Shutdown(SocketShutdown.Both);
                     }

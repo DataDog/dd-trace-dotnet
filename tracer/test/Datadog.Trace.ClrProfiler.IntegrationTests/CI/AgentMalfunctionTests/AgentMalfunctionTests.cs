@@ -32,13 +32,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [InlineData(AgentBehaviour.NoAnswer)]
-        [InlineData(AgentBehaviour.SlowAnswer)]
-        [InlineData(AgentBehaviour.WrongAnswer)]
-        [InlineData(AgentBehaviour.Return404)]
-        [InlineData(AgentBehaviour.Return500)]
-        public void SubmitsTraces(AgentBehaviour behaviour)
+        [InlineData(AgentBehaviour.NoAnswer, TestTransports.Tcp)]
+        [InlineData(AgentBehaviour.SlowAnswer, TestTransports.Tcp)]
+        [InlineData(AgentBehaviour.WrongAnswer, TestTransports.Tcp)]
+        [InlineData(AgentBehaviour.Return404, TestTransports.Tcp)]
+        [InlineData(AgentBehaviour.Return500, TestTransports.Tcp)]
+        [InlineData(AgentBehaviour.NoAnswer, TestTransports.WindowsNamedPipe)]
+        [InlineData(AgentBehaviour.SlowAnswer, TestTransports.WindowsNamedPipe)]
+        [InlineData(AgentBehaviour.WrongAnswer, TestTransports.WindowsNamedPipe)]
+        [InlineData(AgentBehaviour.Return404, TestTransports.WindowsNamedPipe)]
+        [InlineData(AgentBehaviour.Return500, TestTransports.WindowsNamedPipe)]
+#if NETCOREAPP3_1_OR_GREATER
+        [InlineData(AgentBehaviour.NoAnswer, TestTransports.Uds)]
+        [InlineData(AgentBehaviour.SlowAnswer, TestTransports.Uds)]
+        [InlineData(AgentBehaviour.WrongAnswer, TestTransports.Uds)]
+        [InlineData(AgentBehaviour.Return404, TestTransports.Uds)]
+        [InlineData(AgentBehaviour.Return500, TestTransports.Uds)]
+#endif
+        public void SubmitsTraces(AgentBehaviour behaviour, TestTransports transport)
         {
+            EnvironmentHelper.EnableTransport(transport);
             using var agent = EnvironmentHelper.GetMockAgent();
             agent.SetBehaviour(behaviour);
             TestInstrumentation(agent);
