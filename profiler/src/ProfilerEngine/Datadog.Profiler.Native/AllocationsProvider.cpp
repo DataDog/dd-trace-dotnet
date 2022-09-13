@@ -52,7 +52,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
         Log::Warn("Failed to walk stack for sampled allocation: ", HResultConverter::ToStringWithCode(hrCollectStack));
         return;
     }
-
+    result->SetUnixTimeUtc(GetCurrentTimestamp());
     result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
 
     RawAllocationSample rawSample;

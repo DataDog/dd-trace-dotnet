@@ -13,6 +13,7 @@ const std::string Sample::SpanIdLabel = "span id";
 const std::string Sample::ExceptionTypeLabel = "exception type";
 const std::string Sample::ExceptionMessageLabel = "exception message";
 const std::string Sample::AllocationClassLabel = "allocation class";
+const std::string Sample::TimestampLabel = "timestamp";
 
 Sample::Sample(uint64_t timestamp, std::string_view runtimeId, size_t framesCount) :
     Sample(runtimeId)
@@ -124,4 +125,9 @@ void Sample::SetThreadId(const std::string& tid)
 void Sample::SetThreadName(const std::string& name)
 {
     AddLabel(Label{ThreadNameLabel, name});
+}
+
+void Sample::SetTimestamp(const std::string& timestamp)
+{
+    AddLabel(Label{TimestampLabel, timestamp});
 }

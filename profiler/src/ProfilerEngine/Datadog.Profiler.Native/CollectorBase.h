@@ -93,6 +93,22 @@ public:
         return TransformRawSamples(input);
     }
 
+protected:
+    uint64_t GetCurrentTimestamp()
+    {
+        //// /!\ time function allocates so we *MUST* not call it while the thread is suspended
+        //time_t currentTime;
+        //time(&currentTime);
+
+        //if (currentTime == static_cast<time_t>(-1))
+        //{
+        //    currentTime = 0;
+        //}
+
+        //return currentTime;
+        return OpSysTools::GetHighPrecisionNanoseconds();
+    }
+
 private:
 
     std::list<TRawSample> FetchRawSamples()
@@ -132,6 +148,9 @@ private:
 
         // compute symbols for frames
         SetStack(rawSample, sample);
+
+        // timestamp is added as a special label
+        SetTimestamp(rawSample, sample);
 
         // allow inherited classes to add values and specific labels
         rawSample.OnTransform(sample);
@@ -185,6 +204,11 @@ private:
                 sample.AddFrame(moduleName, frame);
             }
         }
+    }
+
+    void SetTimestamp(const TRawSample& rawSample, Sample& sample)
+    {
+        sample.SetTimestamp(std::to_string(rawSample.Timestamp));
     }
 
 private:

@@ -350,7 +350,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
 
             if (isStackSnapshotSuccessful)
             {
-                UpdateSnapshotInfos(pStackSnapshotResult, duration, currentUnixTimestamp);
+                UpdateSnapshotInfos(pStackSnapshotResult, duration, thisSampleTimestampNanosecs /* currentUnixTimestamp*/);
                 pStackSnapshotResult->DetermineAppDomain(pThreadInfo->GetClrThreadId(), _pCorProfilerInfo);
             }
 

@@ -40,7 +40,7 @@ void ContentionProvider::OnContention(double contentionDuration)
         Log::Warn("Failed to walk stack for sampled contention: ", HResultConverter::ToStringWithCode(hrCollectStack));
         return;
     }
-
+    result->SetUnixTimeUtc(GetCurrentTimestamp());
     result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
 
     RawContentionSample rawSample;

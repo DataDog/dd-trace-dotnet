@@ -136,7 +136,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         Log::Warn("Failed to walk stack for thrown exception: ", HResultConverter::ToStringWithCode(hrCollectStack));
         return false;
     }
-
+    result->SetUnixTimeUtc(GetCurrentTimestamp());
     result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
 
     RawExceptionSample rawSample;

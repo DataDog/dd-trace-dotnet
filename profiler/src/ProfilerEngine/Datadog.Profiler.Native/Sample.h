@@ -106,6 +106,7 @@ public:
     void SetAppDomainName(const std::string& name);
     void SetThreadId(const std::string& tid);
     void SetThreadName(const std::string& name);
+    void SetTimestamp(const std::string& timestamp);
 
     // well known labels
 public:
@@ -118,6 +119,7 @@ public:
     static const std::string ExceptionTypeLabel;
     static const std::string ExceptionMessageLabel;
     static const std::string AllocationClassLabel;
+    static const std::string TimestampLabel;
 
 private:
     uint64_t _timestamp;
