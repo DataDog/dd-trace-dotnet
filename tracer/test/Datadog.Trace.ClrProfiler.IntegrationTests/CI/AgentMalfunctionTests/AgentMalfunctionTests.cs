@@ -33,13 +33,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [InlineData(AgentBehaviour.NoAnswer, TestTransports.Tcp)]
+        [InlineData(AgentBehaviour.SlowAnswer, TestTransports.Tcp)]
         [InlineData(AgentBehaviour.WrongAnswer, TestTransports.Tcp)]
         [InlineData(AgentBehaviour.Return404, TestTransports.Tcp)]
         [InlineData(AgentBehaviour.Return500, TestTransports.Tcp)]
         [InlineData(AgentBehaviour.NoAnswer, TestTransports.WindowsNamedPipe)]
+        [InlineData(AgentBehaviour.SlowAnswer, TestTransports.WindowsNamedPipe)]
         [InlineData(AgentBehaviour.WrongAnswer, TestTransports.WindowsNamedPipe)]
 #if NETCOREAPP3_1_OR_GREATER
         [InlineData(AgentBehaviour.NoAnswer, TestTransports.Uds)]
+        [InlineData(AgentBehaviour.SlowAnswer, TestTransports.Uds)]
         [InlineData(AgentBehaviour.WrongAnswer, TestTransports.Uds)]
 #endif
         public void SubmitsTraces(AgentBehaviour behaviour, TestTransports transport)
@@ -47,16 +50,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             EnvironmentHelper.EnableTransport(transport);
             using var agent = EnvironmentHelper.GetMockAgent();
             agent.SetBehaviour(behaviour);
-            TestInstrumentation(agent);
+            TestInstrumentation(agent, behaviour);
         }
 
-        private async void TestInstrumentation(MockTracerAgent agent)
+        private async void TestInstrumentation(MockTracerAgent agent, AgentBehaviour behaviour)
         {
             const int expectedSpanCount = 5;
             const string expectedOperationName = "command_execution";
 
             using var process = RunSampleAndWaitForExit(agent);
-            var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+
+            var timeout = behaviour == AgentBehaviour.SlowAnswer ? MockTracerAgent.SlowAnswerModeMiliseconds * 2 : 20000;
+
+            var spans = agent.WaitForSpans(expectedSpanCount, timeout, operationName: expectedOperationName);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(StackRegex, string.Empty);

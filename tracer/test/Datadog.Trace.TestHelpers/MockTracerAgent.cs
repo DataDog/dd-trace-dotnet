@@ -31,6 +31,8 @@ namespace Datadog.Trace.TestHelpers
 {
     public abstract class MockTracerAgent : IDisposable
     {
+        public const int SlowAnswerModeMiliseconds = 80000;
+
         private readonly CancellationTokenSource _cancellationTokenSource = new();
 
         private AgentBehaviour behaviour = AgentBehaviour.Normal;
@@ -415,7 +417,7 @@ namespace Datadog.Trace.TestHelpers
 
                 if (behaviour == AgentBehaviour.SlowAnswer)
                 {
-                    System.Threading.Thread.Sleep(120000);
+                    System.Threading.Thread.Sleep(SlowAnswerModeMiliseconds);
                 }
             }
 
