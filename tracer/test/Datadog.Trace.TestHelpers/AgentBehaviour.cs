@@ -33,7 +33,7 @@ namespace Datadog.Trace.TestHelpers
         RETURN_404 = 4,
 
         /// <summary>
-        /// The agent answers with 404 code
+        /// The agent answers with 500 code
         /// </summary>
         RETURN_500 = 5,
     }
