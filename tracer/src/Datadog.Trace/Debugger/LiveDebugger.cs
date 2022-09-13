@@ -149,7 +149,6 @@ namespace Datadog.Trace.Debugger
                 LifetimeManager.Instance.AddShutdownTask(() => _discoveryService.RemoveSubscription(DiscoveryCallback));
                 LifetimeManager.Instance.AddShutdownTask(_debuggerSink.Dispose);
                 LifetimeManager.Instance.AddShutdownTask(_probeStatusPoller.Dispose);
-                LifetimeManager.Instance.AddShutdownTask(_lineProbeResolver.OnDomainUnloaded);
             }
         }
 
