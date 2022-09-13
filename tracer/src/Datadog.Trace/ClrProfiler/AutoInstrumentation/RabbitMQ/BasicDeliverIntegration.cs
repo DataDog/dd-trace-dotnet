@@ -17,13 +17,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "RabbitMQ.Client",
-        TypeName = "RabbitMQ.Client.Events.EventingBasicConsumer",
+        TypeName = "RabbitMQ.Client.IBasicConsumer",
         MethodName = "HandleBasicDeliver",
         ReturnTypeName = ClrNames.Void,
         ParameterTypeNames = new[] { ClrNames.String, ClrNames.UInt64, ClrNames.Bool, ClrNames.String, ClrNames.String, RabbitMQConstants.IBasicPropertiesTypeName, ClrNames.Ignore },
         MinimumVersion = "3.6.9",
         MaximumVersion = "6.*.*",
-        IntegrationName = RabbitMQConstants.IntegrationName)]
+        IntegrationName = RabbitMQConstants.IntegrationName,
+        CallTargetIntegrationType = IntegrationType.Derived)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class BasicDeliverIntegration
