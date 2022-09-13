@@ -210,7 +210,7 @@ partial class Build
                    .When(Framework != null, settings => settings.SetFramework(Framework))
                    .SetProcessEnvironmentVariables(envVariables)
                    .SetIgnoreFilter(testDescription.TestsToIgnore)
-                   .WithMemoryDumpAfter(1)
+                   .WithMemoryDumpAfter(100)
                     ;
 
                 return x;

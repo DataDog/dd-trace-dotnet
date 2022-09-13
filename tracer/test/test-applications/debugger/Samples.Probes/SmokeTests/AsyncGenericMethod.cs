@@ -18,7 +18,7 @@ namespace Samples.Probes.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        [MethodProbeTestData]
+        [MethodProbeTestData(skip: true)]
         public async Task<string> Method<T>(T obj, string input)
         {
             var output = obj + input + ".";

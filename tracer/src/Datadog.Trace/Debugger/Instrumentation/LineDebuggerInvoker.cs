@@ -81,7 +81,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogException(Exception exception, ref LineDebuggerState state)
         {
-            Log.Error(exception, "Error caused by our instrumentation");
+            Log.Warning(exception, "Error caused by our instrumentation");
             state.IsActive = false;
         }
 
@@ -140,7 +140,10 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            state.SnapshotCreator.LineProbeEndReturn();
+            var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
+                                       state.MethodMetadataInfo.ParameterNames.Length > 0;
+            state.HasLocalsOrReturnValue = false;
+            state.SnapshotCreator.LineProbeEndReturn(hasArgumentsOrLocals);
             FinalizeSnapshot(ref state);
         }
 

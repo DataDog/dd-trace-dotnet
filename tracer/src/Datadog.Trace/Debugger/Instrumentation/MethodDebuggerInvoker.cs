@@ -235,7 +235,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogException(Exception exception, ref MethodDebuggerState state)
         {
-            Log.Error(exception, "Error caused by our instrumentation");
+            Log.Warning(exception, "Error caused by our instrumentation");
             state.IsActive = false;
         }
 

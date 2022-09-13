@@ -75,5 +75,144 @@
     },
     "message": "AsyncInstanceMethod+<Method>d__2.MoveNext(input=AsyncInstanceMethod.RunAsync): AsyncInstanceMethod.RunAsync.Method\r\n@return=AsyncInstanceMethod.RunAsync.Method, output=AsyncInstanceMethod.RunAsync.",
     "service": "Probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "21": {
+              "fields": {
+                "<>1__state": {
+                  "fields": null,
+                  "type": "Int32",
+                  "value": "-1"
+                },
+                "<>4__this": {
+                  "fields": {
+                    "ClassName": {
+                      "fields": null,
+                      "type": "String",
+                      "value": "AsyncInstanceMethod"
+                    }
+                  },
+                  "type": "AsyncInstanceMethod",
+                  "value": "AsyncInstanceMethod"
+                },
+                "<>dd_liveDebugger_isReEntryToMoveNext": {
+                  "fields": null,
+                  "type": "Boolean",
+                  "value": "True"
+                },
+                "<>t__builder": "ScrubbedValue",
+                "<>u__1": {
+                  "fields": {
+                    "m_task": {
+                      "fields": {
+                        "CompletedTask": {
+                          "fields": null,
+                          "type": "Task",
+                          "value": "Task"
+                        },
+                        "Factory": {
+                          "fields": null,
+                          "type": "TaskFactory",
+                          "value": "TaskFactory"
+                        },
+                        "s_asyncDebuggingEnabled": {
+                          "fields": null,
+                          "type": "Boolean",
+                          "value": "False"
+                        },
+                        "s_currentActiveTasks": {
+                          "fields": null,
+                          "type": "Dictionary`2",
+                          "value": "null"
+                        },
+                        "s_ecCallback": {
+                          "fields": null,
+                          "type": "ContextCallback",
+                          "value": "ContextCallback"
+                        },
+                        "s_taskCompletionSentinel": {
+                          "fields": null,
+                          "type": "Object",
+                          "value": "Object"
+                        },
+                        "s_taskIdCounter": "ScrubbedValue",
+                        "t_currentTask": {
+                          "fields": null,
+                          "type": "Task",
+                          "value": "null"
+                        }
+                      },
+                      "type": "Task",
+                      "value": "null"
+                    }
+                  },
+                  "type": "TaskAwaiter",
+                  "value": "TaskAwaiter"
+                },
+                "<output>5__1": {
+                  "fields": null,
+                  "type": "String",
+                  "value": "null"
+                },
+                "input": {
+                  "fields": null,
+                  "type": "String",
+                  "value": "AsyncInstanceMethod.RunAsync"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "AsyncInstanceMethod.cs",
+            "lines": [
+              21
+            ]
+          }
+        },
+        "stack": [
+          {
+            "function": "Samples.Probes.SmokeTests.AsyncInstanceMethod.Method",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Samples.Probes.SmokeTests.AsyncInstanceMethod.RunAsync",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "function": "Program.RunTest",
+            "lineNumber": "ScrubbedValue"
+          },
+          {
+            "fileName": "Program.cs",
+            "function": "Program+<>c__DisplayClass2_0.<Main>b__0",
+            "lineNumber": "ScrubbedValue"
+          }
+        ],
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "MoveNext",
+      "name": "Samples.Probes.SmokeTests.AsyncInstanceMethod+<Method>d__2",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "AsyncInstanceMethod+<Method>d__2.MoveNext()",
+    "service": "Probes"
   }
 ]

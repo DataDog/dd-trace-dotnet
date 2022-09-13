@@ -1029,21 +1029,14 @@ HRESULT DebuggerTokens::GetDebuggerLocals(void* rewriterWrapperPtr, ULONG* callT
     return S_OK;
 }
 
-mdFieldDef DebuggerTokens::GetIsFirstEntryToMoveNextFieldToken(const mdToken type)
+HRESULT DebuggerTokens::GetIsFirstEntryToMoveNextFieldToken(const mdToken type, mdFieldDef& token)
 {
     const ModuleMetadata* module_metadata = GetMetadata();
-    mdMemberRef rMembers;
     ULONG cTokens;
     HCORENUM henum = nullptr;
-    const HRESULT hr = module_metadata->metadata_import->EnumMembersWithName(
-        &henum, type, 
-        managed_profiler_debugger_is_first_entry_field_name.c_str(), &rMembers, 1, &cTokens);
+    const HRESULT hr = module_metadata->metadata_import->EnumFieldsWithName(
+        &henum, type, managed_profiler_debugger_is_first_entry_field_name.c_str(), &token, 1, &cTokens);
     module_metadata->metadata_import->CloseEnum(henum);
-    if (SUCCEEDED(hr))
-    {
-        return rMembers;
-    }
-    
-    return mdFieldDefNil;
+    return hr;
 }
 } // namespace debugger
