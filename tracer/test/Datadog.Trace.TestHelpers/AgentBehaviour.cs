@@ -18,13 +18,23 @@ namespace Datadog.Trace.TestHelpers
         NO_ANSWER = 1,
 
         /// <summary>
-        /// The agent answer after a long time
+        /// The agent answers after a long time
         /// </summary>
         SLOW_ANSWER = 2,
 
         /// <summary>
-        /// The agent answer with wrong data
+        /// The agent answers with wrong data
         /// </summary>
         WRONG_ANSWER = 3,
+
+        /// <summary>
+        /// The agent answers with 404 code
+        /// </summary>
+        RETURN_404 = 4,
+
+        /// <summary>
+        /// The agent answers with 404 code
+        /// </summary>
+        RETURN_500 = 5,
     }
 }

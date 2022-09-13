@@ -826,14 +826,20 @@ namespace Datadog.Trace.TestHelpers
                                 ctx.Response.AddHeader("Datadog-Agent-Version", Version);
                             }
 
-                            byte[] buffer;
-                            if (behaviour == AgentBehaviour.WRONG_ANSWER)
+                            var response = HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request));
+                            var buffer = behaviour == AgentBehaviour.WRONG_ANSWER ? Encoding.UTF8.GetBytes("WRONG DATA") : Encoding.UTF8.GetBytes(response);
+
+                            if (!ctx.Request.RawUrl.ToLower().Contains("/traces"))
                             {
-                                buffer = Encoding.UTF8.GetBytes("WRONG DATA");
-                            }
-                            else
-                            {
-                                buffer = Encoding.UTF8.GetBytes(HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request)));
+                                if (behaviour == AgentBehaviour.RETURN_404)
+                                {
+                                    ctx.Response.StatusCode = 404;
+                                }
+
+                                if (behaviour == AgentBehaviour.RETURN_500)
+                                {
+                                    ctx.Response.StatusCode = 500;
+                                }
                             }
 
                             ctx.Response.ContentType = "application/json";

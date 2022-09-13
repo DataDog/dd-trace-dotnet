@@ -59,6 +59,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             TestInstrumentation(agent);
         }
 
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public void SubmitsTracesWhenAgentReturns404()
+        {
+            using var agent = EnvironmentHelper.GetMockAgent();
+            agent.SetBehaviour(AgentBehaviour.RETURN_404);
+            TestInstrumentation(agent);
+        }
+
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public void SubmitsTracesWhenAgentReturns500()
+        {
+            using var agent = EnvironmentHelper.GetMockAgent();
+            agent.SetBehaviour(AgentBehaviour.RETURN_500);
+            TestInstrumentation(agent);
+        }
+
         private async void TestInstrumentation(MockTracerAgent agent)
         {
             const int expectedSpanCount = 5;
