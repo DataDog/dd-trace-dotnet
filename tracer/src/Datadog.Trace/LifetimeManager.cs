@@ -113,6 +113,10 @@ namespace Datadog.Trace
                     {
                         func().Wait(TaskTimeout);
                     }
+                    else
+                    {
+                        Log.Error("Hooks must be of Action or Func<Task> types.");
+                    }
                 }
             }
             catch (Exception ex)
