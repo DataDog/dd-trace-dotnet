@@ -412,11 +412,11 @@ namespace Datadog.Trace.TestHelpers
 
                 sendResponse = behaviour != AgentBehaviour.NoAnswer;
                 statusCode = behaviour == AgentBehaviour.Return500 ? 500 : (behaviour == AgentBehaviour.Return404 ? 404 : 200);
-            }
 
-            if (behaviour == AgentBehaviour.SlowAnswer)
-            {
-                System.Threading.Thread.Sleep(10000);
+                if (behaviour == AgentBehaviour.SlowAnswer)
+                {
+                    System.Threading.Thread.Sleep(120000);
+                }
             }
 
             return new MockTracerResponse()
@@ -865,7 +865,12 @@ namespace Datadog.Trace.TestHelpers
                             if (mockTracerResponse.SendResponse)
                             {
                                 var buffer = Encoding.UTF8.GetBytes(mockTracerResponse.Response);
-                                ctx.Response.StatusCode = mockTracerResponse.StatusCode;
+
+                                if (ctx.Response.StatusCode == 200)
+                                {
+                                    ctx.Response.StatusCode = mockTracerResponse.StatusCode;
+                                }
+
                                 ctx.Response.ContentType = "application/json";
                                 ctx.Response.ContentLength64 = buffer.LongLength;
                                 ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
