@@ -18,9 +18,12 @@ namespace Datadog.Trace.AppSec.Transports.Http
     internal class HttpTransport : ITransport
     {
         private const string WafKey = "waf";
+
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HttpTransport>();
+
+        private static bool _canReadHttpResponseHeaders = true;
+
         private readonly HttpContext _context;
-        private bool _canReadHttpResponseHeaders = true;
 
         public HttpTransport(HttpContext context) => _context = context;
 
@@ -56,7 +59,7 @@ namespace Datadog.Trace.AppSec.Transports.Http
                 catch (PlatformNotSupportedException ex)
                 {
                     // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
-                    Log.Error(ex, "Unable to access response headers when creating header tags. Disabling for the rest of the application lifetime.");
+                    Log.Warning(ex, "Unable to access response headers when creating header tags. Disabling for the rest of the application lifetime.");
                     _canReadHttpResponseHeaders = false;
                 }
                 catch (Exception ex)
@@ -72,6 +75,8 @@ namespace Datadog.Trace.AppSec.Transports.Http
         {
             _context.Items["block"] = true;
             var httpResponse = _context.Response;
+            httpResponse.Clear();
+            // httpResponse.Headers.Clear();
             httpResponse.StatusCode = 403;
 
             var template = templateJson;

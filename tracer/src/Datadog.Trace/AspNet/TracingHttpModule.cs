@@ -147,6 +147,9 @@ namespace Datadog.Trace.AspNet
                 var security = Security.Instance;
                 if (security.Settings.Enabled)
                 {
+                    security.InstrumentationGateway.RaiseRequestStart(httpContext, httpContext.Request, scope.Span);
+                    security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, (_) => { });
+
                     if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     {
                         var formData = new Dictionary<string, object>();
@@ -165,7 +168,10 @@ namespace Datadog.Trace.AspNet
             {
                 // Dispose here, as the scope won't be in context items and won't get disposed on request end in that case...
                 scope?.Dispose();
-                Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
+                if (ex is not BlockException)
+                {
+                    Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
+                }
             }
         }
 
@@ -249,7 +255,10 @@ namespace Datadog.Trace.AspNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
+                if (ex is not BlockException)
+                {
+                    Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
+                }
             }
         }
 
@@ -290,7 +299,10 @@ namespace Datadog.Trace.AspNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
+                if (ex is not BlockException)
+                {
+                    Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
+                }
             }
         }
 

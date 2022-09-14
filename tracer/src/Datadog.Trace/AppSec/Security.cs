@@ -5,6 +5,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -44,9 +46,7 @@ namespace Datadog.Trace.AppSec
         private AppSecRateLimiter _rateLimiter;
         private bool _enabled = false;
 
-#if NETFRAMEWORK
         private bool? _usingIntegratedPipeline = null;
-#endif
 
         static Security()
         {
@@ -349,6 +349,7 @@ namespace Datadog.Trace.AppSec
                 }
 
 #else
+                _usingIntegratedPipeline = false;
                 _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
 #endif
                 AddAppsecSpecificInstrumentations();
@@ -440,7 +441,10 @@ namespace Datadog.Trace.AppSec
         private void AddResponseHeaderTags(ITransport transport, Span span)
         {
             TryAddEndPoint(span);
-            var headers = transport.GetResponseHeaders();
+            var headers =
+                _usingIntegratedPipeline == false ?
+                    transport.GetResponseHeaders() :
+                    new NameValueHeadersCollection(new NameValueCollection());
             AddHeaderTags(span, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
         }
 
@@ -505,7 +509,8 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex) when (ex is not BlockException)
             {
-                Log.Error(ex, "Call into the security module failed");
+                var stack = new StackTrace();
+                Log.Error(ex, "Call into the security module failed. Current stack: " + stack);
             }
         }
 
