@@ -105,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 
         internal static void StartCoverage()
         {
-            if (CIVisibility.Settings.CodeCoverageEnabled)
+            if (CIVisibility.Settings.CodeCoverageEnabled == true)
             {
                 Ci.Coverage.CoverageReporter.Handler.StartSession();
             }
@@ -113,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 
         internal static void StopCoverage(Span span)
         {
-            if (CIVisibility.Settings.CodeCoverageEnabled && Ci.Coverage.CoverageReporter.Handler.EndSession() is Ci.Coverage.Models.CoveragePayload coveragePayload)
+            if (CIVisibility.Settings.CodeCoverageEnabled == true && Ci.Coverage.CoverageReporter.Handler.EndSession() is Ci.Coverage.Models.CoveragePayload coveragePayload)
             {
                 if (span is not null)
                 {

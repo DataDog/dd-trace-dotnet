@@ -378,7 +378,6 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Configuration key for enabling or disabling Code Coverage in CI Visibility.
-            /// Default value is false (disabled).
             /// </summary>
             public const string CodeCoverage = "DD_CIVISIBILITY_CODE_COVERAGE_ENABLED";
 
@@ -392,6 +391,11 @@ namespace Datadog.Trace.Configuration
             /// Default Value is false (disabled)
             /// </summary>
             public const string GitUploadEnabled = "DD_CIVISIBILITY_GIT_UPLOAD_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Intelligent Test Runner test skipping feature in CI Visibility
+            /// </summary>
+            public const string TestsSkippingEnabled = "DD_CIVISIBILITY_TESTSSKIPPING_ENABLED";
 
             /// <summary>
             /// Configuration key for enabling or disabling Intelligent Test Runner in CI Visibility

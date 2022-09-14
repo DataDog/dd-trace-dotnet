@@ -342,30 +342,64 @@ namespace Datadog.Trace.Ci
             try
             {
                 var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
+
+                // Upload the git metadata
                 await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
-                var skippeableTests = await itrClient.GetSkippableTestsAsync().ConfigureAwait(false);
-                Log.Information<int>("ITR: SkippableTests = {length}.", skippeableTests.Length);
 
-                var skippableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippableTest>>>();
-                foreach (var item in skippeableTests)
+                // If any DD_CIVISIBILITY_CODE_COVERAGE_ENABLED or DD_CIVISIBILITY_TESTSSKIPPING_ENABLED has not been set
+                // We query the settings api for those
+                if (_settings.CodeCoverageEnabled == null || _settings.TestsSkippingEnabled == null)
                 {
-                    if (!skippableTestsBySuiteAndName.TryGetValue(item.Suite, out var suite))
+                    var settings = await itrClient.GetSettingsAsync().ConfigureAwait(false);
+
+                    if (_settings.CodeCoverageEnabled == null && settings.CodeCoverage.HasValue)
                     {
-                        suite = new Dictionary<string, IList<SkippableTest>>();
-                        skippableTestsBySuiteAndName[item.Suite] = suite;
+                        Log.Information("ITR: Code Coverage has been changed to {value} by settings api.", settings.CodeCoverage.Value);
+                        _settings.SetCodeCoverageEnabled(settings.CodeCoverage.Value);
                     }
 
-                    if (!suite.TryGetValue(item.Name, out var name))
+                    if (_settings.TestsSkippingEnabled == null && settings.TestsSkipping.HasValue)
                     {
-                        name = new List<SkippableTest>();
-                        suite[item.Name] = name;
+                        Log.Information("ITR: Tests Skipping has been changed to {value} by settings api.", settings.TestsSkipping.Value);
+                        _settings.SetTestsSkippingEnabled(settings.TestsSkipping.Value);
                     }
-
-                    name.Add(item);
                 }
 
-                _skippableTestsBySuiteAndName = skippableTestsBySuiteAndName;
-                Log.Debug<int>("ITR: SkippableTests dictionary has been built.", skippeableTests.Length);
+                // Log code coverage status
+                Log.Information(_settings.CodeCoverageEnabled == true ? "ITR: Tests code coverage is enabled." : "ITR: Tests code coverage is disabled.");
+
+                // If the tests skipping feature is enabled we query the api for the tests we have to skip
+                if (_settings.TestsSkippingEnabled == true)
+                {
+                    var skippeableTests = await itrClient.GetSkippableTestsAsync().ConfigureAwait(false);
+                    Log.Information<int>("ITR: SkippableTests = {length}.", skippeableTests.Length);
+
+                    var skippableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippableTest>>>();
+                    foreach (var item in skippeableTests)
+                    {
+                        if (!skippableTestsBySuiteAndName.TryGetValue(item.Suite, out var suite))
+                        {
+                            suite = new Dictionary<string, IList<SkippableTest>>();
+                            skippableTestsBySuiteAndName[item.Suite] = suite;
+                        }
+
+                        if (!suite.TryGetValue(item.Name, out var name))
+                        {
+                            name = new List<SkippableTest>();
+                            suite[item.Name] = name;
+                        }
+
+                        name.Add(item);
+                    }
+
+                    _skippableTestsBySuiteAndName = skippableTestsBySuiteAndName;
+                    Log.Debug<int>("ITR: SkippableTests dictionary has been built.", skippeableTests.Length);
+                }
+                else
+                {
+                    Log.Information("ITR: Tests skipping is disabled.");
+                    _skippableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippableTest>>>();
+                }
             }
             catch (Exception ex)
             {

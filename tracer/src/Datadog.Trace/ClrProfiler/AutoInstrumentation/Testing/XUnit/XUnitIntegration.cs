@@ -137,7 +137,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
         internal static bool ShouldSkip(ref TestRunnerStruct runnerInstance)
         {
-            if (!CIVisibility.Settings.IntelligentTestRunnerEnabled)
+            if (CIVisibility.Settings.IntelligentTestRunnerEnabled != true)
             {
                 return false;
             }

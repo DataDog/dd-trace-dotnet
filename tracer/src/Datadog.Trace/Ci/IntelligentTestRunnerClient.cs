@@ -38,6 +38,7 @@ internal class IntelligentTestRunnerClient
 
     private const string CommitType = "commit";
     private const string TestParamsType = "test_params";
+    private const string SettingsType = "ci_app_test_service_libraries_settings";
 
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IntelligentTestRunnerClient));
     private static readonly Regex ShaRegex = new Regex("[0-9a-f]+", RegexOptions.Compiled);
@@ -46,11 +47,16 @@ internal class IntelligentTestRunnerClient
     private readonly string _id;
     private readonly CIVisibilitySettings _settings;
     private readonly string _workingDirectory;
+    private readonly string _environment;
+    private readonly string _serviceName;
     private readonly IApiRequestFactory _apiRequestFactory;
+    private readonly Uri _settingsUrl;
     private readonly Uri _searchCommitsUrl;
     private readonly Uri _packFileUrl;
     private readonly Uri _skippableTestsUrl;
     private readonly Task<string> _getRepositoryUrlTask;
+    private readonly Task<string> _getBranchNameTask;
+    private readonly Task<string?> _getShaTask;
 
     public IntelligentTestRunnerClient(string workingDirectory, CIVisibilitySettings? settings = null)
     {
@@ -58,12 +64,21 @@ internal class IntelligentTestRunnerClient
         _settings = settings ?? CIVisibility.Settings;
 
         _workingDirectory = workingDirectory;
+        _environment = TraceUtil.NormalizeTag(_settings.TracerSettings.Environment ?? string.Empty) ?? string.Empty;
+        _serviceName = NormalizerTraceProcessor.NormalizeService(_settings.TracerSettings.ServiceName) ?? string.Empty;
         _getRepositoryUrlTask = GetRepositoryUrlAsync();
+        _getBranchNameTask = GetBranchNameAsync();
+        _getShaTask = ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse HEAD", _workingDirectory));
         _apiRequestFactory = CIVisibility.GetRequestFactory(_settings.TracerSettings.Build(), TimeSpan.FromSeconds(45));
 
         var agentlessUrl = _settings.AgentlessUrl;
         if (!string.IsNullOrWhiteSpace(agentlessUrl))
         {
+            _settingsUrl = new UriBuilder(agentlessUrl)
+            {
+                Path = "api/v2/libraries/tests/services/setting"
+            }.Uri;
+
             _searchCommitsUrl = new UriBuilder(agentlessUrl)
             {
                 Path = "api/v2/git/repository/search_commits"
@@ -81,6 +96,12 @@ internal class IntelligentTestRunnerClient
         }
         else
         {
+            _settingsUrl = new UriBuilder(
+                scheme: "https",
+                host: "api." + _settings.Site,
+                port: 443,
+                pathValue: "api/v2/libraries/tests/services/setting").Uri;
+
             _searchCommitsUrl = new UriBuilder(
                 scheme: "https",
                 host: "api." + _settings.Site,
@@ -123,12 +144,77 @@ internal class IntelligentTestRunnerClient
         return await SendObjectsPackFileAsync(localCommits[0], remoteCommitsData).ConfigureAwait(false);
     }
 
+    public async Task<SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false)
+    {
+        Log.Debug("ITR: Getting settings...");
+        var framework = FrameworkDescription.Instance;
+        var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
+        var branchName = await _getBranchNameTask.ConfigureAwait(false);
+        var currentSha = await _getShaTask.ConfigureAwait(false);
+        if (currentSha is null)
+        {
+            Log.Warning("ITR: 'git rev-parse HEAD' command is null");
+            return default;
+        }
+
+        currentSha = currentSha.Replace("\n", string.Empty);
+
+        var query = new DataEnvelope<Data<SettingsQuery>>(
+            new Data<SettingsQuery>(
+                currentSha,
+                SettingsType,
+                new SettingsQuery(
+                    _serviceName,
+                    _environment,
+                    repository,
+                    branchName,
+                    currentSha,
+                    new TestsConfigurations(
+                        framework.OSPlatform,
+                        Environment.OSVersion.VersionString,
+                        framework.OSArchitecture,
+                        skipFrameworkInfo ? null : framework.Name,
+                        skipFrameworkInfo ? null : framework.ProductVersion,
+                        skipFrameworkInfo ? null : framework.ProcessArchitecture))),
+            default);
+        var jsonQuery = JsonConvert.SerializeObject(query, SerializerSettings);
+        var jsonQueryBytes = Encoding.UTF8.GetBytes(jsonQuery);
+        Log.Debug("ITR: JSON RQ = {json}", jsonQuery);
+
+        return await WithRetries(InternalGetSettingsAsync, jsonQueryBytes, MaxRetries).ConfigureAwait(false);
+
+        async Task<SettingsResponse> InternalGetSettingsAsync(byte[] state, bool finalTry)
+        {
+            var request = _apiRequestFactory.Create(_settingsUrl);
+            request.AddHeader(ApiKeyHeader, _settings.ApiKey);
+            request.AddHeader(ApplicationKeyHeader, _settings.ApplicationKey);
+            request.AddHeader(HttpHeaderNames.TraceId, _id);
+            request.AddHeader(HttpHeaderNames.ParentId, _id);
+            Log.Debug("ITR: Getting settings from: {url}", _settingsUrl.ToString());
+            var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+            var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+            if (response.StatusCode is < 200 or >= 300 && response.StatusCode != 404)
+            {
+                if (finalTry)
+                {
+                    Log.Error<int, string>("Failed to get settings with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
+                }
+
+                throw new WebException($"Status: {response.StatusCode}, Content: {responseContent}");
+            }
+
+            Log.Debug("ITR: JSON RS = {json}", responseContent);
+            var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<SettingsResponse>?>>(responseContent);
+            return deserializedResult.Data?.Attributes ?? default;
+        }
+    }
+
     public async Task<SkippableTest[]> GetSkippableTestsAsync()
     {
         Log.Debug("ITR: Getting skippable tests...");
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-        var currentSha = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse HEAD", _workingDirectory)).ConfigureAwait(false);
+        var currentSha = await _getShaTask.ConfigureAwait(false);
         if (currentSha is null)
         {
             Log.Warning("ITR: 'git rev-parse HEAD' command is null");
@@ -136,19 +222,17 @@ internal class IntelligentTestRunnerClient
         }
 
         currentSha = currentSha.Replace("\n", string.Empty);
-        var environment = TraceUtil.NormalizeTag(_settings.TracerSettings.Environment ?? string.Empty) ?? string.Empty;
-        var serviceName = NormalizerTraceProcessor.NormalizeService(_settings.TracerSettings.ServiceName) ?? string.Empty;
 
         var query = new DataEnvelope<Data<SkippableTestsQuery>>(
             new Data<SkippableTestsQuery>(
                 default,
                 TestParamsType,
                 new SkippableTestsQuery(
+                    _serviceName,
+                    _environment,
                     repository,
                     currentSha,
-                    environment,
-                    serviceName,
-                    new SkippableTestsConfigurations(
+                    new TestsConfigurations(
                         framework.OSPlatform,
                         Environment.OSVersion.VersionString,
                         framework.OSArchitecture,
@@ -473,15 +557,27 @@ internal class IntelligentTestRunnerClient
         return gitOutput.Replace("\n", string.Empty);
     }
 
+    private async Task<string> GetBranchNameAsync()
+    {
+        var gitOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "branch --show-current", _workingDirectory)).ConfigureAwait(false);
+        if (gitOutput is null)
+        {
+            Log.Warning("ITR: 'git branch --show-current' command is null");
+            return string.Empty;
+        }
+
+        return gitOutput.Replace("\n", string.Empty);
+    }
+
     private readonly struct DataEnvelope<T>
     {
         [JsonProperty("data")]
-        public readonly T Data;
+        public readonly T? Data;
 
         [JsonProperty("meta")]
         public readonly Metadata? Meta;
 
-        public DataEnvelope(T data, string? repositoryUrl)
+        public DataEnvelope(T? data, string? repositoryUrl)
         {
             Data = data;
             Meta = repositoryUrl is null ? default(Metadata?) : new Metadata(repositoryUrl);
@@ -535,32 +631,63 @@ internal class IntelligentTestRunnerClient
 
     private readonly struct SkippableTestsQuery
     {
+        [JsonProperty("service")]
+        public readonly string Service;
+
+        [JsonProperty("env")]
+        public readonly string Environment;
+
         [JsonProperty("repository_url")]
         public readonly string RepositoryUrl;
 
         [JsonProperty("sha")]
         public readonly string Sha;
 
-        [JsonProperty("env")]
-        public readonly string Environment;
-
-        [JsonProperty("service")]
-        public readonly string Service;
-
         [JsonProperty("configurations")]
-        public readonly SkippableTestsConfigurations Configurations;
+        public readonly TestsConfigurations Configurations;
 
-        public SkippableTestsQuery(string repositoryUrl, string sha, string environment, string service, SkippableTestsConfigurations configurations)
+        public SkippableTestsQuery(string service, string environment, string repositoryUrl, string sha, TestsConfigurations configurations)
         {
+            Service = service;
+            Environment = environment;
             RepositoryUrl = repositoryUrl;
             Sha = sha;
-            Environment = environment;
-            Service = service;
             Configurations = configurations;
         }
     }
 
-    private readonly struct SkippableTestsConfigurations
+    private readonly struct SettingsQuery
+    {
+        [JsonProperty("service")]
+        public readonly string Service;
+
+        [JsonProperty("env")]
+        public readonly string Environment;
+
+        [JsonProperty("repository_url")]
+        public readonly string RepositoryUrl;
+
+        [JsonProperty("branch")]
+        public readonly string Branch;
+
+        [JsonProperty("sha")]
+        public readonly string Sha;
+
+        [JsonProperty("configurations")]
+        public readonly TestsConfigurations Configurations;
+
+        public SettingsQuery(string service, string environment, string repositoryUrl, string branch, string sha, TestsConfigurations configurations)
+        {
+            Service = service;
+            Environment = environment;
+            RepositoryUrl = repositoryUrl;
+            Branch = branch;
+            Sha = sha;
+            Configurations = configurations;
+        }
+    }
+
+    private readonly struct TestsConfigurations
     {
         [JsonProperty(CommonTags.OSPlatform)]
         public readonly string OSPlatform;
@@ -572,15 +699,15 @@ internal class IntelligentTestRunnerClient
         public readonly string OSArchitecture;
 
         [JsonProperty(CommonTags.RuntimeName)]
-        public readonly string RuntimeName;
+        public readonly string? RuntimeName;
 
         [JsonProperty(CommonTags.RuntimeVersion)]
-        public readonly string RuntimeVersion;
+        public readonly string? RuntimeVersion;
 
         [JsonProperty(CommonTags.RuntimeArchitecture)]
-        public readonly string RuntimeArchitecture;
+        public readonly string? RuntimeArchitecture;
 
-        public SkippableTestsConfigurations(string osPlatform, string osVersion, string osArchitecture, string runtimeName, string runtimeVersion, string runtimeArchitecture)
+        public TestsConfigurations(string osPlatform, string osVersion, string osArchitecture, string?runtimeName, string? runtimeVersion, string? runtimeArchitecture)
         {
             OSPlatform = osPlatform;
             OSVersion = osVersion;
@@ -589,5 +716,14 @@ internal class IntelligentTestRunnerClient
             RuntimeVersion = runtimeVersion;
             RuntimeArchitecture = runtimeArchitecture;
         }
+    }
+
+    public readonly struct SettingsResponse
+    {
+        [JsonProperty("code_coverage")]
+        public readonly bool? CodeCoverage;
+
+        [JsonProperty("tests_skipping")]
+        public readonly bool? TestsSkipping;
     }
 }

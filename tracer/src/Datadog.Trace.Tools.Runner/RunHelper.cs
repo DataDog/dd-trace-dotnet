@@ -51,6 +51,7 @@ namespace Datadog.Trace.Tools.Runner
                 var ciVisibilitySettings = Ci.Configuration.CIVisibilitySettings.FromDefaultSources();
                 var agentless = ciVisibilitySettings.Agentless;
                 var apiKey = ciVisibilitySettings.ApiKey;
+                var applicationKey = ciVisibilitySettings.ApplicationKey;
 
                 profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
                 if (!string.IsNullOrEmpty(ciSettings?.ApiKey))
@@ -74,7 +75,20 @@ namespace Datadog.Trace.Tools.Runner
                     return 1;
                 }
 
-                if (ciVisibilitySettings.CodeCoverageEnabled)
+                var enableCodeCoverage = ciVisibilitySettings.CodeCoverageEnabled == true || ciVisibilitySettings.TestsSkippingEnabled == true;
+
+                // If we have api and application key, and the code coverage or the tests skippeable environment variables
+                // are not set when the intelligent test runner is enabled, we query the settings api to check if it should enable coverage or not.
+                if (!string.IsNullOrEmpty(apiKey) && !string.IsNullOrEmpty(applicationKey) && ciVisibilitySettings.IntelligentTestRunnerEnabled &&
+                    (ciVisibilitySettings.CodeCoverageEnabled == null || ciVisibilitySettings.TestsSkippingEnabled == null))
+                {
+                    var itrClient = new Ci.IntelligentTestRunnerClient(Ci.CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings);
+                    // we should skip the framework info because we are interested in the target projects info not the runner one.
+                    var itrSettings = itrClient.GetSettingsAsync(skipFrameworkInfo: true).GetAwaiter().GetResult();
+                    enableCodeCoverage = itrSettings.CodeCoverage == true || itrSettings.TestsSkipping == true;
+                }
+
+                if (enableCodeCoverage)
                 {
                     // Check if we are running dotnet process
                     if (string.Equals(args[0], "dotnet", StringComparison.OrdinalIgnoreCase) ||

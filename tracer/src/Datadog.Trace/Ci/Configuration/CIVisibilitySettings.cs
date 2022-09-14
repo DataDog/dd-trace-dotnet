@@ -34,8 +34,11 @@ namespace Datadog.Trace.Ci.Configuration
             // Intelligent Test Runner
             IntelligentTestRunnerEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.IntelligentTestRunnerEnabled) ?? false;
 
+            // Tests skipping
+            TestsSkippingEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.TestsSkippingEnabled);
+
             // Code coverage
-            CodeCoverageEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.CodeCoverage) ?? IntelligentTestRunnerEnabled;
+            CodeCoverageEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.CodeCoverage);
             CodeCoverageSnkFilePath = source?.GetString(ConfigurationKeys.CIVisibility.CodeCoverageSnkFile);
 
             // Git upload
@@ -95,7 +98,7 @@ namespace Datadog.Trace.Ci.Configuration
         /// <summary>
         /// Gets a value indicating whether the Code Coverage is enabled.
         /// </summary>
-        public bool CodeCoverageEnabled { get; }
+        public bool? CodeCoverageEnabled { get; private set; }
 
         /// <summary>
         /// Gets the snk filepath to re-signing assemblies after the code coverage modification.
@@ -106,6 +109,11 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets a value indicating whether the Git Upload metadata is going to be used.
         /// </summary>
         public bool GitUploadEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the Intelligent Test Runner Tests skipping feature is enabled.
+        /// </summary>
+        public bool? TestsSkippingEnabled { get; private set; }
 
         /// <summary>
         /// Gets a value indicating whether the Intelligent Test Runner is enabled.
@@ -121,6 +129,16 @@ namespace Datadog.Trace.Ci.Configuration
         {
             var source = GlobalSettings.CreateDefaultConfigurationSource();
             return new CIVisibilitySettings(source);
+        }
+
+        internal void SetCodeCoverageEnabled(bool value)
+        {
+            CodeCoverageEnabled = value;
+        }
+
+        internal void SetTestsSkippingEnabled(bool value)
+        {
+            TestsSkippingEnabled = value;
         }
 
         private TracerSettings InitializeTracerSettings()
