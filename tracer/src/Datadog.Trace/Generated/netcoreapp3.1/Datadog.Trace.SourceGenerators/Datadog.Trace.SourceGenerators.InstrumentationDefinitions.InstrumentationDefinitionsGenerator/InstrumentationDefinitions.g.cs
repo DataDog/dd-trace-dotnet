@@ -12,8 +12,10 @@ namespace Datadog.Trace.ClrProfiler
     {
         private static IDictionary<InstrumentationCategory, Payload> Instrumentations = new Dictionary<InstrumentationCategory, Payload>();
         private static IDictionary<InstrumentationCategory, Payload> DerivedInstrumentations = new Dictionary<InstrumentationCategory, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> InterfaceInstrumentations = new Dictionary<InstrumentationCategory, Payload>();
         private static IEnumerable<NativeCallTargetDefinition> InstrumentationsNatives = new List<NativeCallTargetDefinition>();
         private static IEnumerable<NativeCallTargetDefinition> DerivedInstrumentationsNatives = new List<NativeCallTargetDefinition>();
+        private static IEnumerable<NativeCallTargetDefinition> InterfaceInstrumentationsNatives = new List<NativeCallTargetDefinition>();
 
         static InstrumentationDefinitions()
         {
@@ -447,6 +449,28 @@ namespace Datadog.Trace.ClrProfiler
             DerivedInstrumentations.Add(InstrumentationCategory.AppSec, payload);
             DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
             
+            // interface types for InstrumentationCategory Tracing
+            payload = new Payload
+            {
+                DefinitionsId = "6410E14A2A2343BABBB45940190E1C3F",
+                Definitions = new NativeCallTargetDefinition[]
+                {
+                }
+            };
+            InterfaceInstrumentations.Add(InstrumentationCategory.Tracing, payload);
+            InterfaceInstrumentationsNatives = InterfaceInstrumentationsNatives.Concat(payload.Definitions);
+            
+            // interface types for InstrumentationCategory AppSec
+            payload = new Payload
+            {
+                DefinitionsId = "ED012C3038C94D4FBE65900C7C29DD16",
+                Definitions = new NativeCallTargetDefinition[]
+                {
+                }
+            };
+            InterfaceInstrumentations.Add(InstrumentationCategory.AppSec, payload);
+            InterfaceInstrumentationsNatives = InterfaceInstrumentationsNatives.Concat(payload.Definitions);
+            
         }
 
         private static Payload GetDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
@@ -454,6 +478,9 @@ namespace Datadog.Trace.ClrProfiler
 
         private static Payload GetDerivedDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
             => DerivedInstrumentations[instrumentationCategory];
+
+        private static Payload GetInterfaceDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => InterfaceInstrumentations[instrumentationCategory];
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
             string? integrationTypeName, System.Type targetType)

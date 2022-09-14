@@ -15,6 +15,7 @@ namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions
     {
         private const string InstrumentationsCollectionName = "Instrumentations";
         private const string DerivedInstrumentationsCollectionName = "DerivedInstrumentations";
+        private const string InterfaceInstrumentationsCollectionName = "InterfaceInstrumentations";
 
         public static string CreateCallTargetDefinitions(IReadOnlyCollection<CallTargetDefinitionSource> definitions)
         {
@@ -33,8 +34,10 @@ namespace Datadog.Trace.ClrProfiler
     {{
         private static IDictionary<InstrumentationCategory, Payload> {InstrumentationsCollectionName} = new Dictionary<InstrumentationCategory, Payload>();
         private static IDictionary<InstrumentationCategory, Payload> {DerivedInstrumentationsCollectionName} = new Dictionary<InstrumentationCategory, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> {InterfaceInstrumentationsCollectionName} = new Dictionary<InstrumentationCategory, Payload>();
         private static IEnumerable<NativeCallTargetDefinition> {InstrumentationsCollectionName}Natives = new List<NativeCallTargetDefinition>();
         private static IEnumerable<NativeCallTargetDefinition> {DerivedInstrumentationsCollectionName}Natives = new List<NativeCallTargetDefinition>();
+        private static IEnumerable<NativeCallTargetDefinition> {InterfaceInstrumentationsCollectionName}Natives = new List<NativeCallTargetDefinition>();
 
         static InstrumentationDefinitions()
         {{
@@ -78,7 +81,7 @@ namespace Datadog.Trace.ClrProfiler
 
             // only derived types
             integrationName = null;
-            filteredDefs = orderedDefinitions.Where(o => o.IntegrationType != 0);
+            filteredDefs = orderedDefinitions.Where(o => o.IntegrationType == 1);
             foreach (var name in enumNames)
             {
                 var enumDefinitions = filteredDefs.Where(d => d.InstrumentationCategory == (InstrumentationCategory)Enum.Parse(enumType, name));
@@ -103,6 +106,33 @@ namespace Datadog.Trace.ClrProfiler
             ");
             }
 
+            // only interface types
+            integrationName = null;
+            filteredDefs = orderedDefinitions.Where(o => o.IntegrationType == 2);
+            foreach (var name in enumNames)
+            {
+                var enumDefinitions = filteredDefs.Where(d => d.InstrumentationCategory == (InstrumentationCategory)Enum.Parse(enumType, name));
+                var defAttri = enumType.GetField(name).GetCustomAttributes(false).OfType<DefinitionsIdAttribute>().Single();
+                sb.Append(@$"
+            // interface types for InstrumentationCategory {name}
+            payload = new Payload
+            {{
+                DefinitionsId = ""{defAttri.InterfaceDefinitionsId}"",
+                Definitions = new NativeCallTargetDefinition[]
+                {{");
+                foreach (var definition in enumDefinitions)
+                {
+                    integrationName = WriteDefinition(definition, integrationName, sb);
+                }
+
+                sb.Append($@"
+                }}
+            }};
+            {InterfaceInstrumentationsCollectionName}.Add(InstrumentationCategory.{name}, payload);
+            {InterfaceInstrumentationsCollectionName}Natives = {InterfaceInstrumentationsCollectionName}Natives.Concat(payload.Definitions);
+            ");
+            }
+
             sb.Append(@"
         }
 
@@ -111,6 +141,9 @@ namespace Datadog.Trace.ClrProfiler
 
         private static Payload GetDerivedDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
             => DerivedInstrumentations[instrumentationCategory];
+
+        private static Payload GetInterfaceDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => InterfaceInstrumentations[instrumentationCategory];
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
             string? integrationTypeName, System.Type targetType)
