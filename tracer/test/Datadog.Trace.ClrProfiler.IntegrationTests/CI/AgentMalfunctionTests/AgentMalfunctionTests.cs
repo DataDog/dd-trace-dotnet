@@ -42,15 +42,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [InlineData(AgentBehaviour.NoAnswer, TestTransports.Uds)]
         [InlineData(AgentBehaviour.WrongAnswer, TestTransports.Uds)]
 #endif
-        public void SubmitsTraces(AgentBehaviour behaviour, TestTransports transport)
+        public void SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType)
         {
-            EnvironmentHelper.EnableTransport(transport);
+            if (transportType == TestTransports.WindowsNamedPipe && !EnvironmentTools.IsWindows())
+            {
+                throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+            }
+
+            EnvironmentHelper.EnableTransport(transportType);
             using var agent = EnvironmentHelper.GetMockAgent();
             agent.SetBehaviour(behaviour);
-            TestInstrumentation(agent, behaviour);
+            TestInstrumentation(agent);
         }
 
-        private async void TestInstrumentation(MockTracerAgent agent, AgentBehaviour behaviour)
+        private async void TestInstrumentation(MockTracerAgent agent)
         {
             const int expectedSpanCount = 5;
             const string expectedOperationName = "command_execution";
