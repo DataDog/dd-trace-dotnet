@@ -6,15 +6,16 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal class ProductConfigChangedEventArgs : EventArgs
     {
-        private readonly IEnumerable<byte[]> _configContents;
+        private readonly IEnumerable<RemoteConfiguration> _configContents;
 
-        public ProductConfigChangedEventArgs(IEnumerable<byte[]> configContents)
+        public ProductConfigChangedEventArgs(IEnumerable<RemoteConfiguration> configContents)
         {
             _configContents = configContents;
         }
@@ -23,11 +24,26 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         {
             foreach (var configContent in _configContents)
             {
-                using var stream = new MemoryStream(configContent);
+                using var stream = new MemoryStream(configContent.Contents);
                 using var streamReader = new StreamReader(stream);
                 using var jsonReader = new JsonTextReader(streamReader);
                 yield return JsonSerializer.CreateDefault().Deserialize<T>(jsonReader);
             }
+        }
+
+        public IDictionary<string, T> GetDeserializedConfigurationsByPath<T>()
+        {
+            var dic = new Dictionary<string, T>(_configContents.Count());
+            foreach (var configContent in _configContents)
+            {
+                using var stream = new MemoryStream(configContent.Contents);
+                using var streamReader = new StreamReader(stream);
+                using var jsonReader = new JsonTextReader(streamReader);
+                dic.Add(configContent.Path.Path, JsonSerializer.CreateDefault().Deserialize<T>(jsonReader));
+                stream.Seek(0, SeekOrigin.Begin);
+            }
+
+            return dic;
         }
     }
 }

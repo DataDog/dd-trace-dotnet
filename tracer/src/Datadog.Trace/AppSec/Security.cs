@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Transports;
 using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
@@ -45,6 +46,7 @@ namespace Datadog.Trace.AppSec
         private IWaf _waf;
         private AppSecRateLimiter _rateLimiter;
         private bool _enabled = false;
+        private IDictionary<string, Payload> _asmDataConfigs;
 
 #if NETFRAMEWORK
         private bool? _usingIntegratedPipeline = null;
@@ -264,8 +266,14 @@ namespace Datadog.Trace.AppSec
 
         private void AsmDataProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
-            var res = e.GetDeserializedConfigurations<JToken>();
-            _waf.UpdateRules(res);
+            _asmDataConfigs ??= new Dictionary<string, Payload>();
+            var asmDataConfigs = e.GetDeserializedConfigurationsByPath<Payload>();
+            foreach (var asmDataConfig in asmDataConfigs)
+            {
+                _asmDataConfigs[asmDataConfig.Key] = asmDataConfig.Value;
+            }
+
+            _waf.UpdateRules(_asmDataConfigs.SelectMany(p => p.Value.RulesData));
         }
 
         private void FeaturesProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
@@ -317,6 +325,7 @@ namespace Datadog.Trace.AppSec
             }
 
             Log.Information("AppSec Enabled");
+            SharedRemoteConfiguration.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
             SharedRemoteConfiguration.AsmDataProduct.ConfigChanged += AsmDataProductConfigChanged;
             _instrumentationGateway.StartRequest += RunWafAndReact;
             _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
