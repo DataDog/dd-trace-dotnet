@@ -3,28 +3,23 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
-using System.Globalization;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.IAST.Settings
 {
     internal class IASTSettings
     {
-        public static readonly string[] InsecureHashingAlgorithms = { "HMACMD5", "MD5", "HMACSHA1", "SHA1" };
+        public static readonly string InsecureHashingAlgorithmsDefault = "System.Security.Cryptography.HMACMD5,System.Security.Cryptography.MD5,System.Security.Cryptography.HMACSHA1,System.Security.Cryptography.SHA1,System.Security.Cryptography.MD5+Implementation,System.Security.Cryptography.MD5CryptoServiceProvider,System.Security.Cryptography.SHA1+Implementation,System.Security.Cryptography.SHA1CryptoServiceProvider";
 
         public IASTSettings(IConfigurationSource source)
         {
             Enabled = source?.GetBool(ConfigurationKeys.IAST.Enabled) ?? false;
-            InsecureHashingAlgorithmEnabled = source?.GetBool(ConfigurationKeys.IAST.WeakHashAlgorithmsEnabled) ?? true;
+            InsecureHashingAlgorithms = (source?.GetString(ConfigurationKeys.IAST.WeakHashAlgorithms) ?? InsecureHashingAlgorithmsDefault).Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
         }
 
         public bool Enabled { get; set; }
 
-        public bool InsecureHashingAlgorithmEnabled { get; set; }
+        public string[] InsecureHashingAlgorithms { get; }
 
         public static IASTSettings FromDefaultSources()
         {

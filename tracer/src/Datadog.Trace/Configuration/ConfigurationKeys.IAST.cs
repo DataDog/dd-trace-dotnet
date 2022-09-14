@@ -25,7 +25,7 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for enabling or disabling the Weak hash algorithms detection.
             /// Default is value is true (enabled).
             /// </summary>
-            public const string WeakHashAlgorithmsEnabled = "DD_IAST_WEAK_HASH_ALGORITHMS";
+            public const string WeakHashAlgorithms = "DD_IAST_WEAK_HASH_ALGORITHMS";
         }
     }
 }

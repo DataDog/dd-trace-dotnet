@@ -23,9 +23,9 @@ namespace Datadog.Trace.IAST
         {
         }
 
-        public static Scope OnHashingAlgorithm(string algorithm, IntegrationId integrationId)
+        public static Scope OnHashingAlgorithm(string algorithm, IntegrationId integrationId, Datadog.Trace.IAST.IAST iast)
         {
-            if (!InvalidHashAlgorithm(algorithm))
+            if (!InvalidHashAlgorithm(algorithm, iast))
             {
                 return null;
             }
@@ -48,9 +48,9 @@ namespace Datadog.Trace.IAST
             return scope;
         }
 
-        private static bool InvalidHashAlgorithm(string algorithm)
+        private static bool InvalidHashAlgorithm(string algorithm, Datadog.Trace.IAST.IAST iast)
         {
-            return IASTSettings.InsecureHashingAlgorithms.Contains(algorithm);
+            return iast.Settings.InsecureHashingAlgorithms.Contains(algorithm);
         }
     }
 }

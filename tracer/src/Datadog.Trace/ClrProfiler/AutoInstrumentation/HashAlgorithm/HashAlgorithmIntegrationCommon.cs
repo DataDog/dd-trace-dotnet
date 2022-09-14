@@ -19,14 +19,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
         internal static Scope CreateScope(System.Security.Cryptography.HashAlgorithm instance)
         {
             var iast = Datadog.Trace.IAST.IAST.Instance;
-            if (!iast.Settings.Enabled || !iast.Settings.InsecureHashingAlgorithmEnabled)
+            if (!iast.Settings.Enabled)
             {
                 return null;
             }
 
             try
             {
-                return IastModule.OnHashingAlgorithm(instance.GetType().Name, IntegrationId);
+                return IastModule.OnHashingAlgorithm(instance.GetType().FullName, IntegrationId, iast);
             }
             catch (Exception ex)
             {
