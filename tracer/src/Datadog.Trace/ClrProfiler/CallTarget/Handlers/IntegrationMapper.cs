@@ -62,8 +62,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
             ParameterInfo[] onMethodBeginParameters = onMethodBeginMethodInfo.GetParameters();
             if (onMethodBeginParameters.Length < argumentsTypes.Length)
             {
-                // TODO - this message is misleading now....
-                Log.Information("The method {BeginMethodName} with {NumParams} parameters in type: {TypeName} has fewer parameters than required.", nameof(BeginMethodName), onMethodBeginParameters.Length, integrationType.FullName);
+                // TODO - this message is misleading but I don't want to get rid of it just yet....
+                Log.Information($"The method {BeginMethodName} with {onMethodBeginParameters.Length} parameters in type: {integrationType.FullName} has fewer parameters than required.");
             }
             else if (onMethodBeginParameters.Length > argumentsTypes.Length + 1)
             {
