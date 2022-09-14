@@ -264,11 +264,13 @@ namespace Datadog.Trace.AppSec
         private void FeaturesProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
             var features = e.GetDeserializedConfigurations<Features>().FirstOrDefault();
-            if (features != null)
+            if (features.TypedFile != null)
             {
-                _settings.Enabled = features.Asm.Enabled;
+                _settings.Enabled = features.TypedFile.Asm.Enabled;
                 UpdateStatus();
             }
+
+            e.Acknowledge(features.Name);
         }
 
         private void UpdateStatus()

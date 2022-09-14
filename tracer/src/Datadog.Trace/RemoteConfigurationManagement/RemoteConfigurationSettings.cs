@@ -26,6 +26,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             AppVersion = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
 
             var pollInterval = configurationSource?.GetInt32(ConfigurationKeys.Rcm.PollInterval);
+
             pollInterval =
                 pollInterval is null or <= 0 or > 5000
                     ? DefaultPollIntervalMilliseconds
