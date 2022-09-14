@@ -35,6 +35,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private int _targetsVersion;
         private string _lastPollError;
         private bool _isPollingStarted;
+        private bool _isRcmEnabled;
 
         private RemoteConfigurationManager(
             IDiscoveryService discoveryService,
@@ -54,6 +55,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             _lastPollError = null;
             _cancellationSource = new CancellationTokenSource();
             _products = new ConcurrentDictionary<string, Product>();
+            discoveryService.SubscribeToChanges(SetRcmEnabled);
         }
 
         public static RemoteConfigurationManager Instance { get; private set; }
@@ -91,7 +93,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
             while (!_cancellationSource.IsCancellationRequested)
             {
-                var isRcmEnabled = !string.IsNullOrEmpty(_discoveryService.ConfigurationEndpoint);
+                var isRcmEnabled = Volatile.Read(ref _isRcmEnabled);
                 var isProductRegistered = _products.Any();
 
                 if (isRcmEnabled && isProductRegistered)
@@ -119,6 +121,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         public void UnregisterProduct(string productName)
         {
             _products.TryRemove(productName, out _);
+        }
+
+        public void OnShutdown()
+        {
+            _discoveryService.RemoveSubscription(SetRcmEnabled);
+            _cancellationSource.Cancel();
         }
 
         private async Task Poll()
@@ -152,7 +160,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             foreach (var cache in appliedConfigurations)
             {
                 cachedTargetFiles.Add(new RcmCachedTargetFile(cache.Path.Path, cache.Length, cache.Hashes.Select(kp => new RcmCachedTargetFileHash(kp.Key, kp.Value)).ToList()));
-                configStates.Add(new RcmConfigState(cache.Path.Id, cache.Version, cache.Path.Product));
+                configStates.Add(new RcmConfigState(cache.Path.Id, cache.Version, cache.Path.Product, cache.ApplyState, cache.Error));
             }
 
             var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, _lastPollError != null, _lastPollError);
@@ -183,7 +191,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     var configurations = productGroup.ToList();
 
                     product.AssignConfigs(configurations);
-                    CacheAppliedConfigurations(product, configurations);
                 }
                 catch (Exception e)
                 {
@@ -220,23 +227,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 }
             }
 
-            void CacheAppliedConfigurations(Product product, List<RemoteConfiguration> configurations)
-            {
-                foreach (var config in configurations)
-                {
-                    var remoteConfigurationCache = new RemoteConfigurationCache(config.Path, config.Length, config.Hashes, config.Version);
-
-                    if (product.AppliedConfigurations.ContainsKey(config.Path.Path))
-                    {
-                        product.AppliedConfigurations[config.Path.Path] = remoteConfigurationCache;
-                    }
-                    else
-                    {
-                        product.AppliedConfigurations.Add(config.Path.Path, remoteConfigurationCache);
-                    }
-                }
-            }
-
             void UnapplyRemovedConfigurations()
             {
                 List<string> remove = null;
@@ -265,9 +255,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
         }
 
-        public void OnShutdown()
+        private void SetRcmEnabled(AgentConfiguration c)
         {
-            _cancellationSource.Cancel();
+            _isRcmEnabled = !string.IsNullOrEmpty(c.ConfigurationEndpoint);
         }
     }
 }

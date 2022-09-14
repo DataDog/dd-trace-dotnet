@@ -18,13 +18,6 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="RemoteConfigurationSettings.PollInterval"/>
             public const string PollInterval = "DD_INTERNAL_RCM_POLL_INTERVAL";
-
-            /// <summary>
-            /// Configuration key for RCM configuration file full path on the disk.
-            /// For internal usage only.
-            /// </summary>
-            /// <seealso cref="RemoteConfigurationSettings.FilePath"/>
-            public const string FilePath = "DD_INTERNAL_RCM_FILE";
         }
     }
 }

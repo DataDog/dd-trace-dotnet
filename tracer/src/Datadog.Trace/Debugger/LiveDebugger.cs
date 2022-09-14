@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Debugger.Configurations;
@@ -37,6 +38,7 @@ namespace Datadog.Trace.Debugger
         private readonly ConfigurationUpdater _configurationUpdater;
         private readonly object _instanceLock = new();
         private bool _isInitialized;
+        private bool _isRcmAvailable;
 
         private LiveDebugger(
             DebuggerSettings settings,
@@ -58,6 +60,7 @@ namespace Datadog.Trace.Debugger
             _unboundProbes = new List<ProbeDefinition>();
             Product = new LiveDebuggerProduct(serviceName);
             ServiceName = serviceName;
+            discoveryService?.SubscribeToChanges(DiscoveryCallback);
         }
 
         public static LiveDebugger Instance { get; private set; }
@@ -103,7 +106,6 @@ namespace Datadog.Trace.Debugger
                 DebuggerSnapshotSerializer.SetConfig(_settings);
                 Product.ConfigChanged += (sender, args) => AcceptConfiguration(args);
                 AppDomain.CurrentDomain.AssemblyLoad += (sender, args) => CheckUnboundProbes();
-                AppDomain.CurrentDomain.DomainUnload += (sender, args) => _lineProbeResolver.OnDomainUnloaded();
 
                 await StartAsync().ConfigureAwait(false);
             }
@@ -125,8 +127,7 @@ namespace Datadog.Trace.Debugger
                     return false;
                 }
 
-                var isConfigurationSupported = !string.IsNullOrWhiteSpace(_discoveryService.ConfigurationEndpoint);
-                if (!isConfigurationSupported)
+                if (!Volatile.Read(ref _isRcmAvailable))
                 {
                     Log.Warning("Live Debugger could not be enabled because Remote Configuration Management is not available. Please ensure that you are using datadog-agent version 7.38.0 or higher, and that Remote Configuration Management is enabled in datadog-agent's yaml configuration file.");
                     return false;
@@ -137,16 +138,17 @@ namespace Datadog.Trace.Debugger
 
             Task StartAsync()
             {
-                LifetimeManager.Instance.AddShutdownTask(OnShutdown);
+                AddShutdownTask();
 
                 _probeStatusPoller.StartPolling();
                 return _debuggerSink.StartFlushingAsync();
             }
 
-            void OnShutdown()
+            void AddShutdownTask()
             {
-                _debuggerSink.Dispose();
-                _probeStatusPoller.Dispose();
+                LifetimeManager.Instance.AddShutdownTask(() => _discoveryService.RemoveSubscription(DiscoveryCallback));
+                LifetimeManager.Instance.AddShutdownTask(_debuggerSink.Dispose);
+                LifetimeManager.Instance.AddShutdownTask(_probeStatusPoller.Dispose);
             }
         }
 
@@ -271,8 +273,10 @@ namespace Datadog.Trace.Debugger
 
         private void AcceptConfiguration(ProductConfigChangedEventArgs args)
         {
+            Log.Information("AcceptConfiguration: Starting ...");
             var probeConfig = args.GetDeserializedConfigurations<ProbeConfiguration>().Single();
-            _configurationUpdater.Accept(probeConfig);
+            _configurationUpdater.Accept(probeConfig.TypedFile);
+            Log.Information("AcceptConfiguration: End ...");
         }
 
         internal void AddSnapshot(string snapshot)
@@ -299,6 +303,9 @@ namespace Datadog.Trace.Debugger
         {
             _debuggerSink.AddErrorProbeStatus(probeId, exception, errorMessage);
         }
+
+        private void DiscoveryCallback(AgentConfiguration x)
+            => _isRcmAvailable = !string.IsNullOrEmpty(x.ConfigurationEndpoint);
     }
 }
 

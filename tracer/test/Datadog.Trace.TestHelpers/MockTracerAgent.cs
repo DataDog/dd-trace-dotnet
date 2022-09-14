@@ -55,6 +55,8 @@ namespace Datadog.Trace.TestHelpers
 
         public bool TelemetryEnabled { get; }
 
+        public string RcmResponse { get; set; }
+
         /// <summary>
         /// Gets the filters used to filter out spans we don't want to look at for a test.
         /// </summary>
@@ -66,7 +68,7 @@ namespace Datadog.Trace.TestHelpers
 
         public IImmutableList<MockClientStatsPayload> Stats { get; private set; } = ImmutableList<MockClientStatsPayload>.Empty;
 
-        public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
+        public IImmutableList<NameValueCollection> TraceRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
         public List<string> Snapshots { get; private set; } = new();
 
@@ -81,6 +83,8 @@ namespace Datadog.Trace.TestHelpers
 
         public ITestOutputHelper Output { get; set; }
 
+        public AgentConfiguration Configuration { get; set; }
+
         public IImmutableList<NameValueCollection> TelemetryRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
         public ConcurrentQueue<string> RemoteConfigRequests { get; } = new();
@@ -90,14 +94,14 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         public bool ShouldDeserializeTraces { get; set; } = true;
 
-        public static TcpUdpAgent Create(ITestOutputHelper output, int port = 8126, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null, bool useTelemetry = false)
-            => new TcpUdpAgent(port, retries, useStatsd, doNotBindPorts, requestedStatsDPort, useTelemetry) { Output = output };
+        public static TcpUdpAgent Create(ITestOutputHelper output, int port = 8126, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null, bool useTelemetry = false, AgentConfiguration agentConfiguration = null)
+            => new TcpUdpAgent(port, retries, useStatsd, doNotBindPorts, requestedStatsDPort, useTelemetry) { Output = output, Configuration = agentConfiguration ?? new() };
 
 #if NETCOREAPP3_1_OR_GREATER
-        public static UdsAgent Create(ITestOutputHelper output, UnixDomainSocketConfig config) => new UdsAgent(config) { Output = output };
+        public static UdsAgent Create(ITestOutputHelper output, UnixDomainSocketConfig config, AgentConfiguration agentConfiguration = null) => new UdsAgent(config) { Output = output, Configuration = agentConfiguration ?? new() };
 #endif
 
-        public static NamedPipeAgent Create(ITestOutputHelper output, WindowsPipesConfig config) => new NamedPipeAgent(config) { Output = output };
+        public static NamedPipeAgent Create(ITestOutputHelper output, WindowsPipesConfig config, AgentConfiguration agentConfiguration = null) => new NamedPipeAgent(config) { Output = output, Configuration = agentConfiguration ?? new() };
 
         /// <summary>
         /// Wait for the given number of spans to appear.
@@ -135,7 +139,7 @@ namespace Datadog.Trace.TestHelpers
                 Thread.Sleep(500);
             }
 
-            foreach (var headers in RequestHeaders)
+            foreach (var headers in TraceRequestHeaders)
             {
                 // This is the place to check against headers we expect
                 AssertHeader(
@@ -361,7 +365,7 @@ namespace Datadog.Trace.TestHelpers
             }
             else if (request.PathAndQuery.EndsWith("/info"))
             {
-                return $"{{\"endpoints\":{JsonConvert.SerializeObject(DiscoveryService.AllSupportedEndpoints)}}}";
+                return JsonConvert.SerializeObject(Configuration);
             }
             else if (request.PathAndQuery.StartsWith("/debugger/v1/input"))
             {
@@ -376,7 +380,7 @@ namespace Datadog.Trace.TestHelpers
             else if (request.PathAndQuery.StartsWith("/v0.7/config"))
             {
                 HandlePotentialRemoteConfig(request);
-                return "{}";
+                return RcmResponse ?? "{}";
             }
             else
             {
@@ -408,7 +412,7 @@ namespace Datadog.Trace.TestHelpers
                             headerCollection.Add(header.Name, header.Value);
                         }
 
-                        RequestHeaders = RequestHeaders.Add(headerCollection);
+                        TraceRequestHeaders = TraceRequestHeaders.Add(headerCollection);
                     }
                 }
                 catch (Exception ex)
@@ -670,6 +674,18 @@ namespace Datadog.Trace.TestHelpers
             // solely rely on that.
             ProbesStatuses = probeStatuses.Values.ToList();
             Snapshots.AddRange(snapshots);
+        }
+
+        public class AgentConfiguration
+        {
+            [JsonProperty("endpoints")]
+            public string[] Endpoints { get; set; } = DiscoveryService.AllSupportedEndpoints.Select(s => s.StartsWith("/") ? s : "/" + s).ToArray();
+
+            [JsonProperty("client_drop_p0s")]
+            public bool ClientDropP0s { get; set; } = true;
+
+            [JsonProperty("version")]
+            public string AgentVersion { get; set; }
         }
 
         public class TcpUdpAgent : MockTracerAgent

@@ -76,24 +76,6 @@ namespace Datadog.Trace.ClrProfiler
                 return;
             }
 
-            if (CIVisibility.Settings.Enabled && !CIVisibility.Enabled)
-            {
-                // If CI Visibility is enabled by configuration
-                // we check if is the testhost.dll process
-                // we avoid instrumenting other process started from dotnet test.
-                try
-                {
-                    Log.Information("Disabling tracer clr profiler.");
-                    NativeMethods.DisableTracerCLRProfiler();
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "DisableTracerCLRProfiler returned an error: ");
-                }
-
-                return;
-            }
-
             Log.Debug("Initialization started.");
 
             try
@@ -347,24 +329,24 @@ namespace Datadog.Trace.ClrProfiler
         {
             var serviceName = tracer.Settings.ServiceName ?? tracer.DefaultServiceName;
             var exporterSettings = tracer.Settings.Exporter;
-
-            var discoveryService = DiscoveryService.Create(exporterSettings);
-
-            var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
-            var rcmApi = RemoteConfigurationApiFactory.Create(exporterSettings, rcmSettings, discoveryService);
-
-            var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName);
-
-            configurationManager.RegisterProduct(SharedRemoteConfiguration.FeaturesProduct);
-
-            var liveDebugger = LiveDebuggerFactory.Create(discoveryService, configurationManager, tracer.Settings, serviceName);
+            var discoveryService = tracer.TracerManager.DiscoveryService;
 
             Task.Run(
                 async () =>
                 {
-                    var isDiscoverySuccessful = await InitializeDiscoveryService(discoveryService).ConfigureAwait(false);
+                    // TODO: RCM and LiveDebugger should be initialized in TracerManagerFactory so they can respond
+                    // to changes in ExporterSettings etc.
+                    var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
                     if (isDiscoverySuccessful)
                     {
+                        var rcmSettings = RemoteConfigurationSettings.FromDefaultSource();
+                        var rcmApi = RemoteConfigurationApiFactory.Create(exporterSettings, rcmSettings, discoveryService);
+
+                        var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName);
+                        configurationManager.RegisterProduct(SharedRemoteConfiguration.FeaturesProduct);
+
+                        var liveDebugger = LiveDebuggerFactory.Create(discoveryService, configurationManager, tracer.Settings, serviceName);
+
                         Log.Debug("Initializing Remote Configuration management.");
 
                         await Task
@@ -376,16 +358,19 @@ namespace Datadog.Trace.ClrProfiler
                 });
         }
 
-        internal static async Task<bool> InitializeDiscoveryService(IDiscoveryService discoveryService)
+        internal static async Task<bool> WaitForDiscoveryService(IDiscoveryService discoveryService)
         {
-            try
+            var tc = new TaskCompletionSource<bool>();
+            // Stop waiting if we're shutting down
+            LifetimeManager.Instance.AddShutdownTask(() => tc.TrySetResult(false));
+
+            discoveryService.SubscribeToChanges(Callback);
+            return await tc.Task.ConfigureAwait(false);
+
+            void Callback(AgentConfiguration x)
             {
-                return await discoveryService.DiscoverAsync().ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Failed to discover");
-                return false;
+                tc.TrySetResult(true);
+                discoveryService.RemoveSubscription(Callback);
             }
         }
 

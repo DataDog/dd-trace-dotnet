@@ -112,6 +112,9 @@ namespace environment
     // Sets whether to enable NGEN images.
     const shared::WSTRING clr_enable_ngen = WStr("DD_CLR_ENABLE_NGEN");
 
+    // Sets whether the current process must run in CI Visibility mode or not.
+    const shared::WSTRING ci_visibility_enabled = WStr("DD_CIVISIBILITY_ENABLED");
+
 } // namespace environment
 } // namespace trace
 

@@ -6,6 +6,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Configuration;
@@ -22,8 +23,8 @@ namespace Datadog.Trace.Ci
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CITracerManager>();
 
-        public CITracerManager(ImmutableTracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IDogStatsd statsd, RuntimeMetricsWriter runtimeMetricsWriter, DirectLogSubmissionManager logSubmissionManager, ITelemetryController telemetry, string defaultServiceName)
-            : base(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetricsWriter, logSubmissionManager, telemetry, defaultServiceName, new Trace.Processors.ITraceProcessor[]
+        public CITracerManager(ImmutableTracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IDogStatsd statsd, RuntimeMetricsWriter runtimeMetricsWriter, DirectLogSubmissionManager logSubmissionManager, ITelemetryController telemetry, IDiscoveryService discoveryService, string defaultServiceName)
+            : base(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetricsWriter, logSubmissionManager, telemetry, discoveryService, defaultServiceName, new Trace.Processors.ITraceProcessor[]
             {
                 new Trace.Processors.NormalizerTraceProcessor(),
                 new Trace.Processors.TruncatorTraceProcessor(),

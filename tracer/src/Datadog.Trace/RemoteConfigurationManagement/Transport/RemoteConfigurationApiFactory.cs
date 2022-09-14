@@ -24,10 +24,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
                 () => new MinimalAgentHeaderHelper(),
                 uri => uri);
 
-            return
-                string.IsNullOrWhiteSpace(remoteConfigurationSettings.FilePath)
-                    ? RemoteConfigurationApi.Create(apiRequestFactory, discoveryService)
-                    : RemoteConfigurationFileApi.Create(remoteConfigurationSettings);
+            return RemoteConfigurationApi.Create(apiRequestFactory, discoveryService);
         }
     }
 }

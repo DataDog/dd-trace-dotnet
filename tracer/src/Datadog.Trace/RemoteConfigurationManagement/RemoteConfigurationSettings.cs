@@ -24,9 +24,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             TracerVersion = TracerConstants.AssemblyVersion;
             Environment = configurationSource?.GetString(ConfigurationKeys.Environment);
             AppVersion = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
-            FilePath = configurationSource?.GetString(ConfigurationKeys.Rcm.FilePath);
 
             var pollInterval = configurationSource?.GetInt32(ConfigurationKeys.Rcm.PollInterval);
+
             pollInterval =
                 pollInterval is null or <= 0 or > 5000
                     ? DefaultPollIntervalMilliseconds
@@ -46,8 +46,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         public string AppVersion { get; }
 
         public TimeSpan PollInterval { get; }
-
-        public string FilePath { get; set; }
 
         public static RemoteConfigurationSettings FromSource(IConfigurationSource source)
         {

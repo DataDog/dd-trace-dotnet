@@ -13,6 +13,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
@@ -245,7 +246,10 @@ namespace Datadog.Trace.Tools.Runner
             var globalSettings = GlobalSettings.CreateDefaultConfigurationSource();
             globalSettings.Add(new NameValueConfigurationSource(env));
             var tracerSettings = new TracerSettings(globalSettings);
-            var agentWriter = new CIAgentWriter(tracerSettings.Build(), new CISampler());
+            var settings = tracerSettings.Build();
+            var discoveryService = DiscoveryService.Create(settings.Exporter);
+
+            var agentWriter = new CIAgentWriter(settings, new CISampler(), discoveryService);
 
             try
             {
