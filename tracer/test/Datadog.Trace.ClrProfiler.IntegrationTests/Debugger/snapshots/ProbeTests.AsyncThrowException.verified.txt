@@ -14,8 +14,7 @@
                 "type": "String",
                 "value": "RunAsync"
               }
-            },
-            "fields": null
+            }
           },
           "return": {
             "arguments": {
