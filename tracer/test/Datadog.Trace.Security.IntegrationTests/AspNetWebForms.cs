@@ -5,6 +5,7 @@
 
 #if NET461
 using System.Net;
+using System.Security.Policy;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -88,6 +89,19 @@ namespace Datadog.Trace.Security.IntegrationTests
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedUrl, body);
             return TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 1, settings, "application/x-www-form-urlencoded");
+        }
+
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
+        [SkippableTheory]
+        [InlineData("blocking")]
+        public async Task TestBlockedRequest(string test)
+        {
+            var url = "/";
+
+            var settings = VerifyHelper.GetSpanVerifierSettings(test);
+            await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, 2, settings, userAgent: "Hello/V");
         }
 
         protected override string GetTestName() => _testName;

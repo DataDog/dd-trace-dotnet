@@ -89,6 +89,19 @@ namespace Datadog.Trace.Security.IntegrationTests
             return TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 2, settings, "application/json");
         }
 
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        [Trait("LoadFromGAC", "True")]
+        [SkippableTheory]
+        [InlineData("blocking")]
+        public async Task TestBlockedRequest(string test)
+        {
+            var url = "/";
+
+            var settings = VerifyHelper.GetSpanVerifierSettings(test);
+            await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, 1, settings, userAgent: "Hello/V");
+        }
+
         protected override string GetTestName() => _testName;
     }
 }

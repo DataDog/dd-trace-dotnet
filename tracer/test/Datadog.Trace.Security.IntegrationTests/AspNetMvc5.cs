@@ -91,17 +91,17 @@ namespace Datadog.Trace.Security.IntegrationTests
             return TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 2, settings, "application/json");
         }
 
-        [SkippableTheory]
-        [InlineData("blocking", true, 403, "/")]
-        [InlineData("blocking", false, 200, "/")]
+        [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task TestBlockedRequest(string test, bool enableSecurity, int expectedStatusCode, string url = DefaultAttackUrl)
+        [Trait("LoadFromGAC", "True")]
+        [SkippableTheory]
+        [InlineData("blocking")]
+        public async Task TestBlockedRequest(string test)
         {
-            var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: DefaultRuleFile);
+            var url = "/";
 
-            var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-            var settings = VerifyHelper.GetSpanVerifierSettings(test, enableSecurity, expectedStatusCode, sanitisedUrl);
-            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings, userAgent: "Hello/V");
+            var settings = VerifyHelper.GetSpanVerifierSettings(test);
+            await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, 2, settings, userAgent: "Hello/V");
         }
 
         protected override string GetTestName() => _testName;
