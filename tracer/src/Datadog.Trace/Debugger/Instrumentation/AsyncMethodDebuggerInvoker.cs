@@ -110,11 +110,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             isReEntryToMoveNext = true;
             var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance);
-            if (kickoffInfo.KickoffParentObject == null && kickoffInfo.KickoffMethod.IsStatic == false)
-            {
-                Log.Error($"{nameof(BeginMethod)}: hoisted 'this' has not found. {kickoffInfo.KickoffParentType.Name}.{kickoffInfo.KickoffMethod.Name}");
-                return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
-            }
 
             if (!MethodMetadataProvider.TryCreateIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle, kickoffInfo))
             {
@@ -138,7 +133,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
             asyncState.SnapshotCreator.StartSnapshot();
             asyncState.SnapshotCreator.StartCaptures();
             asyncState.SnapshotCreator.StartEntry();
-            asyncState.SnapshotCreator.CaptureInstance(asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType);
+
+            // In an async method, in optimized code, if the invocation target ('this') is not used, it will not be hoisted into the heap-allocated state machine object,
+            // and so unfortunately we can't capture it.
+            if (asyncState.KickoffInvocationTarget != null)
+            {
+                asyncState.SnapshotCreator.CaptureInstance(asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -334,9 +335,24 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogException<TTarget>(Exception exception, ref AsyncMethodDebuggerState asyncState)
         {
-            Log.Error(exception, "Error caused by our instrumentation");
-            asyncState.IsActive = false;
-            RestoreContext();
+            try
+            {
+                Log.Error(exception, "Error caused by our instrumentation");
+                if (asyncState == null)
+                {
+                    asyncState = AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
+                }
+                else
+                {
+                    asyncState.IsActive = false;
+                }
+
+                RestoreContext();
+            }
+            catch
+            {
+                // We are in a bad state, we can't do anything here
+            }
         }
 
         /// <summary>
