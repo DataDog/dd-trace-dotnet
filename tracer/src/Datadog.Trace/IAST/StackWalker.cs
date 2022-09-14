@@ -7,6 +7,7 @@
 
 using System.Diagnostics;
 using System.Linq;
+using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.Iast
 {
