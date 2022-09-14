@@ -41,6 +41,7 @@ namespace Samples.WeakHashing
             testHashAlgorithm(new MACTripleDES());
             testHashAlgorithm(MACTripleDES.Create());
 #endif
+            // File.WriteAllText("c:\\t.txt", DateTime.Now.ToString());
         }
 
         private static void testHashAlgorithm(HashAlgorithm algorithm)
