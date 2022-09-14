@@ -262,7 +262,7 @@ public enum ExplorationTestUseCase
 
 public enum ExplorationTestName
 {
-    eShopOnWeb, protobuf, cake, swashbuckle, paket, RestSharp, serilog, polly, automapper, /*ilspy*/
+    serilog_1, serilog_2, serilog_3, serilog_4, serilog_5, serilog_6, serilog_7, serilog_8, serilog_9, serilog_10, serilog_11, serilog_12, serilog_13, serilog_14, serilog_15, serilog_16, serilog_17, serilog_18, serilog_19, serilog_20, serilog_21, serilog_22, serilog_23, serilog_24, serilog_25, serilog_26, serilog_27, serilog_28, serilog_29, serilog_30, serilog_31, serilog_32, serilog_33, serilog_34, serilog_35, serilog_36, serilog_37, serilog_38, serilog_39, serilog_40
 }
 
 class ExplorationTestDescription
@@ -313,108 +313,16 @@ class ExplorationTestDescription
 
     public static ExplorationTestDescription GetExplorationTestDescription(ExplorationTestName name)
     {
-        var description = name switch
+        return new ExplorationTestDescription
         {
-            ExplorationTestName.eShopOnWeb => new ExplorationTestDescription()
-            {
-                Name = ExplorationTestName.eShopOnWeb,
-                GitRepositoryUrl = "https://github.com/dotnet-architecture/eShopOnWeb.git",
-                GitRepositoryTag = "netcore2.1",
-                IsGitShallowCloneSupported = true,
-                PathToUnitTestProject = "tests/UnitTests",
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 },
-            },
-            ExplorationTestName.protobuf => new ExplorationTestDescription()
-            {
-                Name = ExplorationTestName.protobuf,
-                GitRepositoryUrl = "https://github.com/protocolbuffers/protobuf.git",
-                GitRepositoryTag = "v3.19.1",
-                IsGitShallowCloneSupported = true,
-                IsGitSubmodulesRequired = true,
-                PathToUnitTestProject = "csharp/src/Google.Protobuf.Test",
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 },
-            },
-            ExplorationTestName.cake => new ExplorationTestDescription()
-            {
-                Name = ExplorationTestName.cake,
-                GitRepositoryUrl = "https://github.com/cake-build/cake.git",
-                GitRepositoryTag = "v1.3.0",
-                IsGitShallowCloneSupported = true,
-                PathToUnitTestProject = "src/Cake.Common.Tests",
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0 },
-            },
-            ExplorationTestName.swashbuckle => new ExplorationTestDescription()
-            {
-                Name = ExplorationTestName.swashbuckle,
-                GitRepositoryUrl = "https://github.com/domaindrivendev/Swashbuckle.AspNetCore.git",
-                GitRepositoryTag = "v6.2.3",
-                IsGitShallowCloneSupported = true,
-                PathToUnitTestProject = "test/Swashbuckle.AspNetCore.SwaggerGen.Test",
-                SupportedFrameworks = new[] { TargetFramework.NET6_0 },
-            },
-            ExplorationTestName.paket => new ExplorationTestDescription()
-            {
-                Name = ExplorationTestName.paket,
-                GitRepositoryUrl = "https://github.com/fsprojects/Paket.git",
-                GitRepositoryTag = "6.2.1",
-                IsGitShallowCloneSupported = true,
-                PathToUnitTestProject = "tests/Paket.Tests",
-                TestsToIgnore = new[] { "Loading assembly metadata works" },
-                SupportedFrameworks = new[] { TargetFramework.NET461 },
-            },
-            ExplorationTestName.RestSharp => new ExplorationTestDescription()
-            {
-                Name = ExplorationTestName.RestSharp,
-                GitRepositoryUrl = "https://github.com/restsharp/RestSharp.git",
-                GitRepositoryTag = "107.0.3",
-                IsGitShallowCloneSupported = true,
-                PathToUnitTestProject = "test/RestSharp.Tests",
-                SupportedFrameworks = new[] { TargetFramework.NET6_0 },
-            },
-            ExplorationTestName.serilog => new ExplorationTestDescription()
-            {
-                Name = ExplorationTestName.serilog,
-                GitRepositoryUrl = "https://github.com/serilog/serilog.git",
-                GitRepositoryTag = "v2.10.0",
-                IsGitShallowCloneSupported = true,
-                PathToUnitTestProject = "test/Serilog.Tests",
-                TestsToIgnore = new[] { "DisconnectRemoteObjectsAfterCrossDomainCallsOnDispose" },
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP3_1 },
-            },
-            ExplorationTestName.polly => new ExplorationTestDescription()
-            {
-                Name = ExplorationTestName.polly,
-                GitRepositoryUrl = "https://github.com/app-vnext/polly.git",
-                GitRepositoryTag = "7.2.2+9",
-                IsGitShallowCloneSupported = true,
-                PathToUnitTestProject = "src/Polly.Specs",
-                SupportedFrameworks = new[] { TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET461 },
-            },
-            ExplorationTestName.automapper => new ExplorationTestDescription()
-            {
-                Name = ExplorationTestName.automapper,
-                GitRepositoryUrl = "https://github.com/automapper/automapper.git",
-                GitRepositoryTag = "v11.0.0",
-                IsGitShallowCloneSupported = true,
-                PathToUnitTestProject = "src/UnitTests",
-                SupportedFrameworks = new[] { TargetFramework.NET6_0 },
-                SupportedOSPlatforms = new[] { OSPlatform.Windows },
-            },
-            //ExplorationTestName.ilspy => new ExplorationTestDescription()
-            //{
-            //    Name = ExplorationTestName.ilspy,
-            //    GitRepositoryUrl = "https://github.com/icsharpcode/ILSpy.git",
-            //    GitRepositoryTag = "v7.1",
-            //    IsGitSubmodulesRequired = true,
-            //    PathToUnitTestProject = "ICSharpCode.Decompiler.Tests",
-            //    IsTestedByVSTest = true,
-            //    TestsToIgnore = new[] { "UseMc", "_net45", "ImplicitConversions", "ExplicitConversions", "ICSharpCode_Decompiler", "NewtonsoftJson_pcl_debug", "NRefactory_CSharp", "Random_TestCase_1", "AsyncForeach", "AsyncStreams", "AsyncUsing", "CS9_ExtensionGetEnumerator", "IndexRangeTest", "InterfaceTests", "UsingVariables" },
-            //    SupportedFrameworks = new[] { TargetFramework.NET461 },
-            //},
-            _ => throw new ArgumentOutOfRangeException(nameof(name), name, null)
+            Name = name,
+            GitRepositoryUrl = "https://github.com/serilog/serilog.git",
+            GitRepositoryTag = "v2.10.0",
+            IsGitShallowCloneSupported = true,
+            PathToUnitTestProject = "test/Serilog.Tests",
+            TestsToIgnore = new[] { "DisconnectRemoteObjectsAfterCrossDomainCallsOnDispose" },
+            SupportedFrameworks = new[] { TargetFramework.NETCOREAPP3_1 },
         };
-
-        return description;
     }
 }
 
