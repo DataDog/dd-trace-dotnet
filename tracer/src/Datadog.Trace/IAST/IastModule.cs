@@ -6,6 +6,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.IAST.Settings;
 using Datadog.Trace.Tagging;
@@ -30,11 +31,7 @@ namespace Datadog.Trace.IAST
             }
 
             var tracer = Tracer.Instance;
-            var algorithmId = algorithm.ToUpper();
-
-            var stack = Environment.StackTrace;
-            var stackTrace = new StackTrace(0, true);
-            var frame = stackTrace.GetFrame(0);
+            var frame = StackWalker.GetFrame(HashAlgorithmIntegrationCommon.HashFileNamesToSkip);
             var vulnerability = new Vulnerability(VulnerabilityType.WEAK_HASH, new Location(frame.GetFileName(), frame.GetFileLineNumber()), new Evidence(algorithm));
             var json = JsonConvert.SerializeObject(vulnerability, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 

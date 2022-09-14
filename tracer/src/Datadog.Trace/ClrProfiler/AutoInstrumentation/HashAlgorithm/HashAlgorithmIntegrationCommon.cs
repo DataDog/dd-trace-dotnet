@@ -14,6 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
     {
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.HashAlgorithm;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HashAlgorithmIntegrationCommon));
+        public static readonly string[] HashFileNamesToSkip = { "HashAlgorithmIntegration" };
 
         internal static Scope CreateScope(System.Security.Cryptography.HashAlgorithm instance)
         {
