@@ -13,28 +13,23 @@ namespace Datadog.Trace.TestHelpers
         Normal = 0,
 
         /// <summary>
-        /// The agent doesn't answer
+        /// The agent doesn't answer, causing timeout
         /// </summary>
         NoAnswer = 1,
 
         /// <summary>
-        /// The agent answers after a long time
-        /// </summary>
-        SlowAnswer = 2,
-
-        /// <summary>
         /// The agent answers with wrong data
         /// </summary>
-        WrongAnswer = 3,
+        WrongAnswer = 2,
 
         /// <summary>
         /// The agent answers with 404 code
         /// </summary>
-        Return404 = 4,
+        Return404 = 3,
 
         /// <summary>
         /// The agent answers with 500 code
         /// </summary>
-        Return500 = 5,
+        Return500 = 4,
     }
 }

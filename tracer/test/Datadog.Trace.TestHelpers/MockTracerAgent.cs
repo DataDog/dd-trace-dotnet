@@ -31,8 +31,6 @@ namespace Datadog.Trace.TestHelpers
 {
     public abstract class MockTracerAgent : IDisposable
     {
-        public const int SlowAnswerModeMiliseconds = 80000;
-
         private readonly CancellationTokenSource _cancellationTokenSource = new();
 
         private AgentBehaviour behaviour = AgentBehaviour.Normal;
@@ -414,11 +412,6 @@ namespace Datadog.Trace.TestHelpers
 
                 sendResponse = behaviour != AgentBehaviour.NoAnswer;
                 statusCode = behaviour == AgentBehaviour.Return500 ? 500 : (behaviour == AgentBehaviour.Return404 ? 404 : 200);
-
-                if (behaviour == AgentBehaviour.SlowAnswer)
-                {
-                    System.Threading.Thread.Sleep(SlowAnswerModeMiliseconds);
-                }
             }
 
             return new MockTracerResponse()
@@ -876,17 +869,16 @@ namespace Datadog.Trace.TestHelpers
                                 ctx.Response.ContentType = "application/json";
                                 ctx.Response.ContentLength64 = buffer.LongLength;
                                 ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
+
+                                if (mockTracerResponse.SendResponse)
+                                {
+                                    ctx.Response.Close();
+                                }
                             }
                         }
                         catch (Exception ex)
                         {
                             Output?.WriteLine("[HandleHttpRequests]Error processing web request" + ex);
-                        }
-                        finally
-                        {
-                            // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
-                            // (Setting content-length avoids that)
-
                             ctx.Response.Close();
                         }
                     }
