@@ -6,7 +6,7 @@ using System.Security.Cryptography;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Samples.InsecureHash
+namespace Samples.WeakHashing
 {
     internal static class Program
     {
@@ -39,7 +39,7 @@ namespace Samples.InsecureHash
             testHashAlgorithm(new MACTripleDES());
             testHashAlgorithm(MACTripleDES.Create());
 #endif
-            File.WriteAllText("c:\\t.txt", DateTime.Now.ToString());
+            // File.WriteAllText("c:\\t.txt", DateTime.Now.ToString());
         }
 
         private static void testHashAlgorithm(HashAlgorithm algorithm)

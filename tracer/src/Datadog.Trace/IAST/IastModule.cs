@@ -15,8 +15,8 @@ namespace Datadog.Trace.IAST
 {
     internal class IastModule
     {
-        private const string OperationNameHash = "insecure_hashing";
-        private const string ServiceHash = "hash";
+        private const string OperationNameHash = "weak_hashing";
+        private const string ServiceHash = "weak_hashing";
 
         public IastModule()
         {
@@ -46,8 +46,6 @@ namespace Datadog.Trace.IAST
             var serviceName = tracer.Settings.GetServiceName(tracer, ServiceHash);
             var scope = tracer.StartActiveInternal(OperationNameHash, serviceName: serviceName, tags: tags);
             scope.Span.Tags = tags;
-            scope.Span.ResourceName = "hashing";
-            scope.Span.Type = "type";
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
 
             return scope;

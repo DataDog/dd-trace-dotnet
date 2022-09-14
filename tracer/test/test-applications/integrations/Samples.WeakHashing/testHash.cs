@@ -1,6 +1,6 @@
 ﻿using System.Security.Cryptography;
 
-namespace Samples.InsecureHash
+namespace Samples.WeakHashing
 {
     internal class testHash : HashAlgorithm
     {
