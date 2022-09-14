@@ -13,7 +13,6 @@
         "DD_VERSION": "1.0.0",
         "DD_TRACE_DEBUG": "1",
         "DD_IAST_ENABLED": "1",
-        "DD_IAST_WEAK_HASH_ALGORITHMS": "1"
       },
       "nativeDebugging": true
     }
