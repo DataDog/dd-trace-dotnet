@@ -14,8 +14,6 @@ namespace Datadog.Trace.Debugger
     /// </summary>
     internal interface ILineProbeResolver
     {
-        void OnDomainUnloaded();
-
         LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out BoundLineProbeLocation location);
     }
 }

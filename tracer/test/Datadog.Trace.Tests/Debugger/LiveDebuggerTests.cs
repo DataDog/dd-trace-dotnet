@@ -120,11 +120,6 @@ public class LiveDebuggerTests
     {
         internal bool Called { get; private set; }
 
-        public void OnDomainUnloaded()
-        {
-            Called = true;
-        }
-
         public LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out BoundLineProbeLocation location)
         {
             throw new NotImplementedException();

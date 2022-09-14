@@ -11,7 +11,6 @@ using System.Reflection;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Models;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
@@ -160,17 +159,6 @@ namespace Datadog.Trace.Debugger
             {
                 Log.Error(e, "Failed to resolve line probe for ProbeID {ProbeId}", probe.Id);
                 return new LineProbeResolveResult(LiveProbeResolveStatus.Error, "An error occurred while trying to resolve probe location");
-            }
-        }
-
-        public void OnDomainUnloaded()
-        {
-            lock (_locker)
-            {
-                foreach (var unloadedAssembly in AppDomain.CurrentDomain.GetAssemblies())
-                {
-                    _loadedAssemblies.Remove(unloadedAssembly);
-                }
             }
         }
 
