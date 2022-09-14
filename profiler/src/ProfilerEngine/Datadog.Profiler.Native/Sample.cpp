@@ -13,7 +13,12 @@ const std::string Sample::SpanIdLabel = "span id";
 const std::string Sample::ExceptionTypeLabel = "exception type";
 const std::string Sample::ExceptionMessageLabel = "exception message";
 const std::string Sample::AllocationClassLabel = "allocation class";
-const std::string Sample::TimestampLabel = "timestamp";
+
+// $ prefixed labels are not used as key for aggregation
+// --> their value is concatenated in a list for a new
+// label with 's' at the end.
+// For example, $timestamp --> timestamps
+const std::string Sample::TimestampLabel = "$timestamp";
 
 Sample::Sample(uint64_t timestamp, std::string_view runtimeId, size_t framesCount) :
     Sample(runtimeId)
