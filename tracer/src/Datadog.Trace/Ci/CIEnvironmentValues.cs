@@ -606,6 +606,7 @@ namespace Datadog.Trace.Ci
             {
                 Message = Message + "\n" + extendedMessage;
             }
+
             AuthorName = EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_REPO_COMMIT_AUTHOR");
             AuthorEmail = EnvironmentHelpers.GetEnvironmentVariable("APPVEYOR_REPO_COMMIT_AUTHOR_EMAIL");
         }
