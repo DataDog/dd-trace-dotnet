@@ -14,7 +14,7 @@
     <RazorPagesProject Include="test/test-applications/**/Samples.AspNetCoreRazorPages.csproj" />
     <ExcludeExpenseItDemoProject Remove="test/test-applications/regression/**/ExpenseItDemo*.csproj" />
     <ExcludeLegacyRedisProject Remove="test/test-applications/regression/**/StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
-    <CsharpTestHelperProject Include="test\**\*.TestHelpers.csproj"/>
+    <CsharpTestHelperProject Include="test\**\*.TestHelpers.csproj;test\**\*.TestHelpers.AutoInstrumentation.csproj"/>
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
     <VbSampleLibProject Include="test\test-applications\integrations\**\*.vbproj" />
@@ -36,11 +36,11 @@
 
   <!--  Used by CompileManagedTestHelpers-->
   <Target Name="BuildInstrumentationVerificationLibrary">
-    <MSBuild Targets="Restore;Build" Projects="@(CsharpInstrumentationVerificationLibrary)">
+    <MSBuild Targets="Build" Projects="@(CsharpInstrumentationVerificationLibrary)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
-  
+
   <!--  Used by CompileManagedTestHelpers-->
   <Target Name="BuildCsharpTestHelpers">
     <MSBuild Targets="Build" Projects="@(CsharpTestHelperProject)">
@@ -65,7 +65,7 @@
       <IntegrationTestProjects Include="@(CsharpIntegrationTestProject);@(CsharpIntegrationTestRegressionProject);@(ExcludeExpenseItDemoProject);@(ExcludeLegacyRedisProject)" />
     </ItemGroup>
 
-    <MSBuild Targets="Build" Projects="@(IntegrationTestProjects)">
+    <MSBuild Targets="Build" Projects="@(CsharpTestHelperProject);@(IntegrationTestProjects)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
