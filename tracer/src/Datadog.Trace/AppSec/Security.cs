@@ -509,8 +509,7 @@ namespace Datadog.Trace.AppSec
             }
             catch (Exception ex) when (ex is not BlockException)
             {
-                var stack = new StackTrace();
-                Log.Error(ex, "Call into the security module failed. Current stack: " + stack);
+                Log.Error(ex, "Call into the security module failed");
             }
         }
 
