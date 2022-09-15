@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
@@ -10,6 +12,6 @@ namespace Datadog.Trace.Tagging
     internal partial class InsecureHashingTags : CommonTags
     {
         [Tag(Trace.Tags.IastJson)]
-        public string IastJson { get; set; }
+        public string? IastJson { get; set; }
     }
 }
