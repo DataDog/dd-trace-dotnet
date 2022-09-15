@@ -14,6 +14,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
     /// <summary>
     /// ServiceStack.Redis.RedisNativeClient.SendReceive[T] calltarget instrumentation.
     /// </summary>
+    /// <para>
+    /// 6.2.0 of ServiceStack.Redis changed the signature of SendReceive (added string parameter).
+    /// See: https://github.com/ServiceStack/ServiceStack/commit/950155db0d1b358920eab307c61e334e24f1d174.
+    /// </para>
     [InstrumentMethod(
      AssemblyName = "ServiceStack.Redis",
      TypeName = "ServiceStack.Redis.RedisNativeClient",
