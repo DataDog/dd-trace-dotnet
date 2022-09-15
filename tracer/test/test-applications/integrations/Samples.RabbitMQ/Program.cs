@@ -37,7 +37,7 @@ namespace Samples.RabbitMQ
             var sendThread = new Thread(Send);
             sendThread.Start();
 
-            var receiveThread = new Thread(o => Receive(false));
+            var receiveThread = new Thread(o => Receive(useQueue: false, consumerType: ConsumerType.SameAssemblyImplicitImplementation));
             receiveThread.Start();
 
             sendThread.Join();
@@ -52,12 +52,28 @@ namespace Samples.RabbitMQ
             sendThread = new Thread(Send);
             sendThread.Start();
 
-            receiveThread = new Thread(o => Receive(true));
+            receiveThread = new Thread(o => Receive(useQueue: true, consumerType: ConsumerType.DifferentAssemblyImplicitImplementation));
             receiveThread.Start();
 
             sendThread.Join();
             receiveThread.Join();
 
+            _sendFinished.Reset();
+
+            // Do the test one more time to ensure that we instrument the various interface method scenarios
+            PublishAndGet();
+            PublishAndGetDefault();
+
+            sendThread = new Thread(Send);
+            sendThread.Start();
+
+            receiveThread = new Thread(o => Receive(useQueue: true, consumerType: ConsumerType.DifferentAssemblyExplicitImplementation));
+            receiveThread.Start();
+
+            sendThread.Join();
+            receiveThread.Join();
+
+            _sendFinished.Reset();
         }
 
         private static void PublishAndGet()
@@ -185,7 +201,7 @@ namespace Samples.RabbitMQ
             Console.WriteLine("[Send] Exiting Thread.");
         }
 
-        private static void Receive(bool useQueue)
+        private static void Receive(bool useQueue, ConsumerType consumerType)
         {
             // Let's just wait for all sending activity to finish before doing any work
             _sendFinished.WaitOne();
@@ -202,7 +218,7 @@ namespace Samples.RabbitMQ
                                     arguments: null);
 
                 var queue = new BlockingCollection<BasicDeliverEventArgs>();
-                var consumer = CreateConsumer(channel, queue, useQueue: useQueue, useCustomConsumer: useQueue);
+                var consumer = CreateConsumer(channel, queue, useQueue: useQueue, consumerType);
                 channel.BasicConsume("hello",
                                     true,
                                     consumer);
@@ -229,7 +245,7 @@ namespace Samples.RabbitMQ
             }
         }
 
-        private static IBasicConsumer CreateConsumer(IModel channel, BlockingCollection<BasicDeliverEventArgs> queue, bool useQueue, bool useCustomConsumer)
+        private static IBasicConsumer CreateConsumer(IModel channel, BlockingCollection<BasicDeliverEventArgs> queue, bool useQueue, ConsumerType consumerType)
         {
             void HandleEvent(object sender, BasicDeliverEventArgs ea)
             {
@@ -243,20 +259,28 @@ namespace Samples.RabbitMQ
                 }
             }
 
-            if (useCustomConsumer)
+            IBasicConsumer consumer;
+            switch (consumerType)
             {
-                // Using a custom type tests that interface integration methods work correctly for interfaces defined in another assembly
-                var customConsumer = new CustomConsumer(channel);
-                customConsumer.Received += HandleEvent;
-                return customConsumer;
+                case ConsumerType.SameAssemblyImplicitImplementation:
+                    var eventingBasicConsumer = new global::RabbitMQ.Client.Events.EventingBasicConsumer(channel);
+                    eventingBasicConsumer.Received += HandleEvent;
+                    consumer = eventingBasicConsumer;
+                    break;
+                case ConsumerType.DifferentAssemblyImplicitImplementation:
+                    var customImplicitConsumer = new Samples.RabbitMQ.Program.ImplicitImplementationConsumer(channel);
+                    customImplicitConsumer.Received += HandleEvent;
+                    consumer = customImplicitConsumer;
+                    break;
+                case ConsumerType.DifferentAssemblyExplicitImplementation:
+                default:
+                    var customExplicitConsumer = new Samples.RabbitMQ.Program.ExplicitImplementationConsumer(channel);
+                    customExplicitConsumer.Received += HandleEvent;
+                    consumer = customExplicitConsumer;
+                    break;
             }
-            else
-            {
-                // Using the library type tests that interface integration methods work correctly for interfaces defined in the same assembly
-                var eventingBasicConsumer = new EventingBasicConsumer(channel);
-                eventingBasicConsumer.Received += HandleEvent;
-                return eventingBasicConsumer;
-            }
+
+            return consumer;
         }
 
         private static void ConsumeFromQueue(BlockingCollection<BasicDeliverEventArgs> queue)
@@ -296,15 +320,23 @@ namespace Samples.RabbitMQ
             }
         }
 
+        enum ConsumerType
+        {
+            SameAssemblyImplicitImplementation,
+            DifferentAssemblyImplicitImplementation,
+            DifferentAssemblyExplicitImplementation,
+        }
+
         // Implement a custom consumer class whose implementation is nearly
         // identical to the implementation of RabbitMQ.Client.Events.EventingBasicConsumer.
-        // This will test that we can properly instrument RabbitMQ.Client.IBasicConsumer.HandleBasicDeliver
-        class CustomConsumer : IBasicConsumer
+        // This will test that we can properly instrument implicit interface implementations
+        // of RabbitMQ.Client.IBasicConsumer.HandleBasicDeliver
+        class ImplicitImplementationConsumer : IBasicConsumer
         {
             private readonly DefaultBasicConsumer _consumer;
             private readonly IModel _model;
 
-            public CustomConsumer(IModel model)
+            public ImplicitImplementationConsumer(IModel model)
             {
                 _consumer = new DefaultBasicConsumer(model);
                 _model = model;
@@ -347,6 +379,64 @@ namespace Samples.RabbitMQ
             }
 
             public void HandleModelShutdown(object model, ShutdownEventArgs reason)
+            {
+                _consumer.HandleModelShutdown(model, reason);
+                Shutdown?.Invoke(this, reason);
+            }
+        }
+
+        // Implement a custom consumer class whose implementation is nearly
+        // identical to the implementation of RabbitMQ.Client.Events.EventingBasicConsumer.
+        // This will test that we can properly instrument explicit interface implementations
+        // of RabbitMQ.Client.IBasicConsumer.HandleBasicDeliver
+        class ExplicitImplementationConsumer : IBasicConsumer
+        {
+            private readonly DefaultBasicConsumer _consumer;
+            private readonly IModel _model;
+
+            public ExplicitImplementationConsumer(IModel model)
+            {
+                _consumer = new DefaultBasicConsumer(model);
+                _model = model;
+            }
+
+            IModel IBasicConsumer.Model => _model;
+
+            public event EventHandler<BasicDeliverEventArgs> Received;
+
+            public event EventHandler<ConsumerEventArgs> Registered;
+
+            public event EventHandler<ShutdownEventArgs> Shutdown;
+
+            public event EventHandler<ConsumerEventArgs> Unregistered;
+
+            public event EventHandler<ConsumerEventArgs> ConsumerCancelled;
+
+            void IBasicConsumer.HandleBasicCancel(string consumerTag)
+            {
+                _consumer.HandleBasicCancel(consumerTag);
+            }
+
+            void IBasicConsumer.HandleBasicCancelOk(string consumerTag)
+            {
+                _consumer.HandleBasicCancelOk(consumerTag);
+                Unregistered?.Invoke(this, new ConsumerEventArgs(new[] { consumerTag }));
+            }
+
+            void IBasicConsumer.HandleBasicConsumeOk(string consumerTag)
+            {
+                _consumer.HandleBasicConsumeOk(consumerTag);
+                Registered?.Invoke(this, new ConsumerEventArgs(new[] { consumerTag }));
+            }
+
+            void IBasicConsumer.HandleBasicDeliver(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IBasicProperties properties, ReadOnlyMemory<byte> body)
+            {
+                Received?.Invoke(
+                    this,
+                    new BasicDeliverEventArgs(consumerTag, deliveryTag, redelivered, exchange, routingKey, properties, body));
+            }
+
+            void IBasicConsumer.HandleModelShutdown(object model, ShutdownEventArgs reason)
             {
                 _consumer.HandleModelShutdown(model, reason);
                 Shutdown?.Invoke(this, reason);

@@ -204,19 +204,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             // Assert that all empty get results are expected
-            Assert.Equal(4, emptyBasicGetCount);
+            Assert.Equal(6, emptyBasicGetCount);
 
             // Assert that each span that started a distributed trace (basic.publish)
             // has only one child span (basic.deliver or basic.get)
             Assert.All(distributedParentSpans, kvp => Assert.Equal(1, kvp.Value));
 
-            Assert.Equal(10, basicPublishCount);
-            Assert.Equal(8, basicGetCount);
-            Assert.Equal(6, basicDeliverCount);
+            Assert.Equal(15, basicPublishCount);
+            Assert.Equal(12, basicGetCount);
+            Assert.Equal(9, basicDeliverCount);
 
-            Assert.Equal(2, exchangeDeclareCount);
-            Assert.Equal(2, queueBindCount);
-            Assert.Equal(8, queueDeclareCount);
+            Assert.Equal(3, exchangeDeclareCount);
+            Assert.Equal(3, queueBindCount);
+            Assert.Equal(12, queueDeclareCount);
             telemetry.AssertIntegrationEnabled(IntegrationId.RabbitMQ);
         }
     }
