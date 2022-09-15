@@ -13,6 +13,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests.Debugger;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
@@ -44,8 +45,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestSecurityToggling(bool? enableSecurity, uint expectedState, byte expectedCapablities)
         {
-            // TODO fix me
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*");
 
             var url = "/Health/?[$slice]=value";
             var agent = await RunOnSelfHosted(enableSecurity);
@@ -58,9 +58,10 @@ namespace Datadog.Trace.Security.IntegrationTests
             var request1 = await agent.WaitRcmRequestAndReturnLast();
             CheckAckState(request1, expectedState, null, "First RCM call");
             CheckCapabilities(request1, expectedCapablities, "First RCM call");
-            // even the request show the applied state seems extra time is needed before it's active
-            // TODO replace this with watching the file log
-            await Task.Delay(1500);
+            if (enableSecurity == true)
+            {
+                await logEntryWatcher.WaitForLogEntry("AppSec Disabled");
+            }
 
             var spans2 = await SendRequestsAsync(agent, url);
 
@@ -69,8 +70,10 @@ namespace Datadog.Trace.Security.IntegrationTests
             var request2 = await agent.WaitRcmRequestAndReturnLast();
             CheckAckState(request2, expectedState, null, "Second RCM call");
             CheckCapabilities(request2, expectedCapablities, "Second RCM call");
-            // even the request show the applied state seems extra time is needed before it's active
-            await Task.Delay(1500);
+            if (enableSecurity != false)
+            {
+                await logEntryWatcher.WaitForLogEntry("AppSec Enabled");
+            }
 
             var spans3 = await SendRequestsAsync(agent, url);
 

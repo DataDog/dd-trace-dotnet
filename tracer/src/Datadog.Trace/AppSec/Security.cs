@@ -339,8 +339,6 @@ namespace Datadog.Trace.AppSec
         {
             if (!_enabled)
             {
-                Log.Information("AppSec Enabled");
-
                 _instrumentationGateway.StartRequest += RunWafAndReact;
                 _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
                 _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
@@ -374,6 +372,8 @@ namespace Datadog.Trace.AppSec
                 _rateLimiter = _rateLimiter ?? new AppSecRateLimiter(_settings.TraceRateLimit);
 
                 _enabled = true;
+
+                Log.Information("AppSec Enabled");
             }
         }
 
@@ -381,8 +381,6 @@ namespace Datadog.Trace.AppSec
         {
             if (_enabled)
             {
-                Log.Information("AppSec Disabled");
-
                 _instrumentationGateway.StartRequest -= RunWafAndReact;
                 _instrumentationGateway.EndRequest -= RunWafAndReactAndCleanup;
                 _instrumentationGateway.PathParamsAvailable -= RunWafAndReact;
@@ -394,6 +392,8 @@ namespace Datadog.Trace.AppSec
                 RemoveAppsecSpecificInstrumentations();
 
                 _enabled = false;
+
+                Log.Information("AppSec Disabled");
             }
         }
 
