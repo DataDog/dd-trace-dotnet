@@ -613,7 +613,7 @@ namespace Datadog.Trace.TestHelpers
             404 => "404 Not Found",
             500 => "500 Internal Server Error",
             _ => status.ToString(),
-        }
+        };
 
         private byte[] GetResponseBytes(string body, int status)
         {
