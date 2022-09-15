@@ -13,5 +13,8 @@ namespace Datadog.Trace.Tagging
     {
         [Tag(Trace.Tags.IastJson)]
         public string? IastJson { get; set; }
+
+        [Tag(Trace.Tags.IastEnabled)]
+        public string? IastEnabled { get; set; }
     }
 }
