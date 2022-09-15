@@ -349,7 +349,7 @@ namespace Datadog.Trace.AppSec
                 }
 
 #else
-                _usingIntegratedPipeline = false;
+                _usingIntegratedPipeline = null;
                 _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
 #endif
                 AddAppsecSpecificInstrumentations();
@@ -442,7 +442,7 @@ namespace Datadog.Trace.AppSec
         {
             TryAddEndPoint(span);
             var headers =
-                _usingIntegratedPipeline == false ?
+                _usingIntegratedPipeline == true || _usingIntegratedPipeline is null ?
                     transport.GetResponseHeaders() :
                     new NameValueHeadersCollection(new NameValueCollection());
             AddHeaderTags(span, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
