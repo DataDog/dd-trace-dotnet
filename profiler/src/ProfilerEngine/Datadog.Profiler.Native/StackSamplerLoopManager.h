@@ -11,8 +11,10 @@
 // from dotnet coreclr includes
 #include "cor.h"
 #include "corprof.h"
+#include "xclrdata.h"
 // end
 
+#include "DacService.h"
 #include "IMetricsSender.h"
 #include "Log.h"
 #include "OpSysTools.h"
@@ -86,7 +88,8 @@ public:
         IThreadsCpuManager* pThreadsCpuManager,
         IManagedThreadList* pManagedThreadList,
         ICollector<RawWallTimeSample>* pWallTimeCollector,
-        ICollector<RawCpuSample>* pCpuTimeCollector
+        ICollector<RawCpuSample>* pCpuTimeCollector,
+        DacService* dac
         );
 
     ~StackSamplerLoopManager() override;
@@ -241,4 +244,6 @@ private:
 
     IClrLifetime const* _pClrLifetime;
     bool _isStopped = false;
+
+    DacService* _dac;
 };

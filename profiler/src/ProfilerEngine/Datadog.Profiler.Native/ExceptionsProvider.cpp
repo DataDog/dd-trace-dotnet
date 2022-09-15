@@ -126,7 +126,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     INVOKE(_pManagedThreadList->TryGetCurrentThreadInfo(&threadInfo))
 
     uint32_t hrCollectStack = E_FAIL;
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, nullptr);
 
     pStackFramesCollector->PrepareForNextCollection();
     const auto result = pStackFramesCollector->CollectStackSample(threadInfo, &hrCollectStack);

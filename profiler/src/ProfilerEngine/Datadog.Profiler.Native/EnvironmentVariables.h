@@ -8,6 +8,7 @@
 class EnvironmentVariables final
 {
 public:
+    inline static const shared::WSTRING DacEnabled                  = WStr("DD_PROFILING_DAC_ENABLED");
     inline static const shared::WSTRING ProfilingEnabled            = WStr("DD_PROFILING_ENABLED");
     inline static const shared::WSTRING DebugLogEnabled             = WStr("DD_TRACE_DEBUG");
     inline static const shared::WSTRING LogPath                     = WStr("DD_PROFILING_LOG_PATH");

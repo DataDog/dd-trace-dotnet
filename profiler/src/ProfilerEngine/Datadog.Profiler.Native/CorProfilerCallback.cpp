@@ -2,32 +2,38 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 // from dotnet coreclr includes
+#include "ClrData.h"
 #include "cor.h"
 #include "corprof.h"
+#include "xclrdata.h"
 // end
 
 #include "CorProfilerCallback.h"
 
 #include <inttypes.h>
+#include <filesystem>
 
 #ifdef _WINDOWS
 #include <VersionHelpers.h>
 #include <windows.h>
 #else
 #include "cgroup.h"
+#include <link.h>
 #endif
 
 #include "AllocationsProvider.h"
-#include "ContentionProvider.h"
 #include "AppDomainStore.h"
 #include "ApplicationStore.h"
 #include "ClrEventsParser.h"
 #include "ClrLifetime.h"
 #include "Configuration.h"
+#include "ContentionProvider.h"
 #include "CpuTimeProvider.h"
+#include "EnabledProfilers.h"
 #include "EnvironmentVariables.h"
 #include "ExceptionsProvider.h"
 #include "FrameStore.h"
+#include "HResultConverter.h"
 #include "IMetricsSender.h"
 #include "IMetricsSenderFactory.h"
 #include "LibddprofExporter.h"
@@ -37,15 +43,18 @@
 #include "OsSpecificApi.h"
 #include "ProfilerEngineStatus.h"
 #include "RuntimeIdStore.h"
+#include "RuntimeInfo.h"
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
-#include "RuntimeInfo.h"
-#include "EnabledProfilers.h"
 
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
+
+#include "ClrData.h"
+#include "DacService.h"
+#include "SelfDataTarget.h"
 
 // The following macros are used to construct the profiler file:
 #ifdef _WINDOWS
@@ -167,6 +176,22 @@ bool CorProfilerCallback::InitializeServices()
     // compute enabled profilers based on configuration and receivable CLR events
     _pEnabledProfilers = std::make_unique<EnabledProfilers>(_pConfiguration.get(), _pCorProfilerInfoEvents != nullptr);
 
+    DacService* dac = nullptr;
+
+    if (_pConfiguration->IsDacEnabled())
+    {
+        dac = InitializeDac();
+    }
+
+    if (dac == nullptr)
+    {
+        std::cout << "The DAC is NOT loaded. Using old stackwalking code." << std::endl;
+    }
+    else
+    {
+        std::cout << "The DAC is loaded. Using new stackwalking code." << std::endl;
+    }
+
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
         _pConfiguration.get(),
@@ -175,7 +200,8 @@ bool CorProfilerCallback::InitializeServices()
         _pThreadsCpuManager,
         _pManagedThreadList,
         _pWallTimeProvider,
-        _pCpuTimeProvider);
+        _pCpuTimeProvider,
+        dac);
 
     _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
 
@@ -294,6 +320,153 @@ bool CorProfilerCallback::StopServices()
     }
 
     return result;
+}
+
+#ifndef _WINDOWS
+static int callback(struct dl_phdr_info *info, size_t size, void *data)
+{
+    auto path = std::filesystem::path(info->dlpi_name);
+
+    auto fileName = path.filename();
+
+    if (fileName == "libcoreclr.so")
+    {
+        auto result = (std::string**)data;
+        *result = new std::string(info->dlpi_name);
+    }
+
+    return 0;
+}
+
+#define MIDL_DEFINE_GUID(type,name,l,w1,w2,b1,b2,b3,b4,b5,b6,b7,b8) \
+        EXTERN_C __declspec(selectany) const type name = {l,w1,w2,{b1,b2,b3,b4,b5,b6,b7,b8}}
+
+MIDL_DEFINE_GUID(IID, IID_IXCLRDataProcess,0x5c552ab6,0xfc09,0x4cb3,0x8e,0x36,0x22,0xfa,0x03,0xc7,0x98,0xb7);
+
+#endif
+
+DacService* CorProfilerCallback::InitializeDac()
+{
+#ifdef _WINDOWS
+    HMODULE clrModule;
+
+    if (!GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT, L"coreclr.dll", &clrModule))
+    {
+        std::cout << "Locating coreclr failed" << std::endl;
+        return nullptr;
+    }
+
+    WCHAR buffer[MAX_PATH] = {0};
+
+    const auto size = GetModuleFileNameW(clrModule, buffer, MAX_PATH);
+
+    if (size <= 0)
+    {
+        std::cout << "GetModuleFileNameW failed: " << HResultConverter::ToStringWithCode(HRESULT_FROM_WIN32(GetLastError())) << std::endl;
+        return nullptr;
+    }
+
+    GetModuleFileNameW(clrModule, buffer, size);
+
+    auto path = std::filesystem::path(buffer);
+
+    auto folder = path.remove_filename();
+
+    auto pathToDac = folder.append("mscordaccore.dll");
+
+    std::cout << "Loading DAC from " << pathToDac << std::endl;
+
+    auto pathToDacStr = pathToDac.wstring();
+
+    auto dacModule = LoadLibraryExW(pathToDacStr.c_str(), nullptr, 0);
+
+    if (dacModule == nullptr)
+    {
+        std::cout << "Loading the DAC failed: " << HResultConverter::ToStringWithCode(HRESULT_FROM_WIN32(GetLastError())) << std::endl;
+        return nullptr;
+    }
+
+    std::cout << "Loaded the DAC" << std::endl;
+
+    auto dataCreateInstance = (PFN_CLRDataCreateInstance)GetProcAddress(dacModule, "CLRDataCreateInstance");
+
+    auto dataTarget = new SelfDataTarget();
+
+    IXCLRDataProcess* clrDataProcess;
+
+    auto result = dataCreateInstance(IID_IXCLRDataProcess, (ICLRDataTarget2*)dataTarget, (void**)&clrDataProcess);
+
+    std::cout << "CLRDataCreateInstance result: " << HResultConverter::ToStringWithCode(result) << std::endl;
+
+#else
+
+    std::string* result{0};
+
+    dl_iterate_phdr(&callback, (void*)&result);
+
+    if (result == nullptr) {
+        std::cout << "Failed to find libcoreclr.so" << std::endl;
+        return 0;
+    }
+
+    std::cout << "Result is " << *result << std::endl;
+
+    auto path = std::filesystem::path(*result);
+
+    auto folder = path.remove_filename();
+
+    auto dacLocation = folder.append("libmscordaccore.so");
+
+    std::cout << "DAC location: " << dacLocation;
+
+    auto dacHandle = dlopen(dacLocation.c_str(), RTLD_LAZY);
+
+    if (dacHandle == 0)
+    {
+        std::cout << "dlerror: " << dlerror() << std::endl;
+    }
+
+    std::cout << "dacHandle " << dacHandle << std::endl;
+
+    int (*PAL_InitializeDLL)();
+
+    auto initializeAddr = dlsym(dacHandle, "PAL_InitializeDLL");
+
+    if (initializeAddr == nullptr)
+    {
+        std::cout << "Could not find PAL_InitializeDLL" << std::endl;
+
+        initializeAddr = dlsym(dacHandle, "DAC_PAL_InitializeDLL");
+
+        if (initializeAddr == nullptr)
+        {
+            std::cout << "Could not find DAC_PAL_InitializeDLL" << std::endl;    
+        }
+    }
+
+    PAL_InitializeDLL = (int (*)())initializeAddr;
+
+    PAL_InitializeDLL();
+
+    auto dataCreateInstance = (PFN_CLRDataCreateInstance)dlsym(dacHandle, "CLRDataCreateInstance");
+
+    std::cout << "dataCreateInstance " << dataCreateInstance << std::endl;
+
+    auto dataTarget = new SelfDataTarget();
+
+    IXCLRDataProcess* clrDataProcess;
+
+    auto hr = dataCreateInstance(IID_IXCLRDataProcess, (ICLRDataTarget2*)dataTarget, (void**)&clrDataProcess);
+
+    std::cout << "CLRDataCreateInstance result: " << HResultConverter::ToStringWithCode(hr) << std::endl;
+
+#endif
+
+    auto* dacService = new DacService();
+    dacService->ClrDataProcess = clrDataProcess;
+    dacService->DataTarget = dataTarget;
+
+    return dacService;
 }
 
 void CorProfilerCallback::DisposeInternal(void)
@@ -415,11 +588,11 @@ void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoU
 {
     runtimeMajor = 0;
     runtimeMinor = 0;
-    IUnknown* tstVerProfilerInfo;  // ICorProfilerInfo13 will ship with .NET 7
+    IUnknown* tstVerProfilerInfo; // ICorProfilerInfo13 will ship with .NET 7
     if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo12), (void**)&tstVerProfilerInfo))
     {
         _isNet46OrGreater = true;
-        Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 5.0 or later.");  // could be 6 too
+        Log::Info("ICorProfilerInfo11 available. Profiling API compatibility: .NET Core 5.0 or later."); // could be 6 too
         tstVerProfilerInfo->Release();
     }
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo11), (void**)&tstVerProfilerInfo))
@@ -441,7 +614,7 @@ void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoU
     else if (S_OK == corProfilerInfoUnk->QueryInterface(__uuidof(ICorProfilerInfo9), (void**)&tstVerProfilerInfo))
     {
         runtimeMajor = 2;
-        runtimeMinor = 1;  // could also be 2.2
+        runtimeMinor = 1; // could also be 2.2
         _isNet46OrGreater = true;
         Log::Info("ICorProfilerInfo9 available. Profiling API compatibility: .NET Core 2.1 or later.");
         tstVerProfilerInfo->Release();
@@ -762,13 +935,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
         COR_PRF_EVENTPIPE_PROVIDER_CONFIG providers[] =
             {
-                {
-                    WStr("Microsoft-Windows-DotNETRuntime"),
-                    activatedKeywords,
-                    5, // the documentation states that AllocationTick is Informational but... need Verbose  :^(
-                    NULL
-                }
-            };
+                {WStr("Microsoft-Windows-DotNETRuntime"),
+                 activatedKeywords,
+                 5, // the documentation states that AllocationTick is Informational but... need Verbose  :^(
+                 NULL}};
 
         hr = _pCorProfilerInfoEvents->EventPipeStartSession(
             sizeof(providers) / sizeof(providers[0]),

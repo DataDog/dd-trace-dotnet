@@ -41,4 +41,5 @@ public:
     virtual bool IsAllocationProfilingEnabled() const = 0;
     virtual bool IsContentionProfilingEnabled() const = 0;
     virtual double MinimumCores() const = 0;
+    virtual bool IsDacEnabled() const = 0;
 };

@@ -19,6 +19,7 @@ class MockConfiguration : public IConfiguration
 {
 public:
     ~MockConfiguration() override = default;
+    MOCK_METHOD(bool, IsDacEnabled, (), (const override));
     MOCK_METHOD(bool, IsDebugLogEnabled, (), (const override));
     MOCK_METHOD(fs::path const&, GetLogDirectory, (), (const override));
     MOCK_METHOD(fs::path const&, GetProfilesOutputDirectory, (), (const override));

@@ -234,6 +234,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AdaptiveSampler.h" />
+    <ClInclude Include="DacService.h" />
     <ClInclude Include="EnabledProfilers.h" />
     <ClInclude Include="EnumHelpers.h" />
     <ClInclude Include="COMHelpers.h" />
@@ -297,6 +298,7 @@
     <ClInclude Include="SamplesCollector.h" />
     <ClInclude Include="ProviderBase.h" />
     <ClInclude Include="ScopeFinalizer.h" />
+    <ClInclude Include="SelfDataTarget.h" />
     <ClInclude Include="Semaphore.h" />
     <ClInclude Include="StackFramesCollectorBase.h" />
     <ClInclude Include="StackSamplerLoop.h" />
@@ -347,6 +349,7 @@
     <ClCompile Include="Sample.cpp" />
     <ClCompile Include="SamplesCollector.cpp" />
     <ClCompile Include="ProviderBase.cpp" />
+    <ClCompile Include="SelfDataTarget.cpp" />
     <ClCompile Include="StackFramesCollectorBase.cpp" />
     <ClCompile Include="StackSamplerLoop.cpp" />
     <ClCompile Include="StackSamplerLoopManager.cpp" />

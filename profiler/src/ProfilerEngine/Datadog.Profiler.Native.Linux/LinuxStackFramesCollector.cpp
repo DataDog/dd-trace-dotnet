@@ -3,6 +3,8 @@
 
 #include "LinuxStackFramesCollector.h"
 
+#include "profiler/src/ProfilerEngine/Datadog.Profiler.Native/OpSysTools.h"
+
 #include <cassert>
 #include <chrono>
 #include <errno.h>
@@ -11,6 +13,8 @@
 #include <sys/syscall.h>
 #include <unordered_map>
 #include <iomanip>
+#include <iostream>
+#include "ucontext.h"
 
 #ifdef ARM64
 #include <libunwind-aarch64.h>
@@ -34,11 +38,12 @@ bool LinuxStackFramesCollector::s_isSignalHandlerSetup = false;
 int32_t LinuxStackFramesCollector::s_signalToSend = -1;
 LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
 
-LinuxStackFramesCollector::LinuxStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo) :
+LinuxStackFramesCollector::LinuxStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo, DacService* dac) :
     _pCorProfilerInfo(_pCorProfilerInfo),
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
-    _errorStatistics{}
+    _errorStatistics{},
+    _dac{dac}
 {
     _pCorProfilerInfo->AddRef();
     InitializeSignalHandler();
@@ -98,7 +103,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 
     if (selfCollect)
     {
-        errorCode = CollectCallStackCurrentThread();
+        errorCode = CollectCallStackCurrentThread(nullptr);
     }
     else
     {
@@ -234,8 +239,9 @@ bool LinuxStackFramesCollector::SetupSignalHandler()
     // But, let's check if they are available
 
     struct sigaction sampleAction;
-    sampleAction.sa_flags = 0;
-    sampleAction.sa_handler = LinuxStackFramesCollector::CollectStackSampleSignalHandler;
+    sampleAction.sa_flags = SA_RESTART | SA_SIGINFO;
+    sampleAction.sa_handler = SIG_DFL;
+    sampleAction.sa_sigaction = LinuxStackFramesCollector::CollectStackSampleSignalHandler;
     sigemptyset(&sampleAction.sa_mask);
 
     if (TrySetHandlerForSignal(SIGUSR1, sampleAction))
@@ -288,8 +294,191 @@ char const* LinuxStackFramesCollector::ErrorCodeToString(int32_t errorCode)
     }
 }
 
-std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread()
+static HRESULT GetFrameLocation(IXCLRDataStackWalk* pStackWalk, CLRDATA_ADDRESS* ip, CLRDATA_ADDRESS* sp)
 {
+    T_CONTEXT context;
+
+    // https://github.com/dotnet/diagnostics/blob/b196cd60197fe12f845126394408cb72137827db/src/SOS/Strike/disasm.h
+    HRESULT hr = pStackWalk->GetContext(0x0010000BL, sizeof(T_CONTEXT), NULL, (BYTE*)&context);
+    if (FAILED(hr))
+    {
+        printf("GetFrameContext failed: %lx\n", hr);
+        return hr;
+    }
+    if (hr == S_FALSE)
+    {
+        // GetFrameContext returns S_FALSE if the frame iterator is invalid.  That's basically an error for us.
+        return E_FAIL;
+    }
+    // First find the info for the Frame object, if the current frame has an associated clr!Frame.
+    *ip = context.Rip;
+    *sp = context.Rsp;
+
+    //std::cout << "GetFrameLocation - Rip: " << std::hex << *ip << std::endl;
+
+    // if (IsDbgTargetArm())
+    //     *ip = *ip & ~THUMB_CODE;
+
+    return S_OK;
+}
+
+
+std::int32_t LinuxStackFramesCollector::StackWalkWithDac(void* context)
+{
+    //std::cout << "Flushing DAC" << std::endl;
+
+    _dac->ClrDataProcess->Flush();
+
+    if (context == nullptr)
+    {
+        _dac->DataTarget->OverrideIp = 0;
+
+        //std::cout << "Selfwalk, no override" << std::endl;
+    }
+    else
+    {
+        auto originalContext = (ucontext_t*)context;
+        _dac->DataTarget->OverrideIp = originalContext->uc_mcontext.gregs[REG_RIP];
+        _dac->DataTarget->OverrideRsp = originalContext->uc_mcontext.gregs[REG_RSP];
+        _dac->DataTarget->OverrideRbp = originalContext->uc_mcontext.gregs[REG_RBP];
+        _dac->DataTarget->OverrideRdi = originalContext->uc_mcontext.gregs[REG_RDI];
+        _dac->DataTarget->OverrideRsi = originalContext->uc_mcontext.gregs[REG_RSI];
+        _dac->DataTarget->OverrideRbx = originalContext->uc_mcontext.gregs[REG_RBX];
+        _dac->DataTarget->OverrideRdx = originalContext->uc_mcontext.gregs[REG_RDX];
+        _dac->DataTarget->OverrideRcx = originalContext->uc_mcontext.gregs[REG_RCX];
+        _dac->DataTarget->OverrideRax = originalContext->uc_mcontext.gregs[REG_RAX];
+        _dac->DataTarget->OverrideR8 = originalContext->uc_mcontext.gregs[REG_R8];
+        _dac->DataTarget->OverrideR9 = originalContext->uc_mcontext.gregs[REG_R9];
+        _dac->DataTarget->OverrideR10 = originalContext->uc_mcontext.gregs[REG_R10];
+        _dac->DataTarget->OverrideR11 = originalContext->uc_mcontext.gregs[REG_R11];
+        _dac->DataTarget->OverrideR12 = originalContext->uc_mcontext.gregs[REG_R12];
+        _dac->DataTarget->OverrideR13 = originalContext->uc_mcontext.gregs[REG_R13];
+        _dac->DataTarget->OverrideR14 = originalContext->uc_mcontext.gregs[REG_R14];
+        _dac->DataTarget->OverrideR15 = originalContext->uc_mcontext.gregs[REG_R15];
+
+        //std::cout << "Registers are overriden - " << originalContext->uc_mcontext.gregs[REG_RIP] << " - " << originalContext->uc_mcontext.gregs[REG_RSP] << " - " << originalContext->uc_mcontext.gregs[REG_RBP] << std::endl;
+        //std::cout << "Reading back: " << _dac->DataTarget->OverrideIp << " - " << _dac->DataTarget->OverrideRsp << " - " << _dac->DataTarget->OverrideRbp << std::endl;
+
+    }
+
+
+    IXCLRDataTask* task;
+
+    auto result = _dac->ClrDataProcess->GetTaskByOSThreadID(OpSysTools::GetThreadId(), &task);
+
+    if (FAILED(result))
+    {
+        std::cout << "GetTaskByOSThreadID failed for " << OpSysTools::GetThreadId() << " : " << result << std::endl;
+        return E_FAIL;
+    }
+
+    IXCLRDataStackWalk* stackWalk;
+
+    result = task->CreateStackWalk(CLRDATA_SIMPFRAME_UNRECOGNIZED |
+                                       CLRDATA_SIMPFRAME_MANAGED_METHOD |
+                                       CLRDATA_SIMPFRAME_RUNTIME_MANAGED_CODE |
+                                       CLRDATA_SIMPFRAME_RUNTIME_UNMANAGED_CODE,
+                                   &stackWalk);
+    
+    if (FAILED(result))
+    {
+        std::cout << "CreateStackWalk failed: " << result << std::endl;
+        return E_FAIL;
+    }
+
+    int frameNumber = 0;
+    int internalFrames = 0;
+    HRESULT hr;
+    do
+    {
+        CLRDATA_ADDRESS ip = 0, sp = 0;
+        hr = GetFrameLocation(stackWalk, &ip, &sp);
+        if (SUCCEEDED(hr))
+        {
+            DacpFrameData FrameData;
+            HRESULT frameDataResult = FrameData.Request(stackWalk);
+            if (SUCCEEDED(frameDataResult) && FrameData.frameAddr)
+                sp = FrameData.frameAddr;
+
+            // while ((numNativeFrames > 0) && (currentNativeFrame->StackOffset <= CDA_TO_UL64(sp)))
+            //{
+            //     if (currentNativeFrame->StackOffset != CDA_TO_UL64(sp))
+            //     {
+            //         PrintNativeStackFrame(out, currentNativeFrame, bSuppressLines);
+            //     }
+            //     currentNativeFrame++;
+            //     numNativeFrames--;
+            // }
+
+            // Print the stack pointer.
+            // std::cout << sp;
+
+            // Print the method/Frame info
+            if (SUCCEEDED(frameDataResult) && FrameData.frameAddr)
+            {
+                internalFrames++;
+
+                // Skip the instruction pointer because it doesn't really mean anything for method frames
+                // out.WriteColumn(1, bFull ? String("") : NativePtr(ip));
+
+                // This is a clr!Frame.
+                //std::cout << " clr frame - " << FrameData.frameAddr << std::endl;
+
+                AddFrame(FrameData.frameAddr);
+
+                // out.WriteColumn(2, GetFrameFromAddress(TO_TADDR(FrameData.frameAddr), pStackWalk, bFull));
+            }
+            else
+            {
+                // To get the source line number of the actual code that threw an exception, the IP needs
+                // to be adjusted in certain cases.
+                //
+                // The IP of stack frame points to either:
+                //
+                // 1) Currently executing instruction (if you hit a breakpoint or are single stepping through).
+                // 2) The instruction that caused a hardware exception (div by zero, null ref, etc).
+                // 3) The instruction after the call to an internal runtime function (FCALL like IL_Throw,
+                //    JIT_OverFlow, etc.) that caused a software exception.
+                // 4) The instruction after the call to a managed function (non-leaf node).
+                //
+                // #3 and #4 are the cases that need IP adjusted back because they point after the call instruction
+                // and may point to the next (incorrect) IL instruction/source line.  We distinguish these from #1
+                // or #2 by either being non-leaf node stack frame (#4) or the present of an internal stack frame (#3).
+                bool bAdjustIPForLineNumber = frameNumber > 0 || internalFrames > 0;
+                frameNumber++;
+
+                // The unmodified IP is displayed which points after the exception in most cases. This means that the
+                // printed IP and the printed line number often will not map to one another and this is intentional.
+                //std::cout << " ip - " << ip << std::endl;
+
+                AddFrame(ip);
+
+                // out.WriteColumn(1, InstructionPtr(ip));
+                // out.WriteColumn(2, MethodNameFromIP(ip, bSuppressLines, bFull, bFull, bAdjustIPForLineNumber));
+            }
+        }
+
+        hr = stackWalk->Next();
+    } while (hr == S_OK);
+
+    //std::cout << "Finished stackwalk" << std::endl;
+
+    // _dac = nullptr;
+    stackWalk->Release();
+    task->Release();
+
+
+
+    return S_OK;
+}
+
+std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* context)
+{
+    if (_dac != nullptr)
+    {
+        return StackWalkWithDac(context);   
+    }
+
     try
     {
         std::int32_t resultErrorCode;
@@ -347,12 +536,12 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread()
     }
 }
 
-void LinuxStackFramesCollector::CollectStackSampleSignalHandler(int32_t signal)
+void LinuxStackFramesCollector::CollectStackSampleSignalHandler(int32_t signal, siginfo_t* info, void* context)
 {
     std::unique_lock<std::mutex> stackWalkInProgressLock(s_stackWalkInProgressMutex);
     LinuxStackFramesCollector* pCollectorInstanceCurrentlyStackWalking = s_pInstanceCurrentlyStackWalking;
 
-    std::int32_t resultErrorCode = pCollectorInstanceCurrentlyStackWalking->CollectCallStackCurrentThread();
+    std::int32_t resultErrorCode = pCollectorInstanceCurrentlyStackWalking->CollectCallStackCurrentThread(context);
     stackWalkInProgressLock.unlock();
     pCollectorInstanceCurrentlyStackWalking->NotifyStackWalkCompleted(resultErrorCode);
 }

@@ -3,10 +3,18 @@
 
 #pragma once
 
+#define HOST_AMD64
+#define TARGET_AMD64
+
 // from dotnet coreclr includes
 #include "cor.h"
 #include "corprof.h"
+#include "xclrdata.h"
+#include "crosscomp.h"
+#include "dacprivate.h"
 // end
+
+#include "DacService.h"
 
 #include "StackFramesCollectorBase.h"
 
@@ -22,7 +30,7 @@ class IManagedThreadList;
 class LinuxStackFramesCollector : public StackFramesCollectorBase
 {
 public:
-    explicit LinuxStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo);
+    explicit LinuxStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo, DacService* dac);
     ~LinuxStackFramesCollector() override;
     LinuxStackFramesCollector(LinuxStackFramesCollector const&) = delete;
     LinuxStackFramesCollector& operator=(LinuxStackFramesCollector const&) = delete;
@@ -69,7 +77,8 @@ private:
 
 private:
     static bool TrySetHandlerForSignal(int32_t signal, struct sigaction& action);
-    static void CollectStackSampleSignalHandler(int32_t signal);
+    static void CollectStackSampleSignalHandler(int32_t signal, siginfo_t* info, void* context);
+    std::int32_t StackWalkWithDac(void* context);
 
     static char const* ErrorCodeToString(int32_t errorCode);
     static std::mutex s_stackWalkInProgressMutex;
@@ -79,7 +88,9 @@ private:
 
     static LinuxStackFramesCollector* s_pInstanceCurrentlyStackWalking;
 
-    std::int32_t CollectCallStackCurrentThread();
+    std::int32_t CollectCallStackCurrentThread(void* context);
 
     ErrorStatistics _errorStatistics;
+
+    DacService* _dac;
 };

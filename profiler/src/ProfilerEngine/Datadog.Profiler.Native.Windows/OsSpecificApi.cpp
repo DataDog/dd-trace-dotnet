@@ -7,6 +7,7 @@
 
 #include "OsSpecificApi.h"
 
+#include "DacService.h"
 #include "StackFramesCollectorBase.h"
 #include "SystemTime.h"
 #include "Windows32BitStackFramesCollector.h"
@@ -16,14 +17,14 @@
 
 namespace OsSpecificApi {
 
-std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo)
+std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, DacService* dac)
 {
 #ifdef BIT64
     static_assert(8 * sizeof(void*) == 64);
-    return std::make_unique<Windows64BitStackFramesCollector>(pCorProfilerInfo);
+    return std::make_unique<Windows64BitStackFramesCollector>(pCorProfilerInfo, dac);
 #else
     assert(8 * sizeof(void*) == 32);
-    return std::make_unique<Windows32BitStackFramesCollector>(pCorProfilerInfo);
+    return std::make_unique<Windows32BitStackFramesCollector>(pCorProfilerInfo, dac);
 #endif
 }
 

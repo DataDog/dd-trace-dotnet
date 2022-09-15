@@ -3,6 +3,8 @@
 
 #include "Windows64BitStackFramesCollector.h"
 
+#include "HResultConverter.h"
+
 #ifdef BIT64
 
 #include <cinttypes>
@@ -74,8 +76,9 @@ void UnsafeLogDebugIfEnabledDuringStackwalk(const Args... args)
 
 Windows64BitStackFramesCollector::NtQueryInformationThreadDelegate_t Windows64BitStackFramesCollector::s_ntQueryInformationThreadDelegate = nullptr;
 
-Windows64BitStackFramesCollector::Windows64BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo) :
-    _pCorProfilerInfo(_pCorProfilerInfo)
+Windows64BitStackFramesCollector::Windows64BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo, DacService* dac) :
+    _pCorProfilerInfo(_pCorProfilerInfo),
+    _dac{dac}
 {
     _pCorProfilerInfo->AddRef();
 }
@@ -175,10 +178,157 @@ BOOL GetThreadInfo(ManagedThreadInfo* pThreadInfo, CONTEXT& context, HANDLE& han
     return ::GetThreadContext(handle, &context);
 }
 
+static HRESULT GetFrameLocation(IXCLRDataStackWalk* pStackWalk, CLRDATA_ADDRESS* ip, CLRDATA_ADDRESS* sp)
+{
+    T_CONTEXT context;
+
+    // https://github.com/dotnet/diagnostics/blob/b196cd60197fe12f845126394408cb72137827db/src/SOS/Strike/disasm.h
+    HRESULT hr = pStackWalk->GetContext(0x0010000BL, sizeof(T_CONTEXT), NULL, (BYTE*)&context);
+    if (FAILED(hr))
+    {
+        printf("GetFrameContext failed: %lx\n", hr);
+        return hr;
+    }
+    if (hr == S_FALSE)
+    {
+        // GetFrameContext returns S_FALSE if the frame iterator is invalid.  That's basically an error for us.
+        return E_FAIL;
+    }
+    // First find the info for the Frame object, if the current frame has an associated clr!Frame.
+    *ip = context.Rip;
+    *sp = context.Rsp;
+
+    //std::cout << "GetFrameLocation - Rip: " << std::hex << *ip << std::endl;
+
+    // if (IsDbgTargetArm())
+    //     *ip = *ip & ~THUMB_CODE;
+
+    return S_OK;
+}
+
+StackSnapshotResultBuffer* Windows64BitStackFramesCollector::StackWalkWithDac(ManagedThreadInfo* pThreadInfo, uint32_t* pHR)
+{
+    _dac->ClrDataProcess->Flush();
+
+    IXCLRDataTask* task;
+
+    auto result = _dac->ClrDataProcess->GetTaskByOSThreadID(pThreadInfo->GetOsThreadId(), &task);
+
+    if (FAILED(result))
+    {
+        std::cout << "GetTaskByOSThreadID failed for " << pThreadInfo->GetOsThreadId() << " : " << HResultConverter::ToStringWithCode(result) << std::endl;
+        return this->GetStackSnapshotResult();
+    }
+
+    IXCLRDataStackWalk* stackWalk;
+
+    result = task->CreateStackWalk(CLRDATA_SIMPFRAME_UNRECOGNIZED |
+                                       CLRDATA_SIMPFRAME_MANAGED_METHOD |
+                                       CLRDATA_SIMPFRAME_RUNTIME_MANAGED_CODE |
+                                       CLRDATA_SIMPFRAME_RUNTIME_UNMANAGED_CODE,
+                                   &stackWalk);
+    
+    if (FAILED(result))
+    {
+        std::cout << "CreateStackWalk failed: " << HResultConverter::ToStringWithCode(result) << std::endl;
+        return this->GetStackSnapshotResult();
+    }
+
+    int frameNumber = 0;
+    int internalFrames = 0;
+    HRESULT hr;
+    do
+    {
+        CLRDATA_ADDRESS ip = 0, sp = 0;
+        hr = GetFrameLocation(stackWalk, &ip, &sp);
+        if (SUCCEEDED(hr))
+        {
+            DacpFrameData FrameData;
+            HRESULT frameDataResult = FrameData.Request(stackWalk);
+            if (SUCCEEDED(frameDataResult) && FrameData.frameAddr)
+                sp = FrameData.frameAddr;
+
+            // while ((numNativeFrames > 0) && (currentNativeFrame->StackOffset <= CDA_TO_UL64(sp)))
+            //{
+            //     if (currentNativeFrame->StackOffset != CDA_TO_UL64(sp))
+            //     {
+            //         PrintNativeStackFrame(out, currentNativeFrame, bSuppressLines);
+            //     }
+            //     currentNativeFrame++;
+            //     numNativeFrames--;
+            // }
+
+            // Print the stack pointer.
+            // std::cout << sp;
+
+            // Print the method/Frame info
+            if (SUCCEEDED(frameDataResult) && FrameData.frameAddr)
+            {
+                internalFrames++;
+
+                // Skip the instruction pointer because it doesn't really mean anything for method frames
+                // out.WriteColumn(1, bFull ? String("") : NativePtr(ip));
+
+                // This is a clr!Frame.
+                //std::cout << " clr frame - " << FrameData.frameAddr << std::endl;
+
+                this->AddFrame(FrameData.frameAddr);
+
+                // out.WriteColumn(2, GetFrameFromAddress(TO_TADDR(FrameData.frameAddr), pStackWalk, bFull));
+            }
+            else
+            {
+                // To get the source line number of the actual code that threw an exception, the IP needs
+                // to be adjusted in certain cases.
+                //
+                // The IP of stack frame points to either:
+                //
+                // 1) Currently executing instruction (if you hit a breakpoint or are single stepping through).
+                // 2) The instruction that caused a hardware exception (div by zero, null ref, etc).
+                // 3) The instruction after the call to an internal runtime function (FCALL like IL_Throw,
+                //    JIT_OverFlow, etc.) that caused a software exception.
+                // 4) The instruction after the call to a managed function (non-leaf node).
+                //
+                // #3 and #4 are the cases that need IP adjusted back because they point after the call instruction
+                // and may point to the next (incorrect) IL instruction/source line.  We distinguish these from #1
+                // or #2 by either being non-leaf node stack frame (#4) or the present of an internal stack frame (#3).
+                bool bAdjustIPForLineNumber = frameNumber > 0 || internalFrames > 0;
+                frameNumber++;
+
+                // The unmodified IP is displayed which points after the exception in most cases. This means that the
+                // printed IP and the printed line number often will not map to one another and this is intentional.
+                //std::cout << " ip - " << ip << std::endl;
+
+                this->AddFrame(ip);
+
+                // out.WriteColumn(1, InstructionPtr(ip));
+                // out.WriteColumn(2, MethodNameFromIP(ip, bSuppressLines, bFull, bFull, bAdjustIPForLineNumber));
+            }
+        }
+
+        hr = stackWalk->Next();
+    } while (hr == S_OK);
+
+    // std::cout << "Finished stackwalk" << std::endl;
+
+    // _dac = nullptr;
+    SetOutputHr(S_OK, pHR);
+
+    stackWalk->Release();
+    task->Release();
+
+    return this->GetStackSnapshotResult();
+}
+
 StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
                                                                                               uint32_t* pHR,
                                                                                               bool selfCollect)
 {
+    if (_dac != nullptr)
+    {
+        return StackWalkWithDac(pThreadInfo, pHR);
+    }
+
     // Collect data for TraceContext Tracking:
     bool traceContextDataCollected = this->TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
     assert(traceContextDataCollected);
@@ -330,6 +480,7 @@ bool Windows64BitStackFramesCollector::SuspendTargetThreadImplementation(Managed
 
     HANDLE osThreadHandle = pThreadInfo->GetOsThreadHandle();
     DWORD suspendCount = ::SuspendThread(osThreadHandle);
+
     if (suspendCount == static_cast<DWORD>(-1))
     {
         // We wanted to suspend, but it resulted in error.

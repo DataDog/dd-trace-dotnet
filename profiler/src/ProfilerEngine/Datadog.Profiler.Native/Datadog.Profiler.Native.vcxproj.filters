@@ -260,6 +260,12 @@
     <ClInclude Include="SamplesCollector.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
+    <ClInclude Include="SelfDataTarget.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="DacService.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -390,6 +396,9 @@
     </ClCompile>
     <ClCompile Include="ContentionProvider.cpp">
       <Filter>Contention</Filter>
+    </ClCompile>
+    <ClCompile Include="SelfDataTarget.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

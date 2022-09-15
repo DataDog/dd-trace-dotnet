@@ -4,10 +4,18 @@
 #pragma once
 
 // from dotnet coreclr includes
+
+#define HOST_AMD64
+#define TARGET_AMD64
+
 #include "cor.h"
 #include "corprof.h"
+#include "xclrdata.h"
+#include "crosscomp.h"
+#include "dacprivate.h"
 // end
 
+#include "DacService.h"
 #include "Log.h"
 #include "StackFramesCollectorBase.h"
 #include <winternl.h>
@@ -23,7 +31,7 @@ class Windows64BitStackFramesCollector : public StackFramesCollectorBase
     // ----------- 64 bit specific implementation: -----------
 
 public:
-    explicit Windows64BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo);
+    explicit Windows64BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo, DacService* dac);
     ~Windows64BitStackFramesCollector() override;
 
     bool SuspendTargetThreadImplementation(ManagedThreadInfo* pThreadInfo,
@@ -31,6 +39,7 @@ public:
 
     void ResumeTargetThreadIfRequiredImplementation(ManagedThreadInfo* pThreadInfo, bool isTargetThreadSuspended, uint32_t* pErrorCodeHR) override;
 
+    StackSnapshotResultBuffer* StackWalkWithDac(ManagedThreadInfo* pThreadInfo, uint32_t* pHR);
     StackSnapshotResultBuffer* CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo, uint32_t* pHR, bool selfCollect) override;
 
 private:
@@ -68,4 +77,6 @@ private:
 
     static void SetOutputHrToLastError(uint32_t* pOutputHrCode);
     static void SetOutputHr(HRESULT value, uint32_t* pOutputHrCode);
+
+    DacService* _dac;
 };

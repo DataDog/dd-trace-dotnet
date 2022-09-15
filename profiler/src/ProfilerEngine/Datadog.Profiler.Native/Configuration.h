@@ -44,6 +44,7 @@ public:
     bool IsAllocationProfilingEnabled() const override;
     bool IsContentionProfilingEnabled() const override;
     double MinimumCores() const override;
+    bool IsDacEnabled() const override;
 
 private:
     static tags ExtractUserTags();
@@ -70,6 +71,7 @@ private:
     static std::chrono::seconds const DefaultDevUploadInterval;
     static std::chrono::seconds const DefaultProdUploadInterval;
 
+    bool _isDacEnabled;
     bool _isProfilingEnabled;
     bool _isCpuProfilingEnabled;
     bool _isWallTimeProfilingEnabled;

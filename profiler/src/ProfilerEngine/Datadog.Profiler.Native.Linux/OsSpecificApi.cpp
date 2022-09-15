@@ -10,15 +10,18 @@
 #include "OsSpecificApi.h"
 #include "OpSysTools.h"
 
+#include "DacService.h"
+
 #include "Log.h"
 #include "LinuxStackFramesCollector.h"
 #include "StackFramesCollectorBase.h"
 #include "shared/src/native-src/loader.h"
+#include "xclrdata.h"
 
 namespace OsSpecificApi {
-std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo)
+std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, DacService* dac)
 {
-    return std::make_unique<LinuxStackFramesCollector>(const_cast<ICorProfilerInfo4* const>(pCorProfilerInfo));
+    return std::make_unique<LinuxStackFramesCollector>(const_cast<ICorProfilerInfo4* const>(pCorProfilerInfo), dac);
 }
 
 // https://linux.die.net/man/5/proc

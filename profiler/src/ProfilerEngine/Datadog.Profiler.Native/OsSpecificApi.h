@@ -4,6 +4,8 @@
 #pragma once
 #include "cor.h"
 #include "corprof.h"
+#include "DacService.h"
+#include "xclrdata.h"
 
 #include "StackFramesCollectorBase.h"
 
@@ -18,7 +20,7 @@ class IManagedThreadList;
 // Those functions must be defined in the main projects (Linux and Windows)
 // Here are forward declarations to avoid hard coupling
 namespace OsSpecificApi {
-std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo);
+std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, DacService* dac);
 uint64_t GetThreadCpuTime(ManagedThreadInfo* pThreadInfo);
 bool IsRunning(ManagedThreadInfo* pThreadInfo, uint64_t& cpuTime);
 }

@@ -6,6 +6,7 @@
 // from dotnet coreclr includes
 #include "cor.h"
 #include "corprof.h"
+#include "xclrdata.h"
 // end
 
 #include "AllocationsProvider.h"
@@ -20,6 +21,7 @@
 #include "IMetricsSender.h"
 #include "WallTimeProvider.h"
 #include "CpuTimeProvider.h"
+#include "DacService.h"
 #include "SamplesCollector.h"
 #include "IRuntimeInfo.h"
 #include "IEnabledProfilers.h"
@@ -232,6 +234,7 @@ private:
     bool StartServices();
     bool StopServices();
 
+    DacService* InitializeDac();
 
     template <class T, typename... ArgTypes>
     T* RegisterService(ArgTypes&&... args)

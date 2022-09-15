@@ -31,7 +31,8 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     IThreadsCpuManager* pThreadsCpuManager,
     IManagedThreadList* pManagedThreadList,
     ICollector<RawWallTimeSample>* pWallTimeCollector,
-    ICollector<RawCpuSample>* pCpuTimeCollector
+    ICollector<RawCpuSample>* pCpuTimeCollector,
+    DacService* dac
     ) :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pConfiguration{pConfiguration},
@@ -54,10 +55,11 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _pManagedThreadList{pManagedThreadList},
     _pWallTimeCollector{pWallTimeCollector},
     _pCpuTimeCollector{pCpuTimeCollector},
-    _deadlockInterventionInProgress{0}
+    _deadlockInterventionInProgress{0},
+    _dac{dac}
 {
     _pCorProfilerInfo->AddRef();
-    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
+    _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, _dac);
 
     _currentStatistics = std::make_unique<Statistics>();
     _statisticCollectionStartNs = OpSysTools::GetHighPrecisionNanoseconds();

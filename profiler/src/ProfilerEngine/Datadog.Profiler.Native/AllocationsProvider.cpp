@@ -42,7 +42,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     ManagedThreadInfo* threadInfo;
     CALL(_pManagedThreadList->TryGetCurrentThreadInfo(&threadInfo))
 
-    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo);
+    const auto pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, nullptr);
     pStackFramesCollector->PrepareForNextCollection();
 
     uint32_t hrCollectStack = E_FAIL;

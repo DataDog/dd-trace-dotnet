@@ -33,6 +33,7 @@ Configuration::Configuration()
     _logDirectory = ExtractLogDirectory();
     _pprofDirectory = ExtractPprofDirectory();
     _isOperationalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::OperationalMetricsEnabled, false);
+    _isDacEnabled = GetEnvironmentValue(EnvironmentVariables::DacEnabled, true);
     _isNativeFrameEnabled = GetEnvironmentValue(EnvironmentVariables::NativeFramesEnabled, false);
     _isCpuProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::CpuProfilingEnabled, true);
     _isWallTimeProfilingEnabled = GetEnvironmentValue(EnvironmentVariables::WallTimeProfilingEnabled, true);
@@ -126,6 +127,11 @@ bool Configuration::IsContentionProfilingEnabled() const
 double Configuration::MinimumCores() const
 {
     return _minimumCores;
+}
+
+bool Configuration::IsDacEnabled() const
+{
+    return _isDacEnabled;
 }
 
 std::chrono::seconds Configuration::GetUploadInterval() const

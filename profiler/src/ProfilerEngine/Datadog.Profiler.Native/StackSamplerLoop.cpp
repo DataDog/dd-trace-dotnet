@@ -345,6 +345,8 @@ void StackSamplerLoop::CollectOneThreadStackSample(
             countCollectedStackFrames = pStackSnapshotResult->GetFramesCount();
             bool isStackSnapshotSuccessful = (countCollectedStackFrames > 0);
 
+            //std::cout << "Collected frames: " << countCollectedStackFrames << std::endl;
+
             // Keep track of how many times we sampled this thread:
             pThreadInfo->IncSnapshotsPerformedCount(isStackSnapshotSuccessful);
 

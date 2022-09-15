@@ -10,6 +10,8 @@ option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 message(STATUS "Run Clang Address Sanitizer: " ${RUN_ASAN})
 message(STATUS "Run Clang Undefined-Behavior Sanitizer: " ${RUN_UBSAN})
 
+enable_language(C ASM)
+
 # ******************************************************
 # Compiler options
 # ******************************************************
@@ -34,6 +36,7 @@ endif()
 if (BIT64)
     add_compile_options(-DBIT64)
     add_compile_options(-DHOST_64BIT)
+    add_compile_options(-DHOST_AMD64)
 endif()
 
 if (ISAMD64)
@@ -70,10 +73,14 @@ FILE(GLOB EXCLUDE_DLLMAIN "../Datadog.Profiler.Native/DllMain.cpp")
 
 list(REMOVE_ITEM COMMON_PROFILER_SRC "${EXCLUDE_DLLMAIN}")
 
+set(ARCH_SOURCES
+  arch/AMD64/context2.S)
+
 # ******************************************************
 # Define static target
 # ******************************************************
 add_library(${PROFILER_STATIC_LIB_NAME} STATIC
+    ${ARCH_SOURCES}
     ${LINUX_PROFILER_SRC}
     ${COMMON_PROFILER_SRC}
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp
