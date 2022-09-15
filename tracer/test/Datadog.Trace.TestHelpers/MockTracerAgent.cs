@@ -607,7 +607,22 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private byte[] GetResponseBytes(string body)
+        private string GetStatusString(int status)
+        {
+            switch (status)
+            {
+                case 200:
+                    return "200 OK";
+                case 404:
+                    return "404 Not Found";
+                case 500:
+                    return "500 Internal Server Error";
+                default:
+                    return status.ToString();
+            }
+        }
+
+        private byte[] GetResponseBytes(string body, int status)
         {
             if (string.IsNullOrEmpty(body))
             {
@@ -618,7 +633,8 @@ namespace Datadog.Trace.TestHelpers
 
             var sb = new StringBuilder();
             sb
-               .Append("HTTP/1.1 200 OK")
+               .Append("HTTP/1.1 ")
+               .Append(GetStatusString(status))
                .Append(DatadogHttpValues.CrLf)
                .Append("Date: ")
                .Append(DateTime.UtcNow.ToString("ddd, dd MMM yyyy H:mm::ss K"))
@@ -1012,7 +1028,7 @@ namespace Datadog.Trace.TestHelpers
 
                 if (mockTracerResponse.SendResponse)
                 {
-                    var responseBytes = GetResponseBytes(body: mockTracerResponse.Response);
+                    var responseBytes = GetResponseBytes(body: mockTracerResponse.Response, status: mockTracerResponse.StatusCode);
                     await namedPipeServerStream.WriteAsync(responseBytes, offset: 0, count: responseBytes.Length);
                 }
             }
@@ -1232,10 +1248,9 @@ namespace Datadog.Trace.TestHelpers
 
                         if (mockTracerResponse.SendResponse)
                         {
-                            await stream.WriteAsync(GetResponseBytes(body: mockTracerResponse.Response));
+                            await stream.WriteAsync(GetResponseBytes(body: mockTracerResponse.Response, status: mockTracerResponse.StatusCode));
+                            handler.Shutdown(SocketShutdown.Both);
                         }
-
-                        handler.Shutdown(SocketShutdown.Both);
                     }
                     catch (SocketException ex)
                     {

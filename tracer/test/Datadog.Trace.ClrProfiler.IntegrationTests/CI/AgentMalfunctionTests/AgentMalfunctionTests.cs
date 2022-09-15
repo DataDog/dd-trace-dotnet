@@ -32,15 +32,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
+        [InlineData(AgentBehaviour.Normal, TestTransports.Tcp)]
         [InlineData(AgentBehaviour.NoAnswer, TestTransports.Tcp)]
         [InlineData(AgentBehaviour.WrongAnswer, TestTransports.Tcp)]
         [InlineData(AgentBehaviour.Return404, TestTransports.Tcp)]
         [InlineData(AgentBehaviour.Return500, TestTransports.Tcp)]
+        [InlineData(AgentBehaviour.Normal, TestTransports.WindowsNamedPipe)]
         [InlineData(AgentBehaviour.NoAnswer, TestTransports.WindowsNamedPipe)]
         [InlineData(AgentBehaviour.WrongAnswer, TestTransports.WindowsNamedPipe)]
+        [InlineData(AgentBehaviour.Return404, TestTransports.WindowsNamedPipe)]
+        [InlineData(AgentBehaviour.Return500, TestTransports.WindowsNamedPipe)]
 #if NETCOREAPP3_1_OR_GREATER
+        [InlineData(AgentBehaviour.Normal, TestTransports.Uds)]
         [InlineData(AgentBehaviour.NoAnswer, TestTransports.Uds)]
         [InlineData(AgentBehaviour.WrongAnswer, TestTransports.Uds)]
+        [InlineData(AgentBehaviour.Return404, TestTransports.Uds)]
+        [InlineData(AgentBehaviour.Return500, TestTransports.Uds)]
 #endif
         public void SubmitsTraces(AgentBehaviour behaviour, TestTransports transportType)
         {
