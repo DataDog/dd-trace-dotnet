@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -136,7 +137,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                         new List<object>
                         {
                             new Dictionary<string, object> { { "expiration", 30L }, { "value", "1" } },
-                            new Dictionary<string, object> { { "expiration", null }, { "value", "2" } },
+                            new Dictionary<string, object?> { { "expiration", null }, { "value", "2" } },
                             new Dictionary<string, object> { { "expiration", 30L }, { "value", "3" } },
                         }
                     }

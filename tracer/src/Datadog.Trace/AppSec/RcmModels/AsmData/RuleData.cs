@@ -3,13 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 namespace Datadog.Trace.AppSec.RcmModels.AsmData;
 
 internal class RuleData
 {
-    public string Type { get; set; }
+    public string? Type { get; set; }
 
-    public string Id { get; set; }
+    public string? Id { get; set; }
 
-    public Data[] Data { get; set; }
+    public Data[]? Data { get; set; }
 }
