@@ -313,9 +313,10 @@ namespace Datadog.Trace.Security.IntegrationTests
             agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > -1);
 
             var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
-            var message =
-                string.IsNullOrWhiteSpace(phase) ? string.Empty : string.Format("This is phase: {0}", phase);
-            spans.Count.Should().Be(expectedSpans, message);
+            if (spans.Count != expectedSpans)
+            {
+                Output?.WriteLine($"spans.Count: {spans} != expectedSpans: {expectedSpans}, this is phase: {phase}");
+            }
 
             return spans;
         }
