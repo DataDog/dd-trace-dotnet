@@ -122,7 +122,7 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.Enabled, value: settings.TraceEnabled),
                 new(ConfigTelemetryData.AgentUrl, value: settings.Exporter.AgentUri.ToString()),
                 new(ConfigTelemetryData.AgentTraceTransport, value: settings.Exporter.TracesTransport.ToString()),
-                new(ConfigTelemetryData.Debug, value: GlobalSettings.Source.DebugEnabled),
+                new(ConfigTelemetryData.Debug, value: GlobalSettings.Instance.DebugEnabled),
 #pragma warning disable CS0618
                 new(ConfigTelemetryData.AnalyticsEnabled, value: settings.AnalyticsEnabled),
 #pragma warning restore CS0618

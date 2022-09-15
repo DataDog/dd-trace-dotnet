@@ -23,12 +23,12 @@ namespace Datadog.Trace.Ci.Agent
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIWriterHttpSender>();
 
         private readonly IApiRequestFactory _apiRequestFactory;
-        private readonly GlobalSettings _globalSettings;
+        private readonly bool _isDebugEnabled;
 
         public CIWriterHttpSender(IApiRequestFactory apiRequestFactory)
         {
             _apiRequestFactory = apiRequestFactory;
-            _globalSettings = GlobalSettings.FromDefaultSources();
+            _isDebugEnabled = GlobalSettings.Instance.DebugEnabled;
             Log.Information("CIWriterHttpSender Initialized.");
         }
 
@@ -120,7 +120,7 @@ namespace Datadog.Trace.Ci.Agent
                 {
                     exception = ex;
 
-                    if (_globalSettings.DebugEnabled)
+                    if (_isDebugEnabled)
                     {
                         if (ex.InnerException is InvalidOperationException ioe)
                         {

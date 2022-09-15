@@ -42,7 +42,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="useDefaultSources">If <c>true</c>, creates a <see cref="TracerSettings"/> populated from
         /// the default sources such as environment variables etc. If <c>false</c>, uses the default values.</param>
         public TracerSettings(bool useDefaultSources)
-            : this(useDefaultSources ? CreateDefaultConfigurationSource() : null)
+            : this(useDefaultSources ? GlobalConfigurationSource.Instance : null)
         {
         }
 
@@ -361,7 +361,7 @@ namespace Datadog.Trace.Configuration
         /// </remark>
         public bool DiagnosticSourceEnabled
         {
-            get => GlobalSettings.Source.DiagnosticSourceEnabled;
+            get => GlobalSettings.Instance.DiagnosticSourceEnabled;
             set { }
         }
 
@@ -499,13 +499,12 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
-        /// returned by <see cref="CreateDefaultConfigurationSource"/>.
+        /// returned by <see cref="GlobalConfigurationSource.Instance"/>.
         /// </summary>
         /// <returns>A <see cref="TracerSettings"/> populated from the default sources.</returns>
         public static TracerSettings FromDefaultSources()
         {
-            var source = CreateDefaultConfigurationSource();
-            return new TracerSettings(source);
+            return new TracerSettings(GlobalConfigurationSource.Instance);
         }
 
         /// <summary>
@@ -515,7 +514,7 @@ namespace Datadog.Trace.Configuration
         /// <returns>A new <see cref="IConfigurationSource"/> instance.</returns>
         public static CompositeConfigurationSource CreateDefaultConfigurationSource()
         {
-            return GlobalSettings.CreateDefaultConfigurationSource();
+            return GlobalConfigurationSource.CreateDefaultConfigurationSource();
         }
 
         /// <summary>

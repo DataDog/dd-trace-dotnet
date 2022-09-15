@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -33,7 +35,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         private int _rootVersion;
         private int _targetsVersion;
-        private string _lastPollError;
+        private string? _lastPollError;
         private bool _isPollingStarted;
         private bool _isRcmEnabled;
 
@@ -58,13 +60,15 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             discoveryService.SubscribeToChanges(SetRcmEnabled);
         }
 
-        public static RemoteConfigurationManager Instance { get; private set; }
+        public static RemoteConfigurationManager? Instance { get; private set; }
 
         public static RemoteConfigurationManager Create(
             IDiscoveryService discoveryService,
             IRemoteConfigurationApi remoteConfigurationApi,
             RemoteConfigurationSettings settings,
-            string serviceName)
+            string serviceName,
+            string? environment,
+            string? serviceVersion)
         {
             lock (LockObject)
             {
@@ -72,7 +76,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     discoveryService,
                     remoteConfigurationApi,
                     id: settings.Id,
-                    rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, settings.Environment, settings.AppVersion),
+                    rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, environment, serviceVersion),
                     pollInterval: settings.PollInterval);
             }
         }
@@ -229,7 +233,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
             void UnapplyRemovedConfigurations()
             {
-                List<string> remove = null;
+                List<string>? remove = null;
 
                 foreach (var product in products.Values)
                 {
