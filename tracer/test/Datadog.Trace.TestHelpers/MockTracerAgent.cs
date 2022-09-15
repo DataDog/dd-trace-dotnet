@@ -607,19 +607,12 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private string GetStatusString(int status)
+        private string GetStatusString(int status) => status switch
         {
-            switch (status)
-            {
-                case 200:
-                    return "200 OK";
-                case 404:
-                    return "404 Not Found";
-                case 500:
-                    return "500 Internal Server Error";
-                default:
-                    return status.ToString();
-            }
+            200 => "200 OK",
+            404 => "404 Not Found",
+            500 => "500 Internal Server Error",
+            _ => status.ToString(),
         }
 
         private byte[] GetResponseBytes(string body, int status)
