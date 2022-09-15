@@ -25,6 +25,8 @@ namespace Datadog.Trace.Security.IntegrationTests
 {
     public class AspNetCore5AsmToggle : AspNetBase, IDisposable
     {
+        private const string LogFileNamePrefix = "dotnet-tracer-managed-";
+
         public AspNetCore5AsmToggle(ITestOutputHelper outputHelper)
             : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5AsmToggle))
         {
@@ -42,6 +44,9 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestSecurityToggling(bool? enableSecurity, uint expectedState, byte expectedCapablities)
         {
+            // TODO fix me
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
+
             var url = "/Health/?[$slice]=value";
             var agent = await RunOnSelfHosted(enableSecurity);
             var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, expectedState, expectedCapablities);
@@ -54,6 +59,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             CheckAckState(request1, expectedState, null, "First RCM call");
             CheckCapabilities(request1, expectedCapablities, "First RCM call");
             // even the request show the applied state seems extra time is needed before it's active
+            // TODO replace this with watching the file log
             await Task.Delay(1500);
 
             var spans2 = await SendRequestsAsync(agent, url);
@@ -97,7 +103,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         private void CheckAckState(GetRcmRequest request, uint expectedState, string expectedError, string message)
         {
-            var state = request?.Client?.State?.ConfigStates?.FirstOrDefault(x => x.Product == "FEATURES");
+            var state = request?.Client?.State?.ConfigStates?.SingleOrDefault(x => x.Product == "FEATURES");
 
             state.Should().NotBeNull();
             state.ApplyState.Should().Be(expectedState, message);
