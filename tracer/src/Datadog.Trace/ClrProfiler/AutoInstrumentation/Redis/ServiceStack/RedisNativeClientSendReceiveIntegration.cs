@@ -47,15 +47,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.ServiceStack
         /// OnMethodBegin callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TFunc">Type of the result processor</typeparam>
-        /// <typeparam name="TAction">Type of the server end point</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="cmdWithBinaryArgs">Cmd with binary args</param>
-        /// <param name="fn">Function instance</param>
-        /// <param name="completePipelineFn">Complete pipeline function instance</param>
-        /// <param name="sendWithoutRead">Send without read boolean</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TFunc, TAction>(TTarget instance, byte[][] cmdWithBinaryArgs, TFunc fn, TAction completePipelineFn, bool sendWithoutRead)
+        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, byte[][] cmdWithBinaryArgs)
             where TTarget : IRedisNativeClient
         {
             Scope scope = RedisHelper.CreateScope(Tracer.Instance, IntegrationId, IntegrationName, instance.Host ?? string.Empty, instance.Port.ToString(CultureInfo.InvariantCulture), RedisHelper.GetRawCommand(cmdWithBinaryArgs));
