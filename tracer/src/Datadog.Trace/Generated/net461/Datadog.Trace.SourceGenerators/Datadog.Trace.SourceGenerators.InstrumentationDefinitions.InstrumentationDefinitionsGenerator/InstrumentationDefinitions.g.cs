@@ -440,9 +440,6 @@ namespace Datadog.Trace.ClrProfiler
 
                 // NUnit
                new ("nunit.framework", "NUnit.Framework.Internal.Execution.WorkItem", "PerformWork",  new[] { "System.Void" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemIntegration"),
-
-                // RabbitMQ
-               new ("RabbitMQ.Client", "RabbitMQ.Client.IBasicConsumer", "HandleBasicDeliver",  new[] { "System.Void", "System.String", "System.UInt64", "System.Boolean", "System.String", "System.String", "RabbitMQ.Client.IBasicProperties", "_" }, 3, 6, 9, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverIntegration"),
                 }
             };
             DerivedInstrumentations.Add(InstrumentationCategory.Tracing, payload);
@@ -465,6 +462,8 @@ namespace Datadog.Trace.ClrProfiler
                 DefinitionsId = "6410E14A2A2343BABBB45940190E1C3F",
                 Definitions = new NativeCallTargetDefinition[]
                 {
+                // RabbitMQ
+               new ("RabbitMQ.Client", "RabbitMQ.Client.IBasicConsumer", "HandleBasicDeliver",  new[] { "System.Void", "System.String", "System.UInt64", "System.Boolean", "System.String", "System.String", "RabbitMQ.Client.IBasicProperties", "_" }, 3, 6, 9, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverIntegration"),
                 }
             };
             InterfaceInstrumentations.Add(InstrumentationCategory.Tracing, payload);
