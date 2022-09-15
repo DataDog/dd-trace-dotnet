@@ -192,7 +192,7 @@ namespace Datadog.Trace.Debugger.Helpers
                 for (int i = 0; i < allFields.Length; i++)
                 {
                     var field = allFields[i];
-                    if (char.IsNumber(field.Name[2]) && field.Name.StartsWith(StateMachineFieldsNamePrefix) && field.Name.EndsWith(ThisName))
+                    if (field.Name.StartsWith(StateMachineFieldsNamePrefix) && field.Name.EndsWith(ThisName) && char.IsNumber(field.Name[2]))
                     {
                         thisField = field;
                         break;
