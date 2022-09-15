@@ -16,16 +16,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
     /// System.Security.Cryptography.HashAlgorithm instrumentation
     /// </summary>
     [InstrumentMethod(
-       AssemblyNames = new[] { "mscorlib", "System.Security.Cryptography.Primitives" },
+       AssemblyNames = new[] { "System.Security.Cryptography.Primitives" },
        TypeNames = new[] { "System.Security.Cryptography.HashAlgorithm" },
-       ParameterTypeNames = new[] { "System.IO.Stream" },
+       ParameterTypeNames = new[] { ClrNames.Stream },
        MethodName = "ComputeHash",
        ReturnTypeName = ClrNames.ByteArray,
        MinimumVersion = "1.0.0",
        MaximumVersion = "7.*.*",
        IntegrationName = nameof(Configuration.IntegrationId.HashAlgorithm))]
     [InstrumentMethod(
-       AssemblyNames = new[] { "mscorlib", "System.Security.Cryptography.Primitives" },
+       AssemblyNames = new[] { "System.Security.Cryptography.Primitives" },
        TypeNames = new[] { "System.Security.Cryptography.HashAlgorithm" },
        ParameterTypeNames = new[] { ClrNames.ByteArray },
        MethodName = "ComputeHash",
