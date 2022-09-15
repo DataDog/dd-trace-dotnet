@@ -8,7 +8,6 @@
 using System;
 using System.ComponentModel;
 using System.IO;
-using System.Security.Cryptography;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
@@ -18,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
     /// System.Security.Cryptography.HashAlgorithm instrumentation
     /// </summary>
     [InstrumentMethod(
-       AssemblyNames = new[] { "mscorlib", "System.Security.Cryptography.Primitives" },
+       AssemblyNames = new[] { "System.Security.Cryptography.Primitives" },
        TypeNames = new[] { "System.Security.Cryptography.HashAlgorithm" },
        ParameterTypeNames = new[] { ClrNames.Stream, ClrNames.CancellationToken },
        MethodName = "ComputeHashAsync",
