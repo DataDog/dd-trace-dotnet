@@ -36,7 +36,8 @@ namespace Datadog.Trace.IAST
 
             var tags = new InsecureHashingTags()
             {
-                IastJson = json
+                IastJson = json,
+                IastEnabled = "1"
             };
 
             var serviceName = tracer.Settings.GetServiceName(tracer, ServiceHash);

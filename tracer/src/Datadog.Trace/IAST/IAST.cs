@@ -11,7 +11,7 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.IAST
 {
     /// <summary>
-    /// The Secure is responsible coordinating IAST
+    /// The class responsible for coordinating IAST
     /// </summary>
     internal class IAST
     {
