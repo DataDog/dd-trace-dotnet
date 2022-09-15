@@ -869,11 +869,7 @@ namespace Datadog.Trace.TestHelpers
                                 ctx.Response.ContentType = "application/json";
                                 ctx.Response.ContentLength64 = buffer.LongLength;
                                 ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
-
-                                if (mockTracerResponse.SendResponse)
-                                {
-                                    ctx.Response.Close();
-                                }
+                                ctx.Response.Close();
                             }
                         }
                         catch (Exception ex)
