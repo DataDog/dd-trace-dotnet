@@ -3,12 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Diagnostics;
+#nullable enable
+
 using System.Linq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.IAST.Settings;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -23,7 +22,7 @@ namespace Datadog.Trace.IAST
         {
         }
 
-        public static Scope OnHashingAlgorithm(string algorithm, IntegrationId integrationId, Datadog.Trace.IAST.IAST iast)
+        public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, Datadog.Trace.IAST.IAST iast)
         {
             if (!InvalidHashAlgorithm(algorithm, iast))
             {
@@ -32,7 +31,7 @@ namespace Datadog.Trace.IAST
 
             var tracer = Tracer.Instance;
             var frame = StackWalker.GetFrame(HashAlgorithmIntegrationCommon.HashFileNamesToSkip);
-            var vulnerability = new Vulnerability(VulnerabilityType.WEAK_HASH, new Location(frame.GetFileName(), frame.GetFileLineNumber()), new Evidence(algorithm));
+            var vulnerability = new Vulnerability(VulnerabilityType.WEAK_HASH, new Location(frame?.GetFileName(), frame?.GetFileLineNumber()), new Evidence(algorithm));
             var json = JsonConvert.SerializeObject(vulnerability, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
             var tags = new InsecureHashingTags()
@@ -48,7 +47,7 @@ namespace Datadog.Trace.IAST
             return scope;
         }
 
-        private static bool InvalidHashAlgorithm(string algorithm, Datadog.Trace.IAST.IAST iast)
+        private static bool InvalidHashAlgorithm(string? algorithm, Datadog.Trace.IAST.IAST iast)
         {
             return iast.Settings.InsecureHashingAlgorithms.Contains(algorithm);
         }

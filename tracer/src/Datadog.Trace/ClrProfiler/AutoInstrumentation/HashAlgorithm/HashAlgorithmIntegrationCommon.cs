@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.IAST;
@@ -16,10 +18,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HashAlgorithmIntegrationCommon));
         public static readonly string[] HashFileNamesToSkip = { "HashAlgorithmIntegration" };
 
-        internal static Scope CreateScope(System.Security.Cryptography.HashAlgorithm instance)
+        internal static Scope? CreateScope(System.Security.Cryptography.HashAlgorithm instance)
         {
             var iast = Datadog.Trace.IAST.IAST.Instance;
-            if (!iast.Settings.Enabled)
+            if (!iast.Settings.Enabled || instance == null)
             {
                 return null;
             }

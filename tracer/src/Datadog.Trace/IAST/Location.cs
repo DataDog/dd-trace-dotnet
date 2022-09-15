@@ -3,18 +3,20 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 namespace Datadog.Trace.IAST
 {
     internal class Location
     {
-        public Location(string path, int line)
+        public Location(string? path, int? line)
         {
             this.Path = path;
             this.Line = line;
         }
 
-        public string Path { get; }
+        public string? Path { get; }
 
-        public int Line { get; }
+        public int? Line { get; }
     }
 }
