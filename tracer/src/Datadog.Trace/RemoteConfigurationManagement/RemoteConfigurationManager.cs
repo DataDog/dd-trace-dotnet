@@ -25,6 +25,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationManager));
         private static readonly object LockObject = new object();
+        private static readonly ConcurrentQueue<Action<RemoteConfigurationManager>> _initializationQueue = new ConcurrentQueue<Action<RemoteConfigurationManager>>();
 
         private readonly string _id;
         private readonly RcmClientTracer _rcmTracer;
@@ -65,8 +66,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             discoveryService.SubscribeToChanges(SetRcmEnabled);
         }
 
-        public static event EventHandler Initialized;
-
         public static RemoteConfigurationManager? Instance { get; private set; }
 
         public static RemoteConfigurationManager Create(
@@ -87,9 +86,28 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     pollInterval: settings.PollInterval);
             }
 
-            Initialized?.Invoke(Instance, EventArgs.Empty);
+            while (_initializationQueue.TryDequeue(out var action))
+            {
+                action(Instance);
+            }
 
             return Instance;
+        }
+
+        public static void GetInitializedInstance(Action<RemoteConfigurationManager> action)
+        {
+            RemoteConfigurationManager inst = null;
+            lock (LockObject)
+            {
+                inst = Instance;
+                if (inst == null)
+                {
+                    _initializationQueue.Enqueue(action);
+                    return;
+                }
+            }
+
+            action(inst);
         }
 
         public async Task StartPollingAsync()

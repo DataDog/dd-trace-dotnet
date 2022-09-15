@@ -265,22 +265,7 @@ namespace Datadog.Trace.AppSec
 
         private void SetRemoteConfigCapabilites()
         {
-            Log.Information("SetRemoteConfigCapabilites starting");
-
-            var rcm = RemoteConfigurationManager.Instance;
-            if (rcm != null)
-            {
-                Set(rcm);
-            }
-            else
-            {
-                RemoteConfigurationManager.Initialized += (sender, ea) =>
-                {
-                    Set((RemoteConfigurationManager)sender);
-                };
-            }
-
-            void Set(RemoteConfigurationManager rcm)
+            RemoteConfigurationManager.GetInitializedInstance(rcm =>
             {
                 Log.Information("SetRemoteConfigCapabilites got instance: " + (rcm != null));
                 rcm.SetCapablity(RcmCapablitiesIndices.AsmActivation, _settings.CanBeEnabled);
@@ -288,9 +273,7 @@ namespace Datadog.Trace.AppSec
                 rcm.SetCapablity(RcmCapablitiesIndices.AsmDdRules, false);
                 // TODO set to true when https://github.com/DataDog/dd-trace-dotnet/pull/3171 is merged
                 rcm.SetCapablity(RcmCapablitiesIndices.AsmIpBlocking, false);
-            }
-
-            Log.Information("SetRemoteConfigCapabilites ended");
+            });
         }
 
         private void FeaturesProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
