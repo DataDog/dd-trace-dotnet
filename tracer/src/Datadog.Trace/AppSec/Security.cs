@@ -13,7 +13,6 @@ using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -99,7 +98,7 @@ namespace Datadog.Trace.AppSec
                 if (_settings.CanBeEnabled)
                 {
                     UpdateStatus();
-                    SharedRemoteConfiguration.FeaturesProduct.ConfigChanged += FeaturesProductConfigChanged;
+                    AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged += FeaturesProductConfigChanged;
                 }
                 else
                 {
@@ -277,7 +276,7 @@ namespace Datadog.Trace.AppSec
 
         private void FeaturesProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
-            var features = e.GetDeserializedConfigurations<Features>().FirstOrDefault();
+            var features = e.GetDeserializedConfigurations<AsmFeatures>().FirstOrDefault();
             if (features.TypedFile != null)
             {
                 _settings.Enabled = features.TypedFile.Asm.Enabled;
