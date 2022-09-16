@@ -6,13 +6,30 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
 {
     /// <summary>
     /// StackExchange.Redis.ConnectionMultiplexer.ExecuteAsyncImpl calltarget instrumentation
     /// </summary>
+    [InstrumentMethod(
+        AssemblyName = "StackExchange.Redis",
+        TypeName = "StackExchange.Redis.ConnectionMultiplexer",
+        MethodName = "ExecuteAsyncImpl",
+        ReturnTypeName = "System.Threading.Tasks.Task`1<T>",
+        ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", ClrNames.Object, "StackExchange.Redis.ServerEndPoint", "!!0" },
+        MinimumVersion = "2.0.0", // 2.6.45, but dll uses 2.0.0
+        MaximumVersion = "2.*.*",
+        IntegrationName = StackExchangeRedisHelper.IntegrationName)]
+    [InstrumentMethod(
+        AssemblyName = "StackExchange.Redis.StrongName",
+        TypeName = "StackExchange.Redis.ConnectionMultiplexer",
+        MethodName = "ExecuteAsyncImpl",
+        ReturnTypeName = "System.Threading.Tasks.Task`1<T>",
+        ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", ClrNames.Object, "StackExchange.Redis.ServerEndPoint", "!!0" },
+        MinimumVersion = "2.0.0", // 2.6.45, but dll uses 2.0.0
+        MaximumVersion = "2.*.*",
+        IntegrationName = StackExchangeRedisHelper.IntegrationName)]
     [InstrumentMethod(
         AssemblyName = "StackExchange.Redis",
         TypeName = "StackExchange.Redis.ConnectionMultiplexer",
@@ -40,15 +57,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <typeparam name="TMessage">Type of the message</typeparam>
-        /// <typeparam name="TProcessor">Type of the result processor</typeparam>
-        /// <typeparam name="TServerEndPoint">Type of the server end point</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="message">Message instance</param>
-        /// <param name="resultProcessor">Result processor instance</param>
-        /// <param name="state">State instance</param>
-        /// <param name="serverEndPoint">Server endpoint instance</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TMessage, TProcessor, TServerEndPoint>(TTarget instance, TMessage message, TProcessor resultProcessor, object state, TServerEndPoint serverEndPoint)
+        internal static CallTargetState OnMethodBegin<TTarget, TMessage>(TTarget instance, TMessage message)
             where TTarget : IConnectionMultiplexer
             where TMessage : IMessageData
         {
