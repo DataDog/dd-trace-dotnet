@@ -37,7 +37,10 @@ namespace Datadog.Trace.IAST
             var frame = StackWalker.GetFrame();
             // Sometimes we do not have the file/line but we have the method/class.
             var vulnerability = new Vulnerability(VulnerabilityType.WEAK_HASH, new Location(frame?.GetFileName() ?? GetMethodName(frame), frame?.GetFileLineNumber()), new Evidence(algorithm));
-            var json = JsonConvert.SerializeObject(vulnerability, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
+            // The VulnerabilityBatch class is not very useful right now, but we will need it when handling requests
+            var batch = new VulnerabilityBatch();
+            batch.Add(vulnerability);
+            var json = batch.ToString();
 
             var tags = new InsecureHashingTags()
             {
