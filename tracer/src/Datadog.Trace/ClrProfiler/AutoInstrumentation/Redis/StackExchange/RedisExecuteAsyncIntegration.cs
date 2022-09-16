@@ -14,6 +14,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     /// StackExchange.Redis.[RedisBase/RedisBatch/RedisTransaction].ExecuteAsync[T] calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
+        AssemblyNames = new[] { "StackExchange.Redis", "StackExchange.Redis.StrongName" },
+        MethodName = "ExecuteAsync",
+        ReturnTypeName = "System.Threading.Tasks.Task`1<T>",
+        ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "!!0", "StackExchange.Redis.ServerEndPoint" },
+        MinimumVersion = "2.0.0",  // 2.6.48, but dll uses 2.0.0
+        MaximumVersion = "2.*.*",
+        TypeNames = new[] { "StackExchange.Redis.RedisBatch", "StackExchange.Redis.RedisTransaction" },
+        IntegrationName = IntegrationName)]
+    [InstrumentMethod(
         AssemblyNames = new string[] { "StackExchange.Redis", "StackExchange.Redis.StrongName" },
         MethodName = "ExecuteAsync",
         ReturnTypeName = "System.Threading.Tasks.Task`1<T>",
@@ -34,14 +43,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <typeparam name="TMessage">Type of the message</typeparam>
-        /// <typeparam name="TProcessor">Type of the result processor</typeparam>
-        /// <typeparam name="TServerEndPoint">Type of the server end point</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="message">Message instance</param>
-        /// <param name="resultProcessor">Result processor instance</param>
-        /// <param name="serverEndPoint">Server endpoint instance</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TMessage, TProcessor, TServerEndPoint>(TTarget instance, TMessage message, TProcessor resultProcessor, TServerEndPoint serverEndPoint)
+        internal static CallTargetState OnMethodBegin<TTarget, TMessage>(TTarget instance, TMessage message)
             where TTarget : IRedisBase
             where TMessage : IMessageData
         {
