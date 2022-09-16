@@ -5,10 +5,14 @@
 
 #nullable enable
 
+using System;
+using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.IAST
@@ -31,8 +35,8 @@ namespace Datadog.Trace.IAST
 
             var tracer = Tracer.Instance;
             var frame = StackWalker.GetFrame();
-            // TBD: Sometimes we do not have the file/line but we have the method/class. Should we include it in the vulnerability?
-            var vulnerability = new Vulnerability(VulnerabilityType.WEAK_HASH, new Location(frame?.GetFileName(), frame?.GetFileLineNumber()), new Evidence(algorithm));
+            // Sometimes we do not have the file/line but we have the method/class.
+            var vulnerability = new Vulnerability(VulnerabilityType.WEAK_HASH, new Location(frame?.GetFileName() ?? GetMethodName(frame), frame?.GetFileLineNumber()), new Evidence(algorithm));
             var json = JsonConvert.SerializeObject(vulnerability, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
             var tags = new InsecureHashingTags()
@@ -47,6 +51,18 @@ namespace Datadog.Trace.IAST
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
 
             return scope;
+        }
+
+        private static string? GetMethodName(StackFrame? frame)
+        {
+            var method = frame?.GetMethod();
+            var declaringType = method?.DeclaringType;
+            return (BuildFullMethodName(declaringType?.Namespace, declaringType?.Name, method?.Name));
+        }
+
+        public static string BuildFullMethodName(string? namespaceName, string? className, string? methodName)
+        {
+            return StringBuilderCache.GetStringAndRelease(StringBuilderCache.Acquire(0).Append(namespaceName).Append('.').Append(className).Append("::").Append(methodName));
         }
 
         private static bool InvalidHashAlgorithm(string? algorithm, Datadog.Trace.IAST.IAST iast)
