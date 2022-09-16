@@ -489,6 +489,8 @@ services:
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage
     volumes:
       - ./:/project
+    cap_add:
+      - SYS_PTRACE
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
@@ -561,6 +563,8 @@ services:
     command: dotnet /build/bin/Debug/_build.dll RunExplorationTests --explorationTestUseCase ${explorationTestUseCase:-debugger} --explorationTestName ${explorationTestName:-eshoponweb} --framework ${framework:-netcoreapp3.1} --code-coverage
     volumes:
       - ./:/project
+    cap_add:
+      - SYS_PTRACE
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
@@ -617,6 +621,8 @@ services:
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
     volumes:
       - ./:/project
+    cap_add:
+      - SYS_PTRACE
     environment:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
