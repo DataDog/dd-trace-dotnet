@@ -38,14 +38,10 @@ Type | `web`
 ### Tags
 Name | Required |
 ---------|----------------|
-http.client_ip | Yes
 http.method | Yes
 http.request.headers.host | Yes
-http.route | No
 http.status_code | Yes
 http.url | Yes
-http.useragent | Yes
-network.client.ip | Yes
 span.kind | `server`
 
 ## AspNetMvc
@@ -65,7 +61,6 @@ http.method | Yes
 http.request.headers.host | Yes
 http.status_code | Yes
 http.url | Yes
-http.useragent | Yes
 span.kind | `server`
 
 ## AspNetWebApi2
@@ -80,14 +75,9 @@ Name | Required |
 aspnet.action | No
 aspnet.controller | No
 aspnet.route | Yes
-http.client_ip | No
 http.method | Yes
 http.request.headers.host | Yes
-http.route | No
-http.status_code | No
 http.url | Yes
-http.useragent | Yes
-network.client.ip | No
 span.kind | `server`
 
 ## AspNetCore
@@ -102,14 +92,10 @@ Name | Required |
 aspnet_core.endpoint | No
 aspnet_core.route | No
 component | `aspnet_core`
-http.client_ip | Yes
 http.method | Yes
 http.request.headers.host | Yes
-http.route | No
 http.status_code | Yes
 http.url | Yes
-http.useragent | Yes
-network.client.ip | Yes
 span.kind | `server`
 
 ## AspNetCoreMvc
@@ -125,7 +111,6 @@ aspnet_core.action | Yes
 aspnet_core.area | No
 aspnet_core.controller | Yes
 aspnet_core.page | No
-aspnet_core.route | Yes
 component | `aspnet_core`
 span.kind | `server`
 
@@ -232,21 +217,6 @@ grpc.method.service | Yes
 grpc.status.code | Yes
 span.kind | `client`; `server`
 
-## HotChocolate
-### Span properties
-Name | Required |
----------|----------------|
-Name | `graphql.execute`; `graphql.validate`
-Type | `graphql`
-### Tags
-Name | Required |
----------|----------------|
-component | `HotChocolate`
-graphql.operation.name | No
-graphql.operation.type | No
-graphql.source | Yes
-span.kind | `server`
-
 ## HttpMessageHandler
 ### Span properties
 Name | Required |
@@ -273,7 +243,6 @@ Type | `queue`
 Name | Required |
 ---------|----------------|
 component | `kafka`
-kafka.group | No
 kafka.offset | No
 kafka.partition | No
 kafka.tombstone | No
@@ -325,8 +294,6 @@ Name | Required |
 component | `MySql`
 db.name | Yes
 db.type | `mysql`
-db.user | Yes
-out.host | Yes
 span.kind | `client`
 
 ## Npgsql
@@ -341,7 +308,6 @@ Name | Required |
 component | `Npgsql`
 db.name | Yes
 db.type | `postgres`
-out.host | Yes
 span.kind | `client`
 
 ## Oracle
@@ -357,18 +323,6 @@ component | `Oracle`
 db.name | Yes
 db.type | `oracle`
 span.kind | `client`
-
-## Process
-### Span properties
-Name | Required |
----------|----------------|
-Name | `command_execution`
-Type | `system`
-### Tags
-Name | Required |
----------|----------------|
-cmd.environment_variables | No
-span.kind | `internal`
 
 ## RabbitMQ
 ### Span properties
@@ -466,7 +420,6 @@ Name | Required |
 component | `Sqlite`
 db.name | No
 db.type | `sqlite`
-out.host | Yes
 span.kind | `client`
 
 ## SqlClient
@@ -481,7 +434,6 @@ Name | Required |
 component | `SqlClient`
 db.name | No
 db.type | `sql-server`
-out.host | Yes
 span.kind | `client`
 
 ## Wcf
@@ -494,8 +446,6 @@ Type | `web`
 Name | Required |
 ---------|----------------|
 component | `Wcf`
-http.method | No
-http.request.headers.host | No
 http.url | Yes
 span.kind | `server`
 
