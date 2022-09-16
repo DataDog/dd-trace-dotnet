@@ -320,7 +320,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var grpcSpan in grpcSpans)
                 {
-                    var result = grpcSpan.IsGrpc();
+                    var result = grpcSpan.IsGrpc(excludeTags: new HashSet<string>
+                    {
+                        "clientmeta",
+                        "grpc.request.metadata.client-value1",
+                        "servermeta",
+                        "grpc.response.metadata.server-value1"
+                    });
                     Assert.True(result.Success, result.ToString());
                 }
 

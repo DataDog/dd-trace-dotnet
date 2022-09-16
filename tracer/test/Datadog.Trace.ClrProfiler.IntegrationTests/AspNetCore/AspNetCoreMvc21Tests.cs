@@ -6,6 +6,7 @@
 #if NETCOREAPP2_1
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -55,7 +56,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             var aspnetCoreSpans = spans.Where(s => s.Name == "aspnet_core.request");
             foreach (var aspnetCoreSpan in aspnetCoreSpans)
             {
-                var result = aspnetCoreSpan.IsAspNetCore();
+                var result = aspnetCoreSpan.IsAspNetCore(excludeTags: new HashSet<string>
+                    {
+                        "datadog-header-tag",
+                        "http.request.headers.sample_correlation_identifier",
+                        "http.response.headers.sample_correlation_identifier",
+                        "http.response.headers.server",
+                    });
                 Assert.True(result.Success, result.ToString());
             }
 

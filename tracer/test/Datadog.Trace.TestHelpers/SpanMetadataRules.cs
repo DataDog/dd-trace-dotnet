@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Generic;
+
 namespace Datadog.Trace.TestHelpers
 {
 #pragma warning disable SA1601 // Partial elements should be documented
@@ -34,12 +36,16 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "aspnet.request")
                 .Matches(Type, "web"))
             .Tags(s => s
+                .IsPresent("http.client_ip")
                 .IsPresent("http.method")
                 .IsPresent("http.request.headers.host")
+                .IsOptional("http.route")
                 .IsPresent("http.status_code")
+                .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 // BUG: component tag is not set
                 // .Matches("component", "aspnet")
+                .IsPresent("network.client.ip")
                 .Matches("span.kind", "server"));
 
         public static Result IsAspNetMvc(this MockSpan span) => Result.FromSpan(span)
@@ -54,6 +60,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.method")
                 .IsPresent("http.request.headers.host")
                 .IsPresent("http.status_code")
+                .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 // BUG: component tag is not set
                 // .Matches("component", "aspnet")
@@ -67,10 +74,10 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("aspnet.action")
                 .IsOptional("aspnet.controller")
                 .IsPresent("aspnet.route")
-                .IsPresent("http.client_ip")
+                .IsOptional("http.client_ip")
                 .IsPresent("http.method")
                 .IsPresent("http.request.headers.host")
-                .IsPresent("http.route")
+                .IsOptional("http.route")
                 // BUG: When WebApi2 throws an exception, we cannot immediately set the
                 // status code because the response hasn't been written yet.
                 // For ASP.NET, we register a callback to populate http.status_code
@@ -83,20 +90,24 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.url")
                 // BUG: component tag is not set
                 // .Matches("component", "aspnet")
-                .IsPresent("network.client.ip")
+                .IsOptional("network.client.ip")
                 .Matches("span.kind", "server"));
 
-        public static Result IsAspNetCore(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAspNetCore(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .Matches(Name, "aspnet_core.request")
                 .Matches(Type, "web"))
             .Tags(s => s
                 .IsOptional("aspnet_core.endpoint")
                 .IsOptional("aspnet_core.route")
+                .IsPresent("http.client_ip")
                 .IsPresent("http.method")
                 .IsPresent("http.request.headers.host")
+                .IsOptional("http.route")
                 .IsPresent("http.status_code")
+                .IsPresent("http.useragent")
                 .IsPresent("http.url")
+                .IsPresent("network.client.ip")
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
 
@@ -109,6 +120,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("aspnet_core.area")
                 .IsPresent("aspnet_core.controller")
                 .IsOptional("aspnet_core.page")
+                .IsPresent("aspnet_core.route")
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
 
@@ -177,7 +189,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "GraphQL")
                 .Matches("span.kind", "server"));
 
-        public static Result IsGrpc(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsGrpc(this MockSpan span, ISet<string> excludeTags) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .Matches(Name, "grpc.request")
                 .Matches(Type, "grpc"))
