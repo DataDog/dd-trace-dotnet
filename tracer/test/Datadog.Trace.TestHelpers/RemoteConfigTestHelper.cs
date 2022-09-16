@@ -5,11 +5,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -17,53 +14,50 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.TestHelpers
 {
-    public abstract class RemoteConfigTestHelper : TestHelper
+    public static class RemoteConfigTestHelper
     {
-        protected RemoteConfigTestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
-            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides), output)
+        public static void SetupRcm(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string Id)> configurations, string productName)
         {
+            var response = BuildRcmResponse(configurations, productName);
+            agent.RcmResponse = response;
+            output.WriteLine("Using RCM response: " + response);
         }
 
-        protected RemoteConfigTestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output, bool prependSamplesToAppName)
-            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides, prependSamplesToAppName: false), output)
+        // doing multiple things here, waiting for the request and return the latest one
+        internal static async Task<GetRcmRequest> WaitRcmRequestAndReturnLast(this MockTracerAgent agent, int timeoutInMilliseconds = 50000)
         {
-        }
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
 
-        protected RemoteConfigTestHelper(string sampleAppName, ITestOutputHelper output)
-            : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output), output)
-        {
-        }
-
-        protected RemoteConfigTestHelper(EnvironmentHelper environmentHelper, ITestOutputHelper output)
-            : base(environmentHelper, output)
-        {
-            SetupRcm();
-        }
-
-        protected void SetupRcm(string path = null)
-        {
-            if (path == null)
+            GetRcmRequest request = null;
+            while (DateTime.UtcNow < deadline)
             {
-                path = Path.GetTempFileName();
-                File.Delete(path);
-                Directory.CreateDirectory(path);
-                path = Path.Combine(path, "rcm_config.json");
-                if (File.Exists(path)) { File.Delete(path); }
+                while (agent.RemoteConfigRequests.IsEmpty)
+                {
+                    await Task.Delay(200);
+                }
+
+                string lastRemoteConfigPayload = null;
+                while (agent.RemoteConfigRequests.TryDequeue(out var next))
+                {
+                    lastRemoteConfigPayload = next;
+                }
+
+                if (lastRemoteConfigPayload != null)
+                {
+                    // prefer a request that has been processed, meaning the config states have been filled in
+                    request = JsonConvert.DeserializeObject<GetRcmRequest>(lastRemoteConfigPayload);
+                    if (request?.Client?.State?.ConfigStates?.Count is not null and > 0)
+                    {
+                        return request;
+                    }
+                }
             }
 
-            SetEnvironmentVariable(ConfigurationKeys.Rcm.FilePath, path);
+            // eventually return a request that might be null or has no config states
+            return request;
         }
 
-        protected void CleanupRcm()
-        {
-            if (EnvironmentHelper.CustomEnvironmentVariables.TryGetValue(ConfigurationKeys.Rcm.FilePath, out var rcmConfigPath))
-            {
-                if (File.Exists(rcmConfigPath)) { File.Delete(rcmConfigPath); }
-                EnvironmentHelper.CustomEnvironmentVariables.Remove(ConfigurationKeys.Rcm.FilePath);
-            }
-        }
-
-        protected void WriteRcmFile(IEnumerable<(object Config, string Id)> configurations, string productName)
+        private static string BuildRcmResponse(IEnumerable<(object Config, string Id)> configurations, string productName)
         {
             var targetFiles = new List<RcmFile>();
             var targets = new Dictionary<string, Target>();
@@ -103,16 +97,7 @@ namespace Datadog.Trace.TestHelpers
                 Targets = root
             };
 
-            var json = JsonConvert.SerializeObject(response);
-            if (EnvironmentHelper.CustomEnvironmentVariables.TryGetValue(ConfigurationKeys.Rcm.FilePath, out var rcmConfigPath))
-            {
-                File.WriteAllText(rcmConfigPath, json);
-                Console.WriteLine($"Writing Remote Config at {rcmConfigPath}");
-            }
-            else
-            {
-                throw new InvalidOperationException("Path for remote configurations is not set.");
-            }
+            return JsonConvert.SerializeObject(response);
         }
     }
 }

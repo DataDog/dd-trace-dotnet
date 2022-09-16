@@ -144,7 +144,7 @@ namespace Datadog.Trace.AppSec
 
         internal SecuritySettings Settings => _settings;
 
-        internal Version DdlibWafVersion => _waf?.Version;
+        internal string DdlibWafVersion => _waf?.Version;
 
         private static void AnnotateSpan(Span span)
         {
@@ -264,11 +264,13 @@ namespace Datadog.Trace.AppSec
         private void FeaturesProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
             var features = e.GetDeserializedConfigurations<Features>().FirstOrDefault();
-            if (features != null)
+            if (features.TypedFile != null)
             {
-                _settings.Enabled = features.Asm.Enabled;
+                _settings.Enabled = features.TypedFile.Asm.Enabled;
                 UpdateStatus();
             }
+
+            e.Acknowledge(features.Name);
         }
 
         private void UpdateStatus()
@@ -391,7 +393,12 @@ namespace Datadog.Trace.AppSec
                 span.SetTag(Tags.ActorIp, clientIp);
             }
 
-            span.SetTag(Tags.Origin, "appsec");
+            var origin = span.GetTag(Tags.Origin);
+            if (origin == null)
+            {
+                span.SetTag(Tags.Origin, "appsec");
+            }
+
             span.SetTag(Tags.AppSecRuleFileVersion, _waf.InitializationResult.RuleFileVersion);
             span.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
             span.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
@@ -468,7 +475,7 @@ namespace Datadog.Trace.AppSec
 
                 // run the WAF and execute the results
                 using var wafResult = additiveContext.Run(e.EventData, _settings.WafTimeoutMicroSeconds);
-                if (wafResult.ReturnCode is ReturnCode.Monitor or ReturnCode.Block)
+                if (wafResult.ReturnCode == ReturnCode.Match || wafResult.ReturnCode == ReturnCode.Block)
                 {
                     var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock");
                     if (block)

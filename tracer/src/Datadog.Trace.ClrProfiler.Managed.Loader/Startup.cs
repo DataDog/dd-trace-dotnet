@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.IO;
@@ -41,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             var runInAas = ReadBooleanEnvironmentVariable(AzureAppServicesKey, false);
             if (!runInAas)
             {
-                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize");
+                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
                 return;
             }
 
@@ -54,28 +55,40 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             if (automaticTraceEnabled || customTracingEnabled || needsDogStatsD)
             {
                 StartupLogger.Log("Invoking managed method to start external processes.");
-                TryInvokeManagedMethod("Datadog.Trace.AgentProcessManager", "Initialize");
+                TryInvokeManagedMethod("Datadog.Trace.AgentProcessManager", "Initialize", "Datadog.Trace.AgentProcessManagerLoader");
             }
 
             if (automaticTraceEnabled)
             {
                 StartupLogger.Log("Invoking managed tracer.");
-                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize");
+                TryInvokeManagedMethod("Datadog.Trace.ClrProfiler.Instrumentation", "Initialize", "Datadog.Trace.ClrProfiler.InstrumentationLoader");
             }
         }
 
         internal static string ManagedProfilerDirectory { get; }
 
-        private static void TryInvokeManagedMethod(string typeName, string methodName)
+        private static void TryInvokeManagedMethod(string typeName, string methodName, string? loaderHelperTypeName = null)
         {
             try
             {
                 var assembly = LoadAssembly(AssemblyName);
-
                 if (assembly == null)
                 {
                     StartupLogger.Log("Assembly '{0}' cannot be loaded. The managed method ({1}.{2}) cannot be invoked", AssemblyName, typeName, methodName);
                     return;
+                }
+
+                if (loaderHelperTypeName is not null)
+                {
+                    // The loader helper type name is a class that calls the initialization in the .ctor
+                    // this way we avoid the reflection invoke call.
+                    if (assembly.GetType(loaderHelperTypeName, throwOnError: false) is { } loaderHelperType)
+                    {
+                        Activator.CreateInstance(loaderHelperType);
+                        return;
+                    }
+
+                    StartupLogger.Log("Loader Helper '{0}' cannot be found. Invoking {1}.{2}()", loaderHelperTypeName, typeName, methodName);
                 }
 
                 var type = assembly.GetType(typeName, throwOnError: false);
@@ -88,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
         }
 
-        private static Assembly LoadAssembly(string assemblyString)
+        private static Assembly? LoadAssembly(string assemblyString)
         {
             try
             {
@@ -110,7 +123,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Loader
             }
         }
 
-        private static string ReadEnvironmentVariable(string key)
+        private static string? ReadEnvironmentVariable(string key)
         {
             try
             {

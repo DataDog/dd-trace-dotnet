@@ -72,19 +72,25 @@ public class LiveDebuggerTests
 
     private class DiscoveryServiceMock : IDiscoveryService
     {
-        public string ConfigurationEndpoint => nameof(ConfigurationEndpoint);
-
-        public string DebuggerEndpoint => nameof(DebuggerEndpoint);
-
-        public string AgentVersion => nameof(AgentVersion);
-
         internal bool Called { get; private set; }
 
-        public Task<bool> DiscoverAsync()
+        public void SubscribeToChanges(Action<AgentConfiguration> callback)
         {
             Called = true;
-            return Task.FromResult(true);
+            callback(new AgentConfiguration(
+                         configurationEndpoint: "configurationEndpoint",
+                         debuggerEndpoint: "debuggerEndpoint",
+                         agentVersion: "agentVersion",
+                         statsEndpoint: "traceStatsEndpoint",
+                         dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
+                         clientDropP0: false));
         }
+
+        public void RemoveSubscription(Action<AgentConfiguration> callback)
+        {
+        }
+
+        public Task DisposeAsync() => Task.CompletedTask;
     }
 
     private class RemoteConfigurationManagerMock : IRemoteConfigurationManager
@@ -113,11 +119,6 @@ public class LiveDebuggerTests
     private class LineProbeResolverMock : ILineProbeResolver
     {
         internal bool Called { get; private set; }
-
-        public void OnDomainUnloaded()
-        {
-            Called = true;
-        }
 
         public LineProbeResolveResult TryResolveLineProbe(ProbeDefinition probe, out BoundLineProbeLocation location)
         {

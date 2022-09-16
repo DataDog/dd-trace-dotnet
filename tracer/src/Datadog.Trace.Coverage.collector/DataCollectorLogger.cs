@@ -23,8 +23,7 @@ namespace Datadog.Trace.Coverage.Collector
             _logger = logger;
             _collectionContext = collectionContext;
 
-            var settings = GlobalSettings.FromDefaultSources();
-            _isDebugEnabled = settings.DebugEnabled;
+            _isDebugEnabled = GlobalSettings.Instance.DebugEnabled;
         }
 
         public void Error(string? text)

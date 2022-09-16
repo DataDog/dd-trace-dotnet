@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using Datadog.Trace.Configuration;
 
@@ -17,16 +19,14 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         {
         }
 
-        public RemoteConfigurationSettings(IConfigurationSource configurationSource)
+        public RemoteConfigurationSettings(IConfigurationSource? configurationSource)
         {
             Id = Guid.NewGuid().ToString();
             RuntimeId = Util.RuntimeId.Get();
             TracerVersion = TracerConstants.AssemblyVersion;
-            Environment = configurationSource?.GetString(ConfigurationKeys.Environment);
-            AppVersion = configurationSource?.GetString(ConfigurationKeys.ServiceVersion);
-            FilePath = configurationSource?.GetString(ConfigurationKeys.Rcm.FilePath);
 
             var pollInterval = configurationSource?.GetInt32(ConfigurationKeys.Rcm.PollInterval);
+
             pollInterval =
                 pollInterval is null or <= 0 or > 5000
                     ? DefaultPollIntervalMilliseconds
@@ -41,13 +41,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public string TracerVersion { get; }
 
-        public string Environment { get; }
-
-        public string AppVersion { get; }
-
         public TimeSpan PollInterval { get; }
-
-        public string FilePath { get; set; }
 
         public static RemoteConfigurationSettings FromSource(IConfigurationSource source)
         {
@@ -56,7 +50,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public static RemoteConfigurationSettings FromDefaultSource()
         {
-            return FromSource(GlobalSettings.CreateDefaultConfigurationSource());
+            return FromSource(GlobalConfigurationSource.Instance);
         }
     }
 }

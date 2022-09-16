@@ -9,11 +9,13 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 {
     internal class RcmConfigState
     {
-        public RcmConfigState(string id, int version, string product)
+        public RcmConfigState(string id, int version, string product, uint applyState, string applyError = null)
         {
             Id = id;
             Version = version;
             Product = product;
+            ApplyState = applyState;
+            ApplyError = applyError;
         }
 
         [JsonProperty("id")]
@@ -24,5 +26,11 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol
 
         [JsonProperty("product")]
         public string Product { get; }
+
+        [JsonProperty("apply_state")]
+        public uint ApplyState { get; }
+
+        [JsonProperty("apply_error")]
+        public string ApplyError { get; }
     }
 }

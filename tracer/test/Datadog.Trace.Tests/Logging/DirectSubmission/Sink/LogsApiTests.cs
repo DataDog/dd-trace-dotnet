@@ -7,12 +7,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Text;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
-using Datadog.Trace.Util;
+using Datadog.Trace.TestHelpers.TransportHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -117,118 +115,6 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             request.Responses.Should().ContainSingle().Which.StatusCode.Should().Be(400);
 
             result.Should().BeFalse();
-        }
-
-        internal class TestRequestFactory : IApiRequestFactory
-        {
-            private readonly Uri _baseEndpoint;
-            private readonly Func<Uri, TestApiRequest>[] _requestsToSend;
-
-            public TestRequestFactory(Uri baseEndpoint, params Func<Uri, TestApiRequest>[] requestsToSend)
-            {
-                _baseEndpoint = baseEndpoint;
-                _requestsToSend = requestsToSend;
-            }
-
-            public List<TestApiRequest> RequestsSent { get; } = new();
-
-            public Uri GetEndpoint(string relativePath)
-            {
-                return UriHelpers.Combine(_baseEndpoint, relativePath);
-            }
-
-            public string Info(Uri endpoint) => endpoint.ToString();
-
-            public IApiRequest Create(Uri endpoint)
-            {
-                var request = (_requestsToSend is null || RequestsSent.Count >= _requestsToSend.Length)
-                                  ? new TestApiRequest(endpoint)
-                                  : _requestsToSend[RequestsSent.Count](endpoint);
-
-                RequestsSent.Add(request);
-
-                return request;
-            }
-
-            public void SetProxy(WebProxy proxy, NetworkCredential credential)
-            {
-            }
-        }
-
-        internal class TestApiRequest : IApiRequest
-        {
-            private readonly int _statusCode;
-
-            public TestApiRequest(Uri endpoint, int statusCode = 200)
-            {
-                _statusCode = statusCode;
-                Endpoint = endpoint;
-            }
-
-            public Uri Endpoint { get; }
-
-            public Dictionary<string, string> ExtraHeaders { get; } = new();
-
-            public List<TestApiResponse> Responses { get; } = new();
-
-            public void AddHeader(string name, string value)
-            {
-                ExtraHeaders.Add(name, value);
-            }
-
-            public Task<IApiResponse> GetAsync()
-            {
-                throw new NotImplementedException();
-            }
-
-            public Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)
-            {
-                var response = new TestApiResponse(_statusCode, "The message body", contentType);
-                Responses.Add(response);
-
-                return Task.FromResult((IApiResponse)response);
-            }
-        }
-
-        internal class FaultyApiRequest : TestApiRequest
-        {
-            public FaultyApiRequest(Uri endpoint, int statusCode = 500)
-                : base(endpoint, statusCode)
-            {
-            }
-        }
-
-        internal class TestApiResponse : IApiResponse
-        {
-            private readonly string _body;
-
-            public TestApiResponse(int statusCode, string body, string contentType)
-            {
-                StatusCode = statusCode;
-                _body = body;
-                ContentType = contentType;
-            }
-
-            public string ContentType { get; }
-
-            public int StatusCode { get; }
-
-            public long ContentLength => _body?.Length ?? 0;
-
-            public Encoding ContentEncoding => Encoding.UTF8;
-
-            public void Dispose()
-            {
-            }
-
-            public string GetHeader(string headerName) => throw new NotImplementedException();
-
-            public Task<Stream> GetStreamAsync()
-            {
-                return Task.FromResult(new StreamReader(_body).BaseStream);
-            }
-
-            public Task<string> ReadAsStringAsync() => Task.FromResult(_body);
         }
     }
 }

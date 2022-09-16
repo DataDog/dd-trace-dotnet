@@ -13,6 +13,8 @@ namespace Datadog.Trace.AppSec.Waf
 
         string Data { get; }
 
+        string[] Actions { get; }
+
         ulong AggregatedTotalRuntime { get; }
 
         ulong AggregatedTotalRuntimeWithBindings { get; }

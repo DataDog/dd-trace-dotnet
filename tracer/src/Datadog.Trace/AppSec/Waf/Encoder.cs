@@ -47,8 +47,8 @@ namespace Datadog.Trace.AppSec.Waf
             DDWAF_RET_CODE.DDWAF_ERR_INTERNAL => ReturnCode.ErrorInternal,
             DDWAF_RET_CODE.DDWAF_ERR_INVALID_ARGUMENT => ReturnCode.ErrorInvalidArgument,
             DDWAF_RET_CODE.DDWAF_ERR_INVALID_OBJECT => ReturnCode.ErrorInvalidObject,
-            DDWAF_RET_CODE.DDWAF_GOOD => ReturnCode.Good,
-            DDWAF_RET_CODE.DDWAF_MONITOR => ReturnCode.Monitor,
+            DDWAF_RET_CODE.DDWAF_OK => ReturnCode.Ok,
+            DDWAF_RET_CODE.DDWAF_MATCH => ReturnCode.Match,
             DDWAF_RET_CODE.DDWAF_BLOCK => ReturnCode.Block,
             _ => throw new Exception($"Unknown return code: {rc}")
         };

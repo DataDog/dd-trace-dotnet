@@ -46,6 +46,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             yield return new object[] { ClrNames.TimeSpan, "System.TimeSpan" };
             yield return new object[] { ClrNames.Type, typeof(Type) };
             yield return new object[] { ClrNames.Activity, "System.Diagnostics.Activity" };
+            yield return new object[] { ClrNames.Process, "System.Diagnostics.Process" };
         }
 
         [Fact]
