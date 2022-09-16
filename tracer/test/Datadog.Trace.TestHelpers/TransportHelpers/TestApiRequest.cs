@@ -39,7 +39,7 @@ internal class TestApiRequest : IApiRequest
         ExtraHeaders.Add(name, value);
     }
 
-    public Task<IApiResponse> GetAsync()
+    public virtual Task<IApiResponse> GetAsync()
     {
         var response = new TestApiResponse(_statusCode, _responseContent, _responseContentType);
         Responses.Add(response);
@@ -47,7 +47,7 @@ internal class TestApiRequest : IApiRequest
         return Task.FromResult((IApiResponse)response);
     }
 
-    public Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)
+    public virtual Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)
     {
         var response = new TestApiResponse(_statusCode, _responseContent, _responseContentType);
         Responses.Add(response);
