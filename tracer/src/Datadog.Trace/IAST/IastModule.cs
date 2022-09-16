@@ -30,7 +30,8 @@ namespace Datadog.Trace.IAST
             }
 
             var tracer = Tracer.Instance;
-            var frame = StackWalker.GetFrame(HashAlgorithmIntegrationCommon.HashFileNamesToSkip);
+            var frame = StackWalker.GetFrame();
+            // TBD: Sometimes we do not have the file/line but we have the method/class. Should we include it in the vulnerability?
             var vulnerability = new Vulnerability(VulnerabilityType.WEAK_HASH, new Location(frame?.GetFileName(), frame?.GetFileLineNumber()), new Evidence(algorithm));
             var json = JsonConvert.SerializeObject(vulnerability, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
 
