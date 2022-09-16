@@ -5,6 +5,7 @@
 
 using System;
 using System.Threading;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.IAST.Settings;
 using Datadog.Trace.Logging;
 
@@ -16,11 +17,9 @@ namespace Datadog.Trace.IAST
     internal class IAST
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<IAST>();
-
         private static IAST _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
-
         private readonly IASTSettings _settings;
 
         static IAST()
@@ -43,7 +42,7 @@ namespace Datadog.Trace.IAST
 
                 if (_settings.Enabled)
                 {
-                    // AddAppsecSpecificInstrumentations();
+                    AddIASTSpecificInstrumentations();
                 }
             }
             catch (Exception ex)
@@ -52,6 +51,8 @@ namespace Datadog.Trace.IAST
                 Log.Error(ex, "DDIAST-0001-01: IAST could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
             }
         }
+
+        internal IASTSettings Settings => _settings;
 
         /// <summary>
         /// Gets or sets the global <see cref="IAST"/> instance.
@@ -70,6 +71,34 @@ namespace Datadog.Trace.IAST
             }
         }
 
-        internal IASTSettings Settings => _settings;
+        private static void AddIASTSpecificInstrumentations()
+        {
+            int defs = 0, derived = 0;
+            try
+            {
+                Log.Debug("Adding CallTarget IAST integration definitions to native library.");
+                var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.IAST);
+                NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                defs = payload.Definitions.Length;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
+            try
+            {
+                Log.Debug("Adding CallTarget IAST derived integration definitions to native library.");
+                var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.IAST);
+                NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
+                derived = payload.Definitions.Length;
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
+            Log.Information($"{defs} IAST definitions and {derived} IAST derived definitions added to the profiler.");
+        }
     }
 }
