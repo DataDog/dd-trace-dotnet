@@ -8,6 +8,7 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
