@@ -393,7 +393,12 @@ namespace Datadog.Trace.AppSec
                 span.SetTag(Tags.ActorIp, clientIp);
             }
 
-            span.SetTag(Tags.Origin, "appsec");
+            var origin = span.GetTag(Tags.Origin);
+            if (origin == null)
+            {
+                span.SetTag(Tags.Origin, "appsec");
+            }
+
             span.SetTag(Tags.AppSecRuleFileVersion, _waf.InitializationResult.RuleFileVersion);
             span.SetMetric(Metrics.AppSecWafDuration, result.AggregatedTotalRuntime);
             span.SetMetric(Metrics.AppSecWafAndBindingsDuration, result.AggregatedTotalRuntimeWithBindings);
