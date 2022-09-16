@@ -407,6 +407,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "http.request")
                 .Matches(Type, "http"))
             .Tags(s => s
+                .IsOptional("http-client-handler-type")
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
