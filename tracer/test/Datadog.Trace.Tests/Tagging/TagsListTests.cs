@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Agent.MessagePack;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
@@ -27,36 +28,29 @@ namespace Datadog.Trace.Tests.Tagging
             var tags = new CommonTags();
             var span = new Span(new SpanContext(42, 41), DateTimeOffset.UtcNow, tags);
 
-            tags.Environment = "Test";
-            tags.SamplingLimitDecision = 0.5;
-
-            // Override the properties
-            span.SetTag(Tags.Env, "Overridden Environment");
-            span.SetMetric(Metrics.SamplingLimitDecision, 0.75);
-
-            for (int i = 0; i < 15; i++)
-            {
-                span.SetTag(i.ToString(), i.ToString());
-            }
-
-            for (int i = 0; i < 15; i++)
-            {
-                span.SetMetric(i.ToString(), i);
-            }
+            const int customTagCount = 15;
+            SetupForSerializationTest(span, customTagCount);
 
             Assert.Equal("Overridden Environment", span.GetTag(Tags.Env));
             Assert.Equal(0.75, span.GetMetric(Metrics.SamplingLimitDecision));
 
-            for (int i = 0; i < 15; i++)
+            for (int i = 0; i < customTagCount; i++)
             {
-                Assert.Equal(i.ToString(), span.GetTag(i.ToString()));
-                Assert.Equal((double)i, span.GetMetric(i.ToString()));
+                var key = i.ToString();
+
+                Assert.Equal(key, span.GetTag(key));
+                Assert.Equal((double)i, span.GetMetric(key));
             }
         }
 
         [Fact]
         public void CheckProperties()
         {
+            Action<ITags, string, string> setTag = (tagsList, name, value) => tagsList.SetTag(name, value);
+            Func<ITags, string, string> getTag = (tagsList, name) => tagsList.GetTag(name);
+            Action<ITags, string, double?> setMetric = (tagsList, name, value) => tagsList.SetMetric(name, value);
+            Func<ITags, string, double?> getMetric = (tagsList, name) => tagsList.GetMetric(name);
+
             var assemblies = new[] { typeof(TagsList).Assembly, typeof(SqlTags).Assembly };
 
             foreach (var type in assemblies.SelectMany(a => a.GetTypes()))
@@ -73,11 +67,6 @@ namespace Datadog.Trace.Tests.Tagging
 
                 var random = new Random();
 
-                Action<ITags, string, string> setTag = (tagsList, name, value) => tagsList.SetTag(name, value);
-                Func<ITags, string, string> getTag = (tagsList, name) => tagsList.GetTag(name);
-                Action<ITags, string, double?> setMetric = (tagsList, name, value) => tagsList.SetMetric(name, value);
-                Func<ITags, string, double?> getMetric = (tagsList, name) => tagsList.GetMetric(name);
-
                 ValidateProperties(type, setTag, getTag, () => Guid.NewGuid().ToString());
                 ValidateProperties(type, setMetric, getMetric, () => random.NextDouble());
             }
@@ -86,38 +75,43 @@ namespace Datadog.Trace.Tests.Tagging
         [Fact]
         public void Serialization_RootSpan()
         {
-            var tracer = new Mock<IDatadogTracer>();
-            var traceContext = new TraceContext(tracer.Object);
+            var tracer = new MockTracer();
+            var traceContext = new TraceContext(tracer);
             var span = new Span(new SpanContext(SpanContext.None, traceContext, "service1"), start: null);
             traceContext.AddSpan(span);
 
             const int customTagCount = 15;
             SetupForSerializationTest(span, customTagCount);
-            var deserializedSpan = SerializeSpan(span);
+            span.Finish();
 
-            deserializedSpan.Tags.Count.Should().Be(customTagCount + 4);
+            var deserializedSpan = Serialize(tracer.TraceChunk, traceContext).Single();
+
             deserializedSpan.Tags.Should().Contain(Tags.Env, "Overridden Environment");
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
             deserializedSpan.Tags.Should().Contain(Tags.RuntimeId, Tracer.RuntimeId);
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, $"-{SamplingMechanism.Default.ToString()}");
+            deserializedSpan.Tags.Should().HaveCount(customTagCount + 4);
 
-            deserializedSpan.Metrics.Count.Should().Be(customTagCount + 3);
+            deserializedSpan.Metrics.Should().Contain(Metrics.SamplingPriority, 1);
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
             deserializedSpan.Metrics.Should().Contain(Metrics.TopLevelSpan, 1);
             deserializedSpan.Metrics.Should().Contain(Metrics.ProcessId, DomainMetadata.Instance.ProcessId);
+            deserializedSpan.Metrics.Should().HaveCount(customTagCount + 4);
 
             for (int i = 0; i < customTagCount; i++)
             {
-                deserializedSpan.Tags.Should().Contain(i.ToString(), i.ToString());
-                deserializedSpan.Metrics.Should().Contain(i.ToString(), i);
+                var key = i.ToString();
+
+                deserializedSpan.Tags.Should().Contain(key, key);
+                deserializedSpan.Metrics.Should().Contain(key, i);
             }
         }
 
         [Fact]
         public void Serialization_ServiceEntrySpan()
         {
-            var tracer = new Mock<IDatadogTracer>();
-            var traceContext = new TraceContext(tracer.Object);
+            var tracer = new MockTracer();
+            var traceContext = new TraceContext(tracer);
 
             var rootSpan = new Span(new SpanContext(SpanContext.None, traceContext, "service1"), start: null);
             traceContext.AddSpan(rootSpan);
@@ -126,29 +120,35 @@ namespace Datadog.Trace.Tests.Tagging
 
             const int customTagCount = 15;
             SetupForSerializationTest(childSpan, customTagCount);
-            var deserializedSpan = SerializeSpan(childSpan);
 
-            deserializedSpan.Tags.Count.Should().Be(customTagCount + 3);
+            childSpan.Finish();
+            rootSpan.Finish();
+
+            var deserializedSpan = Serialize(tracer.TraceChunk, traceContext).Single(s => s.ParentId > 0);
+
             deserializedSpan.Tags.Should().Contain(Tags.Env, "Overridden Environment");
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
             deserializedSpan.Tags.Should().Contain(Tags.RuntimeId, Tracer.RuntimeId);
+            deserializedSpan.Tags.Count.Should().Be(customTagCount + 3);
 
-            deserializedSpan.Metrics.Count.Should().Be(customTagCount + 2);
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
             deserializedSpan.Metrics.Should().Contain(Metrics.TopLevelSpan, 1);
+            deserializedSpan.Metrics.Count.Should().Be(customTagCount + 2);
 
             for (int i = 0; i < customTagCount; i++)
             {
-                deserializedSpan.Tags.Should().Contain(i.ToString(), i.ToString());
-                deserializedSpan.Metrics.Should().Contain(i.ToString(), i);
+                var key = i.ToString();
+
+                deserializedSpan.Tags.Should().Contain(key, key);
+                deserializedSpan.Metrics.Should().Contain(key, i);
             }
         }
 
         [Fact]
         public void Serialization_ChildSpan()
         {
-            var tracer = new Mock<IDatadogTracer>();
-            var traceContext = new TraceContext(tracer.Object);
+            var tracer = new MockTracer();
+            var traceContext = new TraceContext(tracer);
 
             var rootSpan = new Span(new SpanContext(SpanContext.None, traceContext, "service1"), start: null);
             traceContext.AddSpan(rootSpan);
@@ -157,28 +157,41 @@ namespace Datadog.Trace.Tests.Tagging
 
             const int customTagCount = 15;
             SetupForSerializationTest(childSpan, customTagCount);
-            var deserializedSpan = SerializeSpan(childSpan);
 
-            deserializedSpan.Tags.Count.Should().Be(customTagCount + 2);
+            childSpan.Finish();
+            rootSpan.Finish();
+
+            var deserializedSpan = Serialize(tracer.TraceChunk, traceContext).Single(s => s.ParentId > 0);
+
             deserializedSpan.Tags.Should().Contain(Tags.Env, "Overridden Environment");
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
+            deserializedSpan.Tags.Count.Should().Be(customTagCount + 2);
 
-            deserializedSpan.Metrics.Count.Should().Be(customTagCount + 1);
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
+            deserializedSpan.Metrics.Count.Should().Be(customTagCount + 1);
 
             for (int i = 0; i < customTagCount; i++)
             {
-                deserializedSpan.Tags.Should().Contain(i.ToString(), i.ToString());
-                deserializedSpan.Metrics.Should().Contain(i.ToString(), i);
+                var key = i.ToString();
+
+                deserializedSpan.Tags.Should().Contain(key, key);
+                deserializedSpan.Metrics.Should().Contain(key, i);
             }
         }
 
         [Fact]
-        public void Serialize_LanguageTag_Manual()
+        public void Serialize_LanguageTag_ManualInstrumentation()
         {
+            var tracer = new MockTracer();
+            var traceContext = new TraceContext(tracer);
+
             // manual spans use CommonTags
-            var span = new Span(new SpanContext(42, 41), DateTimeOffset.UtcNow);
-            var deserializedSpan = SerializeSpan(span);
+            var span = new Span(new SpanContext(SpanContext.None, traceContext, "service1"), DateTimeOffset.UtcNow);
+            traceContext.AddSpan(span);
+            span.Finish();
+
+            var deserializedSpans = Serialize(tracer.TraceChunk, traceContext);
+            var deserializedSpan = deserializedSpans[0];
 
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
         }
@@ -189,13 +202,20 @@ namespace Datadog.Trace.Tests.Tagging
         [InlineData(SpanKinds.Producer, null)]
         [InlineData(SpanKinds.Consumer, TracerConstants.Language)]
         [InlineData("other", TracerConstants.Language)]
-        public void Serialize_LanguageTag_Automatic(string spanKind, string expectedLanguage)
+        public void Serialize_LanguageTag_AutomaticInstrumentation(string spanKind, string expectedLanguage)
         {
+            var tracer = new MockTracer();
+            var traceContext = new TraceContext(tracer);
+
             var tags = new Mock<InstrumentationTags>();
             tags.Setup(t => t.SpanKind).Returns(spanKind);
 
-            var span = new Span(new SpanContext(42, 41), DateTimeOffset.UtcNow, tags.Object);
-            var deserializedSpan = SerializeSpan(span);
+            var span = new Span(new SpanContext(SpanContext.None, traceContext, "service1"), DateTimeOffset.UtcNow, tags.Object);
+            traceContext.AddSpan(span);
+            span.Finish();
+
+            var deserializedSpans = Serialize(tracer.TraceChunk, traceContext);
+            var deserializedSpan = deserializedSpans[0];
 
             if (expectedLanguage == null)
             {
@@ -207,16 +227,17 @@ namespace Datadog.Trace.Tests.Tagging
             }
         }
 
-        private static MockSpan SerializeSpan(Span span)
+        private static MockSpan[] Serialize(ArraySegment<Span> traceChunk, TraceContext traceContext)
         {
-            var buffer = new byte[0];
+            var buffer = Array.Empty<byte>();
+            var model = new TraceChunkModel(traceChunk, traceContext);
 
             // use vendored MessagePack to serialize
             var resolver = SpanFormatterResolver.Instance;
-            Vendors.MessagePack.MessagePackSerializer.Serialize(ref buffer, 0, span, resolver);
+            Vendors.MessagePack.MessagePackSerializer.Serialize(ref buffer, 0, model, resolver);
 
             // use nuget MessagePack to deserialize
-            return global::MessagePack.MessagePackSerializer.Deserialize<MockSpan>(buffer);
+            return global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(buffer);
         }
 
         private static void SetupForSerializationTest(Span span, int customTagCount)
@@ -235,12 +256,10 @@ namespace Datadog.Trace.Tests.Tagging
 
             for (int i = 0; i < customTagCount; i++)
             {
-                span.SetTag(i.ToString(), i.ToString());
-            }
+                var key = i.ToString();
 
-            for (int i = 0; i < customTagCount; i++)
-            {
-                span.SetMetric(i.ToString(), i);
+                span.SetTag(key, key);
+                span.SetMetric(key, i);
             }
         }
 
@@ -307,6 +326,22 @@ namespace Datadog.Trace.Tests.Tagging
                 remainingValues.Remove(tagValue)
                                .Should()
                                .BeTrue($"Property {propertyAndTag.property.Name} of type {type.Name} is not mapped");
+            }
+        }
+
+        private class MockTracer : IDatadogTracer
+        {
+            public string DefaultServiceName => null;
+
+            public ISampler Sampler => null;
+
+            public ImmutableTracerSettings Settings { get; } = new(new TracerSettings());
+
+            public ArraySegment<Span> TraceChunk { get; private set; }
+
+            public void Write(ArraySegment<Span> traceChunk)
+            {
+                TraceChunk = traceChunk;
             }
         }
     }
