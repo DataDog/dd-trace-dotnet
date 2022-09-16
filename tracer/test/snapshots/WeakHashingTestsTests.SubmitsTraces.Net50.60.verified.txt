@@ -12,13 +12,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 50
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.HMACMD5"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 50
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.HMACMD5"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -43,13 +47,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 51
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.HMACMD5"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 51
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.HMACMD5"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -74,13 +82,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 52
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.HMACMD5"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 52
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.HMACMD5"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -105,13 +117,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 54
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.HMACMD5"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 54
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.HMACMD5"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -136,13 +152,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 50
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.MD5CryptoServiceProvider"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 50
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.MD5CryptoServiceProvider"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -167,13 +187,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 51
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.MD5CryptoServiceProvider"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 51
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.MD5CryptoServiceProvider"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -198,13 +222,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 52
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.MD5CryptoServiceProvider"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 52
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.MD5CryptoServiceProvider"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -229,13 +257,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 54
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.MD5CryptoServiceProvider"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 54
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.MD5CryptoServiceProvider"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -260,13 +292,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 50
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.MD5+Implementation"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 50
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.MD5+Implementation"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -291,13 +327,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 51
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.MD5+Implementation"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 51
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.MD5+Implementation"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -322,13 +362,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 52
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.MD5+Implementation"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 52
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.MD5+Implementation"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -353,13 +397,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 54
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.MD5+Implementation"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 54
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.MD5+Implementation"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -384,13 +432,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 50
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.HMACSHA1"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 50
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.HMACSHA1"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -415,13 +467,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 51
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.HMACSHA1"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 51
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.HMACSHA1"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -446,13 +502,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 52
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.HMACSHA1"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 52
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.HMACSHA1"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -477,13 +537,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 54
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.HMACSHA1"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 54
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.HMACSHA1"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -508,13 +572,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 50
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.SHA1+Implementation"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 50
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.SHA1+Implementation"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -539,13 +607,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 51
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.SHA1+Implementation"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 51
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.SHA1+Implementation"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -570,13 +642,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 52
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.SHA1+Implementation"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 52
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.SHA1+Implementation"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -601,13 +677,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 54
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.SHA1+Implementation"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 54
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.SHA1+Implementation"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -632,13 +712,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 50
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 50
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -663,13 +747,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 51
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 51
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -694,13 +782,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 52
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 52
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -725,13 +817,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 54
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 54
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -756,13 +852,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 50
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.HMACMD5"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 50
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.HMACMD5"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -787,13 +887,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 51
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.HMACMD5"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 51
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.HMACMD5"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -818,13 +922,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 52
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.HMACMD5"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 52
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.HMACMD5"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
@@ -849,13 +957,17 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Type": "WEAK_HASH",
-  "Location": {
-        "Line": 54
-  },
-  "Evidence": {
-    "Value": "System.Security.Cryptography.HMACMD5"
-  }
+  "Vulnerabilities": [
+    {
+      "Type": "WEAK_HASH",
+      "Location": {
+                "Line": 54
+      },
+      "Evidence": {
+        "Value": "System.Security.Cryptography.HMACMD5"
+      }
+    }
+  ]
 },
       _dd.p.dm: -0
     },
