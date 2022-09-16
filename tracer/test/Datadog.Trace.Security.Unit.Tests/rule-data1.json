@@ -1,0 +1,26 @@
+﻿[
+  {
+    "data": [
+      {
+        "expiration": 1661848350,
+        "value": "188.243.182.156"
+      },
+      {
+        "expiration": 8857933749,
+        "value": "51.222.158.205"
+      }
+    ],
+    "id": "blocked_ips",
+    "type": "data_with_expiration"
+  },
+  {
+    "data": [
+      {
+        "expiration": 1755346879,
+        "value": "user3"
+      }
+    ],
+    "id": "blocked_users2",
+    "type": "data_with_expiration"
+  }
+]

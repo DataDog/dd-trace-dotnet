@@ -14,8 +14,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         DDWAF_ERR_INTERNAL = -3,
         DDWAF_ERR_INVALID_OBJECT = -2,
         DDWAF_ERR_INVALID_ARGUMENT = -1,
-        DDWAF_GOOD = 0,
-        DDWAF_MONITOR = 1,
+        DDWAF_OK = 0,
+        DDWAF_MATCH = 1,
         DDWAF_BLOCK = 2
     }
 }

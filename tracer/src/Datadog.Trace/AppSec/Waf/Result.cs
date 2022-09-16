@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 
@@ -21,6 +22,9 @@ namespace Datadog.Trace.AppSec.Waf
             this.returnStruct = returnStruct;
             this.returnCode = returnCode;
             this.wafNative = wafNative;
+            Actions = new string[returnStruct.ActionsSize];
+            ReadActions(returnStruct);
+
             AggregatedTotalRuntime = aggregatedTotalRuntime;
             AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
         }
@@ -34,6 +38,8 @@ namespace Datadog.Trace.AppSec.Waf
 
         public string Data => Marshal.PtrToStringAnsi(returnStruct.Data);
 
+        public string[] Actions { get; }
+
         /// <summary>
         /// Gets the total runtime in microseconds
         /// </summary>
@@ -43,6 +49,17 @@ namespace Datadog.Trace.AppSec.Waf
         /// Gets the total runtime in microseconds with parameter passing to the waf
         /// </summary>
         public ulong AggregatedTotalRuntimeWithBindings { get; }
+
+        private void ReadActions(DdwafResultStruct returnStruct)
+        {
+            var pointer = returnStruct.ActionsArray;
+            for (var i = 0; i < returnStruct.ActionsSize; i++)
+            {
+                var pointerString = Marshal.ReadIntPtr(pointer, IntPtr.Size * i);
+                var action = Marshal.PtrToStringAnsi(pointerString);
+                Actions[i] = action;
+            }
+        }
 
         public void Dispose(bool disposing)
         {

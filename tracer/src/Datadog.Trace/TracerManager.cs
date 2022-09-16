@@ -408,7 +408,7 @@ namespace Datadog.Trace
                     writer.WriteValue(Security.Instance.Settings.Rules ?? "(default)");
 
                     writer.WritePropertyName("appsec_libddwaf_version");
-                    writer.WriteValue(Security.Instance.DdlibWafVersion?.ToString() ?? "(none)");
+                    writer.WriteValue(Security.Instance.DdlibWafVersion ?? "(none)");
 
                     writer.WritePropertyName("direct_logs_submission_enabled_integrations");
                     writer.WriteStartArray();
