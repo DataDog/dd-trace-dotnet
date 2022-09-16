@@ -24,7 +24,7 @@ internal readonly struct SpanModel
 
     public SpanModel(
         Span span,
-        TraceChunkModel? traceChunk,
+        in TraceChunkModel? traceChunk,
         bool isLocalRoot,
         bool isChunkOrphan,
         bool isFirstSpanInChunk)

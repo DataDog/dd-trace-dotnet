@@ -26,13 +26,13 @@ internal readonly struct TraceChunkModel
 
     public readonly TraceTagCollection? Tags;
 
-    public TraceChunkModel(ArraySegment<Span> spans, TraceContext? traceContext)
+    public TraceChunkModel(in ArraySegment<Span> spans, TraceContext? traceContext)
         : this(spans, traceContext?.RootSpan, traceContext?.SamplingPriority, traceContext?.RootSpan.Context.Origin, traceContext?.Tags)
     {
     }
 
     public TraceChunkModel(
-        ArraySegment<Span> spans,
+        in ArraySegment<Span> spans,
         Span? localRoot,
         int? samplingPriority,
         string? origin,
