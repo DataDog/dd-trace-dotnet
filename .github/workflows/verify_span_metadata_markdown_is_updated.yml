@@ -22,7 +22,7 @@ jobs:
       - name: "Regenerate docs/span_metadata.md"
         run: .\tracer\build.ps1 GenerateSpanDocumentation
 
-      - name: "Verify no changes in generated files"
+      - name: "Verify no changes in docs/span_metadata.md"
         run: |
           git diff --quiet -- .\docs\span_metadata.md
           if ($LASTEXITCODE -eq 1) {
