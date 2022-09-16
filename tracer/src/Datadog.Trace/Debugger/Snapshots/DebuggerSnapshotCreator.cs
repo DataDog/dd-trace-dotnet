@@ -152,7 +152,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             StartLocalsOrArgs(isFirstLocal, false, "locals");
             // in case TLocal is object and we have the concrete type, use it
-            DebuggerSnapshotSerializer.Serialize(local, localType ?? typeof(TLocal), name, _jsonWriter);
+            DebuggerSnapshotSerializer.Serialize(local, localType ?? local?.GetType() ?? typeof(TLocal), name, _jsonWriter);
         }
 
         internal void CaptureException(Exception ex)

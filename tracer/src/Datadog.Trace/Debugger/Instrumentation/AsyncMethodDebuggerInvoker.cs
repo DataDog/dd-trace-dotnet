@@ -109,7 +109,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             isReEntryToMoveNext = true;
-            var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance);
+            var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance, typeHandle);
 
             if (!MethodMetadataProvider.TryCreateIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle, kickoffInfo))
             {
@@ -145,6 +145,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void BeginEndMethodLogArgs(ref AsyncMethodDebuggerState asyncState)
         {
+            // MoveNextInvocationTarget (i.e 'this') should never be null but because a limitation in our instrumentation,
+            // sometimes we have a null 'this' so we should avoid capture hoisted arguments in this case.
+            if (asyncState.MoveNextInvocationTarget == null)
+            {
+                return;
+            }
+
             // capture hoisted arguments
             var kickOffMethodArguments = asyncState.MethodMetadataInfo.AsyncMethodHoistedArguments;
             for (var index = 0; index < kickOffMethodArguments.Length; index++)
@@ -293,6 +300,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void EndMethodLogLocals(ref AsyncMethodDebuggerState asyncState)
         {
+            // MoveNextInvocationTarget (i.e 'this') should never be null but because a limitation in our instrumentation,
+            // sometimes we have a null 'this' so we should avoid capture hoisted locals in this case.
+            if (asyncState.MoveNextInvocationTarget == null)
+            {
+                return;
+            }
+
             // MethodMetadataInfo saves locals from MoveNext localVarSig,
             // this isn't enough in async scenario because we need to extract more locals the may hoisted in the builder object
             // and we need to subtract some locals that exist in the localVarSig but they are not belongs to the kickoff method

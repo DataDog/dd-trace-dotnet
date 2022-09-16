@@ -14,13 +14,6 @@
                 "type": "String",
                 "value": "AsyncStaticMethod.RunAsync"
               }
-            },
-            "fields": {
-              "ClassName": {
-                "fields": null,
-                "type": "String",
-                "value": "AsyncStaticMethod"
-              }
             }
           },
           "return": {
@@ -47,7 +40,7 @@
               "output": {
                 "fields": null,
                 "type": "String",
-                "value": "AsyncStaticMethod.RunAsync."
+                "value": "null"
               }
             }
           }
@@ -73,7 +66,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncStaticMethod+<Method>d__2.MoveNext(input=AsyncStaticMethod.RunAsync): AsyncStaticMethod.RunAsync.Method\r\n@return=AsyncStaticMethod.RunAsync.Method, output=AsyncStaticMethod.RunAsync.",
+    "message": "AsyncStaticMethod+<Method>d__2.MoveNext(input=AsyncStaticMethod.RunAsync): AsyncStaticMethod.RunAsync.Method\r\n@return=AsyncStaticMethod.RunAsync.Method, output=null",
     "service": "Probes"
   }
 ]
