@@ -99,7 +99,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
                 WaitForBatches(sink, batchCount: i + 1);
             }
 
-            mutex.Wait(10_000).Should().BeTrue($"Sink should be disabled after {BatchingSink.FailuresBeforeCircuitBreak} faults");
+            mutex.Wait(30_000).Should().BeTrue($"Sink should be disabled after {BatchingSink.FailuresBeforeCircuitBreak} faults");
         }
 
         [Fact]
