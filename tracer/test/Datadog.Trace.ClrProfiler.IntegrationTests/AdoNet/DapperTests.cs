@@ -10,13 +10,15 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
-    public class DapperTests : TestHelper
+    public class DapperTests : TracingIntegrationTest
     {
         public DapperTests(ITestOutputHelper output)
             : base("Dapper", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsNpgsql();
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
@@ -36,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 foreach (var span in spans)
                 {
                     // Assert Npgsql because the Dapper application uses Postgres for the actual client
-                    var result = span.IsNpgsql();
+                    var result = ValidateIntegrationSpan(span);
                     Assert.True(result.Success, result.ToString());
 
                     Assert.Equal(expectedOperationName, span.Name);

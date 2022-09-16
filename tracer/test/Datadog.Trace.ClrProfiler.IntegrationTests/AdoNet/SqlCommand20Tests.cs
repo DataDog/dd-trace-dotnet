@@ -12,13 +12,15 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
-    public class SqlCommand20Tests : TestHelper
+    public class SqlCommand20Tests : TracingIntegrationTest
     {
         public SqlCommand20Tests(ITestOutputHelper output)
         : base("SqlServer.NetFramework20", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsSqlClient();
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
@@ -39,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             foreach (var span in spans)
             {
-                var result = span.IsSqlClient();
+                var result = ValidateIntegrationSpan(span);
                 Assert.True(result.Success, result.ToString());
 
                 Assert.Equal(expectedServiceName, span.Service);

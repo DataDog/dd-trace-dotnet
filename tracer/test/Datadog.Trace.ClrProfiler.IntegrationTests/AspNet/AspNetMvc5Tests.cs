@@ -110,7 +110,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [UsesVerify]
-    public abstract class AspNetMvc5Tests : TestHelper, IClassFixture<IisFixture>
+    public abstract class AspNetMvc5Tests : TracingIntegrationTest, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
@@ -160,6 +160,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/graphql/GetAllFoo", 200 }, // Slug in route template
         };
 
+        public override Result ValidateIntegrationSpan(MockSpan span) =>
+            span.Name switch
+            {
+                "aspnet.request" => span.IsAspNet(),
+                "aspnet-mvc.request" => span.IsAspNetMvc(),
+                _ => Result.DefaultSuccess,
+            };
+
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
@@ -176,18 +184,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             // Append virtual directory to the actual request
             var spans = await GetWebServerSpans(_iisFixture.VirtualApplicationPath + path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode);
-
-            var aspnetSpans = spans.Where(s => s.Name == "aspnet.request");
-            foreach (var aspnetSpan in aspnetSpans)
+            foreach (var span in spans)
             {
-                var result = aspnetSpan.IsAspNet();
-                Assert.True(result.Success, result.ToString());
-            }
-
-            var aspnetMvcSpans = spans.Where(s => s.Name == "aspnet-mvc.request");
-            foreach (var aspnetMvcSpan in aspnetMvcSpans)
-            {
-                var result = aspnetMvcSpan.IsAspNetMvc();
+                var result = ValidateIntegrationSpan(span);
                 Assert.True(result.Success, result.ToString());
             }
 

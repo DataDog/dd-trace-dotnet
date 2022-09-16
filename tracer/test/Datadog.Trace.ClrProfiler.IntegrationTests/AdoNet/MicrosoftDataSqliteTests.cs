@@ -12,13 +12,15 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
-    public class MicrosoftDataSqliteTests : TestHelper
+    public class MicrosoftDataSqliteTests : TracingIntegrationTest
     {
         public MicrosoftDataSqliteTests(ITestOutputHelper output)
             : base("Microsoft.Data.Sqlite", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsSqlite();
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.MicrosoftDataSqlite), MemberType = typeof(PackageVersions))]
@@ -50,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             foreach (var span in spans)
             {
-                var result = span.IsSqlite();
+                var result = ValidateIntegrationSpan(span);
                 Assert.True(result.Success, result.ToString());
 
                 Assert.Equal(expectedServiceName, span.Service);

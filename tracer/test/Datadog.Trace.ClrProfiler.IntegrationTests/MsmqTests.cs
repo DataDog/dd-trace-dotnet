@@ -14,7 +14,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class MsmqTests : TestHelper
+    public class MsmqTests : TracingIntegrationTest
     {
         private const string ExpectedServiceName = "Samples.Msmq-msmq";
 
@@ -23,6 +23,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsMsmq();
 
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
@@ -53,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var msmqSpans = spans.Where(span => string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
             foreach (var span in msmqSpans)
             {
-                var result = span.IsMsmq();
+                var result = ValidateIntegrationSpan(span);
                 Assert.True(result.Success, result.ToString());
 
                 span.Service.Should().Be(ExpectedServiceName);

@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [Collection(nameof(StackExchangeRedisTestCollection))]
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class StackExchangeRedisTests : TestHelper
+    public class StackExchangeRedisTests : TracingIntegrationTest
     {
         public StackExchangeRedisTests(ITestOutputHelper output)
             : base("StackExchange.Redis", output)
@@ -41,6 +41,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Latest, // Uses different call stacks
             // ReSharper restore InconsistentNaming
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsStackExchangeRedis();
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.StackExchangeRedis), MemberType = typeof(PackageVersions))]
@@ -64,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(expectedCount);
                 foreach (var span in spans)
                 {
-                    var result = span.IsStackExchangeRedis();
+                    var result = ValidateIntegrationSpan(span);
                     Assert.True(result.Success, result.ToString());
                 }
 

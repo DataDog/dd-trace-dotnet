@@ -14,13 +14,15 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class WebRequest20Tests : TestHelper
+    public class WebRequest20Tests : TracingIntegrationTest
     {
         public WebRequest20Tests(ITestOutputHelper output)
             : base("WebRequest.NetFramework20", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsWebRequest();
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
@@ -44,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    var result = span.IsWebRequest();
+                    var result = ValidateIntegrationSpan(span);
                     Assert.True(result.Success, result.ToString());
 
                     Assert.Equal(expectedServiceName, span.Service);

@@ -11,13 +11,15 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
-    public class SystemDataSqliteTests : TestHelper
+    public class SystemDataSqliteTests : TracingIntegrationTest
     {
         public SystemDataSqliteTests(ITestOutputHelper output)
             : base("SQLite.Core", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsSqlite();
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
@@ -39,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             foreach (var span in spans)
             {
-                var result = span.IsSqlite();
+                var result = ValidateIntegrationSpan(span);
                 Assert.True(result.Success, result.ToString());
 
                 Assert.Equal(expectedServiceName, span.Service);

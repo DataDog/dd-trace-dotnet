@@ -19,13 +19,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class ServiceStackRedisTests : TestHelper
+    public class ServiceStackRedisTests : TracingIntegrationTest
     {
         public ServiceStackRedisTests(ITestOutputHelper output)
             : base("ServiceStack.Redis", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsServiceStackRedis();
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.ServiceStackRedis), MemberType = typeof(PackageVersions))]
@@ -49,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 spans.Count.Should().Be(numberOfRuns * expectedSpansPerRun);
                 foreach (var span in spans)
                 {
-                    var result = span.IsServiceStackRedis();
+                    var result = ValidateIntegrationSpan(span);
                     Assert.True(result.Success, result.ToString());
                 }
 

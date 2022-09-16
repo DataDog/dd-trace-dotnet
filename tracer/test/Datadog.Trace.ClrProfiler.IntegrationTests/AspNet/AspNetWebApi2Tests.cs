@@ -110,7 +110,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [UsesVerify]
-    public abstract class AspNetWebApi2Tests : TestHelper, IClassFixture<IisFixture>
+    public abstract class AspNetWebApi2Tests : TracingIntegrationTest, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
@@ -177,6 +177,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/handler-api/api?ps=false&ts=false", 500, 2 },
         };
 
+        public override Result ValidateIntegrationSpan(MockSpan span) =>
+            span.Name switch
+            {
+                "aspnet.request" => span.IsAspNet(),
+                "aspnet-mvc.request" => span.IsAspNetMvc(),
+                "aspnet-webapi.request" => span.IsAspNetWebApi2(),
+                _ => Result.DefaultSuccess,
+            };
+
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
@@ -193,25 +202,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             // Append virtual directory to the actual request
             var spans = await GetWebServerSpans(_iisFixture.VirtualApplicationPath + path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode, expectedSpanCount);
-
-            var aspnetSpans = spans.Where(s => s.Name == "aspnet.request");
-            foreach (var aspnetSpan in aspnetSpans)
+            foreach (var span in spans)
             {
-                var result = aspnetSpan.IsAspNet();
-                Assert.True(result.Success, result.ToString());
-            }
-
-            var aspnetMvcSpans = spans.Where(s => s.Name == "aspnet-mvc.request");
-            foreach (var aspnetMvcSpan in aspnetMvcSpans)
-            {
-                var result = aspnetMvcSpan.IsAspNetMvc();
-                Assert.True(result.Success, result.ToString());
-            }
-
-            var aspnetWebApi2Spans = spans.Where(s => s.Name == "aspnet-webapi.request");
-            foreach (var aspnetWebApi2Span in aspnetWebApi2Spans)
-            {
-                var result = aspnetWebApi2Span.IsAspNetWebApi2();
+                var result = ValidateIntegrationSpan(span);
                 Assert.True(result.Success, result.ToString());
             }
 

@@ -19,12 +19,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class AwsSqsTests : TestHelper
+    public class AwsSqsTests : TracingIntegrationTest
     {
         public AwsSqsTests(ITestOutputHelper output)
             : base("AWS.SQS", output)
         {
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) =>
+            span.Name switch
+            {
+                "sqs.request" => span.IsAwsSqs(),
+                _ => Result.DefaultSuccess,
+            };
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.AwsSqs), MemberType = typeof(PackageVersions))]
@@ -43,10 +50,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var frameworkName = "NetCore";
 #endif
                 var spans = agent.WaitForSpans(expectedCount);
-                var sqsSpans = spans.Where(s => s.Name == "sqs.request");
-                foreach (var span in sqsSpans)
+                foreach (var span in spans)
                 {
-                    var result = span.IsAwsSqs();
+                    var result = ValidateIntegrationSpan(span);
                     Assert.True(result.Success, result.ToString());
                 }
 

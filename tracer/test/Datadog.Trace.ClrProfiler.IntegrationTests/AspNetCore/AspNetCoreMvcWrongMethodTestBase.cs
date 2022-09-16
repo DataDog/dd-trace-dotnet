@@ -17,7 +17,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     [UsesVerify]
-    public class AspNetCoreMvcWrongMethodTestBase : TestHelper, IClassFixture<AspNetCoreMvcTestBase.AspNetCoreTestFixture>
+    public class AspNetCoreMvcWrongMethodTestBase : TracingIntegrationTest, IClassFixture<AspNetCoreMvcTestBase.AspNetCoreTestFixture>
     {
         private readonly AspNetCoreMvcTestBase.AspNetCoreTestFixture fixture;
         private readonly string _testName;
@@ -30,23 +30,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             EnableDebugMode();
         }
 
+        public override Result ValidateIntegrationSpan(MockSpan span) =>
+            span.Type switch
+            {
+                "aspnet_core.request" => span.IsAspNetCore(),
+                "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(),
+                _ => Result.DefaultSuccess,
+            };
+
         public async Task TestIncorrectMethod(string path)
         {
             await fixture.TryStartApp(this);
 
             var spans = await fixture.WaitForSpans(path, true);
-
-            var aspnetCoreSpans = spans.Where(s => s.Name == "aspnet_core.request");
-            foreach (var aspnetCoreSpan in aspnetCoreSpans)
+            foreach (var span in spans)
             {
-                var result = aspnetCoreSpan.IsAspNetCore();
-                Assert.True(result.Success, result.ToString());
-            }
-
-            var aspnetCoreMvcSpans = spans.Where(s => s.Name == "aspnet_core_mvc.request");
-            foreach (var aspnetCoreMvcSpan in aspnetCoreMvcSpans)
-            {
-                var result = aspnetCoreMvcSpan.IsAspNetCoreMvc();
+                var result = ValidateIntegrationSpan(span);
                 Assert.True(result.Success, result.ToString());
             }
 

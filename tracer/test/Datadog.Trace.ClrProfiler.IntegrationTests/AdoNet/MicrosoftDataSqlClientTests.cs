@@ -13,13 +13,15 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
-    public class MicrosoftDataSqlClientTests : TestHelper
+    public class MicrosoftDataSqlClientTests : TracingIntegrationTest
     {
         public MicrosoftDataSqlClientTests(ITestOutputHelper output)
             : base("Microsoft.Data.SqlClient", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsSqlClient();
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.MicrosoftDataSqlClient), MemberType = typeof(PackageVersions))]
@@ -70,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             foreach (var span in spans)
             {
-                var result = span.IsSqlClient();
+                var result = ValidateIntegrationSpan(span);
                 Assert.True(result.Success, result.ToString());
 
                 Assert.Equal(expectedServiceName, span.Service);

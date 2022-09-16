@@ -15,6 +15,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
+        public TracingIntegrationTest(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
+            : base(sampleAppName, samplePathOverrides, output)
+        {
+        }
+
         public abstract Result ValidateIntegrationSpan(MockSpan span);
     }
 }

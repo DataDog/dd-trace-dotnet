@@ -14,13 +14,15 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
-    public class Elasticsearch5Tests : TestHelper
+    public class Elasticsearch5Tests : TracingIntegrationTest
     {
         public Elasticsearch5Tests(ITestOutputHelper output)
             : base("Elasticsearch.V5", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsElasticsearchNet();
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.ElasticSearch5), MemberType = typeof(PackageVersions))]
@@ -133,7 +135,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    var result = span.IsElasticsearchNet();
+                    var result = ValidateIntegrationSpan(span);
                     Assert.True(result.Success, result.ToString());
 
                     Assert.Equal("Samples.Elasticsearch.V5-elasticsearch", span.Service);

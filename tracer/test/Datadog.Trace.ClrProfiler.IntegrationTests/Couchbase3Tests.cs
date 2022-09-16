@@ -13,7 +13,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
-    public class Couchbase3Tests : TestHelper
+    public class Couchbase3Tests : TracingIntegrationTest
     {
         public Couchbase3Tests(ITestOutputHelper output)
             : base("Couchbase3", output)
@@ -28,6 +28,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 yield return item.ToArray();
             }
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsCouchbase();
 
         [SkippableTheory]
         [MemberData(nameof(GetCouchbase))]
@@ -47,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    var result = span.IsCouchbase();
+                    var result = ValidateIntegrationSpan(span);
                     Assert.True(result.Success, result.ToString());
 
                     Assert.Equal("Samples.Couchbase3-couchbase", span.Service);

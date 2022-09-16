@@ -17,7 +17,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection("IisTests")]
-    public class AspNetWebFormsTests : TestHelper, IClassFixture<IisFixture>
+    public class AspNetWebFormsTests : TracingIntegrationTest, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
 
@@ -32,6 +32,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             _iisFixture.ShutdownPath = "/account/login?shutdown=1";
             _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) =>
+            span.Name switch
+            {
+                "aspnet.request" => span.IsAspNet(),
+                "aspnet-mvc.request" => span.IsAspNetMvc(),
+                _ => Result.DefaultSuccess,
+            };
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
@@ -79,18 +87,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                    .ToList();
 
             Assert.True(allSpans.Count > 0, "Expected there to be spans.");
-
-            var aspnetSpans = allSpans.Where(s => s.Name == "aspnet.request");
-            foreach (var aspnetSpan in aspnetSpans)
+            foreach (var span in allSpans)
             {
-                var result = aspnetSpan.IsAspNet();
-                Assert.True(result.Success, result.ToString());
-            }
-
-            var aspnetMvcSpans = allSpans.Where(s => s.Name == "aspnet-mvc.request");
-            foreach (var aspnetMvcSpan in aspnetMvcSpans)
-            {
-                var result = aspnetMvcSpan.IsAspNetMvc();
+                var result = ValidateIntegrationSpan(span);
                 Assert.True(result.Success, result.ToString());
             }
 

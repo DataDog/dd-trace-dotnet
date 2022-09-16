@@ -16,13 +16,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [CollectionDefinition(nameof(WebRequestTests), DisableParallelization = true)]
     [Collection(nameof(WebRequestTests))]
-    public class WebRequestTests : TestHelper
+    public class WebRequestTests : TracingIntegrationTest
     {
         public WebRequestTests(ITestOutputHelper output)
             : base("WebRequest", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsWebRequest();
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
@@ -48,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    var result = span.IsWebRequest();
+                    var result = ValidateIntegrationSpan(span);
                     Assert.True(result.Success, result.ToString());
 
                     Assert.Equal(expectedServiceName, span.Service);

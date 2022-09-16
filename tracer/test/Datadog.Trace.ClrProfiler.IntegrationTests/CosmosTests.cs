@@ -14,7 +14,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class CosmosTests : TestHelper
+    public class CosmosTests : TracingIntegrationTest
     {
         private const string ExpectedOperationName = "cosmosdb.query";
         private const string ExpectedServiceName = "Samples.CosmosDb-cosmosdb";
@@ -31,6 +31,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 using var processResult = RunSampleAndWaitForExit(agent, arguments: $"{TestPrefix}");
             }
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsCosmosDb();
 
         [SkippableTheory(Skip = "Cosmos emulator is too flaky at the moment")]
         [MemberData(nameof(PackageVersions.CosmosDb), MemberType = typeof(PackageVersions))]
@@ -61,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    var result = span.IsCosmosDb();
+                    var result = ValidateIntegrationSpan(span);
                     Assert.True(result.Success, result.ToString());
 
                     span.Service.Should().Be(ExpectedServiceName);

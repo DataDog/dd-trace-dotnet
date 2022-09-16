@@ -12,13 +12,15 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
-    public class NpgsqlCommandTests : TestHelper
+    public class NpgsqlCommandTests : TracingIntegrationTest
     {
         public NpgsqlCommandTests(ITestOutputHelper output)
             : base("Npgsql", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsNpgsql();
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.Npgsql), MemberType = typeof(PackageVersions))]
@@ -55,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             foreach (var span in spans)
             {
-                var result = span.IsNpgsql();
+                var result = ValidateIntegrationSpan(span);
                 Assert.True(result.Success, result.ToString());
 
                 Assert.Equal(expectedServiceName, span.Service);

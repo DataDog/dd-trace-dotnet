@@ -18,7 +18,7 @@ using Xunit.Sdk;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [UsesVerify]
-    public class WcfTests : TestHelper
+    public class WcfTests : TracingIntegrationTest
     {
         private const string ServiceVersion = "1.0.0";
 
@@ -54,6 +54,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 yield return new object[] { binding, true,  false };
             }
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsWcf();
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
@@ -98,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    var result = span.IsWcf();
+                    var result = ValidateIntegrationSpan(span);
                     Assert.True(result.Success, result.ToString());
                 }
 

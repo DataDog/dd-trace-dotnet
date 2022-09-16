@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -17,7 +18,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [CollectionDefinition(nameof(HttpMessageHandlerTests), DisableParallelization = true)]
-    public class HttpMessageHandlerTests : TestHelper
+    public class HttpMessageHandlerTests : TracingIntegrationTest
     {
         public HttpMessageHandlerTests(ITestOutputHelper output)
             : base("HttpMessageHandler", output)
@@ -39,6 +40,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             from instrumentationOptions in InstrumentationOptionsValues
             from socketHandlerEnabled in new[] { true, false }
             select new object[] { instrumentationOptions, socketHandlerEnabled };
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsHttpMessageHandler();
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
@@ -70,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
-                    var result = span.IsHttpMessageHandler();
+                    var result = ValidateIntegrationSpan(span);
                     Assert.True(result.Success, result.ToString());
 
                     Assert.Equal(expectedServiceName, span.Service);

@@ -11,13 +11,15 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
-    public class FakeCommandTests : TestHelper
+    public class FakeCommandTests : TracingIntegrationTest
     {
         public FakeCommandTests(ITestOutputHelper output)
             : base("FakeDbCommand", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsAdoNet();
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
@@ -47,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             foreach (var span in spans)
             {
-                var result = span.IsAdoNet();
+                var result = ValidateIntegrationSpan(span);
                 Assert.True(result.Success, result.ToString());
 
                 Assert.Equal(expectedOperationName, span.Name);

@@ -13,13 +13,15 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
-    public class MySqlConnectorTests : TestHelper
+    public class MySqlConnectorTests : TracingIntegrationTest
     {
         public MySqlConnectorTests(ITestOutputHelper output)
             : base("MySqlConnector", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsMySql();
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.MySqlConnector), MemberType = typeof(PackageVersions))]
@@ -56,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             foreach (var span in spans)
             {
-                var result = span.IsMySql();
+                var result = ValidateIntegrationSpan(span);
                 Assert.True(result.Success, result.ToString());
 
                 Assert.Equal(expectedServiceName, span.Service);

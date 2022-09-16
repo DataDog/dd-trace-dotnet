@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection(nameof(KafkaTestsCollection))]
     [Trait("RequiresDockerDependency", "true")]
-    public class KafkaTests : TestHelper
+    public class KafkaTests : TracingIntegrationTest
     {
         private const int ExpectedSuccessProducerWithHandlerSpans = 20;
         private const int ExpectedSuccessProducerWithoutHandlerSpans = 10;
@@ -42,6 +42,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             EnableDebugMode();
         }
 
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsKafka();
+
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.Kafka), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
@@ -62,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             foreach (var span in allSpans)
             {
-                var result = span.IsKafka();
+                var result = ValidateIntegrationSpan(span);
                 Assert.True(result.Success, result.ToString());
             }
 
