@@ -49,10 +49,11 @@ internal readonly struct SpanIdLookup
             return false;
         }
 
-        // shortcut for trace chunks with single spans.
-        // also, the local root span (if present) is the first span in the chunk
-        // and the most common parent in most traces.
-        if (value == _spans.Array![_spans.Offset].SpanId)
+        // The local root span (if present) is the usually last span in the chunk
+        // and it is the parent of other most span.
+        // This or _spans.Array![_spans.Offset] would also be a shortcut for,
+        // trace chunks with single spans, be we don't use SpanIdLookup at all for those.
+        if (value == _spans.Array![_spans.Offset + _spans.Count - 1].SpanId)
         {
             return true;
         }
