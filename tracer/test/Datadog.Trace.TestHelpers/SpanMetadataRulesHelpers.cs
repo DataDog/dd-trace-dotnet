@@ -57,8 +57,11 @@ namespace Datadog.Trace.TestHelpers
 
         public Result Tags(Action<SpanTagAssertion> tagAssertions)
         {
-            var t = new SpanTagAssertion(this);
+            var t = new SpanTagAssertion(this, this.Span.Tags);
             tagAssertions(t);
+
+            SpanTagAssertion.DefaultTagAssertions(t);
+            SpanTagAssertion.AssertNoRemainingTags(t);
             return this;
         }
 

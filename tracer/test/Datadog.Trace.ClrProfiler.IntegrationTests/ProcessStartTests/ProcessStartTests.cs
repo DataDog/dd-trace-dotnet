@@ -46,6 +46,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             settings.AddRegexScrubber(StackRegex, string.Empty);
             settings.AddRegexScrubber(ErrorMsgRegex, string.Empty);
             var filename = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "ProcessStartTests.SubmitsTracesLinux" : "ProcessStartTests.SubmitsTraces";
+
+            foreach (var span in spans)
+            {
+                var result = span.IsProcess();
+                Assert.True(result.Success, result.ToString());
+            }
+
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();
