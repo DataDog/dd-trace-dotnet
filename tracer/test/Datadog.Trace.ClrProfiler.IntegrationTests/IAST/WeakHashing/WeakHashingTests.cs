@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable("DD_IAST_ENABLED", "true");
 
-#if NET5_0 || NET6_0
+#if NET6_0 || NET5_0
             const int expectedSpanCount = 28;
             var filename = "WeakHashingTestsTests.SubmitsTraces.Net50.60";
 #else
