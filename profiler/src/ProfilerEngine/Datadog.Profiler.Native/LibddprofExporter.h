@@ -10,7 +10,7 @@
 
 extern "C"
 {
-#include "datadog/profiling.h"
+#include "ddprof/profiling.h"
 }
 
 #include <forward_list>
@@ -34,7 +34,7 @@ public:
         IRuntimeInfo* runtimeInfo,
         IEnabledProfilers* enabledProfilers);
     ~LibddprofExporter() override;
-    bool Export() override;
+    bool Export(std::string filename, uint8_t* pBuffer, uint64_t bufferSize) override;
     void Add(Sample const& sample) override;
     void SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint) override;
 
@@ -85,7 +85,7 @@ private:
     private:
         struct ddog_Profile* _profile;
     };
-        
+
     class ProfileInfo
     {
     public:
@@ -116,7 +116,13 @@ private:
     static ddog_ProfileExporter* CreateExporter(const ddog_Vec_tag* tags, ddog_Endpoint endpoint);
     static ddog_Profile* CreateProfile();
 
-    ddog_Request* CreateRequest(SerializedProfile const& encodedProfile, ddog_ProfileExporter* exporter,  const Tags& additionalTags) const;
+    ddog_Request* CreateRequest(
+        SerializedProfile const& encodedProfile,
+        ddog_ProfileExporter* exporter,
+        const Tags& additionalTags,
+        std::string filename,
+        uint8_t* pBuffer,
+        uint64_t bufferSize) const;
     ddog_Endpoint CreateEndpoint(IConfiguration* configuration);
     ProfileInfoScope GetInfo(std::string_view runtimeId);
 

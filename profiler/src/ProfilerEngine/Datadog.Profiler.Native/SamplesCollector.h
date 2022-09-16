@@ -4,6 +4,7 @@
 #pragma once
 #include "IConfiguration.h"
 #include "IExporter.h"
+#include "IGCSuspensionsProvider.h"
 #include "IMetricsSender.h"
 #include "ISamplesCollector.h"
 #include "IService.h"
@@ -20,7 +21,13 @@ class SamplesCollector
     : public ISamplesCollector, public IService
 {
 public:
-    SamplesCollector(IConfiguration* configuration, IThreadsCpuManager* pThreadsCpuManager, IExporter* exporter, IMetricsSender* metricsSender);
+    SamplesCollector(
+        IConfiguration* configuration,
+        IThreadsCpuManager* pThreadsCpuManager,
+        IExporter* exporter,
+        IMetricsSender* metricsSender,
+        IGCSuspensionsProvider* gcSuspensionProvider
+        );
 
     // Inherited via IService
     const char* GetName() override;
@@ -56,4 +63,5 @@ private:
     std::promise<void> _workerThreadPromise;
     IMetricsSender* _metricsSender;
     IExporter* _exporter;
+    IGCSuspensionsProvider* _gcSuspensionProvider;
 };

@@ -1,6 +1,6 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props')" />
+  <Import Project="..\..\..\..\packages\libdatadog.0.42.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.0.42.0\build\native\libdatadog.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -238,6 +238,8 @@
     <ClInclude Include="EnumHelpers.h" />
     <ClInclude Include="COMHelpers.h" />
     <ClInclude Include="ContentionProvider.h" />
+    <ClInclude Include="GarbageCollectionsProvider.h" />
+    <ClInclude Include="GCSuspensionsProvider.h" />
     <ClInclude Include="IAllocationsListener.h" />
     <ClInclude Include="AllocationsProvider.h" />
     <ClInclude Include="AppDomainStore.h" />
@@ -266,6 +268,10 @@
     <ClInclude Include="IFrameStore.h" />
     <ClInclude Include="HResultConverter.h" />
     <ClInclude Include="IClrLifetime.h" />
+    <ClInclude Include="IGarbageCollectionsListener.h" />
+    <ClInclude Include="IGarbageCollectionsProvider.h" />
+    <ClInclude Include="IGCSuspensionsListener.h" />
+    <ClInclude Include="IGCSuspensionsProvider.h" />
     <ClInclude Include="IManagedThreadList.h" />
     <ClInclude Include="IMetricsSender.h" />
     <ClInclude Include="IMetricsSenderFactory.h" />
@@ -331,6 +337,8 @@
     <ClCompile Include="ExceptionsProvider.cpp" />
     <ClCompile Include="FfiHelper.cpp" />
     <ClCompile Include="FrameStore.cpp" />
+    <ClCompile Include="GarbageCollectionsProvider.cpp" />
+    <ClCompile Include="GCSuspensionsProvider.cpp" />
     <ClCompile Include="HResultConverter.cpp" />
     <ClCompile Include="IMetricsSenderFactory.cpp" />
     <ClCompile Include="ManagedThreadInfo.cpp" />
@@ -367,6 +375,6 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props'))" />
+    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.0.42.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.0.42.0\build\native\libdatadog.props'))" />
   </Target>
 </Project>

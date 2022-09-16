@@ -23,6 +23,9 @@
 #include "SamplesCollector.h"
 #include "IRuntimeInfo.h"
 #include "IEnabledProfilers.h"
+#include "GCSuspensionsProvider.h"
+#include "GarbageCollectionsProvider.h"
+
 #include "shared/src/native-src/string.h"
 
 #include <atomic>
@@ -218,6 +221,8 @@ private :
     std::unique_ptr<IFrameStore> _pFrameStore = nullptr;
     std::unique_ptr<IRuntimeInfo> _pRuntimeInfo = nullptr;
     std::unique_ptr<IEnabledProfilers> _pEnabledProfilers = nullptr;
+    std::unique_ptr<GCSuspensionsProvider> _pGCSuspensionProvider = nullptr;
+    std::unique_ptr<GarbageCollectionsProvider> _pGarbageCollectionsProvider = nullptr;
 
 private:
     static void ConfigureDebugLog();

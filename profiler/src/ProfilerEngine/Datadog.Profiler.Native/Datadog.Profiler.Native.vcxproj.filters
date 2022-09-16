@@ -260,6 +260,24 @@
     <ClInclude Include="SamplesCollector.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
+    <ClInclude Include="IGarbageCollectionsListener.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="IGCSuspensionsListener.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="GCSuspensionsProvider.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="IGCSuspensionsProvider.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="GarbageCollectionsProvider.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
+    <ClInclude Include="IGarbageCollectionsProvider.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -390,6 +408,12 @@
     </ClCompile>
     <ClCompile Include="ContentionProvider.cpp">
       <Filter>Contention</Filter>
+    </ClCompile>
+    <ClCompile Include="GCSuspensionsProvider.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="GarbageCollectionsProvider.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -160,8 +160,17 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore);
         }
 
+        // list of non-service CLR events listeners
+        _pGarbageCollectionsProvider = std::make_unique<GarbageCollectionsProvider>(_pConfiguration.get());
+        _pGCSuspensionProvider = std::make_unique<GCSuspensionsProvider>(_pConfiguration.get());
+
         // TODO: add new CLR events-based providers to the event parser
-        _pClrEventsParser = std::make_unique<ClrEventsParser>(_pCorProfilerInfoEvents, _pAllocationsProvider, _pContentionProvider);
+        _pClrEventsParser = std::make_unique<ClrEventsParser>(
+            _pCorProfilerInfoEvents,
+            _pAllocationsProvider,
+            _pContentionProvider,
+            _pGarbageCollectionsProvider.get(),
+            _pGCSuspensionProvider.get());
     }
 
     // compute enabled profilers based on configuration and receivable CLR events
@@ -187,7 +196,13 @@ bool CorProfilerCallback::InitializeServices()
         _pRuntimeInfo.get(),
         _pEnabledProfilers.get());
 
-    _pSamplesCollector = RegisterService<SamplesCollector>(_pConfiguration.get(), _pThreadsCpuManager, _pExporter.get(), _metricsSender.get());
+    _pSamplesCollector = RegisterService<SamplesCollector>(
+        _pConfiguration.get(),
+        _pThreadsCpuManager,
+        _pExporter.get(),
+        _metricsSender.get(),
+        _pGCSuspensionProvider.get()
+        );
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
@@ -761,14 +776,14 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         }
 
         COR_PRF_EVENTPIPE_PROVIDER_CONFIG providers[] =
+        {
             {
-                {
-                    WStr("Microsoft-Windows-DotNETRuntime"),
-                    activatedKeywords,
-                    5, // the documentation states that AllocationTick is Informational but... need Verbose  :^(
-                    NULL
-                }
-            };
+                WStr("Microsoft-Windows-DotNETRuntime"),
+                activatedKeywords,
+                5, // the documentation states that AllocationTick is Informational but... need Verbose  :^(
+                NULL
+            }
+        };
 
         hr = _pCorProfilerInfoEvents->EventPipeStartSession(
             sizeof(providers) / sizeof(providers[0]),

@@ -352,7 +352,7 @@ void LibddprofExporter::SetEndpoint(const std::string& runtimeId, uint64_t trace
     ddog_Profile_set_endpoint(profile, FfiHelper::StringToCharSlice(traceIdStr), FfiHelper::StringToCharSlice(endpoint));
 }
 
-bool LibddprofExporter::Export()
+bool LibddprofExporter::Export(std::string filename, uint8_t* pBuffer, uint64_t bufferSize)
 {
     bool exported = false;
 
@@ -415,6 +415,7 @@ bool LibddprofExporter::Export()
         if (!_pprofOutputPath.empty())
         {
             ExportToDisk(applicationInfo.ServiceName, serializedProfile, idx++);
+            // TODO: save the filename, pBuffer, bufferSize to disk
         }
 
         auto* exporter = CreateExporter(_exporterBaseTags.GetFfiTags(), _endpoint);
@@ -432,7 +433,13 @@ bool LibddprofExporter::Export()
         additionalTags.Add("runtime-id", std::string(runtimeId));
         additionalTags.Add("profile_seq", std::to_string(exportsCount - 1));
 
-        auto* request = CreateRequest(serializedProfile, exporter, additionalTags);
+        auto* request = CreateRequest(
+            serializedProfile,
+            exporter,
+            additionalTags,
+            filename,
+            pBuffer,
+            bufferSize);
         if (request != nullptr)
         {
             exported &= Send(request, exporter);
@@ -496,17 +503,30 @@ void LibddprofExporter::ExportToDisk(const std::string& applicationName, Seriali
     }
 }
 
-ddog_Request* LibddprofExporter::CreateRequest(SerializedProfile const& encodedProfile, ddog_ProfileExporter* exporter, const Tags& additionalTags) const
+ddog_Request* LibddprofExporter::CreateRequest(
+    SerializedProfile const& encodedProfile,
+    ddog_ProfileExporter* exporter,
+    const Tags& additionalTags,
+    std::string filename,
+    uint8_t* pBuffer,
+    uint64_t bufferSize
+    ) const
 {
     auto start = encodedProfile.GetStart();
     auto end = encodedProfile.GetEnd();
     auto buffer = encodedProfile.GetBuffer();
 
-    ddog_File file{FfiHelper::StringToCharSlice(RequestFileName), ddog_Vec_u8_as_slice(&buffer)};
+    ddog_Slice_u8 additionalFileAsSlice;
+    additionalFileAsSlice.ptr = pBuffer;
+    additionalFileAsSlice.len = bufferSize;
 
+    ddog_File profile { FfiHelper::StringToCharSlice(RequestFileName), ddog_Vec_u8_as_slice(&buffer) };
+    ddog_File additionalFile { FfiHelper::StringToCharSlice(filename), additionalFileAsSlice};
+
+    ddog_File filesArray[2] {profile, additionalFile};
     struct ddog_Slice_file files
     {
-        &file, 1
+        filesArray, 1
     };
 
     return ddog_ProfileExporter_build(exporter, start, end, files, additionalTags.GetFfiTags(), RequestTimeOutMs);

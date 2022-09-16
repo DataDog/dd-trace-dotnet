@@ -10,12 +10,15 @@ SamplesCollector::SamplesCollector(
     IConfiguration* configuration,
     IThreadsCpuManager* pThreadsCpuManager,
     IExporter* exporter,
-    IMetricsSender* metricsSender) :
+    IMetricsSender* metricsSender,
+    IGCSuspensionsProvider* gcSuspensionProvider)
+    :
     _uploadInterval{configuration->GetUploadInterval()},
     _mustStop{false},
     _pThreadsCpuManager{pThreadsCpuManager},
     _metricsSender{metricsSender},
-    _exporter{exporter}
+    _exporter{exporter},
+    _gcSuspensionProvider{gcSuspensionProvider}
 {
 }
 
@@ -93,7 +96,16 @@ void SamplesCollector::Export()
     try
     {
         std::lock_guard lock(_exportLock);
-        success = _exporter->Export();
+
+        // TODO: get the additional files such as GC and suspensions details
+        uint8_t* pBuffer = nullptr;
+        uint64_t bufferSize = 0;
+        std::string filename = "suspensions.json";
+        if (_gcSuspensionProvider != nullptr)
+        {
+            _gcSuspensionProvider->GetSuspensions(pBuffer, bufferSize);
+        }
+        success = _exporter->Export(filename, pBuffer, bufferSize);
     }
     catch (std::exception const& ex)
     {
