@@ -96,7 +96,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         public static void GetInitializedInstance(Action<RemoteConfigurationManager> action)
         {
-            RemoteConfigurationManager inst = null;
+            RemoteConfigurationManager? inst = null;
             lock (LockObject)
             {
                 inst = Instance;
