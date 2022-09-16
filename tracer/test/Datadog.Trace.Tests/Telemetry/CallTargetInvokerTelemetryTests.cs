@@ -14,6 +14,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.IAST.Settings;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
@@ -142,6 +143,10 @@ namespace Datadog.Trace.Tests.Telemetry
             }
 
             public void Start()
+            {
+            }
+
+            public void RecordIASTSettings(IASTSettings settings)
             {
             }
         }

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
+using Datadog.Trace.IAST.Settings;
 using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Telemetry
@@ -51,6 +52,10 @@ namespace Datadog.Trace.Telemetry
         public Task DisposeAsync()
         {
             return Task.CompletedTask;
+        }
+
+        public void RecordIASTSettings(IASTSettings settings)
+        {
         }
     }
 }
