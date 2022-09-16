@@ -3,11 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 namespace Datadog.Trace.IAST
 {
     internal class Evidence
     {
-        public Evidence(string value, Range[] ranges = null)
+        public Evidence(string value, Range[]? ranges = null)
         {
             this.Value = value;
             this.Ranges = ranges;
@@ -15,6 +17,6 @@ namespace Datadog.Trace.IAST
 
         public string Value { get; }
 
-        public Range[] Ranges { get; }
+        public Range[]? Ranges { get; }
     }
 }

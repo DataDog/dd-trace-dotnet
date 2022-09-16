@@ -8,12 +8,9 @@
 using System;
 using System.Diagnostics;
 using System.Linq;
-using System.Text;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
-using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.IAST
 {
@@ -28,7 +25,7 @@ namespace Datadog.Trace.IAST
 
         public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, Datadog.Trace.IAST.IAST iast)
         {
-            if (!InvalidHashAlgorithm(algorithm, iast))
+            if (algorithm == null || !InvalidHashAlgorithm(algorithm, iast))
             {
                 return null;
             }
@@ -60,15 +57,19 @@ namespace Datadog.Trace.IAST
         {
             var method = frame?.GetMethod();
             var declaringType = method?.DeclaringType;
-            return (BuildFullMethodName(declaringType?.Namespace, declaringType?.Name, method?.Name));
+            var namespaceName = declaringType?.Namespace;
+            var typeName = declaringType?.Name;
+            var methodName = method?.Name;
+
+            if (methodName == null || typeName == null || namespaceName == null)
+            {
+                return null;
+            }
+
+            return StringBuilderCache.GetStringAndRelease(StringBuilderCache.Acquire(0).Append(namespaceName).Append('.').Append(typeName).Append("::").Append(methodName));
         }
 
-        public static string BuildFullMethodName(string? namespaceName, string? className, string? methodName)
-        {
-            return StringBuilderCache.GetStringAndRelease(StringBuilderCache.Acquire(0).Append(namespaceName).Append('.').Append(className).Append("::").Append(methodName));
-        }
-
-        private static bool InvalidHashAlgorithm(string? algorithm, Datadog.Trace.IAST.IAST iast)
+        private static bool InvalidHashAlgorithm(string algorithm, Datadog.Trace.IAST.IAST iast)
         {
             return iast.Settings.InsecureHashingAlgorithms.Contains(algorithm);
         }
