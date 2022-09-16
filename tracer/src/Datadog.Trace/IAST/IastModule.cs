@@ -30,24 +30,28 @@ namespace Datadog.Trace.IAST
                 return null;
             }
 
+            return GetScope(algorithm, integrationId);
+        }
+
+        private static Scope GetScope(string evidenceValue, IntegrationId integrationId)
+        {
             var tracer = Tracer.Instance;
             var frame = StackWalker.GetFrame();
             // Sometimes we do not have the file/line but we have the method/class.
-            var vulnerability = new Vulnerability(VulnerabilityType.WEAK_HASH, new Location(frame?.GetFileName() ?? GetMethodName(frame), frame?.GetFileLineNumber()), new Evidence(algorithm));
+            var vulnerability = new Vulnerability(VulnerabilityType.WEAK_HASH, new Location(frame?.GetFileName() ?? GetMethodName(frame), frame?.GetFileLineNumber()), new Evidence(evidenceValue));
             // The VulnerabilityBatch class is not very useful right now, but we will need it when handling requests
             var batch = new VulnerabilityBatch();
             batch.Add(vulnerability);
-            var json = batch.ToString();
 
+            // Right now, we always set the IastEnabled tag to "1", but in the future, it might be zero to indicate that a request has not been analyzed
             var tags = new InsecureHashingTags()
             {
-                IastJson = json,
+                IastJson = batch.ToString(),
                 IastEnabled = "1"
             };
 
             var serviceName = tracer.Settings.GetServiceName(tracer, ServiceHash);
             var scope = tracer.StartActiveInternal(OperationNameHash, serviceName: serviceName, tags: tags);
-            scope.Span.Tags = tags;
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
 
             return scope;
