@@ -52,24 +52,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             await Fixture.TryStartApp(this);
 
             var spans = await Fixture.WaitForSpans(path);
-
-            var aspnetCoreSpans = spans.Where(s => s.Name == "aspnet_core.request");
-            foreach (var aspnetCoreSpan in aspnetCoreSpans)
+            foreach (var span in spans)
             {
-                var result = aspnetCoreSpan.IsAspNetCore(excludeTags: new HashSet<string>
-                    {
-                        "datadog-header-tag",
-                        "http.request.headers.sample_correlation_identifier",
-                        "http.response.headers.sample_correlation_identifier",
-                        "http.response.headers.server",
-                    });
-                Assert.True(result.Success, result.ToString());
-            }
-
-            var aspnetCoreMvcSpans = spans.Where(s => s.Name == "aspnet_core_mvc.request");
-            foreach (var aspnetCoreMvcSpan in aspnetCoreMvcSpans)
-            {
-                var result = aspnetCoreMvcSpan.IsAspNetCoreMvc();
+                var result = ValidateIntegrationSpan(span);
                 Assert.True(result.Success, result.ToString());
             }
 

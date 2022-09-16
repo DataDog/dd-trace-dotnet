@@ -174,7 +174,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
 
     [UsesVerify]
-    public abstract class GrpcTestsBase : TestHelper
+    public abstract class GrpcTestsBase : TracingIntegrationTest
     {
         private const string MetadataHeaders = "server-value1,server-value2:servermeta,client-value1,client-value2:clientmeta";
         private static readonly Regex GrpcCoreCreatedRegex = new(@"\@\d{10}\.\d{9}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -213,6 +213,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             => from packageVersionArray in PackageVersions.Grpc
                from httpClientType in Enum.GetValues(typeof(HttpClientIntegrationType)).Cast<HttpClientIntegrationType>()
                select new[] { packageVersionArray[0], httpClientType };
+
+        public override Result ValidateIntegrationSpan(MockSpan span) =>
+            span.Name switch
+            {
+                "grpc.request" => span.IsGrpc(excludeTags: new HashSet<string>
+                    {
+                        "clientmeta",
+                        "grpc.request.metadata.client-value1",
+                        "servermeta",
+                        "grpc.response.metadata.server-value1"
+                    }),
+                _ => Result.DefaultSuccess
+            };
 
         protected async Task RunSubmitTraces(
             string packageVersion,
@@ -315,18 +328,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     FixVerySlowClientSpans(spans);
                 }
 
-                var grpcSpans = spans.Where(s => s.Name == "grpc.request")
-                                     .ToList();
-
-                foreach (var grpcSpan in grpcSpans)
+                foreach (var span in spans)
                 {
-                    var result = grpcSpan.IsGrpc(excludeTags: new HashSet<string>
-                    {
-                        "clientmeta",
-                        "grpc.request.metadata.client-value1",
-                        "servermeta",
-                        "grpc.response.metadata.server-value1"
-                    });
+                    var result = ValidateIntegrationSpan(span);
                     Assert.True(result.Success, result.ToString());
                 }
 

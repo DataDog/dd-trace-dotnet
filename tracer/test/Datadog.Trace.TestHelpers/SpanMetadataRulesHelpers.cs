@@ -23,6 +23,8 @@ namespace Datadog.Trace.TestHelpers
 #pragma warning disable SA1201 // Elements should appear in the correct order
     public class Result
     {
+        public static readonly Result DefaultSuccess = FromSpan(null);
+
         public MockSpan Span { get; }
 
         public ISet<string> ExcludeTags { get; }
