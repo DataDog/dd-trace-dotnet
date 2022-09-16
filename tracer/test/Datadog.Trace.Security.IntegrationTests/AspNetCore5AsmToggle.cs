@@ -61,6 +61,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             if (enableSecurity == true)
             {
                 await logEntryWatcher.WaitForLogEntry("AppSec Disabled");
+                await Task.Delay(1500);
             }
 
             var spans2 = await SendRequestsAsync(agent, url);
@@ -73,6 +74,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             if (enableSecurity != false)
             {
                 await logEntryWatcher.WaitForLogEntry("AppSec Enabled");
+                await Task.Delay(1500);
             }
 
             var spans3 = await SendRequestsAsync(agent, url);
