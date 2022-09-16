@@ -92,20 +92,18 @@ namespace Datadog.Trace.AppSec.Waf
             GC.SuppressFinalize(this);
         }
 
-        public bool UpdateRules(IEnumerable<RuleData[]> res)
+        public bool UpdateRules(IEnumerable<RuleData> res)
         {
             var finalRuleDatas = MergeRuleDatas(res);
-
             var encoded = encoder.Encode(finalRuleDatas, new List<Obj>(), false);
-
             var ret = wafNative.UpdateRuleData(ruleHandle.Value, encoded.RawPtr);
             return ret == DDWAF_RET_CODE.DDWAF_OK;
         }
 
-        internal static List<object> MergeRuleDatas(IEnumerable<RuleData[]> res)
+        internal static List<object> MergeRuleDatas(IEnumerable<RuleData> res)
         {
             var finalRuleDatas = new List<object>();
-            var groups = res.SelectMany(r => r).GroupBy(r => r.Id + r.Type);
+            var groups = res.GroupBy(r => r.Id + r.Type);
             foreach (var ruleDatas in groups)
             {
                 var datasByValue = ruleDatas.SelectMany(d => d.Data).GroupBy(d => d.Value);
@@ -114,7 +112,11 @@ namespace Datadog.Trace.AppSec.Waf
                 {
                     var longestLastingIp = data.OrderByDescending(d => d.Expiration ?? long.MaxValue).First();
                     var dataIp = new Dictionary<string, object>();
-                    dataIp.Add("expiration", longestLastingIp.Expiration);
+                    if (longestLastingIp.Expiration.HasValue)
+                    {
+                        dataIp.Add("expiration", longestLastingIp.Expiration.Value);
+                    }
+
                     dataIp.Add("value", longestLastingIp.Value);
                     mergedDatas.Add(dataIp);
                 }

@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Transports;
 using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
@@ -45,6 +46,7 @@ namespace Datadog.Trace.AppSec
         private IWaf _waf;
         private AppSecRateLimiter _rateLimiter;
         private bool _enabled = false;
+        private IDictionary<string, Payload> _asmDataConfigs;
 
         private bool? _usingIntegratedPipeline = null;
 
@@ -289,6 +291,18 @@ namespace Datadog.Trace.AppSec
             e.Acknowledge(features.Name);
         }
 
+        private void AsmDataProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
+        {
+            _asmDataConfigs ??= new Dictionary<string, Payload>();
+            var asmDataConfigs = e.GetDeserializedConfigurations<Payload>();
+            foreach (var asmDataConfig in asmDataConfigs)
+            {
+                _asmDataConfigs[asmDataConfig.Name] = asmDataConfig.TypedFile;
+            }
+
+            _waf.UpdateRules(_asmDataConfigs.SelectMany(p => p.Value.RulesData));
+        }
+
         private void UpdateStatus(bool fromRemoteConfig = false)
         {
             if (_enabled == _settings.Enabled) { return; }
@@ -321,6 +335,8 @@ namespace Datadog.Trace.AppSec
         {
             if (!_enabled)
             {
+                SharedRemoteConfiguration.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
+                SharedRemoteConfiguration.AsmDataProduct.ConfigChanged += AsmDataProductConfigChanged;
                 _instrumentationGateway.StartRequest += RunWafAndReact;
                 _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
                 _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
@@ -371,6 +387,7 @@ namespace Datadog.Trace.AppSec
                 _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
                 _instrumentationGateway.StartRequest -= ReportWafInitInfoOnce;
 
+                SharedRemoteConfiguration.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
                 RemoveAppsecSpecificInstrumentations();
 
                 _enabled = false;
