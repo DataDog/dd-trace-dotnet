@@ -439,10 +439,5 @@ namespace Datadog.Trace
         {
             return TracerManager.AgentWriter.FlushTracesAsync();
         }
-
-        internal Task FlushAndCloseAsync()
-        {
-            return TracerManager.AgentWriter.FlushAndCloseAsync();
-        }
     }
 }
