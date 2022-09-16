@@ -33,7 +33,10 @@ namespace Datadog.Trace.TestHelpers
 
         public static void AssertNoRemainingTags(SpanTagAssertion s)
         {
-            s._tags.Remove("_dd.p.dm");
+            foreach (var tag in s._result.ExcludeTags)
+            {
+                s._tags.Remove(tag);
+            }
 
             if (s._tags.Count > 0)
             {

@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -24,6 +25,8 @@ namespace Datadog.Trace.TestHelpers
     {
         public MockSpan Span { get; }
 
+        public ISet<string> ExcludeTags { get; }
+
         public List<string> Errors { get; }
 
         public bool Success
@@ -31,15 +34,16 @@ namespace Datadog.Trace.TestHelpers
             get => Errors.Count == 0;
         }
 
-        public Result(MockSpan span)
+        private Result(MockSpan span, ISet<string> excludeTags)
         {
             Span = span;
+            ExcludeTags = excludeTags;
             Errors = new List<string>();
         }
 
-        public static Result FromSpan(MockSpan span)
+        public static Result FromSpan(MockSpan span, ISet<string> excludeTags = null)
         {
-            return new Result(span);
+            return new Result(span, excludeTags ?? new HashSet<string>());
         }
 
         public Result WithFailure(string failureMessage)
