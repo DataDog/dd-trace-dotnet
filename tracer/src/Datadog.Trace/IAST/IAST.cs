@@ -1,4 +1,4 @@
-// <copyright file="IAST.cs" company="Datadog">
+// <copyright file="Iast.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,43 +6,43 @@
 using System;
 using System.Threading;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.IAST.Settings;
+using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.IAST
+namespace Datadog.Trace.Iast
 {
     /// <summary>
     /// The class responsible for coordinating IAST
     /// </summary>
-    internal class IAST
+    internal class Iast
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<IAST>();
-        private static IAST _instance;
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Iast>();
+        private static Iast _instance;
         private static bool _globalInstanceInitialized;
         private static object _globalInstanceLock = new();
-        private readonly IASTSettings _settings;
+        private readonly IastSettings _settings;
 
-        static IAST()
+        static Iast()
         {
         }
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="IAST"/> class with default settings.
+        /// Initializes a new instance of the <see cref="Iast"/> class with default settings.
         /// </summary>
-        public IAST()
+        public Iast()
             : this(null)
         {
         }
 
-        private IAST(IASTSettings settings = null)
+        private Iast(IastSettings settings = null)
         {
             try
             {
-                _settings = settings ?? IASTSettings.FromDefaultSources();
+                _settings = settings ?? IastSettings.FromDefaultSources();
 
                 if (_settings.Enabled)
                 {
-                    AddIASTSpecificInstrumentations();
+                    AddIastSpecificInstrumentations();
                 }
             }
             catch (Exception ex)
@@ -52,12 +52,12 @@ namespace Datadog.Trace.IAST
             }
         }
 
-        internal IASTSettings Settings => _settings;
+        internal IastSettings Settings => _settings;
 
         /// <summary>
-        /// Gets or sets the global <see cref="IAST"/> instance.
+        /// Gets or sets the global <see cref="Iast"/> instance.
         /// </summary>
-        public static IAST Instance
+        public static Iast Instance
         {
             get => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock);
 
@@ -71,13 +71,13 @@ namespace Datadog.Trace.IAST
             }
         }
 
-        private static void AddIASTSpecificInstrumentations()
+        private static void AddIastSpecificInstrumentations()
         {
             int defs = 0, derived = 0;
             try
             {
                 Log.Debug("Adding CallTarget IAST integration definitions to native library.");
-                var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.IAST);
+                var payload = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.Iast);
                 NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
                 defs = payload.Definitions.Length;
             }
@@ -89,7 +89,7 @@ namespace Datadog.Trace.IAST
             try
             {
                 Log.Debug("Adding CallTarget IAST derived integration definitions to native library.");
-                var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.IAST);
+                var payload = InstrumentationDefinitions.GetDerivedDefinitions(InstrumentationCategory.Iast);
                 NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
                 derived = payload.Definitions.Length;
             }

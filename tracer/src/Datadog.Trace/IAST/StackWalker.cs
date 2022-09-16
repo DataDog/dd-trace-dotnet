@@ -8,7 +8,7 @@
 using System.Diagnostics;
 using System.Linq;
 
-namespace Datadog.Trace.IAST
+namespace Datadog.Trace.Iast
 {
     internal static class StackWalker
     {

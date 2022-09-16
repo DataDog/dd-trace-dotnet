@@ -420,7 +420,7 @@ namespace Datadog.Trace.ClrProfiler
                 Instrumentations.Add(InstrumentationCategory.AppSec, payload);
                 InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-                // root types for InstrumentationCategory IAST
+                // root types for InstrumentationCategory Iast
                 payload = new Payload
                 {
                     DefinitionsId = "18ADCFBDCCF14141B3473C7D3B1E9494",
@@ -428,7 +428,7 @@ namespace Datadog.Trace.ClrProfiler
                     {
                     }
                 };
-                Instrumentations.Add(InstrumentationCategory.IAST, payload);
+                Instrumentations.Add(InstrumentationCategory.Iast, payload);
                 InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
                 // derived types for InstrumentationCategory Tracing
@@ -473,7 +473,7 @@ namespace Datadog.Trace.ClrProfiler
                 DerivedInstrumentations.Add(InstrumentationCategory.AppSec, payload);
                 DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
                 
-                // derived types for InstrumentationCategory IAST
+                // derived types for InstrumentationCategory Iast
                 payload = new Payload
                 {
                     DefinitionsId = "0C21F56FE62D49D78DF30D714F869815",
@@ -481,7 +481,7 @@ namespace Datadog.Trace.ClrProfiler
                     {
                     }
                 };
-                DerivedInstrumentations.Add(InstrumentationCategory.IAST, payload);
+                DerivedInstrumentations.Add(InstrumentationCategory.Iast, payload);
                 DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
                 
                 // interface types for InstrumentationCategory Tracing
@@ -509,7 +509,7 @@ namespace Datadog.Trace.ClrProfiler
                 InterfaceInstrumentations.Add(InstrumentationCategory.AppSec, payload);
                 InterfaceInstrumentationsNatives = InterfaceInstrumentationsNatives.Concat(payload.Definitions);
                 
-                // interface types for InstrumentationCategory IAST
+                // interface types for InstrumentationCategory Iast
                 payload = new Payload
                 {
                     DefinitionsId = "2A8E770131E64FCCB0AAC21AE3857E5E",
@@ -517,7 +517,7 @@ namespace Datadog.Trace.ClrProfiler
                     {
                     }
                 };
-                InterfaceInstrumentations.Add(InstrumentationCategory.IAST, payload);
+                InterfaceInstrumentations.Add(InstrumentationCategory.Iast, payload);
                 InterfaceInstrumentationsNatives = InterfaceInstrumentationsNatives.Concat(payload.Definitions);
                 
         }

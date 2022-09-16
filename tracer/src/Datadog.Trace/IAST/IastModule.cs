@@ -12,7 +12,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
-namespace Datadog.Trace.IAST
+namespace Datadog.Trace.Iast
 {
     internal class IastModule
     {
@@ -23,7 +23,7 @@ namespace Datadog.Trace.IAST
         {
         }
 
-        public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, Datadog.Trace.IAST.IAST iast)
+        public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, Datadog.Trace.Iast.Iast iast)
         {
             if (algorithm == null || !InvalidHashAlgorithm(algorithm, iast))
             {
@@ -73,7 +73,7 @@ namespace Datadog.Trace.IAST
             return StringBuilderCache.GetStringAndRelease(StringBuilderCache.Acquire(0).Append(namespaceName).Append('.').Append(typeName).Append("::").Append(methodName));
         }
 
-        private static bool InvalidHashAlgorithm(string algorithm, Datadog.Trace.IAST.IAST iast)
+        private static bool InvalidHashAlgorithm(string algorithm, Datadog.Trace.Iast.Iast iast)
         {
             return iast.Settings.InsecureHashingAlgorithms.Contains(algorithm);
         }

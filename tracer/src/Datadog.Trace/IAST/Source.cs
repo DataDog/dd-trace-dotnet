@@ -5,7 +5,7 @@
 
 #nullable enable
 
-namespace Datadog.Trace.IAST
+namespace Datadog.Trace.Iast
 {
     internal class Source
     {

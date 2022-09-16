@@ -9,7 +9,7 @@ using System.Threading;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.IAST.Settings;
+using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Telemetry
@@ -20,7 +20,7 @@ namespace Datadog.Trace.Telemetry
         private int _hasChangesFlag = 0;
         private volatile CurrentSettings _settings;
         private volatile SecuritySettings _securitySettings;
-        private volatile IASTSettings _iastSettings;
+        private volatile IastSettings _iastSettings;
         private volatile Profiler _profiler;
         private volatile bool _isTracerInitialized = false;
         private AzureAppServices _azureApServicesMetadata;
@@ -76,7 +76,7 @@ namespace Datadog.Trace.Telemetry
             SetHasChanges();
         }
 
-        public void RecordIASTSettings(IASTSettings iastSettings)
+        public void RecordIastSettings(IastSettings iastSettings)
         {
             _iastSettings = iastSettings;
             SetHasChanges();
@@ -145,7 +145,7 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.AasConfigurationError, value: _azureApServicesMetadata.IsUnsafeToTrace),
                 new(ConfigTelemetryData.TracerInstanceCount, value: _tracerInstanceCount),
                 new(ConfigTelemetryData.SecurityEnabled, value: _securitySettings?.Enabled),
-                new(ConfigTelemetryData.IASTEnabled, value: _iastSettings?.Enabled),
+                new(ConfigTelemetryData.IastEnabled, value: _iastSettings?.Enabled),
                 new(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted),
                 new(ConfigTelemetryData.TraceMethods, value: settings.TraceMethods),
                 new(ConfigTelemetryData.ActivityListenerEnabled, value: settings.IsActivityListenerEnabled),

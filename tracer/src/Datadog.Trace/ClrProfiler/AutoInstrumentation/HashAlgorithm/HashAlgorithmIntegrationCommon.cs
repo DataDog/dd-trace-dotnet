@@ -7,7 +7,7 @@
 
 using System;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.IAST;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
 
         internal static Scope? CreateScope(System.Security.Cryptography.HashAlgorithm instance)
         {
-            var iast = Datadog.Trace.IAST.IAST.Instance;
+            var iast = Datadog.Trace.Iast.Iast.Instance;
             if (!iast.Settings.Enabled || instance == null)
             {
                 return null;

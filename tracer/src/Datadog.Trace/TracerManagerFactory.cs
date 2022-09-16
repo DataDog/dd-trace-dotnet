@@ -120,7 +120,7 @@ namespace Datadog.Trace
             telemetry ??= TelemetryFactory.CreateTelemetryController(settings);
             telemetry.RecordTracerSettings(settings, defaultServiceName, AzureAppServices.Metadata);
             telemetry.RecordSecuritySettings(Security.Instance.Settings);
-            telemetry.RecordIASTSettings(Datadog.Trace.IAST.IAST.Instance.Settings);
+            telemetry.RecordIastSettings(Datadog.Trace.Iast.Iast.Instance.Settings);
             telemetry.RecordProfilerSettings(Profiler.Instance);
 
             SpanContextPropagator.Instance = ContextPropagators.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract);

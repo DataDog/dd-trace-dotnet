@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.IAST.Settings;
+using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Telemetry
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Telemetry
         /// <summary>
         /// Called when IAST security is enabled to record the IAST settings
         /// </summary>
-        public void RecordIASTSettings(IASTSettings settings);
+        public void RecordIastSettings(IastSettings settings);
 
         /// <summary>
         /// Called to record profiler-related telemetry

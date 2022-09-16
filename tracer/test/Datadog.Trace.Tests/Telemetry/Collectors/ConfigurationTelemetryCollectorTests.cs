@@ -14,7 +14,7 @@ using System.Security.Permissions;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
-using Datadog.Trace.IAST.Settings;
+using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry;
 using FluentAssertions;
@@ -99,21 +99,21 @@ namespace Datadog.Trace.Tests.Telemetry
         [Theory]
         [InlineData(false)]
         [InlineData(true)]
-        public void ConfigurationDataShouldIncludeExpectedIASTValues(bool enabled)
+        public void ConfigurationDataShouldIncludeExpectedIastValues(bool enabled)
         {
             var collector = new ConfigurationTelemetryCollector();
 
             collector.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), ServiceName, EmptyAasSettings);
             var source = new NameValueConfigurationSource(new NameValueCollection
             {
-                { ConfigurationKeys.IAST.Enabled, enabled.ToString() },
+                { ConfigurationKeys.Iast.Enabled, enabled.ToString() },
             });
-            collector.RecordIASTSettings(new IASTSettings(source));
+            collector.RecordIastSettings(new IastSettings(source));
 
             var data = collector.GetConfigurationData()
                                 .ToDictionary(x => x.Name, x => x.Value);
 
-            data[ConfigTelemetryData.IASTEnabled].Should().Be(enabled);
+            data[ConfigTelemetryData.IastEnabled].Should().Be(enabled);
         }
 
         [Fact]

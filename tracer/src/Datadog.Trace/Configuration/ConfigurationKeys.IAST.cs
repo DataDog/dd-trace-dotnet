@@ -1,19 +1,13 @@
-// <copyright file="ConfigurationKeys.IAST.cs" company="Datadog">
+// <copyright file="ConfigurationKeys.Iast.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Datadog.Trace.Configuration
 {
     internal partial class ConfigurationKeys
     {
-        internal class IAST
+        internal class Iast
         {
             /// <summary>
             /// Configuration key for enabling or disabling the IAST.
