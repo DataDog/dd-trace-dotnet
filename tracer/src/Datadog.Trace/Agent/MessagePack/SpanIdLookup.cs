@@ -42,7 +42,7 @@ internal readonly struct SpanIdLookup
         }
     }
 
-    public bool Contains(ulong value)
+    public bool Contains(ulong value, int startIndex = 0)
     {
         if (_spans.Count == 0)
         {
@@ -64,9 +64,20 @@ internal readonly struct SpanIdLookup
             return _hashSet?.Contains(value) ?? false;
         }
 
-        // if we didn't create a HashSet, iterate over the span array.
+        // If we didn't create a HashSet, iterate over the span array.
+        // A span's parent usually closes after its child,
+        // so start at the specified index then loop back to the beginning if needed.
+
         // Using a for loop to avoid the boxing allocation on ArraySegment.GetEnumerator
-        for (var i = 0; i < _spans.Count; i++)
+        for (var i = startIndex; i < _spans.Count; i++)
+        {
+            if (value == _spans.Array![i + _spans.Offset].SpanId)
+            {
+                return true;
+            }
+        }
+
+        for (var i = 0; i < startIndex; i++)
         {
             if (value == _spans.Array![i + _spans.Offset].SpanId)
             {

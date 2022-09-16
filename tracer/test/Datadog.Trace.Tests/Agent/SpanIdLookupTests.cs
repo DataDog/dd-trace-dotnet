@@ -73,6 +73,17 @@ public class SpanIdLookupTests
     }
 
     [Fact]
+    public void SmallArray_Found_WithIndex()
+    {
+        var traceChunk = GetTraceChunk(10, 100, 1000);
+        var lookup = new SpanIdLookup(traceChunk);
+
+        lookup.Contains(100, 0).Should().BeTrue();
+        lookup.Contains(100, 1).Should().BeTrue();
+        lookup.Contains(100, 2).Should().BeTrue();
+    }
+
+    [Fact]
     public void LargeArray_NotFound()
     {
         var traceChunk = GetTraceChunk(Enumerable.Range(10, 1000));
