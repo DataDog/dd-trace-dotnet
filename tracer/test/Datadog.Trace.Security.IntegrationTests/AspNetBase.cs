@@ -315,7 +315,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
             if (spans.Count != expectedSpans)
             {
-                Output?.WriteLine($"spans.Count: {spans} != expectedSpans: {expectedSpans}, this is phase: {phase}");
+                Output?.WriteLine($"spans.Count: {spans.Count} != expectedSpans: {expectedSpans}, this is phase: {phase}");
             }
 
             return spans;
