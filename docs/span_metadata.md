@@ -509,6 +509,7 @@ Type | `http`
 Name | Required |
 ---------|----------------|
 component | `HttpMessageHandler`; `WebRequest`
+http-client-handler-type | No
 http.method | Yes
 http.status_code | Yes
 http.url | Yes
