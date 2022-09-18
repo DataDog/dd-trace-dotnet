@@ -760,7 +760,7 @@ namespace Datadog.Trace.Ci
             Message = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_MESSAGE");
             AuthorName = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_AUTHOR");
             AuthorEmail = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_AUTHOR_EMAIL");
-            CommitterEmail = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_CREATOR");
+            CommitterName = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_CREATOR");
             CommitterEmail = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_CREATOR_EMAIL");
         }
 
