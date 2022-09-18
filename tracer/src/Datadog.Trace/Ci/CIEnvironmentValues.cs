@@ -760,6 +760,8 @@ namespace Datadog.Trace.Ci
             Message = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_MESSAGE");
             AuthorName = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_AUTHOR");
             AuthorEmail = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_AUTHOR_EMAIL");
+            CommitterName = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_CREATOR");
+            CommitterEmail = EnvironmentHelpers.GetEnvironmentVariable("BUILDKITE_BUILD_CREATOR_EMAIL");
         }
 
         private void SetupBitriseEnvironment()
@@ -783,6 +785,14 @@ namespace Datadog.Trace.Ci
             PipelineUrl = EnvironmentHelpers.GetEnvironmentVariable("BITRISE_BUILD_URL");
 
             Message = EnvironmentHelpers.GetEnvironmentVariable("BITRISE_GIT_MESSAGE");
+            AuthorName = EnvironmentHelpers.GetEnvironmentVariable("GIT_CLONE_COMMIT_AUTHOR_NAME");
+            AuthorEmail = EnvironmentHelpers.GetEnvironmentVariable("GIT_CLONE_COMMIT_AUTHOR_EMAIL");
+            CommitterName = EnvironmentHelpers.GetEnvironmentVariable("GIT_CLONE_COMMIT_COMMITER_NAME");
+            CommitterEmail = EnvironmentHelpers.GetEnvironmentVariable("GIT_CLONE_COMMIT_COMMITER_EMAIL");
+            if (string.IsNullOrWhiteSpace(CommitterEmail))
+            {
+                CommitterEmail = CommitterName;
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
