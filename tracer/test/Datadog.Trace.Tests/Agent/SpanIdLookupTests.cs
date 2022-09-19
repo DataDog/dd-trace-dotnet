@@ -31,6 +31,8 @@ public class SpanIdLookupTests
     [Fact]
     public void EmptyArray_NotFound()
     {
+        // ArraySegment doesn't behave the same with "new ArraySegment" vs "default",
+        // so we're testing both to be sure
         var traceChunk = new ArraySegment<Span>(Array.Empty<Span>());
         var lookup = new SpanIdLookup(traceChunk);
         lookup.Contains(1).Should().BeFalse();
@@ -39,6 +41,8 @@ public class SpanIdLookupTests
     [Fact]
     public void NewArraySegment_NotFound()
     {
+        // ArraySegment doesn't behave the same with "new ArraySegment" vs "default",
+        // so we're testing both to be sure
         var traceChunk = new ArraySegment<Span>();
         var lookup = new SpanIdLookup(traceChunk);
         lookup.Contains(1).Should().BeFalse();
@@ -59,6 +63,9 @@ public class SpanIdLookupTests
         var lookup = new SpanIdLookup(traceChunk);
 
         lookup.Contains(1).Should().BeFalse();
+        lookup.Contains(1, 0).Should().BeFalse();
+        lookup.Contains(1, 1).Should().BeFalse();
+        lookup.Contains(1, 2).Should().BeFalse();
     }
 
     [Fact]
@@ -67,20 +74,24 @@ public class SpanIdLookupTests
         var traceChunk = GetTraceChunk(10, 100, 1000);
         var lookup = new SpanIdLookup(traceChunk);
 
+        // Result should be the same with or without the start index.
+        // The index is only a search optimization when searching the span array
+        // since parent spans will usually appear after their child spans.
         lookup.Contains(10).Should().BeTrue();
+        lookup.Contains(10, 0).Should().BeTrue();
+        lookup.Contains(10, 1).Should().BeTrue();
+        lookup.Contains(10, 2).Should().BeTrue();
+
         lookup.Contains(100).Should().BeTrue();
-        lookup.Contains(1000).Should().BeTrue();
-    }
-
-    [Fact]
-    public void SmallArray_Found_WithIndex()
-    {
-        var traceChunk = GetTraceChunk(10, 100, 1000);
-        var lookup = new SpanIdLookup(traceChunk);
-
         lookup.Contains(100, 0).Should().BeTrue();
         lookup.Contains(100, 1).Should().BeTrue();
         lookup.Contains(100, 2).Should().BeTrue();
+
+        // The index is ignored when using the HashSet.
+        lookup.Contains(1000).Should().BeTrue();
+        lookup.Contains(1000, 0).Should().BeTrue();
+        lookup.Contains(1000, 1).Should().BeTrue();
+        lookup.Contains(1000, 2).Should().BeTrue();
     }
 
     [Fact]
@@ -90,6 +101,14 @@ public class SpanIdLookupTests
         var lookup = new SpanIdLookup(traceChunk);
 
         lookup.Contains(1).Should().BeFalse();
+        lookup.Contains(1, 0).Should().BeFalse();
+        lookup.Contains(1, traceChunk.Count / 2).Should().BeFalse();
+        lookup.Contains(1, traceChunk.Count - 1).Should().BeFalse();
+
+        lookup.Contains(2000).Should().BeFalse();
+        lookup.Contains(2000, 0).Should().BeFalse();
+        lookup.Contains(2000, traceChunk.Count / 2).Should().BeFalse();
+        lookup.Contains(2000, traceChunk.Count - 1).Should().BeFalse();
     }
 
     [Fact]
@@ -99,8 +118,19 @@ public class SpanIdLookupTests
         var lookup = new SpanIdLookup(traceChunk);
 
         lookup.Contains(10).Should().BeTrue();
+        lookup.Contains(10, 0).Should().BeTrue();
+        lookup.Contains(10, traceChunk.Count / 2).Should().BeTrue();
+        lookup.Contains(10, traceChunk.Count - 1).Should().BeTrue();
+
         lookup.Contains(100).Should().BeTrue();
+        lookup.Contains(100, 0).Should().BeTrue();
+        lookup.Contains(100, traceChunk.Count / 2).Should().BeTrue();
+        lookup.Contains(100, traceChunk.Count - 1).Should().BeTrue();
+
         lookup.Contains(1000).Should().BeTrue();
+        lookup.Contains(1000, 0).Should().BeTrue();
+        lookup.Contains(1000, traceChunk.Count / 2).Should().BeTrue();
+        lookup.Contains(1000, traceChunk.Count - 1).Should().BeTrue();
     }
 
     private static ArraySegment<Span> GetTraceChunk(params int[] spanIds)
