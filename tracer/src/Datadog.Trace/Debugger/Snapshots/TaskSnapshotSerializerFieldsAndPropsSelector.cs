@@ -21,8 +21,6 @@ namespace Datadog.Trace.Debugger.Snapshots
         internal override IEnumerable<MemberInfo> GetFieldsAndProps(
             Type type,
             object source,
-            int maximumDepthOfHierarchyToCopy,
-            int maximumNumberOfFieldsToCopy,
             CancellationTokenSource cts)
         {
             yield return type.GetProperty("Id");

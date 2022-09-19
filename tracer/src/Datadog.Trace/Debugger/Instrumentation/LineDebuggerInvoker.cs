@@ -44,7 +44,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             var paramName = state.MethodMetadataInfo.ParameterNames[index];
-            state.SnapshotCreator.CaptureArgument(arg, paramName, index == 0, state.HasLocalsOrReturnValue);
+            state.SnapshotCreator.CaptureArgument(arg, paramName);
             state.HasLocalsOrReturnValue = false;
         }
 
@@ -69,7 +69,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            state.SnapshotCreator.CaptureLocal(local, localName, index == 0 && !state.HasLocalsOrReturnValue);
+            state.SnapshotCreator.CaptureLocal(local, localName);
             state.HasLocalsOrReturnValue = true;
         }
 
@@ -119,12 +119,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return CreateInvalidatedLineDebuggerState();
             }
 
-            var state = new LineDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, lineNumber, probeFilePath);
+            var state = new LineDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, lineNumber, probeFilePath, instance);
             state.SnapshotCreator.StartDebugger();
             state.SnapshotCreator.StartSnapshot();
             state.SnapshotCreator.StartCaptures();
             state.SnapshotCreator.StartLines(lineNumber);
-            state.SnapshotCreator.CaptureInstance(instance, state.MethodMetadataInfo.DeclaringType);
+            state.SnapshotCreator.CaptureStaticFields(state.MethodMetadataInfo.DeclaringType);
+
             return state;
         }
 
@@ -141,8 +142,14 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
-                                       state.MethodMetadataInfo.ParameterNames.Length > 0;
+                                       state.MethodMetadataInfo.ParameterNames.Length > 0 ||
+                                       !state.MethodMetadataInfo.Method.IsStatic;
             state.HasLocalsOrReturnValue = false;
+            if (state.InvocationTarget != null)
+            {
+                state.SnapshotCreator.CaptureInstance(state.InvocationTarget, state.InvocationTarget.GetType());
+            }
+
             state.SnapshotCreator.LineProbeEndReturn(hasArgumentsOrLocals);
             FinalizeSnapshot(ref state);
         }

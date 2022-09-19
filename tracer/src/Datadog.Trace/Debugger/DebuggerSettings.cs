@@ -10,13 +10,13 @@ namespace Datadog.Trace.Debugger
 {
     internal class DebuggerSettings
     {
-        public const int DefaultMaxDepthToSerialize = 1;
-        public const int DefaultMaxSerializationTimeInMilliseconds = 150;
+        public const int DefaultMaxDepthToSerialize = 3;
+        public const int DefaultMaxSerializationTimeInMilliseconds = 200;
         public const int DefaultMaxNumberOfItemsInCollectionToCopy = 100;
-        public const int DefaultMaxNumberOfFieldsToCopy = 1000;
+        public const int DefaultMaxNumberOfFieldsToCopy = 20;
 
         private const int DefaultUploadBatchSize = 100;
-        private const int DefaultDiagnosticsIntervalSeconds = 3600;
+        private const int DefaultDiagnosticsIntervalSeconds = 5;
         private const int DefaultUploadFlushIntervalMilliseconds = 0;
 
         public DebuggerSettings()

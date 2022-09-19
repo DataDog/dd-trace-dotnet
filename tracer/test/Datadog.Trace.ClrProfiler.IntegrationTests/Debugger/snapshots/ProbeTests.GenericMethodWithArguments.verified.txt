@@ -12,7 +12,6 @@
               "genericParam": {
                 "fields": {
                   "_shouldCloned": {
-                    "fields": null,
                     "type": "Int32",
                     "value": "30"
                   },
@@ -21,12 +20,10 @@
                       "City": {
                         "fields": {
                           "Name": {
-                            "fields": null,
-                            "type": "String",
-                            "value": "null"
+                            "isNull": "true",
+                            "type": "String"
                           },
                           "Type": {
-                            "fields": null,
                             "type": "PlaceType",
                             "value": "City"
                           }
@@ -35,17 +32,14 @@
                         "value": "Place"
                       },
                       "HomeType": {
-                        "fields": null,
                         "type": "BuildingType",
                         "value": "Duplex"
                       },
                       "Number": {
-                        "fields": null,
                         "type": "Int32",
                         "value": "5"
                       },
                       "Street": {
-                        "fields": null,
                         "type": "String",
                         "value": "Elsewhere"
                       }
@@ -54,34 +48,31 @@
                     "value": "Address"
                   },
                   "Age": {
-                    "fields": null,
                     "type": "Double",
                     "value": "30"
                   },
                   "Children": {
-                    "fields": null,
-                    "type": "List`1",
-                    "value": "null"
+                    "isNull": "true",
+                    "type": "List`1"
                   },
                   "Id": {
-                    "fields": null,
                     "type": "Guid",
                     "value": "ScrubbedValue"
                   },
                   "Name": {
-                    "fields": null,
                     "type": "String",
                     "value": "Alfred Hitchcock"
                   }
                 },
                 "type": "Person",
                 "value": "Person"
-              }
-            },
-            "fields": {
-              "Prop": {
-                "fields": null,
-                "type": "String",
+              },
+              "this": {
+                "Prop": {
+                  "type": "String",
+                  "value": "GenericMethodWithArguments"
+                },
+                "type": "GenericMethodWithArguments",
                 "value": "GenericMethodWithArguments"
               }
             }
@@ -91,7 +82,6 @@
               "genericParam": {
                 "fields": {
                   "_shouldCloned": {
-                    "fields": null,
                     "type": "Int32",
                     "value": "30"
                   },
@@ -100,12 +90,10 @@
                       "City": {
                         "fields": {
                           "Name": {
-                            "fields": null,
-                            "type": "String",
-                            "value": "null"
+                            "isNull": "true",
+                            "type": "String"
                           },
                           "Type": {
-                            "fields": null,
                             "type": "PlaceType",
                             "value": "City"
                           }
@@ -114,17 +102,14 @@
                         "value": "Place"
                       },
                       "HomeType": {
-                        "fields": null,
                         "type": "BuildingType",
                         "value": "Duplex"
                       },
                       "Number": {
-                        "fields": null,
                         "type": "Int32",
                         "value": "5"
                       },
                       "Street": {
-                        "fields": null,
                         "type": "String",
                         "value": "Elsewhere"
                       }
@@ -133,40 +118,36 @@
                     "value": "Address"
                   },
                   "Age": {
-                    "fields": null,
                     "type": "Double",
                     "value": "30"
                   },
                   "Children": {
-                    "fields": null,
-                    "type": "List`1",
-                    "value": "null"
+                    "isNull": "true",
+                    "type": "List`1"
                   },
                   "Id": {
-                    "fields": null,
                     "type": "Guid",
                     "value": "ScrubbedValue"
                   },
                   "Name": {
-                    "fields": null,
                     "type": "String",
                     "value": "Alfred Hitchcock"
                   }
                 },
                 "type": "Person",
                 "value": "Person"
-              }
-            },
-            "fields": {
-              "Prop": {
-                "fields": null,
-                "type": "String",
+              },
+              "this": {
+                "Prop": {
+                  "type": "String",
+                  "value": "GenericMethodWithArguments"
+                },
+                "type": "GenericMethodWithArguments",
                 "value": "GenericMethodWithArguments"
               }
             },
             "locals": {
               "@return": {
-                "fields": null,
                 "type": "String",
                 "value": "Alfred Hitchcock (30)"
               }
@@ -214,7 +195,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "GenericMethodWithArguments.Method(genericParam=Person): Alfred Hitchcock (30)\r\n@return=Alfred Hitchcock (30)",
+    "message": "GenericMethodWithArguments.Method(genericParam=Person, this=GenericMethodWithArguments): Alfred Hitchcock (30)\r\n@return=Alfred Hitchcock (30)",
     "service": "Probes"
   },
   {
@@ -231,7 +212,6 @@
                 "genericParam": {
                   "fields": {
                     "_shouldCloned": {
-                      "fields": null,
                       "type": "Int32",
                       "value": "30"
                     },
@@ -240,12 +220,10 @@
                         "City": {
                           "fields": {
                             "Name": {
-                              "fields": null,
-                              "type": "String",
-                              "value": "null"
+                              "isNull": "true",
+                              "type": "String"
                             },
                             "Type": {
-                              "fields": null,
                               "type": "PlaceType",
                               "value": "City"
                             }
@@ -254,17 +232,14 @@
                           "value": "Place"
                         },
                         "HomeType": {
-                          "fields": null,
                           "type": "BuildingType",
                           "value": "Duplex"
                         },
                         "Number": {
-                          "fields": null,
                           "type": "Int32",
                           "value": "5"
                         },
                         "Street": {
-                          "fields": null,
                           "type": "String",
                           "value": "Elsewhere"
                         }
@@ -273,34 +248,31 @@
                       "value": "Address"
                     },
                     "Age": {
-                      "fields": null,
                       "type": "Double",
                       "value": "30"
                     },
                     "Children": {
-                      "fields": null,
-                      "type": "List`1",
-                      "value": "null"
+                      "isNull": "true",
+                      "type": "List`1"
                     },
                     "Id": {
-                      "fields": null,
                       "type": "Guid",
                       "value": "ScrubbedValue"
                     },
                     "Name": {
-                      "fields": null,
                       "type": "String",
                       "value": "Alfred Hitchcock"
                     }
                   },
                   "type": "Person",
                   "value": "Person"
-                }
-              },
-              "fields": {
-                "Prop": {
-                  "fields": null,
-                  "type": "String",
+                },
+                "this": {
+                  "Prop": {
+                    "type": "String",
+                    "value": "GenericMethodWithArguments"
+                  },
+                  "type": "GenericMethodWithArguments",
                   "value": "GenericMethodWithArguments"
                 }
               }
@@ -350,7 +322,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "GenericMethodWithArguments.Method(genericParam=Person)",
+    "message": "GenericMethodWithArguments.Method(genericParam=Person, this=GenericMethodWithArguments)",
     "service": "Probes"
   }
 ]

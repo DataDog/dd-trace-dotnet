@@ -31,6 +31,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         internal bool IsActive = true;
 
         internal bool HasLocalsOrReturnValue;
+        internal object InvocationTarget;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MethodDebuggerState"/> struct.
@@ -39,7 +40,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="scope">Scope instance</param>
         /// <param name="startTime">The intended start time of the scope, intended for scopes created in the OnMethodEnd handler</param>
         /// <param name="methodMetadataIndex">The unique index of the method's <see cref="Instrumentation.MethodMetadataInfo"/></param>
-        internal MethodDebuggerState(string probeId, Scope scope, DateTimeOffset? startTime, int methodMetadataIndex)
+        /// <param name="invocationTarget">The current invocation target ('this' object)</param>
+        internal MethodDebuggerState(string probeId, Scope scope, DateTimeOffset? startTime, int methodMetadataIndex, object invocationTarget)
         {
             _probeId = probeId;
             _scope = scope;
@@ -47,6 +49,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             _methodMetadataIndex = methodMetadataIndex;
             HasLocalsOrReturnValue = false;
             SnapshotCreator = new DebuggerSnapshotCreator();
+            InvocationTarget = invocationTarget;
         }
 
         internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataProvider.Get(_methodMetadataIndex);

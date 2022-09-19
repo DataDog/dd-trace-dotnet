@@ -10,19 +10,16 @@
           "entry": {
             "arguments": {
               "lastName": {
-                "fields": null,
                 "type": "String",
                 "value": "Last name"
               }
             },
-            "fields": {
+            "staticFields": {
               "_staticField": {
-                "fields": null,
                 "type": "String",
                 "value": "Static Field"
               },
               "StaticProperty": {
-                "fields": null,
                 "type": "String",
                 "value": "Static Property"
               }
@@ -31,28 +28,24 @@
           "return": {
             "arguments": {
               "lastName": {
-                "fields": null,
                 "type": "String",
                 "value": "Last name"
-              }
-            },
-            "fields": {
-              "_staticField": {
-                "fields": null,
-                "type": "String",
-                "value": "Static Field"
-              },
-              "StaticProperty": {
-                "fields": null,
-                "type": "String",
-                "value": "Static Property"
               }
             },
             "locals": {
               "@return": {
-                "fields": null,
                 "type": "String",
                 "value": "Last name"
+              }
+            },
+            "staticFields": {
+              "_staticField": {
+                "type": "String",
+                "value": "Static Field"
+              },
+              "StaticProperty": {
+                "type": "String",
+                "value": "Static Property"
               }
             }
           }
@@ -113,19 +106,16 @@
             "22": {
               "arguments": {
                 "lastName": {
-                  "fields": null,
                   "type": "String",
                   "value": "Last name"
                 }
               },
-              "fields": {
+              "staticFields": {
                 "_staticField": {
-                  "fields": null,
                   "type": "String",
                   "value": "Static Field"
                 },
                 "StaticProperty": {
-                  "fields": null,
                   "type": "String",
                   "value": "Static Property"
                 }

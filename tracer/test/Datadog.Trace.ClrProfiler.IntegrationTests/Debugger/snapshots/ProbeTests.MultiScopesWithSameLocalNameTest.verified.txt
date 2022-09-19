@@ -9,15 +9,18 @@
         "captures": {
           "lines": {
             "26": {
-              "fields": null,
+              "arguments": {
+                "this": {
+                  "type": "MultiScopesWithSameLocalNameTest",
+                  "value": "MultiScopesWithSameLocalNameTest"
+                }
+              },
               "locals": {
                 "i": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "0"
                 },
                 "localInFor": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "0"
                 }
@@ -63,7 +66,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultiScopesWithSameLocalNameTest.Run()\r\ni=0, localInFor=0",
+    "message": "MultiScopesWithSameLocalNameTest.Run(this=MultiScopesWithSameLocalNameTest)\r\ni=0, localInFor=0",
     "service": "Probes"
   },
   {
@@ -76,15 +79,18 @@
         "captures": {
           "lines": {
             "26": {
-              "fields": null,
+              "arguments": {
+                "this": {
+                  "type": "MultiScopesWithSameLocalNameTest",
+                  "value": "MultiScopesWithSameLocalNameTest"
+                }
+              },
               "locals": {
                 "i": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "0"
                 },
                 "localInFor": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "0"
                 }
@@ -130,7 +136,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultiScopesWithSameLocalNameTest.Run()\r\ni=0, localInFor=0",
+    "message": "MultiScopesWithSameLocalNameTest.Run(this=MultiScopesWithSameLocalNameTest)\r\ni=0, localInFor=0",
     "service": "Probes"
   },
   {
@@ -143,15 +149,18 @@
         "captures": {
           "lines": {
             "33": {
-              "fields": null,
+              "arguments": {
+                "this": {
+                  "type": "MultiScopesWithSameLocalNameTest",
+                  "value": "MultiScopesWithSameLocalNameTest"
+                }
+              },
               "locals": {
                 "i": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "0"
                 },
                 "localInFor": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "9"
                 }
@@ -197,7 +206,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultiScopesWithSameLocalNameTest.Run()\r\ni=0, localInFor=9",
+    "message": "MultiScopesWithSameLocalNameTest.Run(this=MultiScopesWithSameLocalNameTest)\r\ni=0, localInFor=9",
     "service": "Probes"
   },
   {
@@ -210,15 +219,18 @@
         "captures": {
           "lines": {
             "33": {
-              "fields": null,
+              "arguments": {
+                "this": {
+                  "type": "MultiScopesWithSameLocalNameTest",
+                  "value": "MultiScopesWithSameLocalNameTest"
+                }
+              },
               "locals": {
                 "i": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "1"
                 },
                 "localInFor": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "10"
                 }
@@ -264,7 +276,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultiScopesWithSameLocalNameTest.Run()\r\ni=1, localInFor=10",
+    "message": "MultiScopesWithSameLocalNameTest.Run(this=MultiScopesWithSameLocalNameTest)\r\ni=1, localInFor=10",
     "service": "Probes"
   }
 ]
