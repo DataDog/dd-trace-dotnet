@@ -59,9 +59,10 @@ internal class DDSketchPool
         // https://cs.github.com/DataDog/data-streams-go/blob/6772b163707c0a8ecc8c9a3b28e0dab7e0cf58d4/datastreams/aggregator.go#L30
         // while dd-java uses BitwiseLinearlyInterpolatedMapping(1.0 / 128.0) with CollapsingLowestDenseStore(1024)
         // https://cs.github.com/DataDog/dd-trace-java/blob/3386bd137e58ed7450d1704e269d3567aeadf4c0/utils/histograms/src/main/java/datadog/trace/core/histogram/DDSketchHistogram.java#L16
-        // This splits the difference.
+        // Any relative accuracy works in the backend, and they normalize it
+        // But if we match the values they use it avoids the conversion step
         return new DDSketch(
-            new LogarithmicMapping(relativeAccuracy: 0.01),
+            new LogarithmicMapping(gamma: 1.015625, indexOffset: 1338.5),
             new CollapsingLowestDenseStore(1024),
             new CollapsingLowestDenseStore(1024));
     }

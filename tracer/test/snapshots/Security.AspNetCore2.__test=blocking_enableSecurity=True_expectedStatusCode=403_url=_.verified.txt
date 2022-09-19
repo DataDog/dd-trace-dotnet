@@ -27,7 +27,7 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.event_rules.version: 1.3.0,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"Hello\\/v","parameters":[{"address":"server.request.headers.no_cookies","highlight":["Hello/V"],"key_path":["user-agent",0],"value":"Mistake Not... Hello/V"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"Hello\\/v","parameters":[{"address":"server.request.headers.no_cookies","highlight":["Hello/V"],"key_path":["user-agent","0"],"value":"Mistake Not... Hello/V"}]}]}]},
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -71,7 +71,7 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.event_rules.version: 1.3.0,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"Hello\\/v","parameters":[{"address":"server.request.headers.no_cookies","highlight":["Hello/V"],"key_path":["user-agent",0],"value":"Mistake Not... Hello/V"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"Hello\\/v","parameters":[{"address":"server.request.headers.no_cookies","highlight":["Hello/V"],"key_path":["user-agent","0"],"value":"Mistake Not... Hello/V"}]}]}]},
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -115,7 +115,7 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.event_rules.version: 1.3.0,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"Hello\\/v","parameters":[{"address":"server.request.headers.no_cookies","highlight":["Hello/V"],"key_path":["user-agent",0],"value":"Mistake Not... Hello/V"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"Hello\\/v","parameters":[{"address":"server.request.headers.no_cookies","highlight":["Hello/V"],"key_path":["user-agent","0"],"value":"Mistake Not... Hello/V"}]}]}]},
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -159,7 +159,7 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.event_rules.version: 1.3.0,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"Hello\\/v","parameters":[{"address":"server.request.headers.no_cookies","highlight":["Hello/V"],"key_path":["user-agent",0],"value":"Mistake Not... Hello/V"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"Hello\\/v","parameters":[{"address":"server.request.headers.no_cookies","highlight":["Hello/V"],"key_path":["user-agent","0"],"value":"Mistake Not... Hello/V"}]}]}]},
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -203,7 +203,7 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.event_rules.version: 1.3.0,
-      _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"Hello\\/v","parameters":[{"address":"server.request.headers.no_cookies","highlight":["Hello/V"],"key_path":["user-agent",0],"value":"Mistake Not... Hello/V"}]}]}]},
+      _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"Hello\\/v","parameters":[{"address":"server.request.headers.no_cookies","highlight":["Hello/V"],"key_path":["user-agent","0"],"value":"Mistake Not... Hello/V"}]}]}]},
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet

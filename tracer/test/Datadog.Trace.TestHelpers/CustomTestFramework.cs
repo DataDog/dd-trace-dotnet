@@ -10,6 +10,7 @@ using System.Linq;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
@@ -20,6 +21,7 @@ namespace Datadog.Trace.TestHelpers
         public CustomTestFramework(IMessageSink messageSink)
             : base(messageSink)
         {
+            FluentAssertions.Formatting.Formatter.AddFormatter(new DiffPaneModelFormatter());
         }
 
         public CustomTestFramework(IMessageSink messageSink, Type typeTestedAssembly)

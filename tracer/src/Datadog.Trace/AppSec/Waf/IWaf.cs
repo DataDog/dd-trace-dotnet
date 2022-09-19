@@ -4,18 +4,23 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Waf.ReturnTypesManaged;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Waf
 {
     internal interface IWaf : IDisposable
     {
-        public Version Version { get; }
+        public string Version { get; }
 
         public bool InitializedSuccessfully { get; }
 
         public InitializationResult InitializationResult { get; }
 
         public IContext CreateContext();
+
+        public bool UpdateRules(IEnumerable<RuleData[]> res);
     }
 }

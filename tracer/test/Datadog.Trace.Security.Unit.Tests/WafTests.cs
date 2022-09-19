@@ -20,6 +20,8 @@ namespace Datadog.Trace.Security.Unit.Tests
     [Collection("WafTests")]
     public class WafTests
     {
+        public const int TimeoutMicroSeconds = 1_000_000;
+
         [Theory]
         [InlineData("[$ne]", "arg", "nosql_injection", "crs-942-290")]
         [InlineData("attack", "appscan_fingerprint", "security_scanner", "crs-913-120")]
@@ -108,8 +110,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             using var waf = Waf.Create(string.Empty, string.Empty);
             waf.Should().NotBeNull();
             using var context = waf.CreateContext();
-            var result = context.Run(args, 1_000_000);
-            result.ReturnCode.Should().Be(ReturnCode.Monitor);
+            var result = context.Run(args, TimeoutMicroSeconds);
+            result.ReturnCode.Should().Be(ReturnCode.Match);
             var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
             resultData.Rule.Tags.Type.Should().Be(flow);
             resultData.Rule.Id.Should().Be(rule);

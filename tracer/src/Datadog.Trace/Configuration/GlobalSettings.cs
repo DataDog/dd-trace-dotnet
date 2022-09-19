@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.IO;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -48,9 +46,9 @@ namespace Datadog.Trace.Configuration
         public bool DebugEnabled { get; private set; }
 
         /// <summary>
-        /// Gets or sets the global settings instance.
+        /// Gets the global settings instance.
         /// </summary>
-        internal static GlobalSettings Source { get; set; } = FromDefaultSources();
+        internal static GlobalSettings Instance { get; private set; } = FromDefaultSources();
 
         /// <summary>
         /// Gets a value indicating whether the use
@@ -67,7 +65,7 @@ namespace Datadog.Trace.Configuration
         /// <param name="enabled">Whether debug is enabled.</param>
         public static void SetDebugEnabled(bool enabled)
         {
-            Source.DebugEnabled = enabled;
+            Instance.DebugEnabled = enabled;
 
             if (enabled)
             {
@@ -86,76 +84,18 @@ namespace Datadog.Trace.Configuration
         public static void Reload()
         {
             DatadogLogging.Reset();
-            Source = FromDefaultSources();
+            GlobalConfigurationSource.Reload();
+            Instance = FromDefaultSources();
         }
 
         /// <summary>
         /// Create a <see cref="GlobalSettings"/> populated from the default sources
-        /// returned by <see cref="CreateDefaultConfigurationSource"/>.
+        /// returned by <see cref="GlobalConfigurationSource.Instance"/>.
         /// </summary>
         /// <returns>A <see cref="TracerSettings"/> populated from the default sources.</returns>
         public static GlobalSettings FromDefaultSources()
         {
-            var source = CreateDefaultConfigurationSource();
-            return new GlobalSettings(source);
-        }
-
-        /// <summary>
-        /// Creates a <see cref="IConfigurationSource"/> by combining environment variables,
-        /// AppSettings where available, and a local datadog.json file, if present.
-        /// </summary>
-        /// <returns>A new <see cref="IConfigurationSource"/> instance.</returns>
-        internal static CompositeConfigurationSource CreateDefaultConfigurationSource()
-        {
-            // env > AppSettings > datadog.json
-            var configurationSource = new CompositeConfigurationSource
-            {
-                new EnvironmentConfigurationSource(),
-
-#if NETFRAMEWORK
-                // on .NET Framework only, also read from app.config/web.config
-                new NameValueConfigurationSource(System.Configuration.ConfigurationManager.AppSettings)
-#endif
-            };
-
-            if (TryLoadJsonConfigurationFile(configurationSource, null, out var jsonConfigurationSource))
-            {
-                configurationSource.Add(jsonConfigurationSource);
-            }
-
-            return configurationSource;
-        }
-
-        internal static bool TryLoadJsonConfigurationFile(IConfigurationSource configurationSource, string baseDirectory, out IConfigurationSource jsonConfigurationSource)
-        {
-            try
-            {
-                // if environment variable is not set, look for default file name in the current directory
-                var configurationFileName = configurationSource.GetString(ConfigurationKeys.ConfigurationFileName) ??
-                                            configurationSource.GetString("DD_DOTNET_TRACER_CONFIG_FILE") ??
-                                            Path.Combine(baseDirectory ?? GetCurrentDirectory(), "datadog.json");
-
-                if (string.Equals(Path.GetExtension(configurationFileName), ".JSON", StringComparison.OrdinalIgnoreCase) &&
-                    File.Exists(configurationFileName))
-                {
-                    jsonConfigurationSource = JsonConfigurationSource.FromFile(configurationFileName);
-                    return true;
-                }
-            }
-            catch (Exception)
-            {
-                // Unable to load the JSON file from disk
-                // The configuration manager should not depend on a logger being bootstrapped yet
-                // so do not do anything
-            }
-
-            jsonConfigurationSource = default;
-            return false;
-        }
-
-        private static string GetCurrentDirectory()
-        {
-            return System.AppDomain.CurrentDomain.BaseDirectory;
+            return new GlobalSettings(GlobalConfigurationSource.Instance);
         }
     }
 }

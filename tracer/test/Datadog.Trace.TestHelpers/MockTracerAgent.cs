@@ -33,6 +33,8 @@ namespace Datadog.Trace.TestHelpers
     {
         private readonly CancellationTokenSource _cancellationTokenSource = new();
 
+        private AgentBehaviour behaviour = AgentBehaviour.Normal;
+
         protected MockTracerAgent(bool telemetryEnabled, TestTransports transport)
         {
             TelemetryEnabled = telemetryEnabled;
@@ -324,6 +326,8 @@ namespace Datadog.Trace.TestHelpers
             _cancellationTokenSource.Cancel();
         }
 
+        public void SetBehaviour(AgentBehaviour behaviour) => this.behaviour = behaviour;
+
         protected void IgnoreException(Action action)
         {
             try
@@ -356,37 +360,66 @@ namespace Datadog.Trace.TestHelpers
             MetricsReceived?.Invoke(this, new EventArgs<string>(stats));
         }
 
-        private protected string HandleHttpRequest(MockHttpParser.MockHttpRequest request)
+        private protected MockTracerResponse HandleHttpRequest(MockHttpParser.MockHttpRequest request)
         {
+            string response;
+            int statusCode;
+            bool sendResponse;
+            var isTraceCommand = false;
+
             if (TelemetryEnabled && request.PathAndQuery.StartsWith("/" + TelemetryConstants.AgentTelemetryEndpoint))
             {
                 HandlePotentialTelemetryData(request);
-                return "{}";
+                response = "{}";
             }
             else if (request.PathAndQuery.EndsWith("/info"))
             {
-                return JsonConvert.SerializeObject(Configuration);
+                response = JsonConvert.SerializeObject(Configuration);
             }
             else if (request.PathAndQuery.StartsWith("/debugger/v1/input"))
             {
                 HandlePotentialDebuggerData(request);
-                return "{}";
+                response = "{}";
             }
             else if (request.PathAndQuery.StartsWith("/v0.6/stats"))
             {
                 HandlePotentialStatsData(request);
-                return "{}";
+                response = "{}";
             }
             else if (request.PathAndQuery.StartsWith("/v0.7/config"))
             {
                 HandlePotentialRemoteConfig(request);
-                return RcmResponse ?? "{}";
+                response = RcmResponse ?? "{}";
             }
             else
             {
                 HandlePotentialTraces(request);
-                return "{}";
+                response = "{}";
+                isTraceCommand = true;
             }
+
+            if (isTraceCommand)
+            {
+                statusCode = 200;
+                sendResponse = true;
+            }
+            else
+            {
+                if (behaviour == AgentBehaviour.WrongAnswer)
+                {
+                    response = "WRONG_ANSWER";
+                }
+
+                sendResponse = behaviour != AgentBehaviour.NoAnswer;
+                statusCode = behaviour == AgentBehaviour.Return500 ? 500 : (behaviour == AgentBehaviour.Return404 ? 404 : 200);
+            }
+
+            return new MockTracerResponse()
+            {
+                Response = response,
+                SendResponse = sendResponse,
+                StatusCode = statusCode
+            };
         }
 
         private void HandlePotentialTraces(MockHttpParser.MockHttpRequest request)
@@ -574,7 +607,15 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private byte[] GetResponseBytes(string body)
+        private string GetStatusString(int status) => status switch
+        {
+            200 => "200 OK",
+            404 => "404 Not Found",
+            500 => "500 Internal Server Error",
+            _ => status.ToString(),
+        };
+
+        private byte[] GetResponseBytes(string body, int status)
         {
             if (string.IsNullOrEmpty(body))
             {
@@ -585,7 +626,8 @@ namespace Datadog.Trace.TestHelpers
 
             var sb = new StringBuilder();
             sb
-               .Append("HTTP/1.1 200 OK")
+               .Append("HTTP/1.1 ")
+               .Append(GetStatusString(status))
                .Append(DatadogHttpValues.CrLf)
                .Append("Date: ")
                .Append(DateTime.UtcNow.ToString("ddd, dd MMM yyyy H:mm::ss K"))
@@ -822,21 +864,26 @@ namespace Datadog.Trace.TestHelpers
                                 ctx.Response.AddHeader("Datadog-Agent-Version", Version);
                             }
 
-                            var response = HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request));
-                            var buffer = Encoding.UTF8.GetBytes(response);
-                            ctx.Response.ContentType = "application/json";
-                            ctx.Response.ContentLength64 = buffer.LongLength;
-                            ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
+                            var mockTracerResponse = HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request));
+
+                            if (mockTracerResponse.SendResponse)
+                            {
+                                var buffer = Encoding.UTF8.GetBytes(mockTracerResponse.Response);
+
+                                if (ctx.Response.StatusCode == 200)
+                                {
+                                    ctx.Response.StatusCode = mockTracerResponse.StatusCode;
+                                }
+
+                                ctx.Response.ContentType = "application/json";
+                                ctx.Response.ContentLength64 = buffer.LongLength;
+                                ctx.Response.OutputStream.Write(buffer, 0, buffer.Length);
+                                ctx.Response.Close();
+                            }
                         }
                         catch (Exception ex)
                         {
                             Output?.WriteLine("[HandleHttpRequests]Error processing web request" + ex);
-                        }
-                        finally
-                        {
-                            // NOTE: HttpStreamRequest doesn't support Transfer-Encoding: Chunked
-                            // (Setting content-length avoids that)
-
                             ctx.Response.Close();
                         }
                     }
@@ -970,10 +1017,13 @@ namespace Datadog.Trace.TestHelpers
             private async Task HandleNamedPipeTraces(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
             {
                 var request = await MockHttpParser.ReadRequest(namedPipeServerStream);
-                var response = HandleHttpRequest(request);
+                var mockTracerResponse = HandleHttpRequest(request);
 
-                var responseBytes = GetResponseBytes(body: response);
-                await namedPipeServerStream.WriteAsync(responseBytes, offset: 0, count: responseBytes.Length);
+                if (mockTracerResponse.SendResponse)
+                {
+                    var responseBytes = GetResponseBytes(body: mockTracerResponse.Response, status: mockTracerResponse.StatusCode);
+                    await namedPipeServerStream.WriteAsync(responseBytes, offset: 0, count: responseBytes.Length);
+                }
             }
 
             internal class PipeServer : IDisposable
@@ -1187,11 +1237,13 @@ namespace Datadog.Trace.TestHelpers
                         using var stream = new NetworkStream(handler);
 
                         var request = await MockHttpParser.ReadRequest(stream);
-                        var response = HandleHttpRequest(request);
+                        var mockTracerResponse = HandleHttpRequest(request);
 
-                        await stream.WriteAsync(GetResponseBytes(body: response));
-
-                        handler.Shutdown(SocketShutdown.Both);
+                        if (mockTracerResponse.SendResponse)
+                        {
+                            await stream.WriteAsync(GetResponseBytes(body: mockTracerResponse.Response, status: mockTracerResponse.StatusCode));
+                            handler.Shutdown(SocketShutdown.Both);
+                        }
                     }
                     catch (SocketException ex)
                     {

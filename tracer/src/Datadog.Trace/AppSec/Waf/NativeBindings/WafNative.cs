@@ -23,6 +23,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private readonly GetVersionDelegate _getVersionField;
         private readonly InitDelegate _initField;
+        private readonly UpdateRuleDelegate _updateRuleField;
         private readonly InitContextDelegate _initContextField;
         private readonly RunDelegate _runField;
         private readonly DestroyDelegate _destroyField;
@@ -40,6 +41,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly IntPtr _freeObjectFuncField;
         private readonly FreeRulesetInfoDelegate _rulesetInfoFreeField;
         private readonly SetupLogCallbackDelegate _setupLogCallbackField;
+
+        private string version = null;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="WafNative"/> class.
@@ -59,27 +62,24 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _objectArrayAddField = GetDelegateForNativeFunction<ObjectArrayAddDelegate>(handle, "ddwaf_object_array_add");
             _objectArrayGetIndex = GetDelegateForNativeFunction<ObjectArrayGetAtIndexDelegate>(handle, "ddwaf_object_get_index");
             _objectMapAddFieldX64 =
-                Environment.Is64BitProcess ?
-                    GetDelegateForNativeFunction<ObjectMapAddDelegateX64>(handle, "ddwaf_object_map_addl") :
-                    null;
+                Environment.Is64BitProcess ? GetDelegateForNativeFunction<ObjectMapAddDelegateX64>(handle, "ddwaf_object_map_addl") : null;
             _objectMapAddFieldX86 =
-                Environment.Is64BitProcess ?
-                    null :
-                    GetDelegateForNativeFunction<ObjectMapAddDelegateX86>(handle, "ddwaf_object_map_addl");
+                Environment.Is64BitProcess ? null : GetDelegateForNativeFunction<ObjectMapAddDelegateX86>(handle, "ddwaf_object_map_addl");
             _freeObjectield = GetDelegateForNativeFunction<FreeObjectDelegate>(handle, "ddwaf_object_free", out _freeObjectFuncField);
             _freeResultField = GetDelegateForNativeFunction<FreeResultDelegate>(handle, "ddwaf_result_free");
             _rulesetInfoFreeField = GetDelegateForNativeFunction<FreeRulesetInfoDelegate>(handle, "ddwaf_ruleset_info_free");
             _getVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(handle, "ddwaf_get_version");
+            _updateRuleField = GetDelegateForNativeFunction<UpdateRuleDelegate>(handle, "ddwaf_update_rule_data");
             // setup logging
             var setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(handle, "ddwaf_set_log_cb");
             // convert to a delegate and attempt to pin it by assigning it to  field
             _setupLogCallbackField = new SetupLogCallbackDelegate(LoggingCallback);
             // set the log level and setup the logger
-            var level = GlobalSettings.Source.DebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
+            var level = GlobalSettings.Instance.DebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
             setupLogging(_setupLogCallbackField, level);
         }
 
-        private delegate void GetVersionDelegate(ref DdwafVersionStruct version);
+        private delegate IntPtr GetVersionDelegate();
 
         private delegate void FreeResultDelegate(ref DdwafResultStruct output);
 
@@ -87,7 +87,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate IntPtr InitDelegate(IntPtr wafRule, ref DdwafConfigStruct config, ref DdwafRuleSetInfoStruct ruleSetInfo);
 
-        private delegate IntPtr InitContextDelegate(IntPtr powerwafHandle, IntPtr objFree);
+        private delegate DDWAF_RET_CODE UpdateRuleDelegate(IntPtr powerwafHandle, IntPtr data);
+
+        private delegate IntPtr InitContextDelegate(IntPtr powerwafHandle);
 
         private delegate IntPtr InitMetricsCollectorDelegate(IntPtr powerwafHandle);
 
@@ -138,16 +140,22 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         internal IntPtr ObjectFreeFuncPtr => _freeObjectFuncField;
 
-        internal DdwafVersionStruct GetVersion()
+        internal string GetVersion()
         {
-            DdwafVersionStruct version = default;
-            _getVersionField(ref version);
+            if (version == null)
+            {
+                var ptr = _getVersionField();
+                version = Marshal.PtrToStringAnsi(ptr);
+            }
+
             return version;
         }
 
         internal IntPtr Init(IntPtr wafRule, ref DdwafConfigStruct config, ref DdwafRuleSetInfoStruct ruleSetInfo) => _initField(wafRule, ref config, ref ruleSetInfo);
 
-        internal IntPtr InitContext(IntPtr powerwafHandle, IntPtr objFree) => _initContextField(powerwafHandle, objFree);
+        internal DDWAF_RET_CODE UpdateRuleData(IntPtr powerwafHandle, IntPtr data) => _updateRuleField(powerwafHandle, data);
+
+        internal IntPtr InitContext(IntPtr powerwafHandle) => _initContextField(powerwafHandle);
 
         internal DDWAF_RET_CODE Run(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs) => _runField(context, newArgs, ref result, timeLeftInUs);
 
@@ -188,9 +196,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         internal bool ObjectArrayAdd(IntPtr array, IntPtr entry) => _objectArrayAddField(array, entry);
 
         // Setting entryNameLength to 0 will result in the entryName length being re-computed with strlen
-        internal bool ObjectMapAdd(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry) => Environment.Is64BitProcess ?
-                    _objectMapAddFieldX64(map, entryName, entryNameLength, entry) :
-                    _objectMapAddFieldX86(map, entryName, (uint)entryNameLength, entry);
+        internal bool ObjectMapAdd(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry) => Environment.Is64BitProcess ? _objectMapAddFieldX64(map, entryName, entryNameLength, entry) : _objectMapAddFieldX86(map, entryName, (uint)entryNameLength, entry);
 
         internal void ObjectFreePtr(IntPtr input) => _freeObjectield(input);
 
