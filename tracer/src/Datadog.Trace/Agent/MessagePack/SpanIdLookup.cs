@@ -59,7 +59,7 @@ internal readonly struct SpanIdLookup
         }
 
         // if we created a HashSet, use it
-        if (_hashSet != null)
+        if (_hashSet is not null)
         {
             return _hashSet.Contains(value);
         }
