@@ -38,6 +38,8 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
              *      - CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(TArg1 arg1, TArg2);
              *      - CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, ...>(TArg1 arg1, TArg2, ...);
              *
+             * Note: OnMethodBegin signatures can differ from the [InstrumentMethod] parameter type names,
+             *       but the order of the parameter (if used in the OnMethodBegin body) does matter.
              */
 
             Log.Debug($"Creating BeginMethod Dynamic Method for '{integrationType.FullName}' integration. [Target={targetType.FullName}]");
