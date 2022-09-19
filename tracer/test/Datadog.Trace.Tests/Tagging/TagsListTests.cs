@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Agent.MessagePack;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
@@ -326,22 +325,6 @@ namespace Datadog.Trace.Tests.Tagging
                 remainingValues.Remove(tagValue)
                                .Should()
                                .BeTrue($"Property {propertyAndTag.property.Name} of type {type.Name} is not mapped");
-            }
-        }
-
-        private class MockTracer : IDatadogTracer
-        {
-            public string DefaultServiceName => null;
-
-            public ISampler Sampler => null;
-
-            public ImmutableTracerSettings Settings { get; } = new(new TracerSettings());
-
-            public ArraySegment<Span> TraceChunk { get; private set; }
-
-            public void Write(ArraySegment<Span> traceChunk)
-            {
-                TraceChunk = traceChunk;
             }
         }
     }
