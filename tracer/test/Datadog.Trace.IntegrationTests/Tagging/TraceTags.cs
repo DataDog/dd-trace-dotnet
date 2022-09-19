@@ -4,11 +4,11 @@
 // </copyright>
 
 using System;
+using System.Linq;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
-using Moq;
 using Xunit;
 
 namespace Datadog.Trace.IntegrationTests.Tagging;
@@ -24,28 +24,31 @@ public class TraceTags
     public void SerializeSamplingMechanismTag(int samplingMechanism)
     {
         // set up the trace
-        var tracer = new Mock<IDatadogTracer>();
-        var traceContext = new TraceContext(tracer.Object);
+        var tracer = new MockTracer();
+        var traceContext = new TraceContext(tracer);
         traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, samplingMechanism);
 
         // create a span
         var spanContext = new SpanContext(SpanContext.None, traceContext, "service1");
         var span = new Span(spanContext, start: null);
         traceContext.AddSpan(span);
+        span.Finish();
 
-        var deserializedSpan = SerializeSpan(span);
+        var deserializedSpan = Serialize(tracer.TraceChunk, traceContext).Single();
 
         deserializedSpan.Tags.Should().Contain("_dd.p.dm", $"-{samplingMechanism}");
     }
 
-    private static MockSpan SerializeSpan(Span span)
+    private static MockSpan[] Serialize(ArraySegment<Span> traceChunk, TraceContext traceContext)
     {
         var buffer = Array.Empty<byte>();
+        var model = new TraceChunkModel(traceChunk, traceContext);
 
         // use vendored MessagePack to serialize
-        Vendors.MessagePack.MessagePackSerializer.Serialize(ref buffer, 0, span, SpanFormatterResolver.Instance);
+        var resolver = SpanFormatterResolver.Instance;
+        Vendors.MessagePack.MessagePackSerializer.Serialize(ref buffer, 0, model, resolver);
 
         // use nuget MessagePack to deserialize
-        return global::MessagePack.MessagePackSerializer.Deserialize<MockSpan>(buffer);
+        return global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(buffer);
     }
 }
