@@ -61,7 +61,7 @@ internal readonly struct SpanIdLookup
         // if we created a HashSet, use it
         if (_hashSet != null)
         {
-            return _hashSet?.Contains(value) ?? false;
+            return _hashSet.Contains(value);
         }
 
         // If we didn't create a HashSet, iterate over the span array.
