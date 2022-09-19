@@ -337,6 +337,8 @@ namespace Datadog.Trace.AppSec
             {
                 SharedRemoteConfiguration.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
                 SharedRemoteConfiguration.AsmDataProduct.ConfigChanged += AsmDataProductConfigChanged;
+                // reapply rules
+                _waf.UpdateRules(_asmDataConfigs.SelectMany(p => p.Value.RulesData));
                 _instrumentationGateway.StartRequest += RunWafAndReact;
                 _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
                 _instrumentationGateway.PathParamsAvailable += RunWafAndReact;

@@ -11,7 +11,6 @@ using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypesManaged;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -94,9 +93,15 @@ namespace Datadog.Trace.AppSec.Waf
 
         public bool UpdateRules(IEnumerable<RuleData> res)
         {
+            if (res.Count() == 0)
+            {
+                return false;
+            }
+
             var finalRuleDatas = MergeRuleDatas(res);
             var encoded = encoder.Encode(finalRuleDatas, new List<Obj>(), false);
             var ret = wafNative.UpdateRuleData(ruleHandle.Value, encoded.RawPtr);
+            Log.Debug("{number} rules have been updated and status is {status}", finalRuleDatas.Count, ret);
             return ret == DDWAF_RET_CODE.DDWAF_OK;
         }
 
