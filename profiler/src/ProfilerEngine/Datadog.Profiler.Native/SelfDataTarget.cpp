@@ -1,19 +1,24 @@
 #include "SelfDataTarget.h"
-#include "cordebug.h"
 #include "HResultConverter.h"
+#include "cordebug.h"
 
 #include <filesystem>
 #include <iostream>
 
 #ifndef _WINDOWS
 #include <link.h>
+#include <fcntl.h>
 #endif
 
+#define MIDL_DEFINE_GUID(type, name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
+    EXTERN_C __declspec(selectany) const type name = {l, w1, w2, {b1, b2, b3, b4, b5, b6, b7, b8}}
 
-#define MIDL_DEFINE_GUID(type,name,l,w1,w2,b1,b2,b3,b4,b5,b6,b7,b8) \
-        EXTERN_C __declspec(selectany) const type name = {l,w1,w2,{b1,b2,b3,b4,b5,b6,b7,b8}}
+MIDL_DEFINE_GUID(IID, IID_ICLRDataTarget2, 0x6d05fae3, 0x189c, 0x4630, 0xa6, 0xdc, 0x1c, 0x25, 0x1e, 0x1c, 0x01, 0xab);
 
-MIDL_DEFINE_GUID(IID, IID_ICLRDataTarget2,0x6d05fae3,0x189c,0x4630,0xa6,0xdc,0x1c,0x25,0x1e,0x1c,0x01,0xab);
+extern "C" void* DacInstantiateTypeByAddress(void* addr, uint32_t size, bool throwEx)
+{
+    std::cout << "DacInstantiateTypeByAddress" << std::endl;
+}
 
 HRESULT SelfDataTarget::QueryInterface(REFIID riid, void** ppvObject)
 {
@@ -71,7 +76,7 @@ HRESULT SelfDataTarget::GetPointerSize(ULONG32* size)
 
 #ifndef _WINDOWS
 
-int GetImageBaseCallback(struct dl_phdr_info *info, size_t size, void *data)
+int GetImageBaseCallback(struct dl_phdr_info* info, size_t size, void* data)
 {
     auto result = (std::pair<LPCWSTR, size_t>*)data;
 
@@ -94,7 +99,7 @@ int GetImageBaseCallback(struct dl_phdr_info *info, size_t size, void *data)
 HRESULT SelfDataTarget::GetImageBase(LPCWSTR moduleName, CLRDATA_ADDRESS* baseAddress)
 {
     std::cout << "GetImageBase - " << moduleName << std::endl;
-    
+
 #ifdef _WINDOWS
     HMODULE module;
 
@@ -103,7 +108,7 @@ HRESULT SelfDataTarget::GetImageBase(LPCWSTR moduleName, CLRDATA_ADDRESS* baseAd
         std::cout << "Locating the module failed" << std::endl;
         return E_FAIL;
     }
-    
+
     *baseAddress = (CLRDATA_ADDRESS)module;
 
 #else
@@ -113,7 +118,8 @@ HRESULT SelfDataTarget::GetImageBase(LPCWSTR moduleName, CLRDATA_ADDRESS* baseAd
 
     dl_iterate_phdr(&GetImageBaseCallback, &result);
 
-    if (result.second == 0) {
+    if (result.second == 0)
+    {
         std::cout << "Locating the module failed" << std::endl;
         return E_FAIL;
     }
@@ -128,11 +134,29 @@ HRESULT SelfDataTarget::GetImageBase(LPCWSTR moduleName, CLRDATA_ADDRESS* baseAd
 
 HRESULT SelfDataTarget::ReadVirtual(CLRDATA_ADDRESS address, PBYTE buffer, ULONG32 size, ULONG32* done)
 {
-    //std::cout << "SelfDataTarget::ReadVirtual" << std::endl;
+    //std::cout << "SelfDataTarget::ReadVirtual - Reading " << size << " bytes at address " << std::hex << address << std::endl;
+
+    if (address < 0x1000)
+    {
+        std::cout << "ReadVirtual null" << std::endl;
+        *done = 0;
+        return S_OK;
+    }
+
+#ifndef _WINDOWS
+    int nullfd = open("/dev/random", O_WRONLY);
+    
+    if (write(nullfd, (void*)address, size) < 0)
+    {
+        std::cout << "ReadVirtual error when writing " << size << " bytes to " << std::hex << address << std::endl;
+        close(nullfd);
+        return E_FAIL;
+    }
+    close(nullfd);
+#endif
 
     memcpy(buffer, (BYTE*)address, size);
     *done = size;
-
     return S_OK;
 }
 
@@ -162,7 +186,7 @@ HRESULT SelfDataTarget::GetCurrentThreadID(ULONG32* threadID)
 
 HRESULT SelfDataTarget::GetThreadContext(ULONG32 threadID, ULONG32 contextFlags, ULONG32 contextSize, PBYTE buffer)
 {
-    //std::cout << "SelfDataTarget::GetThreadContext" << std::endl;
+    // std::cout << "SelfDataTarget::GetThreadContext" << std::endl;
 #ifdef _WINDOWS
     const auto thread = OpenThread(THREAD_ALL_ACCESS, FALSE, threadID);
 
@@ -176,9 +200,9 @@ HRESULT SelfDataTarget::GetThreadContext(ULONG32 threadID, ULONG32 contextFlags,
         success = ::GetThreadContext(thread, &context);
     }
 
-    //std::cout << "ThreadContext " << success << " rip : " << std::hex << context.Rip << std::endl;
+    // std::cout << "ThreadContext " << success << " rip : " << std::hex << context.Rip << std::endl;
 
-    memcpy(&buffer, &context, contextSize);
+    memcpy(buffer, &context, contextSize);
 
     CloseHandle(thread);
 
@@ -193,7 +217,7 @@ HRESULT SelfDataTarget::GetThreadContext(ULONG32 threadID, ULONG32 contextFlags,
         /*CONTEXT context = {0};
         context.ContextFlags = contextFlags;*/
 
-        //std::cout << "Storing: " << OverrideIp << " - " << OverrideRsp << " - " << OverrideRbp << std::endl;
+        // std::cout << "Storing: " << OverrideIp << " - " << OverrideRsp << " - " << OverrideRbp << std::endl;
 
         context->Rip = OverrideIp;
         context->Rsp = OverrideRsp;
@@ -231,14 +255,14 @@ HRESULT SelfDataTarget::GetThreadContext(ULONG32 threadID, ULONG32 contextFlags,
         context.R14 = OverrideR14;
         context.R15 = OverrideR15;*/
 
-        //memcpy(&buffer, &context, contextSize);
+        // memcpy(&buffer, &context, contextSize);
 
-        //std::cout << "Using overriden registers: " << context.Rip << " - " << context.Rsp << " - " << context.Rbp << std::endl;
-        //std::cout << "Using overriden registers: " << context->Rip << " - " << context->Rsp << " - " << context->Rbp << std::endl;
+        // std::cout << "Using overriden registers: " << context.Rip << " - " << context.Rsp << " - " << context.Rbp << std::endl;
+        // std::cout << "Using overriden registers: " << context->Rip << " - " << context->Rsp << " - " << context->Rbp << std::endl;
     }
     else
     {
-        CONTEXT_CaptureContext((LPCONTEXT)buffer);        
+        CONTEXT_CaptureContext((LPCONTEXT)buffer);
     }
 
     return S_OK;

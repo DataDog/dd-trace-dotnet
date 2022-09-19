@@ -338,12 +338,12 @@ static int callback(struct dl_phdr_info *info, size_t size, void *data)
     return 0;
 }
 
+#endif
+
 #define MIDL_DEFINE_GUID(type,name,l,w1,w2,b1,b2,b3,b4,b5,b6,b7,b8) \
         EXTERN_C __declspec(selectany) const type name = {l,w1,w2,{b1,b2,b3,b4,b5,b6,b7,b8}}
 
 MIDL_DEFINE_GUID(IID, IID_IXCLRDataProcess,0x5c552ab6,0xfc09,0x4cb3,0x8e,0x36,0x22,0xfa,0x03,0xc7,0x98,0xb7);
-
-#endif
 
 DacService* CorProfilerCallback::InitializeDac()
 {

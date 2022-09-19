@@ -189,6 +189,7 @@ static HRESULT GetFrameLocation(IXCLRDataStackWalk* pStackWalk, CLRDATA_ADDRESS*
         printf("GetFrameContext failed: %lx\n", hr);
         return hr;
     }
+
     if (hr == S_FALSE)
     {
         // GetFrameContext returns S_FALSE if the frame iterator is invalid.  That's basically an error for us.

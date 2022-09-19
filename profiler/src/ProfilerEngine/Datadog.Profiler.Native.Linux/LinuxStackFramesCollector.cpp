@@ -374,10 +374,8 @@ std::int32_t LinuxStackFramesCollector::StackWalkWithDac(void* context)
 
     IXCLRDataStackWalk* stackWalk;
 
-    result = task->CreateStackWalk(CLRDATA_SIMPFRAME_UNRECOGNIZED |
-                                       CLRDATA_SIMPFRAME_MANAGED_METHOD |
-                                       CLRDATA_SIMPFRAME_RUNTIME_MANAGED_CODE |
-                                       CLRDATA_SIMPFRAME_RUNTIME_UNMANAGED_CODE,
+    result = task->CreateStackWalk(CLRDATA_SIMPFRAME_MANAGED_METHOD |
+                                       CLRDATA_SIMPFRAME_RUNTIME_MANAGED_CODE,
                                    &stackWalk);
     
     if (FAILED(result))

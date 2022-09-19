@@ -93,4 +93,5 @@ private:
     ErrorStatistics _errorStatistics;
 
     DacService* _dac;
+    IXCLRDataStackWalk* _stackWalker;
 };

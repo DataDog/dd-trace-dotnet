@@ -122,3 +122,31 @@ int dladdr(const void* addr_arg, Dl_info* info)
 
     return result;
 }
+
+
+static void* (*__real_malloc)(size_t size) = NULL;
+
+void* malloc(size_t size)
+{
+    if (__real_malloc == NULL)
+    {
+        __real_malloc = dlsym(RTLD_NEXT, "malloc");
+    }
+
+    sigset_t oldOne;
+    sigset_t newOne;
+
+    // initialize the set to all signals
+    sigfillset(&newOne);
+
+    // prevent any signals from interrupting the execution of the real malloc
+    pthread_sigmask(SIG_SETMASK, &newOne, &oldOne);
+
+    // call the real malloc
+    void* result = __real_malloc(size);
+
+    // restore the previous state for signals
+    pthread_sigmask(SIG_SETMASK, &oldOne, NULL);
+
+    return result;
+}
