@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 
@@ -242,6 +243,11 @@ namespace Datadog.Trace.Configuration
         public const string ApiKey = "DD_API_KEY";
 
         /// <summary>
+        /// Configuration key for setting the Application key, used by the ITR.
+        /// </summary>
+        public const string ApplicationKey = "DD_APPLICATION_KEY";
+
+        /// <summary>
         /// Configuration key for setting the default Datadog destination site.
         /// Defaults to "datadoghq.com".
         /// </summary>
@@ -372,7 +378,6 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Configuration key for enabling or disabling Code Coverage in CI Visibility.
-            /// Default value is false (disabled).
             /// </summary>
             public const string CodeCoverage = "DD_CIVISIBILITY_CODE_COVERAGE_ENABLED";
 
@@ -386,6 +391,17 @@ namespace Datadog.Trace.Configuration
             /// Default Value is false (disabled)
             /// </summary>
             public const string GitUploadEnabled = "DD_CIVISIBILITY_GIT_UPLOAD_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Intelligent Test Runner test skipping feature in CI Visibility
+            /// </summary>
+            public const string TestsSkippingEnabled = "DD_CIVISIBILITY_TESTSSKIPPING_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling Intelligent Test Runner in CI Visibility
+            /// Default Value is false (disabled)
+            /// </summary>
+            public const string IntelligentTestRunnerEnabled = "DD_CIVISIBILITY_ITR_ENABLED";
         }
 
         /// <summary>

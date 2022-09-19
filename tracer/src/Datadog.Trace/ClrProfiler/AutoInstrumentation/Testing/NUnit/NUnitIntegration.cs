@@ -2,18 +2,17 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Pdb;
-using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
@@ -21,11 +20,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
     {
         internal const string IntegrationName = nameof(Configuration.IntegrationId.NUnit);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.NUnit;
+        internal const string SkipReasonKey = "_SKIPREASON";
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NUnitIntegration));
 
         internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
-        internal static Scope CreateScope(ITest currentTest, Type targetType)
+        internal static Scope? CreateScope(ITest currentTest, Type targetType)
         {
             MethodInfo testMethod = currentTest.Method.MethodInfo;
             object[] testMethodArguments = currentTest.Arguments;
@@ -36,13 +36,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 return null;
             }
 
+            Common.Prepare(testMethod);
+
             string testFramework = "NUnit";
             string fullName = currentTest.FullName;
             string composedTestName = currentTest.Name;
 
             string testName = testMethod.Name;
-            string testSuite = testMethod.DeclaringType?.FullName;
-            string testBundle = testMethod.DeclaringType?.Assembly?.GetName().Name;
+            string testSuite = testMethod.DeclaringType?.FullName ?? string.Empty;
+            string testBundle = testMethod.DeclaringType?.Assembly.GetName().Name ?? string.Empty;
 
             // Extract the test suite from the full name to support custom fixture parameters and test declared in base classes.
             if (fullName.EndsWith("." + composedTestName))
@@ -50,9 +52,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 testSuite = fullName.Substring(0, fullName.Length - (composedTestName.Length + 1));
             }
 
-            string skipReason = null;
+            string? skipReason = null;
 
-            Scope scope = Tracer.Instance.StartActiveInternal("nunit.test");
+            Scope? scope = Tracer.Instance.StartActiveInternal("nunit.test");
             Span span = scope.Span;
 
             span.Type = SpanTypes.Test;
@@ -63,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             span.SetTag(TestTags.Suite, testSuite);
             span.SetTag(TestTags.Name, testName);
             span.SetTag(TestTags.Framework, testFramework);
-            span.SetTag(TestTags.FrameworkVersion, targetType.Assembly?.GetName().Version.ToString());
+            span.SetTag(TestTags.FrameworkVersion, targetType.Assembly.GetName().Version?.ToString() ?? string.Empty);
             span.SetTag(TestTags.Type, TestTags.TypeTest);
 
             // Get test parameters
@@ -93,11 +95,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             // Get traits
             if (testMethodProperties != null)
             {
-                Dictionary<string, List<string>> traits = new Dictionary<string, List<string>>();
-                skipReason = (string)testMethodProperties.Get("_SKIPREASON");
+                Dictionary<string, List<string>?> traits = new Dictionary<string, List<string>?>();
+                skipReason = (string)testMethodProperties.Get(SkipReasonKey);
                 foreach (var key in testMethodProperties.Keys)
                 {
-                    if (key == "_SKIPREASON" || key == "_JOINTYPE")
+                    if (key == SkipReasonKey || key == "_JOINTYPE")
                     {
                         continue;
                     }
@@ -106,14 +108,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                     if (value != null)
                     {
                         List<string> lstValues = new List<string>();
-                        foreach (object valObj in value)
+                        foreach (object? valObj in value)
                         {
                             if (valObj is null)
                             {
                                 continue;
                             }
 
-                            lstValues.Add(valObj.ToString());
+                            lstValues.Add(valObj.ToString() ?? string.Empty);
                         }
 
                         traits[key] = lstValues;
@@ -149,7 +151,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             return scope;
         }
 
-        internal static void FinishScope(Scope scope, Exception ex)
+        internal static void FinishScope(Scope scope, Exception? ex)
         {
             try
             {
@@ -161,7 +163,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
                 if (ex != null)
                 {
-                    string exTypeName = ex.GetType().FullName;
+                    string? exTypeName = ex.GetType().FullName;
 
                     if (exTypeName == "NUnit.Framework.SuccessException")
                     {
@@ -191,10 +193,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
         }
 
-        internal static void FinishSkippedScope(Scope scope, string skipReason)
+        internal static void FinishSkippedScope(Scope scope, string? skipReason)
         {
-            var span = scope?.Span;
-            if (span != null)
+            if (scope?.Span is { } span)
             {
                 try
                 {
@@ -208,6 +209,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                     Common.StopCoverage(span);
                 }
             }
+        }
+
+        internal static bool ShouldSkip(ITest currentTest)
+        {
+            if (CIVisibility.Settings.IntelligentTestRunnerEnabled != true)
+            {
+                return false;
+            }
+
+            var testMethod = currentTest.Method.MethodInfo;
+            var testSuite = testMethod.DeclaringType?.FullName ?? string.Empty;
+            return Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters());
         }
     }
 }

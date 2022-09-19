@@ -2,8 +2,10 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -11,6 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
@@ -22,7 +25,10 @@ namespace Datadog.Trace.Ci
     {
         private static readonly CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
         private static int _firstInitialization = 1;
-        private static Lazy<bool> _enabledLazy = new Lazy<bool>(() => InternalEnabled(), true);
+        private static Lazy<bool> _enabledLazy = new(() => InternalEnabled(), true);
+        private static Task? _skippableTestsTask;
+        private static Dictionary<string, Dictionary<string, IList<SkippableTest>>>? _skippableTestsBySuiteAndName;
+
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
 
         public static bool Enabled => _enabledLazy.Value;
@@ -31,7 +37,7 @@ namespace Datadog.Trace.Ci
 
         public static CIVisibilitySettings Settings => _settings;
 
-        public static CITracerManager Manager
+        public static CITracerManager? Manager
         {
             get
             {
@@ -59,17 +65,24 @@ namespace Datadog.Trace.Ci
             TracerSettings tracerSettings = _settings.TracerSettings;
 
             // Set the service name if empty
-            Log.Information("Setting up the service name");
+            Log.Debug("Setting up the service name");
             if (string.IsNullOrEmpty(tracerSettings.ServiceName))
             {
                 // Extract repository name from the git url and use it as a default service name.
                 tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
             }
 
-            // Update and upload git tree metadata.
-            if (_settings.GitUploadEnabled)
+            // Intelligent Test Runner
+            if (_settings.IntelligentTestRunnerEnabled)
             {
-                Log.Information("Update and uploading git tree metadata.");
+                Log.Information("ITR: Update and uploading git tree metadata and getting skippable tests.");
+                _skippableTestsTask = GetIntelligentTestRunnerSkippableTestsAsync();
+                LifetimeManager.Instance.AddAsyncShutdownTask(() => _skippableTestsTask);
+            }
+            else if (_settings.GitUploadEnabled)
+            {
+                // Update and upload git tree metadata.
+                Log.Information("ITR: Update and uploading git tree metadata.");
                 var tskItrUpdate = UploadGitMetadataAsync();
                 LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
             }
@@ -77,43 +90,70 @@ namespace Datadog.Trace.Ci
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
             TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings));
+            _ = Tracer.Instance;
 
-            static async Task UploadGitMetadataAsync()
-            {
-                try
-                {
-                    var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
-                    await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "ITR: Error uploading repository git metadata.");
-                }
-            }
+            // Initialize FrameworkDescription
+            _ = FrameworkDescription.Instance;
+
+            // Initialize CIEnvironment
+            _ = CIEnvironmentValues.Instance;
         }
 
         internal static void FlushSpans()
         {
+            var sContext = SynchronizationContext.Current;
             try
             {
-                var flushThread = new Thread(InternalFlush);
-                flushThread.IsBackground = false;
-                flushThread.Name = "FlushThread";
-                flushThread.Start();
-                flushThread.Join();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Exception occurred when flushing spans.");
-            }
-
-            static void InternalFlush()
-            {
+                SynchronizationContext.SetSynchronizationContext(null);
                 if (!InternalFlushAsync().Wait(30_000))
                 {
                     Log.Error("Timeout occurred when flushing spans.");
                 }
             }
+            finally
+            {
+                SynchronizationContext.SetSynchronizationContext(sContext);
+            }
+        }
+
+        internal static Task<IList<SkippableTest>> GetSkippableTestsFromSuiteAndNameAsync(string suite, string name)
+        {
+            if (_skippableTestsTask is { } skippableTask)
+            {
+                if (skippableTask.IsCompleted)
+                {
+                    return Task.FromResult(GetSkippableTestsFromSuiteAndName(suite, name));
+                }
+
+                return SlowGetSkippableTestsFromSuiteAndNameAsync(suite, name);
+            }
+
+            return Task.FromResult((IList<SkippableTest>)Array.Empty<SkippableTest>());
+
+            static async Task<IList<SkippableTest>> SlowGetSkippableTestsFromSuiteAndNameAsync(string suite, string name)
+            {
+                await _skippableTestsTask!.ConfigureAwait(false);
+                return GetSkippableTestsFromSuiteAndName(suite, name);
+            }
+
+            static IList<SkippableTest> GetSkippableTestsFromSuiteAndName(string suite, string name)
+            {
+                if (_skippableTestsBySuiteAndName is { } skippeableTestBySuite)
+                {
+                    if (skippeableTestBySuite.TryGetValue(suite, out var testsInSuite) &&
+                        testsInSuite.TryGetValue(name, out var tests))
+                    {
+                        return tests;
+                    }
+                }
+
+                return Array.Empty<SkippableTest>();
+            }
+        }
+
+        internal static bool HasSkippableTests()
+        {
+            return _skippableTestsBySuiteAndName?.Count > 0;
         }
 
         internal static string GetServiceNameFromRepository(string repository)
@@ -147,15 +187,19 @@ namespace Datadog.Trace.Ci
 
         internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings)
         {
-            IApiRequestFactory factory = null;
-            TimeSpan agentlessTimeout = TimeSpan.FromSeconds(15);
+            return GetRequestFactory(settings, TimeSpan.FromSeconds(15));
+        }
+
+        internal static IApiRequestFactory GetRequestFactory(ImmutableTracerSettings settings, TimeSpan timeout)
+        {
+            IApiRequestFactory? factory = null;
 
 #if NETCOREAPP
             Log.Information("Using {FactoryType} for trace transport.", nameof(HttpClientRequestFactory));
-            factory = new HttpClientRequestFactory(settings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: agentlessTimeout);
+            factory = new HttpClientRequestFactory(settings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
 #else
             Log.Information("Using {FactoryType} for trace transport.", nameof(ApiWebRequestFactory));
-            factory = new ApiWebRequestFactory(settings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: agentlessTimeout);
+            factory = new ApiWebRequestFactory(settings.Exporter.AgentUri, AgentHttpHeaderNames.DefaultHeaders, timeout: timeout);
 #endif
 
             if (!string.IsNullOrWhiteSpace(_settings.ProxyHttps))
@@ -175,7 +219,7 @@ namespace Datadog.Trace.Ci
                     return factory;
                 }
 
-                NetworkCredential credential = null;
+                NetworkCredential? credential = null;
                 if (!string.IsNullOrWhiteSpace(userName))
                 {
                     credential = new NetworkCredential(userName, password);
@@ -243,7 +287,6 @@ namespace Datadog.Trace.Ci
             // Try to autodetect based in the domain name.
             var domainName = AppDomain.CurrentDomain.FriendlyName ?? string.Empty;
             if (domainName.StartsWith("testhost", StringComparison.Ordinal) ||
-                domainName.StartsWith("vstest", StringComparison.Ordinal) ||
                 domainName.StartsWith("xunit", StringComparison.Ordinal) ||
                 domainName.StartsWith("nunit", StringComparison.Ordinal) ||
                 domainName.StartsWith("MSBuild", StringComparison.Ordinal))
@@ -274,6 +317,88 @@ namespace Datadog.Trace.Ci
                 {
                     // .
                 }
+            }
+        }
+
+        private static async Task UploadGitMetadataAsync()
+        {
+            try
+            {
+                var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
+                await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "ITR: Error uploading repository git metadata.");
+            }
+        }
+
+        private static async Task GetIntelligentTestRunnerSkippableTestsAsync()
+        {
+            try
+            {
+                var itrClient = new IntelligentTestRunnerClient(CIEnvironmentValues.Instance.WorkspacePath, _settings);
+
+                // Upload the git metadata
+                await itrClient.UploadRepositoryChangesAsync().ConfigureAwait(false);
+
+                // If any DD_CIVISIBILITY_CODE_COVERAGE_ENABLED or DD_CIVISIBILITY_TESTSSKIPPING_ENABLED has not been set
+                // We query the settings api for those
+                if (_settings.CodeCoverageEnabled == null || _settings.TestsSkippingEnabled == null)
+                {
+                    var settings = await itrClient.GetSettingsAsync().ConfigureAwait(false);
+
+                    if (_settings.CodeCoverageEnabled == null && settings.CodeCoverage.HasValue)
+                    {
+                        Log.Information("ITR: Code Coverage has been changed to {value} by settings api.", settings.CodeCoverage.Value);
+                        _settings.SetCodeCoverageEnabled(settings.CodeCoverage.Value);
+                    }
+
+                    if (_settings.TestsSkippingEnabled == null && settings.TestsSkipping.HasValue)
+                    {
+                        Log.Information("ITR: Tests Skipping has been changed to {value} by settings api.", settings.TestsSkipping.Value);
+                        _settings.SetTestsSkippingEnabled(settings.TestsSkipping.Value);
+                    }
+                }
+
+                // Log code coverage status
+                Log.Information(_settings.CodeCoverageEnabled == true ? "ITR: Tests code coverage is enabled." : "ITR: Tests code coverage is disabled.");
+
+                // If the tests skipping feature is enabled we query the api for the tests we have to skip
+                if (_settings.TestsSkippingEnabled == true)
+                {
+                    var skippeableTests = await itrClient.GetSkippableTestsAsync().ConfigureAwait(false);
+                    Log.Information<int>("ITR: SkippableTests = {length}.", skippeableTests.Length);
+
+                    var skippableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippableTest>>>();
+                    foreach (var item in skippeableTests)
+                    {
+                        if (!skippableTestsBySuiteAndName.TryGetValue(item.Suite, out var suite))
+                        {
+                            suite = new Dictionary<string, IList<SkippableTest>>();
+                            skippableTestsBySuiteAndName[item.Suite] = suite;
+                        }
+
+                        if (!suite.TryGetValue(item.Name, out var name))
+                        {
+                            name = new List<SkippableTest>();
+                            suite[item.Name] = name;
+                        }
+
+                        name.Add(item);
+                    }
+
+                    _skippableTestsBySuiteAndName = skippableTestsBySuiteAndName;
+                    Log.Debug<int>("ITR: SkippableTests dictionary has been built.", skippeableTests.Length);
+                }
+                else
+                {
+                    Log.Information("ITR: Tests skipping is disabled.");
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "ITR: Error getting skippeable tests.");
             }
         }
     }

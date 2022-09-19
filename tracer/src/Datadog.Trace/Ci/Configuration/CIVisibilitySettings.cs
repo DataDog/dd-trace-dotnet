@@ -20,6 +20,7 @@ namespace Datadog.Trace.Ci.Configuration
             Agentless = source?.GetBool(ConfigurationKeys.CIVisibility.AgentlessEnabled) ?? false;
             Logs = source?.GetBool(ConfigurationKeys.CIVisibility.Logs) ?? false;
             ApiKey = source?.GetString(ConfigurationKeys.ApiKey);
+            ApplicationKey = source?.GetString(ConfigurationKeys.ApplicationKey);
             Site = source?.GetString(ConfigurationKeys.Site) ?? "datadoghq.com";
             AgentlessUrl = source?.GetString(ConfigurationKeys.CIVisibility.AgentlessUrl);
 
@@ -30,8 +31,14 @@ namespace Datadog.Trace.Ci.Configuration
             var proxyNoProxy = source?.GetString(ConfigurationKeys.Proxy.ProxyNoProxy) ?? string.Empty;
             ProxyNoProxy = proxyNoProxy.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
 
+            // Intelligent Test Runner
+            IntelligentTestRunnerEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.IntelligentTestRunnerEnabled) ?? false;
+
+            // Tests skipping
+            TestsSkippingEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.TestsSkippingEnabled);
+
             // Code coverage
-            CodeCoverageEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.CodeCoverage) ?? false;
+            CodeCoverageEnabled = source?.GetBool(ConfigurationKeys.CIVisibility.CodeCoverage);
             CodeCoverageSnkFilePath = source?.GetString(ConfigurationKeys.CIVisibility.CodeCoverageSnkFile);
 
             // Git upload
@@ -57,6 +64,11 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets the Api Key to use in Agentless mode
         /// </summary>
         public string? ApiKey { get; }
+
+        /// <summary>
+        /// Gets the Application Key to use in ITR
+        /// </summary>
+        public string? ApplicationKey { get; }
 
         /// <summary>
         /// Gets the Datadog site
@@ -86,7 +98,7 @@ namespace Datadog.Trace.Ci.Configuration
         /// <summary>
         /// Gets a value indicating whether the Code Coverage is enabled.
         /// </summary>
-        public bool CodeCoverageEnabled { get; }
+        public bool? CodeCoverageEnabled { get; private set; }
 
         /// <summary>
         /// Gets the snk filepath to re-signing assemblies after the code coverage modification.
@@ -99,6 +111,16 @@ namespace Datadog.Trace.Ci.Configuration
         public bool GitUploadEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the Intelligent Test Runner Tests skipping feature is enabled.
+        /// </summary>
+        public bool? TestsSkippingEnabled { get; private set; }
+
+        /// <summary>
+        /// Gets a value indicating whether the Intelligent Test Runner is enabled.
+        /// </summary>
+        public bool IntelligentTestRunnerEnabled { get; }
+
+        /// <summary>
         /// Gets the tracer settings
         /// </summary>
         public TracerSettings TracerSettings => LazyInitializer.EnsureInitialized(ref _tracerSettings, () => InitializeTracerSettings())!;
@@ -106,6 +128,16 @@ namespace Datadog.Trace.Ci.Configuration
         public static CIVisibilitySettings FromDefaultSources()
         {
             return new CIVisibilitySettings(GlobalConfigurationSource.Instance);
+        }
+
+        internal void SetCodeCoverageEnabled(bool value)
+        {
+            CodeCoverageEnabled = value;
+        }
+
+        internal void SetTestsSkippingEnabled(bool value)
+        {
+            TestsSkippingEnabled = value;
         }
 
         private TracerSettings InitializeTracerSettings()

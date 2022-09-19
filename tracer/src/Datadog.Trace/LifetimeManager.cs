@@ -18,7 +18,7 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<LifetimeManager>();
         private static LifetimeManager _instance;
-        private readonly ConcurrentQueue<Action> _shutdownHooks = new();
+        private readonly ConcurrentQueue<object> _shutdownHooks = new();
 
         public LifetimeManager()
         {
@@ -65,21 +65,7 @@ namespace Datadog.Trace
 
         public void AddAsyncShutdownTask(Func<Task> func)
         {
-            var action = () =>
-            {
-                var current = SynchronizationContext.Current;
-                try
-                {
-                    SynchronizationContext.SetSynchronizationContext(null);
-                    func().Wait(TaskTimeout);
-                }
-                finally
-                {
-                    SynchronizationContext.SetSynchronizationContext(current);
-                }
-            };
-
-            _shutdownHooks.Enqueue(action);
+            _shutdownHooks.Enqueue(func);
         }
 
         private void CurrentDomain_ProcessExit(object sender, EventArgs e)
@@ -109,16 +95,58 @@ namespace Datadog.Trace
 
         private void RunShutdownTasks()
         {
+            var current = SynchronizationContext.Current;
             try
             {
-                while (_shutdownHooks.TryDequeue(out var action))
+                if (current is not null)
                 {
-                    action();
+                    SetSynchronizationContext(null);
+                }
+
+                while (_shutdownHooks.TryDequeue(out var actionOrFunc))
+                {
+                    if (actionOrFunc is Action action)
+                    {
+                        action();
+                    }
+                    else if (actionOrFunc is Func<Task> func)
+                    {
+                        func().Wait(TaskTimeout);
+                    }
+                    else
+                    {
+                        Log.Error("Hooks must be of Action or Func<Task> types.");
+                    }
                 }
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error running shutdown hooks");
+            }
+            finally
+            {
+                if (current is not null)
+                {
+                    SetSynchronizationContext(current);
+                }
+            }
+
+            static void SetSynchronizationContext(SynchronizationContext context)
+            {
+                if (!AppDomain.CurrentDomain.IsFullyTrusted)
+                {
+                    // Fix MethodAccessException when the Assembly is loaded as partially trusted.
+                    return;
+                }
+
+                try
+                {
+                    SynchronizationContext.SetSynchronizationContext(context);
+                }
+                catch (MethodAccessException mae)
+                {
+                    Log.Warning(mae, "Access to security crital method SynchronizationContext.SetSynchronizationContext has failed.");
+                }
             }
         }
     }

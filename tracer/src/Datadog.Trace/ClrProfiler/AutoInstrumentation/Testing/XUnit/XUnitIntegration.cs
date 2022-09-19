@@ -2,16 +2,15 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Pdb;
-using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 {
@@ -22,11 +21,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
 
         internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
-        internal static Scope CreateScope(ref TestRunnerStruct runnerInstance, Type targetType)
+        internal static Scope? CreateScope(ref TestRunnerStruct runnerInstance, Type targetType)
         {
-            string testBundle = runnerInstance.TestClass.Assembly?.GetName().Name;
-            string testSuite = runnerInstance.TestClass.ToString();
-            string testName = runnerInstance.TestMethod.Name;
+            MethodInfo testMethod = runnerInstance.TestMethod;
+            Type testClass = runnerInstance.TestClass;
+
+            Common.Prepare(testMethod);
+
+            string testBundle = testClass.Assembly.GetName().Name ?? string.Empty;
+            string testSuite = testClass.ToString();
+            string testName = testMethod.Name;
 
             string testFramework = "xUnit";
 
@@ -41,12 +45,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             span.SetTag(TestTags.Suite, testSuite);
             span.SetTag(TestTags.Name, testName);
             span.SetTag(TestTags.Framework, testFramework);
-            span.SetTag(TestTags.FrameworkVersion, targetType.Assembly?.GetName().Version.ToString());
+            span.SetTag(TestTags.FrameworkVersion, targetType.Assembly.GetName().Version?.ToString() ?? string.Empty);
             span.SetTag(TestTags.Type, TestTags.TypeTest);
 
             // Get test parameters
             object[] testMethodArguments = runnerInstance.TestMethodArguments;
-            ParameterInfo[] methodParameters = runnerInstance.TestMethod.GetParameters();
+            ParameterInfo[] methodParameters = testMethod.GetParameters();
             if (methodParameters?.Length > 0 && testMethodArguments?.Length > 0)
             {
                 TestParameters testParameters = new TestParameters();
@@ -80,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
             Common.DecorateSpanWithRuntimeAndCiInformation(span);
 
             // Test code and code owners
-            Common.DecorateSpanWithSourceAndCodeOwners(span, runnerInstance.TestMethod);
+            Common.DecorateSpanWithSourceAndCodeOwners(span, testMethod);
 
             Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             Common.StartCoverage();
@@ -129,6 +133,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
                 scope.Dispose();
                 Common.StopCoverage(scope.Span);
             }
+        }
+
+        internal static bool ShouldSkip(ref TestRunnerStruct runnerInstance)
+        {
+            if (CIVisibility.Settings.IntelligentTestRunnerEnabled != true)
+            {
+                return false;
+            }
+
+            var testMethod = runnerInstance.TestMethod;
+            return Common.ShouldSkip(runnerInstance.TestClass.ToString(), testMethod.Name, runnerInstance.TestMethodArguments, testMethod.GetParameters());
         }
     }
 }
