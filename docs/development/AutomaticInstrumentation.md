@@ -78,6 +78,7 @@ For parameters that are well-known types like `string`, `object`, or `Exception`
 ##### `OnMethodBegin`
 
 OnMethodBegin signatures with 1 or more parameters with 1 or more generics:
+
 ```csharp
       CallTargetState OnMethodBegin<TTarget>(TTarget instance);
       CallTargetState OnMethodBegin<TTarget, TArg1>(TTarget instance, ref TArg1 arg1);
@@ -88,9 +89,16 @@ OnMethodBegin signatures with 1 or more parameters with 1 or more generics:
       CallTargetState OnMethodBegin<TTarget, TArg1, TArg2>(ref TArg1 arg1, ref TArg2);
       CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, ...>(ref TArg1 arg1, ref TArg2, ...)
 ```
+
 The last four signatures are for static classes.
 > For performance reasons, it is recommended to use the `ref` or `in` (if there's no need to edit the argument) keyword in front of the arguments after the instance one. Note that you cannot use `in` or `ref` if you are using duck-typing constraints on the parameters ([which you should be, where possible](../DuckTyping.md#best-practices)).
 
+As a convenience, the `OnMethodBegin` signatured does not need to exactly match the targeted method signature.
+However, it must contain the arguments used within the `OnMethodBegin` body and they must be in order.
+An additional limitation here is that the arguments must be listed in order, if any are used.
+
+An example here is that if the 4th argument of the targeted function needs to be used, then the first three arguments must be present in the `OnMethodBegin` signature.
+Even if those arguments aren't used.
 
 ##### `OnMethodEnd`
 
