@@ -191,7 +191,7 @@ internal class IntelligentTestRunnerClient
             request.AddHeader(HttpHeaderNames.TraceId, _id);
             request.AddHeader(HttpHeaderNames.ParentId, _id);
             Log.Debug("ITR: Getting settings from: {url}", _settingsUrl.ToString());
-            var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+            using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
             if (response.StatusCode is < 200 or >= 300 && response.StatusCode != 404)
             {
@@ -254,7 +254,7 @@ internal class IntelligentTestRunnerClient
             request.AddHeader(HttpHeaderNames.TraceId, _id);
             request.AddHeader(HttpHeaderNames.ParentId, _id);
             Log.Debug("ITR: Searching skippable tests from: {url}", _skippableTestsUrl.ToString());
-            var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+            using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
             if (response.StatusCode is < 200 or >= 300 && response.StatusCode != 404)
             {

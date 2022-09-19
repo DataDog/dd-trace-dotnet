@@ -26,7 +26,7 @@ namespace Datadog.Trace.Ci
         private static readonly CIVisibilitySettings _settings = CIVisibilitySettings.FromDefaultSources();
         private static int _firstInitialization = 1;
         private static Lazy<bool> _enabledLazy = new(() => InternalEnabled(), true);
-        private static Task? _skippableTask;
+        private static Task? _skippableTestsTask;
         private static Dictionary<string, Dictionary<string, IList<SkippableTest>>>? _skippableTestsBySuiteAndName;
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
@@ -75,9 +75,9 @@ namespace Datadog.Trace.Ci
             // Intelligent Test Runner
             if (_settings.IntelligentTestRunnerEnabled)
             {
-                Log.Information("ITR: Update and uploading git tree metadata and getting skippeable tests.");
-                _skippableTask = GetIntelligentTestRunnerSkippableTestsAsync();
-                LifetimeManager.Instance.AddAsyncShutdownTask(() => _skippableTask);
+                Log.Information("ITR: Update and uploading git tree metadata and getting skippable tests.");
+                _skippableTestsTask = GetIntelligentTestRunnerSkippableTestsAsync();
+                LifetimeManager.Instance.AddAsyncShutdownTask(() => _skippableTestsTask);
             }
             else if (_settings.GitUploadEnabled)
             {
@@ -118,7 +118,7 @@ namespace Datadog.Trace.Ci
 
         internal static Task<IList<SkippableTest>> GetSkippableTestsFromSuiteAndNameAsync(string suite, string name)
         {
-            if (_skippableTask is { } skippableTask)
+            if (_skippableTestsTask is { } skippableTask)
             {
                 if (skippableTask.IsCompleted)
                 {
@@ -132,11 +132,7 @@ namespace Datadog.Trace.Ci
 
             static async Task<IList<SkippableTest>> SlowGetSkippableTestsFromSuiteAndNameAsync(string suite, string name)
             {
-                if (_skippableTask is { } skippableTask)
-                {
-                    await skippableTask.ConfigureAwait(false);
-                }
-
+                await _skippableTestsTask!.ConfigureAwait(false);
                 return GetSkippableTestsFromSuiteAndName(suite, name);
             }
 
@@ -398,7 +394,6 @@ namespace Datadog.Trace.Ci
                 else
                 {
                     Log.Information("ITR: Tests skipping is disabled.");
-                    _skippableTestsBySuiteAndName = new Dictionary<string, Dictionary<string, IList<SkippableTest>>>();
                 }
             }
             catch (Exception ex)
