@@ -7,11 +7,14 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Threading.Tasks;
 using Amazon.SimpleSystemsManagement.Model;
+using DiffMatchPatch;
 using GenerateSpanDocumentation;
 using GeneratePackageVersions;
 using Honeypot;
 using Microsoft.TeamFoundation.Build.WebApi;
+using Microsoft.VisualBasic;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
 using Nuke.Common;
@@ -227,6 +230,45 @@ partial class Build
         .Description("Updates verified snapshots files with received ones")
         .Executes(ReplaceReceivedFilesInSnapshots);
 
+    Target PrintSnapshotsDiff  => _ => _
+      .Description("Prints snapshots differences from the current tests")
+      .AssuredAfterFailure()
+      .Executes(() =>
+      {
+          var snapshotsDirectory = TestsDirectory / "snapshots";
+          var files = snapshotsDirectory.GlobFiles("*.received.*");
+
+          foreach (var source in files)
+          {
+              var fileName = Path.GetFileNameWithoutExtension(source);
+
+              Logger.Info("Difference found in " + fileName);
+              var dmp = new diff_match_patch();
+              var diff = dmp.diff_main(File.ReadAllText(source.ToString().Replace("received", "verified")), File.ReadAllText(source));
+              dmp.diff_cleanupSemantic(diff);
+
+              foreach (var t in diff)
+              {
+                  if (t.operation != Operation.EQUAL)
+                  {
+                      Logger.Info(DiffToString(t));
+                  }
+              }
+          }
+
+          string DiffToString(Diff diff)
+          {
+              var line = diff.operation switch
+              {
+                  Operation.DELETE => $"- {diff.text}",
+                  Operation.INSERT => $"+ {diff.text}",
+                  Operation.EQUAL => string.Empty,
+                  _ => throw new Exception("Unknown value of the Option enum.")
+              };
+              return line.Trim('\n');
+          }
+      });
+
     Target UpdateSnapshotsFromBuild => _ => _
       .Description("Updates verified snapshots downloading them from the CI given a build id")
       .Requires(() => BuildId)
@@ -249,6 +291,7 @@ partial class Build
                              project: AzureDevopsProjectId,
                              buildId: buildNumber);
 
+            var listTasks = new List<Task>();
             foreach(var artifact in artifacts)
             {
                 if (!artifact.Name.Contains("snapshots"))
@@ -259,17 +302,22 @@ partial class Build
                 var extractLocation = Path.Combine((AbsolutePath)Path.GetTempPath(), artifact.Name);
                 var snapshotsDirectory = TestsDirectory / "snapshots";
 
-                await DownloadAzureArtifact((AbsolutePath)Path.GetTempPath(), artifact, AzureDevopsToken);
+                listTasks.Add(Task.Run(async () =>
+                {
+                    await DownloadAzureArtifact((AbsolutePath)Path.GetTempPath(), artifact, AzureDevopsToken);
 
-                CopyDirectoryRecursively(
-                    source: extractLocation,
-                    target: snapshotsDirectory,
-                    DirectoryExistsPolicy.Merge,
-                    FileExistsPolicy.Skip,
-                    excludeFile: file => !Path.GetFileNameWithoutExtension(file.FullName).EndsWith(".received"));
+                    CopyDirectoryRecursively(
+                        source: extractLocation,
+                        target: snapshotsDirectory,
+                        DirectoryExistsPolicy.Merge,
+                        FileExistsPolicy.Skip,
+                        excludeFile: file => !Path.GetFileNameWithoutExtension(file.FullName).EndsWith(".received"));
 
-                DeleteDirectory(extractLocation);
+                    DeleteDirectory(extractLocation);
+                }));
             }
+
+            Task.WaitAll(listTasks.ToArray());
 
             ReplaceReceivedFilesInSnapshots();
       });

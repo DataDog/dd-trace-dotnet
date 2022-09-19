@@ -991,6 +991,7 @@ partial class Build
         .After(BuildWindowsIntegrationTests)
         .Requires(() => IsWin)
         .Requires(() => Framework)
+        .Triggers(PrintSnapshotsDiff)
         .Executes(() =>
         {
             EnsureExistingDirectory(TestLogsDirectory);
@@ -1083,6 +1084,7 @@ partial class Build
         .After(CompileIntegrationTests)
         .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
+        .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
         .Executes(() => RunWindowsIisIntegrationTests(
                       Solution.GetProject(Projects.ClrProfilerIntegrationTests)));
@@ -1092,6 +1094,7 @@ partial class Build
         .After(CompileIntegrationTests)
         .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
+        .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
         .Executes(() => RunWindowsIisIntegrationTests(
                       Solution.GetProject(Projects.AppSecIntegrationTests)));
@@ -1127,6 +1130,7 @@ partial class Build
         .After(CompileIntegrationTests)
         .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
+        .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
         .Executes(() =>
         {
@@ -1372,6 +1376,7 @@ partial class Build
         .Description("Runs the linux integration tests")
         .Requires(() => Framework)
         .Requires(() => !IsWin)
+        .Triggers(PrintSnapshotsDiff)
         .Executes(() =>
         {
             EnsureExistingDirectory(TestLogsDirectory);
