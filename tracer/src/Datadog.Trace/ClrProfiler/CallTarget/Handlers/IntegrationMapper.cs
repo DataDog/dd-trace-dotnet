@@ -71,9 +71,6 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
 
             List<Type> callGenericTypes = new List<Type>();
 
-            // TODO this might be an issue now that onMethodBeginParameters doesn't need all params in argumentTypes
-            // TODO previously this was determined with onMethodBeginParameters.Length != argumentsTypes.Length
-            // TODO I think onMethodBeginParameters[0].ParameterType == genericArgumentsTypes[0]; can throw for static?
             bool mustLoadInstance = onMethodBeginParameters[0].ParameterType == genericArgumentsTypes[0];
             Type instanceGenericType = genericArgumentsTypes[0];
             Type instanceGenericConstraint = instanceGenericType.GetGenericParameterConstraints().FirstOrDefault();
