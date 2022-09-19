@@ -15,8 +15,7 @@ using Datadog.Trace.Vendors.MessagePack.Formatters;
 namespace Datadog.Trace.Agent.MessagePack
 {
     internal class SpanMessagePackFormatter : IMessagePackFormatter<TraceChunkModel>,
-                                              IMessagePackFormatter<SpanModel>,
-                                              IMessagePackFormatter<Span> // IMessagePackFormatter<Span> is not allowed, use IMessagePackFormatter<SpanModel> instead
+                                              IMessagePackFormatter<SpanModel>
     {
         public static readonly SpanMessagePackFormatter Instance = new();
 
@@ -165,13 +164,6 @@ namespace Datadog.Trace.Agent.MessagePack
             offset += WriteMetrics(ref bytes, offset, value, tagProcessors);
 
             return offset - originalOffset;
-        }
-
-        int IMessagePackFormatter<Span>.Serialize(ref byte[] bytes, int offset, Span value, IFormatterResolver formatterResolver)
-        {
-            // We block IMessagePackFormatter<Span> since it can return wrong results and we want to catch any tests trying to use it.
-            // Note that this also covers Span collections, like Span[] and ArraySegment<Span>.
-            throw new NotSupportedException("Serializing Span with IMessagePackFormatter<Span> is not supported. Use IMessagePackFormatter<SpanModel> instead.");
         }
 
         // TAGS
@@ -358,11 +350,6 @@ namespace Datadog.Trace.Agent.MessagePack
         }
 
         TraceChunkModel IMessagePackFormatter<TraceChunkModel>.Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
-        {
-            throw new NotSupportedException($"{nameof(SpanMessagePackFormatter)} does not support deserialization. For testing purposes, deserialize using the MessagePack NuGet package.");
-        }
-
-        Span IMessagePackFormatter<Span>.Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
         {
             throw new NotSupportedException($"{nameof(SpanMessagePackFormatter)} does not support deserialization. For testing purposes, deserialize using the MessagePack NuGet package.");
         }
