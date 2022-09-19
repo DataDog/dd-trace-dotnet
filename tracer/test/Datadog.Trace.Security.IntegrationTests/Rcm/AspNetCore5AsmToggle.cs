@@ -23,7 +23,7 @@ using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.Security.IntegrationTests
+namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
     public class AspNetCore5AsmToggle : AspNetBase, IDisposable
     {
@@ -65,6 +65,11 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             CheckAckState(request1, expectedState, null, "First RCM call");
             CheckCapabilities(request1, expectedCapabilities, "First RCM call");
+            if (enableSecurity == true)
+            {
+                await logEntryWatcher.WaitForLogEntry("AppSec Disabled");
+                await Task.Delay(1500);
+            }
 
             var spans2 = await SendRequestsAsync(agent, url);
 
@@ -77,6 +82,11 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             CheckAckState(request2, expectedState, null, "Second RCM call");
             CheckCapabilities(request2, expectedCapabilities, "Second RCM call");
+            if (enableSecurity != false)
+            {
+                await logEntryWatcher.WaitForLogEntry("AppSec Enabled");
+                await Task.Delay(1500);
+            }
 
             var spans3 = await SendRequestsAsync(agent, url);
 

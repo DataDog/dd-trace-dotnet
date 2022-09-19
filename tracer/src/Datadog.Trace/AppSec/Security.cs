@@ -274,8 +274,7 @@ namespace Datadog.Trace.AppSec
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeEnabled);
                     // TODO set to '_settings.Rules == null' when https://github.com/DataDog/dd-trace-dotnet/pull/3120 is merged
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, false);
-                    // TODO set to true when https://github.com/DataDog/dd-trace-dotnet/pull/3171 is merged
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, false);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, true);
                 });
         }
 
@@ -298,9 +297,21 @@ namespace Datadog.Trace.AppSec
             foreach (var asmDataConfig in asmDataConfigs)
             {
                 _asmDataConfigs[asmDataConfig.Name] = asmDataConfig.TypedFile;
+                e.Acknowledge(asmDataConfig.Name);
             }
 
-            _waf.UpdateRules(_asmDataConfigs.SelectMany(p => p.Value.RulesData));
+            var updated = _waf.UpdateRules(_asmDataConfigs.SelectMany(p => p.Value.RulesData));
+            foreach (var asmDataConfig in asmDataConfigs)
+            {
+                if (!updated)
+                {
+                    e.Error(asmDataConfig.Name, "Waf could not update the rules");
+                }
+                else
+                {
+                    e.Acknowledge(asmDataConfig.Name);
+                }
+            }
         }
 
         private void UpdateStatus(bool fromRemoteConfig = false)
@@ -335,10 +346,9 @@ namespace Datadog.Trace.AppSec
         {
             if (!_enabled)
             {
-                SharedRemoteConfiguration.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
-                SharedRemoteConfiguration.AsmDataProduct.ConfigChanged += AsmDataProductConfigChanged;
+                AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged += AsmDataProductConfigChanged;
                 // reapply rules
-                _waf.UpdateRules(_asmDataConfigs.SelectMany(p => p.Value.RulesData));
+                _waf.UpdateRules(_asmDataConfigs?.SelectMany(p => p.Value.RulesData));
                 _instrumentationGateway.StartRequest += RunWafAndReact;
                 _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
                 _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
@@ -389,7 +399,8 @@ namespace Datadog.Trace.AppSec
                 _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
                 _instrumentationGateway.StartRequest -= ReportWafInitInfoOnce;
 
-                SharedRemoteConfiguration.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
+                AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
+                AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged -= AsmDataProductConfigChanged;
                 RemoveAppsecSpecificInstrumentations();
 
                 _enabled = false;
@@ -516,9 +527,9 @@ namespace Datadog.Trace.AppSec
 
                 // run the WAF and execute the results
                 using var wafResult = additiveContext.Run(e.EventData, _settings.WafTimeoutMicroSeconds);
-                if (wafResult.ReturnCode == ReturnCode.Match || wafResult.ReturnCode == ReturnCode.Block)
+                if (wafResult.ReturnCode is ReturnCode.Match or ReturnCode.Block)
                 {
-                    var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock");
+                    var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock") || wafResult.Actions.Contains("block");
                     if (block)
                     {
                         e.Transport.WriteBlockedResponse(_settings.BlockedJsonTemplate, _settings.BlockedHtmlTemplate, CanAccessHeaders());
@@ -560,6 +571,8 @@ namespace Datadog.Trace.AppSec
                 _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
             }
 
+            AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
+            AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged -= FeaturesProductConfigChanged;
             Dispose();
         }
 

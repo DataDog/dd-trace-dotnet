@@ -333,7 +333,7 @@ namespace Datadog.Trace.ClrProfiler
             Task.Run(
                 async () =>
                 {
-                    // TODO: RCM and LiveDebugger should be initialized in TracerManagerFactory so they can respond
+                    // TODO: RCM and LiveDebugger should be initialized in TracerManagerFactory so they can respond, so that product can also be Unregistered, for example, if AsmFeaturesProduct is disabled, ASM_DATA and ASM_DD should Unregister themselves, and re register themselves when it's enabled..
                     // to changes in ExporterSettings etc.
                     var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
                     if (isDiscoverySuccessful)
@@ -342,8 +342,9 @@ namespace Datadog.Trace.ClrProfiler
                         var rcmApi = RemoteConfigurationApiFactory.Create(tracer.Settings.Exporter, rcmSettings, discoveryService);
 
                         var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, tracer.Settings.Environment, tracer.Settings.ServiceVersion);
+                        // see comment above
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmFeaturesProduct);
-                        configurationManager.RegisterProduct(SharedRemoteConfiguration.AsmDataProduct);
+                        configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmDataProduct);
 
                         var liveDebugger = LiveDebuggerFactory.Create(discoveryService, configurationManager, tracer.Settings, serviceName);
 

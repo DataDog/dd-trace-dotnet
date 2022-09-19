@@ -93,20 +93,25 @@ namespace Datadog.Trace.AppSec.Waf
 
         public bool UpdateRules(IEnumerable<RuleData> res)
         {
-            if (res.Count() == 0)
+            if (res == null || res.Count() == 0)
             {
                 return false;
             }
 
-            var finalRuleDatas = MergeRuleDatas(res);
+            var finalRuleDatas = MergeRuleData(res);
             var encoded = encoder.Encode(finalRuleDatas, new List<Obj>(), false);
             var ret = wafNative.UpdateRuleData(ruleHandle.Value, encoded.RawPtr);
             Log.Debug("{number} rules have been updated and status is {status}", finalRuleDatas.Count, ret);
             return ret == DDWAF_RET_CODE.DDWAF_OK;
         }
 
-        internal static List<object> MergeRuleDatas(IEnumerable<RuleData> res)
+        internal static List<object> MergeRuleData(IEnumerable<RuleData> res)
         {
+            if (res == null)
+            {
+                throw new ArgumentNullException(nameof(res));
+            }
+
             var finalRuleDatas = new List<object>();
             var groups = res.GroupBy(r => r.Id + r.Type);
             foreach (var ruleDatas in groups)
