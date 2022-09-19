@@ -474,6 +474,9 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.InstrumentedAssemblyVerification.Standalone", "tracer\src\Datadog.InstrumentedAssemblyVerification.Standalone\Datadog.InstrumentedAssemblyVerification.Standalone.csproj", "{61FD6A7E-38EB-4B90-A890-DE3205C041B1}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "debugger", "debugger", "{16427BFB-B4C6-46A9-A290-8EA51FF73FEA}"
+	ProjectSection(SolutionItems) = preProject
+		tracer\test\test-applications\debugger\Directory.Build.props = tracer\test\test-applications\debugger\Directory.Build.props
+	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Probes", "tracer\test\test-applications\debugger\Samples.Probes\Samples.Probes.csproj", "{2BED2D88-0B51-468B-A559-DA7B4BACA00B}"
 EndProject

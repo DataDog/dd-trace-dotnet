@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 namespace Samples.Probes.SmokeTests
 {
     [LineProbeTestData(lineNumber: 21)]
-    internal class AsyncInstanceMethod : IAsyncRun
+    public class AsyncInstanceMethod : IAsyncRun
     {
         private const string ClassName = "AsyncInstanceMethod";
 

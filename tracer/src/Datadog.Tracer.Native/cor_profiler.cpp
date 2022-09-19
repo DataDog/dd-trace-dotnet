@@ -3380,6 +3380,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
     }
     catch (...)
     {
+        Logger::Error("JITCachedFunctionSearchStarted: Failed on exception while tried to grab the mutex of `module_ids_lock_` for functionId ", functionId);
         return S_OK;
     }
 

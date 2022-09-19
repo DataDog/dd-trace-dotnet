@@ -200,8 +200,9 @@ partial class Build
         }
 
         if (ExplorationTestUseCase == global::ExplorationTestUseCase.Debugger &&
-            testDescription.Name is not global::ExplorationTestName.protobuf or global::ExplorationTestName.cake or global::ExplorationTestName.paket or global::ExplorationTestName.polly)
+            testDescription.Name is global::ExplorationTestName.protobuf or global::ExplorationTestName.cake or global::ExplorationTestName.paket or global::ExplorationTestName.polly)
         {
+            Logger.Info("The Exploration Tests: protobuf, cake, paket, polly are disabled for the Live Debugger.");
             return;
         }
 

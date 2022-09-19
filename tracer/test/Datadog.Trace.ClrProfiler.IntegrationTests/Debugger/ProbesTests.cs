@@ -157,6 +157,7 @@ public class ProbesTests : TestHelper, IDisposable
     [MemberData(nameof(ProbeTests))]
     public async Task MethodProbeTest(Type testType)
     {
+        SkipOverTestIfNeeded(testType);
         await RunMethodProbeTests(testType);
     }
 
@@ -285,6 +286,17 @@ public class ProbesTests : TestHelper, IDisposable
         finally
         {
             await sample.StopSample();
+        }
+    }
+
+    /// <summary>
+    /// Internal Jira Ticket: DEBUG-1092.
+    /// </summary>
+    private void SkipOverTestIfNeeded(Type testType)
+    {
+        if (testType == typeof(AsyncInstanceMethod) && !EnvironmentTools.IsWindows())
+        {
+            throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
         }
     }
 
