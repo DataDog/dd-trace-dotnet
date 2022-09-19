@@ -50,6 +50,8 @@ class SignalHandlerForTest
 public:
     SignalHandlerForTest()
     {
+        _forwardCall = false;
+        _handlerType = 0;
         EXPECT_EQ(sigaction(SIGUSR1, nullptr, &_oldAction), 0);
     }
 

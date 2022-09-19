@@ -762,6 +762,11 @@ stages:
         baseImage: $(baseImage)
         command: "BuildAndRunNativeUnitTests"
 
+    - publish: /ddlogs
+      artifact: continuous-profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
     - task: PublishTestResults@2
       displayName: publish profiler test results
       inputs:

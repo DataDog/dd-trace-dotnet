@@ -181,7 +181,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
         else
         {
             // release the lock and wait for a notification or the 2s timeout
-            auto status =_stackWalkInProgressWaiter.wait_for(stackWalkInProgressLock, 2s);
+            auto status = _stackWalkInProgressWaiter.wait_for(stackWalkInProgressLock, 2s);
 
             // The lock is reacquired, but we might have faced an issue:
             // - the thread is dead and the lock released
@@ -221,7 +221,6 @@ bool LinuxStackFramesCollector::SetupSignalHandler()
 {
     struct sigaction sampleAction;
     sampleAction.sa_flags = SA_RESTART | SA_SIGINFO;
-    sampleAction.sa_handler = SIG_DFL;
     sampleAction.sa_sigaction = LinuxStackFramesCollector::CollectStackSampleSignalHandler;
     sigemptyset(&sampleAction.sa_mask);
     sigaddset(&sampleAction.sa_mask, s_signalToSend);

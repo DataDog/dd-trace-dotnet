@@ -82,7 +82,7 @@ partial class Build
     [LazyPathExecutable(name: "chmod")] readonly Lazy<Tool> Chmod;
     [LazyPathExecutable(name: "objcopy")] readonly Lazy<Tool> ExtractDebugInfo;
     [LazyPathExecutable(name: "strip")] readonly Lazy<Tool> StripBinary;
-    [LazyPathExecutable(name: "ln")] readonly Lazy<Tool> HardLinkUtil;
+     [LazyPathExecutable(name: "ln")] readonly Lazy<Tool> HardLinkUtil;
 
     IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatform =>
         Equals(TargetPlatform, MSBuildTargetPlatform.x64)
@@ -434,7 +434,7 @@ partial class Build
         .Executes(() =>
         {
             var (arch, extension) = GetUnixArchitectureAndExtension();
-            
+
             // Copy Native file
             CopyFileToDirectory(
                 NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
@@ -480,7 +480,7 @@ partial class Build
 
             // Copy existing files from tracer home to the Distribution location
             CopyDirectoryRecursively(MonitoringHomeDirectory, DistributionHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-            
+
             // Add the create log path script
             CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, DistributionHomeDirectory);
         });
@@ -500,7 +500,7 @@ partial class Build
                 var outputFile = outputDir / Path.GetFileNameWithoutExtension(file);
 
                 Logger.Info($"Extracting debug symbol for {file} to {outputFile}.debug");
-                ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {outputFile}.debug");    
+                ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {outputFile}.debug");
 
                 Logger.Info($"Stripping out unneeded information from {file}");
                 StripBinary.Value(arguments: $"--strip-unneeded {file}");
@@ -587,23 +587,23 @@ partial class Build
             var assetsDirectory = TemporaryDirectory / arch;
             EnsureCleanDirectory(assetsDirectory);
             CopyDirectoryRecursively(MonitoringHomeDirectory, assetsDirectory, DirectoryExistsPolicy.Merge);
-            
+
             // For back-compat reasons, we must always have the Datadog.ClrProfiler.Native.so file in the root folder
             // as it's set in the COR_PROFILER_PATH etc env var
             // so create a symlink to avoid bloating package sizes
             var archSpecificFile = assetsDirectory / arch / $"{FileNames.NativeLoader}.{ext}";
             var linkLocation = assetsDirectory / $"{FileNames.NativeLoader}.{ext}";
             HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
-            
+
             // For back-compat reasons, we have to keep the libddwaf.so file in the root folder
             // because the way AppSec probes the paths won't find the linux-musl-x64 target currently
             archSpecificFile = assetsDirectory / arch / FileNames.AppSecLinuxWaf;
             linkLocation = assetsDirectory / FileNames.AppSecLinuxWaf;
             HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
-            
+
             // we must always have the Datadog.Linux.ApiWrapper.x64.so file in the continuousprofiler subfolder
             // as it's set in the LD_PRELOAD env var
-            var continuousProfilerDir = assetsDirectory / "continuousprofiler"; 
+            var continuousProfilerDir = assetsDirectory / "continuousprofiler";
             EnsureExistingDirectory(continuousProfilerDir);
             archSpecificFile = assetsDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
             linkLocation = continuousProfilerDir / FileNames.ProfilerLinuxApiWrapper;
@@ -623,7 +623,7 @@ partial class Build
                 replacement:$@";$1;./{arch}/Datadog.");
             File.WriteAllText(assetsDirectory / FileNames.LoaderConf, contents: loaderConfContents);
 
-            // Copy createLogPath.sh script and set the permissions 
+            // Copy createLogPath.sh script and set the permissions
             CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, assetsDirectory);
             chmod.Invoke($"+x {assetsDirectory / FileNames.CreateLogPathScript}");
 
@@ -1534,7 +1534,7 @@ partial class Build
        .Executes(() =>
        {
            var knownPatterns = new List<Regex>();
-           
+
            if (IsAlpine)
            {
                // AppSec complains about not loading initially on alpine, but can be ignored
@@ -1603,9 +1603,9 @@ partial class Build
                              && nativeProfilerFiles.Count > 0
                              && nativeLoaderFiles.Count > 0);
 
-        if (hasRequiredFiles 
-         && managedErrors.Count == 0 
-         && nativeTracerErrors.Count == 0 
+        if (hasRequiredFiles
+         && managedErrors.Count == 0
+         && nativeTracerErrors.Count == 0
          && nativeProfilerErrors.Count == 0
          && nativeLoaderErrors.Count == 0)
         {
@@ -1813,7 +1813,7 @@ partial class Build
         (IsOsx) switch
         {
             (true) => ("osx-x64", "dylib"),
-            (false) => ($"linux-{LinuxArchitectureIdentifier}", "so"), // LibDdWaf doesn't 
+            (false) => ($"linux-{LinuxArchitectureIdentifier}", "so"), // LibDdWaf doesn't
         };
 
     private (string Arch, string Ext) GetUnixArchitectureAndExtension() =>
@@ -1823,7 +1823,7 @@ partial class Build
             (false, false) => ($"linux-{LinuxArchitectureIdentifier}", "so"),
             (false, true) => ($"linux-musl-{LinuxArchitectureIdentifier}", "so"),
         };
-    
+
     // the integration tests need their own copy of the profiler, this achieved through build.props on Windows, but doesn't seem to work under Linux
     private void IntegrationTestLinuxProfilerDirFudge(string project)
     {
