@@ -189,6 +189,13 @@ namespace Datadog.Trace
             Telemetry?.Start();
         }
 
+        /// <summary>
+        /// Internal for testing only.
+        /// Run all the shutdown tasks for a standalone <see cref="TracerManager"/> instance,
+        /// stopping the background processes.
+        /// </summary>
+        internal Task ShutdownAsync() => RunShutdownTasksAsync(this, null);
+
         private static async Task CleanUpOldTracerManager(TracerManager oldManager, TracerManager newManager)
         {
             try
@@ -496,11 +503,13 @@ namespace Datadog.Trace
             _heartbeatTimer = new Timer(HeartbeatCallback, state: null, dueTime: TimeSpan.Zero, period: TimeSpan.FromMinutes(1));
         }
 
-        private static async Task RunShutdownTasksAsync()
+        private static Task RunShutdownTasksAsync() => RunShutdownTasksAsync(_instance, _heartbeatTimer);
+
+        private static async Task RunShutdownTasksAsync(TracerManager instance, Timer heartbeatTimer)
         {
             try
             {
-                if (_heartbeatTimer is { } heartbeatTimer)
+                if (heartbeatTimer is not null)
                 {
                     Log.Debug("Disposing Heartbeat timer.");
 #if NETCOREAPP3_1_OR_GREATER
@@ -510,16 +519,16 @@ namespace Datadog.Trace
 #endif
                 }
 
-                if (_instance is { } instance)
+                if (instance is not null)
                 {
                     Log.Debug("Disposing AgentWriter.");
-                    var flushTracesTask = _instance.AgentWriter?.FlushAndCloseAsync() ?? Task.CompletedTask;
+                    var flushTracesTask = instance.AgentWriter?.FlushAndCloseAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing DirectLogSubmission.");
-                    var logSubmissionTask = _instance.DirectLogSubmission?.DisposeAsync() ?? Task.CompletedTask;
+                    var logSubmissionTask = instance.DirectLogSubmission?.DisposeAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing Telemetry.");
-                    var telemetryTask = _instance.Telemetry?.DisposeAsync() ?? Task.CompletedTask;
+                    var telemetryTask = instance.Telemetry?.DisposeAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing DiscoveryService.");
-                    var discoveryService = _instance.DiscoveryService?.DisposeAsync() ?? Task.CompletedTask;
+                    var discoveryService = instance.DiscoveryService?.DisposeAsync() ?? Task.CompletedTask;
 
                     Log.Debug("Waiting for disposals.");
                     await Task.WhenAll(flushTracesTask, logSubmissionTask, telemetryTask, discoveryService).ConfigureAwait(false);

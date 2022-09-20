@@ -108,7 +108,7 @@ namespace Datadog.Trace.IntegrationTests
             CreateDefaultSpan(httpStatusCode: "99");
             CreateDefaultSpan(httpStatusCode: "600");
 
-            await tracer.FlushAndCloseAsync(); // Flushes and closes both traces and stats
+            await tracer.TracerManager.ShutdownAsync(); // Flushes and closes both traces and stats
 
             var statsPayload = agent.WaitForStats(1);
             var spans = agent.WaitForSpans(13);
@@ -223,7 +223,7 @@ namespace Datadog.Trace.IntegrationTests
             CreateDefaultSpan(type: "redis", resource: "SET le_key le_value");
             CreateDefaultSpan(type: "redis", resource: "SET another_key another_value");
 
-            await tracer.FlushAndCloseAsync(); // Flushes and closes both traces and stats
+            await tracer.TracerManager.ShutdownAsync(); // Flushes and closes both traces and stats
 
             var statsPayload = agent.WaitForStats(1);
             var spans = agent.WaitForSpans(13);
@@ -469,7 +469,7 @@ namespace Datadog.Trace.IntegrationTests
             await tracer.FlushAsync();
 
             // Flush and close both traces and stats
-            await tracer.FlushAndCloseAsync();
+            await tracer.TracerManager.ShutdownAsync();
             WaitForStats(statsWaitEvent, expectStats);
             WaitForTraces(tracesWaitEvent, finishSpansOnClose); // The last span was an error, so we expect to receive it as long as it closed
 

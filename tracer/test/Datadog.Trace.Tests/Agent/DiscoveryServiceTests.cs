@@ -4,8 +4,10 @@
 // </copyright>
 
 using System;
+using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.TransportHelpers;
@@ -276,6 +278,54 @@ public class DiscoveryServiceTests
         config1.Equals(config3).Should().BeFalse();
     }
 
+    [Fact]
+    public async Task HandlesFailuresInApiWithBackoff()
+    {
+        var mutex = new ManualResetEventSlim(initialState: false, spinCount: 0);
+        var factory = new TestRequestFactory(
+            _ => new ThrowingRequest(),
+            _ => new ThrowingRequest(),
+            _ => new ThrowingRequest(),
+            _ => new ThrowingRequest(),
+            _ => new ThrowingRequest(),
+            _ => new ThrowingRequest(),
+            _ => new ThrowingRequest());
+
+        // These are the default values in the other constructor
+        // but setting them explicitly here as it's the behaviour we're testing
+        // not the exact values we choose later
+        var ds = new DiscoveryService(factory, initialRetryDelayMs: 500, maxRetryDelayMs: 5_000, recheckIntervalMs: 30_000);
+        ds.SubscribeToChanges(_ => mutex.Set());
+
+        // wait for 0 + 500 + 1000 + 2000 + 4000 + 5000 ms (+ 2500 buffer).
+        // should not be set
+        mutex.Wait(15_000);
+
+        await ds.DisposeAsync();
+        // add some leeway in case of slowness
+        factory.RequestsSent.Count.Should().BeInRange(5, 6, "Should make at most 6 retries in 13s");
+    }
+
     private string GetConfig(bool dropP0 = true, string version = null)
         => JsonConvert.SerializeObject(new MockTracerAgent.AgentConfiguration() { ClientDropP0s = dropP0, AgentVersion = version });
+
+    internal class ThrowingRequest : TestApiRequest
+    {
+        public ThrowingRequest()
+            : base(new Uri("http://localhost"))
+        {
+        }
+
+        public override async Task<IApiResponse> GetAsync()
+        {
+            await Task.Yield();
+            throw new WebException("Error in GetAsync");
+        }
+
+        public override async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
+        {
+            await Task.Yield();
+            throw new WebException("Error in PostAsync");
+        }
+    }
 }
