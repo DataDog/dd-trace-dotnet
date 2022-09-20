@@ -13,6 +13,7 @@ using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -89,6 +90,7 @@ namespace Datadog.Trace.AppSec
 
         private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IWaf waf = null)
         {
+            var spanContext = Tracer.Instance.StartActiveInternal("asm-init");
             try
             {
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
@@ -105,11 +107,15 @@ namespace Datadog.Trace.AppSec
                 {
                     Log.Information("AppSec remote enabling not allowed (DD_APPSEC_ENABLED=false).");
                 }
+
+                spanContext.Dispose();
             }
             catch (Exception ex)
             {
                 _settings = new(source: null) { Enabled = false };
                 Log.Error(ex, "DDAS-0001-01: AppSec could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
+
+                spanContext.DisposeWithException(ex);
             }
         }
 
