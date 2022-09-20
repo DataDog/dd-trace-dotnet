@@ -10,7 +10,6 @@
   <ItemGroup>
     <None Remove="applicationHost.config" />
     <None Remove="xunit.runner.json" />
-    <Compile Include="..\Datadog.Trace.ClrProfiler.IntegrationTests\Debugger\LogEntryWatcher.cs" Link="LogEntryWatcher.cs" />
     <Compile Include="..\Datadog.Trace.TestHelpers.SharedSource\VerifyHelper.cs" Link="VerifyHelper.cs" />
     <Content Include="applicationHost.config">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

@@ -11,7 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger;
+namespace Datadog.Trace.TestHelpers;
 
 internal class LogEntryWatcher : IDisposable
 {
