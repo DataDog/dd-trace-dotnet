@@ -13,7 +13,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.TestHelpers;
 
-internal class LogEntryWatcher : IDisposable
+public class LogEntryWatcher : IDisposable
 {
     private readonly FileSystemWatcher _fileWatcher;
     private StreamReader _reader;
