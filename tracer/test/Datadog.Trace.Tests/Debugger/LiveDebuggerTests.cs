@@ -115,7 +115,7 @@ public class LiveDebuggerTests
             Products.Remove(productName);
         }
 
-        public void SetCapablity(int index, bool available)
+        public void SetCapability(int index, bool available)
         {
         }
     }

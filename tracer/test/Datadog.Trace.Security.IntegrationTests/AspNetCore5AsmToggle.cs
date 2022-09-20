@@ -39,15 +39,15 @@ namespace Datadog.Trace.Security.IntegrationTests
         // * https://github.com/DataDog/dd-trace-dotnet/pull/3171
         // the verify file names will need adjusting too
         [SkippableTheory]
-        [InlineData(true, ApplyStates.ACKNOWLEDGED,  RcmCapablitiesIndices.AsmActivation)] // RcmCapablitiesIndices.AsmActivation | RcmCapablitiesIndices.AsmIpBlocking | RcmCapablitiesIndices.AsmDdRules)]
-        [InlineData(false, ApplyStates.UNACKNOWLEDGED, 0)] // RcmCapablitiesIndices.AsmIpBlocking | RcmCapablitiesIndices.AsmDdRules)]
-        [InlineData(null, ApplyStates.ACKNOWLEDGED, RcmCapablitiesIndices.AsmActivation)] // RcmCapablitiesIndices.AsmActivation | RcmCapablitiesIndices.AsmIpBlocking | RcmCapablitiesIndices.AsmDdRules)]
+        [InlineData(true, ApplyStates.ACKNOWLEDGED,  RcmCapabilitiesIndices.AsmActivation)] // RcmCapabilitiesIndices.AsmActivation | RcmCapabilitiesIndices.AsmIpBlocking | RcmCapabilitiesIndices.AsmDdRules)]
+        [InlineData(false, ApplyStates.UNACKNOWLEDGED, 0)] // RcmCapabilitiesIndices.AsmIpBlocking | RcmCapabilitiesIndices.AsmDdRules)]
+        [InlineData(null, ApplyStates.ACKNOWLEDGED, RcmCapabilitiesIndices.AsmActivation)] // RcmCapabilitiesIndices.AsmActivation | RcmCapabilitiesIndices.AsmIpBlocking | RcmCapabilitiesIndices.AsmDdRules)]
         [Trait("RunOnWindows", "True")]
-        public async Task TestSecurityToggling(bool? enableSecurity, uint expectedState, byte expectedCapablities)
+        public async Task TestSecurityToggling(bool? enableSecurity, uint expectedState, byte expectedCapabilities)
         {
             var url = "/Health/?[$slice]=value";
             var agent = await RunOnSelfHosted(enableSecurity);
-            var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, expectedState, expectedCapablities);
+            var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, expectedState, expectedCapabilities);
 
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*");
 
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var request1 = await agent.WaitRcmRequestAndReturnLast();
             CheckAckState(request1, expectedState, null, "First RCM call");
-            CheckCapabilities(request1, expectedCapablities, "First RCM call");
+            CheckCapabilities(request1, expectedCapabilities, "First RCM call");
             if (enableSecurity == true)
             {
                 await logEntryWatcher.WaitForLogEntry("AppSec Disabled");
@@ -70,7 +70,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var request2 = await agent.WaitRcmRequestAndReturnLast();
             CheckAckState(request2, expectedState, null, "Second RCM call");
-            CheckCapabilities(request2, expectedCapablities, "Second RCM call");
+            CheckCapabilities(request2, expectedCapabilities, "Second RCM call");
             if (enableSecurity != false)
             {
                 await logEntryWatcher.WaitForLogEntry("AppSec Enabled");
@@ -117,8 +117,8 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         private void CheckCapabilities(GetRcmRequest request, byte expectedState, string message)
         {
-            var capablities = BitConverter.ToInt32(request?.Client?.Capabilities);
-            capablities.Should().Be(expectedState, message);
+            var capabilities = BitConverter.ToInt32(request?.Client?.Capabilities);
+            capabilities.Should().Be(expectedState, message);
         }
     }
 }

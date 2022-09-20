@@ -267,11 +267,11 @@ namespace Datadog.Trace.AppSec
         {
             RemoteConfigurationManager.GetInitializedInstance(rcm =>
             {
-                rcm.SetCapablity(RcmCapablitiesIndices.AsmActivation, _settings.CanBeEnabled);
+                rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeEnabled);
                 // TODO set to '_settings.Rules == null' when https://github.com/DataDog/dd-trace-dotnet/pull/3120 is merged
-                rcm.SetCapablity(RcmCapablitiesIndices.AsmDdRules, false);
+                rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, false);
                 // TODO set to true when https://github.com/DataDog/dd-trace-dotnet/pull/3171 is merged
-                rcm.SetCapablity(RcmCapablitiesIndices.AsmIpBlocking, false);
+                rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, false);
             });
         }
 

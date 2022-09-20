@@ -36,8 +36,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private readonly CancellationTokenSource _cancellationSource;
         private readonly ConcurrentDictionary<string, Product> _products;
 
-        // 32 capablieties ought to be enough for anybody
-        private BitVector32 _capablities = new();
+        // 32 capabilities ought to be enough for anybody
+        private BitVector32 _capabilities = new();
 
         private int _rootVersion;
         private int _targetsVersion;
@@ -162,9 +162,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             _cancellationSource.Cancel();
         }
 
-        public void SetCapablity(int index, bool available)
+        public void SetCapability(int index, bool available)
         {
-            _capablities[index] = available;
+            _capabilities[index] = available;
         }
 
         private async Task Poll()
@@ -202,7 +202,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
 
             var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, _lastPollError != null, _lastPollError);
-            var rcmClient = new RcmClient(_id, products.Keys, _rcmTracer, rcmState, BitConverter.GetBytes(_capablities.Data));
+            var rcmClient = new RcmClient(_id, products.Keys, _rcmTracer, rcmState, BitConverter.GetBytes(_capabilities.Data));
             var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
 
             return rcmRequest;

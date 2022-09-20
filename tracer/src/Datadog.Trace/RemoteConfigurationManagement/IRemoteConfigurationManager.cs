@@ -18,6 +18,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         void UnregisterProduct(string productName);
 
-        void SetCapablity(int index, bool available);
+        void SetCapability(int index, bool available);
     }
 }
