@@ -265,7 +265,7 @@ namespace Datadog.Trace.AppSec
 
         private void SetRemoteConfigCapabilites()
         {
-            RemoteConfigurationManager.GetInitializedInstance(rcm =>
+            RemoteConfigurationManager.CallbackWithInitializedInstance(rcm =>
             {
                 rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeEnabled);
                 // TODO set to '_settings.Rules == null' when https://github.com/DataDog/dd-trace-dotnet/pull/3120 is merged
