@@ -8,11 +8,20 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci
 {
-    internal class TestParameters
+    /// <summary>
+    /// Test parameters
+    /// </summary>
+    public class TestParameters
     {
+        /// <summary>
+        /// Gets or sets the test parameters metadata
+        /// </summary>
         [JsonProperty("metadata")]
         public Dictionary<string, object> Metadata { get; set; }
 
+        /// <summary>
+        /// Gets or sets the test arguments
+        /// </summary>
         [JsonProperty("arguments")]
         public Dictionary<string, object> Arguments { get; set; }
 
