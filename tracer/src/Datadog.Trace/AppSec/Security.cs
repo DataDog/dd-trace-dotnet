@@ -283,9 +283,9 @@ namespace Datadog.Trace.AppSec
         private void AsmDDProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
             var asmDD = e.GetDeserializedConfigurations<string>().FirstOrDefault();
-            if (!string.IsNullOrEmpty(asmDD))
+            if (!string.IsNullOrEmpty(asmDD.TypedFile))
             {
-                _remoteRulesJson = asmDD;
+                _remoteRulesJson = asmDD.TypedFile;
                 UpdateStatus(true);
             }
         }

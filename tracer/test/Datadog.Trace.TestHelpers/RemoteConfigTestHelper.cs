@@ -16,15 +16,21 @@ namespace Datadog.Trace.TestHelpers
 {
     public static class RemoteConfigTestHelper
     {
-        public static void SetupRcm(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string Id)> configurations, string productName, bool waitForDelivery = true)
+        public static void SetupRcm(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string Id)> configurations, string productName)
         {
             var response = BuildRcmResponse(configurations, productName);
             agent.RcmResponse = response;
             output.WriteLine("Using RCM response: " + response);
-            if (waitForDelivery)
-            {
-                agent.WaitForRemoteConfig();
-            }
+        }
+
+        internal static async Task<GetRcmRequest> SetupRcmAndWait(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string Id)> configurations, string productName)
+        {
+            var response = BuildRcmResponse(configurations, productName);
+            agent.RcmResponse = response;
+            output.WriteLine("Using RCM response: " + response);
+            var res = await agent.WaitRcmRequestAndReturnLast();
+            await Task.Delay(1000);
+            return res;
         }
 
         // doing multiple things here, waiting for the request and return the latest one

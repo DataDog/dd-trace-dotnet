@@ -38,12 +38,10 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var spans1 = await SendRequestsAsync(agent, url);
 
-            agent.SetupRcm(Output, new[] { ((object)GetRules("2.22.222"), "1") }, "ASM_DD");
-
+            await agent.SetupRcmAndWait(Output, new[] { ((object)GetRules("2.22.222"), "1") }, "ASM_DD");
             var spans2 = await SendRequestsAsync(agent, url);
 
-            agent.SetupRcm(Output, new[] { ((object)GetRules("3.33.333"), "2") }, "ASM_DD");
-
+            await agent.SetupRcmAndWait(Output, new[] { ((object)GetRules("3.33.333"), "2") }, "ASM_DD");
             var spans3 = await SendRequestsAsync(agent, url);
 
             var spans = new List<MockSpan>();
