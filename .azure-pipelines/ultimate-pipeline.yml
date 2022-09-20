@@ -659,6 +659,9 @@ stages:
     pool:
       vmImage: macos-11
     steps:
+      - template: steps/clone-repo.yml
+        parameters:
+          masterCommitId: $(masterCommitId)
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
         parameters:
