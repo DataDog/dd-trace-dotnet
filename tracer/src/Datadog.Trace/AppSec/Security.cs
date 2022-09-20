@@ -288,6 +288,8 @@ namespace Datadog.Trace.AppSec
                 _remoteRulesJson = asmDD.TypedFile;
                 UpdateStatus(true);
             }
+
+            e.Acknowledge(asmDD.Name);
         }
 
         private void FeaturesProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
