@@ -17,11 +17,11 @@ namespace Datadog.Trace.IntegrationTests
     public class TraceTagTests
     {
         private readonly Tracer _tracer;
-        private readonly TestApi _testApi;
+        private readonly MockApi _testApi;
 
         public TraceTagTests()
         {
-            _testApi = new TestApi();
+            _testApi = new MockApi();
 
             var settings = new TracerSettings();
             var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
