@@ -527,6 +527,7 @@ ddog_Request* LibddprofExporter::CreateRequest(
     struct ddog_Slice_file files
     {
         filesArray, 1
+        //filesArray, 2
     };
 
     return ddog_ProfileExporter_build(exporter, start, end, files, additionalTags.GetFfiTags(), RequestTimeOutMs);

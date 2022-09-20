@@ -357,7 +357,7 @@ void ClrEventsParser::OnGCRestartEEEnd()
 
     // compute suspension time
     uint64_t suspensionDuration = 0;
-    uint64_t currentTimestamp = currentTimestamp = GetCurrentTimestamp();
+    uint64_t currentTimestamp = GetCurrentTimestamp();
     if (_suspensionStart != 0)
     {
         suspensionDuration = currentTimestamp - _suspensionStart;
