@@ -96,7 +96,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData("blocking")]
         public async Task TestBlockedRequest(string test)
         {
-            var url = "/Health";
+            var url = "/api/Health";
 
             var settings = VerifyHelper.GetSpanVerifierSettings(test);
             await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, 1, settings, userAgent: "Hello/V");
