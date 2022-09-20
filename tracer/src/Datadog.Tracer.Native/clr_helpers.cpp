@@ -223,6 +223,8 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
     mdToken type_extends = mdTokenNil;
     bool type_valueType = false;
     bool type_isGeneric = false;
+    bool type_isAbstract = false;
+    bool type_isSealed = false;
 
     HRESULT hr = E_FAIL;
     const auto token_type = TypeFromToken(token);
@@ -245,6 +247,10 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
                 type_valueType =
                     extendsInfo->name == WStr("System.ValueType") || extendsInfo->name == WStr("System.Enum");
             }
+
+            type_isAbstract = IsTdAbstract(type_flags);
+            type_isSealed = IsTdSealed(type_flags);
+
             break;
         case mdtTypeRef:
             hr = metadata_import->GetTypeRefProps(token, &parent_token, type_name, kNameMaxSize, &type_name_len);
@@ -268,7 +274,8 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
                 const auto baseType = GetTypeInfo(metadata_import, type_token);
                 return {baseType.id,        baseType.name,        token,
                         token_type,         baseType.extend_from, baseType.valueType,
-                        baseType.isGeneric, baseType.parent_type, baseType.scopeToken};
+                        baseType.isGeneric, baseType.isAbstract, baseType.isSealed,
+                        baseType.parent_type, baseType.scopeToken};
             }
         }
         break;
@@ -296,7 +303,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
     }
 
     return {token,       type_name_string, mdTypeSpecNil,  token_type,
-            extendsInfo, type_valueType,   type_isGeneric, parentTypeInfo, parent_token};
+            extendsInfo, type_valueType,   type_isGeneric, type_isAbstract, type_isSealed, parentTypeInfo, parent_token};
 }
 
 // Searches for an AssemblyRef whose name and version match exactly.

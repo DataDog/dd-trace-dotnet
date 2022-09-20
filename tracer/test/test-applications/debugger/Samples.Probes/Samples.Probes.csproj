@@ -14,4 +14,13 @@
     <RuntimeIdentifiers Condition="'$(OS)' == 'Windows_NT' AND '$(TargetFramework)' == 'net461'">win7-x86;win7-x64</RuntimeIdentifiers>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="System.Memory" Version="4.5.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
+    <ProjectReference Include="..\dependency-libs\Samples.Probes.External\Samples.Probes.External.csproj" />
+  </ItemGroup>
+
 </Project>

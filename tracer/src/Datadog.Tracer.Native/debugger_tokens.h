@@ -327,7 +327,7 @@ public:
     HRESULT WriteEndReturnMemberRef(void* rewriterWrapperPtr, const TypeInfo* currentType,
                                     TypeSignature* returnArgument, ILInstr** instruction, ProbeType probeType);
 
-    HRESULT WriteLogException(void* rewriterWrapperPtr, const TypeInfo* currentType, ProbeType probeType);
+    HRESULT WriteLogException(void* rewriterWrapperPtr, ProbeType probeType);
 
     HRESULT WriteLogArg(void* rewriterWrapperPtr, const TypeSignature& argument, ILInstr** instruction, ProbeType probeType);
 
@@ -344,7 +344,7 @@ public:
     HRESULT GetDebuggerLocals(void* rewriterWrapperPtr, ULONG* callTargetStateIndex, mdToken* callTargetStateToken, ULONG* asyncMethodStateIndex);
     HRESULT CreateBeginMethodStartMarkerRefSignature(ProbeType probeType, mdMemberRef& beginMethodRef);
 
-    mdFieldDef GetIsFirstEntryToMoveNextFieldToken(mdToken type);
+    HRESULT GetIsFirstEntryToMoveNextFieldToken(mdToken type, mdFieldDef& token);
 };
 
 } // namespace debugger

@@ -418,7 +418,7 @@ namespace datadog::shared::nativeloader
     {
         try
         {
-            if (m_writeToDiskCorProfilerInfo != nullptr)
+            if (m_writeToDiskCorProfilerInfo != nullptr && SUCCEEDED(hrStatus))
             {
                 WCHAR modulePath[MAX_PATH];
                 DWORD nameSize = 0;

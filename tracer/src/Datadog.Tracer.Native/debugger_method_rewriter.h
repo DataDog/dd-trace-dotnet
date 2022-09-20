@@ -42,7 +42,8 @@ private:
                                   const std::vector<TypeSignature>& locals, int numLocals,
                                   ILRewriterWrapper& rewriterWrapper, ULONG callTargetStateIndex,
                                         ILInstr** beginCallInstruction, ProbeType probeType);
-    static HRESULT LoadInstanceIntoStack(FunctionInfo* caller, bool isStatic, const ILRewriterWrapper& rewriterWrapper, ILInstr** outLoadArgumentInstr);
+    static HRESULT LoadInstanceIntoStack(FunctionInfo* caller, bool isStatic, const ILRewriterWrapper& rewriterWrapper,
+                                         ILInstr** outLoadArgumentInstr, CallTargetTokens* callTargetTokens);
     static HRESULT CallLineProbe(int instrumentedMethodIndex, CorProfiler* corProfiler, ModuleID module_id,
                                  ModuleMetadata& module_metadata, FunctionInfo* caller, DebuggerTokens* debuggerTokens,
                                  mdToken function_token, bool isStatic, std::vector<TypeSignature>& methodArguments,

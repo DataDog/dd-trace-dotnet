@@ -8,6 +8,7 @@
 namespace debugger
 {
 
+bool IsDebuggerEnabled();
 bool IsDebuggerInstrumentAllEnabled();
 
 } // namespace debugger

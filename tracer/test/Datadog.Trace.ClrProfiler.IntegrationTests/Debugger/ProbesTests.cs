@@ -37,7 +37,7 @@ public class ProbesTests : TestHelper, IDisposable
     private const string ProbesInstrumentedLogEntry = "Live Debugger.InstrumentProbes: Request to instrument probes definitions completed.";
 
     private readonly string[] _typesToScrub = { nameof(IntPtr), nameof(Guid) };
-    private readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber", "thread_name", "thread_id" };
+    private readonly string[] _knownPropertiesToReplace = { "duration", "timestamp", "dd.span_id", "dd.trace_id", "id", "lineNumber", "thread_name", "thread_id", "<>t__builder", "s_taskIdCounter", "<>u__1" };
 
     public ProbesTests(ITestOutputHelper output)
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
@@ -48,6 +48,45 @@ public class ProbesTests : TestHelper, IDisposable
     public static IEnumerable<object[]> ProbeTests()
     {
         return DebuggerTestHelper.AllProbeTestTypes();
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task AsyncMethodInGenericClassTest()
+    {
+        Skip.If(true, "Not supported yet. Internal Jira Ticket: #DEBUG-1092.");
+
+        var testType = typeof(AsyncMethodInGenericClassTest);
+        const int expectedNumberOfSnapshots = 1;
+
+        var guidGenerator = new DeterministicGuidGenerator();
+
+        var probes = new[]
+        {
+            CreateProbe("GenericClass`1", "Run", guidGenerator)
+        };
+
+        await RunSingleTestWithApprovals(testType, isMultiPhase: false, expectedNumberOfSnapshots, probes);
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task TransparentCodeCtorInstrumentationTest()
+    {
+        var testType = typeof(CtorTransparentCodeTest);
+        const int expectedNumberOfSnapshots = 1;
+
+        var guidGenerator = new DeterministicGuidGenerator();
+
+        var probes = new[]
+        {
+            CreateProbe("SecurityTransparentTest", ".ctor", guidGenerator),
+            CreateProbe("CtorTransparentCodeTest", "Run", guidGenerator)
+        };
+
+        await RunSingleTestWithApprovals(testType, isMultiPhase: false, expectedNumberOfSnapshots, probes);
     }
 
     [SkippableTheory]
@@ -65,36 +104,7 @@ public class ProbesTests : TestHelper, IDisposable
             throw new InvalidOperationException($"{nameof(InstallAndUninstallMethodProbeWithOverloadsTest)} expected one probe request to exist, but found {probes.Length} probes.");
         }
 
-        using var agent = EnvironmentHelper.GetMockAgent();
-        SetDebuggerEnvironment(agent);
-        using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
-        try
-        {
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
-
-            SetProbeConfiguration(agent, probes.Select(p => p.Probe).ToArray());
-            await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
-
-            await sample.RunCodeSample();
-
-            var snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
-            Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
-            await ApproveSnapshots(snapshots, testType, isMultiPhase: true, phaseNumber: 1);
-            agent.ClearSnapshots();
-
-            var statuses = await agent.WaitForProbesStatuses(probes.Length);
-            Assert.Equal(probes.Length, statuses?.Length);
-            await ApproveStatuses(statuses, testType, isMultiPhase: true, phaseNumber: 1);
-            agent.ClearProbeStatuses();
-
-            SetProbeConfiguration(agent, Array.Empty<SnapshotProbe>());
-            await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
-            Assert.True(await agent.WaitForNoSnapshots(6000), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
-        }
-        finally
-        {
-            await sample.StopSample();
-        }
+        await RunSingleTestWithApprovals(testType, isMultiPhase: true, expectedNumberOfSnapshots, probes.Select(p => p.Probe).ToArray());
     }
 
     [SkippableFact]
@@ -147,6 +157,7 @@ public class ProbesTests : TestHelper, IDisposable
     [MemberData(nameof(ProbeTests))]
     public async Task MethodProbeTest(Type testType)
     {
+        SkipOverTestIfNeeded(testType);
         await RunMethodProbeTests(testType);
     }
 
@@ -180,6 +191,22 @@ public class ProbesTests : TestHelper, IDisposable
         await RunMethodProbeTests(testType);
     }
 #endif
+
+    private static SnapshotProbe CreateProbe(string typeName, string methodName, DeterministicGuidGenerator guidGenerator)
+    {
+        return new SnapshotProbe
+        {
+            Id = guidGenerator.New().ToString(),
+            Language = TracerConstants.Language,
+            Active = true,
+            Where = new Where
+            {
+                TypeName = typeName,
+                MethodName = methodName
+            },
+            Sampling = new Trace.Debugger.Configurations.Models.Sampling { SnapshotsPerSecond = 1000000 }
+        };
+    }
 
     private async Task RunMethodProbeTests(Type testType)
     {
@@ -255,6 +282,52 @@ public class ProbesTests : TestHelper, IDisposable
                 await ApproveStatuses(statuses, testType, isMultiPhase, phaseNumber);
                 agent.ClearProbeStatuses();
             }
+        }
+        finally
+        {
+            await sample.StopSample();
+        }
+    }
+
+    /// <summary>
+    /// Internal Jira Ticket: DEBUG-1092.
+    /// </summary>
+    private void SkipOverTestIfNeeded(Type testType)
+    {
+        if (testType == typeof(AsyncInstanceMethod) && !EnvironmentTools.IsWindows())
+        {
+            throw new SkipException("Can't use WindowsNamedPipes on non-Windows");
+        }
+    }
+
+    private async Task RunSingleTestWithApprovals(Type testType, bool isMultiPhase, int expectedNumberOfSnapshots, params SnapshotProbe[] probes)
+    {
+        using var agent = EnvironmentHelper.GetMockAgent();
+
+        SetDebuggerEnvironment(agent);
+        using var sample = DebuggerTestHelper.StartSample(this, agent, testType.FullName);
+        try
+        {
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{sample.Process.ProcessName}*");
+
+            SetProbeConfiguration(agent, probes);
+            await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
+
+            await sample.RunCodeSample();
+
+            var snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
+            Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
+            await ApproveSnapshots(snapshots, testType, isMultiPhase: true, phaseNumber: 1);
+            agent.ClearSnapshots();
+
+            var statuses = await agent.WaitForProbesStatuses(probes.Length);
+            Assert.Equal(probes.Length, statuses?.Length);
+            await ApproveStatuses(statuses, testType, isMultiPhase: true, phaseNumber: 1);
+            agent.ClearProbeStatuses();
+
+            SetProbeConfiguration(agent, Array.Empty<SnapshotProbe>());
+            await logEntryWatcher.WaitForLogEntry(ProbesInstrumentedLogEntry);
+            Assert.True(await agent.WaitForNoSnapshots(6000), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
         }
         finally
         {

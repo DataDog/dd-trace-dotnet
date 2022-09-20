@@ -15,7 +15,7 @@ namespace Samples.Probes.SmokeTests
         internal struct NestedAsyncGenericStruct<T> where T : IGeneric
         {
             [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-            [MethodProbeTestData]
+            [MethodProbeTestData(skip: true)]
             public async Task<string> Method<K>(K generic, string input) where K : IGeneric
             {
                 var output = generic.Message + input + ".";

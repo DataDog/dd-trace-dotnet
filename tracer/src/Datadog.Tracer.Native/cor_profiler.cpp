@@ -215,7 +215,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     rejit_handler = info10 != nullptr ? std::make_shared<RejitHandler>(info10, work_offloader)
                                       : std::make_shared<RejitHandler>(this->info_, work_offloader);
     tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(rejit_handler, work_offloader);
-
+    
     debugger_instrumentation_requester = std::make_unique<debugger::DebuggerProbesInstrumentationRequester>(rejit_handler, work_offloader);
 
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
@@ -551,6 +551,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             const auto numReJITs = tracer_integration_preprocessor->RequestRejitForLoadedModules(rejitModuleIds, integration_definitions_);
             Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
         }
+    }
+
+    if (debugger_instrumentation_requester != nullptr)
+    {
+        debugger_instrumentation_requester->ModuleLoadFinished(module_id);
     }
 
     return hr;
@@ -1046,16 +1051,6 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
             const auto numReJITs = tracer_integration_preprocessor->RequestRejitForLoadedModules(std::vector<ModuleID>{module_id}, integration_definitions_);
             Logger::Debug("[Tracer] Total number of ReJIT Requested: ", numReJITs);
         }
-
-        if (debugger_instrumentation_requester != nullptr)
-        {
-            const auto& probes = debugger_instrumentation_requester->GetProbes();
-            if (!probes.empty())
-            {
-                const auto numReJITs = debugger_instrumentation_requester->RequestRejitForLoadedModule(module_id);
-                 Logger::Debug("[Debugger] Total number of ReJIT Requested: ", numReJITs);
-            }
-        }
     }
 
     return S_OK;
@@ -1216,7 +1211,11 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     // In case is True we create a local ModuleMetadata to inject the loader.
     if (!shared::Contains(module_ids_, module_id))
     {
-        debugger_instrumentation_requester->PerformInstrumentAllIfNeeded(module_id, function_token);
+        if (debugger_instrumentation_requester != nullptr)
+        {
+            debugger_instrumentation_requester->PerformInstrumentAllIfNeeded(module_id, function_token);
+        }
+        
         return S_OK;
     }
 
@@ -1230,7 +1229,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     {
         // Loader was already injected in a calltarget scenario, we don't need to do anything else here
 
-        debugger_instrumentation_requester->PerformInstrumentAllIfNeeded(module_id, function_token);
+        if (debugger_instrumentation_requester != nullptr)
+        {
+            debugger_instrumentation_requester->PerformInstrumentAllIfNeeded(module_id, function_token);
+        }
 
         return S_OK;
     }
@@ -1690,13 +1692,21 @@ void CorProfiler::InstrumentProbes(debugger::DebuggerMethodProbeDefinition* meth
                             debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,
                             debugger::DebuggerRemoveProbesDefinition* removeProbes, int revertProbesLength) const
 {
-    debugger_instrumentation_requester->InstrumentProbes(methodProbes, methodProbesLength, lineProbes, lineProbesLength,
-                                                  removeProbes, revertProbesLength);
+    if (debugger_instrumentation_requester != nullptr)
+    {
+        debugger_instrumentation_requester->InstrumentProbes(methodProbes, methodProbesLength, lineProbes,
+                                                             lineProbesLength, removeProbes, revertProbesLength);
+    }
 }
 
 int CorProfiler::GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses)
 {
-    return debugger_instrumentation_requester->GetProbesStatuses(probeIds, probeIdsLength, probeStatuses);
+    if (debugger_instrumentation_requester != nullptr)
+    {
+        return debugger_instrumentation_requester->GetProbesStatuses(probeIds, probeIdsLength, probeStatuses);
+    }
+
+    return 0;
 }
 
 //
@@ -3341,7 +3351,12 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ReJITError(ModuleID moduleId, mdMethodDef
         return S_OK;
     }
 
-    return debugger_instrumentation_requester->NotifyReJITError(moduleId, methodId, functionId, hrStatus);
+    if (debugger_instrumentation_requester != nullptr)
+    {
+        return debugger_instrumentation_requester->NotifyReJITError(moduleId, methodId, functionId, hrStatus);
+    }
+
+    return S_OK;
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID functionId, BOOL* pbUseCachedFunction)
@@ -3357,9 +3372,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCachedFunctionSearchStarted(FunctionID
         return S_OK;
     }
 
-    // keep this lock until we are done using the module,
-    // to prevent it from unloading while in use
-    std::lock_guard<std::mutex> guard(module_ids_lock_);
+    try
+    {
+        // keep this lock until we are done using the module,
+        // to prevent it from unloading while in use
+        std::lock_guard<std::mutex> guard(module_ids_lock_);
+    }
+    catch (...)
+    {
+        Logger::Error("JITCachedFunctionSearchStarted: Failed on exception while tried to grab the mutex of `module_ids_lock_` for functionId ", functionId);
+        return S_OK;
+    }
 
     // Extract Module metadata
     ModuleID module_id;

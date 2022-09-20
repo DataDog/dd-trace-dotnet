@@ -95,10 +95,14 @@ namespace Datadog.Trace.Debugger.Snapshots
             _jsonWriter.WriteEndObject();
         }
 
-        internal void LineProbeEndReturn()
+        internal void LineProbeEndReturn(bool hasArgumentsOrLocals)
         {
-            // end arguments or locals
-            _jsonWriter.WriteEndObject();
+            if (hasArgumentsOrLocals)
+            {
+                // end arguments or locals
+                _jsonWriter.WriteEndObject();
+            }
+
             // end line number
             _jsonWriter.WriteEndObject();
             // end lines

@@ -328,13 +328,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <summary>
         /// Log exception
         /// </summary>
-        /// <typeparam name="TTarget">Target object of the method. Note that it could be typeof(object) and not a concrete type</typeparam>
         /// <param name="exception">Exception instance</param>
         /// <param name="asyncState">Debugger asyncState</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void LogException<TTarget>(Exception exception, ref AsyncMethodDebuggerState asyncState)
+        public static void LogException(Exception exception, ref AsyncMethodDebuggerState asyncState)
         {
-            Log.Error(exception, "Error caused by our instrumentation");
+            Log.Warning(exception, "Error caused by our instrumentation");
             asyncState.IsActive = false;
             RestoreContext();
         }

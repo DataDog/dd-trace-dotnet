@@ -3,7 +3,8 @@ using System.Threading.Tasks;
 
 namespace Samples.Probes.SmokeTests
 {
-    internal class AsyncInstanceMethod : IAsyncRun
+    [LineProbeTestData(lineNumber: 21)]
+    public class AsyncInstanceMethod : IAsyncRun
     {
         private const string ClassName = "AsyncInstanceMethod";
 

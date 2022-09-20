@@ -923,7 +923,8 @@ partial class Build
             var includeSecurity = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
             var includeDebugger = TracerDirectory.GlobFiles("test/test-applications/debugger/*/*.csproj");
 
-            var exclude = TracerDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj");
+            var exclude = TracerDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj")
+                                         .Concat(TracerDirectory.GlobFiles("test/test-applications/debugger/dependency-libs/**/*.csproj"));
 
             var projects = includeIntegration
                 .Concat(includeSecurity)

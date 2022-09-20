@@ -44,7 +44,7 @@ namespace Datadog.Trace.Debugger.RateLimiting
         public bool Sample(string probeId)
         {
             // Rate limiter is engaged at ~1 probe per second (1 probes per 1s time window)
-            var probeSampler = _samplers.GetOrAdd(probeId, CreateSampler(1));
+            var probeSampler = _samplers.GetOrAdd(probeId, _ => CreateSampler(1));
             return probeSampler.Sample() && _globalSampler.Sample();
         }
 

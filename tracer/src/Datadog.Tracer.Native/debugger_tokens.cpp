@@ -296,6 +296,11 @@ HRESULT DebuggerTokens::WriteBeginMethod_StartMarker(void* rewriterWrapperPtr, c
 
     bool isValueType = currentType->valueType;
     mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
+    if (currentTypeRef == mdTokenNil)
+    {
+        isValueType = false;
+        currentTypeRef = GetObjectTypeRef();
+    }
 
     unsigned currentTypeBuffer;
     ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
@@ -420,6 +425,11 @@ HRESULT DebuggerTokens::WriteEndVoidReturnMemberRef(void* rewriterWrapperPtr, co
 
     bool isValueType = currentType->valueType;
     mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
+    if (currentTypeRef == mdTokenNil)
+    {
+        isValueType = false;
+        currentTypeRef = GetObjectTypeRef();
+    }
 
     unsigned currentTypeBuffer;
     ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
@@ -488,6 +498,11 @@ HRESULT DebuggerTokens::WriteEndReturnMemberRef(void* rewriterWrapperPtr, const 
 
     bool isValueType = currentType->valueType;
     mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
+    if (currentTypeRef == mdTokenNil)
+    {
+        isValueType = false;
+        currentTypeRef = GetObjectTypeRef();
+    }
 
     unsigned currentTypeBuffer;
     ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
@@ -599,7 +614,7 @@ HRESULT DebuggerTokens::CreateEndMethodStartMarkerRefSignature(ProbeType probeTy
 }
 
 // write log exception
-HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeInfo* currentType, ProbeType probeType)
+HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, ProbeType probeType)
 {
     auto hr = EnsureBaseCalltargetTokens();
     if (FAILED(hr))
@@ -607,14 +622,15 @@ HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeIn
         return hr;
     }
     ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
-    ModuleMetadata* module_metadata = GetMetadata();
-
-    mdTypeRef stateTypeRef = GetDebuggerState(probeType);
-    mdTypeRef methodOrLineTypeRef = GetDebuggerInvoker(probeType);
     mdMemberRef logExceptionRef = GetLogExceptionMemberRef(probeType);
 
     if (logExceptionRef == mdMemberRefNil)
     {
+        ModuleMetadata* module_metadata = GetMetadata();
+
+        mdTypeRef stateTypeRef = GetDebuggerState(probeType);
+        mdTypeRef methodOrLineTypeRef = GetDebuggerInvoker(probeType);
+
         unsigned exTypeRefBuffer;
         auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
 
@@ -625,8 +641,7 @@ HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeIn
         COR_SIGNATURE signature[signatureBufferSize];
         unsigned offset = 0;
 
-        signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERIC;
-        signature[offset++] = 0x01; // One generic argument: TTarget
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
         signature[offset++] = 0x02; // (Exception, DebuggerState)
 
         signature[offset++] = ELEMENT_TYPE_VOID;
@@ -652,40 +667,7 @@ HRESULT DebuggerTokens::WriteLogException(void* rewriterWrapperPtr, const TypeIn
         SetLogExceptionMemberRef(probeType, logExceptionRef);
     }
 
-    mdMethodSpec logExceptionMethodSpec = mdMethodSpecNil;
-
-    bool isValueType = currentType->valueType;
-    mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
-
-    unsigned currentTypeBuffer;
-    ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
-
-    auto signatureLength = 3 + currentTypeSize;
-    COR_SIGNATURE signature[signatureBufferSize];
-    unsigned offset = 0;
-    signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
-    signature[offset++] = 0x01;
-
-    if (isValueType)
-    {
-        signature[offset++] = ELEMENT_TYPE_VALUETYPE;
-    }
-    else
-    {
-        signature[offset++] = ELEMENT_TYPE_CLASS;
-    }
-    memcpy(&signature[offset], &currentTypeBuffer, currentTypeSize);
-    offset += currentTypeSize;
-
-    hr = module_metadata->metadata_emit->DefineMethodSpec(logExceptionRef, signature, signatureLength,
-                                                          &logExceptionMethodSpec);
-    if (FAILED(hr))
-    {
-        Logger::Warn("Error creating log exception method spec.");
-        return hr;
-    }
-
-    rewriterWrapper->CallMember(logExceptionMethodSpec, false);
+    rewriterWrapper->CallMember(logExceptionRef, false);
     return S_OK;
 }
 
@@ -828,6 +810,11 @@ HRESULT DebuggerTokens::WriteBeginLine(void* rewriterWrapperPtr, const TypeInfo*
 
     bool isValueType = currentType->valueType;
     mdToken currentTypeRef = GetCurrentTypeRef(currentType, isValueType);
+    if (currentTypeRef == mdTokenNil)
+    {
+        isValueType = false;
+        currentTypeRef = GetObjectTypeRef();
+    }
 
     unsigned currentTypeBuffer;
     ULONG currentTypeSize = CorSigCompressToken(currentTypeRef, &currentTypeBuffer);
@@ -1042,22 +1029,14 @@ HRESULT DebuggerTokens::GetDebuggerLocals(void* rewriterWrapperPtr, ULONG* callT
     return S_OK;
 }
 
-mdFieldDef DebuggerTokens::GetIsFirstEntryToMoveNextFieldToken(const mdToken type)
+HRESULT DebuggerTokens::GetIsFirstEntryToMoveNextFieldToken(const mdToken type, mdFieldDef& token)
 {
     const ModuleMetadata* module_metadata = GetMetadata();
-    mdFieldDef token;
     ULONG cTokens;
     HCORENUM henum = nullptr;
-    const HRESULT hr = module_metadata->metadata_import->EnumFieldsWithName (
-        &henum, type, 
-        managed_profiler_debugger_is_first_entry_field_name.c_str(),
-        &token, 1, &cTokens);
+    const HRESULT hr = module_metadata->metadata_import->EnumFieldsWithName(
+        &henum, type, managed_profiler_debugger_is_first_entry_field_name.c_str(), &token, 1, &cTokens);
     module_metadata->metadata_import->CloseEnum(henum);
-    if (SUCCEEDED(hr))
-    {
-        return token;
-    }
-    
-    return mdFieldDefNil;
+    return hr;
 }
 } // namespace debugger
