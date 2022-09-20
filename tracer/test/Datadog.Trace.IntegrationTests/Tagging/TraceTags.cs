@@ -5,7 +5,9 @@
 
 using System;
 using System.Linq;
-using Datadog.Trace.Agent.MessagePack;
+using System.Threading.Tasks;
+using Datadog.Trace.Agent;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -15,40 +17,37 @@ namespace Datadog.Trace.IntegrationTests.Tagging;
 
 public class TraceTags
 {
+    private readonly Tracer _tracer;
+    private readonly MockApi _testApi;
+
+    public TraceTags()
+    {
+        // make it so all traces are initially dropped so we can override with keep,
+        // otherwise we can't change the sampling mechanism
+        var settings = new TracerSettings { GlobalSamplingRate = 0 };
+
+        _testApi = new MockApi();
+        var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
+        _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+    }
+
     [Theory]
     [InlineData(SamplingMechanism.Default)]
     [InlineData(SamplingMechanism.AgentRate)]
     [InlineData(SamplingMechanism.TraceSamplingRule)]
     [InlineData(SamplingMechanism.Manual)]
     [InlineData(SamplingMechanism.Asm)]
-    public void SerializeSamplingMechanismTag(int samplingMechanism)
+    public async Task SerializeSamplingMechanismTag(int samplingMechanism)
     {
-        // set up the trace
-        var tracer = new MockTracer();
-        var traceContext = new TraceContext(tracer);
-        traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, samplingMechanism);
+        using (var scope = _tracer.StartActiveInternal("root"))
+        {
+            var traceContext = scope.Span.Context.TraceContext;
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, samplingMechanism);
+        }
 
-        // create a span
-        var spanContext = new SpanContext(SpanContext.None, traceContext, "service1");
-        var span = new Span(spanContext, start: null);
-        traceContext.AddSpan(span);
-        span.Finish();
-
-        var deserializedSpan = Serialize(tracer.TraceChunk, traceContext).Single();
-
+        await _tracer.FlushAsync();
+        var traceChunks = _testApi.Wait();
+        var deserializedSpan = traceChunks.Single().Single();
         deserializedSpan.Tags.Should().Contain("_dd.p.dm", $"-{samplingMechanism}");
-    }
-
-    private static MockSpan[] Serialize(ArraySegment<Span> traceChunk, TraceContext traceContext)
-    {
-        var buffer = Array.Empty<byte>();
-        var model = new TraceChunkModel(traceChunk, traceContext);
-
-        // use vendored MessagePack to serialize
-        var resolver = SpanFormatterResolver.Instance;
-        Vendors.MessagePack.MessagePackSerializer.Serialize(ref buffer, 0, model, resolver);
-
-        // use nuget MessagePack to deserialize
-        return global::MessagePack.MessagePackSerializer.Deserialize<MockSpan[]>(buffer);
     }
 }
