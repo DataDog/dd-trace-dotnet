@@ -303,7 +303,7 @@ public class DiscoveryServiceTests
 
         await ds.DisposeAsync();
         // add some leeway in case of slowness
-        factory.RequestsSent.Count.Should().BeInRange(3, 6, "Should make at most 6 retries in 13s");
+        factory.RequestsSent.Count.Should().BeInRange(3, 6, "Should make between 3 and 6 retries in 13s");
     }
 
     private string GetConfig(bool dropP0 = true, string version = null)
