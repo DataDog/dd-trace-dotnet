@@ -7,6 +7,9 @@ labels:
 
   - name: "area:asm"
     title: "^\\[?(?i)ASM"
+  
+  - name: "area:remote-config"
+    title: "^\\[?(?i)(RCM|remote config)"
 
   - name: "area:profiler"
     title: "^\\[?(?i)profiler"
