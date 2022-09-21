@@ -12,6 +12,7 @@
 #include <unordered_map>
 #include <iomanip>
 
+#define UNW_LOCAL_ONLY
 #ifdef ARM64
 #include <libunwind-aarch64.h>
 #elif AMD64
