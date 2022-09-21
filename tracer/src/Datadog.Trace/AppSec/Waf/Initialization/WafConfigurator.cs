@@ -41,6 +41,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 valueRegex = Marshal.StringToHGlobalAnsi(obfuscationParameterValueRegex);
                 args.KeyRegex = keyRegex;
                 args.ValueRegex = valueRegex;
+                args.FreeWafFunction = wafNative.ObjectFreeFuncPtr;
 
                 var ruleHandle = wafNative.Init(configObj.RawPtr, ref args, ref ruleSetInfo);
                 if (ruleHandle == IntPtr.Zero)
