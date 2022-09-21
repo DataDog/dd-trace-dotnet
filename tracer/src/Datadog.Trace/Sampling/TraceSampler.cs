@@ -9,7 +9,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Sampling
 {
-    internal class TraceSampler : ISampler
+    internal class TraceSampler : ITraceSampler
     {
         private const ulong KnuthFactor = 1_111_111_111_111_111_111;
 

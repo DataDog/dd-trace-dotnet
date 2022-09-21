@@ -126,7 +126,7 @@ namespace Datadog.Trace.Tests.Sampling
         }
 
         private void RunSamplerTest(
-            ISampler sampler,
+            ITraceSampler sampler,
             int iterations,
             float expectedAutoKeepRate,
             float expectedUserKeepRate,

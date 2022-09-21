@@ -18,7 +18,7 @@ namespace Datadog.Trace.TestHelpers
         public static Tracer Create(
             TracerSettings settings = null,
             IAgentWriter agentWriter = null,
-            ISampler sampler = null,
+            ITraceSampler sampler = null,
             IScopeManager scopeManager = null,
             IDogStatsd statsd = null)
         {
