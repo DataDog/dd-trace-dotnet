@@ -10,74 +10,10 @@ using Datadog.Trace.Vendors.StatsdClient;
 
 namespace Datadog.Trace.TestHelpers
 {
-#pragma warning disable SA1601 // Partial elements should be documented
     public static partial class SpanMetadataRules
     {
         internal static (string PropertyName, string Result) Name(MockSpan span) => (nameof(span.Name), span.Name);
 
         internal static (string PropertyName, string Result) Type(MockSpan span) => (nameof(span.Type), span.Type);
-    }
-
-#pragma warning disable SA1402 // File may only contain a single type
-
-#pragma warning disable SA1201 // Elements should appear in the correct order
-    public class Result
-    {
-        public static readonly Result DefaultSuccess = FromSpan(null);
-
-        public MockSpan Span { get; }
-
-        public ISet<string> ExcludeTags { get; }
-
-        public List<string> Errors { get; }
-
-        public bool Success
-        {
-            get => Errors.Count == 0;
-        }
-
-        private Result(MockSpan span, ISet<string> excludeTags)
-        {
-            Span = span;
-            ExcludeTags = excludeTags;
-            Errors = new List<string>();
-        }
-
-        public static Result FromSpan(MockSpan span, ISet<string> excludeTags = null)
-        {
-            return new Result(span, excludeTags ?? new HashSet<string>());
-        }
-
-        public Result WithFailure(string failureMessage)
-        {
-            Errors.Add(failureMessage);
-            return this;
-        }
-
-        public Result Properties(Action<SpanPropertyAssertion> propertyAssertions)
-        {
-            var p = new SpanPropertyAssertion(this);
-            propertyAssertions(p);
-            return this;
-        }
-
-        public Result Tags(Action<SpanTagAssertion> tagAssertions)
-        {
-            var t = new SpanTagAssertion(this, this.Span.Tags);
-            tagAssertions(t);
-
-            SpanTagAssertion.DefaultTagAssertions(t);
-            SpanTagAssertion.AssertNoRemainingTags(t);
-            return this;
-        }
-
-        public override string ToString()
-        {
-            string errorMessage = string.Concat(Errors.Select(s => $"{Environment.NewLine}- {s}"));
-
-            return $"Result: {Success}{Environment.NewLine}"
-                 + $"Span: {Span}{Environment.NewLine}"
-                 + $"Errors:{errorMessage}";
-        }
     }
 }
