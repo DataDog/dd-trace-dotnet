@@ -987,7 +987,7 @@ partial class Build : NukeBuild
 
     static bool IsGitBaseBranch(string baseBranch)
         => string.Equals(
-            GitTasks.Git("git rev-parse --abbrev-ref HEAD").First().Text,
+            GitTasks.Git("rev-parse --abbrev-ref HEAD").First().Text,
             baseBranch,
             StringComparison.OrdinalIgnoreCase);
 
