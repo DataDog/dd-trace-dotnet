@@ -123,15 +123,9 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return false;
                 }
 
-                MethodMetadataInfo methodMetadataInfo;
-                if (targetObject == null)
-                {
-                    methodMetadataInfo = MethodMetadataInfoFactory.Create(method, type);
-                }
-                else
-                {
-                    methodMetadataInfo = MethodMetadataInfoFactory.Create(method, targetObject, type, asyncKickOffInfo);
-                }
+                var methodMetadataInfo = asyncKickOffInfo.Equals(default(AsyncHelper.AsyncKickoffMethodInfo)) ?
+                                             MethodMetadataInfoFactory.Create(method, type) :
+                                             MethodMetadataInfoFactory.Create(method, type, asyncKickOffInfo);
 
                 _items[index] = methodMetadataInfo;
             }

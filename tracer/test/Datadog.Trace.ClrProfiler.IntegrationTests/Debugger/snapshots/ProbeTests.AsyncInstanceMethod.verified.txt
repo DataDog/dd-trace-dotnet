@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -13,13 +13,6 @@
                 "fields": null,
                 "type": "String",
                 "value": "AsyncInstanceMethod.RunAsync"
-              }
-            },
-            "fields": {
-              "ClassName": {
-                "fields": null,
-                "type": "String",
-                "value": "AsyncInstanceMethod"
               }
             }
           },
@@ -47,7 +40,7 @@
               "output": {
                 "fields": null,
                 "type": "String",
-                "value": "AsyncInstanceMethod.RunAsync."
+                "value": "null"
               }
             }
           }
@@ -73,7 +66,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncInstanceMethod+<Method>d__2.MoveNext(input=AsyncInstanceMethod.RunAsync): AsyncInstanceMethod.RunAsync.Method\r\n@return=AsyncInstanceMethod.RunAsync.Method, output=AsyncInstanceMethod.RunAsync.",
+    "message": "AsyncInstanceMethod+<Method>d__2.MoveNext(input=AsyncInstanceMethod.RunAsync): AsyncInstanceMethod.RunAsync.Method\r\n@return=AsyncInstanceMethod.RunAsync.Method, output=null",
     "service": "Probes"
   },
   {
@@ -92,17 +85,6 @@
                   "type": "Int32",
                   "value": "-1"
                 },
-                "<>4__this": {
-                  "fields": {
-                    "ClassName": {
-                      "fields": null,
-                      "type": "String",
-                      "value": "AsyncInstanceMethod"
-                    }
-                  },
-                  "type": "AsyncInstanceMethod",
-                  "value": "AsyncInstanceMethod"
-                },
                 "<>dd_liveDebugger_isReEntryToMoveNext": {
                   "fields": null,
                   "type": "Boolean",
@@ -110,7 +92,7 @@
                 },
                 "<>t__builder": "ScrubbedValue",
                 "<>u__1": "ScrubbedValue",
-                "<output>5__1": {
+                "<output>5__2": {
                   "fields": null,
                   "type": "String",
                   "value": "null"

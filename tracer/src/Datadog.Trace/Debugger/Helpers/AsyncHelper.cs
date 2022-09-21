@@ -26,7 +26,7 @@ namespace Datadog.Trace.Debugger.Helpers
         private const BindingFlags AllFieldsBindingFlags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.FlattenHierarchy;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static FieldInfo[] GetHoistedArgumentsFromStateMachine<TTarget>(TTarget instance, string[] originalMethodParametersName)
+        internal static FieldInfo[] GetHoistedArgumentsFromStateMachine(Type type, string[] originalMethodParametersName)
         {
             if (originalMethodParametersName is null || originalMethodParametersName.Length == 0)
             {
@@ -34,7 +34,7 @@ namespace Datadog.Trace.Debugger.Helpers
             }
 
             var foundFields = new FieldInfo[originalMethodParametersName.Length];
-            var allFields = instance.GetType().GetFields(AllFieldsBindingFlags);
+            var allFields = type.GetFields(AllFieldsBindingFlags);
 
             int found = 0;
             for (int i = 0; i < allFields.Length; i++)
@@ -73,15 +73,14 @@ namespace Datadog.Trace.Debugger.Helpers
         /// For now, we're capturing all locals that are hoisted (except known generated locals),
         /// and we're capturing all the locals that appear in localVarSig with `LogLocal`
         /// </summary>
-        /// <typeparam name="TTarget">Instance type</typeparam>
-        /// <param name="instance">Instance object</param>
+        /// <param name="type">Object type</param>
         /// <param name="asyncKickoffInfo">The async kickoff info</param>
         /// <returns>List of locals</returns>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static FieldInfoNameSanitized[] GetHoistedLocalsFromStateMachine<TTarget>(TTarget instance, AsyncKickoffMethodInfo asyncKickoffInfo)
+        internal static FieldInfoNameSanitized[] GetHoistedLocalsFromStateMachine(Type type, AsyncKickoffMethodInfo asyncKickoffInfo)
         {
             var foundFields = new List<FieldInfoNameSanitized>();
-            var allFields = instance.GetType().GetFields(AllFieldsBindingFlags);
+            var allFields = type.GetFields(AllFieldsBindingFlags);
             var kickoffParameters = asyncKickoffInfo.KickoffMethod.GetParameters();
             for (var i = 0; i < allFields.Length; i++)
             {
@@ -192,7 +191,7 @@ namespace Datadog.Trace.Debugger.Helpers
                 for (int i = 0; i < allFields.Length; i++)
                 {
                     var field = allFields[i];
-                    if (char.IsNumber(field.Name[2]) && field.Name.StartsWith(StateMachineFieldsNamePrefix) && field.Name.EndsWith(ThisName))
+                    if (field.Name.StartsWith(StateMachineFieldsNamePrefix) && field.Name.EndsWith(ThisName) && char.IsNumber(field.Name[2]))
                     {
                         thisField = field;
                         break;
@@ -204,10 +203,10 @@ namespace Datadog.Trace.Debugger.Helpers
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static AsyncKickoffMethodInfo GetAsyncKickoffMethodInfo<TTarget>(TTarget stateMachine)
+        internal static AsyncKickoffMethodInfo GetAsyncKickoffMethodInfo<TTarget>(TTarget stateMachine, RuntimeTypeHandle typeHandle)
         {
-            var kickoffParentObject = GetAsyncKickoffThisObject(stateMachine);
-            var kickoffMethod = GetAsyncKickoffMethod(stateMachine.GetType());
+            var kickoffParentObject = stateMachine != null ? GetAsyncKickoffThisObject(stateMachine) : null;
+            var kickoffMethod = GetAsyncKickoffMethod(stateMachine?.GetType() ?? Type.GetTypeFromHandle(typeHandle));
             var kickoffParentType = kickoffParentObject?.GetType() ?? kickoffMethod.DeclaringType;
             return new AsyncKickoffMethodInfo(kickoffParentObject, kickoffParentType, kickoffMethod);
         }
@@ -226,6 +225,27 @@ namespace Datadog.Trace.Debugger.Helpers
             public Type KickoffParentType { get; }
 
             public MethodBase KickoffMethod { get; }
+
+            public static bool operator ==(AsyncKickoffMethodInfo op1,  AsyncKickoffMethodInfo op2)
+            {
+                return op1.Equals(op2);
+            }
+
+            public static bool operator !=(AsyncKickoffMethodInfo op1,  AsyncKickoffMethodInfo op2) => !(op1 == op2);
+
+            public bool Equals(AsyncKickoffMethodInfo kickoffMethodInfo)
+            {
+                return KickoffParentObject == kickoffMethodInfo.KickoffParentObject &&
+                       KickoffParentType == kickoffMethodInfo.KickoffParentType &&
+                       KickoffMethod == kickoffMethodInfo.KickoffMethod;
+            }
+
+            public override bool Equals(object obj) => throw new NotSupportedException();
+
+            public override int GetHashCode()
+            {
+                return HashCode.Combine(KickoffParentObject, KickoffParentType, KickoffMethod);
+            }
         }
 
         // can't use ref struct here because GetHoistedArgumentsFromStateMachine returns FieldNameValue[]

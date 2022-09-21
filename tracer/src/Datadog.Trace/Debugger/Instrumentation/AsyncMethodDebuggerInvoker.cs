@@ -109,12 +109,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             isReEntryToMoveNext = true;
-            var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance);
-            if (kickoffInfo.KickoffParentObject == null && kickoffInfo.KickoffMethod.IsStatic == false)
-            {
-                Log.Error($"{nameof(BeginMethod)}: hoisted 'this' has not found. {kickoffInfo.KickoffParentType.Name}.{kickoffInfo.KickoffMethod.Name}");
-                return AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
-            }
+            var kickoffInfo = AsyncHelper.GetAsyncKickoffMethodInfo(instance, typeHandle);
 
             if (!MethodMetadataProvider.TryCreateIfNotExists(instance, methodMetadataIndex, in methodHandle, in typeHandle, kickoffInfo))
             {
@@ -138,12 +133,25 @@ namespace Datadog.Trace.Debugger.Instrumentation
             asyncState.SnapshotCreator.StartSnapshot();
             asyncState.SnapshotCreator.StartCaptures();
             asyncState.SnapshotCreator.StartEntry();
-            asyncState.SnapshotCreator.CaptureInstance(asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType);
+
+            // In an async method, in optimized code, if the invocation target ('this') is not used, it will not be hoisted into the heap-allocated state machine object,
+            // and so unfortunately we can't capture it.
+            if (asyncState.KickoffInvocationTarget != null)
+            {
+                asyncState.SnapshotCreator.CaptureInstance(asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType);
+            }
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void BeginEndMethodLogArgs(ref AsyncMethodDebuggerState asyncState)
         {
+            // MoveNextInvocationTarget (i.e 'this') should never be null but because a limitation in our instrumentation,
+            // sometimes we have a null 'this' so we should avoid capture hoisted arguments in this case.
+            if (asyncState.MoveNextInvocationTarget == null)
+            {
+                return;
+            }
+
             // capture hoisted arguments
             var kickOffMethodArguments = asyncState.MethodMetadataInfo.AsyncMethodHoistedArguments;
             for (var index = 0; index < kickOffMethodArguments.Length; index++)
@@ -292,6 +300,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void EndMethodLogLocals(ref AsyncMethodDebuggerState asyncState)
         {
+            // MoveNextInvocationTarget (i.e 'this') should never be null but because a limitation in our instrumentation,
+            // sometimes we have a null 'this' so we should avoid capture hoisted locals in this case.
+            if (asyncState.MoveNextInvocationTarget == null)
+            {
+                return;
+            }
+
             // MethodMetadataInfo saves locals from MoveNext localVarSig,
             // this isn't enough in async scenario because we need to extract more locals the may hoisted in the builder object
             // and we need to subtract some locals that exist in the localVarSig but they are not belongs to the kickoff method
@@ -333,9 +348,24 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogException(Exception exception, ref AsyncMethodDebuggerState asyncState)
         {
-            Log.Warning(exception, "Error caused by our instrumentation");
-            asyncState.IsActive = false;
-            RestoreContext();
+            try
+            {
+                Log.Error(exception, "Error caused by our instrumentation");
+                if (asyncState == null)
+                {
+                    asyncState = AsyncMethodDebuggerState.CreateInvalidatedDebuggerState();
+                }
+                else
+                {
+                    asyncState.IsActive = false;
+                }
+
+                RestoreContext();
+            }
+            catch
+            {
+                // We are in a bad state, we can't do anything here
+            }
         }
 
         /// <summary>
