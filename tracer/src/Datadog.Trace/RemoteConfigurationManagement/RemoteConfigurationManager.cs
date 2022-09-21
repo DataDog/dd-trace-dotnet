@@ -6,8 +6,10 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -23,6 +25,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationManager));
         private static readonly object LockObject = new object();
+        private static readonly ConcurrentQueue<Action<RemoteConfigurationManager>> _initializationQueue = new ConcurrentQueue<Action<RemoteConfigurationManager>>();
 
         private readonly string _id;
         private readonly RcmClientTracer _rcmTracer;
@@ -32,6 +35,9 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         private readonly CancellationTokenSource _cancellationSource;
         private readonly ConcurrentDictionary<string, Product> _products;
+
+        // 32 capabilities ought to be enough for anybody
+        private BitVector32 _capabilities = new();
 
         private int _rootVersion;
         private int _targetsVersion;
@@ -72,13 +78,36 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         {
             lock (LockObject)
             {
-                return Instance ??= new RemoteConfigurationManager(
+                Instance ??= new RemoteConfigurationManager(
                     discoveryService,
                     remoteConfigurationApi,
                     id: settings.Id,
                     rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, environment, serviceVersion),
                     pollInterval: settings.PollInterval);
             }
+
+            while (_initializationQueue.TryDequeue(out var action))
+            {
+                action(Instance);
+            }
+
+            return Instance;
+        }
+
+        public static void CallbackWithInitializedInstance(Action<RemoteConfigurationManager> action)
+        {
+            RemoteConfigurationManager? inst = null;
+            lock (LockObject)
+            {
+                inst = Instance;
+                if (inst == null)
+                {
+                    _initializationQueue.Enqueue(action);
+                    return;
+                }
+            }
+
+            action(inst);
         }
 
         public async Task StartPollingAsync()
@@ -133,6 +162,11 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             _cancellationSource.Cancel();
         }
 
+        public void SetCapability(int index, bool available)
+        {
+            _capabilities[index] = available;
+        }
+
         private async Task Poll()
         {
             try
@@ -168,7 +202,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
 
             var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, _lastPollError != null, _lastPollError);
-            var rcmClient = new RcmClient(_id, products.Keys, _rcmTracer, rcmState);
+            var rcmClient = new RcmClient(_id, products.Keys, _rcmTracer, rcmState, BitConverter.GetBytes(_capabilities.Data));
             var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
 
             return rcmRequest;

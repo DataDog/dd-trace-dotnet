@@ -61,6 +61,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_WAF_TIMEOUT", 10_000_000.ToString());
         }
 
+        public string SampleProcessName
+        {
+            get { return _process?.ProcessName; }
+        }
+
         public Task<MockTracerAgent> RunOnSelfHosted(bool? enableSecurity, string externalRulesFile = null, int? traceRateLimit = null)
         {
             if (_agent == null)
