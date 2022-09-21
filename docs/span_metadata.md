@@ -160,10 +160,10 @@ Type | `sql`
 ### Tags
 Name | Required |
 ---------|----------------|
-b.type | `cosmosdb`
 component | `CosmosDb`
 cosmosdb.container | No
 db.name | No
+db.type | `cosmosdb`
 out.host | Yes
 span.kind | `client`
 
