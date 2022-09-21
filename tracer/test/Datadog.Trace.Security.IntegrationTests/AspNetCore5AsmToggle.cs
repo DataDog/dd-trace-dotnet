@@ -13,6 +13,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
@@ -52,7 +53,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var spans1 = await SendRequestsAsync(agent, url);
 
-            agent.SetupRcm(Output, new[] { ((object)new Features() { Asm = new Asm() { Enabled = false } }, "1") }, "FEATURES");
+            agent.SetupRcm(Output, new[] { ((object)new AsmFeatures() { Asm = new Asm() { Enabled = false } }, "1") }, "ASM_FEATURES");
 
             var request1 = await agent.WaitRcmRequestAndReturnLast();
             CheckAckState(request1, expectedState, null, "First RCM call");
@@ -65,7 +66,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var spans2 = await SendRequestsAsync(agent, url);
 
-            agent.SetupRcm(Output, new[] { ((object)new Features() { Asm = new Asm() { Enabled = true } }, "2") }, "FEATURES");
+            agent.SetupRcm(Output, new[] { ((object)new AsmFeatures() { Asm = new Asm() { Enabled = true } }, "2") }, "ASM_FEATURES");
 
             var request2 = await agent.WaitRcmRequestAndReturnLast();
             CheckAckState(request2, expectedState, null, "Second RCM call");
@@ -97,17 +98,17 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var spans1 = await SendRequestsAsync(agent, url);
 
-            agent.SetupRcm(Output, new[] { ((object)"haha, you weren't expect this!", "1") }, "FEATURES");
+            agent.SetupRcm(Output, new[] { ((object)"haha, you weren't expect this!", "1") }, "ASM_FEATURES");
 
             var request = await agent.WaitRcmRequestAndReturnLast();
-            CheckAckState(request, ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.Configuration.Features'. Path '', line 1, position 32.", "First RCM call");
+            CheckAckState(request, ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.AppSec.AsmFeatures'. Path '', line 1, position 32.", "First RCM call");
 
             await VerifySpans(spans1.ToImmutableList(), settings, true);
         }
 
         private void CheckAckState(GetRcmRequest request, uint expectedState, string expectedError, string message)
         {
-            var state = request?.Client?.State?.ConfigStates?.SingleOrDefault(x => x.Product == "FEATURES");
+            var state = request?.Client?.State?.ConfigStates?.SingleOrDefault(x => x.Product == "ASM_FEATURES");
 
             state.Should().NotBeNull();
             state.ApplyState.Should().Be(expectedState, message);
