@@ -517,7 +517,7 @@ namespace Datadog.Trace.AppSec
                 span.SetTag(Tags.AppSecWafInitRuleErrors, _waf.InitializationResult.ErrorMessage);
             }
 
-            span.SetTag(Tags.AppSecWafVersion, _waf.Version.ToString());
+            span.SetTag(Tags.AppSecWafVersion, _waf.Version);
         }
 
         private void RunShutdown()

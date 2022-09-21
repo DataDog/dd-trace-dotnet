@@ -16,7 +16,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypesManaged
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InitializationResult));
 
-        public InitializationResult(IntPtr? ruleHandle, ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, string[]> errors, bool unusableRuleFile = false)
+        public InitializationResult(IntPtr? ruleHandle, ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, string[]> errors, bool unusableRuleFile = false, bool wrongWafVersion = false)
         {
             HasErrors = errors.Count > 0;
             Errors = errors;
@@ -26,6 +26,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypesManaged
             RuleFileVersion = ruleFileVersion;
             RuleHandle = ruleHandle;
             UnusableRuleFile = unusableRuleFile;
+            WrongWafVersion = wrongWafVersion;
         }
 
         internal IntPtr? RuleHandle { get; }
@@ -45,9 +46,13 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypesManaged
 
         internal bool UnusableRuleFile { get; }
 
+        internal bool WrongWafVersion { get; }
+
         internal string RuleFileVersion { get; }
 
         internal static InitializationResult FromUnusableRuleFile() => new(null, 0, 0, string.Empty, new Dictionary<string, string[]>(), true);
+
+        internal static InitializationResult FromWrongWafVersion() => new(null, 0, 0, string.Empty, new Dictionary<string, string[]>(), wrongWafVersion: true);
 
         internal static InitializationResult From(DdwafRuleSetInfoStruct ddwaRuleSetInfoStruct, IntPtr? ruleHandle)
         {

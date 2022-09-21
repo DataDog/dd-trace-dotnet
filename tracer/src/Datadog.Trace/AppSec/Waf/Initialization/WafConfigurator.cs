@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -23,10 +24,17 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
         internal static InitializationResult Configure(string rulesFile, WafNative wafNative, Encoder encoder, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex)
         {
+            if (wafNative.ExportErrorHappened)
+            {
+                Log.Error("Waf couldn't initialize properly because of missing methods in native library, please check the version of libddwaf");
+                return InitializationResult.FromWrongWafVersion();
+            }
+
             var argCache = new List<Obj>();
             var configObj = GetConfigObj(rulesFile, argCache, encoder);
             if (configObj == null)
             {
+                Log.Error("Waf couldn't initialize properly because of an unusable rule file, please check the submitted rulefile");
                 return InitializationResult.FromUnusableRuleFile();
             }
 
@@ -157,9 +165,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             }
         }
 
-        private static Stream GetRulesStream(string rulesFile) => string.IsNullOrWhiteSpace(rulesFile) ?
-                                                                      GetRulesManifestStream() :
-                                                                      GetRulesFileStream(rulesFile);
+        private static Stream GetRulesStream(string rulesFile) => string.IsNullOrWhiteSpace(rulesFile) ? GetRulesManifestStream() : GetRulesFileStream(rulesFile);
 
         private static Stream GetRulesManifestStream()
         {
