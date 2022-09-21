@@ -19,7 +19,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\dependency-libs\Samples.Probes.External\Samples.Probes.External.csproj" />
   </ItemGroup>
 
