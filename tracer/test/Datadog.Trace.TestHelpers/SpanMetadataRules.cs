@@ -149,7 +149,7 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsOptional("cosmosdb.container")
                 .IsOptional("db.name")
-                .Matches("b.type", "cosmosdb")
+                .Matches("db.type", "cosmosdb")
                 .IsPresent("out.host")
                 .Matches("component", "CosmosDb")
                 .Matches("span.kind", "client"));
