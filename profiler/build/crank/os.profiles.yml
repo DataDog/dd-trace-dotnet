@@ -38,18 +38,16 @@ profiles:
         endpoints:
           - "{{ linuxEndpoint }}"
         environmentVariables:
-          COR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-          COR_PROFILER_PATH: "{{ linuxProfilerPath }}/{{ commit_hash }}/monitoring-home-linux/Datadog.Trace.ClrProfiler.Native.so"
           CORECLR_PROFILER: "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
-          CORECLR_PROFILER_PATH: "{{ linuxProfilerPath }}/{{ commit_hash }}/monitoring-home-linux/Datadog.Trace.ClrProfiler.Native.so"
+          CORECLR_PROFILER_PATH: "{{ linuxProfilerPath }}/{{ commit_hash }}/monitoring-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so"
           DD_DOTNET_TRACER_HOME: "{{ linuxProfilerPath }}/{{ commit_hash }}/monitoring-home-linux"
-          DD_DOTNET_PROFILER_HOME: "{{ linuxProfilerPath }}/{{ commit_hash }}/monitoring-home-linux/continuousprofiler"
+          DD_DOTNET_PROFILER_HOME: "{{ linuxProfilerPath }}/{{ commit_hash }}/monitoring-home-linux/linux-x64"
           DD_AGENT_HOST: "{{ controllerIp }}"
           DD_TRACE_LOGGING_RATE: 6
           DD_TRACE_ENABLED: 0
           DD_ENV: throughput-profiler-linux
-          LD_LIBRARY_PATH: "{{ linuxProfilerPath }}/{{ commit_hash }}/monitoring-home-linux/continuousprofiler"
-          LD_PRELOAD: "{{ linuxProfilerPath }}/{{ commit_hash }}/monitoring-home-linux/continuousprofiler/Datadog.Linux.ApiWrapper.x64.so"
+          LD_LIBRARY_PATH: "{{ linuxProfilerPath }}/{{ commit_hash }}/monitoring-home-linux/linux-x64"
+          LD_PRELOAD: "{{ linuxProfilerPath }}/{{ commit_hash }}/monitoring-home-linux/linux-x64/Datadog.Linux.ApiWrapper.x64.so"
         options:
           requiredOperatingSystem: linux
           requiredArchitecture: x64
