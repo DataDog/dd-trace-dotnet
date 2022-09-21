@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.AppSec;
 
-internal class AsmRemoteConfigurationProducts
+internal static class AsmRemoteConfigurationProducts
 {
     public static AsmFeaturesProduct AsmFeaturesProduct { get; } = new();
 }
