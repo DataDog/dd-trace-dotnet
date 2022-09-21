@@ -2,7 +2,6 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
 #nullable enable
 
 using System;
@@ -29,7 +28,7 @@ public sealed class TestSuite
         Module = module;
         _timestamp = Stopwatch.GetTimestamp();
         StartDate = startDate ?? DateTimeOffset.UtcNow;
-        CIVisibility.Log.Warning("##### New Test Suite Created: {name}", Name);
+        CIVisibility.Log.Information("###### New Test Suite Created: {name} ({module})", Name, Module.Bundle);
     }
 
     /// <summary>
@@ -86,7 +85,7 @@ public sealed class TestSuite
     /// </summary>
     /// <param name="key">Key of the tag</param>
     /// <param name="value">Value of the tag</param>
-    public void SetTag(string key, string value)
+    public void SetTag(string key, string? value)
     {
         var tags = Volatile.Read(ref _tags);
 
@@ -144,7 +143,7 @@ public sealed class TestSuite
         EndDate = StartDate.Add(duration ?? StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp));
         CurrentSuite.Value = null;
         Module.RemoveSuite(Name);
-        CIVisibility.Log.Warning("##### Test Suite Closed: {name}", Name);
+        CIVisibility.Log.Information("###### Test Suite Closed: {name} ({module})", Name, Module.Bundle);
     }
 
     /// <summary>

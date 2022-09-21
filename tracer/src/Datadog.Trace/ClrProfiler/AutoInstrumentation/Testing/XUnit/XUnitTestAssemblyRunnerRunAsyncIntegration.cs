@@ -1,4 +1,4 @@
-// <copyright file="XUnitTestInvokerRunAsyncIntegration.cs" company="Datadog">
+// <copyright file="XUnitTestAssemblyRunnerRunAsyncIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,31 +6,29 @@
 
 using System;
 using System.ComponentModel;
+using System.Reflection;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
 /// <summary>
-/// Xunit.Sdk.TestInvoker`1.RunAsync calltarget instrumentation
+/// Xunit.Sdk.TestAssemblyRunner`1.RunTestCollectionAsync calltarget instrumentation
 /// </summary>
 [InstrumentMethod(
     AssemblyNames = new[] { "xunit.execution.dotnet", "xunit.execution.desktop" },
-    TypeName = "Xunit.Sdk.TestInvoker`1",
+    TypeName = "Xunit.Sdk.TestAssemblyRunner`1",
     MethodName = "RunAsync",
-    ReturnTypeName = "System.Threading.Tasks.Task`1<System.Decimal>",
+    ReturnTypeName = "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>",
     ParameterTypeNames = new string[0],
     MinimumVersion = "2.2.0",
     MaximumVersion = "2.*.*",
-    IntegrationName = IntegrationName)]
+    IntegrationName = XUnitIntegration.IntegrationName)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public static class XUnitTestInvokerRunAsyncIntegration
+public static class XUnitTestAssemblyRunnerRunAsyncIntegration
 {
-    private const string IntegrationName = nameof(IntegrationId.XUnit);
-
     /// <summary>
     /// OnMethodBegin callback
     /// </summary>
@@ -44,34 +42,46 @@ public static class XUnitTestInvokerRunAsyncIntegration
             return CallTargetState.GetDefault();
         }
 
-        var invokerInstance = instance.DuckCast<TestInvokerStruct>();
-        var runnerInstance = new TestRunnerStruct
+        var assemblyRunnerInstance = instance.DuckCast<TestAssemblyRunnerStruct>();
+        if (assemblyRunnerInstance.TestAssembly.Assembly.Name is { } assemblyName)
         {
-            Aggregator = invokerInstance.Aggregator,
-            TestCase = invokerInstance.TestCase,
-            TestClass = invokerInstance.TestClass,
-            TestMethod = invokerInstance.TestMethod,
-            TestMethodArguments = invokerInstance.TestMethodArguments
-        };
+            var testBundleString = new AssemblyName(assemblyName).Name;
 
-        return new CallTargetState(null, XUnitIntegration.CreateScope(ref runnerInstance, instance.GetType()));
+            // Extract the version of the framework from the TestClassRunner base class
+            var frameworkType = instance.GetType();
+            while (frameworkType.IsAbstract == false)
+            {
+                if (frameworkType.BaseType is { } baseType)
+                {
+                    frameworkType = baseType;
+                }
+                else
+                {
+                    break;
+                }
+            }
+
+            return new CallTargetState(null, TestModule.Create(testBundleString, "xUnit", frameworkType.Assembly.GetName().Version?.ToString()));
+        }
+
+        return CallTargetState.GetDefault();
     }
 
     /// <summary>
     /// OnAsyncMethodEnd callback
     /// </summary>
     /// <typeparam name="TTarget">Type of the target</typeparam>
+    /// <typeparam name="TReturn">Type of the return type</typeparam>
     /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
     /// <param name="returnValue">Return value</param>
     /// <param name="exception">Exception instance in case the original code threw an exception.</param>
     /// <param name="state">Calltarget state value</param>
     /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-    internal static decimal OnAsyncMethodEnd<TTarget>(TTarget instance, decimal returnValue, Exception exception, in CallTargetState state)
+    internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
     {
-        if (state.State is Test test)
+        if (state.State is TestModule testModule)
         {
-            var invokerInstance = instance.DuckCast<TestInvokerStruct>();
-            XUnitIntegration.FinishScope(test, invokerInstance.Aggregator);
+            testModule.Close();
         }
 
         return returnValue;

@@ -79,13 +79,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
                 for (int i = 0; i < methodParameters.Length; i++)
                 {
+                    var key = methodParameters[i].Name ?? string.Empty;
                     if (testMethodArguments != null && i < testMethodArguments.Length)
                     {
-                        testParameters.Arguments[methodParameters[i].Name] = Common.GetParametersValueData(testMethodArguments[i]);
+                        testParameters.Arguments[key] = Common.GetParametersValueData(testMethodArguments[i]);
                     }
                     else
                     {
-                        testParameters.Arguments[methodParameters[i].Name] = "(default)";
+                        testParameters.Arguments[key] = "(default)";
                     }
                 }
 

@@ -2,7 +2,6 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
 #nullable enable
 
 using System;
@@ -21,7 +20,7 @@ namespace Datadog.Trace.Ci;
 /// </summary>
 public sealed class TestModule
 {
-    private static readonly AsyncLocal<TestModule?> CurrentSession = new();
+    private static readonly AsyncLocal<TestModule?> CurrentModule = new();
     private readonly long _timestamp;
     private readonly Dictionary<string, TestSuite> _suites;
     private readonly Dictionary<string, string> _tags;
@@ -88,13 +87,13 @@ public sealed class TestModule
 
         _timestamp = Stopwatch.GetTimestamp();
         StartDate = startDate ?? DateTimeOffset.UtcNow;
-        CIVisibility.Log.Warning("##### Test Session Created: {bundle}", bundle);
+        CIVisibility.Log.Information("### Test Module Created: {bundle}", bundle);
     }
 
     /// <summary>
     /// Gets the current TestModule
     /// </summary>
-    public static TestModule? Current => CurrentSession.Value;
+    public static TestModule? Current => CurrentModule.Value;
 
     /// <summary>
     /// Gets the test module start date
@@ -142,7 +141,7 @@ public sealed class TestModule
     public static TestModule Create(string? bundle = null, string? framework = null, string? frameworkVersion = null, DateTimeOffset? startDate = null)
     {
         var testModule = new TestModule(bundle, framework, frameworkVersion, startDate);
-        CurrentSession.Value = testModule;
+        CurrentModule.Value = testModule;
         return testModule;
     }
 
@@ -200,7 +199,7 @@ public sealed class TestModule
     public void Close(TimeSpan? duration = null)
     {
         EndDate = StartDate.Add(duration ?? StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp));
-        CurrentSession.Value = null;
+        CurrentModule.Value = null;
 
         lock (_suites)
         {
@@ -215,7 +214,7 @@ public sealed class TestModule
             }
         }
 
-        CIVisibility.Log.Warning("##### Test Session Closed: {bundle}", Bundle);
+        CIVisibility.Log.Information("### Test Module Closed: {bundle}", Bundle);
         CIVisibility.FlushSpans();
     }
 

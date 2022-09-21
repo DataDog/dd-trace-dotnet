@@ -2,7 +2,6 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
 #nullable enable
 
 using System;
@@ -107,6 +106,8 @@ public sealed class Test
             // If a test doesn't have a fixed start time we reset it before running the test code
             span.ResetStartTime();
         }
+
+        CIVisibility.Log.Information("######### New Test Created: {name} ({suite} | {module})", Name, Suite.Name, Suite.Module.Bundle);
     }
 
     /// <summary>
@@ -174,7 +175,7 @@ public sealed class Test
     /// </summary>
     /// <param name="key">Key of the tag</param>
     /// <param name="value">Value of the tag</param>
-    public void SetTag(string key, string value)
+    public void SetTag(string key, string? value)
     {
         _scope.Span.SetTag(key, value);
     }
@@ -310,5 +311,6 @@ public sealed class Test
         scope.Dispose();
 
         CurrentTest.Value = null;
+        CIVisibility.Log.Information("######### Test Closed: {name} ({suite} | {module})", Name, Suite.Name, Suite.Module.Bundle);
     }
 }

@@ -8,50 +8,49 @@ using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
+
+/// <summary>
+/// Xunit.Sdk.TestRunner`1.RunAsync calltarget instrumentation
+/// </summary>
+[InstrumentMethod(
+    AssemblyNames = new[] { "xunit.execution.dotnet", "xunit.execution.desktop" },
+    TypeName = "Xunit.Sdk.TestRunner`1",
+    MethodName = "RunAsync",
+    ReturnTypeName = "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>",
+    MinimumVersion = "2.2.0",
+    MaximumVersion = "2.*.*",
+    IntegrationName = XUnitIntegration.IntegrationName)]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+public static class XUnitTestRunnerRunAsyncIntegration
 {
     /// <summary>
-    /// Xunit.Sdk.TestRunner`1.RunAsync calltarget instrumentation
+    /// OnMethodBegin callback
     /// </summary>
-    [InstrumentMethod(
-        AssemblyNames = new[] { "xunit.execution.dotnet", "xunit.execution.desktop" },
-        TypeName = "Xunit.Sdk.TestRunner`1",
-        MethodName = "RunAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>",
-        MinimumVersion = "2.2.0",
-        MaximumVersion = "2.*.*",
-        IntegrationName = XUnitIntegration.IntegrationName)]
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class XUnitTestRunnerRunAsyncIntegration
+    /// <typeparam name="TTarget">Type of the target</typeparam>
+    /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
+    /// <returns>Calltarget state value</returns>
+    internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
     {
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
+        if (XUnitIntegration.IsEnabled && instance is not null)
         {
-            if (XUnitIntegration.IsEnabled && instance is not null)
+            var runnerInstance = instance.DuckCast<TestRunnerStruct>();
+
+            // Check if the test should be skipped by the ITR
+            if (XUnitIntegration.ShouldSkip(ref runnerInstance) && instance.TryDuckCast<ITestRunnerSkippable>(out var skippableRunnerInstance))
             {
-                TestRunnerStruct runnerInstance = instance.DuckCast<TestRunnerStruct>();
-
-                // Check if the test should be skipped by the ITR
-                if (XUnitIntegration.ShouldSkip(ref runnerInstance) && instance.TryDuckCast<ITestRunnerSkippeable>(out var skippeableRunnerInstance))
-                {
-                    Common.Log.Debug("ITR: Test skipped: {class}.{name}", runnerInstance.TestClass.FullName, runnerInstance.TestMethod.Name);
-                    skippeableRunnerInstance.SkipReason = "Skipped by the Intelligent Test Runner";
-                }
-
-                // Skip test support
-                if (runnerInstance.SkipReason != null)
-                {
-                    XUnitIntegration.CreateScope(ref runnerInstance, instance.GetType());
-                }
+                Common.Log.Debug("ITR: Test skipped: {class}.{name}", runnerInstance.TestClass?.FullName ?? string.Empty, runnerInstance.TestMethod?.Name ?? string.Empty);
+                skippableRunnerInstance.SkipReason = "Skipped by the Intelligent Test Runner";
             }
 
-            return CallTargetState.GetDefault();
+            // Skip test support
+            if (runnerInstance.SkipReason != null)
+            {
+                XUnitIntegration.CreateScope(ref runnerInstance, instance.GetType());
+            }
         }
+
+        return CallTargetState.GetDefault();
     }
 }

@@ -2,20 +2,20 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
+
+/// <summary>
+/// ITestAssembly structure
+/// </summary>
+[DuckCopy]
+internal struct TestAssemblyStruct
 {
     /// <summary>
-    /// ITestAssembly structure
+    /// Gets the assembly that this test assembly belongs to
     /// </summary>
-    [DuckCopy]
-    internal struct TestAssemblyStruct
-    {
-        /// <summary>
-        /// Gets the assembly that this test assembly belongs to
-        /// </summary>
-        public AssemblyInfoStruct Assembly;
-    }
+    public AssemblyInfoStruct Assembly;
 }

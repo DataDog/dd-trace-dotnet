@@ -2,25 +2,25 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
+
+/// <summary>
+/// Xunit.Abstractions.ITypeInfo proxy structure
+/// </summary>
+[DuckCopy]
+internal struct TypeInfoStruct
 {
     /// <summary>
-    /// Xunit.Abstractions.ITypeInfo proxy structure
+    /// Gets the fully qualified type name (for non-generic parameters), or the simple type name (for generic parameters).
     /// </summary>
-    [DuckCopy]
-    internal struct TypeInfoStruct
-    {
-        /// <summary>
-        /// Gets the fully qualified type name (for non-generic parameters), or the simple type name (for generic parameters).
-        /// </summary>
-        public string Name;
+    public string? Name;
 
-        /// <summary>
-        /// Represents information about a type.
-        /// </summary>
-        public AssemblyInfoStruct Assembly;
-    }
+    /// <summary>
+    /// Represents information about a type.
+    /// </summary>
+    public AssemblyInfoStruct Assembly;
 }
