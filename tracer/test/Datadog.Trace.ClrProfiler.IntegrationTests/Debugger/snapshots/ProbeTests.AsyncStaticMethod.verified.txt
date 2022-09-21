@@ -40,7 +40,7 @@
               "output": {
                 "fields": null,
                 "type": "String",
-                "value": "null"
+                "value": "AsyncStaticMethod.RunAsync."
               }
             }
           }
@@ -66,7 +66,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "AsyncStaticMethod+<Method>d__2.MoveNext(input=AsyncStaticMethod.RunAsync): AsyncStaticMethod.RunAsync.Method\r\n@return=AsyncStaticMethod.RunAsync.Method, output=null",
+    "message": "AsyncStaticMethod+<Method>d__2.MoveNext(input=AsyncStaticMethod.RunAsync): AsyncStaticMethod.RunAsync.Method\r\n@return=AsyncStaticMethod.RunAsync.Method, output=AsyncStaticMethod.RunAsync.",
     "service": "Probes"
   }
 ]
