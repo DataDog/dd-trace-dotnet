@@ -90,7 +90,6 @@ namespace Datadog.Trace.AppSec
 
         private Security(SecuritySettings settings = null, InstrumentationGateway instrumentationGateway = null, IWaf waf = null)
         {
-            var spanContext = Tracer.Instance.StartActiveInternal("asm-init");
             try
             {
                 _settings = settings ?? SecuritySettings.FromDefaultSources();
@@ -107,15 +106,11 @@ namespace Datadog.Trace.AppSec
                 {
                     Log.Information("AppSec remote enabling not allowed (DD_APPSEC_ENABLED=false).");
                 }
-
-                spanContext.Dispose();
             }
             catch (Exception ex)
             {
                 _settings = new(source: null) { Enabled = false };
                 Log.Error(ex, "DDAS-0001-01: AppSec could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
-
-                spanContext.DisposeWithException(ex);
             }
         }
 
@@ -381,9 +376,12 @@ namespace Datadog.Trace.AppSec
 
         private void Report(ITransport transport, Span span, IResult result, bool blocked)
         {
+            Tracer.Instance.TracerManager.Statsd.Increment("asm-waf-report");
             span.SetTag(Tags.AppSecEvent, "true");
+
             if (blocked)
             {
+                Tracer.Instance.TracerManager.Statsd.Increment("asm-waf-blocked");
                 span.SetTag(Tags.AppSecBlocked, "true");
             }
 
