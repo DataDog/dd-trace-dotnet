@@ -47,7 +47,10 @@ internal class TestApiRequest : IApiRequest
         return Task.FromResult((IApiResponse)response);
     }
 
-    public virtual Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)
+    public Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)
+        => PostAsync(traces, contentType, contentEncoding: null);
+
+    public virtual Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
     {
         var response = new TestApiResponse(_statusCode, _responseContent, _responseContentType);
         Responses.Add(response);

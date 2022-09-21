@@ -322,7 +322,7 @@ public class DiscoveryServiceTests
             throw new WebException("Error in GetAsync");
         }
 
-        public override async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
+        public override async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
         {
             await Task.Yield();
             throw new WebException("Error in PostAsync");
