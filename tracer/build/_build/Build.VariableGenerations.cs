@@ -38,6 +38,7 @@ partial class Build : NukeBuild
 
                 void GenerateConditionVariableBasedOnGitChange(string variableName, string[] filters, string[] exclusionFilters)
                 {
+                    const string baseBranch = "origin/master";
                     bool isChanged;
                     var forceExplorationTestsWithVariableName = $"force_exploration_tests_with_{variableName}";
                     if (bool.Parse(Environment.GetEnvironmentVariable(forceExplorationTestsWithVariableName) ?? "false"))
@@ -45,9 +46,14 @@ partial class Build : NukeBuild
                         Logger.Info($"{forceExplorationTestsWithVariableName} was set - forcing exploration tests");
                         isChanged = true;
                     }
+                    else if(IsGitBaseBranch(baseBranch))
+                    {
+                        // on master, treat everything as having changed
+                        isChanged = true;
+                    }
                     else
                     {
-                        var changedFiles = GetGitChangedFiles("origin/master");
+                        var changedFiles = GetGitChangedFiles(baseBranch);
 
                         // Choose changedFiles that meet any of the filters => Choose changedFiles that DON'T meet any of the exclusion filters
                         isChanged = changedFiles.Any(s => filters.Any(filter => s.Contains(filter)) && !exclusionFilters.Any(filter => s.Contains(filter)));
@@ -978,6 +984,12 @@ partial class Build : NukeBuild
                }
            }
        });
+
+    static bool IsGitBaseBranch(string baseBranch)
+        => string.Equals(
+            GitTasks.Git("git rev-parse --abbrev-ref HEAD").First().Text,
+            baseBranch,
+            StringComparison.OrdinalIgnoreCase);
 
     static string[] GetGitChangedFiles(string baseBranch)
     {
