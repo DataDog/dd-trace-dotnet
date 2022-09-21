@@ -133,15 +133,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  .OrderBy(s => s.Start)
                                  .ToList();
 
-                foreach (var span in spans)
-                {
-                    var result = ValidateIntegrationSpan(span);
-                    Assert.True(result.Success, result.ToString());
-
-                    Assert.Equal("Samples.Elasticsearch.V5-elasticsearch", span.Service);
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-                }
-
+                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Elasticsearch.V5-elasticsearch");
                 ValidateSpans(spans, (span) => span.Resource, expected);
                 telemetry.AssertIntegrationEnabled(IntegrationId.ElasticsearchNet);
             }

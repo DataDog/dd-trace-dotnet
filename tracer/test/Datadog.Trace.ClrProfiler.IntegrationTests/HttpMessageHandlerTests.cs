@@ -70,16 +70,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
                 Assert.Equal(expectedSpanCount, spans.Count);
+                ValidateIntegrationSpans(spans, expectedServiceName: expectedServiceName);
 
                 foreach (var span in spans)
                 {
-                    var result = ValidateIntegrationSpan(span);
-                    Assert.True(result.Success, result.ToString());
-
-                    Assert.Equal(expectedServiceName, span.Service);
-                    Assert.Equal("HttpMessageHandler", span.Tags[Tags.InstrumentationName]);
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-
                     if (span.Tags[Tags.HttpStatusCode] == "502")
                     {
                         Assert.Equal(1, span.Error);

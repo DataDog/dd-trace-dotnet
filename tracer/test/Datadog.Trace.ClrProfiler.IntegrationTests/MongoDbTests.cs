@@ -31,12 +31,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) =>
-            span.Name switch
-            {
-                "mongodb.query" => span.IsMongoDB(),
-                _ => Result.DefaultSuccess
-            };
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsMongoDB();
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.MongoDB), MemberType = typeof(PackageVersions))]
@@ -86,11 +81,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                   .UseTextForParameters($"packageVersion={snapshotSuffix}")
                                   .DisableRequireUniquePrefix();
 
-                foreach (var span in spans)
-                {
-                    var result = ValidateIntegrationSpan(span);
-                    Assert.True(result.Success, result.ToString());
-                }
+                ValidateIntegrationSpans(allMongoSpans, expectedServiceName: "Samples.MongoDB-mongodb");
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.MongoDb);
 

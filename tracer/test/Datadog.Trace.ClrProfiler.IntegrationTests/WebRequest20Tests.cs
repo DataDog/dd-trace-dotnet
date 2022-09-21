@@ -32,7 +32,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             int expectedSpanCount = 45;
             const string expectedOperationName = "http.request";
-            const string expectedServiceName = "Samples.WebRequest.NetFramework20-http-client";
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
@@ -43,16 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
                 Assert.Equal(expectedSpanCount, spans.Count);
-
-                foreach (var span in spans)
-                {
-                    var result = ValidateIntegrationSpan(span);
-                    Assert.True(result.Success, result.ToString());
-
-                    Assert.Equal(expectedServiceName, span.Service);
-                    Assert.Equal("WebRequest", span.Tags[Tags.InstrumentationName]);
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-                }
+                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.WebRequest.NetFramework20-http-client");
 
                 var firstSpan = spans.First();
                 var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);

@@ -125,11 +125,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             await _fixture.TryStartApp(this, _output);
 
             var spans = await _fixture.WaitForSpans(Output, path, expectedSpanCount);
-            foreach (var span in spans)
-            {
-                var result = ValidateIntegrationSpan(span);
-                Assert.True(result.Success, result.ToString());
-            }
+            ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Owin.WebApi2", isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);

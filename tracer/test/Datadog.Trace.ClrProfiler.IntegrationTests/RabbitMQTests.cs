@@ -64,13 +64,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var rabbitmqSpans = spans.Where(span => string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
                 var manualSpans = spans.Where(span => !string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
 
+                ValidateIntegrationSpans(rabbitmqSpans, expectedServiceName: "Samples.RabbitMQ-rabbitmq");
+
                 foreach (var span in rabbitmqSpans)
                 {
-                    var result = ValidateIntegrationSpan(span);
-                    Assert.True(result.Success, result.ToString());
-
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-
                     var command = span.Tags[Tags.AmqpCommand];
 
                     if (command.StartsWith("basic.", StringComparison.OrdinalIgnoreCase))

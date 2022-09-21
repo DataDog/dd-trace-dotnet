@@ -60,15 +60,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 var dbTags = 0;
                 var containerTags = 0;
+                ValidateIntegrationSpans(spans, expectedServiceName: ExpectedServiceName);
 
                 foreach (var span in spans)
                 {
-                    var result = ValidateIntegrationSpan(span);
-                    Assert.True(result.Success, result.ToString());
-
-                    span.Service.Should().Be(ExpectedServiceName);
                     span.Resource.Should().StartWith("SELECT * FROM");
-                    span.Tags.Should().NotContain(Tags.Version, "External service span should not have service version tag.");
 
                     if (span.Tags.ContainsKey(Tags.CosmosDbContainer))
                     {

@@ -138,6 +138,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(expectedSpans);
                 foreach (var span in spans)
                 {
+                    // TODO: Refactor to use ValidateIntegrationSpans when the HotChocolate server integration is fixed. It currently produces a service name of {service]-graphql
                     var result = ValidateIntegrationSpan(span);
                     Assert.True(result.Success, result.ToString());
                 }

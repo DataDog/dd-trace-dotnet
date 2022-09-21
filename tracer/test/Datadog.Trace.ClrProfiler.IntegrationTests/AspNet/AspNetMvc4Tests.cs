@@ -130,11 +130,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             var spans = await GetWebServerSpans(path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode);
-            foreach (var span in spans)
-            {
-                var result = ValidateIntegrationSpan(span);
-                Assert.True(result.Success, result.ToString());
-            }
+            ValidateIntegrationSpans(spans, expectedServiceName: "sample", isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);

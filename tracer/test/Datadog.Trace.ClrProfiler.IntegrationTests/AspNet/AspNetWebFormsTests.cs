@@ -87,11 +87,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                    .ToList();
 
             Assert.True(allSpans.Count > 0, "Expected there to be spans.");
-            foreach (var span in allSpans)
-            {
-                var result = ValidateIntegrationSpan(span);
-                Assert.True(result.Success, result.ToString());
-            }
+            ValidateIntegrationSpans(allSpans, expectedServiceName: "sample", isExternalSpan: false);
 
             var elasticSpans = allSpans
                              .Where(s => s.Type == "elasticsearch")

@@ -46,15 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  .ToList();
 
                 Assert.True(spans.Count >= 9, $"Expecting at least 9 spans, only received {spans.Count}");
-
-                foreach (var span in spans)
-                {
-                    var result = ValidateIntegrationSpan(span);
-                    Assert.True(result.Success, result.ToString());
-
-                    Assert.Equal("Samples.Couchbase3-couchbase", span.Service);
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-                }
+                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Couchbase3-couchbase");
 
                 var expected = new List<string>
                 {

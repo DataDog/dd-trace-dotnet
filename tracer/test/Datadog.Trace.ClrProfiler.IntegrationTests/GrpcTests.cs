@@ -330,6 +330,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 foreach (var span in spans)
                 {
+                    // TODO: Refactor to use ValidateIntegrationSpans, but this sample produces both server and client spans so the immediate implementation is not suitable for this test
                     var result = ValidateIntegrationSpan(span);
                     Assert.True(result.Success, result.ToString());
                 }

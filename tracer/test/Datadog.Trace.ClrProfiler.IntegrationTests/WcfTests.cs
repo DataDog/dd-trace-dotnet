@@ -92,17 +92,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // so we can wait on the exact number of spans we expect.
                 agent.SpanFilters.Add(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings(binding, enableNewWcfInstrumentation, enableWcfObfuscation);
 
                 await VerifyHelper.VerifySpans(spans, settings)
                               .UseMethodName("_");
-
-                foreach (var span in spans)
-                {
-                    var result = ValidateIntegrationSpan(span);
-                    Assert.True(result.Success, result.ToString());
-                }
 
                 // The custom binding doesn't trigger the integration
                 telemetry.AssertIntegration(IntegrationId.Wcf, enabled: binding != "Custom", autoEnabled: true);

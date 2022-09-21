@@ -43,17 +43,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+            ValidateIntegrationSpans(spans, expectedServiceName: "Samples.ProcessStart-command");
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(StackRegex, string.Empty);
             settings.AddRegexScrubber(ErrorMsgRegex, string.Empty);
             var filename = RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? "ProcessStartTests.SubmitsTracesLinux" : "ProcessStartTests.SubmitsTraces";
-
-            foreach (var span in spans)
-            {
-                var result = ValidateIntegrationSpan(span);
-                Assert.True(result.Success, result.ToString());
-            }
 
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename)

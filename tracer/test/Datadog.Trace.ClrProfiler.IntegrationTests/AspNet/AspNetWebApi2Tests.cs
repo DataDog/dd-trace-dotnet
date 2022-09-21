@@ -70,6 +70,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 : base(iisFixture, output, virtualApp: true, classicMode: false, enableRouteTemplateResourceNames: true)
             {
             }
+
+            protected override string ExpectedServiceName => "sample/my-app";
         }
 
         [Collection("IisTests")]
@@ -137,6 +139,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         (enableRouteTemplateResourceNames ?  ".WithFF" : ".NoFF"));
         }
 
+        protected virtual string ExpectedServiceName => "sample";
+
         public static TheoryData<string, int, int> Data() => new()
         {
             { "/api/environment", 200, 2 },
@@ -202,11 +206,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             // Append virtual directory to the actual request
             var spans = await GetWebServerSpans(_iisFixture.VirtualApplicationPath + path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode, expectedSpanCount);
-            foreach (var span in spans)
-            {
-                var result = ValidateIntegrationSpan(span);
-                Assert.True(result.Success, result.ToString());
-            }
+            ValidateIntegrationSpans(spans, expectedServiceName: ExpectedServiceName, isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);

@@ -43,11 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             await fixture.TryStartApp(this);
 
             var spans = await fixture.WaitForSpans(path, true);
-            foreach (var span in spans)
-            {
-                var result = ValidateIntegrationSpan(span);
-                Assert.True(result.Success, result.ToString());
-            }
+            ValidateIntegrationSpans(spans, expectedServiceName: EnvironmentHelper.FullSampleName, isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath);

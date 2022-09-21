@@ -18,6 +18,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetServiceVersion("1.0.0");
         }
 
+        // Assert Npgsql because the Dapper application uses Postgres for the actual client
         public override Result ValidateIntegrationSpan(MockSpan span) => span.IsNpgsql();
 
         [SkippableFact]
@@ -34,17 +35,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
                 Assert.Equal(expectedSpanCount, spans.Count);
-
-                foreach (var span in spans)
-                {
-                    // Assert Npgsql because the Dapper application uses Postgres for the actual client
-                    var result = ValidateIntegrationSpan(span);
-                    Assert.True(result.Success, result.ToString());
-
-                    Assert.Equal(expectedOperationName, span.Name);
-                    Assert.Equal(expectedServiceName, span.Service);
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-                }
+                ValidateIntegrationSpans(spans, expectedServiceName: expectedServiceName);
             }
         }
 
@@ -62,17 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
                 Assert.Equal(expectedSpanCount, spans.Count);
-
-                foreach (var span in spans)
-                {
-                    // Assert Npgsql because the Dapper application uses Postgres for the actual client
-                    var result = span.IsNpgsql();
-                    Assert.True(result.Success, result.ToString());
-
-                    Assert.Equal(expectedOperationName, span.Name);
-                    Assert.Equal(expectedServiceName, span.Service);
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-                }
+                ValidateIntegrationSpans(spans, expectedServiceName: expectedServiceName);
             }
         }
     }

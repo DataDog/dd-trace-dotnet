@@ -46,15 +46,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             int actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
 
             Assert.Equal(expectedSpanCount, actualSpanCount);
+            ValidateIntegrationSpans(spans, expectedServiceName: expectedServiceName);
 
             foreach (var span in spans)
             {
-                var result = ValidateIntegrationSpan(span);
-                Assert.True(result.Success, result.ToString());
-
                 Assert.Equal(expectedOperationName, span.Name);
-                Assert.Equal(expectedServiceName, span.Service);
-                Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
             }
 
             telemetry.AssertIntegrationEnabled(IntegrationId.AdoNet);
