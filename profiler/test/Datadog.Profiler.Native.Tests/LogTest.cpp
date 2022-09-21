@@ -32,7 +32,7 @@ void CheckExpectedStringInFile(fs::path const& fileFullPath, std::string const& 
     ASSERT_FALSE(true);
 }
 
-TEST(LoggerTest, DISABLED_EnsureLogFilesAreFoundAtDefaultLocation)
+TEST(LoggerTest, EnsureLogFilesAreFoundAtDefaultLocation)
 {
     unsetenv(EnvironmentVariables::LogDirectory); // to make sure this env. var. is not set (other test)
 

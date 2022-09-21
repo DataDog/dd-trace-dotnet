@@ -66,7 +66,7 @@ partial class Build
                 arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {ProfilerLinuxBuildDirectory} -S {ProfilerDirectory} -DCMAKE_BUILD_TYPE=Release");
 
             CMake.Value(
-                arguments: $"--build {ProfilerLinuxBuildDirectory}");
+                arguments: $"--build {ProfilerLinuxBuildDirectory} --parallel");
 
             if (IsAlpine)
             {
@@ -90,8 +90,7 @@ partial class Build
             Chmod.Value.Invoke("+x " + exePath);
 
             var testExe = ToolResolver.GetLocalTool(exePath);
-            testExe("--gtest_output=xml", workingDirectory: workingDirectory,
-                environmentVariables: new Dictionary<string, string> { { "DD_TRACE_DEBUG", "1" } });
+            testExe("--gtest_output=xml", workingDirectory: workingDirectory);
         });
 
     Target CompileProfilerNativeTestsWindows => _ => _

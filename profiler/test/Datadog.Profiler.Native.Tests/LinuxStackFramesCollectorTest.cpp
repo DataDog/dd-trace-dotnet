@@ -20,6 +20,8 @@
 #define _GNU_SOURCE
 #include <dlfcn.h>
 
+#include <libunwind.h>
+
 using namespace std::literals;
 
 #define ASSERT_DURATION_LE(secs, stmt)                                            \
@@ -132,8 +134,8 @@ public:
 
         _isStopped = false;
 
-        _stopWorkerPromise = std::promise<void>();
-        _workerThread = std::make_unique<WorkerThread>(_stopWorkerPromise.get_future());
+        _stopWorker = false;
+        _workerThread = std::make_unique<WorkerThread>(_stopWorker);
 
         ResetCallbackState();
 
@@ -144,9 +146,10 @@ public:
     void TearDown() override
     {
         StopTest();
+        _workerThread.reset();
+
         SignalHandlerForTest::_instance.reset();
         sigaction(SIGUSR1, &_oldAction, nullptr);
-        _workerThread.reset();
     }
 
     void StopTest()
@@ -155,7 +158,7 @@ public:
             return;
 
         _isStopped = true;
-        _stopWorkerPromise.set_value();
+        _stopWorker = true;
     }
 
     pid_t GetWorkerThreadId()
@@ -186,12 +189,26 @@ public:
         _callbackCalledFuture = _callbackCalledPromise.get_future();
     }
 
+    void ValidateCallstack(const std::vector<uintptr_t>& ips)
+    {
+        const auto& expectedCallstack = _workerThread->GetExpectedCallStack();
+
+        const auto expectedNbFrames = expectedCallstack.size();
+        const auto collectedNbFrames = ips.size();
+
+        EXPECT_GE(expectedNbFrames, 2);
+        EXPECT_GE(collectedNbFrames, 2);
+
+        EXPECT_EQ(ips[collectedNbFrames - 1], (uintptr_t)expectedCallstack[expectedNbFrames - 1]);
+        EXPECT_EQ(ips[collectedNbFrames - 2], (uintptr_t)expectedCallstack[expectedNbFrames - 2]);
+    }
+
 private:
     class WorkerThread
     {
     public:
-        WorkerThread(std::future<void>&& stopWorker) :
-            _stopWorker(std::move(stopWorker)),
+        WorkerThread(const std::atomic<bool>& stopWorker) :
+            _stopWorker(stopWorker),
             _workerThreadIdPromise(),
             _workerThreadIdFuture{_workerThreadIdPromise.get_future()}
 
@@ -201,6 +218,7 @@ private:
 
         ~WorkerThread()
         {
+            _callstack.clear();
             _worker.join();
         }
 
@@ -209,26 +227,39 @@ private:
             return _workerThreadIdFuture.get();
         }
 
+        const std::vector<void*>& GetExpectedCallStack() const
+        {
+            return _callstack;
+        }
+
     private:
+
         void Work()
         {
+            // Get the callstack
+            const int32_t nbMaxFrames = 20;
+            _callstack.resize(nbMaxFrames);
+            auto nb = unw_backtrace(_callstack.data(), nbMaxFrames);
+            _callstack.resize(nb);
+
             _workerThreadIdPromise.set_value(OpSysTools::GetThreadId());
-            while (_stopWorker.wait_for(50ms) == std::future_status::timeout)
+            while (!_stopWorker.load())
             {
                 // do nothing
             }
         }
 
-        std::future<void> _stopWorker;
+        const std::atomic<bool>& _stopWorker;
         std::promise<pid_t> _workerThreadIdPromise;
         std::shared_future<pid_t> _workerThreadIdFuture;
         std::thread _worker;
+        std::vector<void*> _callstack;
     };
 
     bool _isStopped;
     struct sigaction _oldAction;
     pid_t _processId;
-    std::promise<void> _stopWorkerPromise;
+    std::atomic<bool> _stopWorker;
     std::promise<void> _callbackCalledPromise;
     std::future<void> _callbackCalledFuture;
     std::unique_ptr<WorkerThread> _workerThread;
@@ -245,9 +276,12 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
     StackSnapshotResultBuffer* buffer;
 
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
-
     EXPECT_EQ(hr, S_OK);
-    EXPECT_GT(buffer->GetFramesCount(), 0);
+
+    std::vector<uintptr_t> ips;
+    buffer->CopyInstructionPointers(ips);
+
+    ValidateCallstack(ips);
 }
 
 TEST_F(LinuxStackFramesCollectorFixture, CheckSignalHandlerIsSetForSignalUSR1)
@@ -292,9 +326,13 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfA
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
-
     EXPECT_EQ(hr, S_OK);
-    EXPECT_GE(buffer->GetFramesCount(), 0);
+
+    std::vector<uintptr_t> ips;
+    buffer->CopyInstructionPointers(ips);
+
+    ValidateCallstack(ips);
+
     EXPECT_FALSE(WasCallbackCalled());
 
     SendSignal();
@@ -319,7 +357,12 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfA
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
 
     EXPECT_EQ(hr, S_OK);
-    EXPECT_GE(buffer->GetFramesCount(), 0);
+
+    std::vector<uintptr_t> ips;
+    buffer->CopyInstructionPointers(ips);
+
+    ValidateCallstack(ips);
+
     EXPECT_FALSE(WasCallbackCalled());
 
     SendSignal();
@@ -351,7 +394,12 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
 
     EXPECT_EQ(hr, S_OK);
-    EXPECT_GT(buffer->GetFramesCount(), 0);
+
+    std::vector<uintptr_t> ips;
+    buffer->CopyInstructionPointers(ips);
+
+    ValidateCallstack(ips);
+
     EXPECT_FALSE(WasCallbackCalled()) << "Test handler was called.";
 
     // 3rd check Test handler still working
@@ -385,7 +433,12 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
 
     EXPECT_EQ(hr, S_OK);
-    EXPECT_GT(buffer->GetFramesCount(), 0);
+
+    std::vector<uintptr_t> ips;
+    buffer->CopyInstructionPointers(ips);
+
+    ValidateCallstack(ips);
+
     EXPECT_FALSE(WasCallbackCalled());
 
     // 3rd check Test handler still working
@@ -471,7 +524,11 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
         // validate it's working
         ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, S_OK);
-        EXPECT_GT(buffer->GetFramesCount(), 0);
+
+        std::vector<uintptr_t> ips;
+        buffer->CopyInstructionPointers(ips);
+
+        ValidateCallstack(ips);
     }
 
     InstallHandler(SA_SIGINFO);
@@ -481,7 +538,11 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
         // validate it's working
         ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, S_OK);
-        EXPECT_GT(buffer->GetFramesCount(), 0);
+
+        std::vector<uintptr_t> ips;
+        buffer->CopyInstructionPointers(ips);
+
+        ValidateCallstack(ips);
     }
 
     InstallHandler(SA_SIGINFO);

@@ -12,7 +12,6 @@
 
 #include <atomic>
 #include <condition_variable>
-#include <future>
 #include <memory>
 #include <mutex>
 #include <signal.h>
@@ -82,7 +81,7 @@ private:
 
     static LinuxStackFramesCollector* s_pInstanceCurrentlyStackWalking;
 
-    std::int32_t CollectCallStackCurrentThread();
+    std::int32_t CollectCallStackCurrentThread(void* ucontext);
 
     ErrorStatistics _errorStatistics;
 };
