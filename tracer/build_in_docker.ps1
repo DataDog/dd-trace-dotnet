@@ -10,8 +10,10 @@ Set-Location $PSScriptRoot
 $ROOT_DIR="$PSScriptRoot/.."
 $BUILD_DIR="$ROOT_DIR/tracer/build/_build"
 $IMAGE_NAME="dd-trace-dotnet/alpine-base"
+ALPINE_VERSION="3.14"
 
 &docker build `
+   --build-arg ALPINE_VERSION=3.14 `
    --build-arg DOTNETSDK_VERSION=6.0.401 `
    --tag $IMAGE_NAME `
    --file "$BUILD_DIR/docker/alpine.dockerfile" `

@@ -1,4 +1,5 @@
-﻿FROM alpine:3.14 as base
+﻿ARG ALPINE_VERSION
+FROM alpine:$ALPINE_VERSION as base
 
 ENV \
     # Unset ASPNETCORE_URLS from aspnet base image

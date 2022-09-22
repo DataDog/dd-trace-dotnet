@@ -274,6 +274,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
+        alpineVersion: 3.14 # need to use old version of clang etc for build
         command: "Clean BuildTracerHome BuildNativeLoader ExtractDebugInfoLinux"
 
     - publish: $(monitoringHome)
@@ -318,6 +319,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
+        alpineVersion: 3.14 # need to use old version of clang etc for build
         command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
 
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build
