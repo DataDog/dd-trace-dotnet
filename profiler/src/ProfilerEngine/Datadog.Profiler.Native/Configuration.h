@@ -48,6 +48,7 @@ public:
     int32_t ContentionSampleLimit() const override;
     int32_t ContentionDurationThreshold() const override;
     std::chrono::nanoseconds CpuWallTimeSamplingRate() const override;
+    const std::string& GetNamedPipePath() const override;
 
 private:
     static tags ExtractUserTags();
@@ -105,4 +106,5 @@ private:
     std::chrono::nanoseconds _cpuWallTimeSamplingRate;
 
     double _minimumCores;
+    std::string _namedPipePath;
 };

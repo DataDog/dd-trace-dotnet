@@ -251,15 +251,17 @@ ddog_Endpoint LibddprofExporter::CreateEndpoint(IConfiguration* configuration)
         // Agent mode
 
 #if _WINDOWS
-        bool useDefaultDomainSocket = false;
+        const auto& socketPath = configuration->GetNamedPipePath();
+        std::string agentUrl = "windows:" + socketPath;
 #else
-        std::error_code ec; // fs::exists might throw if no error_code parameter is provided
-        bool useDefaultDomainSocket = fs::exists("/var/run/datadog/apm.socket", ec);
+        std::string socketPath = "/var/run/datadog/apm.socket";
+        std::string agentUrl = "unix://" + socketPath;
 #endif
 
-        if (useDefaultDomainSocket)
+        std::error_code ec; // fs::exists might throw if no error_code parameter is provided
+        if (fs::exists(socketPath, ec))
         {
-            _agentUrl = "unix:///var/run/datadog/apm.socket";
+            _agentUrl = agentUrl;
         }
         else
         {

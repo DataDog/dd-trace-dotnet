@@ -45,4 +45,5 @@ public:
     virtual int32_t ContentionSampleLimit() const = 0;
     virtual int32_t ContentionDurationThreshold() const = 0;
     virtual std::chrono::nanoseconds CpuWallTimeSamplingRate() const = 0;
+    virtual const std::string& GetNamedPipePath() const = 0;
 };
