@@ -356,33 +356,23 @@ partial class Build
                     {
                         foreach (var arch in WafWindowsArchitectureFolders)
                         {
-                            var oldVersionPath =
-                                oldVersionTempPath / "runtimes" / arch / "native" / "ddwaf.dll";
+                            var oldVersionPath = oldVersionTempPath / "runtimes" / arch / "native" / "ddwaf.dll";
                             var source = MonitoringHomeDirectory / arch;
                             foreach (var fmk in frameworks)
                             {
                                 var dest = testBinFolder / fmk / arch;
-                                CopyDirectoryRecursively(
-                                    source,
-                                    dest,
-                                    DirectoryExistsPolicy.Merge,
-                                    FileExistsPolicy.Overwrite
-                                );
+                                CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
-                                CopyFile(
-                                    oldVersionPath,
-                                    dest / $"ddwaf{OlderLibDdwafVersion}.dll",
-                                    FileExistsPolicy.Overwrite
-                                );
+                                CopyFile(oldVersionPath, dest / $"ddwaf{OlderLibDdwafVersion}.dll", FileExistsPolicy.Overwrite);
                             }
                         }
                     }
                     else
                     {
-                        var (arch, ext) = GetUnixArchitectureAndExtension();
+                        var (arch, _) = GetUnixArchitectureAndExtension();
+                        var (archWaf, ext) = GetLibDdWafUnixArchitectureAndExtension();
                         var source = MonitoringHomeDirectory / arch;
-                        var oldVersionPath =
-                            oldVersionTempPath / "runtimes" / arch / "native" / $"libddwaf.{ext}";
+                        var oldVersionPath = oldVersionTempPath / "runtimes" / archWaf / "native" / $"libddwaf.{ext}";
                         foreach (var fmk in frameworks)
                         {
                             // We have to copy into the _root_ test bin folder here, not the arch sub-folder.
@@ -395,19 +385,9 @@ partial class Build
                             var dest = testBinFolder / fmk;
 
                             // use the files from the monitoring native folder
-                            CopyDirectoryRecursively(
-                                source,
-                                dest,
-                                DirectoryExistsPolicy.Merge,
-                                FileExistsPolicy.Overwrite
-                            );
+                            CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
-                            CopyFile(
-                                oldVersionPath,
-                                dest / $"libddwaf{OlderLibDdwafVersion}.{ext}",
-                                FileExistsPolicy.Overwrite
-                            );
-                            ;
+                            CopyFile(oldVersionPath, dest / $"libddwaf{OlderLibDdwafVersion}.{ext}", FileExistsPolicy.Overwrite);
                         }
                     }
                 });
@@ -660,7 +640,7 @@ partial class Build
                 replacement:$@";$1;./{arch}/Datadog.");
             File.WriteAllText(assetsDirectory / FileNames.LoaderConf, contents: loaderConfContents);
 
- // Copy createLogPath.sh script and set the permissions 
+            // Copy createLogPath.sh script and set the permissions 
             CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, assetsDirectory);
             chmod.Invoke($"+x {assetsDirectory / FileNames.CreateLogPathScript}");
 
