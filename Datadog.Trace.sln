@@ -484,13 +484,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.HotChocolate", "tra
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.TestHelpers.AutoInstrumentation", "tracer\test\Datadog.Trace.TestHelpers.AutoInstrumentation\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj", "{FFF9AF47-7556-4B38-8BAC-1CB51EDF8F7A}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dependency-libs", "dependency-libs", "{A9D2D155-C761-4DC1-848C-2AF0DDB2F7DF}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Probes.Optimized", "tracer\test\test-applications\debugger\Samples.Probes.Optimized\Samples.Probes.Optimized.csproj", "{4369E51F-2814-4054-B707-40A490274AD6}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Probes.Unoptimized", "tracer\test\test-applications\debugger\Samples.Probes.Unoptimized\Samples.Probes.Unoptimized.csproj", "{07EDEDB9-A794-4436-B198-7250F808C46F}"
-EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dependency-libs (2)", "dependency-libs (2)", "{0884B566-D22E-498C-BAA9-26D50ABCAE3A}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "dependency-libs", "dependency-libs", "{67E00002-0FA8-46C6-B6BC-61D7DCD612CC}"
 EndProject
