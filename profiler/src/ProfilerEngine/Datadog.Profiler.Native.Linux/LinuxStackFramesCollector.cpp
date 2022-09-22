@@ -7,8 +7,11 @@
 #include <chrono>
 #include <errno.h>
 #include <iomanip>
+
+#define UNW_LOCAL_ONLY
 #include <libunwind.h>
 #include <mutex>
+
 #include <signal.h>
 #include <sys/syscall.h>
 #include <unordered_map>
