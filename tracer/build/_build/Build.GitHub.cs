@@ -100,16 +100,12 @@ partial class Build
                 // This is a dumb implementation that just show the diff
                 // We could imagine getting the whole context with -U1000 and show the differences including parent name
                 // eg now we show -oldAttribute: oldValue, but we could show -tag.oldattribute: oldvalue
-                var changes = GitTasks.Git($"diff \"{baseCommit}\" -- */*snapshots*/*.*")
+                var changes = GitTasks.Git($"diff --diff-filter=M \"{baseCommit}\" -- */*snapshots*/*.*")
                                    .Select(f => f.Text);
 
-                const int minFiles = 10;
-                var nbSnapshotsModified = changes.Count(f => f.Contains("@@ "));
-                if (nbSnapshotsModified < minFiles)
+                if (!changes.Any())
                 {
-                    // Dumb early exit, if we modify less than 10 files, we can review them manually
-                    // Also it's certainly an addition of snapshot tests, so may not make sense to print a summary.
-                    Console.WriteLine($"{nbSnapshotsModified} snapshots modified. Not doing snapshots diff for PRs modifying less than {minFiles}.");
+                    Console.WriteLine($"No snapshots modified (some may have been added/deleted). Not doing snapshots diff.");
                     return;
                 }
 
