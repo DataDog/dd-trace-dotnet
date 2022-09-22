@@ -7,7 +7,7 @@ ExternalProject_Add(libunwind
     INSTALL_COMMAND ""
     UPDATE_COMMAND ""
     CONFIGURE_COMMAND ""
-    BUILD_COMMAND autoreconf -i <SOURCE_DIR> && <SOURCE_DIR>/configure CXXFLAGS=-fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0\ -O3 CFLAGS=-fPIC\ -O3 --disable-minidebuginfo && make -j
+    BUILD_COMMAND autoreconf -i <SOURCE_DIR> && <SOURCE_DIR>/configure CXXFLAGS=-fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0\ -DUNW_LOCAL_ONLY=1\ -O3 CFLAGS=-fPIC\ -O3 --disable-minidebuginfo && make -j
     BUILD_ALWAYS false
 )
 
