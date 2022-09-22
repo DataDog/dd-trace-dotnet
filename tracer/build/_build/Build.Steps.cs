@@ -305,44 +305,33 @@ partial class Build
         UncompressZip(libDdwafZip, uncompressFolder);
     }
 
-    Target CopyLibDdwaf =>
-        _ =>
-            _.Unlisted()
-                .After(Clean)
-                .After(DownloadLibDdwaf)
-                .Executes(() =>
-                {
-                    if (IsWin)
-                    {
-                        foreach (var architecture in WafWindowsArchitectureFolders)
-                        {
-                            var source =
-                                LibDdwafDirectory()
-                                / "runtimes"
-                                / architecture
-                                / "native"
-                                / "ddwaf.dll";
-                            var dest = MonitoringHomeDirectory / architecture;
-                            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-                        }
-                    }
-                    else
-                    {
-                        var (sourceArch, ext) = GetLibDdWafUnixArchitectureAndExtension();
-                        var (destArch, _) = GetUnixArchitectureAndExtension();
+    Target CopyLibDdwaf => _ => _
+        .Unlisted()
+        .After(Clean)
+        .After(DownloadLibDdwaf)
+        .Executes(() =>
+        {
+          if (IsWin)
+          {
+              foreach (var architecture in WafWindowsArchitectureFolders)
+              {
+                  var source = LibDdwafDirectory() / "runtimes" / architecture / "native" / "ddwaf.dll";
+                  var dest = MonitoringHomeDirectory / architecture;
+                  CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+              }
+          }
+          else
+          {
+              var (sourceArch, ext) = GetLibDdWafUnixArchitectureAndExtension();
+              var (destArch, _) = GetUnixArchitectureAndExtension();
 
-                        var ddwafFileName = $"libddwaf.{ext}";
+              var ddwafFileName = $"libddwaf.{ext}";
 
-                        var source =
-                            LibDdwafDirectory()
-                            / "runtimes"
-                            / sourceArch
-                            / "native"
-                            / ddwafFileName;
-                        var dest = MonitoringHomeDirectory / destArch;
-                        CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-                    }
-                });
+              var source = LibDdwafDirectory() / "runtimes" / sourceArch / "native" / ddwafFileName;
+              var dest = MonitoringHomeDirectory / destArch;
+              CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+          }
+        });
 
     Target CopyNativeFilesForAppSecUnitTests => _ => _
                 .Unlisted()
