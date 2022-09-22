@@ -6,12 +6,8 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Collections.Specialized;
 using System.Linq;
-using System.Reflection;
-using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry;
@@ -37,6 +33,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 new DependencyTelemetryCollector(),
                 new IntegrationTelemetryCollector(),
                 _transport,
+                _refreshInterval,
                 _refreshInterval);
         }
 
@@ -67,6 +64,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 new DependencyTelemetryCollector(),
                 new IntegrationTelemetryCollector(),
                 transport,
+                _refreshInterval,
                 _refreshInterval);
 
             controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName", EmptyAasMetadata);
@@ -77,6 +75,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var previousDataCount = transport.GetData();
 
             previousDataCount
+               .Where(x => x.RequestType != TelemetryRequestTypes.AppHeartbeat)
                .Should()
                .OnlyContain(x => x.RequestType == TelemetryRequestTypes.AppStarted, "Fatal error should mean we try to send app-started twice");
 
@@ -85,6 +84,41 @@ namespace Datadog.Trace.Tests.Telemetry
             // Shouldn't receive any more data,
             await Task.Delay(3_000);
             transport.GetData().Count.Should().Be(previousDataCount.Count, "Should not send more data after disposal");
+        }
+
+        [Fact]
+        public async Task TelemetrySendsHeartbeatsIndependentlyOfData()
+        {
+            var heartBeatInterval = TimeSpan.FromMilliseconds(100);
+            var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
+            var controller = new TelemetryController(
+                new ConfigurationTelemetryCollector(),
+                new DependencyTelemetryCollector(),
+                new IntegrationTelemetryCollector(),
+                transport,
+                flushInterval: TimeSpan.FromMinutes(1),
+                heartBeatInterval: heartBeatInterval);
+
+            controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName", EmptyAasMetadata);
+            controller.Start();
+
+            var requiredHeartbeats = 10;
+            var deadline = DateTimeOffset.UtcNow.AddSeconds(heartBeatInterval.TotalSeconds * 100);
+            while (DateTimeOffset.UtcNow < deadline)
+            {
+                var heartBeatCount = transport.GetData().Count(x => x.RequestType == TelemetryRequestTypes.AppHeartbeat);
+                if (heartBeatCount > requiredHeartbeats)
+                {
+                    break;
+                }
+
+                await Task.Delay(_refreshInterval);
+            }
+
+            transport.GetData()
+                     .Where(x => x.RequestType == TelemetryRequestTypes.AppHeartbeat)
+                     .Should()
+                     .HaveCountGreaterOrEqualTo(requiredHeartbeats);
         }
 
         [Fact]
@@ -102,6 +136,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 new DependencyTelemetryCollector(),
                 new IntegrationTelemetryCollector(),
                 _transport,
+                _refreshInterval,
                 _refreshInterval);
 
             controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName", EmptyAasMetadata);

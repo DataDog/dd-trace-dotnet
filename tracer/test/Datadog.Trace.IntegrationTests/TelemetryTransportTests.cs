@@ -17,6 +17,8 @@ namespace Datadog.Trace.IntegrationTests
 {
     public class TelemetryTransportTests
     {
+        private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(1);
+
         [SkippableFact]
         public async Task CanSendTelemetry()
         {
@@ -25,7 +27,7 @@ namespace Datadog.Trace.IntegrationTests
 
             // Uses framework specific transport
             var transport = TelemetryTransportFactory.Create(
-                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null),
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, HeartbeatInterval),
                 new ImmutableExporterSettings(new ExporterSettings { AgentUri = telemetryUri }));
             var data = GetSampleData();
 
@@ -51,7 +53,7 @@ namespace Datadog.Trace.IntegrationTests
 
             // Uses framework specific transport
             var transport = TelemetryTransportFactory.Create(
-                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null),
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, HeartbeatInterval),
                 new ImmutableExporterSettings(new ExporterSettings { AgentUri = telemetryUri }));
             var data = GetSampleData();
 
@@ -74,7 +76,7 @@ namespace Datadog.Trace.IntegrationTests
 
             // Uses framework specific transport
             var transport = TelemetryTransportFactory.Create(
-                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null),
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, HeartbeatInterval),
                 new ImmutableExporterSettings(new ExporterSettings { AgentUri = telemetryUri }));
             var data = GetSampleData();
 

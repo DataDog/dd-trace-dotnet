@@ -32,7 +32,8 @@ namespace Datadog.Trace.Telemetry
                         Dependencies,
                         Integrations,
                         factory,
-                        TelemetryConstants.RefreshInterval);
+                        TelemetryConstants.DefaultFlushInterval,
+                        settings.HeartbeatInterval);
                 }
                 catch (Exception ex)
                 {
