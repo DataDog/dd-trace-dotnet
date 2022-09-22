@@ -1,9 +1,38 @@
-﻿ARG DOTNETSDK_VERSION
-FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-alpine3.14 as base
+ARG ALPINE_VERSION
+FROM alpine:$ALPINE_VERSION as base
 
+ENV \
+    # Unset ASPNETCORE_URLS from aspnet base image
+    ASPNETCORE_URLS= \
+    # Do not generate certificate
+    DOTNET_GENERATE_ASPNET_CERTIFICATE=false \
+    # Do not show first run text
+    DOTNET_NOLOGO=true \
+    # Disable the invariant mode (set in base image)
+    DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false \
+    # Enable correct mode for dotnet watch (only mode supported in a container)
+    DOTNET_USE_POLLING_FILE_WATCHER=true \
+    # Skip extraction of XML docs - generally not useful within an image/container - helps performance
+    NUGET_XMLDOC_MODE=skip
+    
 RUN apk update \
-    && apk upgrade \
-    && apk add --no-cache --update \
+        && apk upgrade \
+        && apk add --no-cache \
+        ca-certificates \
+        \
+        # .NET Core dependencies
+        krb5-libs \
+        libgcc \
+        libintl \
+        libssl1.1 \
+        libstdc++ \
+        zlib \
+        \
+        # SDK dependencies
+        curl \
+        icu-libs \
+        \
+        # our dependencies
         clang \
         cmake \
         git \
@@ -25,6 +54,15 @@ RUN apk update \
     && gem install --minimal-deps --no-document fpm
 
 ENV IsAlpine=true
+
+ARG DOTNETSDK_VERSION
+# Install the .NET SDK
+RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
+    && chmod +x ./dotnet-install.sh \
+    && ./dotnet-install.sh --version $DOTNETSDK_VERSION --install-dir /usr/share/dotnet \
+    && rm dotnet-install.sh \
+    && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet \
+    && dotnet help
 
 FROM base as builder
 

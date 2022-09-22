@@ -6,6 +6,10 @@ parameters:
   - name: 'target'
     type: 'string'
     default: tester
+
+  - name: 'alpineVersion'
+    type: 'string'
+    default: "3.16"
     
   - name: build
     type: boolean
@@ -22,6 +26,7 @@ steps:
 - ${{ if eq(parameters.build, true) }}:
   - script: |
       docker build \
+        --build-arg ALPINE_VERSION=${{ parameters.alpineVersion }} \
         --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
         --tag dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         --target ${{ parameters.target }} \
