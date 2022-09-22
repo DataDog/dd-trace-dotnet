@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Debugger;
 public class LiveDebuggerTests : TestHelper
 {
     private const string LogFileNamePrefix = "dotnet-tracer-managed-";
-    private const string LiveDebuggerDisabledLogEntry = "Live Debugger is disabled. To enable it, please set DD_DEBUGGER_ENABLED environment variable to 'true'.";
+    private const string LiveDebuggerDisabledLogEntry = "Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.";
 
     public LiveDebuggerTests(ITestOutputHelper output)
         : base("Probes", Path.Combine("test", "test-applications", "debugger"), output)
