@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  verify_source_generators:
+  verify_span_metadata:
     runs-on: windows-latest
 
     steps:
