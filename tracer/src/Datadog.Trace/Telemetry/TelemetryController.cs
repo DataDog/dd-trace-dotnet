@@ -213,10 +213,16 @@ namespace Datadog.Trace.Telemetry
         {
             // use values from previous failed attempt if necessary
             var configuration = _configuration.GetConfigurationData() ?? _circuitBreaker.PreviousConfiguration;
-            var dependencies = _dependencies.GetData() ?? _circuitBreaker.PreviousDependencies;
+            var newDependencies = _dependencies.GetData();
+            if (newDependencies is not null && _circuitBreaker.PreviousDependencies is { } previousDependencies)
+            {
+                newDependencies.AddRange(previousDependencies);
+            }
+
+            var aggregatedDependencies = newDependencies ?? _circuitBreaker.PreviousDependencies;
             var integrations = _integrations.GetData() ?? _circuitBreaker.PreviousIntegrations;
 
-            var data = _dataBuilder.BuildTelemetryData(application, host, configuration, dependencies, integrations, sendHeartbeat);
+            var data = _dataBuilder.BuildTelemetryData(application, host, configuration, aggregatedDependencies, integrations, sendHeartbeat);
             if (data.Length == 0)
             {
                 return true;
@@ -226,7 +232,7 @@ namespace Datadog.Trace.Telemetry
             foreach (var telemetryData in data)
             {
                 var result = await _transport.PushTelemetry(telemetryData).ConfigureAwait(false);
-                if (_circuitBreaker.Evaluate(result, configuration, dependencies, integrations) == TelemetryPushResult.FatalError)
+                if (_circuitBreaker.Evaluate(result, configuration, aggregatedDependencies, integrations) == TelemetryPushResult.FatalError)
                 {
                     // big problem, abandon hope
                     return false;
