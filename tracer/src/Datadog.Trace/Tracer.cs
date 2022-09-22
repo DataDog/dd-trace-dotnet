@@ -76,7 +76,7 @@ namespace Datadog.Trace
         /// Note that this API does NOT replace the global Tracer instance.
         /// The <see cref="TracerManager"/> created will be scoped specifically to this instance.
         /// </summary>
-        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ISampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null)
+        internal Tracer(TracerSettings settings, IAgentWriter agentWriter, ITraceSampler sampler, IScopeManager scopeManager, IDogStatsd statsd, ITelemetryController telemetry = null, IDiscoveryService discoveryService = null)
             : this(TracerManagerFactory.Instance.CreateTracerManager(settings?.Build(), agentWriter, sampler, scopeManager, statsd, runtimeMetrics: null, logSubmissionManager: null, telemetry: telemetry ?? NullTelemetryController.Instance, discoveryService))
         {
         }
@@ -215,9 +215,9 @@ namespace Datadog.Trace
         ImmutableTracerSettings ITracer.Settings => Settings;
 
         /// <summary>
-        /// Gets the <see cref="ISampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
+        /// Gets the <see cref="ITraceSampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
         /// </summary>
-        ISampler IDatadogTracer.Sampler => TracerManager.Sampler;
+        ITraceSampler IDatadogTracer.Sampler => TracerManager.Sampler;
 
         internal static string RuntimeId => DistributedTracer.Instance.GetRuntimeId();
 

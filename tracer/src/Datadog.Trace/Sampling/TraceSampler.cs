@@ -1,4 +1,4 @@
-// <copyright file="RuleBasedSampler.cs" company="Datadog">
+// <copyright file="TraceSampler.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,17 +9,17 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Sampling
 {
-    internal class RuleBasedSampler : ISampler
+    internal class TraceSampler : ITraceSampler
     {
         private const ulong KnuthFactor = 1_111_111_111_111_111_111;
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RuleBasedSampler>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceSampler>();
 
         private readonly IRateLimiter _limiter;
         private readonly DefaultSamplingRule _defaultRule = new DefaultSamplingRule();
         private readonly List<ISamplingRule> _rules = new List<ISamplingRule>();
 
-        public RuleBasedSampler(IRateLimiter limiter)
+        public TraceSampler(IRateLimiter limiter)
         {
             _limiter = limiter ?? new TracerRateLimiter(null);
             RegisterRule(_defaultRule);

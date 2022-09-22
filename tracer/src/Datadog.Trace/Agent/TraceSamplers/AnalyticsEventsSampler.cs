@@ -8,7 +8,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.TraceSamplers
 {
-    internal class AnalyticsEventsSampler : ITraceSampler
+    internal class AnalyticsEventsSampler : ITraceChunkSampler
     {
         public bool Sample(ArraySegment<Span> trace)
         {

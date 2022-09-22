@@ -51,7 +51,7 @@ namespace Datadog.Trace
         public TracerManager(
             ImmutableTracerSettings settings,
             IAgentWriter agentWriter,
-            ISampler sampler,
+            ITraceSampler sampler,
             IScopeManager scopeManager,
             IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetricsWriter,
@@ -118,9 +118,9 @@ namespace Datadog.Trace
         public IScopeManager ScopeManager { get; }
 
         /// <summary>
-        /// Gets the <see cref="ISampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
+        /// Gets the <see cref="ITraceSampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
         /// </summary>
-        public ISampler Sampler { get; }
+        public ITraceSampler Sampler { get; }
 
         public DirectLogSubmissionManager DirectLogSubmission { get; }
 

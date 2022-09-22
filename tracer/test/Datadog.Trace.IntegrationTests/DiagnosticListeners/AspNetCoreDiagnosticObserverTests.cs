@@ -542,7 +542,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
         {
             var settings = new TracerSettings(configSource);
             var agentWriter = writer ?? new Mock<IAgentWriter>().Object;
-            var samplerMock = new Mock<ISampler>();
+            var samplerMock = new Mock<ITraceSampler>();
 
             return new Tracer(settings, agentWriter, samplerMock.Object, scopeManager: null, statsd: null);
         }

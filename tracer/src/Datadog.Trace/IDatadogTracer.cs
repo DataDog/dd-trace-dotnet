@@ -17,7 +17,7 @@ namespace Datadog.Trace
     {
         string DefaultServiceName { get; }
 
-        ISampler Sampler { get; }
+        ITraceSampler Sampler { get; }
 
         ImmutableTracerSettings Settings { get; }
 
