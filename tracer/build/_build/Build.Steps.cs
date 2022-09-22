@@ -361,7 +361,7 @@ partial class Build
                                 var dest = testBinFolder / fmk / arch;
                                 CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
-                                CopyFile(oldVersionPath, dest / $"ddwaf{OlderLibDdwafVersion}.dll", FileExistsPolicy.Overwrite);
+                                CopyFile(oldVersionPath, dest / $"ddwaf-{OlderLibDdwafVersion}.dll", FileExistsPolicy.Overwrite);
                             }
                         }
                     }
@@ -385,7 +385,7 @@ partial class Build
                             // use the files from the monitoring native folder
                             CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
-                            CopyFile(oldVersionPath, dest / $"libddwaf{OlderLibDdwafVersion}.{ext}", FileExistsPolicy.Overwrite);
+                            CopyFile(oldVersionPath, dest / $"libddwaf-{OlderLibDdwafVersion}.{ext}", FileExistsPolicy.Overwrite);
                         }
                     }
                 });

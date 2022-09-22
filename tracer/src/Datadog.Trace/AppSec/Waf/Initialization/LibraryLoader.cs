@@ -123,8 +123,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
             // include the appdomain base as this will help framework samples running in IIS find the library
             var currentDir =
-                string.IsNullOrEmpty(AppDomain.CurrentDomain.RelativeSearchPath) ?
-                    AppDomain.CurrentDomain.BaseDirectory : AppDomain.CurrentDomain.RelativeSearchPath;
+                string.IsNullOrEmpty(AppDomain.CurrentDomain.RelativeSearchPath) ? AppDomain.CurrentDomain.BaseDirectory : AppDomain.CurrentDomain.RelativeSearchPath;
 
             if (!string.IsNullOrWhiteSpace(currentDir))
             {
@@ -183,13 +182,21 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
         }
 
         private static string GetLibName(FrameworkDescription fwk, string libVersion = null)
-            => fwk.OSPlatform switch
+        {
+            string versionSuffix = null;
+            if (!string.IsNullOrEmpty(libVersion))
             {
-                OSPlatformName.MacOS => $"libddwaf{libVersion}.dylib",
-                OSPlatformName.Linux => $"libddwaf{libVersion}.so",
-                OSPlatformName.Windows => $"ddwaf{libVersion}.dll",
+                versionSuffix = $"-{libVersion}";
+            }
+
+            return fwk.OSPlatform switch
+            {
+                OSPlatformName.MacOS => $"libddwaf{versionSuffix}.dylib",
+                OSPlatformName.Linux => $"libddwaf{versionSuffix}.so",
+                OSPlatformName.Windows => $"ddwaf{versionSuffix}.dll",
                 _ => null, // unsupported
             };
+        }
 
         private static string[] GetRuntimeIds(FrameworkDescription fwk)
             => fwk.OSPlatform switch
