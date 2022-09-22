@@ -172,7 +172,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -197,7 +197,7 @@ stages:
   - job: build
     timeoutInMinutes: 60 #default value
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -226,7 +226,7 @@ stages:
 
   - job: build
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2019 # profiler doesn't build on windows-2022 currently: "The Windows SDK version 10.0.18362.0 was not found"
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -548,7 +548,7 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool:
-    vmImage: windows-2019
+    vmImage: windows-2022
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -593,7 +593,7 @@ stages:
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   pool:
-    vmImage: windows-2019
+    vmImage: windows-2022
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -1489,7 +1489,7 @@ stages:
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_windows_matrix'] ]
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     # Enable the Datadog Agent service for this job
     services:
@@ -1670,7 +1670,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ Windows ]
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -1743,7 +1743,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -1884,7 +1884,7 @@ stages:
           targetPlatform: "x64"
 
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -2447,7 +2447,7 @@ stages:
       timeoutInMinutes: 30
 
       pool:
-        vmImage: windows-2019
+        vmImage: windows-2022
 
       steps:
       - template: steps/clone-repo.yml
@@ -3091,7 +3091,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -3160,7 +3160,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -3225,7 +3225,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -3290,7 +3290,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
