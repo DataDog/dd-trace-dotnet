@@ -32,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        [SkippableTheory(Skip = "Cosmos emulator is too flaky at the moment")]
+        [SkippableTheory]
         [MemberData(nameof(PackageVersions.CosmosDb), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
@@ -40,6 +40,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "ArmUnsupported")]
         public void SubmitsTraces(string packageVersion)
         {
+            if (Environment.GetEnvironmentVariable("run_cosmos_integration_tests") != "true")
+            {
+                throw new SkipException("Skipping Cosmos tests. To run set environment variable 'run_cosmos_integration_tests=true'");
+            }
+
             var expectedSpanCount = 14;
 
             using var telemetry = this.ConfigureTelemetry();
