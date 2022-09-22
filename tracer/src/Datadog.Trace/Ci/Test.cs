@@ -42,60 +42,18 @@ public sealed class Test
         span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
         span.ResourceName = $"{suite.Name}.{name}";
         span.SetTag(Trace.Tags.Origin, TestTags.CIAppTestOriginName);
-        if (module.Bundle is { } bundleName)
-        {
-            span.SetTag(TestTags.Bundle, bundleName);
-        }
-
-        span.SetTag(TestTags.Suite, suite.Name);
-        span.SetTag(TestTags.Name, name);
-        if (module.Framework is { } framework)
-        {
-            span.SetTag(TestTags.Framework, framework);
-        }
-
-        if (module.FrameworkVersion is { } frameworkVersion)
-        {
-            span.SetTag(TestTags.FrameworkVersion, frameworkVersion);
-        }
-
         span.SetTag(TestTags.Type, TestTags.TypeTest);
 
-        // Copy module tags to the span
-        if (module.Tags is { } moduleTags)
-        {
-            foreach (var tag in moduleTags)
-            {
-                span.SetTag(tag.Key, tag.Value);
-            }
-        }
+        // Test
+        span.SetTag(TestTags.Name, name);
+        span.SetMetric(TestSuiteVisibilityTags.TestSuiteId, Suite.SuiteId);
+        span.SetMetric(TestSuiteVisibilityTags.TestModuleId, Suite.Module.ModuleId);
 
-        // Copy module metrics to the span
-        if (module.Metrics is { } moduleMetrics)
-        {
-            foreach (var metric in moduleMetrics)
-            {
-                span.SetMetric(metric.Key, metric.Value);
-            }
-        }
+        // Copy module tags to the span
+        module.CopyTagsToSpan(span);
 
         // Copy suite tags to the span
-        if (suite.Tags is { } suiteTags)
-        {
-            foreach (var tag in suiteTags)
-            {
-                span.SetTag(tag.Key, tag.Value);
-            }
-        }
-
-        // Copy suite metrics to the span
-        if (suite.Metrics is { } suiteMetrics)
-        {
-            foreach (var metric in suiteMetrics)
-            {
-                span.SetMetric(metric.Key, metric.Value);
-            }
-        }
+        suite.CopyTagsToSpan(span);
 
         if (CIVisibility.Settings.CodeCoverageEnabled == true)
         {
@@ -109,7 +67,7 @@ public sealed class Test
         }
 
         CurrentTest.Value = this;
-        CIVisibility.Log.Information("######### New Test Created: {name} ({suite} | {module})", Name, Suite.Name, Suite.Module.Bundle);
+        CIVisibility.Log.Information("######### New Test Created: {name} ({suite} | {module})", Name, Suite.Name, Suite.Module.Name);
     }
 
     /// <summary>
@@ -315,7 +273,7 @@ public sealed class Test
         scope.Dispose();
 
         Current = null;
-        CIVisibility.Log.Information("######### Test Closed: {name} ({suite} | {module})", Name, Suite.Name, Suite.Module.Bundle);
+        CIVisibility.Log.Information("######### Test Closed: {name} ({suite} | {module})", Name, Suite.Name, Suite.Module.Name);
     }
 
     internal void ResetStartDate()

@@ -45,7 +45,7 @@ public static class XUnitTestAssemblyRunnerRunAsyncIntegration
         var assemblyRunnerInstance = instance.DuckCast<TestAssemblyRunnerStruct>();
         if (assemblyRunnerInstance.TestAssembly.Assembly.Name is { } assemblyName)
         {
-            var testBundleString = new AssemblyName(assemblyName).Name;
+            var testBundleString = new AssemblyName(assemblyName).Name ?? string.Empty;
 
             // Extract the version of the framework from the TestClassRunner base class
             var frameworkType = instance.GetType();

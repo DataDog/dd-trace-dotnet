@@ -5,10 +5,9 @@
 #nullable enable
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.Threading;
-using Datadog.Trace.Util;
+using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.Ci;
 
@@ -18,20 +17,45 @@ namespace Datadog.Trace.Ci;
 public sealed class TestSuite
 {
     private static readonly AsyncLocal<TestSuite?> CurrentSuite = new();
-    private readonly long _timestamp;
-    private Dictionary<string, string>? _tags;
-    private Dictionary<string, double>? _metrics;
+    private readonly Span _span;
     private int _finished;
 
     private TestSuite(TestModule module, string name, DateTimeOffset? startDate = null)
     {
-        Name = name;
         Module = module;
-        _timestamp = Stopwatch.GetTimestamp();
-        StartDate = startDate ?? DateTimeOffset.UtcNow;
+        Name = name;
+
+        if (string.IsNullOrEmpty(module.Framework))
+        {
+            _span = Tracer.Instance.StartSpan("test_suite", startTime: startDate);
+        }
+        else
+        {
+            _span = Tracer.Instance.StartSpan($"{module.Framework!.ToLowerInvariant()}.test_suite", startTime: startDate);
+        }
+
+        var span = _span;
+        span.Type = SpanTypes.TestSuite;
+        span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
+        span.ResourceName = name;
+        span.SetTag(Trace.Tags.Origin, TestTags.CIAppTestOriginName);
+        span.SetTag(TestTags.Type, TestTags.TypeTest);
+
+        // Suite
+        span.SetTag(TestTags.Suite, name);
+        span.SetMetric(TestSuiteVisibilityTags.TestModuleId, Module.ModuleId);
+
+        // Copy module tags to the span
+        module.CopyTagsToSpan(span);
+
+        if (startDate is null)
+        {
+            // If a test doesn't have a fixed start time we reset it before running the test code
+            span.ResetStartTime();
+        }
 
         Current = this;
-        CIVisibility.Log.Information("###### New Test Suite Created: {name} ({module})", Name, Module.Bundle);
+        CIVisibility.Log.Information("###### New Test Suite Created: {name} ({module})", Name, Module.Name);
     }
 
     /// <summary>
@@ -51,27 +75,14 @@ public sealed class TestSuite
     /// <summary>
     /// Gets the test suite start date
     /// </summary>
-    public DateTimeOffset StartDate { get; }
-
-    /// <summary>
-    /// Gets the test suite end date
-    /// </summary>
-    public DateTimeOffset? EndDate { get; private set; }
+    public DateTimeOffset StartDate => _span.StartTime;
 
     /// <summary>
     /// Gets the test module for this suite
     /// </summary>
     public TestModule Module { get; }
 
-    /// <summary>
-    /// Gets the Suite Tags
-    /// </summary>
-    internal Dictionary<string, string>? Tags => _tags;
-
-    /// <summary>
-    /// Gets the Suite Metrics
-    /// </summary>
-    internal Dictionary<string, double>? Metrics => _metrics;
+    internal ulong SuiteId => _span.SpanId;
 
     /// <summary>
     /// Create a new Test Suite
@@ -86,57 +97,23 @@ public sealed class TestSuite
     }
 
     /// <summary>
-    /// Sets a string tag into the test suite
+    /// Sets a string tag into the test
     /// </summary>
     /// <param name="key">Key of the tag</param>
     /// <param name="value">Value of the tag</param>
     public void SetTag(string key, string? value)
     {
-        var tags = Volatile.Read(ref _tags);
-
-        if (tags is null)
-        {
-            var newTags = new Dictionary<string, string>();
-            tags = Interlocked.CompareExchange(ref _tags, newTags, null) ?? newTags;
-        }
-
-        lock (tags)
-        {
-            if (value is null)
-            {
-                tags.Remove(key);
-                return;
-            }
-
-            tags[key] = value;
-        }
+        _span.SetTag(key, value);
     }
 
     /// <summary>
-    /// Sets a number tag into the test suite
+    /// Sets a number tag into the test
     /// </summary>
     /// <param name="key">Key of the tag</param>
     /// <param name="value">Value of the tag</param>
     public void SetTag(string key, double? value)
     {
-        var metrics = Volatile.Read(ref _metrics);
-
-        if (metrics is null)
-        {
-            var newMetrics = new Dictionary<string, double>();
-            metrics = Interlocked.CompareExchange(ref _metrics, newMetrics, null) ?? newMetrics;
-        }
-
-        lock (metrics)
-        {
-            if (value is null)
-            {
-                metrics.Remove(key);
-                return;
-            }
-
-            metrics[key] = value.Value;
-        }
+        _span.SetMetric(key, value);
     }
 
     /// <summary>
@@ -150,10 +127,17 @@ public sealed class TestSuite
             return;
         }
 
-        EndDate = StartDate.Add(duration ?? StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp));
+        var span = _span;
+
+        // Calculate duration beforehand
+        duration ??= span.Context.TraceContext.ElapsedSince(span.StartTime);
+
+        // Finish
+        span.Finish(duration.Value);
+
         Current = null;
         Module.RemoveSuite(Name);
-        CIVisibility.Log.Information("###### Test Suite Closed: {name} ({module})", Name, Module.Bundle);
+        CIVisibility.Log.Information("###### Test Suite Closed: {name} ({module})", Name, Module.Name);
     }
 
     /// <summary>
@@ -165,5 +149,13 @@ public sealed class TestSuite
     public Test CreateTest(string name, DateTimeOffset? startDate = null)
     {
         return Test.Create(this, name, startDate);
+    }
+
+    internal void CopyTagsToSpan(Span span)
+    {
+        var processor = new CopyProcessor(span);
+        var tags = _span.Tags;
+        tags.EnumerateTags(ref processor);
+        tags.EnumerateMetrics(ref processor);
     }
 }
