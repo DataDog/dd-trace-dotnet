@@ -2003,7 +2003,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: [ Windows ]
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -2794,7 +2794,7 @@ stages:
       timeoutInMinutes: 30
 
       pool:
-        vmImage: windows-2019
+        vmImage: windows-2022
 
       steps:
       - template: steps/clone-repo.yml
@@ -3440,7 +3440,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -3509,7 +3509,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -3574,7 +3574,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
@@ -3639,7 +3639,7 @@ stages:
     variables:
       smokeTestAppDir: "$(System.DefaultWorkingDirectory)/tracer/test/test-applications/regression/AspNetCoreSmokeTest"
     pool:
-      vmImage: windows-2019
+      vmImage: windows-2022
 
     steps:
     - template: steps/clone-repo.yml
