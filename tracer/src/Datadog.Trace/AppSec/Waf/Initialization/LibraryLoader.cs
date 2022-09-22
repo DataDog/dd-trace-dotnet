@@ -17,11 +17,11 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LibraryLoader));
 
-        internal static IntPtr LoadAndGetHandle()
+        internal static IntPtr LoadAndGetHandle(string libVersion = null)
         {
             var fd = FrameworkDescription.Instance;
 
-            var libName = GetLibName(fd);
+            var libName = GetLibName(fd, libVersion);
             var runtimeIds = GetRuntimeIds(fd);
 
             // libName or runtimeIds being null means platform is not supported
@@ -182,12 +182,12 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return success;
         }
 
-        private static string GetLibName(FrameworkDescription fwk)
+        private static string GetLibName(FrameworkDescription fwk, string libVersion = null)
             => fwk.OSPlatform switch
             {
-                OSPlatformName.MacOS => "libddwaf.dylib",
-                OSPlatformName.Linux => "libddwaf.so",
-                OSPlatformName.Windows => "ddwaf.dll",
+                OSPlatformName.MacOS => $"libddwaf{libVersion}.dylib",
+                OSPlatformName.Linux => $"libddwaf{libVersion}.so",
+                OSPlatformName.Windows => $"ddwaf{libVersion}.dll",
                 _ => null, // unsupported
             };
 

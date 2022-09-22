@@ -6,6 +6,7 @@ using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.ProjectModel;
@@ -57,7 +58,12 @@ partial class Build
     AbsolutePath ProfilerTestLogsDirectory => ProfilerBuildDataDirectory / "logs";
 
     const string LibDdwafVersion = "1.5.0";
-    AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{LibDdwafVersion}";
+
+    const string OlderLibDdwafVersion = "1.4.0";
+
+    AbsolutePath LibDdwafDirectory(string libDdwafVersion = null) =>
+        (NugetPackageDirectory ?? RootDirectory / "packages")
+        / $"libddwaf.{libDdwafVersion ?? LibDdwafVersion}";
 
     AbsolutePath SourceDirectory => TracerDirectory / "src";
     AbsolutePath BuildDirectory => TracerDirectory / "build";
@@ -67,10 +73,7 @@ partial class Build
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
 
-    readonly string[] WafWindowsArchitectureFolders =
-    {
-        "win-x86", "win-x64"
-    };
+    readonly string[] WafWindowsArchitectureFolders = { "win-x86", "win-x64" };
     Project NativeTracerProject => Solution.GetProject(Projects.ClrProfilerNative);
     Project NativeLoaderProject => Solution.GetProject(Projects.NativeLoader);
 
@@ -276,104 +279,149 @@ partial class Build
         .DependsOn(CompileNativeTestsLinux)
         .DependsOn(CompileProfilerNativeTestsWindows);
 
-    Target DownloadLibDdwaf => _ => _
-        .Unlisted()
-        .After(CreateRequiredDirectories)
-        .Executes(async () =>
+    Target DownloadLibDdwaf => _ => _.Unlisted().After(CreateRequiredDirectories).Executes(() => DownloadWafVersion());
+
+    async Task DownloadWafVersion(string libddwafVersion = null, string uncompressFolder = null)
+    {
+        var libDdwafUri = new Uri(
+            $"https://www.nuget.org/api/v2/package/libddwaf/{libddwafVersion ?? LibDdwafVersion}"
+        );
+        var libDdwafZip = TempDirectory / "libddwaf.zip";
+
+        using (var client = new HttpClient())
         {
-            var libDdwafUri = new Uri($"https://www.nuget.org/api/v2/package/libddwaf/{LibDdwafVersion}");
-            var libDdwafZip = TempDirectory / "libddwaf.zip";
+            var response = await client.GetAsync(libDdwafUri);
 
-            using (var client = new HttpClient())
-            {
-                var response = await client.GetAsync(libDdwafUri);
+            response.EnsureSuccessStatusCode();
 
-                response.EnsureSuccessStatusCode();
+            await using var file = File.Create(libDdwafZip);
+            await using var stream = await response.Content.ReadAsStreamAsync();
+            await stream.CopyToAsync(file);
+        }
 
-                await using var file = File.Create(libDdwafZip);
-                await using var stream = await response.Content.ReadAsStreamAsync();
-                await stream.CopyToAsync(file);
-            }
+        uncompressFolder ??= LibDdwafDirectory(libddwafVersion);
+        Console.WriteLine($"{libDdwafZip} downloaded. Extracting to {uncompressFolder}...");
 
-            Console.WriteLine($"{libDdwafZip} downloaded. Extracting to {LibDdwafDirectory}...");
+        UncompressZip(libDdwafZip, uncompressFolder);
+    }
 
-            UncompressZip(libDdwafZip, LibDdwafDirectory);
-        });
-
-    Target CopyLibDdwaf => _ => _
-        .Unlisted()
-        .After(Clean)
-        .After(DownloadLibDdwaf)
-        .Executes(() =>
-        {
-            if (IsWin)
-            {
-                foreach (var architecture in WafWindowsArchitectureFolders)
+    Target CopyLibDdwaf =>
+        _ =>
+            _.Unlisted()
+                .After(Clean)
+                .After(DownloadLibDdwaf)
+                .Executes(() =>
                 {
-                    var source = LibDdwafDirectory / "runtimes" / architecture / "native" / "ddwaf.dll";
-                    var dest = MonitoringHomeDirectory / architecture;
-                    CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-                }
-            }
-            else
-            {
-                var (sourceArch, ext) = GetLibDdWafUnixArchitectureAndExtension();
-                var (destArch, _) = GetUnixArchitectureAndExtension();
+                    if (IsWin)
+                    {
+                        foreach (var architecture in WafWindowsArchitectureFolders)
+                        {
+                            var source =
+                                LibDdwafDirectory()
+                                / "runtimes"
+                                / architecture
+                                / "native"
+                                / "ddwaf.dll";
+                            var dest = MonitoringHomeDirectory / architecture;
+                            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                        }
+                    }
+                    else
+                    {
+                        var (sourceArch, ext) = GetLibDdWafUnixArchitectureAndExtension();
+                        var (destArch, _) = GetUnixArchitectureAndExtension();
 
-                var ddwafFileName = $"libddwaf.{ext}";
+                        var ddwafFileName = $"libddwaf.{ext}";
 
-                var source = LibDdwafDirectory / "runtimes" / sourceArch / "native" / ddwafFileName;
-                var dest = MonitoringHomeDirectory / destArch;
-                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-
-            }
-        });
+                        var source =
+                            LibDdwafDirectory()
+                            / "runtimes"
+                            / sourceArch
+                            / "native"
+                            / ddwafFileName;
+                        var dest = MonitoringHomeDirectory / destArch;
+                        CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                    }
+                });
 
     Target CopyNativeFilesForAppSecUnitTests => _ => _
-        .Unlisted()
-        .After(Clean)
-        .After(DownloadLibDdwaf)
-        .Executes(() =>
-        {
-            var project = Solution.GetProject(Projects.AppSecUnitTests);
-            var testDir = project.Directory;
-            var frameworks = project.GetTargetFrameworks();
-
-            var testBinFolder = testDir / "bin" / BuildConfiguration;
-
-            // dotnet test runs under x86 for net461, even on x64 platforms
-            // so copy both, just to be safe
-            if (IsWin)
-            {
-                foreach (var arch in WafWindowsArchitectureFolders)
-                foreach (var fmk in frameworks)
+                .Unlisted()
+                .After(Clean)
+                .After(DownloadLibDdwaf)
+                .Executes(async () =>
                 {
-                    var source = MonitoringHomeDirectory / arch;
-                    var dest = testBinFolder / fmk / arch;
-                    CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-                }
-            }
+                    var project = Solution.GetProject(Projects.AppSecUnitTests);
+                    var testDir = project.Directory;
+                    var frameworks = project.GetTargetFrameworks();
 
-            else
-            {
-                var (arch, _) = GetUnixArchitectureAndExtension();
-                foreach (var fmk in frameworks)
-                {
-                    var source = MonitoringHomeDirectory / arch;
-                    // We have to copy into the _root_ test bin folder here, not the arch sub-folder.
-                    // This is because these tests try to load the WAF.
-                    // Loading the WAF requires using the native tracer as a proxy, which means either
-                    // - The native tracer must be loaded first, so it can rewrite the PInvoke calls
-                    // - The native tracer must be side-by-side with the running dll
-                    // As this is a managed-only unit test, the native tracer _must_ be in the root folder
-                    // For simplicity, we just copy all the native dlls there
-                    var dest = testBinFolder / fmk;
+                    var testBinFolder = testDir / "bin" / BuildConfiguration;
 
-                    // use the files from the monitoring native folder
-                    CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-                }
-            }
-        });
+                    //older waf to test
+                    var oldVersionTempPath = TempDirectory / $"libddwaf.{OlderLibDdwafVersion}";
+                    Console.WriteLine("oldversion path is:" + oldVersionTempPath);
+                    await DownloadWafVersion(OlderLibDdwafVersion, oldVersionTempPath);
+
+                    // dotnet test runs under x86 for net461, even on x64 platforms
+                    // so copy both, just to be safe
+                    if (IsWin)
+                    {
+                        foreach (var arch in WafWindowsArchitectureFolders)
+                        {
+                            var oldVersionPath =
+                                oldVersionTempPath / "runtimes" / arch / "native" / "ddwaf.dll";
+                            var source = MonitoringHomeDirectory / arch;
+                            foreach (var fmk in frameworks)
+                            {
+                                var dest = testBinFolder / fmk / arch;
+                                CopyDirectoryRecursively(
+                                    source,
+                                    dest,
+                                    DirectoryExistsPolicy.Merge,
+                                    FileExistsPolicy.Overwrite
+                                );
+
+                                CopyFile(
+                                    oldVersionPath,
+                                    dest / $"ddwaf{OlderLibDdwafVersion}.dll",
+                                    FileExistsPolicy.Overwrite
+                                );
+                            }
+                        }
+                    }
+                    else
+                    {
+                        var (arch, ext) = GetUnixArchitectureAndExtension();
+                        var source = MonitoringHomeDirectory / arch;
+                        var oldVersionPath =
+                            oldVersionTempPath / "runtimes" / arch / "native" / $"libddwaf.{ext}";
+                        foreach (var fmk in frameworks)
+                        {
+                            // We have to copy into the _root_ test bin folder here, not the arch sub-folder.
+                            // This is because these tests try to load the WAF.
+                            // Loading the WAF requires using the native tracer as a proxy, which means either
+                            // - The native tracer must be loaded first, so it can rewrite the PInvoke calls
+                            // - The native tracer must be side-by-side with the running dll
+                            // As this is a managed-only unit test, the native tracer _must_ be in the root folder
+                            // For simplicity, we just copy all the native dlls there
+                            var dest = testBinFolder / fmk;
+
+                            // use the files from the monitoring native folder
+                            CopyDirectoryRecursively(
+                                source,
+                                dest,
+                                DirectoryExistsPolicy.Merge,
+                                FileExistsPolicy.Overwrite
+                            );
+
+                            CopyFile(
+                                oldVersionPath,
+                                dest / $"libddwaf{OlderLibDdwafVersion}.{ext}",
+                                FileExistsPolicy.Overwrite
+                            );
+                            ;
+                        }
+                    }
+                });
 
     Target PublishManagedTracer => _ => _
         .Unlisted()
@@ -623,7 +671,7 @@ partial class Build
                 replacement:$@";$1;./{arch}/Datadog.");
             File.WriteAllText(assetsDirectory / FileNames.LoaderConf, contents: loaderConfContents);
 
-            // Copy createLogPath.sh script and set the permissions 
+ // Copy createLogPath.sh script and set the permissions 
             CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, assetsDirectory);
             chmod.Invoke($"+x {assetsDirectory / FileNames.CreateLogPathScript}");
 
