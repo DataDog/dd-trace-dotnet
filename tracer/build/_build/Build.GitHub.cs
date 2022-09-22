@@ -91,29 +91,23 @@ partial class Build
            .Requires(() => GitHubRepositoryName)
            .Requires(() => GitHubToken)
            .Requires(() => PullRequestNumber)
+           .Requires(() => TargetBranch)
            .Executes(async() =>
             {
-                var client = GetGitHubClient();
-
-                var pr = await client.PullRequest.Get(
-                    owner: GitHubRepositoryOwner,
-                    name: GitHubRepositoryName,
-                    number: PullRequestNumber.Value);
-
-                // Fixes an issue (ambiguous argument) when we do git diff in the Action.
-                GitTasks.Git("fetch origin master:master", logOutput: false);
+                // This assumes that we're running in a pull request, so we compare against the target branch
+                var baseCommit = GitTasks.Git($"merge-base origin/{TargetBranch} HEAD").First().Text;
 
                 // This is a dumb implementation that just show the diff
                 // We could imagine getting the whole context with -U1000 and show the differences including parent name
                 // eg now we show -oldAttribute: oldValue, but we could show -tag.oldattribute: oldvalue
-                var changes = GitTasks.Git("diff master -- tracer/test/snapshots")
+                var changes = GitTasks.Git($"diff \"{baseCommit}\" -- */*snapshots*/*.*")
                                    .Select(f => f.Text);
 
-                const int minFiles = 50;
+                const int minFiles = 10;
                 var nbSnapshotsModified = changes.Count(f => f.Contains("@@ "));
                 if (nbSnapshotsModified < minFiles)
                 {
-                    // Dumb early exit, if we modify less than 50 files, we can review them manually
+                    // Dumb early exit, if we modify less than 10 files, we can review them manually
                     // Also it's certainly an addition of snapshot tests, so may not make sense to print a summary.
                     Console.WriteLine($"{nbSnapshotsModified} snapshots modified. Not doing snapshots diff for PRs modifying less than {minFiles}.");
                     return;
