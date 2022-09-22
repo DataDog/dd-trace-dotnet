@@ -61,7 +61,7 @@ partial class Build
 
     const string OlderLibDdwafVersion = "1.4.0";
 
-    AbsolutePath LibDdwafDirectory => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{LibDdwafVersion}";
+    AbsolutePath LibDdwafDirectory(string libDdwafVersion = null) => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{libDdwafVersion ?? LibDdwafVersion}";
 
     AbsolutePath SourceDirectory => TracerDirectory / "src";
     AbsolutePath BuildDirectory => TracerDirectory / "build";
@@ -279,7 +279,7 @@ partial class Build
 
     Target DownloadLibDdwaf => _ => _.Unlisted().After(CreateRequiredDirectories).Executes(() => DownloadWafVersion());
 
-    async Task DownloadWafVersion(string libddwafVersion = null, string uncompressFolder = null)
+    async Task DownloadWafVersion(string libddwafVersion = null, string uncompressFolderTarget = null)
     {
         var libDdwafUri = new Uri(
             $"https://www.nuget.org/api/v2/package/libddwaf/{libddwafVersion ?? LibDdwafVersion}"
@@ -297,10 +297,10 @@ partial class Build
             await stream.CopyToAsync(file);
         }
 
-        uncompressFolder ??= LibDdwafDirectory(libddwafVersion);
-        Console.WriteLine($"{libDdwafZip} downloaded. Extracting to {uncompressFolder}...");
+        uncompressFolderTarget ??= LibDdwafDirectory(libddwafVersion);
+        Console.WriteLine($"{libDdwafZip} downloaded. Extracting to {uncompressFolderTarget}...");
 
-        UncompressZip(libDdwafZip, uncompressFolder);
+        UncompressZip(libDdwafZip, uncompressFolderTarget);
     }
 
     Target CopyLibDdwaf => _ => _
