@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
         }
     }
 
-    public abstract class AspNetAsyncHandlerTests : TestHelper, IClassFixture<IisFixture>
+    public abstract class AspNetAsyncHandlerTests : TracingIntegrationTest, IClassFixture<IisFixture>
     {
         private readonly IisFixture _iisFixture;
 
@@ -40,6 +40,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNet
             _iisFixture.ShutdownPath = "/shutdown";
             _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) =>
+            span.Name switch
+            {
+                "aspnet.request" => span.IsAspNet(),
+                "aspnet-mvc.request" => span.IsAspNetMvc(),
+                _ => Result.DefaultSuccess,
+            };
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]

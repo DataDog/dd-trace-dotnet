@@ -13,13 +13,15 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
-    public class MicrosoftDataSqlClientTests : TestHelper
+    public class MicrosoftDataSqlClientTests : TracingIntegrationTest
     {
         public MicrosoftDataSqlClientTests(ITestOutputHelper output)
             : base("Microsoft.Data.SqlClient", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsSqlClient();
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.MicrosoftDataSqlClient), MemberType = typeof(PackageVersions))]
@@ -67,16 +69,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             int actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
 
             Assert.Equal(expectedSpanCount, actualSpanCount);
-
-            foreach (var span in spans)
-            {
-                var result = span.IsSqlClient();
-                Assert.True(result.Success, result.ToString());
-
-                Assert.Equal(expectedServiceName, span.Service);
-                Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-            }
-
+            ValidateIntegrationSpans(spans, expectedServiceName: expectedServiceName);
             telemetry.AssertIntegrationEnabled(IntegrationId.SqlClient);
         }
 

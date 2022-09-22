@@ -19,13 +19,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class ServiceStackRedisTests : TestHelper
+    public class ServiceStackRedisTests : TracingIntegrationTest
     {
         public ServiceStackRedisTests(ITestOutputHelper output)
             : base("ServiceStack.Redis", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsServiceStackRedis();
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.ServiceStackRedis), MemberType = typeof(PackageVersions))]
@@ -47,11 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  .OrderBy(s => s.Start)
                                  .ToList();
                 spans.Count.Should().Be(numberOfRuns * expectedSpansPerRun);
-                foreach (var span in spans)
-                {
-                    var result = span.IsServiceStackRedis();
-                    Assert.True(result.Success, result.ToString());
-                }
+                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.ServiceStack.Redis-redis");
 
                 var host = Environment.GetEnvironmentVariable("SERVICESTACK_REDIS_HOST") ?? "localhost:6379";
                 var port = host.Substring(host.IndexOf(':') + 1);

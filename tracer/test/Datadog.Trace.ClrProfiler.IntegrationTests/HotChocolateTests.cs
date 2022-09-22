@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [UsesVerify]
-    public abstract class HotChocolateTests : TestHelper
+    public abstract class HotChocolateTests : TracingIntegrationTest
     {
         private const string ServiceVersion = "1.0.0";
 
@@ -53,6 +53,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             _testName = testName;
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) =>
+            span.Type switch
+            {
+                "graphql" => span.IsHotChocolate(),
+                _ => Result.DefaultSuccess,
+            };
 
         protected async Task RunSubmitsTraces(string packageVersion = "")
         {
@@ -129,6 +136,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
 
                 var spans = agent.WaitForSpans(expectedSpans);
+                foreach (var span in spans)
+                {
+                    // TODO: Refactor to use ValidateIntegrationSpans when the HotChocolate server integration is fixed. It currently produces a service name of {service]-graphql
+                    var result = ValidateIntegrationSpan(span);
+                    Assert.True(result.Success, result.ToString());
+                }
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 

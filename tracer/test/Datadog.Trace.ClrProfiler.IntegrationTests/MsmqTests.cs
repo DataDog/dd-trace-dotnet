@@ -14,7 +14,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
-    public class MsmqTests : TestHelper
+    public class MsmqTests : TracingIntegrationTest
     {
         private const string ExpectedServiceName = "Samples.Msmq-msmq";
 
@@ -23,6 +23,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsMsmq();
 
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
@@ -51,13 +53,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var spans = agent.WaitForSpans(totalTransactions);
             Assert.True(spans.Count >= totalTransactions, $"Expecting at least {totalTransactions} spans, only received {spans.Count}");
             var msmqSpans = spans.Where(span => string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
+            ValidateIntegrationSpans(msmqSpans, expectedServiceName: ExpectedServiceName);
+
             foreach (var span in msmqSpans)
             {
-                var result = span.IsMsmq();
-                Assert.True(result.Success, result.ToString());
-
-                span.Service.Should().Be(ExpectedServiceName);
-                span.Tags.Should().Contain(new System.Collections.Generic.KeyValuePair<string, string>(Tags.InstrumentationName, "msmq"));
                 if (span.Tags[Tags.MsmqIsTransactionalQueue] == "True")
                 {
                     span.Tags[Tags.MsmqQueuePath].Should().Be(".\\Private$\\private-transactional-queue");
@@ -68,8 +67,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     span.Tags[Tags.MsmqQueuePath].Should().Be(".\\Private$\\private-nontransactional-queue");
                     nonTransactionalTraces++;
                 }
-
-                span.Tags?.ContainsKey(Tags.Version).Should().BeFalse("External service span should not have service version tag.");
 
                 var command = span.Tags[Tags.MsmqCommand];
 

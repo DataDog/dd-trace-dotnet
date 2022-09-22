@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Collection(nameof(KafkaTestsCollection))]
     [Trait("RequiresDockerDependency", "true")]
-    public class KafkaTests : TestHelper
+    public class KafkaTests : TracingIntegrationTest
     {
         private const int ExpectedSuccessProducerWithHandlerSpans = 20;
         private const int ExpectedSuccessProducerWithoutHandlerSpans = 10;
@@ -42,6 +42,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             EnableDebugMode();
         }
 
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsKafka();
+
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.Kafka), MemberType = typeof(PackageVersions))]
         [Trait("Category", "EndToEnd")]
@@ -59,12 +61,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // We use HaveCountGreaterOrEqualTo because _both_ consumers may handle the message
             // Due to manual/autocommit behaviour
             allSpans.Should().HaveCountGreaterOrEqualTo(TotalExpectedSpanCount);
-
-            foreach (var span in allSpans)
-            {
-                var result = span.IsKafka();
-                Assert.True(result.Success, result.ToString());
-            }
+            ValidateIntegrationSpans(allSpans, expectedServiceName: "Samples.Kafka-kafka");
 
             var allProducerSpans = allSpans.Where(x => x.Name == "kafka.produce").ToList();
             var successfulProducerSpans = allProducerSpans.Where(x => x.Error == 0).ToList();

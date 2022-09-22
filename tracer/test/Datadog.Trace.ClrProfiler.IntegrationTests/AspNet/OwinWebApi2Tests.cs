@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [UsesVerify]
-    public abstract class OwinWebApi2Tests : TestHelper, IClassFixture<OwinWebApi2Tests.OwinFixture>
+    public abstract class OwinWebApi2Tests : TracingIntegrationTest, IClassFixture<OwinWebApi2Tests.OwinFixture>
     {
         private readonly OwinFixture _fixture;
         private readonly string _testName;
@@ -109,6 +109,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/handler-api/api?ps=false&ts=false", 500, 1 },
         };
 
+        public override Result ValidateIntegrationSpan(MockSpan span) =>
+            span.Name switch
+            {
+                "aspnet-webapi.request" => span.IsAspNetWebApi2(),
+                _ => Result.DefaultSuccess,
+            };
+
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
@@ -118,13 +125,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             await _fixture.TryStartApp(this, _output);
 
             var spans = await _fixture.WaitForSpans(Output, path, expectedSpanCount);
-
-            var aspnetWebApi2Spans = spans.Where(s => s.Name == "aspnet-webapi.request");
-            foreach (var aspnetWebApi2Span in aspnetWebApi2Spans)
-            {
-                var result = aspnetWebApi2Span.IsAspNetWebApi2();
-                Assert.True(result.Success, result.ToString());
-            }
+            ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Owin.WebApi2", isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
             var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
