@@ -8,7 +8,7 @@ EXPOSE 443
 WORKDIR /app
 
 FROM mcr.microsoft.com/dotnet/runtime-deps:5.0-buster-slim as builder
-ARG DOTNETSDK_VERSION=6.0.100
+ARG DOTNETSDK_VERSION=6.0.401
 ENV DOTNETSDK_VERSION=$DOTNETSDK_VERSION
 
 # Based on https://github.com/dotnet/dotnet-docker/blob/34c81d5f9c8d56b36cc89da61702ccecbf00f249/src/sdk/6.0/bullseye-slim/amd64/Dockerfile
