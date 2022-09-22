@@ -48,7 +48,7 @@ public static class XUnitTestOutputHelperQueueTestOutputIntegration
             return CallTargetState.GetDefault();
         }
 
-        if (Test.Current?.TestScope.Span is { } span)
+        if (Test.Current?.GetInternalSpan() is { } span)
         {
             tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("xunit", "info", output, span));
         }

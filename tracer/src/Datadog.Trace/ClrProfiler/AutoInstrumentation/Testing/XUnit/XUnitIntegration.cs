@@ -80,7 +80,7 @@ internal static class XUnitIntegration
             return null;
         }
 
-        ((Span)test.TestScope.Span).ResetStartTime();
+        test.ResetStartDate();
         return test;
     }
 

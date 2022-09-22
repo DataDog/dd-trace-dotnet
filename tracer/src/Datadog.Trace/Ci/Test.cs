@@ -108,6 +108,7 @@ public sealed class Test
             span.ResetStartTime();
         }
 
+        CurrentTest.Value = this;
         CIVisibility.Log.Information("######### New Test Created: {name} ({suite} | {module})", Name, Suite.Name, Suite.Module.Bundle);
     }
 
@@ -135,7 +136,11 @@ public sealed class Test
     /// <summary>
     /// Gets the current Test
     /// </summary>
-    public static Test? Current => CurrentTest.Value;
+    public static Test? Current
+    {
+        get => CurrentTest.Value;
+        internal set => CurrentTest.Value = value;
+    }
 
     /// <summary>
     /// Gets the test name
@@ -148,14 +153,9 @@ public sealed class Test
     public DateTimeOffset StartDate => _scope.Span.StartTime;
 
     /// <summary>
-    /// Gets the test scope
-    /// </summary>
-    public IScope TestScope => _scope;
-
-    /// <summary>
     /// Gets the test suite for this test
     /// </summary>
-    public TestSuite Suite { get; private set; }
+    public TestSuite Suite { get; }
 
     /// <summary>
     /// Create a new Test
@@ -166,9 +166,7 @@ public sealed class Test
     /// <returns>New test suite instance</returns>
     internal static Test Create(TestSuite suite, string name, DateTimeOffset? startDate = null)
     {
-        var test = new Test(suite, name, startDate);
-        CurrentTest.Value = test;
-        return test;
+        return new Test(suite, name, startDate);
     }
 
     /// <summary>
@@ -316,7 +314,17 @@ public sealed class Test
         scope.Span.Finish(duration.Value);
         scope.Dispose();
 
-        CurrentTest.Value = null;
+        Current = null;
         CIVisibility.Log.Information("######### Test Closed: {name} ({suite} | {module})", Name, Suite.Name, Suite.Module.Bundle);
+    }
+
+    internal void ResetStartDate()
+    {
+        _scope.Span.ResetStartTime();
+    }
+
+    internal ISpan GetInternalSpan()
+    {
+        return _scope.Span;
     }
 }

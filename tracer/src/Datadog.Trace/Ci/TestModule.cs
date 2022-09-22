@@ -88,13 +88,18 @@ public sealed class TestModule
 
         _timestamp = Stopwatch.GetTimestamp();
         StartDate = startDate ?? DateTimeOffset.UtcNow;
+        Current = this;
         CIVisibility.Log.Information("### Test Module Created: {bundle}", bundle);
     }
 
     /// <summary>
     /// Gets the current TestModule
     /// </summary>
-    public static TestModule? Current => CurrentModule.Value;
+    public static TestModule? Current
+    {
+        get => CurrentModule.Value;
+        internal set => CurrentModule.Value = value;
+    }
 
     /// <summary>
     /// Gets the test module start date
@@ -141,9 +146,7 @@ public sealed class TestModule
     /// <returns>New test session instance</returns>
     public static TestModule Create(string? bundle = null, string? framework = null, string? frameworkVersion = null, DateTimeOffset? startDate = null)
     {
-        var testModule = new TestModule(bundle, framework, frameworkVersion, startDate);
-        CurrentModule.Value = testModule;
-        return testModule;
+        return new TestModule(bundle, framework, frameworkVersion, startDate);
     }
 
     /// <summary>
@@ -205,7 +208,6 @@ public sealed class TestModule
         }
 
         EndDate = StartDate.Add(duration ?? StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp));
-        CurrentModule.Value = null;
 
         lock (_suites)
         {
@@ -218,6 +220,7 @@ public sealed class TestModule
             }
         }
 
+        Current = null;
         CIVisibility.Log.Information("### Test Module Closed: {bundle}", Bundle);
         CIVisibility.FlushSpans();
     }

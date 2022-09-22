@@ -29,13 +29,19 @@ public sealed class TestSuite
         Module = module;
         _timestamp = Stopwatch.GetTimestamp();
         StartDate = startDate ?? DateTimeOffset.UtcNow;
+
+        Current = this;
         CIVisibility.Log.Information("###### New Test Suite Created: {name} ({module})", Name, Module.Bundle);
     }
 
     /// <summary>
     /// Gets the current TestSuite
     /// </summary>
-    public static TestSuite? Current => CurrentSuite.Value;
+    public static TestSuite? Current
+    {
+        get => CurrentSuite.Value;
+        internal set => CurrentSuite.Value = value;
+    }
 
     /// <summary>
     /// Gets the test suite name
@@ -76,9 +82,7 @@ public sealed class TestSuite
     /// <returns>New test suite instance</returns>
     internal static TestSuite Create(TestModule module, string name, DateTimeOffset? startDate = null)
     {
-        var testSuite = new TestSuite(module, name, startDate);
-        CurrentSuite.Value = testSuite;
-        return testSuite;
+        return new TestSuite(module, name, startDate);
     }
 
     /// <summary>
@@ -147,7 +151,7 @@ public sealed class TestSuite
         }
 
         EndDate = StartDate.Add(duration ?? StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp));
-        CurrentSuite.Value = null;
+        Current = null;
         Module.RemoveSuite(Name);
         CIVisibility.Log.Information("###### Test Suite Closed: {name} ({module})", Name, Module.Bundle);
     }

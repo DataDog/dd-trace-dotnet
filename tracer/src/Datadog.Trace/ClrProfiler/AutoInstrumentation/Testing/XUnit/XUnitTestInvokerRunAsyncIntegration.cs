@@ -58,6 +58,28 @@ public static class XUnitTestInvokerRunAsyncIntegration
     }
 
     /// <summary>
+    /// OnMethodEnd callback
+    /// </summary>
+    /// <typeparam name="TTarget">Type of the target</typeparam>
+    /// <typeparam name="TResult">TestResult type</typeparam>
+    /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
+    /// <param name="returnValue">Original method return value</param>
+    /// <param name="exception">Exception instance in case the original code threw an exception.</param>
+    /// <param name="state">Calltarget state value</param>
+    /// <returns>Return value of the method</returns>
+    internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, Exception exception, in CallTargetState state)
+    {
+        if (state.State == Test.Current)
+        {
+            // Restore the AsyncLocal set
+            // This is used to mimic the ExecutionContext copy from the StateMachine
+            Test.Current = null;
+        }
+
+        return new CallTargetReturn<TResult>(returnValue);
+    }
+
+    /// <summary>
     /// OnAsyncMethodEnd callback
     /// </summary>
     /// <typeparam name="TTarget">Type of the target</typeparam>
