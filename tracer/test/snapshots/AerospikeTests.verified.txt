@@ -1,6 +1,5 @@
 ﻿[
   {
-    "changingstuff": "everywhere",
     TraceId: Id_1,
     SpanId: Id_2,
     Name: aerospike.command,

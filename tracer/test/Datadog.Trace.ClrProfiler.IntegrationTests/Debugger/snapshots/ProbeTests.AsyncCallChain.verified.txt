@@ -1,6 +1,5 @@
 ﻿[
   {
-    "changingstuff": "everywhere",
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
     "ddsource": "dd_debugger",
