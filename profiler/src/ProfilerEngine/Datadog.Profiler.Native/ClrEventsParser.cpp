@@ -76,7 +76,7 @@ void ClrEventsParser::ParseEvent(
 
 uint64_t ClrEventsParser::GetCurrentTimestamp()
 {
-    return OpSysTools::GetHighPrecisionNanoseconds();
+    return OpSysTools::GetHighPrecisionTimestamp();
 }
 
 void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData)

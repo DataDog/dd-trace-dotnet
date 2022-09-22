@@ -521,13 +521,12 @@ ddog_Request* LibddprofExporter::CreateRequest(
     additionalFileAsSlice.len = bufferSize;
 
     ddog_File profile { FfiHelper::StringToCharSlice(RequestFileName), ddog_Vec_u8_as_slice(&buffer) };
-    ddog_File additionalFile { FfiHelper::StringToCharSlice(filename), additionalFileAsSlice};
+    ddog_File additionalFile{FfiHelper::StringToCharSlice(filename), additionalFileAsSlice};
 
     ddog_File filesArray[2] {profile, additionalFile};
     struct ddog_Slice_file files
     {
-        filesArray, 1
-        //filesArray, 2
+        filesArray, 2
     };
 
     return ddog_ProfileExporter_build(exporter, start, end, files, additionalTags.GetFfiTags(), RequestTimeOutMs);

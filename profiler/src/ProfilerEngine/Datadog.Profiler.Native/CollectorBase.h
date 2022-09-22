@@ -106,7 +106,7 @@ protected:
         //}
 
         //return currentTime;
-        return OpSysTools::GetHighPrecisionNanoseconds();
+        return OpSysTools::GetHighPrecisionTimestamp();
     }
 
 private:

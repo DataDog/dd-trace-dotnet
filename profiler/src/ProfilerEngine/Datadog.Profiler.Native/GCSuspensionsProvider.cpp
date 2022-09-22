@@ -36,9 +36,8 @@ GCSuspensionsProvider::~GCSuspensionsProvider()
     }
 }
 
-bool GCSuspensionsProvider::GetSuspensions(uint8_t*& pBuffer, uint64_t& bufferSize)
+bool GCSuspensionsProvider::GetSuspensions(std::stringstream& builder)
 {
-    std::stringstream builder;
     builder << "[";
 
     bool isFirst = true;
@@ -62,11 +61,11 @@ bool GCSuspensionsProvider::GetSuspensions(uint8_t*& pBuffer, uint64_t& bufferSi
 
     builder << "]";
 
-    auto content = builder.str();
-    std::cout << content << std::endl;
+    //auto content = builder.str();
+    //std::cout << content << std::endl;
 
-    // ONLY for debug
-    SaveSuspensions(content);
+    //// ONLY for debug
+    //SaveSuspensions(content);
 
     return false;
 }

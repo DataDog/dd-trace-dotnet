@@ -34,7 +34,7 @@ public:
     GCSuspensionsProvider(IConfiguration* configuration);
     ~GCSuspensionsProvider();
 
-    virtual bool GetSuspensions(uint8_t*& pBuffer, uint64_t& bufferSize) override;
+    virtual bool GetSuspensions(std::stringstream& content) override;
     virtual void OnSuspension(int32_t number, uint32_t generation, uint64_t pauseDuration, uint64_t timestamp) override;
 
 private:

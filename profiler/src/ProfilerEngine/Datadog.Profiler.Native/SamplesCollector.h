@@ -64,4 +64,6 @@ private:
     IMetricsSender* _metricsSender;
     IExporter* _exporter;
     IGCSuspensionsProvider* _gcSuspensionProvider;
+
+    const std::string _filename = "suspensions.json";
 };

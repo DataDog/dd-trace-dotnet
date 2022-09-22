@@ -70,8 +70,9 @@ public:
     }
 
     static bool IsSafeToStartProfiler(double coresThreshold);
+    static std::int64_t GetHighPrecisionTimestamp(void);
 
-private:
+ private:
     static constexpr std::int64_t NanosecondsPerSecond = 1000000000;
 
     static std::int64_t s_nanosecondsPerHighPrecisionTimerTick;
@@ -92,6 +93,15 @@ private:
     static GetThreadDescriptionDelegate_t GetDelegate_GetThreadDescription(void);
 #endif
 };
+
+inline std::int64_t OpSysTools::GetHighPrecisionTimestamp(void)
+{
+    //return OpSysTools::GetHighPrecisionNanosecondsFallback();
+    auto now = std::chrono::system_clock::now();
+
+    int64_t totalNanosecs = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
+    return static_cast<std::int64_t>(totalNanosecs);
+}
 
 inline std::int64_t OpSysTools::GetHighPrecisionNanoseconds(void)
 {

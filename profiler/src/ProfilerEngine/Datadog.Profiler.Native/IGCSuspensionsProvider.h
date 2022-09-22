@@ -8,7 +8,7 @@
 class IGCSuspensionsProvider
 {
 public:
-    virtual bool GetSuspensions(uint8_t*& pBuffer, uint64_t& bufferSize) = 0;
+    virtual bool GetSuspensions(std::stringstream& content) = 0;
 
     virtual ~IGCSuspensionsProvider() = default;
 };

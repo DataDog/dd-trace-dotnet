@@ -98,14 +98,22 @@ void SamplesCollector::Export()
         std::lock_guard lock(_exportLock);
 
         // TODO: get the additional files such as GC and suspensions details
+        std::stringstream builder;
         uint8_t* pBuffer = nullptr;
         uint64_t bufferSize = 0;
-        std::string filename = "suspensions.json";
         if (_gcSuspensionProvider != nullptr)
         {
-            _gcSuspensionProvider->GetSuspensions(pBuffer, bufferSize);
+            _gcSuspensionProvider->GetSuspensions(builder);
+            auto stringContent = builder.str();
+            bufferSize = stringContent.length();
+            pBuffer = (uint8_t*)malloc(bufferSize);
+            memcpy(pBuffer, stringContent.c_str(), bufferSize);
         }
-        success = _exporter->Export(filename, pBuffer, bufferSize);
+        success = _exporter->Export(_filename, pBuffer, bufferSize);
+        if (pBuffer != nullptr)
+        {
+            free(pBuffer);
+        }
     }
     catch (std::exception const& ex)
     {
