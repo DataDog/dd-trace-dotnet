@@ -269,23 +269,26 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 
         // if we are in the signal handler, ctx won't be null, so we will use the context
         // This will allow us to skip the syscall frame and start from the frame before the syscall.
-        unw_cursor_t cursor;
+        auto flag = UNW_INIT_SIGNAL_FRAME;
+        unw_context_t context;
         if (ctx != nullptr)
         {
-            resultErrorCode = unw_init_local2(&cursor, reinterpret_cast<unw_context_t*>(ctx), UNW_INIT_SIGNAL_FRAME);
+            context = *reinterpret_cast<unw_context_t*>(ctx);
         }
         else
         {
             // not in signal handler. Get the context and initialize the cursor form here
-            unw_context_t context;
             resultErrorCode = unw_getcontext(&context);
             if (resultErrorCode != 0)
             {
                 return E_ABORT; // unw_getcontext does not return a specific error code. Only -1
             }
 
-            resultErrorCode = unw_init_local(&cursor, &context);
+            flag = static_cast<unw_init_local2_flags_t>(0);
         }
+
+        unw_cursor_t cursor;
+        resultErrorCode = unw_init_local2(&cursor, &context, flag);
 
         if (resultErrorCode < 0)
         {
@@ -383,7 +386,7 @@ void LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal, sigi
             if (pCollectorInstance->CanCollect(OpSysTools::GetThreadId(), info->si_pid))
             {
                 // In case it's the thread we want to sample, just get its callstack
-                auto resultErrorCode = pCollectorInstance->CollectCallStackCurrentThread(reinterpret_cast<unw_context_t*>(context));
+                auto resultErrorCode = pCollectorInstance->CollectCallStackCurrentThread(context);
 
                 // release the lock
                 stackWalkInProgressLock.unlock();
