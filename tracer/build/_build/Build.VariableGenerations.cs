@@ -303,7 +303,10 @@ partial class Build : NukeBuild
                         "alpine",
                         new (string publishFramework, string runtimeTag)[]
                         {
+                            (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.16"),
+                            (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.15"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.15"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.13"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
