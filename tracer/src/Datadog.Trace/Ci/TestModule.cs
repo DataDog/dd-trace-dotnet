@@ -25,6 +25,7 @@ public sealed class TestModule
     private readonly Dictionary<string, TestSuite> _suites;
     private readonly Dictionary<string, string> _tags;
     private Dictionary<string, double>? _metrics;
+    private int _finished;
 
     private TestModule(string? bundle = null, string? framework = null, string? frameworkVersion = null, DateTimeOffset? startDate = null)
     {
@@ -198,6 +199,11 @@ public sealed class TestModule
     /// <param name="duration">Duration of the test module</param>
     public void Close(TimeSpan? duration = null)
     {
+        if (Interlocked.Exchange(ref _finished, 1) == 1)
+        {
+            return;
+        }
+
         EndDate = StartDate.Add(duration ?? StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp));
         CurrentModule.Value = null;
 
@@ -209,8 +215,6 @@ public sealed class TestModule
                 {
                     suite.Close(duration);
                 }
-
-                _suites.Clear();
             }
         }
 

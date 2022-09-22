@@ -21,6 +21,7 @@ public sealed class Test
 {
     private static readonly AsyncLocal<Test?> CurrentTest = new();
     private readonly Scope _scope;
+    private int _finished;
 
     private Test(TestSuite suite, string name, DateTimeOffset? startDate = null)
     {
@@ -273,6 +274,11 @@ public sealed class Test
     /// <param name="skipReason">In case </param>
     public void Close(Status status, TimeSpan? duration = null, string? skipReason = null)
     {
+        if (Interlocked.Exchange(ref _finished, 1) == 1)
+        {
+            return;
+        }
+
         var scope = _scope;
 
         // Calculate duration beforehand

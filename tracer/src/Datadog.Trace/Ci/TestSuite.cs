@@ -21,6 +21,7 @@ public sealed class TestSuite
     private readonly long _timestamp;
     private Dictionary<string, string>? _tags;
     private Dictionary<string, double>? _metrics;
+    private int _finished;
 
     private TestSuite(TestModule module, string name, DateTimeOffset? startDate = null)
     {
@@ -140,6 +141,11 @@ public sealed class TestSuite
     /// <param name="duration">Duration of the test suite</param>
     public void Close(TimeSpan? duration = null)
     {
+        if (Interlocked.Exchange(ref _finished, 1) == 1)
+        {
+            return;
+        }
+
         EndDate = StartDate.Add(duration ?? StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp));
         CurrentSuite.Value = null;
         Module.RemoveSuite(Name);
