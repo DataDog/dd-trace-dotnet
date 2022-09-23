@@ -41,6 +41,7 @@ steps:
         --env artifacts=/project/$(relativeArtifacts) \
         --env DD_CLR_ENABLE_NGEN=$(DD_CLR_ENABLE_NGEN) \
         --env DD_INSTRUMENTATION_TELEMETRY_ENABLED \
+        --env DD_TRACE_DEBUG=1 \
         --env Verify_DisableClipboard=true \
         --env DiffEngine_Disabled=true \
         --env TestAllPackageVersions=$(TestAllPackageVersions) \
