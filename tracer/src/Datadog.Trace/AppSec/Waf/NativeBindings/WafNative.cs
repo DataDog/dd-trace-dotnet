@@ -41,7 +41,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly IntPtr _freeObjectFuncField;
         private readonly FreeRulesetInfoDelegate _rulesetInfoFreeField;
         private readonly SetupLogCallbackDelegate _setupLogCallbackField;
-
         private string version = null;
 
         /// <summary>
@@ -91,8 +90,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         private delegate IntPtr InitContextDelegate(IntPtr powerwafHandle);
 
-        private delegate IntPtr InitMetricsCollectorDelegate(IntPtr powerwafHandle);
-
         private delegate DDWAF_RET_CODE RunDelegate(IntPtr context, IntPtr newArgs, ref DdwafResultStruct result, ulong timeLeftInUs);
 
         private delegate void DestroyDelegate(IntPtr handle);
@@ -137,6 +134,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             DDWAF_ERROR,
             DDWAF_AFTER_LAST,
         }
+
+        internal bool ExportErrorHappened { get; private set; }
 
         internal IntPtr ObjectFreeFuncPtr => _freeObjectFuncField;
 
@@ -246,6 +245,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             if (funcPtr == IntPtr.Zero)
             {
                 _log.Error("No function of name {functionName} exists on waf object", functionName);
+                ExportErrorHappened = true;
                 return null;
             }
 

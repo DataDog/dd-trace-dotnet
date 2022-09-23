@@ -405,17 +405,7 @@ namespace Datadog.Trace
                     writer.WritePropertyName("agent_error");
                     writer.WriteValue(agentError ?? string.Empty);
 
-                    writer.WritePropertyName("appsec_enabled");
-                    writer.WriteValue(Security.Instance.Settings.Enabled);
-
-                    writer.WritePropertyName("appsec_trace_rate_limit");
-                    writer.WriteValue(Security.Instance.Settings.TraceRateLimit);
-
-                    writer.WritePropertyName("appsec_rules_file_path");
-                    writer.WriteValue(Security.Instance.Settings.Rules ?? "(default)");
-
-                    writer.WritePropertyName("appsec_libddwaf_version");
-                    writer.WriteValue(Security.Instance.DdlibWafVersion ?? "(none)");
+                    WriteAsmInfo(writer);
 
                     writer.WritePropertyName("direct_logs_submission_enabled_integrations");
                     writer.WriteStartArray();
@@ -467,6 +457,28 @@ namespace Datadog.Trace
             catch (Exception ex)
             {
                 Log.Warning(ex, "DATADOG TRACER DIAGNOSTICS - Error fetching configuration");
+            }
+        }
+
+        private static void WriteAsmInfo(JsonTextWriter writer)
+        {
+            var security = Security.Instance;
+            writer.WritePropertyName("appsec_enabled");
+            writer.WriteValue(security.Settings.Enabled);
+
+            writer.WritePropertyName("appsec_trace_rate_limit");
+            writer.WriteValue(security.Settings.TraceRateLimit);
+
+            writer.WritePropertyName("appsec_rules_file_path");
+            writer.WriteValue(security.Settings.Rules ?? "(default)");
+
+            writer.WritePropertyName("appsec_libddwaf_version");
+            writer.WriteValue(security.DdlibWafVersion ?? "(none)");
+
+            if (security.WafExportsErrorHappened)
+            {
+                writer.WritePropertyName("appsec_libddwaf_export_errors");
+                writer.WriteValue(security.WafExportsErrorHappened);
             }
         }
 

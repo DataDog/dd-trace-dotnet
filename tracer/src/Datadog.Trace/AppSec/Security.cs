@@ -138,6 +138,8 @@ namespace Datadog.Trace.AppSec
 
         internal InstrumentationGateway InstrumentationGateway => _instrumentationGateway;
 
+        internal bool WafExportsErrorHappened => _waf?.InitializationResult?.ExportErrors ?? false;
+
         /// <summary>
         /// Gets <see cref="SecuritySettings"/> instance
         /// </summary>
@@ -264,14 +266,15 @@ namespace Datadog.Trace.AppSec
 
         private void SetRemoteConfigCapabilites()
         {
-            RemoteConfigurationManager.CallbackWithInitializedInstance(rcm =>
-            {
-                rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeEnabled);
-                // TODO set to '_settings.Rules == null' when https://github.com/DataDog/dd-trace-dotnet/pull/3120 is merged
-                rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, false);
-                // TODO set to true when https://github.com/DataDog/dd-trace-dotnet/pull/3171 is merged
-                rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, false);
-            });
+            RemoteConfigurationManager.CallbackWithInitializedInstance(
+                rcm =>
+                {
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeEnabled);
+                    // TODO set to '_settings.Rules == null' when https://github.com/DataDog/dd-trace-dotnet/pull/3120 is merged
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, false);
+                    // TODO set to true when https://github.com/DataDog/dd-trace-dotnet/pull/3171 is merged
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, false);
+                });
         }
 
         private void FeaturesProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
@@ -289,6 +292,7 @@ namespace Datadog.Trace.AppSec
         private void UpdateStatus()
         {
             if (_enabled == _settings.Enabled) { return; }
+
             lock (_settings)
             {
                 if (_settings.Enabled)
@@ -517,7 +521,7 @@ namespace Datadog.Trace.AppSec
                 span.SetTag(Tags.AppSecWafInitRuleErrors, _waf.InitializationResult.ErrorMessage);
             }
 
-            span.SetTag(Tags.AppSecWafVersion, _waf.Version.ToString());
+            span.SetTag(Tags.AppSecWafVersion, _waf.Version);
         }
 
         private void RunShutdown()
