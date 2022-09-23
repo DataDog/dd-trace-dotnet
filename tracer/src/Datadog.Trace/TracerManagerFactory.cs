@@ -93,7 +93,7 @@ namespace Datadog.Trace
                                      GetApplicationName() ??
                                      UnknownServiceName;
 
-            discoveryService ??= DiscoveryService.Create(settings.Exporter);
+            discoveryService ??= GetDiscoveryService(settings);
 
             statsd = settings.TracerMetricsEnabled
                          ? (statsd ?? CreateDogStatsdClient(settings, defaultServiceName))
@@ -179,6 +179,9 @@ namespace Datadog.Trace
 
             return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize);
         }
+
+        protected virtual IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)
+            => DiscoveryService.Create(settings.Exporter);
 
         private static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, string serviceName)
         {
