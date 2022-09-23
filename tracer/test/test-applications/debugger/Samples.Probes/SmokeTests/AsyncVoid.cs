@@ -20,7 +20,7 @@ namespace Samples.Probes.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        [MethodProbeTestData]
+        [MethodProbeTestData(skip: true)]
         private async Task VoidTaskMethod()
         {
             try
@@ -37,7 +37,7 @@ namespace Samples.Probes.SmokeTests
         }
 
         [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.NoOptimization)]
-        [MethodProbeTestData]
+        [MethodProbeTestData(skip: true)]
         private async void VoidMethod(string caller)
         {
             await Task.Delay(20);
