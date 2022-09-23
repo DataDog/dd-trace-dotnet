@@ -138,7 +138,7 @@ namespace Datadog.Trace.AppSec
 
         internal InstrumentationGateway InstrumentationGateway => _instrumentationGateway;
 
-        internal bool WafExportsErrorHappened => _waf.InitializationResult.ExportErrors;
+        internal bool WafExportsErrorHappened => _waf?.InitializationResult?.ExportErrors ?? false;
 
         /// <summary>
         /// Gets <see cref="SecuritySettings"/> instance
