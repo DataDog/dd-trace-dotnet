@@ -1,0 +1,137 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_1,
+    Name: http.request,
+    Resource: GET /waf/*allpaths,
+    Service: weblog,
+    Type: web,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.host: localhost:00000,
+      http.method: GET,
+      http.route: /waf/*allpaths,
+      http.status_code: 200,
+      http.url: http://localhost:00000/waf/appscan_fingerprint,
+      http.useragent: Mistake Not...,
+      runtime-id: Guid_1,
+      system.pid: 0,
+      _dd.p.dm: -1
+    },
+    Metrics: {
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_3,
+    Name: http.request,
+    Resource: GET /waf/*allpaths,
+    Service: weblog,
+    Type: web,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.host: localhost:00000,
+      http.method: GET,
+      http.route: /waf/*allpaths,
+      http.status_code: 200,
+      http.url: http://localhost:00000/waf/appscan_fingerprint,
+      http.useragent: Mistake Not...,
+      runtime-id: Guid_1,
+      system.pid: 0,
+      _dd.p.dm: -1
+    },
+    Metrics: {
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_4,
+    SpanId: Id_4,
+    Name: http.request,
+    Resource: GET /waf/*allpaths,
+    Service: weblog,
+    Type: web,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.host: localhost:00000,
+      http.method: GET,
+      http.route: /waf/*allpaths,
+      http.status_code: 200,
+      http.url: http://localhost:00000/waf/appscan_fingerprint,
+      http.useragent: Mistake Not...,
+      runtime-id: Guid_1,
+      system.pid: 0,
+      _dd.p.dm: -1
+    },
+    Metrics: {
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_5,
+    SpanId: Id_5,
+    Name: http.request,
+    Resource: GET /waf/*allpaths,
+    Service: weblog,
+    Type: web,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.host: localhost:00000,
+      http.method: GET,
+      http.route: /waf/*allpaths,
+      http.status_code: 200,
+      http.url: http://localhost:00000/waf/appscan_fingerprint,
+      http.useragent: Mistake Not...,
+      runtime-id: Guid_1,
+      system.pid: 0,
+      _dd.p.dm: -1
+    },
+    Metrics: {
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_6,
+    SpanId: Id_6,
+    Name: http.request,
+    Resource: GET /waf/*allpaths,
+    Service: weblog,
+    Type: web,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.host: localhost:00000,
+      http.method: GET,
+      http.route: /waf/*allpaths,
+      http.status_code: 200,
+      http.url: http://localhost:00000/waf/appscan_fingerprint,
+      http.useragent: Mistake Not...,
+      runtime-id: Guid_1,
+      system.pid: 0,
+      _dd.p.dm: -1
+    },
+    Metrics: {
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

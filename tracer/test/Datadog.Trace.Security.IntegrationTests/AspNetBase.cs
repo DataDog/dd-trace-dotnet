@@ -34,11 +34,12 @@ namespace Datadog.Trace.Security.IntegrationTests
         protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
         protected const string DefaultRuleFile = "ruleset.3.0.json";
         private const string Prefix = "Security.";
-        private static readonly Regex AppSecWafDuration = new(@"_dd.appsec.waf.duration: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex AppSecWafDurationWithBindings = new(@"_dd.appsec.waf.duration_ext: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex AppSecWafDuration = new(@"_dd.appsec.waf.duration: \d+\.\d", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex AppSecWafDurationWithBindings = new(@"_dd.appsec.waf.duration_ext: \d+\.\d", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecWafVersion = new(@"\s*_dd.appsec.waf.version: \d.\d.\d(\S*)?,", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex AppSecEventRulesLoaded = new(@"\s*_dd.appsec.event_rules.loaded: \d+\.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex AppSecEventRulesLoaded = new(@"\s*_dd.appsec.event_rules.loaded: \d+\.\d,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecErrorCount = new(@"\s*_dd.appsec.event_rules.error_count: 0.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        private static readonly Regex SystemPid = new(@"system.pid: \d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private readonly string _testName;
         private readonly HttpClient _httpClient;
         private readonly string _shutdownPath;
@@ -75,6 +76,24 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
 
             StartSample(
+                _agent,
+                arguments: null,
+                enableSecurity: enableSecurity,
+                externalRulesFile: externalRulesFile,
+                traceRateLimit: traceRateLimit);
+
+            return Task.FromResult(_agent);
+        }
+
+        public Task<MockTracerAgent> RunGoHosted(bool? enableSecurity, string externalRulesFile = null, int? traceRateLimit = null)
+        {
+            if (_agent == null)
+            {
+                var agentPort = TcpPortProvider.GetOpenPort();
+                _agent = MockTracerAgent.Create(Output, agentPort);
+            }
+
+            StartGoSample(
                 _agent,
                 arguments: null,
                 enableSecurity: enableSecurity,
@@ -138,6 +157,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             });
             settings.AddRegexScrubber(AppSecWafDuration, "_dd.appsec.waf.duration: 0.0");
             settings.AddRegexScrubber(AppSecWafDurationWithBindings, "_dd.appsec.waf.duration_ext: 0.0");
+            settings.AddRegexScrubber(SystemPid, "system.pid: 0");
             if (!testInit)
             {
                 settings.AddRegexScrubber(AppSecWafVersion, string.Empty);
@@ -262,6 +282,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
 
             var url = $"http://localhost:{_httpPort}{path}";
+            Console.WriteLine($"Calling {url}");
             var response =
                 body == null ? await _httpClient.GetAsync(url) : await _httpClient.PostAsync(url, new StringContent(body, Encoding.UTF8, contentType ?? "application/json"));
             var responseText = await response.Content.ReadAsStringAsync();
@@ -343,6 +364,71 @@ namespace Datadog.Trace.Security.IntegrationTests
             Output.WriteLine($"Starting Application: {sampleAppPath}");
             var executable = EnvironmentHelper.IsCoreClr() ? EnvironmentHelper.GetSampleExecutionSource() : sampleAppPath;
             var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} {arguments ?? string.Empty}" : arguments;
+            EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_TRACE_RATE_LIMIT", traceRateLimit?.ToString());
+
+            int? aspNetCorePort = default;
+            _process = ProfilerHelper.StartProcessWithProfiler(
+                executable,
+                EnvironmentHelper,
+                agent,
+                args,
+                aspNetCorePort: 0,
+                enableSecurity: enableSecurity,
+                externalRulesFile: externalRulesFile);
+
+            // then wait server ready
+            var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
+            _process.OutputDataReceived += (sender, args) =>
+            {
+                if (args.Data != null)
+                {
+                    if (args.Data.Contains("Now listening on:"))
+                    {
+                        var splitIndex = args.Data.LastIndexOf(':');
+                        aspNetCorePort = int.Parse(args.Data.Substring(splitIndex + 1));
+                        wh.Set();
+                    }
+
+                    Output.WriteLine($"[webserver][stdout] {args.Data}");
+                }
+            };
+            _process.BeginOutputReadLine();
+
+            _process.ErrorDataReceived += (sender, args) =>
+            {
+                if (args.Data != null)
+                {
+                    Output.WriteLine($"[webserver][stderr] {args.Data}");
+                }
+            };
+
+            _process.BeginErrorReadLine();
+
+            wh.WaitOne(mstimeout);
+            if (!aspNetCorePort.HasValue)
+            {
+                _process.Kill();
+                throw new Exception("Unable to determine port application is listening on");
+            }
+
+            _httpPort = aspNetCorePort.Value;
+        }
+
+        private void StartGoSample(
+            MockTracerAgent agent,
+            string arguments,
+            string packageVersion = "",
+            string framework = "",
+            bool? enableSecurity = true,
+            string externalRulesFile = null,
+            int? traceRateLimit = null)
+        {
+            const int mstimeout = 15_000;
+
+            // EnvironmentHelper.DebugModeEnabled = true;
+
+            var executable = "/home/robert/code/dd-trace-dotnet/tracer/test/test-applications/golang/app/weblog";
+            var args = string.Empty;
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_TRACE_RATE_LIMIT", traceRateLimit?.ToString());
 
             int? aspNetCorePort = default;

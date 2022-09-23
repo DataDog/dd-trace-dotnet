@@ -367,6 +367,8 @@ namespace Datadog.Trace.TestHelpers
             bool sendResponse;
             var isTraceCommand = false;
 
+            Console.WriteLine("starting " + request.PathAndQuery);
+
             if (TelemetryEnabled && request.PathAndQuery.StartsWith("/" + TelemetryConstants.AgentTelemetryEndpoint))
             {
                 HandlePotentialTelemetryData(request);
@@ -424,13 +426,16 @@ namespace Datadog.Trace.TestHelpers
 
         private void HandlePotentialTraces(MockHttpParser.MockHttpRequest request)
         {
-            if (ShouldDeserializeTraces && request.ContentLength >= 1)
+            Console.WriteLine($"here - ShouldDeserializeTraces: {ShouldDeserializeTraces}, request.ContentLength: {request.ContentLength}");
+            if (ShouldDeserializeTraces && (request.ContentLength >= 1 || request.ContentLength == -1))
             {
                 try
                 {
                     var body = ReadStreamBody(request);
+                    Console.WriteLine("got body: " + body);
 
                     var spans = MessagePackSerializer.Deserialize<IList<IList<MockSpan>>>(body);
+                    Console.WriteLine("got spans: " + spans.Count);
                     OnRequestDeserialized(spans);
 
                     lock (this)
@@ -667,10 +672,11 @@ namespace Datadog.Trace.TestHelpers
                 return new byte[0];
             }
 
-            var i = 0;
-            var body = new byte[request.ContentLength.Value];
+            var length = request.ContentLength.Value;
+            var bufferSize = length == -1 ? 5000 : length;
+            var body = new List<byte>((int)bufferSize);
 
-            while (request.Body.Stream.CanRead && i < request.ContentLength)
+            while (request.Body.Stream.CanRead)
             {
                 var nextByte = request.Body.Stream.ReadByte();
 
@@ -679,16 +685,17 @@ namespace Datadog.Trace.TestHelpers
                     break;
                 }
 
-                body[i] = (byte)nextByte;
-                i++;
+                body.Add((byte)nextByte);
             }
 
-            if (i < request.ContentLength)
+            if (length != -1 && body.Count < length)
             {
-                throw new Exception($"Less bytes were sent than we counted. {i} read versus {request.ContentLength} expected.");
+                throw new Exception($"Less bytes were sent than we counted. {body.Count} read versus {request.ContentLength} expected.");
             }
 
-            return body;
+            Console.WriteLine("read: " + body.Count);
+
+            return body.ToArray();
         }
 
         private void ReceiveDebuggerBatch(string batch)

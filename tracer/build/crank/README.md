@@ -22,7 +22,8 @@ Before running the script, the tracer and profiler (if desired) source must be b
 Once the source is built the script can used with the following command line:
 
 ```
-./tracer/build/crank/run-adhoc.sh appsec_baseline linux_adhoc true
+cd tracer/build/crank
+./run-adhoc.sh appsec_baseline linux_adhoc true
 ```
 
 or
