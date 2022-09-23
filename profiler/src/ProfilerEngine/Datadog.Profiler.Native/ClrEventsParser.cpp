@@ -68,9 +68,12 @@ void ClrEventsParser::ParseEvent(
     }
     else
     {
+#ifdef NDEBUG
+#else
         std::stringstream builder;
         builder << "Keyword = " << keywords << " - " << std::setw(3) << id << std::endl;
         std::cout << builder.str();
+#endif
     }
 }
 
@@ -194,15 +197,6 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
 
         OnGCGlobalHeapHistory(payload);
     }
-    else
-    {
-        //std::stringstream builder;
-        //if (version != 0)
-        //     builder << "? " << std::setw(3) << id << "_V" << version << std::endl;
-        //else
-        //    builder << "? " << std::setw(3) << id << std::endl;
-        //std::cout << builder.str();
-    }
 }
 
 void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData)
@@ -314,19 +308,12 @@ void ClrEventsParser::InitializeGC(GCDetails& gc, GCStartPayload& payload)
 
 void ClrEventsParser::OnGCTriggered()
 {
-    std::cout << std::endl << "OnGCTriggered" << std::endl;
-
     // all previous collections are finished
     ClearCollections();
 }
 
 void ClrEventsParser::OnGCStart(GCStartPayload& payload)
 {
-    std::stringstream builder;
-
-    builder << "OnGCStart(" << payload.Depth << ", " << payload.Type << ")"<< std::endl;
-    std::cout << builder.str();
-
     // If a BCG is already started, FGC (0/1) are possible and will finish before the BGC
     //
     if ((payload.Depth == 2) && (payload.Type == GCType::BackgroundGC))
@@ -405,10 +392,6 @@ void ClrEventsParser::OnGCGlobalHeapHistory(GCGlobalHeapPayload& payload)
 {
     GCDetails& gc = GetCurrentGC();
 
-    std::stringstream builder;
-    builder << "OnGCGlobalHeapHistory(" << payload.CondemnedGeneration << ", " << gc.Type << ")" << std::endl;
-    std::cout << builder.str();
-
     // check unexpected event (we should have received a GCStart first)
     if (gc.Number == -1)
     {
@@ -425,7 +408,6 @@ void ClrEventsParser::OnGCGlobalHeapHistory(GCGlobalHeapPayload& payload)
         // check unexpected generation mismatch: should never occur
         if (gc.Generation != payload.CondemnedGeneration)
         {
-            std::cout << "generation mismatch" << std::endl;
             return;
         }
 

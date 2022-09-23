@@ -96,16 +96,6 @@ public:
 protected:
     uint64_t GetCurrentTimestamp()
     {
-        //// /!\ time function allocates so we *MUST* not call it while the thread is suspended
-        //time_t currentTime;
-        //time(&currentTime);
-
-        //if (currentTime == static_cast<time_t>(-1))
-        //{
-        //    currentTime = 0;
-        //}
-
-        //return currentTime;
         return OpSysTools::GetHighPrecisionTimestamp();
     }
 

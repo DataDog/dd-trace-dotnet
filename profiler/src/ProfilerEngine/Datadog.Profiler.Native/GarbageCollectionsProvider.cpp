@@ -20,9 +20,7 @@ bool GarbageCollectionsProvider::GetGarbageCollections(uint8_t*& pBuffer, uint64
 
 void GarbageCollectionsProvider::OnGarbageCollection(int32_t number, uint32_t generation, GCReason reason, GCType type, bool isCompacting, uint64_t pauseDuration, uint64_t timestamp)
 {
-    std::stringstream builder;
-    builder << timestamp << " + " << number << " - " << generation << " = " << pauseDuration << " (" << type << ") " << std::endl;
-    std::cout << builder.str();
+    // TODO: create a GCInfo and store it until GetGarbageCollections()
 }
 
 GCInfo::GCInfo(int32_t number,

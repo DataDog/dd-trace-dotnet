@@ -96,7 +96,6 @@ public:
 
 inline std::int64_t OpSysTools::GetHighPrecisionTimestamp(void)
 {
-    //return OpSysTools::GetHighPrecisionNanosecondsFallback();
     auto now = std::chrono::system_clock::now();
 
     int64_t totalNanosecs = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
