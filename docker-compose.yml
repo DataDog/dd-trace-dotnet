@@ -495,6 +495,7 @@ services:
       - framework=${framework:-netcoreapp3.1}
       - baseImage=${baseImage:-default}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
+      - DD_TRACE_DEBUG=1
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
       - Verify_DisableClipboard=true
