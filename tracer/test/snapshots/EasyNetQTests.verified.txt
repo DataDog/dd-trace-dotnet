@@ -1,0 +1,182 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: amqp.command,
+    Resource: basic.publish easynetqtest-exchange-name -> easynetqtest-routing-key,
+    Service: Samples.EasyNetQ-rabbitmq,
+    Type: queue,
+    Tags: {
+      amqp.command: basic.publish,
+      amqp.exchange: easynetqtest-exchange-name,
+      amqp.routing_key: easynetqtest-routing-key,
+      component: RabbitMQ,
+      env: integration_tests,
+      message.size: 0,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_4,
+    Name: amqp.command,
+    Resource: basic.publish easynetqtest-exchange-name -> easynetqtest-routing-key,
+    Service: Samples.EasyNetQ-rabbitmq,
+    Type: queue,
+    Tags: {
+      amqp.command: basic.publish,
+      amqp.exchange: easynetqtest-exchange-name,
+      amqp.routing_key: easynetqtest-routing-key,
+      component: RabbitMQ,
+      env: integration_tests,
+      message.size: 30,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_5,
+    Name: amqp.command,
+    Resource: basic.deliver,
+    Service: Samples.EasyNetQ-rabbitmq,
+    Type: queue,
+    ParentId: Id_2,
+    Tags: {
+      amqp.command: basic.deliver,
+      amqp.exchange: easynetqtest-exchange-name,
+      amqp.routing_key: easynetqtest-routing-key,
+      component: RabbitMQ,
+      env: integration_tests,
+      language: dotnet,
+      message.size: 0,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_3,
+    SpanId: Id_6,
+    Name: amqp.command,
+    Resource: basic.deliver,
+    Service: Samples.EasyNetQ-rabbitmq,
+    Type: queue,
+    ParentId: Id_4,
+    Tags: {
+      amqp.command: basic.deliver,
+      amqp.exchange: easynetqtest-exchange-name,
+      amqp.routing_key: easynetqtest-routing-key,
+      component: RabbitMQ,
+      env: integration_tests,
+      language: dotnet,
+      message.size: 30,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_8,
+    Name: amqp.command,
+    Resource: exchange.declare,
+    Service: Samples.EasyNetQ-rabbitmq,
+    Type: queue,
+    Tags: {
+      amqp.command: exchange.declare,
+      amqp.exchange: easynetqtest-exchange-name,
+      component: RabbitMQ,
+      env: integration_tests,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_9,
+    SpanId: Id_10,
+    Name: amqp.command,
+    Resource: queue.bind,
+    Service: Samples.EasyNetQ-rabbitmq,
+    Type: queue,
+    Tags: {
+      amqp.command: queue.bind,
+      amqp.exchange: easynetqtest-exchange-name,
+      amqp.queue: easynetqtest-queue-name,
+      amqp.routing_key: easynetqtest-routing-key,
+      component: RabbitMQ,
+      env: integration_tests,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_11,
+    SpanId: Id_12,
+    Name: amqp.command,
+    Resource: queue.declare,
+    Service: Samples.EasyNetQ-rabbitmq,
+    Type: queue,
+    Tags: {
+      amqp.command: queue.declare,
+      amqp.queue: easynetqtest-queue-name,
+      component: RabbitMQ,
+      env: integration_tests,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

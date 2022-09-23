@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+      <RequiresDockerDependency>true</RequiresDockerDependency>
+    </PropertyGroup>
+  
+    <ItemGroup>
+      <PackageReference Include="EasyNetQ" Version="7.0.0" />
+      <PackageReference Include="EasyNetQ.Serialization.NewtonsoftJson" Version="7.0.0" />
+    </ItemGroup>
+  
+  </Project>
+  
