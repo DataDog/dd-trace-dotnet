@@ -75,5 +75,8 @@ namespace Datadog.Trace.Ci
                 return new CIAgentWriter(settings, sampler, discoveryService, traceBufferSize);
             }
         }
+
+        protected override IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)
+            => _settings.Agentless ? NullDiscoveryService.Instance : base.GetDiscoveryService(settings);
     }
 }

@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.PlatformHelpers;
@@ -59,8 +60,8 @@ namespace Datadog.Trace.IntegrationTests
                 }
             };
 
-            var immutableSettings = settings.Build();
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+            var discovery = DiscoveryService.Create(settings.Build().Exporter);
+            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
             Span span;
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
@@ -207,8 +208,8 @@ namespace Datadog.Trace.IntegrationTests
                 }
             };
 
-            var immutableSettings = settings.Build();
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+            var discovery = DiscoveryService.Create(settings.Build().Exporter);
+            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
             var spinSucceeded = SpinWait.SpinUntil(() => tracer.TracerManager.AgentWriter is AgentWriter { CanComputeStats: true }, 5_000);
@@ -367,7 +368,8 @@ namespace Datadog.Trace.IntegrationTests
 
             var immutableSettings = settings.Build();
 
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+            var discovery = DiscoveryService.Create(immutableSettings.Exporter);
+            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
             if (expectStats)
