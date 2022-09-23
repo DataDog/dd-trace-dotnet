@@ -31,16 +31,19 @@ namespace Samples.RabbitMQ
 
         private static void RunRabbitMQ()
         {
-            RunProducersAndConsumers(useQueue: false, ConsumerType.SameAssemblyImplicitImplementation);
+            RunProducersAndConsumers(useQueue: false, ConsumerType.SyncImplicitInternal, isAsyncConsumer: false);
 
             // Doing the test twice to make sure that both our context propagation works but also manual propagation (when users enqueue messages for instance)
-            RunProducersAndConsumers(useQueue: true, ConsumerType.DifferentAssemblyImplicitImplementation);
+            RunProducersAndConsumers(useQueue: true, ConsumerType.SyncImplicitExternal, isAsyncConsumer: false);
 
-            // Do the test one more time to ensure that we instrument the various interface method scenarios
-            RunProducersAndConsumers(useQueue: true, ConsumerType.DifferentAssemblyExplicitImplementation);
+            // ConsumerType.AsyncExplicitExternal -- Need to test interface instrumentation async basic deliver
+            RunProducersAndConsumers(useQueue: true, ConsumerType.AsyncExplicitExternal, isAsyncConsumer: true);
+
+            // ConsumerType.AsyncDerived -- Need to test derived instrumentation async basic deliver
+            RunProducersAndConsumers(useQueue: true, ConsumerType.AsyncDerivedInternal, isAsyncConsumer: true);
         }
 
-        private static void RunProducersAndConsumers(bool useQueue, ConsumerType consumerType)
+        private static void RunProducersAndConsumers(bool useQueue, ConsumerType consumerType, bool isAsyncConsumer)
         {
             PublishAndGet(useDefaultQueue: false);
             PublishAndGet(useDefaultQueue: true);
@@ -48,7 +51,7 @@ namespace Samples.RabbitMQ
             var sendThread = new Thread(Send);
             sendThread.Start();
 
-            var receiveThread = new Thread(o => Receive(useQueue, consumerType));
+            var receiveThread = new Thread(o => Receive(useQueue, consumerType, isAsyncConsumer));
             receiveThread.Start();
 
             sendThread.Join();
@@ -161,13 +164,15 @@ namespace Samples.RabbitMQ
             Console.WriteLine("[Send] Exiting Thread.");
         }
 
-        private static void Receive(bool useQueue, ConsumerType consumerType)
+        private static void Receive(bool useQueue, ConsumerType consumerType, bool isAsyncConsumer)
         {
             // Let's just wait for all sending activity to finish before doing any work
             _sendFinished.WaitOne();
 
             // Configure and listen to RabbitMQ queue
             var factory = new ConnectionFactory() { HostName = Host() };
+            factory.DispatchConsumersAsync = isAsyncConsumer;
+
             using(var connection = factory.CreateConnection())
             using(var channel = connection.CreateModel())
             {
@@ -219,24 +224,34 @@ namespace Samples.RabbitMQ
                 }
             }
 
-            IBasicConsumer consumer;
+            IBasicConsumer consumer = null;
             switch (consumerType)
             {
-                case ConsumerType.SameAssemblyImplicitImplementation:
+                case ConsumerType.SyncImplicitInternal:
                     var eventingBasicConsumer = new global::RabbitMQ.Client.Events.EventingBasicConsumer(channel);
                     eventingBasicConsumer.Received += HandleEvent;
                     consumer = eventingBasicConsumer;
                     break;
-                case ConsumerType.DifferentAssemblyImplicitImplementation:
-                    var customImplicitConsumer = new Samples.RabbitMQ.Program.ImplicitImplementationConsumer(channel);
+                case ConsumerType.SyncImplicitExternal:
+                    var customImplicitConsumer = new Samples.RabbitMQ.SyncImplicitImplementationConsumer(channel);
                     customImplicitConsumer.Received += HandleEvent;
                     consumer = customImplicitConsumer;
                     break;
-                case ConsumerType.DifferentAssemblyExplicitImplementation:
+                case ConsumerType.AsyncExplicitExternal:
+                    var asyncExplicitExternalConsumer = new Samples.RabbitMQ.AsyncExplicitImplementationConsumer(channel);
+                    asyncExplicitExternalConsumer.Received += HandleEvent;
+                    consumer = asyncExplicitExternalConsumer;
+                    break;
+                case ConsumerType.AsyncDerivedInternal:
+                    var asyncDerivedInternalConsumer = new global::RabbitMQ.Client.Events.AsyncEventingBasicConsumer(channel);
+                    asyncDerivedInternalConsumer.Received += async (ch, ea) =>
+                    {
+                        HandleEvent(ch, ea);
+                        await Task.Yield();
+                    };
+                    consumer = asyncDerivedInternalConsumer;
+                    break;
                 default:
-                    var customExplicitConsumer = new Samples.RabbitMQ.Program.ExplicitImplementationConsumer(channel);
-                    customExplicitConsumer.Received += HandleEvent;
-                    consumer = customExplicitConsumer;
                     break;
             }
 
@@ -282,124 +297,30 @@ namespace Samples.RabbitMQ
 
         enum ConsumerType
         {
-            SameAssemblyImplicitImplementation,
-            DifferentAssemblyImplicitImplementation,
-            DifferentAssemblyExplicitImplementation,
+            SyncImplicitInternal,
+            SyncImplicitExternal,
+            SyncDerivedInternal,
+            SyncDerivedExternal,
+            AsyncExplicitExternal,
+            AsyncDerivedInternal,
+            AsyncDerivedExternal
         }
 
-        // Implement a custom consumer class whose implementation is nearly
-        // identical to the implementation of RabbitMQ.Client.Events.EventingBasicConsumer.
-        // This will test that we can properly instrument implicit interface implementations
-        // of RabbitMQ.Client.IBasicConsumer.HandleBasicDeliver
-        class ImplicitImplementationConsumer : IBasicConsumer
+        class ImplicitImplementationDerivedConsumer : AsyncDefaultBasicConsumer
         {
-            private readonly DefaultBasicConsumer _consumer;
-            private readonly IModel _model;
-
-            public ImplicitImplementationConsumer(IModel model)
+            public ImplicitImplementationDerivedConsumer(IModel model)
+                : base(model)
             {
-                _consumer = new DefaultBasicConsumer(model);
-                _model = model;
             }
-
-            public IModel Model => _model;
 
             public event EventHandler<BasicDeliverEventArgs> Received;
 
-            public event EventHandler<ConsumerEventArgs> Registered;
-
-            public event EventHandler<ShutdownEventArgs> Shutdown;
-
-            public event EventHandler<ConsumerEventArgs> Unregistered;
-
-            public event EventHandler<ConsumerEventArgs> ConsumerCancelled;
-
-            public void HandleBasicCancel(string consumerTag)
+            public override async Task HandleBasicDeliver(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IBasicProperties properties, ReadOnlyMemory<byte> body)
             {
-                _consumer.HandleBasicCancel(consumerTag);
-            }
-
-            public void HandleBasicCancelOk(string consumerTag)
-            {
-                _consumer.HandleBasicCancelOk(consumerTag);
-                Unregistered?.Invoke(this, new ConsumerEventArgs(new[] { consumerTag }));
-            }
-
-            public void HandleBasicConsumeOk(string consumerTag)
-            {
-                _consumer.HandleBasicConsumeOk(consumerTag);
-                Registered?.Invoke(this, new ConsumerEventArgs(new[] { consumerTag }));
-            }
-
-            public void HandleBasicDeliver(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IBasicProperties properties, ReadOnlyMemory<byte> body)
-            {
+                await Task.Yield();
                 Received?.Invoke(
                     this,
                     new BasicDeliverEventArgs(consumerTag, deliveryTag, redelivered, exchange, routingKey, properties, body));
-            }
-
-            public void HandleModelShutdown(object model, ShutdownEventArgs reason)
-            {
-                _consumer.HandleModelShutdown(model, reason);
-                Shutdown?.Invoke(this, reason);
-            }
-        }
-
-        // Implement a custom consumer class whose implementation is nearly
-        // identical to the implementation of RabbitMQ.Client.Events.EventingBasicConsumer.
-        // This will test that we can properly instrument explicit interface implementations
-        // of RabbitMQ.Client.IBasicConsumer.HandleBasicDeliver
-        class ExplicitImplementationConsumer : IBasicConsumer
-        {
-            private readonly DefaultBasicConsumer _consumer;
-            private readonly IModel _model;
-
-            public ExplicitImplementationConsumer(IModel model)
-            {
-                _consumer = new DefaultBasicConsumer(model);
-                _model = model;
-            }
-
-            IModel IBasicConsumer.Model => _model;
-
-            public event EventHandler<BasicDeliverEventArgs> Received;
-
-            public event EventHandler<ConsumerEventArgs> Registered;
-
-            public event EventHandler<ShutdownEventArgs> Shutdown;
-
-            public event EventHandler<ConsumerEventArgs> Unregistered;
-
-            public event EventHandler<ConsumerEventArgs> ConsumerCancelled;
-
-            void IBasicConsumer.HandleBasicCancel(string consumerTag)
-            {
-                _consumer.HandleBasicCancel(consumerTag);
-            }
-
-            void IBasicConsumer.HandleBasicCancelOk(string consumerTag)
-            {
-                _consumer.HandleBasicCancelOk(consumerTag);
-                Unregistered?.Invoke(this, new ConsumerEventArgs(new[] { consumerTag }));
-            }
-
-            void IBasicConsumer.HandleBasicConsumeOk(string consumerTag)
-            {
-                _consumer.HandleBasicConsumeOk(consumerTag);
-                Registered?.Invoke(this, new ConsumerEventArgs(new[] { consumerTag }));
-            }
-
-            void IBasicConsumer.HandleBasicDeliver(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IBasicProperties properties, ReadOnlyMemory<byte> body)
-            {
-                Received?.Invoke(
-                    this,
-                    new BasicDeliverEventArgs(consumerTag, deliveryTag, redelivered, exchange, routingKey, properties, body));
-            }
-
-            void IBasicConsumer.HandleModelShutdown(object model, ShutdownEventArgs reason)
-            {
-                _consumer.HandleModelShutdown(model, reason);
-                Shutdown?.Invoke(this, reason);
             }
         }
     }

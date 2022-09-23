@@ -17,6 +17,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "RabbitMQ.Client",
+        TypeName = "RabbitMQ.Client.IAsyncBasicConsumer",
+        MethodName = "HandleBasicDeliver",
+        ReturnTypeName = ClrNames.Task,
+        ParameterTypeNames = new[] { ClrNames.String, ClrNames.UInt64, ClrNames.Bool, ClrNames.String, ClrNames.String, RabbitMQConstants.IBasicPropertiesTypeName, ClrNames.Ignore },
+        MinimumVersion = "3.6.9",
+        MaximumVersion = "6.*.*",
+        IntegrationName = RabbitMQConstants.IntegrationName,
+        CallTargetIntegrationType = IntegrationType.Interface)]
+    [InstrumentMethod(
+        AssemblyName = "RabbitMQ.Client",
         TypeName = "RabbitMQ.Client.AsyncDefaultBasicConsumer",
         MethodName = "HandleBasicDeliver",
         ReturnTypeName = ClrNames.Task,
