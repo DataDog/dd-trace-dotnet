@@ -25,14 +25,13 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
-    public class AspNetCore5AsmData : AspNetBase, IDisposable
+    public class AspNetCore5AsmData : RcmBase
     {
-        private const string LogFileNamePrefix = "dotnet-tracer-managed-";
+        private const string _rulesUpdatedMessage = "rules have been updated and waf status is \"DDWAF_OK\"";
 
         public AspNetCore5AsmData(ITestOutputHelper outputHelper)
-            : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5AsmData))
+            : base(outputHelper, testName: nameof(AspNetCore5AsmData))
         {
-            SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "500");
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
         }
 
@@ -42,6 +41,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         [Trait("RunOnWindows", "True")]
         public async Task TestBlockedRequestIp(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
         {
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*");
             var agent = await RunOnSelfHosted(enableSecurity, "ruleset-withblockips.json");
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             // we want to see the ip here
@@ -55,16 +55,26 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
                 new[]
                 {
                     (
-                        (object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, "asm_data"), (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, "asm_data_servicea"),
+                        (object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, "asm_data"),
+                    (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, "asm_data_servicea"),
                 },
                 product.Name);
 
             var request1 = await agent.WaitRcmRequestAndReturnLast();
-            // // even the request show the applied state seems extra time is needed before it's active
-            await Task.Delay(1500);
+            if (enableSecurity)
+            {
+                await logEntryWatcher.WaitForLogEntry($"1 {_rulesUpdatedMessage}", logEntryWatcherTimeout);
+            }
+            else
+            {
+                await Task.Delay(1500);
+            }
+
             var spanAfterAsmData = await SendRequestsAsync(agent, url);
-            spanAfterAsmData.First().GetTag(Tags.HttpStatusCode).Should().Be(((int)expectedStatusCode).ToString());
-            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
+            var spans = new List<MockSpan>();
+            spans.AddRange(spanBeforeAsmData);
+            spans.AddRange(spanAfterAsmData);
+            await VerifySpans(spans.ToImmutableList(), settings, true);
         }
 
         [SkippableTheory]
@@ -77,8 +87,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             // we want to see the ip here
             var scrubbers = VerifyHelper.SpanScrubbers.Where(s => s.RegexPattern.ToString() != @"http.client_ip: (.)*(?=,)");
             var settings = VerifyHelper.GetSpanVerifierSettings(scrubbers: scrubbers, parameters: new object[] { test, enableSecurity, (int)expectedStatusCode, sanitisedUrl });
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*");
             var spanBeforeAsmData = await SendRequestsAsync(agent, url);
-            spanBeforeAsmData.First().GetTag(Tags.AppSecEvent).Should().BeNull();
 
             var product = new AsmDataProduct();
             agent.SetupRcm(
@@ -86,30 +96,38 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
                 new[]
                 {
                     (
-                        (object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, "asm_data"), (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, "asm_data_servicea"),
+                        (object)new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 5545453532, Value = MainIp } } } } }, "asm_data"),
+                    (new Payload { RulesData = new[] { new RuleData { Id = "blocked_ips", Type = "ip_with_expiration", Data = new[] { new Data { Expiration = 1545453532, Value = MainIp } } } } }, "asm_data_servicea"),
                 },
                 product.Name);
 
             var request1 = await agent.WaitRcmRequestAndReturnLast();
-            // // even the request show the applied state seems extra time is needed before it's active
+            await logEntryWatcher.WaitForLogEntry($"1 {_rulesUpdatedMessage}", logEntryWatcherTimeout);
             await Task.Delay(1500);
+
             var spanAfterAsmData = await SendRequestsAsync(agent, url);
             spanAfterAsmData.First().GetTag(Tags.AppSecEvent).Should().NotBeNull();
             agent.SetupRcm(Output, new[] { ((object)new AsmFeatures { Asm = new Asm { Enabled = false } }, "1") }, "ASM_FEATURES");
             var requestAfterDeactivation = await agent.WaitRcmRequestAndReturnLast();
-            // // even the request show the applied state seems extra time is needed before it's active
+            await logEntryWatcher.WaitForLogEntry(AppSecDisabledMessage, logEntryWatcherTimeout);
             await Task.Delay(1500);
-            spanAfterAsmData = await SendRequestsAsync(agent, url);
-            spanAfterAsmData.First().GetTag(Tags.AppSecEvent).Should().BeNull();
+
+            var spanAfterAsmDeactivated = await SendRequestsAsync(agent, url);
 
             agent.SetupRcm(Output, new[] { ((object)new AsmFeatures { Asm = new Asm { Enabled = true } }, "1") }, "ASM_FEATURES");
             var requestAfterReactivation = await agent.WaitRcmRequestAndReturnLast();
-            // // even the request show the applied state seems extra time is needed before it's active
+            await logEntryWatcher.WaitForLogEntries(new[] { $"1 {_rulesUpdatedMessage}", AppSecEnabledMessage }, logEntryWatcherTimeout);
             await Task.Delay(1500);
-            spanAfterAsmData = await SendRequestsAsync(agent, url);
-            spanAfterAsmData.First().GetTag(Tags.AppSecEvent).Should().NotBeNull();
 
-            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
+            var spanAfterAsmDataReactivated = await SendRequestsAsync(agent, url);
+
+            var spans = new List<MockSpan>();
+            spans.AddRange(spanBeforeAsmData);
+            spans.AddRange(spanAfterAsmData);
+            spans.AddRange(spanAfterAsmDeactivated);
+            spans.AddRange(spanAfterAsmDataReactivated);
+
+            await VerifySpans(spans.ToImmutableList(), settings, true);
         }
     }
 }

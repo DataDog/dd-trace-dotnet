@@ -94,9 +94,7 @@ namespace Datadog.Trace.AppSec.Transports.Http
             _completeAsync ??= httpResponse.GetType().GetMethod("CompleteAsync");
             if (_completeAsync != null)
             {
-                var t = (Task)_completeAsync.Invoke(httpResponse, null);
-                t.ConfigureAwait(false);
-                t.Wait();
+                _completeAsync.Invoke(httpResponse, null);
             }
             else
             {

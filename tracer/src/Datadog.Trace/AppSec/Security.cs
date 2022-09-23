@@ -296,6 +296,7 @@ namespace Datadog.Trace.AppSec
             {
                 return;
             }
+
             _asmDataConfigs ??= new Dictionary<string, Payload>();
             var asmDataConfigs = e.GetDeserializedConfigurations<Payload>();
             foreach (var asmDataConfig in asmDataConfigs)
@@ -387,7 +388,7 @@ namespace Datadog.Trace.AppSec
 
                 _enabled = true;
 
-                Log.Information("AppSec is now Enabled, coming from remote config: {enableFromRemoteConfig}", fromRemoteConfig);
+                Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {enableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
             }
         }
 
@@ -408,7 +409,7 @@ namespace Datadog.Trace.AppSec
 
                 _enabled = false;
 
-                Log.Information("AppSec is now Disabled, coming from remote config: {enableFromRemoteConfig}", fromRemoteConfig);
+                Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {enableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
             }
         }
 

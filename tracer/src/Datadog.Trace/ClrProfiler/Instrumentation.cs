@@ -333,7 +333,7 @@ namespace Datadog.Trace.ClrProfiler
             Task.Run(
                 async () =>
                 {
-                    // TODO: RCM and LiveDebugger should be initialized in TracerManagerFactory so they can respond, so that product can also be Unregistered, for example, if AsmFeaturesProduct is disabled, ASM_DATA and ASM_DD should Unregister themselves, and re register themselves when it's enabled..
+                    // TODO: RCM and LiveDebugger should be initialized in TracerManagerFactory so they can respond
                     // to changes in ExporterSettings etc.
                     var isDiscoverySuccessful = await WaitForDiscoveryService(discoveryService).ConfigureAwait(false);
                     if (isDiscoverySuccessful)
