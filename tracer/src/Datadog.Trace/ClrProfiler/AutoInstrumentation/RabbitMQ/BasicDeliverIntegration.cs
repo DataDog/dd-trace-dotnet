@@ -25,6 +25,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         MaximumVersion = "6.*.*",
         IntegrationName = RabbitMQConstants.IntegrationName,
         CallTargetIntegrationType = IntegrationType.Interface)]
+    [InstrumentMethod(
+        AssemblyName = "RabbitMQ.Client",
+        TypeName = "RabbitMQ.Client.DefaultBasicConsumer",
+        MethodName = "HandleBasicDeliver",
+        ReturnTypeName = ClrNames.Void,
+        ParameterTypeNames = new[] { ClrNames.String, ClrNames.UInt64, ClrNames.Bool, ClrNames.String, ClrNames.String, RabbitMQConstants.IBasicPropertiesTypeName, ClrNames.Ignore },
+        MinimumVersion = "3.6.9",
+        MaximumVersion = "6.*.*",
+        IntegrationName = RabbitMQConstants.IntegrationName,
+        CallTargetIntegrationType = IntegrationType.Derived)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class BasicDeliverIntegration
@@ -51,6 +61,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             where TBasicProperties : IBasicProperties
             where TBody : IBody // ReadOnlyMemory<byte> body in 6.0.0
         {
+            if (RabbitMQIntegration.GetActiveRabbitMQScope(Tracer.Instance) != null)
+            {
+                // we are already instrumenting this,
+                // don't instrument nested methods that belong to the same stacktrace
+                // e.g. DerivedType.HandleBasicDeliver -> BaseType.RabbitMQ.Client.IAsyncBasicConsumer.HandleBasicDeliver
+                return CallTargetState.GetDefault();
+            }
+
             SpanContext propagatedContext = null;
 
             // try to extract propagated context values from headers

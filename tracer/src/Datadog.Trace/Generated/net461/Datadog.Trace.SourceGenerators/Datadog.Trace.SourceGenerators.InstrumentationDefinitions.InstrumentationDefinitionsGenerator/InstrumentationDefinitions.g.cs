@@ -443,6 +443,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 // RabbitMQ
                new ("RabbitMQ.Client", "RabbitMQ.Client.AsyncDefaultBasicConsumer", "HandleBasicDeliver",  new[] { "System.Threading.Tasks.Task", "System.String", "System.UInt64", "System.Boolean", "System.String", "System.String", "RabbitMQ.Client.IBasicProperties", "_" }, 3, 6, 9, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverAsyncIntegration"),
+               new ("RabbitMQ.Client", "RabbitMQ.Client.DefaultBasicConsumer", "HandleBasicDeliver",  new[] { "System.Void", "System.String", "System.UInt64", "System.Boolean", "System.String", "System.String", "RabbitMQ.Client.IBasicProperties", "_" }, 3, 6, 9, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverIntegration"),
                 }
             };
             DerivedInstrumentations.Add(InstrumentationCategory.Tracing, payload);
@@ -674,6 +675,7 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Process.ProcessStartIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Process,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicPublishIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.ExchangeDeclareIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.QueueDeclareIntegration"

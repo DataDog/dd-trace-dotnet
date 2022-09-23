@@ -61,6 +61,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             where TBasicProperties : IBasicProperties
             where TBody : IBody // ReadOnlyMemory<byte> body in 6.0.0
         {
+            if (RabbitMQIntegration.GetActiveRabbitMQScope(Tracer.Instance) != null)
+            {
+                // we are already instrumenting this,
+                // don't instrument nested methods that belong to the same stacktrace
+                // e.g. DerivedType.HandleBasicDeliver -> BaseType.RabbitMQ.Client.IAsyncBasicConsumer.HandleBasicDeliver
+                return CallTargetState.GetDefault();
+            }
+
             SpanContext propagatedContext = null;
 
             // try to extract propagated context values from headers
