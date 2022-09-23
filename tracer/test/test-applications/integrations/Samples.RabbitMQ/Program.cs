@@ -26,21 +26,17 @@ namespace Samples.RabbitMQ
 
         public static void Main(string[] args)
         {
-            RunRabbitMQ();
-        }
+            // Test a derived type for the sync consumer from the library
+            RunProducersAndConsumers(useQueue: false, ConsumerType.InternalSyncDerived, isAsyncConsumer: false);
 
-        private static void RunRabbitMQ()
-        {
-            RunProducersAndConsumers(useQueue: false, ConsumerType.SyncImplicitInternal, isAsyncConsumer: false);
+            // Test a derived type for the async consumer from the library
+            RunProducersAndConsumers(useQueue: true, ConsumerType.InternalAsyncDerived, isAsyncConsumer: true);
 
-            // Doing the test twice to make sure that both our context propagation works but also manual propagation (when users enqueue messages for instance)
-            RunProducersAndConsumers(useQueue: true, ConsumerType.SyncImplicitExternal, isAsyncConsumer: false);
+            // Test a custom type that implements the sync consumer interface, using implicit interface implementation
+            RunProducersAndConsumers(useQueue: true, ConsumerType.ExternalSyncImplicit, isAsyncConsumer: false);
 
-            // ConsumerType.AsyncExplicitExternal -- Need to test interface instrumentation async basic deliver
-            RunProducersAndConsumers(useQueue: true, ConsumerType.AsyncExplicitExternal, isAsyncConsumer: true);
-
-            // ConsumerType.AsyncDerived -- Need to test derived instrumentation async basic deliver
-            RunProducersAndConsumers(useQueue: true, ConsumerType.AsyncDerivedInternal, isAsyncConsumer: true);
+            // Test a custom type that implements the async consumer inteface, using explicit interface implementation
+            RunProducersAndConsumers(useQueue: true, ConsumerType.ExternalAsyncExplicit, isAsyncConsumer: true);
         }
 
         private static void RunProducersAndConsumers(bool useQueue, ConsumerType consumerType, bool isAsyncConsumer)
@@ -227,29 +223,29 @@ namespace Samples.RabbitMQ
             IBasicConsumer consumer = null;
             switch (consumerType)
             {
-                case ConsumerType.SyncImplicitInternal:
+                case ConsumerType.InternalSyncDerived:
                     var eventingBasicConsumer = new global::RabbitMQ.Client.Events.EventingBasicConsumer(channel);
                     eventingBasicConsumer.Received += HandleEvent;
                     consumer = eventingBasicConsumer;
                     break;
-                case ConsumerType.SyncImplicitExternal:
-                    var customImplicitConsumer = new Samples.RabbitMQ.SyncImplicitImplementationConsumer(channel);
-                    customImplicitConsumer.Received += HandleEvent;
-                    consumer = customImplicitConsumer;
-                    break;
-                case ConsumerType.AsyncExplicitExternal:
-                    var asyncExplicitExternalConsumer = new Samples.RabbitMQ.AsyncExplicitImplementationConsumer(channel);
-                    asyncExplicitExternalConsumer.Received += HandleEvent;
-                    consumer = asyncExplicitExternalConsumer;
-                    break;
-                case ConsumerType.AsyncDerivedInternal:
-                    var asyncDerivedInternalConsumer = new global::RabbitMQ.Client.Events.AsyncEventingBasicConsumer(channel);
-                    asyncDerivedInternalConsumer.Received += async (ch, ea) =>
+                case ConsumerType.InternalAsyncDerived:
+                    var asyncEventingBasicConsumer = new global::RabbitMQ.Client.Events.AsyncEventingBasicConsumer(channel);
+                    asyncEventingBasicConsumer.Received += (ch, ea) =>
                     {
                         HandleEvent(ch, ea);
-                        await Task.Yield();
+                        return Task.CompletedTask;
                     };
-                    consumer = asyncDerivedInternalConsumer;
+                    consumer = asyncEventingBasicConsumer;
+                    break;
+                case ConsumerType.ExternalSyncImplicit:
+                    var customSyncConsumer = new Samples.RabbitMQ.SyncImplicitImplementationConsumer(channel);
+                    customSyncConsumer.Received += HandleEvent;
+                    consumer = customSyncConsumer;
+                    break;
+                case ConsumerType.ExternalAsyncExplicit:
+                    var customAsyncConsumer = new Samples.RabbitMQ.AsyncExplicitImplementationConsumer(channel);
+                    customAsyncConsumer.Received += HandleEvent;
+                    consumer = customAsyncConsumer;
                     break;
                 default:
                     break;
@@ -297,31 +293,10 @@ namespace Samples.RabbitMQ
 
         enum ConsumerType
         {
-            SyncImplicitInternal,
-            SyncImplicitExternal,
-            SyncDerivedInternal,
-            SyncDerivedExternal,
-            AsyncExplicitExternal,
-            AsyncDerivedInternal,
-            AsyncDerivedExternal
-        }
-
-        class ImplicitImplementationDerivedConsumer : AsyncDefaultBasicConsumer
-        {
-            public ImplicitImplementationDerivedConsumer(IModel model)
-                : base(model)
-            {
-            }
-
-            public event EventHandler<BasicDeliverEventArgs> Received;
-
-            public override async Task HandleBasicDeliver(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IBasicProperties properties, ReadOnlyMemory<byte> body)
-            {
-                await Task.Yield();
-                Received?.Invoke(
-                    this,
-                    new BasicDeliverEventArgs(consumerTag, deliveryTag, redelivered, exchange, routingKey, properties, body));
-            }
+            InternalSyncDerived,
+            ExternalSyncImplicit,
+            ExternalAsyncExplicit,
+            InternalAsyncDerived,
         }
     }
 }
