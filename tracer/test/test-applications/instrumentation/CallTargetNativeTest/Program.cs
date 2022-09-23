@@ -126,6 +126,10 @@ namespace CallTargetNativeTest
                 new(TargetAssembly, typeof(ArgumentsGenericParentType<>.NonAbstractClass).FullName, "VoidMethod", new[] { "_", "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop1ArgumentsVoidIntegration).FullName),
             });
 
+            NativeMethods.AddInterfaceInstrumentations(Guid.NewGuid().ToString("N"), new NativeCallTargetDefinition[]
+            {
+                new(TargetAssembly, typeof(InterfaceType).FullName, "VoidMethod", new[] { "_", "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop1ArgumentsVoidIntegration).FullName),
+            });
         }
 
         static void EnableDefinitions()
@@ -247,6 +251,11 @@ namespace CallTargetNativeTest
                         // GenericParentAbstractMethod();
                         break;
                     }
+                case "interface":
+                    {
+                        InterfaceMethod();
+                        break;
+                    }
                 case "remove":
                     {
                         WithOutArguments();
@@ -319,6 +328,8 @@ namespace CallTargetNativeTest
                         GenericParentWithOutArguments();
                         // .
                         AbstractMethod();
+                        // .
+                        InterfaceMethod();
                         //.
                         WithOutArguments();
                         DisableDefinitions();
@@ -332,7 +343,7 @@ namespace CallTargetNativeTest
                         break;
                     }
                 default:
-                    Console.WriteLine("Run with the profiler and use a number from 0-9/withref/without/abstract/remove/all as an argument.");
+                    Console.WriteLine("Run with the profiler and use a number from 0-9/withref/without/abstract/interface/remove/all as an argument.");
                     return;
             }
 
