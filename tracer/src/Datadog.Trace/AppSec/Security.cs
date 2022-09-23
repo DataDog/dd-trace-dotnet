@@ -347,7 +347,7 @@ namespace Datadog.Trace.AppSec
             if (!_enabled)
             {
                 AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged += AsmDataProductConfigChanged;
-                // reapply rules
+                // reapply rules if existing ones in memory
                 _waf.UpdateRules(_asmDataConfigs?.SelectMany(p => p.Value.RulesData));
                 _instrumentationGateway.StartRequest += RunWafAndReact;
                 _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
@@ -400,7 +400,6 @@ namespace Datadog.Trace.AppSec
                 _instrumentationGateway.StartRequest -= ReportWafInitInfoOnce;
 
                 AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
-                AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged -= AsmDataProductConfigChanged;
                 RemoveAppsecSpecificInstrumentations();
 
                 _enabled = false;
