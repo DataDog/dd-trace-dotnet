@@ -24,7 +24,11 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         public override bool CanProcessEvent(IEvent @event)
         {
             // This intake accepts both Span and Test events
-            if (@event is SpanEvent or TestEvent)
+            if (@event is SpanEvent
+                or TestEvent
+                or TestSuiteEvent
+                or TestModuleEvent
+                or TestSessionEvent)
             {
                 return true;
             }

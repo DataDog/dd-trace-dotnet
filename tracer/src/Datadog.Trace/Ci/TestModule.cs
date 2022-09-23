@@ -202,6 +202,12 @@ public sealed class TestModule
             }
         }
 
+        // Update status
+        if (span.GetTag(TestTags.Status) is null)
+        {
+            span.SetTag(TestTags.Status, TestTags.StatusPass);
+        }
+
         // Finish
         span.Finish(duration.Value);
 

@@ -65,15 +65,60 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             len += 2; // Tags and metrics
 
+            var suiteId = value.Tags.GetTag(TestSuiteVisibilityTags.TestSuiteId);
+            if (suiteId is not null)
+            {
+                // we need to add this value to the root
+                len++;
+            }
+
+            var moduleId = value.Tags.GetTag(TestSuiteVisibilityTags.TestModuleId);
+            if (moduleId is not null)
+            {
+                // we need to add this value to the root
+                len++;
+            }
+
+            var sessionId = value.Tags.GetTag(TestSuiteVisibilityTags.TestSessionId);
+            if (sessionId is not null)
+            {
+                // we need to add this value to the root
+                len++;
+            }
+
+            if (value.Type is SpanTypes.TestSuite or SpanTypes.TestModule or SpanTypes.TestSession)
+            {
+                // these types doesn't have a traceId in the root
+                len--;
+            }
+
             int originalOffset = offset;
 
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, len);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdBytes);
-            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.TraceId);
+            if (value.Type == SpanTypes.TestSuite)
+            {
+                offset += MessagePackBinary.WriteString(ref bytes, offset, TestSuiteVisibilityTags.TestSuiteId);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);
+            }
+            else if (value.Type == SpanTypes.TestModule)
+            {
+                offset += MessagePackBinary.WriteString(ref bytes, offset, TestSuiteVisibilityTags.TestModuleId);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);
+            }
+            else if (value.Type == SpanTypes.TestSession)
+            {
+                offset += MessagePackBinary.WriteString(ref bytes, offset, TestSuiteVisibilityTags.TestSessionId);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);
+            }
+            else
+            {
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdBytes);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.TraceId);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
-            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);
+            }
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _nameBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, value.OperationName);
@@ -97,6 +142,27 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             {
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _parentIdBytes);
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.ParentId.Value);
+            }
+
+            if (suiteId is not null)
+            {
+                offset += MessagePackBinary.WriteString(ref bytes, offset, TestSuiteVisibilityTags.TestSuiteId);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, ulong.Parse(suiteId));
+                value.Tags.SetMetric(TestSuiteVisibilityTags.TestSuiteId, null);
+            }
+
+            if (moduleId is not null)
+            {
+                offset += MessagePackBinary.WriteString(ref bytes, offset, TestSuiteVisibilityTags.TestModuleId);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, ulong.Parse(moduleId));
+                value.Tags.SetMetric(TestSuiteVisibilityTags.TestModuleId, null);
+            }
+
+            if (sessionId is not null)
+            {
+                offset += MessagePackBinary.WriteString(ref bytes, offset, TestSuiteVisibilityTags.TestSessionId);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, ulong.Parse(sessionId));
+                value.Tags.SetMetric(TestSuiteVisibilityTags.TestSessionId, null);
             }
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _errorBytes);

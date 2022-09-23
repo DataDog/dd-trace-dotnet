@@ -46,8 +46,7 @@ public sealed class Test
 
         // Test
         span.SetTag(TestTags.Name, name);
-        span.SetMetric(TestSuiteVisibilityTags.TestSuiteId, Suite.SuiteId);
-        span.SetMetric(TestSuiteVisibilityTags.TestModuleId, Suite.Module.ModuleId);
+        span.SetTag(TestSuiteVisibilityTags.TestSuiteId, Suite.SuiteId.ToString());
 
         // Copy module tags to the span
         module.CopyTagsToSpan(span);
@@ -261,6 +260,7 @@ public sealed class Test
                 break;
             case Status.Fail:
                 scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                Suite.SetTag(TestTags.Status, TestTags.StatusFail);
                 break;
             case Status.Skip:
                 scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);

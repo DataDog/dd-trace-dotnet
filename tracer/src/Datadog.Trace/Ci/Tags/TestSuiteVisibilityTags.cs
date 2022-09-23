@@ -9,6 +9,11 @@ namespace Datadog.Trace.Ci.Tags;
 internal static class TestSuiteVisibilityTags
 {
     /// <summary>
+    /// Test session id
+    /// </summary>
+    public const string TestSessionId = "test_session_id";
+
+    /// <summary>
     /// Test module id
     /// </summary>
     public const string TestModuleId = "test_module_id";

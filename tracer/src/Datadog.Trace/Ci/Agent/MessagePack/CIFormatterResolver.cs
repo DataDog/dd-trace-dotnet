@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.Ci.Coverage.Models;
 using Datadog.Trace.Ci.EventModel;
@@ -14,58 +15,79 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 {
     internal class CIFormatterResolver : IFormatterResolver
     {
-        public static readonly IFormatterResolver Instance = new CIFormatterResolver();
+        public static readonly CIFormatterResolver Instance = new();
 
         private readonly IMessagePackFormatter<Span> _spanFormatter;
         private readonly IMessagePackFormatter<CIVisibilityProtocolPayload> _eventsPayloadFormatter;
         private readonly IMessagePackFormatter<IEvent> _eventFormatter;
-        private readonly IMessagePackFormatter<TestEvent> _testEventFormatter;
-        private readonly IMessagePackFormatter<SpanEvent> _spanEventFormatter;
+        private readonly IMessagePackFormatter<CIVisibilityEvent<Span>> _ciVisibilityEventFormatter;
         private readonly IMessagePackFormatter<CoveragePayload> _coveragePayloadFormatter;
+
+        private readonly Type _spanType = typeof(Span);
+        private readonly Type _ciVisibilityProtocolPayloadType = typeof(CIVisibilityProtocolPayload);
+        private readonly Type _ciVisibilityEventSpanType = typeof(CIVisibilityEvent<Span>);
+        private readonly Type _spanEventType = typeof(SpanEvent);
+        private readonly Type _testEventType = typeof(TestEvent);
+        private readonly Type _testSuiteEventType = typeof(TestSuiteEvent);
+        private readonly Type _testModuleEventType = typeof(TestModuleEvent);
+        private readonly Type _testSessionEventType = typeof(TestSessionEvent);
+        private readonly Type _coveragePayloadType = typeof(CoveragePayload);
+        private readonly Type _iEventType = typeof(IEvent);
 
         private CIFormatterResolver()
         {
             _spanFormatter = SpanMessagePackFormatter.Instance;
             _eventsPayloadFormatter = new CIEventMessagePackFormatter(CIVisibility.Settings.TracerSettings);
             _eventFormatter = new IEventMessagePackFormatter();
-            _testEventFormatter = new TestEventMessagePackFormatter();
-            _spanEventFormatter = new SpanEventMessagePackFormatter();
+            _ciVisibilityEventFormatter = new CIVisibilityEventMessagePackFormatter<Span>();
             _coveragePayloadFormatter = new CoveragePayloadMessagePackFormatter();
         }
 
         public IMessagePackFormatter<T> GetFormatter<T>()
         {
-            if (typeof(T) == typeof(Span))
+            var typeOfT = typeof(T);
+
+            if (typeOfT == _spanType)
             {
                 return (IMessagePackFormatter<T>)_spanFormatter;
             }
 
-            if (typeof(T) == typeof(CIVisibilityProtocolPayload))
+            if (typeOfT == _ciVisibilityProtocolPayloadType)
             {
                 return (IMessagePackFormatter<T>)_eventsPayloadFormatter;
             }
 
-            if (typeof(T) == typeof(IEvent))
+            if (typeOfT == _ciVisibilityEventSpanType ||
+                typeOfT == _spanEventType ||
+                typeOfT == _testEventType ||
+                typeOfT == _testSuiteEventType ||
+                typeOfT == _testModuleEventType ||
+                typeOfT == _testSessionEventType)
             {
-                return (IMessagePackFormatter<T>)_eventFormatter;
+                return (IMessagePackFormatter<T>)_ciVisibilityEventFormatter;
             }
 
-            if (typeof(T) == typeof(TestEvent))
-            {
-                return (IMessagePackFormatter<T>)_testEventFormatter;
-            }
-
-            if (typeof(T) == typeof(SpanEvent))
-            {
-                return (IMessagePackFormatter<T>)_spanEventFormatter;
-            }
-
-            if (typeof(T) == typeof(CoveragePayload))
+            if (typeOfT == _coveragePayloadType)
             {
                 return (IMessagePackFormatter<T>)_coveragePayloadFormatter;
             }
 
+            if (typeOfT == _iEventType)
+            {
+                return (IMessagePackFormatter<T>)_eventFormatter;
+            }
+
             return StandardResolver.Instance.GetFormatter<T>();
+        }
+
+        public IMessagePackFormatter<CIVisibilityEvent<Span>> GetCiVisibilityEventFormatter()
+        {
+            return _ciVisibilityEventFormatter;
+        }
+
+        public IMessagePackFormatter<CoveragePayload> GetCoveragePayloadFormatter()
+        {
+            return _coveragePayloadFormatter;
         }
     }
 }

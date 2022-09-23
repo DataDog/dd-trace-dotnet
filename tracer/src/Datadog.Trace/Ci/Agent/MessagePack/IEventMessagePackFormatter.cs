@@ -20,18 +20,25 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
         public int Serialize(ref byte[] bytes, int offset, IEvent value, IFormatterResolver formatterResolver)
         {
-            if (value is SpanEvent spanEvent)
-            {
-                return formatterResolver.GetFormatter<SpanEvent>().Serialize(ref bytes, offset, spanEvent, formatterResolver);
-            }
+            var formatter = CIFormatterResolver.Instance;
 
-            if (value is TestEvent testEvent)
+            if (value is CIVisibilityEvent<Span> ciVisibilityEvent)
             {
-                return formatterResolver.GetFormatter<TestEvent>().Serialize(ref bytes, offset, testEvent, formatterResolver);
+                if (formatter == formatterResolver)
+                {
+                    return formatter.GetCiVisibilityEventFormatter().Serialize(ref bytes, offset, ciVisibilityEvent, formatterResolver);
+                }
+
+                return formatterResolver.GetFormatter<CIVisibilityEvent<Span>>().Serialize(ref bytes, offset, ciVisibilityEvent, formatterResolver);
             }
 
             if (value is CoveragePayload coverageEvent)
             {
+                if (formatter == formatterResolver)
+                {
+                    return formatter.GetCoveragePayloadFormatter().Serialize(ref bytes, offset, coverageEvent, formatterResolver);
+                }
+
                 return formatterResolver.GetFormatter<CoveragePayload>().Serialize(ref bytes, offset, coverageEvent, formatterResolver);
             }
 

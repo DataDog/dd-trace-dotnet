@@ -43,7 +43,7 @@ public sealed class TestSuite
 
         // Suite
         span.SetTag(TestTags.Suite, name);
-        span.SetMetric(TestSuiteVisibilityTags.TestModuleId, Module.ModuleId);
+        span.SetTag(TestSuiteVisibilityTags.TestModuleId, Module.ModuleId.ToString());
 
         // Copy module tags to the span
         module.CopyTagsToSpan(span);
@@ -131,6 +131,19 @@ public sealed class TestSuite
 
         // Calculate duration beforehand
         duration ??= span.Context.TraceContext.ElapsedSince(span.StartTime);
+
+        // Update status
+        if (span.GetTag(TestTags.Status) is { } status)
+        {
+            if (status == TestTags.StatusFail)
+            {
+                Module.SetTag(TestTags.Status, TestTags.StatusFail);
+            }
+        }
+        else
+        {
+            span.SetTag(TestTags.Status, TestTags.StatusPass);
+        }
 
         // Finish
         span.Finish(duration.Value);
