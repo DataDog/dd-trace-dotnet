@@ -20,7 +20,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             using var waf = Waf.Create(string.Empty, string.Empty, string.Empty, "1.4.0");
             waf.InitializedSuccessfully.Should().BeFalse();
-            waf.InitializationResult.WrongWafVersion.Should().BeTrue();
+            waf.InitializationResult.ExportErrors.Should().BeTrue();
         }
     }
 }

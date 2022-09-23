@@ -10,6 +10,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypesManaged;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -26,15 +27,15 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
         {
             if (wafNative.ExportErrorHappened)
             {
-                Log.Error("Waf couldn't initialize properly because of missing methods in native library, please check the version of libddwaf");
-                return InitializationResult.FromWrongWafVersion();
+                Log.Error("Waf couldn't initialize properly because of missing methods in native library, please make sure the tracer has been correctly installed and that previous versions are correctly uninstalled.");
+                return InitializationResult.FromExportErrors();
             }
 
             var argCache = new List<Obj>();
             var configObj = GetConfigObj(rulesFile, argCache, encoder);
             if (configObj == null)
             {
-                Log.Error("Waf couldn't initialize properly because of an unusable rule file, please check the submitted rulefile");
+                Log.Error("Waf couldn't initialize properly because of an unusable rule file. If you set the environment variable {appsecrule_env}, check the path and content of the file are correct.", ConfigurationKeys.AppSec.Rules);
                 return InitializationResult.FromUnusableRuleFile();
             }
 
