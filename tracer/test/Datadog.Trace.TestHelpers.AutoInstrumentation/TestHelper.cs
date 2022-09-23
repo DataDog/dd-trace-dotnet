@@ -661,28 +661,11 @@ namespace Datadog.Trace.TestHelpers
                 RedirectStandardError = true,
             });
 
-            dumpToolProcess.OutputDataReceived += (sender, args) =>
-            {
-                if (args.Data != null)
-                {
-                    Output.WriteLine($"[dump][stdout] {args.Data}");
-                }
-            };
-            dumpToolProcess.BeginOutputReadLine();
-
-            dumpToolProcess.ErrorDataReceived += (sender, args) =>
-            {
-                if (args.Data != null)
-                {
-                    Output.WriteLine($"[dump][stderr] {args.Data}");
-                }
-            };
-            dumpToolProcess.BeginErrorReadLine();
-
-            if (!dumpToolProcess.HasExited)
-            {
-                dumpToolProcess.WaitForExit(30_000);
-            }
+            using var helper = new ProcessHelper(dumpToolProcess);
+            dumpToolProcess.WaitForExit(30_000);
+            helper.Drain();
+            Output.WriteLine($"[dump][stdout] {helper.StandardOutput}");
+            Output.WriteLine($"[dump][stderr] {helper.ErrorOutput}");
 
             Output.WriteLine($"Memory dump captured using '{tool} {args}', exit code: {dumpToolProcess.ExitCode}");
             return true;
