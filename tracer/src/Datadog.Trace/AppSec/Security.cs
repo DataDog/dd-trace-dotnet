@@ -292,6 +292,10 @@ namespace Datadog.Trace.AppSec
 
         private void AsmDataProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
+            if (!_enabled)
+            {
+                return;
+            }
             _asmDataConfigs ??= new Dictionary<string, Payload>();
             var asmDataConfigs = e.GetDeserializedConfigurations<Payload>();
             foreach (var asmDataConfig in asmDataConfigs)
