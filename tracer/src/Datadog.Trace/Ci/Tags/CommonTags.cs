@@ -154,5 +154,10 @@ namespace Datadog.Trace.Ci.Tags
         /// Environment variables from CI
         /// </summary>
         public const string CiEnvVars = "_dd.ci.env_vars";
+
+        /// <summary>
+        /// Intelligent Test Runner tests skipped flag
+        /// </summary>
+        public const string TestsSkipped = "_dd.ci.itr.tests_skipped";
     }
 }

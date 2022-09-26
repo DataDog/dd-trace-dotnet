@@ -32,7 +32,6 @@ public sealed class TestModule
 
         Name = name;
         Framework = framework;
-        FrameworkVersion = frameworkVersion;
 
         if (string.IsNullOrEmpty(framework))
         {
@@ -46,66 +45,59 @@ public sealed class TestModule
         var span = _span;
 
         span.Type = SpanTypes.TestModule;
-        span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
         span.ResourceName = name;
-        span.SetTag(Trace.Tags.Origin, TestTags.CIAppTestOriginName);
-        span.SetTag(TestTags.Type, TestTags.TypeTest);
 
-        // Module
-        span.SetTag(TestTags.Module, name);
-        span.SetTag(TestTags.Bundle, name);
-        span.SetTag(TestTags.Framework, framework);
-        span.SetTag(TestTags.FrameworkVersion, frameworkVersion);
-
-        span.SetTag(CommonTags.CIProvider, environment.Provider);
-        span.SetTag(CommonTags.CIPipelineId, environment.PipelineId);
-        span.SetTag(CommonTags.CIPipelineName, environment.PipelineName);
-        span.SetTag(CommonTags.CIPipelineNumber, environment.PipelineNumber);
-        span.SetTag(CommonTags.CIPipelineUrl, environment.PipelineUrl);
-        span.SetTag(CommonTags.CIJobUrl, environment.JobUrl);
-        span.SetTag(CommonTags.CIJobName, environment.JobName);
-        span.SetTag(CommonTags.StageName, environment.StageName);
-        span.SetTag(CommonTags.CIWorkspacePath, environment.WorkspacePath);
-
-        span.SetTag(CommonTags.GitRepository, environment.Repository);
-        span.SetTag(CommonTags.GitCommit, environment.Commit);
-        span.SetTag(CommonTags.GitBranch, environment.Branch);
-        span.SetTag(CommonTags.GitTag, environment.Tag);
-        span.SetTag(CommonTags.GitCommitAuthorName, environment.AuthorName);
-        span.SetTag(CommonTags.GitCommitAuthorEmail, environment.AuthorEmail);
-        span.SetTag(CommonTags.GitCommitCommitterName, environment.CommitterName);
-        span.SetTag(CommonTags.GitCommitCommitterEmail, environment.CommitterEmail);
-        span.SetTag(CommonTags.GitCommitMessage, environment.Message);
-        span.SetTag(CommonTags.BuildSourceRoot, environment.SourceRoot);
-
-        span.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
-        span.SetTag(CommonTags.RuntimeName, frameworkDescription.Name);
-        span.SetTag(CommonTags.RuntimeVersion, frameworkDescription.ProductVersion);
-        span.SetTag(CommonTags.RuntimeArchitecture, frameworkDescription.ProcessArchitecture);
-        span.SetTag(CommonTags.OSArchitecture, frameworkDescription.OSArchitecture);
-        span.SetTag(CommonTags.OSPlatform, frameworkDescription.OSPlatform);
-        span.SetTag(CommonTags.OSVersion, Environment.OSVersion.VersionString);
-
-        if (environment.AuthorDate is { } aDate)
+        var tags = new TestModuleSpanTags
         {
-            span.SetTag(CommonTags.GitCommitAuthorDate, aDate.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
-        }
-
-        if (environment.CommitterDate is { } cDate)
-        {
-            span.SetTag(CommonTags.GitCommitCommitterDate, cDate.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture));
-        }
+            ModuleId = span.SpanId,
+            Type = TestTags.TypeTest,
+            Module = name,
+            Framework = framework,
+            FrameworkVersion = frameworkVersion,
+            CIProvider = environment.Provider,
+            CIPipelineId = environment.PipelineId,
+            CIPipelineName = environment.PipelineName,
+            CIPipelineNumber = environment.PipelineNumber,
+            CIPipelineUrl = environment.PipelineUrl,
+            CIJobName = environment.JobName,
+            CIJobUrl = environment.JobUrl,
+            StageName = environment.StageName,
+            CIWorkspacePath = environment.WorkspacePath,
+            GitRepository = environment.Repository,
+            GitCommit = environment.Commit,
+            GitBranch = environment.Branch,
+            GitTag = environment.Tag,
+            GitCommitAuthorDate = environment.AuthorDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture),
+            GitCommitAuthorName = environment.AuthorName,
+            GitCommitAuthorEmail = environment.AuthorEmail,
+            GitCommitCommitterDate = environment.CommitterDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture),
+            GitCommitCommitterName = environment.CommitterName,
+            GitCommitCommitterEmail = environment.CommitterEmail,
+            GitCommitMessage = environment.Message,
+            BuildSourceRoot = environment.SourceRoot,
+            LibraryVersion = TracerConstants.AssemblyVersion,
+            RuntimeName = frameworkDescription.Name,
+            RuntimeVersion = frameworkDescription.ProductVersion,
+            RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
+            OSArchitecture = frameworkDescription.OSArchitecture,
+            OSPlatform = frameworkDescription.OSPlatform,
+            OSVersion = Environment.OSVersion.VersionString,
+        };
 
         if (environment.VariablesToBypass is { } variablesToBypass)
         {
-            span.SetTag(CommonTags.CiEnvVars, Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(variablesToBypass));
+            tags.CiEnvVars = Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(variablesToBypass);
         }
 
         // Check if Intelligent Test Runner has skippable tests
         if (CIVisibility.HasSkippableTests())
         {
-            span.SetTag("_dd.ci.itr.tests_skipped", "true");
+            tags.TestsSkipped = "true";
         }
+
+        span.Tags = tags;
+        span.SetTag(Trace.Tags.Origin, TestTags.CIAppTestOriginName);
+        span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
 
         Current = this;
         CIVisibility.Log.Information("### Test Module Created: {name}", name);
@@ -121,26 +113,21 @@ public sealed class TestModule
     }
 
     /// <summary>
-    /// Gets the test module start date
-    /// </summary>
-    public DateTimeOffset StartDate => _span.StartTime;
-
-    /// <summary>
     /// Gets the module name
     /// </summary>
     public string Name { get; }
+
+    /// <summary>
+    /// Gets the test module start date
+    /// </summary>
+    public DateTimeOffset StartDate => _span.StartTime;
 
     /// <summary>
     /// Gets the test framework
     /// </summary>
     public string? Framework { get; }
 
-    /// <summary>
-    /// Gets the test framework version
-    /// </summary>
-    public string? FrameworkVersion { get; }
-
-    internal ulong ModuleId => _span.SpanId;
+    internal TestModuleSpanTags Tags => (TestModuleSpanTags)_span.Tags;
 
     /// <summary>
     /// Create a new Test Module
@@ -203,10 +190,7 @@ public sealed class TestModule
         }
 
         // Update status
-        if (span.GetTag(TestTags.Status) is null)
-        {
-            span.SetTag(TestTags.Status, TestTags.StatusPass);
-        }
+        Tags.Status ??= TestTags.StatusPass;
 
         // Finish
         span.Finish(duration.Value);
@@ -252,13 +236,5 @@ public sealed class TestModule
         {
             _suites.Remove(name);
         }
-    }
-
-    internal void CopyTagsToSpan(Span span)
-    {
-        var processor = new CopyProcessor(span);
-        var tags = _span.Tags;
-        tags.EnumerateTags(ref processor);
-        tags.EnumerateMetrics(ref processor);
     }
 }

@@ -83,6 +83,8 @@ public static class XUnitTestAssemblyRunnerRunAsyncIntegration
         {
             // Restore the AsyncLocal set
             // This is used to mimic the ExecutionContext copy from the StateMachine
+            // CallTarget integrations does this automatically when using a normal `Scope`
+            // in this case we have to do it manually.
             TestModule.Current = null;
         }
 

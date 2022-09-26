@@ -36,17 +36,11 @@ public sealed class TestSuite
 
         var span = _span;
         span.Type = SpanTypes.TestSuite;
-        span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
         span.ResourceName = name;
+
+        span.Tags = new TestSuiteSpanTags(module.Tags, span.SpanId, name);
+        span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
         span.SetTag(Trace.Tags.Origin, TestTags.CIAppTestOriginName);
-        span.SetTag(TestTags.Type, TestTags.TypeTest);
-
-        // Suite
-        span.SetTag(TestTags.Suite, name);
-        span.SetTag(TestSuiteVisibilityTags.TestModuleId, Module.ModuleId.ToString());
-
-        // Copy module tags to the span
-        module.CopyTagsToSpan(span);
 
         if (startDate is null)
         {
@@ -82,7 +76,7 @@ public sealed class TestSuite
     /// </summary>
     public TestModule Module { get; }
 
-    internal ulong SuiteId => _span.SpanId;
+    internal TestSuiteSpanTags Tags => (TestSuiteSpanTags)_span.Tags;
 
     /// <summary>
     /// Create a new Test Suite
@@ -133,16 +127,16 @@ public sealed class TestSuite
         duration ??= span.Context.TraceContext.ElapsedSince(span.StartTime);
 
         // Update status
-        if (span.GetTag(TestTags.Status) is { } status)
+        if (Tags.Status is { } status)
         {
             if (status == TestTags.StatusFail)
             {
-                Module.SetTag(TestTags.Status, TestTags.StatusFail);
+                Module.Tags.Status = TestTags.StatusFail;
             }
         }
         else
         {
-            span.SetTag(TestTags.Status, TestTags.StatusPass);
+            Tags.Status = TestTags.StatusPass;
         }
 
         // Finish
@@ -162,13 +156,5 @@ public sealed class TestSuite
     public Test CreateTest(string name, DateTimeOffset? startDate = null)
     {
         return Test.Create(this, name, startDate);
-    }
-
-    internal void CopyTagsToSpan(Span span)
-    {
-        var processor = new CopyProcessor(span);
-        var tags = _span.Tags;
-        tags.EnumerateTags(ref processor);
-        tags.EnumerateMetrics(ref processor);
     }
 }

@@ -39,20 +39,11 @@ public sealed class Test
 
         var span = _scope.Span;
         span.Type = SpanTypes.Test;
-        span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
         span.ResourceName = $"{suite.Name}.{name}";
+
+        span.Tags = new TestSpanTags(Suite.Tags, name);
+        span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
         span.SetTag(Trace.Tags.Origin, TestTags.CIAppTestOriginName);
-        span.SetTag(TestTags.Type, TestTags.TypeTest);
-
-        // Test
-        span.SetTag(TestTags.Name, name);
-        span.SetTag(TestSuiteVisibilityTags.TestSuiteId, Suite.SuiteId.ToString());
-
-        // Copy module tags to the span
-        module.CopyTagsToSpan(span);
-
-        // Copy suite tags to the span
-        suite.CopyTagsToSpan(span);
 
         if (CIVisibility.Settings.CodeCoverageEnabled == true)
         {
@@ -113,6 +104,8 @@ public sealed class Test
     /// Gets the test suite for this test
     /// </summary>
     public TestSuite Suite { get; }
+
+    internal TestSpanTags Tags => (TestSpanTags)_scope.Span.Tags;
 
     /// <summary>
     /// Create a new Test
@@ -181,17 +174,17 @@ public sealed class Test
     {
         if (MethodSymbolResolver.Instance.TryGetMethodSymbol(methodInfo, out var methodSymbol))
         {
-            var span = _scope.Span;
-            span.SetTag(TestTags.SourceFile, CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
-            span.SetMetric(TestTags.SourceStart, methodSymbol.StartLine);
-            span.SetMetric(TestTags.SourceEnd, methodSymbol.EndLine);
+            var tags = (TestSpanTags)_scope.Span.Tags;
+            tags.SourceFile = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false);
+            tags.SourceStart = methodSymbol.StartLine;
+            tags.SourceEnd = methodSymbol.EndLine;
 
             if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
             {
                 var match = codeOwners.Match("/" + CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
                 if (match is not null)
                 {
-                    span.SetTag(TestTags.CodeOwners, match.Value.GetOwnersString());
+                    tags.CodeOwners = match.Value.GetOwnersString();
                 }
             }
         }
@@ -205,7 +198,8 @@ public sealed class Test
     {
         if (traits?.Count > 0)
         {
-            SetTag(TestTags.Traits, Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(traits));
+            var tags = (TestSpanTags)_scope.Span.Tags;
+            tags.Traits = Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(traits);
         }
     }
 
@@ -217,7 +211,8 @@ public sealed class Test
     {
         if (parameters is not null)
         {
-            SetTag(TestTags.Parameters, parameters.ToJSON());
+            var tags = (TestSpanTags)_scope.Span.Tags;
+            tags.Parameters = parameters.ToJSON();
         }
     }
 
@@ -235,6 +230,7 @@ public sealed class Test
         }
 
         var scope = _scope;
+        var tags = (TestSpanTags)scope.Span.Tags;
 
         // Calculate duration beforehand
         duration ??= scope.Span.Context.TraceContext.ElapsedSince(scope.Span.StartTime);
@@ -256,15 +252,15 @@ public sealed class Test
         switch (status)
         {
             case Status.Pass:
-                scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+                tags.Status = TestTags.StatusPass;
                 break;
             case Status.Fail:
-                scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
-                Suite.SetTag(TestTags.Status, TestTags.StatusFail);
+                tags.Status = TestTags.StatusFail;
+                Suite.Tags.Status = TestTags.StatusFail;
                 break;
             case Status.Skip:
-                scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
-                scope.Span.SetTag(TestTags.SkipReason, skipReason);
+                tags.Status = TestTags.StatusSkip;
+                tags.SkipReason = skipReason;
                 break;
         }
 
