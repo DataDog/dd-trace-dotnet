@@ -317,7 +317,7 @@ jobs:
         run: |
           source profiler/src/ProfilerEngine/DeployResources/DDProf-SetEnv.sh `pwd`/profiler/_build/DDProf-Deploy &&
           cd profiler/_build/bin/Release-x64/profiler/src/Demos/Samples.Computer01/net6.0 &&
-          UBSAN_OPTIONS=print_stacktrace=1 LD_PRELOAD="libubsan.so.1:$LD_PRELOAD" dotnet Samples.Computer01.dll --scenario 1 --timeout 120
+          UBSAN_OPTIONS=print_stacktrace=1 LD_PRELOAD="libubsan.so.1:$LD_PRELOAD" catchsegv dotnet Samples.Computer01.dll --scenario 1 --timeout 120
 
       - name: 'Publish Test results, Logs and PProf files'
         uses: actions/upload-artifact@v2

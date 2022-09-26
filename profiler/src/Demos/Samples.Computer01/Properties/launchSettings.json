@@ -27,6 +27,7 @@
         "DD_PROFILING_EXCEPTION_ENABLED": "1",
         "DD_PROFILING_ALLOCATION_ENABLED": "1",
         "DD_INTERNAL_PROFILING_OUTPUT_DIR": "$(PROGRAMDATA)\\Datadog-APM\\Pprof-files\\DotNet",
+        "DD_TRACE_PIPE_NAME": "datadogpipe",
 
         "DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION": "true"
       },

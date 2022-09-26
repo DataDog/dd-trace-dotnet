@@ -8,9 +8,6 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demos", "Demos", "{D2476213-2D12-43A8-966C-BCFCE098FD63}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Computer01", "profiler\src\Demos\Samples.Computer01\Samples.Computer01.csproj", "{D0B50192-CE1D-43E2-AC4A-9B6037AAAB7D}"
-	ProjectSection(ProjectDependencies) = postProject
-		{0831386B-1A96-443F-B02B-C1D2B65FD845} = {0831386B-1A96-443F-B02B-C1D2B65FD845}
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Native", "Native", "{882D9CEA-09AD-4C08-B737-9E6E04563AB6}"
 EndProject
