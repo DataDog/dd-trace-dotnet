@@ -36,7 +36,7 @@ namespace Datadog.Trace.Agent.Transports
 
         public async Task<IApiResponse> GetAsync()
         {
-            _request.Method = "GET";
+            ResetRequest(method: "GET", contentType: null, contentEncoding: null);
 
             try
             {
@@ -51,10 +51,13 @@ namespace Datadog.Trace.Agent.Transports
             }
         }
 
-        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
+        public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
+            => PostAsync(bytes, contentType, null);
+
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
         {
-            _request.Method = "POST";
-            _request.ContentType = contentType;
+            ResetRequest(method: "POST", contentType, contentEncoding);
+
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
                 await requestStream.WriteAsync(bytes.Array, bytes.Offset, bytes.Count).ConfigureAwait(false);
@@ -88,8 +91,7 @@ namespace Datadog.Trace.Agent.Transports
 
             Log.Debug<int>("Sending multipart form request with {Count} items.", items.Length);
 
-            _request.Method = "POST";
-            _request.ContentType = "multipart/form-data; boundary=" + Boundary;
+            ResetRequest(method: "POST", contentType: "multipart/form-data; boundary=" + Boundary, contentEncoding: null);
 
             using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
             {
@@ -175,6 +177,20 @@ namespace Datadog.Trace.Agent.Transports
             {
                 // If the exception is caused by an error status code, ignore it and let the caller handle the result
                 return new ApiWebResponse((HttpWebResponse)exception.Response);
+            }
+        }
+
+        private void ResetRequest(string method, string contentType, string contentEncoding)
+        {
+            _request.Method = method;
+            _request.ContentType = string.IsNullOrEmpty(contentType) ? null : contentType;
+            if (string.IsNullOrEmpty(contentEncoding))
+            {
+                _request.Headers.Remove(HttpRequestHeader.ContentEncoding);
+            }
+            else
+            {
+                _request.Headers.Set(HttpRequestHeader.ContentEncoding, contentEncoding);
             }
         }
     }

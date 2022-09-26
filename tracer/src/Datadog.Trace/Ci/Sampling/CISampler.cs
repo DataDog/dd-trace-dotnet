@@ -8,7 +8,7 @@ using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Ci.Sampling
 {
-    internal class CISampler : ISampler
+    internal class CISampler : ITraceSampler
     {
         public SamplingDecision MakeSamplingDecision(Span span)
         {

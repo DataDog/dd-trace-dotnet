@@ -110,7 +110,10 @@ namespace Benchmarks.Trace
                 return Task.FromResult<IApiResponse>(new FakeApiResponse());
             }
 
-            public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)
+            public Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)
+                => PostAsync(traces, contentType, null);
+
+            public async Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType, string contentEncoding)
             {
                 using (var requestStream = Stream.Null)
                 {
@@ -119,6 +122,7 @@ namespace Benchmarks.Trace
 
                 return new FakeApiResponse();
             }
+
         }
 
         private class FakeApiResponse : IApiResponse

@@ -16,13 +16,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [CollectionDefinition(nameof(WebRequestTests), DisableParallelization = true)]
     [Collection(nameof(WebRequestTests))]
-    public class WebRequestTests : TestHelper
+    public class WebRequestTests : TracingIntegrationTest
     {
         public WebRequestTests(ITestOutputHelper output)
             : base("WebRequest", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsWebRequest();
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
@@ -34,7 +36,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var expectedSpanCount = 76;
 
             const string expectedOperationName = "http.request";
-            const string expectedServiceName = "Samples.WebRequest-http-client";
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
@@ -45,16 +46,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName).OrderBy(s => s.Start);
                 spans.Should().HaveCount(expectedSpanCount);
-
-                foreach (var span in spans)
-                {
-                    var result = span.IsWebRequest();
-                    Assert.True(result.Success, result.ToString());
-
-                    Assert.Equal(expectedServiceName, span.Service);
-                    Assert.True(string.Equals(span.Tags[Tags.InstrumentationName], "WebRequest") || string.Equals(span.Tags[Tags.InstrumentationName], "HttpMessageHandler"));
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-                }
+                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.WebRequest-http-client");
 
                 var firstSpan = spans.First();
                 var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);

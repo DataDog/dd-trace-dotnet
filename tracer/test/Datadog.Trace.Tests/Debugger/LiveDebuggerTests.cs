@@ -114,6 +114,10 @@ public class LiveDebuggerTests
         {
             Products.Remove(productName);
         }
+
+        public void SetCapability(int index, bool available)
+        {
+        }
     }
 
     private class LineProbeResolverMock : ILineProbeResolver

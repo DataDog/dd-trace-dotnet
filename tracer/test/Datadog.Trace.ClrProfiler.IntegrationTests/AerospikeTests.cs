@@ -17,13 +17,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class AerospikeTests : TestHelper
+    public class AerospikeTests : TracingIntegrationTest
     {
         public AerospikeTests(ITestOutputHelper output)
             : base("Aerospike", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsAerospike();
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.Aerospike), MemberType = typeof(PackageVersions))]
@@ -40,11 +42,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
-                foreach (var span in spans)
-                {
-                    var result = span.IsAerospike();
-                    Assert.True(result.Success, result.ToString());
-                }
+                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Aerospike-aerospike");
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 

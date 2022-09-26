@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
     [UsesVerify]
-    public class MongoDbTests : TestHelper
+    public class MongoDbTests : TracingIntegrationTest
     {
         private static readonly Regex OsRegex = new(@"""os"" : \{.*?\} ");
         private static readonly Regex ObjectIdRegex = new(@"ObjectId\("".*?""\)");
@@ -30,6 +30,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsMongoDB();
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.MongoDB), MemberType = typeof(PackageVersions))]
@@ -79,11 +81,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                   .UseTextForParameters($"packageVersion={snapshotSuffix}")
                                   .DisableRequireUniquePrefix();
 
-                foreach (var span in allMongoSpans)
-                {
-                    var result = span.IsMongoDB();
-                    Assert.True(result.Success, result.ToString());
-                }
+                ValidateIntegrationSpans(allMongoSpans, expectedServiceName: "Samples.MongoDB-mongodb");
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.MongoDb);
 

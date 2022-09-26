@@ -17,11 +17,11 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LibraryLoader));
 
-        internal static IntPtr LoadAndGetHandle()
+        internal static IntPtr LoadAndGetHandle(string libVersion = null)
         {
             var fd = FrameworkDescription.Instance;
 
-            var libName = GetLibName(fd);
+            var libName = GetLibName(fd, libVersion);
             var runtimeIds = GetRuntimeIds(fd);
 
             // libName or runtimeIds being null means platform is not supported
@@ -123,8 +123,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
             // include the appdomain base as this will help framework samples running in IIS find the library
             var currentDir =
-                string.IsNullOrEmpty(AppDomain.CurrentDomain.RelativeSearchPath) ?
-                    AppDomain.CurrentDomain.BaseDirectory : AppDomain.CurrentDomain.RelativeSearchPath;
+                string.IsNullOrEmpty(AppDomain.CurrentDomain.RelativeSearchPath) ? AppDomain.CurrentDomain.BaseDirectory : AppDomain.CurrentDomain.RelativeSearchPath;
 
             if (!string.IsNullOrWhiteSpace(currentDir))
             {
@@ -182,14 +181,22 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return success;
         }
 
-        private static string GetLibName(FrameworkDescription fwk)
-            => fwk.OSPlatform switch
+        private static string GetLibName(FrameworkDescription fwk, string libVersion = null)
+        {
+            string versionSuffix = null;
+            if (!string.IsNullOrEmpty(libVersion))
             {
-                OSPlatformName.MacOS => "libddwaf.dylib",
-                OSPlatformName.Linux => "libddwaf.so",
-                OSPlatformName.Windows => "ddwaf.dll",
+                versionSuffix = $"-{libVersion}";
+            }
+
+            return fwk.OSPlatform switch
+            {
+                OSPlatformName.MacOS => $"libddwaf{versionSuffix}.dylib",
+                OSPlatformName.Linux => $"libddwaf{versionSuffix}.so",
+                OSPlatformName.Windows => $"ddwaf{versionSuffix}.dll",
                 _ => null, // unsupported
             };
+        }
 
         private static string[] GetRuntimeIds(FrameworkDescription fwk)
             => fwk.OSPlatform switch

@@ -36,7 +36,7 @@ public class DiscoveryServiceTests
         var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
         ds.SubscribeToChanges(x => mutex.Set());
 
-        mutex.Wait(10_000).Should().BeTrue("Should raise subscription changes");
+        mutex.Wait(30_000).Should().BeTrue("Should raise subscription changes");
 
         await ds.DisposeAsync();
     }
@@ -59,7 +59,7 @@ public class DiscoveryServiceTests
                 mutex.Set();
             });
 
-        mutex.Wait(10_000).Should().BeTrue("Should raise subscription changes");
+        mutex.Wait(30_000).Should().BeTrue("Should raise subscription changes");
         config.Should().NotBeNull();
         config.AgentVersion.Should().Be(version);
         config.ConfigurationEndpoint.Should().NotBeNullOrEmpty();
@@ -107,7 +107,7 @@ public class DiscoveryServiceTests
         var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
         // make sure we have config
         ds.SubscribeToChanges(x => mutex.Set());
-        mutex.Wait(10_000).Should().BeTrue("Should make request to api");
+        mutex.Wait(30_000).Should().BeTrue("Should make request to api");
 
         ds.SubscribeToChanges(x => Interlocked.Increment(ref notificationCount));
         Volatile.Read(ref notificationCount).Should().Be(1);
@@ -140,7 +140,7 @@ public class DiscoveryServiceTests
         // fire first request
         mutex1.Set();
         // wait for third request
-        mutex3.Wait(10_000).Should().BeTrue("Should make third request to api");
+        mutex3.Wait(30_000).Should().BeTrue("Should make third request to api");
 
         Volatile.Read(ref notificationCount).Should().Be(1); // initial
 
@@ -172,7 +172,7 @@ public class DiscoveryServiceTests
         // fire first request
         mutex1.Set();
         // wait for third request
-        mutex3.Wait(10_000).Should().BeTrue("Should make third request to api");
+        mutex3.Wait(30_000).Should().BeTrue("Should make third request to api");
 
         Volatile.Read(ref notificationCount).Should().Be(2); // initial and second
 
@@ -207,7 +207,7 @@ public class DiscoveryServiceTests
         // fire first request
         mutex1.Set();
         // wait for third request
-        mutex3.Wait(10_000).Should().BeTrue("Should make third request to api");
+        mutex3.Wait(30_000).Should().BeTrue("Should make third request to api");
 
         Volatile.Read(ref notificationCount).Should().Be(1); // callback should only run once
 
@@ -236,7 +236,7 @@ public class DiscoveryServiceTests
         var ds = new DiscoveryService(factory, InitialRetryDelayMs, MaxRetryDelayMs, RecheckIntervalMs);
 
         // should be inside recheck loop
-        mutex.Wait(10_000).Should().BeTrue("Should make request to api");
+        mutex.Wait(30_000).Should().BeTrue("Should make request to api");
 
         var dispose = ds.DisposeAsync();
 
@@ -303,7 +303,7 @@ public class DiscoveryServiceTests
 
         await ds.DisposeAsync();
         // add some leeway in case of slowness
-        factory.RequestsSent.Count.Should().BeInRange(5, 6, "Should make at most 6 retries in 13s");
+        factory.RequestsSent.Count.Should().BeInRange(3, 6, "Should make between 3 and 6 retries in 13s");
     }
 
     private string GetConfig(bool dropP0 = true, string version = null)
@@ -322,7 +322,7 @@ public class DiscoveryServiceTests
             throw new WebException("Error in GetAsync");
         }
 
-        public override async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
+        public override async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
         {
             await Task.Yield();
             throw new WebException("Error in PostAsync");

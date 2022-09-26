@@ -1,4 +1,4 @@
-// <copyright file="RuleBasedSamplerTests.cs" company="Datadog">
+// <copyright file="TraceSamplerTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ using Xunit;
 namespace Datadog.Trace.Tests.Sampling
 {
     [Collection(nameof(Datadog.Trace.Tests.Sampling))]
-    public class RuleBasedSamplerTests
+    public class TraceSamplerTests
     {
         private const float FallbackRate = 0.25f;
         private const string ServiceName = "my-service-name";
@@ -25,7 +25,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void RateLimiter_Never_Applied_For_DefaultRule()
         {
-            var sampler = new RuleBasedSampler(new DenyAll());
+            var sampler = new TraceSampler(new DenyAll());
             RunSamplerTest(
                 sampler,
                 iterations: 500,
@@ -37,7 +37,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void RateLimiter_Denies_All_Traces()
         {
-            var sampler = new RuleBasedSampler(new DenyAll());
+            var sampler = new TraceSampler(new DenyAll());
             sampler.RegisterRule(new CustomSamplingRule(1, "Allow_all", ".*", ".*"));
             RunSamplerTest(
                 sampler,
@@ -50,7 +50,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void Keep_Everything_Rule()
         {
-            var sampler = new RuleBasedSampler(new NoLimits());
+            var sampler = new TraceSampler(new NoLimits());
             sampler.RegisterRule(new CustomSamplingRule(1, "Allow_all", ".*", ".*"));
             RunSamplerTest(
                 sampler,
@@ -63,7 +63,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void Keep_Nothing_Rule()
         {
-            var sampler = new RuleBasedSampler(new NoLimits());
+            var sampler = new TraceSampler(new NoLimits());
             sampler.RegisterRule(new CustomSamplingRule(0, "Allow_nothing", ".*", ".*"));
             RunSamplerTest(
                 sampler,
@@ -76,7 +76,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void Keep_Half_Rule()
         {
-            var sampler = new RuleBasedSampler(new NoLimits());
+            var sampler = new TraceSampler(new NoLimits());
             sampler.RegisterRule(new CustomSamplingRule(0.5f, "Allow_half", ".*", ".*"));
             RunSamplerTest(
                 sampler,
@@ -89,7 +89,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void No_Registered_Rules_Uses_Legacy_Rates()
         {
-            var sampler = new RuleBasedSampler(new NoLimits());
+            var sampler = new TraceSampler(new NoLimits());
             sampler.SetDefaultSampleRates(MockAgentRates);
 
             RunSamplerTest(
@@ -104,7 +104,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void Choose_Between_Sampling_Mechanisms()
         {
             var span = GetMyServiceSpan(traceId: 1);
-            var sampler = new RuleBasedSampler(new NoLimits());
+            var sampler = new TraceSampler(new NoLimits());
 
             // if there are no other rules, and before we wave agent rates, mechanism is "Default"
             var (_, mechanism1) = sampler.MakeSamplingDecision(span);
@@ -126,7 +126,7 @@ namespace Datadog.Trace.Tests.Sampling
         }
 
         private void RunSamplerTest(
-            ISampler sampler,
+            ITraceSampler sampler,
             int iterations,
             float expectedAutoKeepRate,
             float expectedUserKeepRate,

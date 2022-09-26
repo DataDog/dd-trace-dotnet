@@ -7,7 +7,7 @@ using System;
 
 namespace Datadog.Trace.Agent.TraceSamplers
 {
-    internal class ErrorSampler : ITraceSampler
+    internal class ErrorSampler : ITraceChunkSampler
     {
         public bool Sample(ArraySegment<Span> trace)
         {

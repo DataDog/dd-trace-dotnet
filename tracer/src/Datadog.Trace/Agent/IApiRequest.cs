@@ -15,5 +15,7 @@ namespace Datadog.Trace.Agent
         Task<IApiResponse> GetAsync();
 
         Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType);
+
+        Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding);
     }
 }

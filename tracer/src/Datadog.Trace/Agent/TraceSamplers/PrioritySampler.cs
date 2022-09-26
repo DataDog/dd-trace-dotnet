@@ -8,7 +8,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.TraceSamplers
 {
-    internal class PrioritySampler : ITraceSampler
+    internal class PrioritySampler : ITraceChunkSampler
     {
         public bool Sample(ArraySegment<Span> trace) =>
             SamplingHelpers.IsKeptBySamplingPriority(trace);

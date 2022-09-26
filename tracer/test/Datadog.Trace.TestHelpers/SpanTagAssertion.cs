@@ -3,6 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Datadog.Trace.TestHelpers
@@ -10,15 +13,46 @@ namespace Datadog.Trace.TestHelpers
     public class SpanTagAssertion : SpanAssertion
     {
         private readonly Result _result;
+        private readonly IDictionary<string, string> _tags;
 
-        internal SpanTagAssertion(Result result)
+        internal SpanTagAssertion(Result result, IDictionary<string, string> tags)
         {
             _result = result;
+            _tags = new Dictionary<string, string>(tags);
+        }
+
+        public static void DefaultTagAssertions(SpanTagAssertion s) => s
+            .IsPresent("env")
+            .IsOptional("runtime-id") // TODO: Make runtime-id required on all spans, per our span attributes push
+            .IsOptional("language") // TODO: Make language required on all spans, per our span attributes push
+            .IsOptional("version")
+            .IsOptional("_dd.p.dm")
+            .IsOptional("error.msg")
+            .IsOptional("error.type")
+            .IsOptional("error.stack");
+
+        public static void AssertNoRemainingTags(SpanTagAssertion s)
+        {
+            foreach (var tag in s._result.ExcludeTags)
+            {
+                s._tags.Remove(tag);
+            }
+
+            if (s._tags.Count > 0)
+            {
+                s._result.WithFailure(GenerateNoRemainingTagsFailureString(s._tags));
+            }
         }
 
         public SpanTagAssertion IsPresent(string tagName)
         {
-            if (_result.Span.GetTag(tagName) is null)
+            bool keyExists = _tags.TryGetValue(tagName, out string value);
+            if (keyExists)
+            {
+                _tags.Remove(tagName);
+            }
+
+            if (!keyExists || value is null)
             {
                 _result.WithFailure(GeneratePresentFailureString("tag", tagName));
             }
@@ -26,14 +60,28 @@ namespace Datadog.Trace.TestHelpers
             return this;
         }
 
-        public SpanTagAssertion IsOptional(string key) => this;
+        public SpanTagAssertion IsOptional(string tagName)
+        {
+            bool keyExists = _tags.TryGetValue(tagName, out string value);
+            if (keyExists)
+            {
+                _tags.Remove(tagName);
+            }
+
+            return this;
+        }
 
         public SpanTagAssertion Matches(string tagName, string expectedValue)
         {
-            var actualValue = _result.Span.GetTag(tagName);
-            if (actualValue != expectedValue)
+            bool keyExists = _tags.TryGetValue(tagName, out string value);
+            if (keyExists)
             {
-                _result.WithFailure(GenerateMatchesFailureString("tag", tagName, expectedValue, actualValue));
+                _tags.Remove(tagName);
+            }
+
+            if (value != expectedValue)
+            {
+                _result.WithFailure(GenerateMatchesFailureString("tag", tagName, expectedValue, value));
             }
 
             return this;
@@ -41,14 +89,19 @@ namespace Datadog.Trace.TestHelpers
 
         public SpanTagAssertion MatchesOneOf(string tagName, params string[] expectedValues)
         {
-            var actualValue = _result.Span.GetTag(tagName);
-            if (expectedValues.Where(s => s == actualValue).SingleOrDefault() is null)
+            bool keyExists = _tags.TryGetValue(tagName, out string value);
+            if (keyExists)
+            {
+                _tags.Remove(tagName);
+            }
+
+            if (expectedValues.Where(s => s == value).SingleOrDefault() is null)
             {
                 string expectedValueString = "["
                              + string.Join(",", expectedValues.Select(s => $"\"{s}\"").ToArray())
                              + "]";
 
-                _result.WithFailure(GenerateMatchesOneOfFailureString("tag", tagName, expectedValueString, actualValue));
+                _result.WithFailure(GenerateMatchesOneOfFailureString("tag", tagName, expectedValueString, value));
             }
 
             return this;

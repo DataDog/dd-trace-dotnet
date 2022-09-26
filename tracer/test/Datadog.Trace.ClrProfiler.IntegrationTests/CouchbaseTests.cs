@@ -14,7 +14,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
-    public class CouchbaseTests : TestHelper
+    public class CouchbaseTests : TracingIntegrationTest
     {
         public CouchbaseTests(ITestOutputHelper output)
             : base("Couchbase", output)
@@ -30,6 +30,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsCouchbase();
+
         [SkippableTheory]
         [MemberData(nameof(GetCouchbase))]
         [Trait("Category", "EndToEnd")]
@@ -42,15 +44,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var spans = agent.WaitForSpans(13, 500);
                 Assert.True(spans.Count >= 13, $"Expecting at least 13 spans, only received {spans.Count}");
-
-                foreach (var span in spans)
-                {
-                    var result = span.IsCouchbase();
-                    Assert.True(result.Success, result.ToString());
-
-                    Assert.Equal("Samples.Couchbase-couchbase", span.Service);
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-                }
+                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Couchbase-couchbase");
 
                 var expected = new List<string>
                 {

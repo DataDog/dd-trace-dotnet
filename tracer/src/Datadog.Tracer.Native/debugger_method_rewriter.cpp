@@ -1361,17 +1361,19 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     {
         const auto& methodProbeId = methodProbes[0]->probeId; // TODO accept multiple probeIds
 
-        Logger::Info("Applying Method Probe instrumentation with probeId.", methodProbeId);
 
         if (isAsyncMethod)
         {
-            hr = ApplyAsyncMethodProbe(corProfiler, module_id, module_metadata, caller, debuggerTokens, function_token,
+            Logger::Info("Async probe is disabled");
+            return S_OK;
+            /* hr = ApplyAsyncMethodProbe(corProfiler, module_id, module_metadata, caller, debuggerTokens, function_token,
                                        isStatic, &methodReturnType, methodProbeId, methodLocals, numLocals, rewriterWrapper, asyncMethodStateIndex, callTargetReturnIndex,
                                        returnValueIndex, callTargetReturnToken, firstInstruction, instrumentedMethodIndex, beforeLineProbe,
-                                       newClauses);
+                                       newClauses); */
         }
         else
         {
+            Logger::Info("Applying Method Probe instrumentation with probeId.", methodProbeId);
             hr = ApplyMethodProbe(corProfiler, module_id, module_metadata, caller, debuggerTokens, function_token,
                                   retFuncArg, isVoid, isStatic, methodArguments, numArgs, methodProbeId, rewriter,
                                   methodLocals, numLocals, rewriterWrapper, callTargetStateIndex, exceptionIndex,

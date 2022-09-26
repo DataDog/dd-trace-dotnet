@@ -13,7 +13,6 @@ using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.ClrProfiler;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -99,12 +98,14 @@ namespace Datadog.Trace.AppSec
                 if (_settings.CanBeEnabled)
                 {
                     UpdateStatus();
-                    SharedRemoteConfiguration.FeaturesProduct.ConfigChanged += FeaturesProductConfigChanged;
+                    AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged += FeaturesProductConfigChanged;
                 }
                 else
                 {
                     Log.Information("AppSec remote enabling not allowed (DD_APPSEC_ENABLED=false).");
                 }
+
+                SetRemoteConfigCapabilites();
             }
             catch (Exception ex)
             {
@@ -136,6 +137,8 @@ namespace Datadog.Trace.AppSec
         InstrumentationGateway IDatadogSecurity.InstrumentationGateway => _instrumentationGateway;
 
         internal InstrumentationGateway InstrumentationGateway => _instrumentationGateway;
+
+        internal bool WafExportsErrorHappened => _waf?.InitializationResult?.ExportErrors ?? false;
 
         /// <summary>
         /// Gets <see cref="SecuritySettings"/> instance
@@ -261,9 +264,22 @@ namespace Datadog.Trace.AppSec
             _waf?.Dispose();
         }
 
+        private void SetRemoteConfigCapabilites()
+        {
+            RemoteConfigurationManager.CallbackWithInitializedInstance(
+                rcm =>
+                {
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeEnabled);
+                    // TODO set to '_settings.Rules == null' when https://github.com/DataDog/dd-trace-dotnet/pull/3120 is merged
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, false);
+                    // TODO set to true when https://github.com/DataDog/dd-trace-dotnet/pull/3171 is merged
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, false);
+                });
+        }
+
         private void FeaturesProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
-            var features = e.GetDeserializedConfigurations<Features>().FirstOrDefault();
+            var features = e.GetDeserializedConfigurations<AsmFeatures>().FirstOrDefault();
             if (features.TypedFile != null)
             {
                 _settings.Enabled = features.TypedFile.Asm.Enabled;
@@ -276,6 +292,7 @@ namespace Datadog.Trace.AppSec
         private void UpdateStatus()
         {
             if (_enabled == _settings.Enabled) { return; }
+
             lock (_settings)
             {
                 if (_settings.Enabled)
@@ -307,8 +324,6 @@ namespace Datadog.Trace.AppSec
         {
             if (!_enabled)
             {
-                Log.Information("AppSec Enabled");
-
                 _instrumentationGateway.StartRequest += RunWafAndReact;
                 _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
                 _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
@@ -342,6 +357,8 @@ namespace Datadog.Trace.AppSec
                 _rateLimiter = _rateLimiter ?? new AppSecRateLimiter(_settings.TraceRateLimit);
 
                 _enabled = true;
+
+                Log.Information("AppSec Enabled");
             }
         }
 
@@ -349,8 +366,6 @@ namespace Datadog.Trace.AppSec
         {
             if (_enabled)
             {
-                Log.Information("AppSec Disabled");
-
                 _instrumentationGateway.StartRequest -= RunWafAndReact;
                 _instrumentationGateway.EndRequest -= RunWafAndReactAndCleanup;
                 _instrumentationGateway.PathParamsAvailable -= RunWafAndReact;
@@ -362,6 +377,8 @@ namespace Datadog.Trace.AppSec
                 RemoveAppsecSpecificInstrumentations();
 
                 _enabled = false;
+
+                Log.Information("AppSec Disabled");
             }
         }
 
@@ -504,7 +521,7 @@ namespace Datadog.Trace.AppSec
                 span.SetTag(Tags.AppSecWafInitRuleErrors, _waf.InitializationResult.ErrorMessage);
             }
 
-            span.SetTag(Tags.AppSecWafVersion, _waf.Version.ToString());
+            span.SetTag(Tags.AppSecWafVersion, _waf.Version);
         }
 
         private void RunShutdown()

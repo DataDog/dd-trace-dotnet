@@ -12,13 +12,15 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
-    public class MicrosoftDataSqliteTests : TestHelper
+    public class MicrosoftDataSqliteTests : TracingIntegrationTest
     {
         public MicrosoftDataSqliteTests(ITestOutputHelper output)
             : base("Microsoft.Data.Sqlite", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsSqlite();
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.MicrosoftDataSqlite), MemberType = typeof(PackageVersions))]
@@ -47,15 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
 
             Assert.Equal(expectedSpanCount, spans.Count);
-
-            foreach (var span in spans)
-            {
-                var result = span.IsSqlite();
-                Assert.True(result.Success, result.ToString());
-
-                Assert.Equal(expectedServiceName, span.Service);
-                Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-            }
+            ValidateIntegrationSpans(spans, expectedServiceName: expectedServiceName);
 
             telemetry.AssertIntegrationEnabled(IntegrationId.Sqlite);
         }

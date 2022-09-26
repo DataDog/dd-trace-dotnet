@@ -9,7 +9,7 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.TraceSamplers
 {
-    internal class RareSampler : ITraceSampler
+    internal class RareSampler : ITraceChunkSampler
     {
         private const string RareKey = "_dd.rare";
         private const int CacheLimit = 200; // Uses default value of 200 as found in the trace agent

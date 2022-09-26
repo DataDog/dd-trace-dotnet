@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Generic;
+
 namespace Datadog.Trace.TestHelpers
 {
 #pragma warning disable SA1601 // Partial elements should be documented
@@ -34,12 +36,16 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "aspnet.request")
                 .Matches(Type, "web"))
             .Tags(s => s
+                .IsPresent("http.client_ip")
                 .IsPresent("http.method")
                 .IsPresent("http.request.headers.host")
+                .IsOptional("http.route")
                 .IsPresent("http.status_code")
+                .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 // BUG: component tag is not set
                 // .Matches("component", "aspnet")
+                .IsPresent("network.client.ip")
                 .Matches("span.kind", "server"));
 
         public static Result IsAspNetMvc(this MockSpan span) => Result.FromSpan(span)
@@ -54,6 +60,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.method")
                 .IsPresent("http.request.headers.host")
                 .IsPresent("http.status_code")
+                .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 // BUG: component tag is not set
                 // .Matches("component", "aspnet")
@@ -67,8 +74,10 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("aspnet.action")
                 .IsOptional("aspnet.controller")
                 .IsPresent("aspnet.route")
+                .IsOptional("http.client_ip")
                 .IsPresent("http.method")
                 .IsPresent("http.request.headers.host")
+                .IsOptional("http.route")
                 // BUG: When WebApi2 throws an exception, we cannot immediately set the
                 // status code because the response hasn't been written yet.
                 // For ASP.NET, we register a callback to populate http.status_code
@@ -76,22 +85,29 @@ namespace Datadog.Trace.TestHelpers
                 // What we should do is instrument OWIN and assert that that has the
                 // "http.status_code" tag
                 // .IsPresent("http.status_code")
+                .IsOptional("http.status_code")
+                .IsPresent("http.useragent")
                 .IsPresent("http.url")
                 // BUG: component tag is not set
                 // .Matches("component", "aspnet")
+                .IsOptional("network.client.ip")
                 .Matches("span.kind", "server"));
 
-        public static Result IsAspNetCore(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAspNetCore(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .Matches(Name, "aspnet_core.request")
                 .Matches(Type, "web"))
             .Tags(s => s
                 .IsOptional("aspnet_core.endpoint")
                 .IsOptional("aspnet_core.route")
+                .IsPresent("http.client_ip")
                 .IsPresent("http.method")
                 .IsPresent("http.request.headers.host")
+                .IsOptional("http.route")
                 .IsPresent("http.status_code")
+                .IsPresent("http.useragent")
                 .IsPresent("http.url")
+                .IsPresent("network.client.ip")
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
 
@@ -104,6 +120,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("aspnet_core.area")
                 .IsPresent("aspnet_core.controller")
                 .IsOptional("aspnet_core.page")
+                .IsPresent("aspnet_core.route")
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
 
@@ -132,7 +149,7 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsOptional("cosmosdb.container")
                 .IsOptional("db.name")
-                .Matches("b.type", "cosmosdb")
+                .Matches("db.type", "cosmosdb")
                 .IsPresent("out.host")
                 .Matches("component", "CosmosDb")
                 .Matches("span.kind", "client"));
@@ -172,7 +189,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "GraphQL")
                 .Matches("span.kind", "server"));
 
-        public static Result IsGrpc(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsGrpc(this MockSpan span, ISet<string> excludeTags) => Result.FromSpan(span, excludeTags)
             .Properties(s => s
                 .Matches(Name, "grpc.request")
                 .Matches(Type, "grpc"))
@@ -185,6 +202,17 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("grpc.status.code")
                 .Matches("component", "Grpc")
                 .MatchesOneOf("span.kind", "client", "server"));
+
+        public static Result IsHotChocolate(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .MatchesOneOf(Name, "graphql.execute", "graphql.validate")
+                .Matches(Type, "graphql"))
+            .Tags(s => s
+                .IsOptional("graphql.operation.name")
+                .IsOptional("graphql.operation.type")
+                .IsPresent("graphql.source")
+                .Matches("component", "HotChocolate")
+                .Matches("span.kind", "server"));
 
         public static Result IsHttpMessageHandler(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
@@ -242,6 +270,8 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 .IsPresent("db.name")
+                .IsPresent("db.user")
+                .IsPresent("out.host")
                 .Matches("db.type", "mysql")
                 .Matches("component", "MySql")
                 .Matches("span.kind", "client"));
@@ -252,6 +282,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 .IsPresent("db.name")
+                .IsPresent("out.host")
                 .Matches("db.type", "postgres")
                 .Matches("component", "Npgsql")
                 .Matches("span.kind", "client"));
@@ -265,6 +296,14 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("db.type", "oracle")
                 .Matches("component", "Oracle")
                 .Matches("span.kind", "client"));
+
+        public static Result IsProcess(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "command_execution")
+                .Matches(Type, "system"))
+            .Tags(s => s
+                .IsOptional("cmd.environment_variables")
+                .Matches("span.kind", "internal"));
 
         public static Result IsRabbitMQ(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
@@ -336,6 +375,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 .IsOptional("db.name")
+                .IsPresent("out.host")
                 .Matches("db.type", "sqlite")
                 .Matches("component", "Sqlite")
                 .Matches("span.kind", "client"));
@@ -346,6 +386,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "sql"))
             .Tags(s => s
                 .IsOptional("db.name")
+                .IsPresent("out.host")
                 .Matches("db.type", "sql-server")
                 .Matches("component", "SqlClient")
                 .Matches("span.kind", "client"));
@@ -355,6 +396,8 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "wcf.request")
                 .Matches(Type, "web"))
             .Tags(s => s
+                .IsOptional("http.method")
+                .IsOptional("http.request.headers.host")
                 .IsPresent("http.url")
                 .Matches("component", "Wcf")
                 .Matches("span.kind", "server"));
@@ -364,6 +407,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "http.request")
                 .Matches(Type, "http"))
             .Tags(s => s
+                .IsOptional("http-client-handler-type")
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")

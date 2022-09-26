@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests
         {
             var settings = new TracerSettings();
             var writerMock = new Mock<IAgentWriter>();
-            var samplerMock = new Mock<ISampler>();
+            var samplerMock = new Mock<ITraceSampler>();
 
             _tracer = new Tracer(settings, writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
@@ -520,7 +520,7 @@ namespace Datadog.Trace.Tests
                 StartupDiagnosticLogEnabled = false
             };
 
-            var tracer = new Tracer(settings, agent.Object, Mock.Of<ISampler>(), Mock.Of<IScopeManager>(), Mock.Of<IDogStatsd>());
+            var tracer = new Tracer(settings, agent.Object, Mock.Of<ITraceSampler>(), Mock.Of<IScopeManager>(), Mock.Of<IDogStatsd>());
 
             await tracer.ForceFlushAsync();
 
@@ -536,7 +536,7 @@ namespace Datadog.Trace.Tests
             {
                 StartupDiagnosticLogEnabled = false
             };
-            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ISampler>(), scopeManager, Mock.Of<IDogStatsd>());
+            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
             var rootTestScope = (Scope)tracer.StartActive("test.trace");
             var childTestScope = (Scope)tracer.StartActive("test.trace.child");
@@ -578,7 +578,7 @@ namespace Datadog.Trace.Tests
             {
                 StartupDiagnosticLogEnabled = false
             };
-            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ISampler>(), scopeManager, Mock.Of<IDogStatsd>());
+            var tracer = new Tracer(settings, Mock.Of<IAgentWriter>(), Mock.Of<ITraceSampler>(), scopeManager, Mock.Of<IDogStatsd>());
 
             var rootTestScope = (Scope)tracer.StartActive("test.trace");
             var childTestScope = (Scope)tracer.StartActive("test.trace.child");

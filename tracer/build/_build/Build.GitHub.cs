@@ -91,31 +91,21 @@ partial class Build
            .Requires(() => GitHubRepositoryName)
            .Requires(() => GitHubToken)
            .Requires(() => PullRequestNumber)
+           .Requires(() => TargetBranch)
            .Executes(async() =>
             {
-                var client = GetGitHubClient();
-
-                var pr = await client.PullRequest.Get(
-                    owner: GitHubRepositoryOwner,
-                    name: GitHubRepositoryName,
-                    number: PullRequestNumber.Value);
-
-                // Fixes an issue (ambiguous argument) when we do git diff in the Action.
-                GitTasks.Git("fetch origin master:master", logOutput: false);
+                // This assumes that we're running in a pull request, so we compare against the target branch
+                var baseCommit = GitTasks.Git($"merge-base origin/{TargetBranch} HEAD").First().Text;
 
                 // This is a dumb implementation that just show the diff
                 // We could imagine getting the whole context with -U1000 and show the differences including parent name
                 // eg now we show -oldAttribute: oldValue, but we could show -tag.oldattribute: oldvalue
-                var changes = GitTasks.Git("diff master -- tracer/test/snapshots")
+                var changes = GitTasks.Git($"diff --diff-filter=M \"{baseCommit}\" -- */*snapshots*/*.*")
                                    .Select(f => f.Text);
 
-                const int minFiles = 50;
-                var nbSnapshotsModified = changes.Count(f => f.Contains("@@ "));
-                if (nbSnapshotsModified < minFiles)
+                if (!changes.Any())
                 {
-                    // Dumb early exit, if we modify less than 50 files, we can review them manually
-                    // Also it's certainly an addition of snapshot tests, so may not make sense to print a summary.
-                    Console.WriteLine($"{nbSnapshotsModified} snapshots modified. Not doing snapshots diff for PRs modifying less than {minFiles}.");
+                    Console.WriteLine($"No snapshots modified (some may have been added/deleted). Not doing snapshots diff.");
                     return;
                 }
 
@@ -420,6 +410,8 @@ partial class Build
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
                 "profiler/src/ProfilerEngine/ProductVersion.props",
+                "shared/src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
+                "shared/src/Datadog.Trace.ClrProfiler.Native/Resource.rc",
                 "shared/src/msi-installer/WindowsInstaller.wixproj",
                 "tracer/build/_build/Build.cs",
                 "tracer/samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",

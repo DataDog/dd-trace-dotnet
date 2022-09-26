@@ -32,17 +32,27 @@ namespace Datadog.Trace.Agent.Transports
             _headers.Add(name, value);
         }
 
-        public async Task<IApiResponse> GetAsync() => (await SendAsync(WebRequestMethods.Http.Get, null, null).ConfigureAwait(false)).Item1;
+        public async Task<IApiResponse> GetAsync()
+            => (await SendAsync(WebRequestMethods.Http.Get, null, null, null).ConfigureAwait(false)).Item1;
 
-        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType) => (await SendAsync(WebRequestMethods.Http.Post, contentType, new BufferContent(bytes)).ConfigureAwait(false)).Item1;
+        public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
+            => PostAsync(bytes, contentType, contentEncoding: null);
 
-        private async Task<Tuple<IApiResponse, HttpRequest>> SendAsync(string verb, string contentType, IHttpContent content)
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
+            => (await SendAsync(WebRequestMethods.Http.Post, contentType, new BufferContent(bytes), contentEncoding).ConfigureAwait(false)).Item1;
+
+        private async Task<Tuple<IApiResponse, HttpRequest>> SendAsync(string verb, string contentType, IHttpContent content, string contentEncoding)
         {
             using (var bidirectionalStream = _streamFactory.GetBidirectionalStream())
             {
                 if (contentType != null)
                 {
                     _headers.Add("Content-Type", contentType);
+                }
+
+                if (!string.IsNullOrEmpty(contentEncoding))
+                {
+                    _headers.Add("Content-Encoding", contentEncoding);
                 }
 
                 var request = new HttpRequest(verb, _uri.Host, _uri.PathAndQuery, _headers, content);

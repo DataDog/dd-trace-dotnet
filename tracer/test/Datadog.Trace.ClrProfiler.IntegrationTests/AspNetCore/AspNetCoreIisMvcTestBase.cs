@@ -13,7 +13,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     [UsesVerify]
-    public abstract class AspNetCoreIisMvcTestBase : TestHelper, IClassFixture<IisFixture>
+    public abstract class AspNetCoreIisMvcTestBase : TracingIntegrationTest, IClassFixture<IisFixture>
     {
         private readonly bool _inProcess;
         private readonly bool _enableRouteTemplateResourceNames;
@@ -51,6 +51,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
             { "/branch/not-found", 404 },
             { "/handled-exception", 500 },
         };
+
+        public override Result ValidateIntegrationSpan(MockSpan span) =>
+            span.Type switch
+            {
+                "aspnet_core.request" => span.IsAspNetCore(),
+                "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(),
+                _ => Result.DefaultSuccess,
+            };
 
         protected string GetTestName(string testName)
         {

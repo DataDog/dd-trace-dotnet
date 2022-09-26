@@ -34,7 +34,7 @@ namespace Datadog.Trace.Ci
         protected override TracerManager CreateTracerManagerFrom(
             ImmutableTracerSettings settings,
             IAgentWriter agentWriter,
-            ISampler sampler,
+            ITraceSampler sampler,
             IScopeManager scopeManager,
             IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetrics,
@@ -46,12 +46,12 @@ namespace Datadog.Trace.Ci
             return new CITracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, defaultServiceName);
         }
 
-        protected override ISampler GetSampler(ImmutableTracerSettings settings)
+        protected override ITraceSampler GetSampler(ImmutableTracerSettings settings)
         {
             return new CISampler();
         }
 
-        protected override IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ISampler sampler, IDiscoveryService discoveryService)
+        protected override IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ITraceSampler sampler, IDiscoveryService discoveryService)
         {
             // Check for agentless scenario
             if (_settings.Agentless)
@@ -75,5 +75,8 @@ namespace Datadog.Trace.Ci
                 return new CIAgentWriter(settings, sampler, discoveryService, traceBufferSize);
             }
         }
+
+        protected override IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)
+            => _settings.Agentless ? NullDiscoveryService.Instance : base.GetDiscoveryService(settings);
     }
 }

@@ -1,6 +1,5 @@
 using System;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.Debugger.Instrumentation;
 
 namespace Samples.Probes.SmokeTests
 {

@@ -16,7 +16,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
-    public class RabbitMQTests : TestHelper
+    public class RabbitMQTests : TracingIntegrationTest
     {
         private const string ExpectedServiceName = "Samples.RabbitMQ-rabbitmq";
 
@@ -25,6 +25,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsRabbitMQ();
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.RabbitMQ), MemberType = typeof(PackageVersions))]
@@ -62,13 +64,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var rabbitmqSpans = spans.Where(span => string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
                 var manualSpans = spans.Where(span => !string.Equals(span.Service, ExpectedServiceName, StringComparison.OrdinalIgnoreCase));
 
+                ValidateIntegrationSpans(rabbitmqSpans, expectedServiceName: "Samples.RabbitMQ-rabbitmq");
+
                 foreach (var span in rabbitmqSpans)
                 {
-                    var result = span.IsRabbitMQ();
-                    Assert.True(result.Success, result.ToString());
-
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-
                     var command = span.Tags[Tags.AmqpCommand];
 
                     if (command.StartsWith("basic.", StringComparison.OrdinalIgnoreCase))

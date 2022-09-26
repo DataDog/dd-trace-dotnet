@@ -4,6 +4,7 @@
 // </copyright>
 #if NETCOREAPP
 using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Net;
@@ -19,7 +20,7 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
 {
     [UsesVerify]
-    public abstract class AspNetCoreMvcTestBase : TestHelper, IClassFixture<AspNetCoreMvcTestBase.AspNetCoreTestFixture>, IDisposable
+    public abstract class AspNetCoreMvcTestBase : TracingIntegrationTest, IClassFixture<AspNetCoreMvcTestBase.AspNetCoreTestFixture>, IDisposable
     {
         protected const string HeaderName1WithMapping = "datadog-header-name";
         protected const string HeaderName1UpperWithMapping = "DATADOG-HEADER-NAME";
@@ -71,6 +72,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AspNetCore
         {
             Fixture.SetOutput(null);
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) =>
+            span.Name switch
+            {
+                "aspnet_core.request" => span.IsAspNetCore(excludeTags: new HashSet<string>
+                    {
+                        "datadog-header-tag",
+                        "http.request.headers.sample_correlation_identifier",
+                        "http.response.headers.sample_correlation_identifier",
+                        "http.response.headers.server",
+                    }),
+                "aspnet_core_mvc.request" => span.IsAspNetCoreMvc(),
+                _ => Result.DefaultSuccess
+            };
 
         protected virtual string GetTestName(string testName)
         {

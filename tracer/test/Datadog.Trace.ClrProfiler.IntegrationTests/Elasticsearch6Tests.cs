@@ -15,13 +15,15 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
-    public class Elasticsearch6Tests : TestHelper
+    public class Elasticsearch6Tests : TracingIntegrationTest
     {
         public Elasticsearch6Tests(ITestOutputHelper output)
             : base("Elasticsearch", output)
         {
             SetServiceVersion("1.0.0");
         }
+
+        public override Result ValidateIntegrationSpan(MockSpan span) => span.IsElasticsearchNet();
 
         [SkippableTheory]
         [MemberData(nameof(PackageVersions.ElasticSearch6), MemberType = typeof(PackageVersions))]
@@ -138,16 +140,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  .Where(s => s.Type == "elasticsearch")
                                  .OrderBy(s => s.Start)
                                  .ToList();
-
-                foreach (var span in spans)
-                {
-                    var result = span.IsElasticsearchNet();
-                    Assert.True(result.Success, result.ToString());
-
-                    Assert.Equal("Samples.Elasticsearch-elasticsearch", span.Service);
-                    Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
-                }
-
+                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Elasticsearch-elasticsearch");
                 ValidateSpans(spans, (span) => span.Resource, expected);
                 telemetry.AssertIntegrationEnabled(IntegrationId.ElasticsearchNet);
             }

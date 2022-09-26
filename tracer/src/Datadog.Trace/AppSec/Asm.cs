@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.Configuration;
+#nullable enable
+
+namespace Datadog.Trace.AppSec;
 
 internal class Asm
 {

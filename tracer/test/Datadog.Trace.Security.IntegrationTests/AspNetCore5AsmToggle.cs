@@ -13,6 +13,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
@@ -25,40 +26,56 @@ namespace Datadog.Trace.Security.IntegrationTests
 {
     public class AspNetCore5AsmToggle : AspNetBase, IDisposable
     {
+        private const string LogFileNamePrefix = "dotnet-tracer-managed-";
+
         public AspNetCore5AsmToggle(ITestOutputHelper outputHelper)
             : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5AsmToggle))
         {
             SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "500");
         }
 
+        // TODO addjust third parameter as the following PRs are merged:
+        // * https://github.com/DataDog/dd-trace-dotnet/pull/3120
+        // * https://github.com/DataDog/dd-trace-dotnet/pull/3171
+        // the verify file names will need adjusting too
         [SkippableTheory]
-        [InlineData(true, ApplyStates.ACKNOWLEDGED)]
-        [InlineData(false, ApplyStates.UNACKNOWLEDGED)]
-        [InlineData(null, ApplyStates.ACKNOWLEDGED)]
+        [InlineData(true, ApplyStates.ACKNOWLEDGED,  RcmCapabilitiesIndices.AsmActivation)] // RcmCapabilitiesIndices.AsmActivation | RcmCapabilitiesIndices.AsmIpBlocking | RcmCapabilitiesIndices.AsmDdRules)]
+        [InlineData(false, ApplyStates.UNACKNOWLEDGED, 0)] // RcmCapabilitiesIndices.AsmIpBlocking | RcmCapabilitiesIndices.AsmDdRules)]
+        [InlineData(null, ApplyStates.ACKNOWLEDGED, RcmCapabilitiesIndices.AsmActivation)] // RcmCapabilitiesIndices.AsmActivation | RcmCapabilitiesIndices.AsmIpBlocking | RcmCapabilitiesIndices.AsmDdRules)]
         [Trait("RunOnWindows", "True")]
-        public async Task TestSecurityToggling(bool? enableSecurity, uint expectedState)
+        public async Task TestSecurityToggling(bool? enableSecurity, uint expectedState, byte expectedCapabilities)
         {
             var url = "/Health/?[$slice]=value";
             var agent = await RunOnSelfHosted(enableSecurity);
-            var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, expectedState);
+            var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, expectedState, expectedCapabilities);
+
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*");
 
             var spans1 = await SendRequestsAsync(agent, url);
 
-            agent.SetupRcm(Output, new[] { ((object)new Features() { Asm = new Asm() { Enabled = false } }, "1") }, "FEATURES");
+            agent.SetupRcm(Output, new[] { ((object)new AsmFeatures() { Asm = new Asm() { Enabled = false } }, "1") }, "ASM_FEATURES");
 
             var request1 = await agent.WaitRcmRequestAndReturnLast();
             CheckAckState(request1, expectedState, null, "First RCM call");
-            // even the request show the applied state seems extra time is needed before it's active
-            await Task.Delay(1500);
+            CheckCapabilities(request1, expectedCapabilities, "First RCM call");
+            if (enableSecurity == true)
+            {
+                await logEntryWatcher.WaitForLogEntry("AppSec Disabled");
+                await Task.Delay(1500);
+            }
 
             var spans2 = await SendRequestsAsync(agent, url);
 
-            agent.SetupRcm(Output, new[] { ((object)new Features() { Asm = new Asm() { Enabled = true } }, "2") }, "FEATURES");
+            agent.SetupRcm(Output, new[] { ((object)new AsmFeatures() { Asm = new Asm() { Enabled = true } }, "2") }, "ASM_FEATURES");
 
             var request2 = await agent.WaitRcmRequestAndReturnLast();
             CheckAckState(request2, expectedState, null, "Second RCM call");
-            // even the request show the applied state seems extra time is needed before it's active
-            await Task.Delay(1500);
+            CheckCapabilities(request2, expectedCapabilities, "Second RCM call");
+            if (enableSecurity != false)
+            {
+                await logEntryWatcher.WaitForLogEntry("AppSec Enabled");
+                await Task.Delay(1500);
+            }
 
             var spans3 = await SendRequestsAsync(agent, url);
 
@@ -81,21 +98,27 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             var spans1 = await SendRequestsAsync(agent, url);
 
-            agent.SetupRcm(Output, new[] { ((object)"haha, you weren't expect this!", "1") }, "FEATURES");
+            agent.SetupRcm(Output, new[] { ((object)"haha, you weren't expect this!", "1") }, "ASM_FEATURES");
 
             var request = await agent.WaitRcmRequestAndReturnLast();
-            CheckAckState(request, ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.Configuration.Features'. Path '', line 1, position 32.", "First RCM call");
+            CheckAckState(request, ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.AppSec.AsmFeatures'. Path '', line 1, position 32.", "First RCM call");
 
             await VerifySpans(spans1.ToImmutableList(), settings, true);
         }
 
         private void CheckAckState(GetRcmRequest request, uint expectedState, string expectedError, string message)
         {
-            var state = request?.Client?.State?.ConfigStates?.FirstOrDefault(x => x.Product == "FEATURES");
+            var state = request?.Client?.State?.ConfigStates?.SingleOrDefault(x => x.Product == "ASM_FEATURES");
 
             state.Should().NotBeNull();
             state.ApplyState.Should().Be(expectedState, message);
             state.ApplyError.Should().Be(expectedError, message);
+        }
+
+        private void CheckCapabilities(GetRcmRequest request, byte expectedState, string message)
+        {
+            var capabilities = BitConverter.ToInt32(request?.Client?.Capabilities);
+            capabilities.Should().Be(expectedState, message);
         }
     }
 }

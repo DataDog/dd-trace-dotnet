@@ -77,12 +77,20 @@ namespace Datadog.Trace.Agent.Transports
             }
         }
 
-        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
+        public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType)
+            => PostAsync(bytes, contentType, null);
+
+        public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
         {
             // re-create HttpContent on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
             using (var content = new ByteArrayContent(bytes.Array, bytes.Offset, bytes.Count))
             {
                 content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+                if (!string.IsNullOrEmpty(contentEncoding))
+                {
+                    content.Headers.ContentEncoding.Add(contentEncoding);
+                }
+
                 _postRequest.Content = content;
 
                 var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
