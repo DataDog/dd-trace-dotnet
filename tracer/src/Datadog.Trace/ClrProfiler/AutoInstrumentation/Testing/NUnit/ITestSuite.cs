@@ -12,9 +12,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
     /// </summary>
     internal interface ITestSuite : ITest
     {
-        /// <summary>
-        /// Gets the children tests
-        /// </summary>
-        IEnumerable Tests { get; }
+        // /// <summary>
+        // /// Gets the children tests
+        // /// </summary>
+        // IEnumerable Tests { get; }
     }
 }
