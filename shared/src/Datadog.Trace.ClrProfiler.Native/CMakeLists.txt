@@ -95,12 +95,14 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 
 include(ExternalProject)
 set(EXTERNAL_INSTALL_LOCATION ${OUTPUT_DEPS_DIR}/fmt/)
-ExternalProject_Add(fmt
-        GIT_REPOSITORY https://github.com/DataDog/fmt.git
-        GIT_TAG 5.3.0
-        GIT_CONFIG advice.detachedHead=false
+execute_process(
+        COMMAND git clone --quiet --depth 1 --branch 5.3.0 --config advice.detachedHead=false https://github.com/DataDog/fmt.git
+        WORKING_DIRECTORY "${OUTPUT_DEPS_DIR}"
         TIMEOUT 5
+        )
+ExternalProject_Add(fmt
         CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0
+        SOURCE_DIR "${EXTERNAL_INSTALL_LOCATION}"
         PREFIX "${EXTERNAL_INSTALL_LOCATION}"
         INSTALL_COMMAND ""
         )
