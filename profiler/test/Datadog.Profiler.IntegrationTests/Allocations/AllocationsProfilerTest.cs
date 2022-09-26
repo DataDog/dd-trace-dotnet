@@ -45,7 +45,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
@@ -69,7 +69,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "0");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
@@ -113,7 +113,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
 
         private void CheckAllocationProfiles(TestApplicationRunner runner)
         {
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 

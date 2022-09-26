@@ -251,7 +251,11 @@ ddog_Endpoint LibddprofExporter::CreateEndpoint(IConfiguration* configuration)
         // Agent mode
 
 #if _WINDOWS
-        const auto& socketPath = configuration->GetNamedPipePath();
+        std::string socketPath;
+        if (!configuration->GetNamedPipePath().empty())
+        {
+            socketPath = R"(\\.\pipe\)" + configuration->GetNamedPipePath();
+        }
         std::string agentUrl = "windows:" + socketPath;
 #else
         std::string socketPath = "/var/run/datadog/apm.socket";
