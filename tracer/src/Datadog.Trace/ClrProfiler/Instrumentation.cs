@@ -374,7 +374,7 @@ namespace Datadog.Trace.ClrProfiler
                         // see comment above
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmFeaturesProduct);
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmDataProduct);
-                        configurationManager.RegisterProduct(SharedRemoteConfiguration.AsmDDProduct); // This should be activated by Security only when Asm is active, but there is no visibility right now
+                        configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmDDProduct); // This should be activated by Security only when Asm is active, but there is no visibility right now
 
                         var liveDebugger = LiveDebuggerFactory.Create(discoveryService, configurationManager, tracer.Settings, serviceName);
 

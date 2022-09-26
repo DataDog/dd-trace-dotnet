@@ -5,7 +5,7 @@
 
 using Datadog.Trace.RemoteConfigurationManagement;
 
-namespace Datadog.Trace.Configuration;
+namespace Datadog.Trace.AppSec;
 
 internal class AsmDDProduct : Product
 {

@@ -102,13 +102,13 @@ namespace Datadog.Trace.AppSec
                 {
                     UpdateStatus();
                     AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged += FeaturesProductConfigChanged;
+                    AsmRemoteConfigurationProducts.AsmDDProduct.ConfigChanged += AsmDDProductConfigChanged;
                 }
                 else
                 {
                     Log.Information("AppSec remote enabling not allowed (DD_APPSEC_ENABLED=false).");
                 }
 
-                SharedRemoteConfiguration.AsmDDProduct.ConfigChanged += AsmDDProductConfigChanged;
                 SetRemoteConfigCapabilites();
             }
             catch (Exception ex)
