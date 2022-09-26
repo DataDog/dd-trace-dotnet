@@ -3,27 +3,33 @@
 
 #pragma once
 
-#include <unordered_set>
-
 #include "AdaptiveSampler.h"
 #include "IConfiguration.h"
 
-class ExceptionSampler
+
+// Base class for samplers that takes care of AdaptiveSampler logistics
+class GenericSampler
 {
-public:
-    explicit ExceptionSampler(const IConfiguration* configuration);
-    ExceptionSampler(std::chrono::milliseconds windowDuration, int32_t samplesPerWindow, int32_t lookback);
-
-    bool Sample(std::string exceptionType);
-
 private:
     static constexpr inline std::chrono::milliseconds SamplingWindow = std::chrono::milliseconds(500);
 
-    AdaptiveSampler _sampler;
-    std::unordered_set<std::string> _knownExceptions;
-    std::mutex _knownExceptionsMutex;
+public:
+    explicit GenericSampler(const IConfiguration* configuration);
+    GenericSampler(std::chrono::milliseconds windowDuration, int32_t samplesPerWindow, int32_t lookback);
+    virtual ~GenericSampler() = default;
 
-    void RollWindow();
+    bool Sample();
+
+protected:
+    AdaptiveSampler _sampler;
+
+protected:
+    // Called to reset the state (if any) when starting a new window
+    virtual void OnRollWindow();
+
+private:
     int32_t SamplingWindowsPerRecording(const IConfiguration* configuration);
     int32_t SamplesPerWindow(const IConfiguration* configuration);
+    void RollWindow();
+
 };

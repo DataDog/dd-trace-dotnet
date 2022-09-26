@@ -260,6 +260,15 @@
     <ClInclude Include="SamplesCollector.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
+    <ClInclude Include="GenericSampler.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="AllocationsSampler.h">
+      <Filter>Allocations</Filter>
+    </ClInclude>
+    <ClInclude Include="GroupSampler.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -390,6 +399,15 @@
     </ClCompile>
     <ClCompile Include="ContentionProvider.cpp">
       <Filter>Contention</Filter>
+    </ClCompile>
+    <ClCompile Include="GenericSampler.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="AllocationsSampler.cpp">
+      <Filter>Allocations</Filter>
+    </ClCompile>
+    <ClCompile Include="GroupSampler.cpp">
+      <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
