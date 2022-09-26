@@ -1274,6 +1274,7 @@ partial class Build
                         "Samples.AWS.Lambda" => Framework == TargetFramework.NETCOREAPP3_1,
                         var name when projectsToSkip.Contains(name) => false,
                         var name when multiPackageProjects.Contains(name) => false,
+                        "Samples.Probes" => true,
                         "Samples.AspNetCoreRazorPages" => true,
                         _ when !string.IsNullOrWhiteSpace(SampleName) => x.project?.Name?.Contains(SampleName) ?? false,
                         _ => true,
