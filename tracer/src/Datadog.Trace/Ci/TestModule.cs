@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
+using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 

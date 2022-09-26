@@ -3,11 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.SourceGenerators;
 
-namespace Datadog.Trace.Ci.Tags;
+namespace Datadog.Trace.Ci.Tagging;
 
-internal partial class TestModuleSpanTags : Tagging.CommonTags
+internal partial class TestModuleSpanTags : Trace.Tagging.CommonTags
 {
     public ulong ModuleId { get; set; }
 

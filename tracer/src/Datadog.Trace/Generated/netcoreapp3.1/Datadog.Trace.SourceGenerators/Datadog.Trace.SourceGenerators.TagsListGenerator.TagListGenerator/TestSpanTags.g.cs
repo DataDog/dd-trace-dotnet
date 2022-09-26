@@ -4,7 +4,7 @@
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.Ci.Tags
+namespace Datadog.Trace.Ci.Tagging
 {
     partial class TestSpanTags
     {

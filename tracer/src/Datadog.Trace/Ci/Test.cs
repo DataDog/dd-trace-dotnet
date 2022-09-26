@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
+using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Pdb;

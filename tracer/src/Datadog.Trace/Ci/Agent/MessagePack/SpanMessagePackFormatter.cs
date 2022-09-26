@@ -5,6 +5,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Processors;
