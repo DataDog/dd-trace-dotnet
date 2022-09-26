@@ -298,14 +298,15 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
         // Now walk the stack:
         auto [data, size] = Data();
 
-        auto count = unw_backtrace2((void**)data, size, reinterpret_cast<ucontext_t*>(ctx));
+        auto count = unw_backtrace2((void**)data, size, reinterpret_cast<unw_context_t*>(ctx));
+
+        SetFrameCount(count);
 
         if (count == 0)
         {
             return S_FALSE;
         }
 
-        SetFrameCount(count);
         return S_OK;
     }
     catch (...)
