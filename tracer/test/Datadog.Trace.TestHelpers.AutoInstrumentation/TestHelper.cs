@@ -146,75 +146,30 @@ namespace Datadog.Trace.TestHelpers
 
         public async Task<bool> TakeMemoryDump(Process process)
         {
-            // We don't know if procdump is available, so download it fresh
-            if (!EnvironmentTools.IsWindows())
-            {
-                Output.WriteLine("Not running on windows, skipping memory dump");
-                return false;
-            }
-
             try
             {
-                const string url = @"https://download.sysinternals.com/files/Procdump.zip";
-                var client = new HttpClient();
-                var zipFilePath = Path.GetTempFileName();
-                Output.WriteLine($"Downloading Procdump to '{zipFilePath}'");
-                using (var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
+                if (EnvironmentTools.IsLinux())
                 {
-                    using var bodyStream = await response.Content.ReadAsStreamAsync();
-                    using Stream streamToWriteTo = File.Open(zipFilePath, FileMode.Create);
-                    await bodyStream.CopyToAsync(streamToWriteTo);
+                    var dotnetRuntimeFolder = Path.GetDirectoryName(typeof(object).Assembly.Location);
+                    var createDumpExecutable = Path.Combine(dotnetRuntimeFolder!, "createdump");
+                    // createdump automatically puts the dump in the /tmp/ directory, which is where we grab it from
+                    var args = process.Id.ToString();
+                    return CaptureMemoryDump(createDumpExecutable, args);
                 }
-
-                var unpackedDirectory = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetTempFileName()));
-                Output.WriteLine($"Procdump downloaded. Unpacking to '{unpackedDirectory}'");
-                System.IO.Compression.ZipFile.ExtractToDirectory(zipFilePath, unpackedDirectory);
-
-                var procDump = Path.Combine(unpackedDirectory, "procdump.exe");
-                var processId = process.Id;
-
-                var args = $"-ma {processId} -accepteula";
-                Output.WriteLine($"Capturing memory dump using '{procDump} {args}'");
-
-                using var procDumpProcess = Process.Start(new ProcessStartInfo(procDump, args)
+                else if (EnvironmentTools.IsWindows())
                 {
-                    UseShellExecute = false,
-                    CreateNoWindow = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                });
-
-                procDumpProcess.OutputDataReceived += (sender, args) =>
-                {
-                    if (args.Data != null)
-                    {
-                        Output.WriteLine($"[procdump][stdout] {args.Data}");
-                    }
-                };
-                procDumpProcess.BeginOutputReadLine();
-
-                procDumpProcess.ErrorDataReceived += (sender, args) =>
-                {
-                    if (args.Data != null)
-                    {
-                        Output.WriteLine($"[procdump][stderr] {args.Data}");
-                    }
-                };
-                procDumpProcess.BeginErrorReadLine();
-
-                if (!procDumpProcess.HasExited)
-                {
-                    procDumpProcess.WaitForExit(30_000);
+                    var procDumpExecutable = await DownloadProcdumpZipAndExtract();
+                    var args = $"-ma {process.Id} -accepteula";
+                    return CaptureMemoryDump(procDumpExecutable, args);
                 }
-
-                Output.WriteLine($"Memory dump captured using '{procDump} {args}'");
-                return true;
             }
             catch (Exception ex)
             {
                 Output.WriteLine("Error taking memory dump: " + ex);
                 return false;
             }
+
+            return false;
         }
 
         public ProcessResult RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000)
@@ -233,8 +188,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 var tookMemoryDump = TakeMemoryDump(process);
                 process.Kill();
-                // should we throw a skip exception on Linux as we don't have a memory dump?
-                throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump}. Killing process.");
+                throw new Exception($"The sample did not exit in {timeoutMs}ms. Memory dump taken: {tookMemoryDump.Result}. Killing process.");
             }
 
             var exitCode = process.ExitCode;
@@ -672,6 +626,50 @@ namespace Datadog.Trace.TestHelpers
 
         private bool IsServerSpan(MockSpan span) =>
             span.Tags.GetValueOrDefault(Tags.SpanKind) == SpanKinds.Server;
+
+        private async Task<string> DownloadProcdumpZipAndExtract()
+        {
+            // We don't know if procdump is available, so download it fresh
+            const string url = @"https://download.sysinternals.com/files/Procdump.zip";
+            var client = new HttpClient();
+            var zipFilePath = Path.GetTempFileName();
+            Output.WriteLine($"Downloading Procdump to '{zipFilePath}'");
+            using (var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
+            {
+                using var bodyStream = await response.Content.ReadAsStreamAsync();
+                using Stream streamToWriteTo = File.Open(zipFilePath, FileMode.Create);
+                await bodyStream.CopyToAsync(streamToWriteTo);
+            }
+
+            var unpackedDirectory = Path.Combine(Path.GetTempPath(), Path.GetFileNameWithoutExtension(Path.GetTempFileName()));
+            Output.WriteLine($"Procdump downloaded. Unpacking to '{unpackedDirectory}'");
+            System.IO.Compression.ZipFile.ExtractToDirectory(zipFilePath, unpackedDirectory);
+
+            var procDump = Path.Combine(unpackedDirectory, "procdump.exe");
+            return procDump;
+        }
+
+        private bool CaptureMemoryDump(string tool, string args)
+        {
+            Output.WriteLine($"Capturing memory dump using '{tool} {args}'");
+
+            using var dumpToolProcess = Process.Start(new ProcessStartInfo(tool, args)
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            });
+
+            using var helper = new ProcessHelper(dumpToolProcess);
+            dumpToolProcess.WaitForExit(30_000);
+            helper.Drain();
+            Output.WriteLine($"[dump][stdout] {helper.StandardOutput}");
+            Output.WriteLine($"[dump][stderr] {helper.ErrorOutput}");
+
+            Output.WriteLine($"Memory dump captured using '{tool} {args}', exit code: {dumpToolProcess.ExitCode}");
+            return true;
+        }
 
         protected internal class TupleList<T1, T2> : List<Tuple<T1, T2>>
         {
