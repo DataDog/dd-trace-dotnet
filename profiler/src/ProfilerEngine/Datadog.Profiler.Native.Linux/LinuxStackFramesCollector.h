@@ -69,7 +69,7 @@ private:
 
 private:
     static bool TrySetHandlerForSignal(int32_t signal, struct sigaction& action);
-    static void CollectStackSampleSignalHandler(int32_t signal);
+    static void CollectStackSampleSignalHandler(int signal, siginfo_t* info, void* context);
 
     static char const* ErrorCodeToString(int32_t errorCode);
     static std::mutex s_stackWalkInProgressMutex;
@@ -79,7 +79,7 @@ private:
 
     static LinuxStackFramesCollector* s_pInstanceCurrentlyStackWalking;
 
-    std::int32_t CollectCallStackCurrentThread();
+    std::int32_t CollectCallStackCurrentThread(void* ctx);
 
     ErrorStatistics _errorStatistics;
 };

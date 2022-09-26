@@ -98,7 +98,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 
     if (selfCollect)
     {
-        errorCode = CollectCallStackCurrentThread();
+        errorCode = CollectCallStackCurrentThread(nullptr);
     }
     else
     {
@@ -204,7 +204,7 @@ bool LinuxStackFramesCollector::TrySetHandlerForSignal(int32_t signal, struct si
 
     // Replace signal only if there is no user-defined one.
     // @ToDo: is that enough?
-    if (oldAction.sa_handler == SIG_DFL || oldAction.sa_handler == SIG_IGN)
+    if (oldAction.sa_sigaction == nullptr || oldAction.sa_sigaction == nullptr)
     {
         sigaddset(&action.sa_mask, signal);
         int32_t result = sigaction(signal, &action, &oldAction);
@@ -234,8 +234,8 @@ bool LinuxStackFramesCollector::SetupSignalHandler()
     // But, let's check if they are available
 
     struct sigaction sampleAction;
-    sampleAction.sa_flags = 0;
-    sampleAction.sa_handler = LinuxStackFramesCollector::CollectStackSampleSignalHandler;
+    sampleAction.sa_flags = SA_RESTART | SA_SIGINFO;
+    sampleAction.sa_sigaction = LinuxStackFramesCollector::CollectStackSampleSignalHandler;
     sigemptyset(&sampleAction.sa_mask);
 
     if (TrySetHandlerForSignal(SIGUSR1, sampleAction))
@@ -288,7 +288,7 @@ char const* LinuxStackFramesCollector::ErrorCodeToString(int32_t errorCode)
     }
 }
 
-std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread()
+std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 {
     try
     {
@@ -298,7 +298,7 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread()
         // Now walk the stack:
         auto [data, size] = Data();
 
-        auto count = unw_backtrace((void**)data, size);
+        auto count = unw_backtrace2((void**)data, size, reinterpret_cast<ucontext_t*>(ctx));
 
         if (count == 0)
         {
@@ -314,12 +314,12 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread()
     }
 }
 
-void LinuxStackFramesCollector::CollectStackSampleSignalHandler(int32_t signal)
+void LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal, siginfo_t* info, void* context)
 {
     std::unique_lock<std::mutex> stackWalkInProgressLock(s_stackWalkInProgressMutex);
     LinuxStackFramesCollector* pCollectorInstanceCurrentlyStackWalking = s_pInstanceCurrentlyStackWalking;
 
-    std::int32_t resultErrorCode = pCollectorInstanceCurrentlyStackWalking->CollectCallStackCurrentThread();
+    std::int32_t resultErrorCode = pCollectorInstanceCurrentlyStackWalking->CollectCallStackCurrentThread(context);
     stackWalkInProgressLock.unlock();
     pCollectorInstanceCurrentlyStackWalking->NotifyStackWalkCompleted(resultErrorCode);
 }

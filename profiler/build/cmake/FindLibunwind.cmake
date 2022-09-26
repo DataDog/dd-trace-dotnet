@@ -2,7 +2,7 @@ SET(LIBUNWIND_VERSION "1.6.2")
 
 ExternalProject_Add(libunwind
     GIT_REPOSITORY https://github.com/DataDog/libunwind.git
-    GIT_TAG v1.6.2
+    GIT_TAG gleocadie/backtrace2
     GIT_PROGRESS true
     INSTALL_COMMAND ""
     UPDATE_COMMAND ""
