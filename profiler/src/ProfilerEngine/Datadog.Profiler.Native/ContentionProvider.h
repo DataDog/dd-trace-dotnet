@@ -6,6 +6,7 @@
 
 #include "IContentionListener.h"
 #include "RawContentionSample.h"
+#include "GenericSampler.h"
 
 class IManagedThreadList;
 class IFrameStore;
@@ -23,11 +24,14 @@ public:
         IFrameStore* pFrameStore,
         IThreadsCpuManager* pThreadsCpuManager,
         IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore);
+        IRuntimeIdStore* pRuntimeIdStore,
+        IConfiguration* pConfiguration);
 
     void OnContention(double contentionDuration) override;
 
 private:
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
+    GenericSampler _sampler;
+    int32_t _contentionDurationThreshold;
 };

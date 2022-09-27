@@ -14,8 +14,7 @@ private:
     static constexpr inline std::chrono::milliseconds SamplingWindow = std::chrono::milliseconds(500);
 
 public:
-    explicit GenericSampler(const IConfiguration* configuration);
-    GenericSampler(std::chrono::milliseconds windowDuration, int32_t samplesPerWindow, int32_t lookback);
+    GenericSampler(int32_t samplesLimit, int32_t uploadInterval);
     virtual ~GenericSampler() = default;
 
     bool Sample();
@@ -28,8 +27,8 @@ protected:
     virtual void OnRollWindow();
 
 private:
-    int32_t SamplingWindowsPerRecording(const IConfiguration* configuration);
-    int32_t SamplesPerWindow(const IConfiguration* configuration);
+    int32_t SamplingWindowsPerRecording(int32_t intervalMs, int32_t samplingWindowMs);
+    int32_t SamplesPerWindow(int32_t samplesLimit, int32_t samplingWindowsPerRecording);
     void RollWindow();
 
 };

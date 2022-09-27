@@ -17,16 +17,33 @@ ContentionProvider::ContentionProvider(
     IFrameStore* pFrameStore,
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore)
+    IRuntimeIdStore* pRuntimeIdStore,
+    IConfiguration* pConfiguration)
     :
     CollectorBase<RawContentionSample>("ContentionProvider", pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo{pCorProfilerInfo},
-    _pManagedThreadList{pManagedThreadList}
+    _pManagedThreadList{pManagedThreadList},
+    _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval().count() * 1000),
+    _contentionDurationThreshold{pConfiguration->ContentionDurationThreshold()}
 {
 }
 
 void ContentionProvider::OnContention(double contentionDuration)
 {
+
+    // sample contentions with a duration greater then a threshold (100ms by default)
+    if (contentionDuration < _contentionDurationThreshold)
+    {
+        if (!_sampler.Sample())
+        {
+            return;
+        }
+    }
+    else
+    {
+    // TODO: should we call _sampler.Keep() to avoid swamping the profile with contention samples?
+    }
+
     ManagedThreadInfo* threadInfo;
     CALL(_pManagedThreadList->TryGetCurrentThreadInfo(&threadInfo))
 

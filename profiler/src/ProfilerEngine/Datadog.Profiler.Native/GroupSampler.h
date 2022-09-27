@@ -15,9 +15,9 @@ template <class TGroup>
 class GroupSampler : public GenericSampler
 {
 public:
-    GroupSampler<TGroup>(IConfiguration* configuration)
+    GroupSampler<TGroup>(int32_t samplesLimit, int32_t uploadIntervalMs)
         :
-        GenericSampler(configuration)
+        GenericSampler(samplesLimit, uploadIntervalMs)
     {
     }
 
@@ -46,6 +46,6 @@ protected:
     }
 
 private:
-    std::unordered_set<std::string> _knownGroups;
+    std::unordered_set<TGroup> _knownGroups;
     std::mutex _knownGroupsMutex;
 };

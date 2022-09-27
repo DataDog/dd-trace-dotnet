@@ -44,6 +44,9 @@ public:
     bool IsAllocationProfilingEnabled() const override;
     bool IsContentionProfilingEnabled() const override;
     double MinimumCores() const override;
+    int32_t AllocationSampleLimit() const override;
+    int32_t ContentionSampleLimit() const override;
+    int32_t ContentionDurationThreshold() const override;
 
 private:
     static tags ExtractUserTags();
@@ -94,5 +97,8 @@ private:
     bool _isNativeFrameEnabled;
     bool _isAgentLess;
     int32_t _exceptionSampleLimit;
+    int32_t _allocationSampleLimit;
+    int32_t _contentionSampleLimit;
+    int32_t _contentionDurationThreshold;
     double _minimumCores;
 };

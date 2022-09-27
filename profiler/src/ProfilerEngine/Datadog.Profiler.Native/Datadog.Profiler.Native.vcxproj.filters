@@ -263,9 +263,6 @@
     <ClInclude Include="GenericSampler.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="AllocationsSampler.h">
-      <Filter>Allocations</Filter>
-    </ClInclude>
     <ClInclude Include="GroupSampler.h">
       <Filter>Utils</Filter>
     </ClInclude>
@@ -401,12 +398,6 @@
       <Filter>Contention</Filter>
     </ClCompile>
     <ClCompile Include="GenericSampler.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="AllocationsSampler.cpp">
-      <Filter>Allocations</Filter>
-    </ClCompile>
-    <ClCompile Include="GroupSampler.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>

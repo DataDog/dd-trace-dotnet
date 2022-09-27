@@ -31,7 +31,7 @@ ExceptionsProvider::ExceptionsProvider(
     _mscorlibModuleId(0),
     _exceptionClassId(0),
     _loggedMscorlibError(false),
-    _sampler(pConfiguration)
+    _sampler(pConfiguration->ExceptionSampleLimit(), pConfiguration->GetUploadInterval().count() * 1000)
 {
 }
 

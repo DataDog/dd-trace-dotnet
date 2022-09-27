@@ -44,6 +44,9 @@ public:
     MOCK_METHOD(bool, IsAllocationProfilingEnabled, (), (const override));
     MOCK_METHOD(bool, IsContentionProfilingEnabled, (), (const override));
     MOCK_METHOD(double, MinimumCores, (), (const override));
+    MOCK_METHOD(int32_t, AllocationSampleLimit, (), (const override));
+    MOCK_METHOD(int32_t, ContentionSampleLimit, (), (const override));
+    MOCK_METHOD(int32_t, ContentionDurationThreshold, (), (const override));
 };
 
 class MockExporter : public IExporter

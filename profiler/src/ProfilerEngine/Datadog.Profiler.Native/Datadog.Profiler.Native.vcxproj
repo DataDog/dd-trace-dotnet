@@ -234,7 +234,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="AdaptiveSampler.h" />
-    <ClInclude Include="AllocationsSampler.h" />
     <ClInclude Include="EnabledProfilers.h" />
     <ClInclude Include="EnumHelpers.h" />
     <ClInclude Include="COMHelpers.h" />
@@ -317,7 +316,6 @@
   <ItemGroup>
     <ClCompile Include="AdaptiveSampler.cpp" />
     <ClCompile Include="AllocationsProvider.cpp" />
-    <ClCompile Include="AllocationsSampler.cpp" />
     <ClCompile Include="AppDomainStore.cpp" />
     <ClCompile Include="ApplicationInfo.cpp" />
     <ClCompile Include="ApplicationStore.cpp" />
@@ -336,7 +334,6 @@
     <ClCompile Include="FfiHelper.cpp" />
     <ClCompile Include="FrameStore.cpp" />
     <ClCompile Include="GenericSampler.cpp" />
-    <ClCompile Include="GroupSampler.cpp" />
     <ClCompile Include="HResultConverter.cpp" />
     <ClCompile Include="IMetricsSenderFactory.cpp" />
     <ClCompile Include="ManagedThreadInfo.cpp" />

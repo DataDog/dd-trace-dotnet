@@ -41,4 +41,7 @@ public:
     virtual bool IsAllocationProfilingEnabled() const = 0;
     virtual bool IsContentionProfilingEnabled() const = 0;
     virtual double MinimumCores() const = 0;
+    virtual int32_t AllocationSampleLimit() const = 0;
+    virtual int32_t ContentionSampleLimit() const = 0;
+    virtual int32_t ContentionDurationThreshold() const = 0;
 };

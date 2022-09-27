@@ -4,13 +4,14 @@
 #include "GenericSampler.h"
 #include "Configuration.h"
 
-GenericSampler::GenericSampler(const IConfiguration* configuration) :
-    _sampler(SamplingWindow, SamplesPerWindow(configuration), SamplingWindowsPerRecording(configuration), 16, [this] { RollWindow(); })
-{
-}
 
-GenericSampler::GenericSampler(std::chrono::milliseconds windowDuration, int32_t samplesPerWindow, int32_t lookback) :
-    _sampler(windowDuration, samplesPerWindow, lookback, 16, [this] { RollWindow(); })
+GenericSampler::GenericSampler(int32_t samplesLimit, int32_t uploadInterval) :
+    _sampler(
+        SamplingWindow,
+        SamplesPerWindow(samplesLimit, SamplingWindowsPerRecording(uploadInterval, SamplingWindow.count())),
+        SamplingWindowsPerRecording(uploadInterval, SamplingWindow.count()),
+        16, [this] { RollWindow(); }
+        )
 {
 }
 
@@ -28,14 +29,17 @@ void GenericSampler::OnRollWindow()
 {
 }
 
-int32_t GenericSampler::SamplingWindowsPerRecording(const IConfiguration* configuration)
+int32_t GenericSampler::SamplingWindowsPerRecording(int32_t intervalMs, int32_t samplingWindowMs)
 {
-    const auto uploadIntervalMs = std::chrono::duration_cast<std::chrono::milliseconds>(configuration->GetUploadInterval());
-    const auto samplingWindowMs = std::chrono::duration_cast<std::chrono::milliseconds>(SamplingWindow);
-    return static_cast<int32_t>(std::min<int64_t>(uploadIntervalMs / samplingWindowMs, INT32_MAX));
+    return intervalMs / samplingWindowMs;
 }
 
-int32_t GenericSampler::SamplesPerWindow(const IConfiguration* configuration)
+int32_t GenericSampler::SamplesPerWindow(int32_t samplesLimit, int32_t samplingWindowsPerRecording)
 {
-    return configuration->ExceptionSampleLimit() / SamplingWindowsPerRecording(configuration);
+    if (samplingWindowsPerRecording == 0)
+    {
+        return samplesLimit;
+    }
+
+    return samplesLimit / samplingWindowsPerRecording;
 }

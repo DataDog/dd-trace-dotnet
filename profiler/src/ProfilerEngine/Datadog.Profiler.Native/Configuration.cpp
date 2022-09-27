@@ -52,6 +52,9 @@ Configuration::Configuration()
     _serviceName = GetEnvironmentValue(EnvironmentVariables::ServiceName, OpSysTools::GetProcessName());
     _isAgentLess = GetEnvironmentValue(EnvironmentVariables::Agentless, false);
     _exceptionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ExceptionSampleLimit, 100);
+    _allocationSampleLimit = GetEnvironmentValue(EnvironmentVariables::AllocationSampleLimit, 100);
+    _contentionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ContentionSampleLimit, 100);
+    _contentionDurationThreshold = GetEnvironmentValue(EnvironmentVariables::ContentionDurationThreshold, 100);
     _minimumCores = GetEnvironmentValue<double>(EnvironmentVariables::CoreMinimumOverride, 1.0);
 }
 
@@ -118,9 +121,24 @@ bool Configuration::IsAllocationProfilingEnabled() const
     return _isAllocationProfilingEnabled;
 }
 
+int32_t Configuration::AllocationSampleLimit() const
+{
+    return _allocationSampleLimit;
+}
+
 bool Configuration::IsContentionProfilingEnabled() const
 {
     return _isContentionProfilingEnabled;
+}
+
+int32_t Configuration::ContentionSampleLimit() const
+{
+    return _contentionSampleLimit;
+}
+
+int32_t Configuration::ContentionDurationThreshold() const
+{
+    return _contentionDurationThreshold;
 }
 
 double Configuration::MinimumCores() const

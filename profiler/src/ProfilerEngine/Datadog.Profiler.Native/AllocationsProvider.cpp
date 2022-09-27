@@ -21,12 +21,14 @@ AllocationsProvider::AllocationsProvider(
     IFrameStore* pFrameStore,
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore)
+    IRuntimeIdStore* pRuntimeIdStore,
+    IConfiguration* pConfiguration)
     :
     CollectorBase<RawAllocationSample>("AllocationsProvider", pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
-    _pFrameStore(pFrameStore)
+    _pFrameStore(pFrameStore),
+    _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval().count() * 1000)
 {
 }
 
@@ -37,6 +39,11 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
                                        uintptr_t address,
                                        uint64_t objectSize)
 {
+    if (!_sampler.Sample(classId))
+    {
+        return;
+    }
+
     // create a sample from the allocation
 
     ManagedThreadInfo* threadInfo;
