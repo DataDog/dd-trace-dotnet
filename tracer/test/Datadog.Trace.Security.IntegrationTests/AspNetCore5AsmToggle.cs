@@ -59,7 +59,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var request1 = await agent.WaitRcmRequestAndReturnLast();
             if (enableSecurity == true)
             {
-                await logEntryWatcher.WaitForLogEntry("AppSec Disabled", timeoutLogEntry);
+                await logEntryWatcher.WaitForLogEntry("AppSec is now Disabled, coming from remote config: true", timeoutLogEntry);
             }
 
             CheckAckState(request1, expectedState, null, "First RCM call");
@@ -71,7 +71,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var request2 = await agent.WaitRcmRequestAndReturnLast();
             if (enableSecurity != false)
             {
-                await logEntryWatcher.WaitForLogEntry("AppSec Enabled", timeoutLogEntry);
+                await logEntryWatcher.WaitForLogEntry("AppSec is now Enabled, coming from remote config: true", timeoutLogEntry);
             }
 
             CheckAckState(request2, expectedState, null, "Second RCM call");
