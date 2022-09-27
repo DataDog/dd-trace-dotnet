@@ -148,7 +148,7 @@ namespace Datadog.Trace.Tests.Telemetry
         public class TestData
         {
             public static TheoryData<bool, bool, bool, string> Data => new()
-                // configuration, dependencies, integrations, sendHeartBeat expected request types
+                // configuration, dependencies, integrations, expected request types
                 {
                     { true, true, true, TelemetryRequestTypes.AppStarted },
                     { true, true, false, TelemetryRequestTypes.AppStarted },
