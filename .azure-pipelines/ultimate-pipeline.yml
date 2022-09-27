@@ -1195,6 +1195,11 @@ stages:
         dockerComposeCommand: down
       condition: succeededOrFailed()
 
+    - script: |      
+        sudo chmod -R 644 tracer/build_data/dumps/* || true
+      displayName: Make dumps uploadable to AzDo
+      condition: succeededOrFailed()
+
     - publish: tracer/build_data
       artifact: integration_tests_linux_docker_tracer_logs_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
       condition: succeededOrFailed()
