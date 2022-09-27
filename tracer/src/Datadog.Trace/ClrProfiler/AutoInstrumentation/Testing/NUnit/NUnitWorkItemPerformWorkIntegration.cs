@@ -51,7 +51,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
             else if (item.TestType == "TestFixture" && NUnitIntegration.GetTestModuleFrom(item) is { } module)
             {
-                NUnitIntegration.SetTestSuiteTo(item, TestSuite.Create(module, item.Name));
+                NUnitIntegration.SetTestSuiteTo(item, module.CreateSuite(item.Name));
+            }
+            else if (item.TestType == "TestMethod")
+            {
+                // ShowITest(item);
             }
 
             // TestType: Assembly

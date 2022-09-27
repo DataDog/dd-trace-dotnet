@@ -12,6 +12,7 @@ using System.Threading;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Ci;
 
@@ -179,15 +180,20 @@ public sealed class TestModule
         // Calculate duration beforehand
         duration ??= span.Context.TraceContext.ElapsedSince(span.StartTime);
 
+        var remainingSuites = Array.Empty<TestSuite>();
         lock (_suites)
         {
             if (_suites.Count > 0)
             {
-                foreach (var suite in _suites.Values.ToArray())
-                {
-                    suite.Close(duration);
-                }
+                Log.Warning("### Numbers of opened suites: {count}", _suites.Count);
+                remainingSuites = _suites.Values.ToArray();
             }
+        }
+
+        foreach (var suite in remainingSuites)
+        {
+            Log.Warning("###### CLOSING OPEN SUITE: {suite}", suite.Name);
+            suite.Close();
         }
 
         // Update status

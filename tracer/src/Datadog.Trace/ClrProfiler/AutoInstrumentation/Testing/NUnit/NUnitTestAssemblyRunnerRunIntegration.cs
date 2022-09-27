@@ -126,7 +126,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         {
             // CIVisibility.Log.Information("*** NUnit.Framework.Api.NUnitTestAssemblyRunner() END");
             // CIVisibility.Log.Information($"       {instance}, {returnValue}");
-            Common.FlushSpans(NUnitIntegration.IntegrationId);
             return new CallTargetReturn<TResult>(returnValue);
         }
     }

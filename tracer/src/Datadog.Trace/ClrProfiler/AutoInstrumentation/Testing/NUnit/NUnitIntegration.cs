@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 return null;
             }
 
-            var test = Test.Create(suite, testMethod.Name);
+            var test = suite.CreateTest(testMethod.Name);
             string? skipReason = null;
 
             // Get test parameters
@@ -139,8 +139,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
                 if (exTypeName == "NUnit.Framework.SuccessException")
                 {
-                    test.Close(Test.Status.Pass);
                     test.SetTag(TestTags.Message, ex.Message);
+                    test.Close(Test.Status.Pass);
                 }
                 else if (exTypeName is "NUnit.Framework.IgnoreException" or "NUnit.Framework.InconclusiveException")
                 {
