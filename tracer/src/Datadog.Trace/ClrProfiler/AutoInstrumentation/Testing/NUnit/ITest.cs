@@ -97,6 +97,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         /// Gets the arguments to use in creating the test or empty array if none required.
         /// </summary>
         object[] Arguments { get; }
+
+        /// <summary>
+        /// Gets the parent test, if any.
+        /// </summary>
+        /// <value>The parent test or null if none exists.</value>
+        ITest Parent { get; }
     }
 
     internal interface ITestAssembly : ITest

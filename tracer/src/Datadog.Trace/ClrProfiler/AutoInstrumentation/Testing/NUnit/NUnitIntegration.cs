@@ -8,6 +8,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
@@ -18,6 +19,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     internal static class NUnitIntegration
     {
+        private static readonly ConditionalWeakTable<object, object> TestItems = new();
+
         internal const string IntegrationName = nameof(Configuration.IntegrationId.NUnit);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.NUnit;
         internal const string SkipReasonKey = "_SKIPREASON";
@@ -25,54 +28,30 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
         internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
-        internal static Scope? CreateScope(ITest currentTest, Type targetType)
+        internal static Test? CreateTest(ITest currentTest)
         {
-            MethodInfo testMethod = currentTest.Method.MethodInfo;
-            object[] testMethodArguments = currentTest.Arguments;
-            IPropertyBag testMethodProperties = currentTest.Properties;
+            var testMethod = currentTest.Method.MethodInfo;
+            var testMethodArguments = currentTest.Arguments;
+            var testMethodProperties = currentTest.Properties;
 
             if (testMethod == null)
             {
                 return null;
             }
 
-            Common.Prepare(testMethod);
-
-            string testFramework = "NUnit";
-            string fullName = currentTest.FullName;
-            string composedTestName = currentTest.Name;
-
-            string testName = testMethod.Name;
-            string testSuite = testMethod.DeclaringType?.FullName ?? string.Empty;
-            string testBundle = testMethod.DeclaringType?.Assembly.GetName().Name ?? string.Empty;
-
-            // Extract the test suite from the full name to support custom fixture parameters and test declared in base classes.
-            if (fullName.EndsWith("." + composedTestName))
+            if (GetTestSuiteFrom(currentTest) is not { } suite)
             {
-                testSuite = fullName.Substring(0, fullName.Length - (composedTestName.Length + 1));
+                return null;
             }
 
+            var test = Test.Create(suite, testMethod.Name);
             string? skipReason = null;
 
-            Scope? scope = Tracer.Instance.StartActiveInternal("nunit.test");
-            Span span = scope.Span;
-
-            span.Type = SpanTypes.Test;
-            span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
-            span.ResourceName = $"{testSuite}.{testName}";
-            span.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
-            span.SetTag(TestTags.Bundle, testBundle);
-            span.SetTag(TestTags.Suite, testSuite);
-            span.SetTag(TestTags.Name, testName);
-            span.SetTag(TestTags.Framework, testFramework);
-            span.SetTag(TestTags.FrameworkVersion, targetType.Assembly.GetName().Version?.ToString() ?? string.Empty);
-            span.SetTag(TestTags.Type, TestTags.TypeTest);
-
             // Get test parameters
-            ParameterInfo[] methodParameters = testMethod.GetParameters();
+            var methodParameters = testMethod.GetParameters();
             if (methodParameters?.Length > 0)
             {
-                TestParameters testParameters = new TestParameters();
+                var testParameters = new TestParameters();
                 testParameters.Metadata = new Dictionary<string, object>();
                 testParameters.Arguments = new Dictionary<string, object>();
                 testParameters.Metadata[TestTags.MetadataTestName] = currentTest.Name;
@@ -90,13 +69,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                     }
                 }
 
-                span.SetTag(TestTags.Parameters, testParameters.ToJSON());
+                test.SetParameters(testParameters);
             }
 
             // Get traits
             if (testMethodProperties != null)
             {
-                Dictionary<string, List<string>?> traits = new Dictionary<string, List<string>?>();
+                var traits = new Dictionary<string, List<string>>();
                 skipReason = (string)testMethodProperties.Get(SkipReasonKey);
                 foreach (var key in testMethodProperties.Keys)
                 {
@@ -105,11 +84,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                         continue;
                     }
 
-                    IList value = testMethodProperties[key];
+                    var value = testMethodProperties[key];
                     if (value != null)
                     {
-                        List<string> lstValues = new List<string>();
-                        foreach (object? valObj in value)
+                        var lstValues = new List<string>();
+                        foreach (var valObj in value)
                         {
                             if (valObj is null)
                             {
@@ -121,94 +100,125 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
                         traits[key] = lstValues;
                     }
-                    else
-                    {
-                        traits[key] = null;
-                    }
                 }
 
                 if (traits.Count > 0)
                 {
-                    span.SetTag(TestTags.Traits, Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(traits));
+                    test.SetTraits(traits);
                 }
             }
-
-            // CI Environment Variables and Runtime information
-            Common.DecorateSpanWithRuntimeAndCiInformation(span);
 
             // Test code and code owners
-            Common.DecorateSpanWithSourceAndCodeOwners(span, testMethod);
+            test.SetTestMethodInfo(testMethod);
 
+            // Telemetry
             Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            Common.StartCoverage();
 
-            if (skipReason != null)
+            // Skip tests
+            if (skipReason is not null)
             {
-                FinishSkippedScope(scope, skipReason);
-                scope = null;
+                test.Close(Test.Status.Skip, skipReason: skipReason, duration: TimeSpan.Zero);
+                return null;
             }
 
-            span.ResetStartTime();
-            return scope;
+            test.ResetStartDate();
+            return test;
         }
 
-        internal static void FinishScope(Scope scope, Exception? ex)
+        internal static void FinishTest(Test test, Exception? ex)
         {
-            try
+            // unwrap the generic NUnitException
+            if (ex != null && ex.GetType().FullName == "NUnit.Framework.Internal.NUnitException")
             {
-                // unwrap the generic NUnitException
-                if (ex != null && ex.GetType().FullName == "NUnit.Framework.Internal.NUnitException")
+                ex = ex.InnerException;
+            }
+
+            if (ex != null)
+            {
+                var exTypeName = ex.GetType().FullName;
+
+                if (exTypeName == "NUnit.Framework.SuccessException")
                 {
-                    ex = ex.InnerException;
+                    test.Close(Test.Status.Pass);
+                    test.SetTag(TestTags.Message, ex.Message);
                 }
-
-                if (ex != null)
+                else if (exTypeName is "NUnit.Framework.IgnoreException" or "NUnit.Framework.InconclusiveException")
                 {
-                    string? exTypeName = ex.GetType().FullName;
-
-                    if (exTypeName == "NUnit.Framework.SuccessException")
-                    {
-                        scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
-                        scope.Span.SetTag(TestTags.Message, ex.Message);
-                    }
-                    else if (exTypeName is "NUnit.Framework.IgnoreException" or "NUnit.Framework.InconclusiveException")
-                    {
-                        scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
-                        scope.Span.SetTag(TestTags.SkipReason, ex.Message);
-                    }
-                    else
-                    {
-                        scope.Span.SetException(ex);
-                        scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
-                    }
+                    test.Close(Test.Status.Skip, skipReason: ex.Message);
                 }
                 else
                 {
-                    scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
+                    test.SetErrorInfo(ex);
+                    test.Close(Test.Status.Fail);
                 }
             }
-            finally
+            else
             {
-                scope.Dispose();
-                Common.StopCoverage(scope.Span);
+                test.Close(Test.Status.Pass);
             }
         }
 
-        internal static void FinishSkippedScope(Scope scope, string? skipReason)
+        internal static TestModule? GetTestModuleFrom(ITest? test)
         {
-            if (scope?.Span is { } span)
+            if (test is null)
             {
-                try
-                {
-                    span.SetTag(TestTags.Status, TestTags.StatusSkip);
-                    span.SetTag(TestTags.SkipReason, skipReason ?? string.Empty);
-                    span.Finish(TimeSpan.Zero);
-                }
-                finally
-                {
-                    scope.Dispose();
-                    Common.StopCoverage(span);
-                }
+                return null;
+            }
+
+            if (test.TestType != "Assembly")
+            {
+                test = GetParentWithTestType(test, "Assembly");
+            }
+
+            if (test is not null && TestItems.TryGetValue(test.Instance, out var moduleObject) && moduleObject is TestModule module)
+            {
+                return module;
+            }
+
+            return null;
+        }
+
+        internal static void SetTestModuleTo(ITest test, TestModule module)
+        {
+            if (test.TestType == "Assembly")
+            {
+                TestItems.Add(test.Instance, module);
+            }
+            else if (GetParentWithTestType(test, "Assembly") is { } assemblyITest)
+            {
+                TestItems.Add(assemblyITest.Instance, module);
+            }
+        }
+
+        internal static TestSuite? GetTestSuiteFrom(ITest? test)
+        {
+            if (test is null)
+            {
+                return null;
+            }
+
+            if (test.TestType != "TestFixture")
+            {
+                test = GetParentWithTestType(test, "TestFixture");
+            }
+
+            if (test is not null && TestItems.TryGetValue(test.Instance, out var suiteObject) && suiteObject is TestSuite suite)
+            {
+                return suite;
+            }
+
+            return null;
+        }
+
+        internal static void SetTestSuiteTo(ITest test, TestSuite suite)
+        {
+            if (test.TestType == "TestFixture")
+            {
+                TestItems.Add(test.Instance, suite);
+            }
+            else if (GetParentWithTestType(test, "TestFixture") is { } suiteITest)
+            {
+                TestItems.Add(suiteITest.Instance, suite);
             }
         }
 
@@ -222,6 +232,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             var testMethod = currentTest.Method.MethodInfo;
             var testSuite = testMethod.DeclaringType?.FullName ?? string.Empty;
             return Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters());
+        }
+
+        private static ITest? GetParentWithTestType(ITest test, string testType)
+        {
+            var parent = test.Parent;
+            if (parent?.Instance is null)
+            {
+                return null;
+            }
+
+            return parent.TestType == testType ? parent : GetParentWithTestType(parent, testType);
         }
     }
 }

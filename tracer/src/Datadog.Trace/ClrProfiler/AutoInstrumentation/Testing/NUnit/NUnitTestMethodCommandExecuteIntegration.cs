@@ -5,6 +5,7 @@
 
 using System;
 using System.ComponentModel;
+using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
@@ -41,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 return CallTargetState.GetDefault();
             }
 
-            return new CallTargetState(NUnitIntegration.CreateScope(executionContext.CurrentTest, typeof(TTarget)));
+            return new CallTargetState(null, NUnitIntegration.CreateTest(executionContext.CurrentTest));
         }
 
         /// <summary>
@@ -56,10 +57,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         /// <returns>Return value of the method</returns>
         internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, Exception exception, in CallTargetState state)
         {
-            Scope scope = state.Scope;
-            if (scope != null)
+            if (state.State is Test test)
             {
-                NUnitIntegration.FinishScope(scope, exception);
+                NUnitIntegration.FinishTest(test, exception);
             }
 
             return new CallTargetReturn<TResult>(returnValue);

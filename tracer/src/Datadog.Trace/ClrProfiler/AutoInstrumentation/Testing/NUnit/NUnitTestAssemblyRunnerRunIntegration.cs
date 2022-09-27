@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#pragma warning disable SA1402
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.Ci;
@@ -48,31 +50,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             // TestType: Assembly
             // TestType: TestFixture
             // TestType: TestMethod
-
-            CIVisibility.Log.Information("*** NUnit.Framework.Api.NUnitTestAssemblyRunner() BEGIN");
-            var item = instance.LoadedTest.Instance.DuckCast<ITestAssembly>();
-            CIVisibility.Log.Information($"       Id: {item.Id}");
-            CIVisibility.Log.Information($"       Name: {item.Name}");
-            CIVisibility.Log.Information($"       TestType: {item.TestType}");
-            CIVisibility.Log.Information($"       FullName: {item.FullName}");
-            CIVisibility.Log.Information($"       ClassName: {item.ClassName}");
-            CIVisibility.Log.Information($"       MethodName: {item.MethodName}");
-            CIVisibility.Log.Information($"       TypeInfo.FullName: {item.TypeInfo?.FullName}");
-            CIVisibility.Log.Information($"       TypeInfo.Namespace: {item.TypeInfo?.Namespace}");
-            CIVisibility.Log.Information($"       TypeInfo.Name: {item.TypeInfo?.Name}");
-            CIVisibility.Log.Information($"       TypeInfo.Type: {item.TypeInfo?.Type}");
-            CIVisibility.Log.Information($"       TypeInfo.Assembly: {item.TypeInfo?.Assembly?.GetName().FullName}");
-            CIVisibility.Log.Information($"       RunState: {item.RunState}");
-            CIVisibility.Log.Information($"       TestCaseCount: {item.TestCaseCount}");
-            CIVisibility.Log.Information($"       IsSuite: {item.IsSuite}");
-            CIVisibility.Log.Information($"       HasChildren: {item.HasChildren}");
-            CIVisibility.Log.Information($"       Tests.Count: {item.Tests?.Count}");
-            CIVisibility.Log.Information($"       Fixture: {item.Fixture}");
-            CIVisibility.Log.Information($"       Assembly.FullName: {item.Assembly?.GetName().FullName}");
-            CIVisibility.Log.Information($"       TestListener: {testListener}");
-            CIVisibility.Log.Information($"       TestFilter: {testFilter}");
-
-            ShowITest(item);
+            //
+            // CIVisibility.Log.Information("*** NUnit.Framework.Api.NUnitTestAssemblyRunner() BEGIN");
+            // var item = instance.LoadedTest.Instance.DuckCast<ITestAssembly>();
+            // CIVisibility.Log.Information($"       Id: {item.Id}");
+            // CIVisibility.Log.Information($"       Name: {item.Name}");
+            // CIVisibility.Log.Information($"       TestType: {item.TestType}");
+            // CIVisibility.Log.Information($"       FullName: {item.FullName}");
+            // CIVisibility.Log.Information($"       ClassName: {item.ClassName}");
+            // CIVisibility.Log.Information($"       MethodName: {item.MethodName}");
+            // CIVisibility.Log.Information($"       TypeInfo.FullName: {item.TypeInfo?.FullName}");
+            // CIVisibility.Log.Information($"       TypeInfo.Namespace: {item.TypeInfo?.Namespace}");
+            // CIVisibility.Log.Information($"       TypeInfo.Name: {item.TypeInfo?.Name}");
+            // CIVisibility.Log.Information($"       TypeInfo.Type: {item.TypeInfo?.Type}");
+            // CIVisibility.Log.Information($"       TypeInfo.Assembly: {item.TypeInfo?.Assembly?.GetName().FullName}");
+            // CIVisibility.Log.Information($"       RunState: {item.RunState}");
+            // CIVisibility.Log.Information($"       TestCaseCount: {item.TestCaseCount}");
+            // CIVisibility.Log.Information($"       IsSuite: {item.IsSuite}");
+            // CIVisibility.Log.Information($"       HasChildren: {item.HasChildren}");
+            // CIVisibility.Log.Information($"       Tests.Count: {item.Tests?.Count}");
+            // CIVisibility.Log.Information($"       Fixture: {item.Fixture}");
+            // CIVisibility.Log.Information($"       Assembly.FullName: {item.Assembly?.GetName().FullName}");
+            // CIVisibility.Log.Information($"       TestListener: {testListener}");
+            // CIVisibility.Log.Information($"       TestFilter: {testFilter}");
+            //
+            // ShowITest(item);
 
             return CallTargetState.GetDefault();
 
@@ -122,8 +124,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         /// <returns>Return value of the method</returns>
         internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult returnValue, Exception exception, in CallTargetState state)
         {
-            CIVisibility.Log.Information("*** NUnit.Framework.Api.NUnitTestAssemblyRunner() END");
-            CIVisibility.Log.Information($"       {instance}, {returnValue}");
+            // CIVisibility.Log.Information("*** NUnit.Framework.Api.NUnitTestAssemblyRunner() END");
+            // CIVisibility.Log.Information($"       {instance}, {returnValue}");
             Common.FlushSpans(NUnitIntegration.IntegrationId);
             return new CallTargetReturn<TResult>(returnValue);
         }
