@@ -273,10 +273,8 @@ namespace Datadog.Trace.Debugger
 
         private void AcceptConfiguration(ProductConfigChangedEventArgs args)
         {
-            Log.Information("AcceptConfiguration: Starting ...");
             var probeConfig = args.GetDeserializedConfigurations<ProbeConfiguration>().Single();
             _configurationUpdater.Accept(probeConfig.TypedFile);
-            Log.Information("AcceptConfiguration: End ...");
         }
 
         internal void AddSnapshot(string snapshot)

@@ -37,6 +37,17 @@ constexpr std::uint64_t TotalDeadlocksThreshold = 12;
 // Be very careful with this flag. See comments for the StackSamplerLoopManager class and throughout the implementation.
 constexpr bool LogDuringStackSampling_Unsafe = false;
 
+// If AllowDeadlockIntervention is FALSE, deadlock interventions are not actually performed.
+// The deadlocks are happening only on Windows because the target threads that are suspended
+// might have already acquired a lock that the stack walking thread might then need to acquire
+// (memory allocation, Windows loader lock with LoadLibrary, table used by the stack walking API, ?...)
+// --> deadlock
+#ifdef _WINDOWS
+constexpr bool AllowDeadlockIntervention = true;
+#else
+constexpr bool AllowDeadlockIntervention = false;
+#endif
+
 /// <summary>
 /// The process-singleton instance of this class owns and manages the StackSamplerLoop of the process.
 ///

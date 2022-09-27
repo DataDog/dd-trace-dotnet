@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props" Condition="Exists('..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props')" />
   <ItemGroup Label="ProjectConfigurations">
@@ -49,7 +49,6 @@
     <ClCompile Include="FrameStoreHelper.cpp" />
     <ClCompile Include="IMetricsSenderFactoryTest.cpp" />
     <ClCompile Include="LibddprofExporterTest.cpp" />
-    <ClCompile Include="LinuxStackFramesCollectorTest.cpp" />
     <ClCompile Include="LogTest.cpp" />
     <ClCompile Include="ManagedThreadListTest.cpp" />
     <ClCompile Include="OpSysToolsTest.cpp" />
