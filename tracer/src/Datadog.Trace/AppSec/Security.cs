@@ -283,13 +283,13 @@ namespace Datadog.Trace.AppSec
             if (features.TypedFile != null)
             {
                 _settings.Enabled = features.TypedFile.Asm.Enabled;
-                UpdateStatus();
+                UpdateStatus(true);
             }
 
             e.Acknowledge(features.Name);
         }
 
-        private void UpdateStatus()
+        private void UpdateStatus(bool fromRemoteConfig = false)
         {
             if (_enabled == _settings.Enabled) { return; }
 
@@ -297,15 +297,12 @@ namespace Datadog.Trace.AppSec
             {
                 if (_settings.Enabled)
                 {
-                    if (_waf != null)
-                    {
-                        _waf.Dispose();
-                    }
+                    _waf?.Dispose();
 
                     _waf = Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules);
                     if (_waf?.InitializedSuccessfully ?? false)
                     {
-                        EnableWaf();
+                        EnableWaf(fromRemoteConfig);
                     }
                     else
                     {
@@ -315,12 +312,12 @@ namespace Datadog.Trace.AppSec
 
                 if (!_settings.Enabled)
                 {
-                    DisableWaf();
+                    DisableWaf(fromRemoteConfig);
                 }
             }
         }
 
-        private void EnableWaf()
+        private void EnableWaf(bool fromRemoteConfig)
         {
             if (!_enabled)
             {
@@ -354,15 +351,15 @@ namespace Datadog.Trace.AppSec
                 AddAppsecSpecificInstrumentations();
 
                 _instrumentationGateway.StartRequest += ReportWafInitInfoOnce;
-                _rateLimiter = _rateLimiter ?? new AppSecRateLimiter(_settings.TraceRateLimit);
+                _rateLimiter ??= new AppSecRateLimiter(_settings.TraceRateLimit);
 
                 _enabled = true;
 
-                Log.Information("AppSec Enabled");
+                Log.Information("AppSec is now Enabled, coming from remote config: {enableFromRemoteConfig}", fromRemoteConfig);
             }
         }
 
-        private void DisableWaf()
+        private void DisableWaf(bool fromRemoteConfig)
         {
             if (_enabled)
             {
@@ -378,7 +375,7 @@ namespace Datadog.Trace.AppSec
 
                 _enabled = false;
 
-                Log.Information("AppSec Disabled");
+                Log.Information("AppSec is now Disabled, coming from remote config: {enableFromRemoteConfig}", fromRemoteConfig);
             }
         }
 
