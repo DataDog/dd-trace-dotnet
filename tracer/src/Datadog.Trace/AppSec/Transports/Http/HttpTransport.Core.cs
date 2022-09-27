@@ -52,17 +52,23 @@ namespace Datadog.Trace.AppSec.Transports.Http
             return new HeadersCollectionAdapter(_context.Response.Headers);
         }
 
-        public void WriteBlockedResponse(string templateJson, string templateHtml)
+        public void WriteBlockedResponse(string templateJson, string templateHtml, bool canAccessHeaders)
         {
             _context.Items["block"] = true;
             var httpResponse = _context.Response;
             httpResponse.Clear();
-            httpResponse.Headers.Clear();
+
+            // this should always be true for core, but it would seem foolish to ignore it, as potential source of future bugs
+            if (canAccessHeaders)
+            {
+                httpResponse.Headers.Clear();
+            }
+
             httpResponse.StatusCode = 403;
             var syncIOFeature = _context.Features.Get<IHttpBodyControlFeature>();
             if (syncIOFeature != null)
             {
-                // allow synchronous operatoin for net core >=3.1 otherwise invalidoperation exception
+                // allow synchronous operations for net core >=3.1 otherwise invalidoperation exception
                 syncIOFeature.AllowSynchronousIO = true;
             }
 

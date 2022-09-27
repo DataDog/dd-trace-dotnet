@@ -253,12 +253,9 @@ namespace Datadog.Trace.AspNet
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not BlockException)
             {
-                if (ex is not BlockException)
-                {
-                    Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
-                }
+                Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
             }
         }
 

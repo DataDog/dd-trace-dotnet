@@ -349,7 +349,6 @@ namespace Datadog.Trace.AppSec
                 }
 
 #else
-                _usingIntegratedPipeline = null;
                 _instrumentationGateway.LastChanceToWriteTags += InstrumentationGateway_AddHeadersResponseTags;
 #endif
                 AddAppsecSpecificInstrumentations();
@@ -438,11 +437,16 @@ namespace Datadog.Trace.AppSec
             }
         }
 
+        private bool CanAccessHeaders()
+        {
+            return _usingIntegratedPipeline == true || _usingIntegratedPipeline is null;
+        }
+
         private void AddResponseHeaderTags(ITransport transport, Span span)
         {
             TryAddEndPoint(span);
             var headers =
-                _usingIntegratedPipeline == true || _usingIntegratedPipeline is null ?
+                CanAccessHeaders() ?
                     transport.GetResponseHeaders() :
                     new NameValueHeadersCollection(new NameValueCollection());
             AddHeaderTags(span, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
@@ -501,7 +505,7 @@ namespace Datadog.Trace.AppSec
                     var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock");
                     if (block)
                     {
-                        e.Transport.WriteBlockedResponse(_settings.BlockedJsonTemplate, _settings.BlockedHtmlTemplate);
+                        e.Transport.WriteBlockedResponse(_settings.BlockedJsonTemplate, _settings.BlockedHtmlTemplate, CanAccessHeaders());
                     }
 
                     Report(e.Transport, span, wafResult, block);

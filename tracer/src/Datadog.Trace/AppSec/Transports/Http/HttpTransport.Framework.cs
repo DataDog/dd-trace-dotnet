@@ -5,7 +5,9 @@
 
 #if NETFRAMEWORK
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Web;
@@ -71,12 +73,21 @@ namespace Datadog.Trace.AppSec.Transports.Http
             return new NameValueHeadersCollection(new NameValueCollection());
         }
 
-        public void WriteBlockedResponse(string templateJson, string templateHtml)
+        public void WriteBlockedResponse(string templateJson, string templateHtml, bool canAccessHeaders)
         {
             _context.Items["block"] = true;
             var httpResponse = _context.Response;
             httpResponse.Clear();
-            // httpResponse.Headers.Clear();
+
+            if (canAccessHeaders)
+            {
+                var keys = httpResponse.Headers.Keys.Cast<string>().ToList();
+                foreach (var key in keys)
+                {
+                    httpResponse.Headers.Remove(key);
+                }
+            }
+
             httpResponse.StatusCode = 403;
 
             var template = templateJson;
