@@ -78,6 +78,7 @@ namespace Datadog.Trace.AppSec.Transports.Http
             _context.Items["block"] = true;
             var httpResponse = _context.Response;
             httpResponse.Clear();
+            httpResponse.Cookies.Clear();
 
             if (canAccessHeaders)
             {

@@ -58,6 +58,11 @@ namespace Datadog.Trace.AppSec.Transports.Http
             var httpResponse = _context.Response;
             httpResponse.Clear();
 
+            foreach (var cookie in _context.Request.Cookies)
+            {
+                httpResponse.Cookies.Delete(cookie.Key);
+            }
+
             // this should always be true for core, but it would seem foolish to ignore it, as potential source of future bugs
             if (canAccessHeaders)
             {
