@@ -81,7 +81,7 @@ public class DataStreamsWriterTests
     {
         // using a very long duration here so that we're guaranteed to still
         // be in the "current" bucket when we call flush and close
-        var bucketDuration = int.MaxValue; // 100 s
+        var bucketDuration = int.MaxValue;
         var api = new StubApi();
         var writer = CreateWriter(api, bucketDuration);
 

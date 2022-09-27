@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.Linq;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
@@ -24,7 +25,7 @@ public class DataStreamsAggregatorTests
 
     private static readonly long T1 = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
-    // Set tp2 to be some 40 seconds after the tp1, but also account for bucket alignments,
+    // Set t2 to be some 40 seconds after the t1, but also account for bucket alignments,
     // otherwise the possible StatsPayload would change depending on when the test is run.
     private static readonly long T2 = BucketStartTimeForTimestamp(T1 + (40 * OneSecondNs)) + (6 * OneSecondNs);
 
@@ -41,14 +42,22 @@ public class DataStreamsAggregatorTests
         var statsToWrite = aggregator.Export(T2);
 
         // compare expected, bit messy, but works
-        var stats = statsToWrite[0];
-        AssertStats(stats, TimestampType.Current, BucketStartTimeForTimestamp(T1));
-        AssertBucket(stats, hash: 2, CreateSketch(5), CreateSketch(2));
+        var currentStats = statsToWrite
+                          .Where(x => x.TimestampType == TimestampType.Current)
+                          .Should()
+                          .ContainSingle()
+                          .Subject;
+        AssertStats(currentStats, TimestampType.Current, BucketStartTimeForTimestamp(T1));
+        AssertBucket(currentStats, hash: 2, CreateSketch(5), CreateSketch(2));
 
-        stats = statsToWrite[1];
+        var originStats = statsToWrite
+                          .Where(x => x.TimestampType == TimestampType.Origin)
+                          .Should()
+                          .ContainSingle()
+                          .Subject;
         // // origin timestamp subtracts the pathway latency
-        AssertStats(stats, TimestampType.Origin, BucketStartTimeForTimestamp(T1 - (5 * OneSecondNs)));
-        AssertBucket(stats, hash: 2, CreateSketch(5), CreateSketch(2));
+        AssertStats(originStats, TimestampType.Origin, BucketStartTimeForTimestamp(T1 - (5 * OneSecondNs)));
+        AssertBucket(originStats, hash: 2, CreateSketch(5), CreateSketch(2));
     }
 
     [Fact]
