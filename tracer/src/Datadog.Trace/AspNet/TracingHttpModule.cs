@@ -179,7 +179,8 @@ namespace Datadog.Trace.AspNet
         {
             try
             {
-                if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+                var tracer = Tracer.Instance;
+                if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     // integration disabled
                     return;
