@@ -78,7 +78,6 @@ internal class DataStreamsManager
         // This shouldn't happen normally, as you should call SetCheckpoint before calling InjectPathwayContext
         // But if data streams was disabled, you call SetCheckpoint, and then data streams is enabled
         // you will hit this code path
-        System.Diagnostics.Debug.Fail("Attempted to inject null pathway context");
         Log.Debug("Attempted to inject null pathway context");
     }
 

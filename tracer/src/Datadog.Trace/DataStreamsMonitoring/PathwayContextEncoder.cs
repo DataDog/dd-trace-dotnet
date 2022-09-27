@@ -24,8 +24,8 @@ internal static class PathwayContextEncoder
     /// <returns>The encoded pathway</returns>
     public static byte[] Encode(PathwayContext pathway)
     {
-        var pathwayStartMs = pathway.PathwayStart / 1000;
-        var edgeStartMs = pathway.EdgeStart / 1000;
+        var pathwayStartMs = ToMilliseconds(pathway.PathwayStart);
+        var edgeStartMs = ToMilliseconds(pathway.EdgeStart);
 
         var pathwayBytes = VarEncodingHelper.VarLongZigZagLength(pathwayStartMs);
         var edgeBytes = VarEncodingHelper.VarLongZigZagLength(edgeStartMs);
@@ -64,14 +64,32 @@ internal static class PathwayContextEncoder
             return null;
         }
 
-        var edgeBytesMs = VarEncodingHelper.ReadVarLongZigZag(bytes, offset: 8 + bytesRead, out _);
-        if (edgeBytesMs is null)
+        var edgeStartMs = VarEncodingHelper.ReadVarLongZigZag(bytes, offset: 8 + bytesRead, out _);
+        if (edgeStartMs is null)
         {
             Log.Warning("Error decoding Data Stream PathwayContext from bytes {Base64EncodedBytes}: invalid edge start", Convert.ToBase64String(bytes));
             return null;
         }
 
+        var pathwayStartNs = ToNanoseconds(pathwayStartMs.Value);
+        var edgeStartNs = ToNanoseconds(edgeStartMs.Value);
+        if (pathwayStartMs > pathwayStartNs || edgeStartMs.Value > edgeStartNs)
+        {
+            Log.Warning(
+                "Overflow detected in Data Stream PathwayContext from bytes {Base64EncodedBytes}: invalid pathway {PathwayMs}ms or edge {EdgeMs}ms",
+                Convert.ToBase64String(bytes),
+                pathwayStartMs,
+                edgeStartMs);
+            return null;
+        }
+
         // Pathway context values are in ns
-        return new PathwayContext(new PathwayHash(hash), pathwayStartMs.Value * 1000, edgeBytesMs.Value * 1000);
+        return new PathwayContext(new PathwayHash(hash), pathwayStartNs, edgeStartNs);
     }
+
+    private static long ToNanoseconds(long milliseconds)
+        => milliseconds * 1_000_000;
+
+    private static long ToMilliseconds(long nanoseconds)
+        => nanoseconds / 1_000_000;
 }

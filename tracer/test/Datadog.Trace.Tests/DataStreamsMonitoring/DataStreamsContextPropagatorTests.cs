@@ -6,6 +6,7 @@
 using System;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.ExtensionMethods;
 using FluentAssertions;
 using Xunit;
 
@@ -16,11 +17,12 @@ public class DataStreamsContextPropagatorTests
     [Fact]
     public void CanRoundTripPathwayContext()
     {
+        var oneMs = TimeSpan.FromMilliseconds(1);
         var headers = new TestHeadersCollection();
         var context = new PathwayContext(
             new PathwayHash(1234),
-            DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1000, // leaky abstraction, the encoder truncates
-            DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() * 1000);
+            DateTimeOffset.UtcNow.AddSeconds(-5).ToUnixTimeNanoseconds(),
+            DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
 
         DataStreamsContextPropagator.Instance.Inject(context, headers);
 
@@ -28,7 +30,14 @@ public class DataStreamsContextPropagatorTests
 
         extracted.Should().NotBeNull();
         extracted.Value.Hash.Value.Should().Be(context.Hash.Value);
-        extracted.Value.PathwayStart.Should().Be(context.PathwayStart);
-        extracted.Value.EdgeStart.Should().Be(context.EdgeStart);
+        FromUnixTimeNanoseconds(extracted.Value.PathwayStart)
+           .Should()
+           .BeCloseTo(FromUnixTimeNanoseconds(context.PathwayStart), oneMs);
+        FromUnixTimeNanoseconds(extracted.Value.EdgeStart)
+           .Should()
+           .BeCloseTo(FromUnixTimeNanoseconds(context.EdgeStart), oneMs);
     }
+
+    private static DateTimeOffset FromUnixTimeNanoseconds(long nanoseconds)
+        => DateTimeOffset.FromUnixTimeMilliseconds(nanoseconds / 1_000_000);
 }

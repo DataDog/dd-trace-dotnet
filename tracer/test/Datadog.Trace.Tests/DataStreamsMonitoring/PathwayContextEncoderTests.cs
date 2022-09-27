@@ -27,7 +27,6 @@ public class PathwayContextEncoderTests
     [Theory]
     [InlineData(0, 0, 0)]
     [InlineData(ulong.MaxValue, long.MaxValue, long.MaxValue)]
-    [InlineData(ulong.MinValue, long.MinValue, long.MinValue)]
     public void TestEdgeCases(ulong hash, long pathwayStartNs, long edgeStartNs)
         => EncodeTest(hash, pathwayStartNs, edgeStartNs);
 
@@ -72,6 +71,40 @@ public class PathwayContextEncoderTests
         decoded.Should().BeNull();
     }
 
+    [Fact]
+    public void DecoderFailure_OutOfRangeEdgeBytes()
+    {
+        // first 8 bytes are the hash (0)
+        // 9th byte is valid pathway  (0)
+        // 10-18 byte is large edge value (ulong.max, can never be written as we truncate)
+        var bytes = new byte[18];
+        bytes[9] = 0b0111_1111;
+        for (var i = 10; i < 18; i++)
+        {
+            bytes[i] = 0b1111_1111;
+        }
+
+        var decoded = PathwayContextEncoder.Decode(bytes);
+        decoded.Should().BeNull();
+    }
+
+    [Fact]
+    public void DecoderFailure_OutOfRangePathwayBytes()
+    {
+        // first 8 bytes are the hash (0)
+        // 9-17 byte is large edge value (ulong.max, can never be written as we truncate)
+        // 18 byte is valid edge (0)
+        var bytes = new byte[18];
+        bytes[8] = 0b0111_1111;
+        for (var i = 10; i < 17; i++)
+        {
+            bytes[i] = 0b1111_1111;
+        }
+
+        var decoded = PathwayContextEncoder.Decode(bytes);
+        decoded.Should().BeNull();
+    }
+
     private static void EncodeTest(ulong hash, long pathwayStartNs, long edgeStartNs)
     {
         var pathway = new PathwayContext(
@@ -88,8 +121,8 @@ public class PathwayContextEncoderTests
         decoded.Should().NotBeNull();
         // can't compare directly, because encoding and decoding truncates the ns values to be ms
         decoded.Value.Hash.Should().Be(pathway.Hash);
-        decoded.Value.EdgeStart.Should().Be((pathway.EdgeStart / 1000) * 1000);
-        decoded.Value.PathwayStart.Should().Be((pathway.PathwayStart / 1000) * 1000);
+        decoded.Value.EdgeStart.Should().Be((pathway.EdgeStart / 1_000_000) * 1_000_000);
+        decoded.Value.PathwayStart.Should().Be((pathway.PathwayStart / 1_000_000) * 1_000_000);
     }
 
     private static long GetLong()

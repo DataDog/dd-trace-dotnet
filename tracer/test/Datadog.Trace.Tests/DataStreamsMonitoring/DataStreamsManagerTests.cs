@@ -56,7 +56,7 @@ public class DataStreamsManagerTests
     {
         var dsm = new DataStreamsManager(enabled: true, "foo", "bar");
         var headers = new TestHeadersCollection();
-        var context = new PathwayContext(new PathwayHash(123), 12340000, 56780000);
+        var context = new PathwayContext(new PathwayHash(123), 1_234_000_000, 5_678_000_000);
 
         dsm.InjectPathwayContext(context, headers);
         headers.Values.Should().NotBeEmpty();
