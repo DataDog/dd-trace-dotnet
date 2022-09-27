@@ -74,7 +74,7 @@ public class DataStreamsMonitoringTests : TestHelper
         using var processResult = RunSampleAndWaitForExit(agent);
 
         using var assertionScope = new AssertionScope();
-        var dataStreams = agent.DataStreams;
+        var dataStreams = agent.WaitForDataStreams(2);
 
         // This is nasty and hacky, but it's the only way I could get any semblence
         // of snapshots. We could have more than one payload due to the way flushing works,

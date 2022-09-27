@@ -1,6 +1,6 @@
 {
   "profiles": {
-    "Samples.Kafka": {
+    "Samples.DataStreams.Kafka": {
       "commandName": "Project",
       "environmentVariables": {
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home\\tracer",
