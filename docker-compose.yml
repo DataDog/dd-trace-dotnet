@@ -477,6 +477,7 @@ services:
       - baseImage=${baseImage:-default}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
+      - enable_crash_dumps=${enable_crash_dumps:-true}
     hostname: integrationtests
 
   IntegrationTests:
@@ -497,6 +498,7 @@ services:
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
+      - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - MONGO_HOST=mongo
@@ -624,6 +626,7 @@ services:
       - baseImage=${baseImage:-debian}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
+      - enable_crash_dumps=${enable_crash_dumps:-true}
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
