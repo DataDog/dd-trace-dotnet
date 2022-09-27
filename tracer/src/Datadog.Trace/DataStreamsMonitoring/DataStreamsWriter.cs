@@ -222,7 +222,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
             }
             else
             {
-                Log.Warning("Data streams monitoring was enabled but is not supported by the Agent. Disabling flush");
+                Log.Warning("Data streams monitoring was enabled but is not supported by the Agent. Disabling Data streams. " +
+                            "Consider upgrading your Datadog Agent to at least version 7.34.0+");
             }
         }
     }
