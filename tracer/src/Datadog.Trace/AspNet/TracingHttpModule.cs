@@ -242,6 +242,7 @@ namespace Datadog.Trace.AspNet
                             security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, scope.Span, httpContext.Request.RequestContext.RouteData.Values, eraseExistingAddress: false);
                             security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, scope.Span);
                             security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, scope.Span);
+                            security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, (_) => { });
                         }
 
                         scope.Dispose();
