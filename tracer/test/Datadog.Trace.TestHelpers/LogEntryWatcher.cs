@@ -21,12 +21,7 @@ public class LogEntryWatcher : IDisposable
     public LogEntryWatcher(string logFilePattern)
     {
         var logPath = DatadogLogging.GetLogDirectory();
-        _fileWatcher = new FileSystemWatcher
-        {
-            Path = logPath,
-            Filter = logFilePattern,
-            EnableRaisingEvents = true
-        };
+        _fileWatcher = new FileSystemWatcher { Path = logPath, Filter = logFilePattern, EnableRaisingEvents = true };
 
         var dir = new DirectoryInfo(logPath);
         var lastFile = dir
@@ -63,9 +58,9 @@ public class LogEntryWatcher : IDisposable
             }
 
             var line = await _reader.ReadLineAsync();
-            if (line != null)
+            if (line?.Contains(logEntry) ?? false)
             {
-                isFound = line?.Contains(logEntry) == true;
+                isFound = true;
             }
             else
             {
@@ -75,7 +70,7 @@ public class LogEntryWatcher : IDisposable
 
         if (!isFound)
         {
-            throw new InvalidOperationException("Log entry was not found.");
+            throw new InvalidOperationException(_reader == null ? $"Log file was not found for path: {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}" : "Log entry was not found.");
         }
     }
 
