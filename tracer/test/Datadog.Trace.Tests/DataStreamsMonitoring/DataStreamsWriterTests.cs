@@ -48,7 +48,7 @@ public class DataStreamsWriterTests
     [InlineData(null)]
     public async Task DoesNotWriteIfNoStats_OnClose(bool? isSupported)
     {
-        var bucketDuration = 100_000_000; // 100 ms
+        var bucketDuration = 100_000_000;
         var api = new StubApi();
         var writer = CreateWriter(api, out var discovery, bucketDuration);
         TriggerSupportUpdate(discovery, isSupported);
@@ -100,7 +100,7 @@ public class DataStreamsWriterTests
     [Fact]
     public async Task WhenSupported_WritesAStatsPoint_OnClose()
     {
-        var bucketDuration = 100_000_000; // 100 ms
+        var bucketDuration = 100_000_000;
         var api = new StubApi();
         var writer = CreateWriter(api, out var discovery, bucketDuration);
         TriggerSupportUpdate(discovery, isSupported: true);
@@ -117,7 +117,7 @@ public class DataStreamsWriterTests
     [InlineData(null)]
     public async Task WhenNotSupported_DoesNotWriteAStatsPoint_OnClose(bool? isSupported)
     {
-        var bucketDuration = 100_000_000; // 100 ms
+        var bucketDuration = 100_000_000;
         var api = new StubApi();
         var writer = CreateWriter(api, out var discovery, bucketDuration);
         TriggerSupportUpdate(discovery, isSupported);
@@ -153,7 +153,7 @@ public class DataStreamsWriterTests
     {
         // using a very long duration here so that we're guaranteed to still
         // be in the "current" bucket when we call flush and close
-        var bucketDuration = int.MaxValue; // 100 s
+        var bucketDuration = int.MaxValue;
         var api = new StubApi();
         var writer = CreateWriter(api, out var discovery, bucketDuration);
         TriggerSupportUpdate(discovery, isSupported);
