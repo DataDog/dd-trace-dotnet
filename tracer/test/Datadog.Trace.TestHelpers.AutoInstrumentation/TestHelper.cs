@@ -668,7 +668,15 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"[dump][stdout] {helper.StandardOutput}");
             Output.WriteLine($"[dump][stderr] {helper.ErrorOutput}");
 
-            Output.WriteLine($"Memory dump captured using '{tool} {args}', exit code: {dumpToolProcess.ExitCode}");
+            if (dumpToolProcess.ExitCode == 0)
+            {
+                Output.WriteLine($"Memory dump successfully captured using '{tool} {args}'.");
+            }
+            else
+            {
+                Output.WriteLine($"Failed to capture memory dump using '{tool} {args}'. {tool}'s exit code was {dumpToolProcess.ExitCode}.");
+            }
+
             return true;
         }
 
