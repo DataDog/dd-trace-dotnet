@@ -1,13 +1,15 @@
 # `Datadog.Trace.Bundle` NuGet package
 
-This package contains the Datadog .NET APM tracer, allowing both automatic and custom instrumentation in certain scenarios.
+This package contains the Datadog .NET APM suite. As other setups, it enables Tracing, Continuous Profiler and ASM. For tracing though, it allows both automatic and custom instrumentation. It is meant to be used mainly when access to the application server is limited (eg on Azure Service Fabric). Refer to the next section for more details on when to use this package.
 
 > If you are using automatic instrumentation and would like to interact with APM only through C# attributes, see the [Datadog.Trace.Annotations](https://www.nuget.org/packages/Datadog.Trace.Annotations/) NuGet package.
 
 ## When should you use Datadog.Trace.Bundle
 
-You should consider using this package mainly in scenarios where other setups aren't possible. 
-For instance, [on Windows, please install the tracer using our MSI](https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=windows#install-the-tracer), on [linux, using the appropriate package](https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=linux#install-the-tracer). Also note, that `Datadog.Trace.Bundle` will not allow you to trace apps running in IIS.
+Consider using this package mainly in scenarios where other setups aren't possible. 
+For instance, [on Windows, please install the tracer using our MSI](https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=windows#install-the-tracer), on [linux, using the appropriate package](https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=linux#install-the-tracer), on AAS Windows, rely on the [AAS extension](https://docs.datadoghq.com/serverless/azure_app_services/?tab=net). 
+
+Also note, that `Datadog.Trace.Bundle` will not allow you to trace apps running in IIS.
 
 ## Getting Started
 
@@ -19,6 +21,10 @@ For instance, [on Windows, please install the tracer using our MSI](https://docs
 ### Configure the tracer
 
 In addition to adding the nuget to your project, you need to set the following required environment variables for automatic instrumentation to attach to your application.
+
+> **_NOTE:_** 
+The following are the mandatory variables. More options are available in our public documentation for the [Tracer](https://docs.datadoghq.com/tracing/trace_collection/library_config/dotnet-core/?tab=environmentvariables) and the [Continuous Profiler](https://docs.datadoghq.com/profiler/enabling/dotnet/?tab=linux#configuration) to tune your usage. 
+
 
 .NET Core:
 
