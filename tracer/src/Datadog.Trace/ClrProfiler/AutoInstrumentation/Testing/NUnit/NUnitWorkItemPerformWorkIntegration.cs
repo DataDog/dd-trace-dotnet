@@ -43,6 +43,7 @@ public static class NUnitWorkItemPerformWorkIntegration
                 case "Assembly" when item.Instance.TryDuckCast<ITestAssembly>(out var itemAssembly):
                     var assemblyName = itemAssembly.Assembly?.GetName().Name ?? string.Empty;
                     var frameworkVersion = item.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
+                    CIVisibility.WaitForSkippableTaskToFinish();
                     NUnitIntegration.SetTestModuleTo(item, TestModule.Create(assemblyName, "NUnit", frameworkVersion));
                     break;
                 case "TestFixture" when NUnitIntegration.GetTestModuleFrom(item) is { } module:
