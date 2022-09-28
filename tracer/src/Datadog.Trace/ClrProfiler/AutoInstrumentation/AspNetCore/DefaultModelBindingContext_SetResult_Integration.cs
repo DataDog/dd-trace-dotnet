@@ -6,14 +6,11 @@
 #if !NETFRAMEWORK
 
 using System.ComponentModel;
-using System.Diagnostics;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DuckTyping;
-using Microsoft.AspNetCore.Http;
-using static System.Formats.Asn1.AsnWriter;
 
 namespace Datadog.Trace.ClrProfiler.AspNetCore
 {
