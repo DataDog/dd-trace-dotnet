@@ -271,7 +271,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
             catch (HttpRequestException ex)
             {
-                return (HttpStatusCode.BadGateway, ex.ToString());
+                return (HttpStatusCode.BadRequest, ex.ToString());
             }
         }
 
