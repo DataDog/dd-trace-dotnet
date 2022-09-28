@@ -36,72 +36,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
             where TTarget : IWorkItem
         {
-            if (!NUnitIntegration.IsEnabled)
+            if (NUnitIntegration.IsEnabled)
             {
-                return CallTargetState.GetDefault();
-            }
-
-            var item = instance.Test;
-
-            if (item.TestType == "Assembly" && item.Instance.TryDuckCast<ITestAssembly>(out var itemAssembly))
-            {
-                var assemblyName = itemAssembly.Assembly?.GetName().Name ?? string.Empty;
-                var frameworkVersion = item.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
-                NUnitIntegration.SetTestModuleTo(item, TestModule.Create(assemblyName, "NUnit", frameworkVersion));
-            }
-            else if (item.TestType == "TestFixture" && NUnitIntegration.GetTestModuleFrom(item) is { } module)
-            {
-                NUnitIntegration.SetTestSuiteTo(item, module.CreateSuite(item.Name));
-            }
-            else if (item.TestType == "TestMethod")
-            {
-                // ShowITest(item);
-            }
-
-            // TestType: Assembly
-            // TestType: TestFixture
-            // TestType: TestMethod
-
-            // CIVisibility.Log.Information("+++ +++ +++ NUnit.Framework.Internal.Execution.WorkItem.PerformWork() BEGIN");
-            // ShowITest(item);
-            // if (item.Parent?.Instance is not null)
-            // {
-            //     ShowITest(item.Parent);
-            // }
-
-            // Check if the test should be skipped by the ITR
-            if (instance.Test is { IsSuite: false, Method.MethodInfo: { } } currentTest && NUnitIntegration.ShouldSkip(currentTest))
-            {
-                var testMethod = currentTest.Method.MethodInfo;
-                Common.Log.Debug("ITR: Test skipped: {class}.{name}", testMethod.DeclaringType?.FullName, testMethod.Name);
-                currentTest.RunState = RunState.Ignored;
-                currentTest.Properties.Set(NUnitIntegration.SkipReasonKey, "Skipped by the Intelligent Test Runner");
+                var item = instance.Test;
+                switch (item.TestType)
+                {
+                    case "Assembly" when item.Instance.TryDuckCast<ITestAssembly>(out var itemAssembly):
+                        var assemblyName = itemAssembly.Assembly?.GetName().Name ?? string.Empty;
+                        var frameworkVersion = item.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
+                        NUnitIntegration.SetTestModuleTo(item, TestModule.Create(assemblyName, "NUnit", frameworkVersion));
+                        break;
+                    case "TestFixture" when NUnitIntegration.GetTestModuleFrom(item) is { } module:
+                        NUnitIntegration.SetTestSuiteTo(item, module.CreateSuite(item.Name));
+                        break;
+                    case "TestMethod" when NUnitIntegration.ShouldSkip(item):
+                        var testMethod = item.Method.MethodInfo;
+                        Common.Log.Debug("ITR: Test skipped: {class}.{name}", testMethod.DeclaringType?.FullName, testMethod.Name);
+                        item.RunState = RunState.Ignored;
+                        item.Properties.Set(NUnitIntegration.SkipReasonKey, "Skipped by the Intelligent Test Runner");
+                        break;
+                }
             }
 
             return CallTargetState.GetDefault();
-
-            // static void ShowITest(ITest item)
-            // {
-            //     CIVisibility.Log.Information($"       **************************************************");
-            //     CIVisibility.Log.Information($"         Id: {item.Id}");
-            //     CIVisibility.Log.Information($"         Name: {item.Name}");
-            //     CIVisibility.Log.Information($"         TestType: {item.TestType}");
-            //     CIVisibility.Log.Information($"         FullName: {item.FullName}");
-            //     CIVisibility.Log.Information($"         ClassName: {item.ClassName}");
-            //     CIVisibility.Log.Information($"         MethodName: {item.MethodName}");
-            //     CIVisibility.Log.Information($"         TypeInfo.FullName: {item.TypeInfo?.FullName}");
-            //     CIVisibility.Log.Information($"         TypeInfo.Namespace: {item.TypeInfo?.Namespace}");
-            //     CIVisibility.Log.Information($"         TypeInfo.Name: {item.TypeInfo?.Name}");
-            //     CIVisibility.Log.Information($"         TypeInfo.Type: {item.TypeInfo?.Type}");
-            //     CIVisibility.Log.Information($"         TypeInfo.Assembly: {item.TypeInfo?.Assembly?.GetName().FullName}");
-            //     CIVisibility.Log.Information($"         RunState: {item.RunState}");
-            //     CIVisibility.Log.Information($"         TestCaseCount: {item.TestCaseCount}");
-            //     CIVisibility.Log.Information($"         IsSuite: {item.IsSuite}");
-            //     CIVisibility.Log.Information($"         HasChildren: {item.HasChildren}");
-            //     CIVisibility.Log.Information($"         Tests.Count: {item.Tests?.Count}");
-            //     CIVisibility.Log.Information($"         Fixture: {item.Fixture}");
-            //     CIVisibility.Log.Information($"       **************************************************");
-            // }
         }
     }
 }

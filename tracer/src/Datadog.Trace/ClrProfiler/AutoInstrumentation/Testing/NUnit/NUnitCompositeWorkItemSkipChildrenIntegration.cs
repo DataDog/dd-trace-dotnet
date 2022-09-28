@@ -107,9 +107,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         {
             if (state.State != null)
             {
-                object[] stateArray = (object[])state.State;
-                object testSuiteOrWorkItem = stateArray[0];
-                string skipMessage = (string)stateArray[1];
+                var stateArray = (object[])state.State;
+                var testSuiteOrWorkItem = stateArray[0];
+                var skipMessage = (string)stateArray[1];
 
                 const string startString = "OneTimeSetUp:";
                 if (skipMessage?.StartsWith(startString, StringComparison.OrdinalIgnoreCase) == true)
@@ -119,7 +119,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
                 if (testSuiteOrWorkItem is not null)
                 {
-                    string typeName = testSuiteOrWorkItem.GetType().Name;
+                    var typeName = testSuiteOrWorkItem.GetType().Name;
 
                     if (typeName == "ParameterizedMethodSuite")
                     {

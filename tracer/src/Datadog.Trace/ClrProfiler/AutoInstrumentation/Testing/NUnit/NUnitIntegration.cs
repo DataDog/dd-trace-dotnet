@@ -19,6 +19,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 {
     internal static class NUnitIntegration
     {
+        private const string TestModuleConst = "Assembly";
+        private const string TestSuiteConst = "TestFixture";
+
         private static readonly ConditionalWeakTable<object, object> TestItems = new();
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.NUnit);
@@ -128,7 +131,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         internal static void FinishTest(Test test, Exception? ex)
         {
             // unwrap the generic NUnitException
-            if (ex != null && ex.GetType().FullName == "NUnit.Framework.Internal.NUnitException")
+            if (ex?.GetType().FullName == "NUnit.Framework.Internal.NUnitException")
             {
                 ex = ex.InnerException;
             }
@@ -165,12 +168,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 return null;
             }
 
-            if (test.TestType != "Assembly")
+            if (test.TestType != TestModuleConst)
             {
-                test = GetParentWithTestType(test, "Assembly");
+                test = GetParentWithTestType(test, TestModuleConst);
             }
 
-            if (test is not null && TestItems.TryGetValue(test.Instance, out var moduleObject) && moduleObject is TestModule module)
+            if (test is not null &&
+                TestItems.TryGetValue(test.Instance, out var moduleObject) && moduleObject is TestModule module)
             {
                 return module;
             }
@@ -180,11 +184,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
         internal static void SetTestModuleTo(ITest test, TestModule module)
         {
-            if (test.TestType == "Assembly")
+            if (test.TestType == TestModuleConst)
             {
                 TestItems.Add(test.Instance, module);
             }
-            else if (GetParentWithTestType(test, "Assembly") is { } assemblyITest)
+            else if (GetParentWithTestType(test, TestModuleConst) is { } assemblyITest)
             {
                 TestItems.Add(assemblyITest.Instance, module);
             }
@@ -197,12 +201,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 return null;
             }
 
-            if (test.TestType != "TestFixture")
+            if (test.TestType != TestSuiteConst)
             {
-                test = GetParentWithTestType(test, "TestFixture");
+                test = GetParentWithTestType(test, TestSuiteConst);
             }
 
-            if (test is not null && TestItems.TryGetValue(test.Instance, out var suiteObject) && suiteObject is TestSuite suite)
+            if (test is not null &&
+                TestItems.TryGetValue(test.Instance, out var suiteObject) && suiteObject is TestSuite suite)
             {
                 return suite;
             }
@@ -212,11 +217,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
         internal static void SetTestSuiteTo(ITest test, TestSuite suite)
         {
-            if (test.TestType == "TestFixture")
+            if (test.TestType == TestSuiteConst)
             {
                 TestItems.Add(test.Instance, suite);
             }
-            else if (GetParentWithTestType(test, "TestFixture") is { } suiteITest)
+            else if (GetParentWithTestType(test, TestSuiteConst) is { } suiteITest)
             {
                 TestItems.Add(suiteITest.Instance, suite);
             }
@@ -236,7 +241,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
         private static ITest? GetParentWithTestType(ITest test, string testType)
         {
-            var parent = test.Parent;
+            var parent = test?.Parent;
             if (parent?.Instance is null)
             {
                 return null;

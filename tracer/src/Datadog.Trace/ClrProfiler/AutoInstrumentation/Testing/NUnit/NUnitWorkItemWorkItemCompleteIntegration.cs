@@ -38,7 +38,6 @@ public class NUnitWorkItemWorkItemCompleteIntegration
         where TTarget : IWorkItem
     {
         var item = instance.Test;
-
         switch (item.TestType)
         {
             case "Assembly" when NUnitIntegration.GetTestModuleFrom(item) is { } module:
@@ -49,10 +48,6 @@ public class NUnitWorkItemWorkItemCompleteIntegration
                 break;
         }
 
-        // CIVisibility.Log.Information("--- --- --- NUnit.Framework.Internal.Execution.WorkItem.WorkItemComplete() END");
-        // CIVisibility.Log.Information($"       Id: {item.Id}");
-        // CIVisibility.Log.Information($"       Name: {item.Name}");
-        // CIVisibility.Log.Information($"       TestType: {item.TestType}");
         return CallTargetReturn.GetDefault();
     }
 }

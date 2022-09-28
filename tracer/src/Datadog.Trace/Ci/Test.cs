@@ -24,7 +24,7 @@ public sealed class Test
     private readonly Scope _scope;
     private int _finished;
 
-    private Test(TestSuite suite, string name, DateTimeOffset? startDate = null)
+    internal Test(TestSuite suite, string name, DateTimeOffset? startDate = null)
     {
         Suite = suite;
         var module = suite.Module;
@@ -94,7 +94,7 @@ public sealed class Test
     /// <summary>
     /// Gets the test name
     /// </summary>
-    public string? Name => _scope.Span.GetTag(TestTags.Name);
+    public string? Name => Tags.Name;
 
     /// <summary>
     /// Gets the test start date
@@ -106,19 +106,7 @@ public sealed class Test
     /// </summary>
     public TestSuite Suite { get; }
 
-    internal TestSpanTags Tags => (TestSpanTags)_scope.Span.Tags;
-
-    /// <summary>
-    /// Create a new Test
-    /// </summary>
-    /// <param name="suite">Test suite instance</param>
-    /// <param name="name">Test suite name</param>
-    /// <param name="startDate">Test suite start date</param>
-    /// <returns>New test suite instance</returns>
-    internal static Test Create(TestSuite suite, string name, DateTimeOffset? startDate = null)
-    {
-        return new Test(suite, name, startDate);
-    }
+    private TestSpanTags Tags => (TestSpanTags)_scope.Span.Tags;
 
     /// <summary>
     /// Sets a string tag into the test

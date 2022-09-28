@@ -42,10 +42,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 return CallTargetState.GetDefault();
             }
 
-            CIVisibility.Log.Warning("*** Skipping test: {test}", executionContext.CurrentTest.FullName);
             if (NUnitIntegration.CreateTest(executionContext.CurrentTest) is { } test)
             {
-                test.Close(Test.Status.Skip);
+                test.Close(Test.Status.Skip, TimeSpan.Zero);
             }
 
             return CallTargetState.GetDefault();

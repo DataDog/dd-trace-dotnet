@@ -215,7 +215,7 @@ public sealed class TestModule
     /// <returns>Test suite instance</returns>
     public TestSuite CreateSuite(string name, DateTimeOffset? startDate = null)
     {
-        var suite = TestSuite.Create(this, name, startDate);
+        var suite = new TestSuite(this, name, startDate);
         lock (_suites)
         {
             _suites[name] = suite;

@@ -21,7 +21,7 @@ public sealed class TestSuite
     private readonly Span _span;
     private int _finished;
 
-    private TestSuite(TestModule module, string name, DateTimeOffset? startDate = null)
+    internal TestSuite(TestModule module, string name, DateTimeOffset? startDate = null)
     {
         Module = module;
         Name = name;
@@ -78,18 +78,6 @@ public sealed class TestSuite
     public TestModule Module { get; }
 
     internal TestSuiteSpanTags Tags => (TestSuiteSpanTags)_span.Tags;
-
-    /// <summary>
-    /// Create a new Test Suite
-    /// </summary>
-    /// <param name="module">Test module instance</param>
-    /// <param name="name">Test suite name</param>
-    /// <param name="startDate">Test suite start date</param>
-    /// <returns>New test suite instance</returns>
-    internal static TestSuite Create(TestModule module, string name, DateTimeOffset? startDate = null)
-    {
-        return new TestSuite(module, name, startDate);
-    }
 
     /// <summary>
     /// Sets a string tag into the test
@@ -156,6 +144,6 @@ public sealed class TestSuite
     /// <returns>Test instance</returns>
     public Test CreateTest(string name, DateTimeOffset? startDate = null)
     {
-        return Test.Create(this, name, startDate);
+        return new Test(this, name, startDate);
     }
 }
