@@ -23,8 +23,7 @@ namespace Datadog.Trace.Telemetry
             HostTelemetryData? host,
             ICollection<TelemetryValue>? configuration,
             ICollection<DependencyTelemetryData>? dependencies,
-            ICollection<IntegrationTelemetryData>? integrations,
-            bool sendHeartbeat)
+            ICollection<IntegrationTelemetryData>? integrations)
         {
             if (application is null)
             {
@@ -77,12 +76,6 @@ namespace Datadog.Trace.Telemetry
                 return new[] { GetRequest(application, host, TelemetryRequestTypes.AppDependenciesLoaded, payload), };
             }
 
-            if (sendHeartbeat)
-            {
-                Log.Debug("No changes in telemetry, sending heartbeat");
-                return new[] { GetRequest(application, host, TelemetryRequestTypes.AppHeartbeat, payload: null) };
-            }
-
             Log.Debug("No changes in telemetry");
             return Array.Empty<TelemetryData>();
         }
@@ -101,6 +94,9 @@ namespace Datadog.Trace.Telemetry
 
             return GetRequest(application, host, TelemetryRequestTypes.AppClosing, payload: null);
         }
+
+        public TelemetryData BuildHeartbeatData(ApplicationTelemetryData application, HostTelemetryData host)
+            => GetRequest(application, host, TelemetryRequestTypes.AppHeartbeat, payload: null);
 
         private TelemetryData GetRequest(
             ApplicationTelemetryData application,
