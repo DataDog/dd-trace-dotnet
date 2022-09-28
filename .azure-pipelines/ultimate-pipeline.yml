@@ -1104,6 +1104,11 @@ stages:
           framework=$(publishTargetFramework)
         dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=false IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
+    
+    - script: |      
+        sudo chmod -R 644 tracer/build_data/dumps/* || true
+      displayName: Make dumps uploadable to AzDo
+      condition: succeededOrFailed()
 
     - publish: tracer/build_data
       artifact: integration_tests_linux_tracer_logs_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
