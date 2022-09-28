@@ -54,8 +54,8 @@ services:
   
   serverless-lambda-no-param-sync:
     build:
-      context: ./tracer
-      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
     depends_on:
     - serverless-integration-extension-mock
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamSync"
@@ -71,8 +71,8 @@ services:
 
   serverless-lambda-one-param-sync:
     build:
-      context: ./tracer
-      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
     depends_on:
     - serverless-integration-extension-mock
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamSync"
@@ -88,8 +88,8 @@ services:
 
   serverless-lambda-two-params-sync:
     build:
-      context: ./tracer
-      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
     depends_on:
     - serverless-integration-extension-mock
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsSync"
@@ -105,8 +105,8 @@ services:
 
   serverless-lambda-no-param-sync-with-context:
     build:
-      context: ./tracer
-      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
     depends_on:
     - serverless-integration-extension-mock-with-context
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamSyncWithContext"
@@ -122,8 +122,8 @@ services:
 
   serverless-lambda-one-param-sync-with-context:
     build:
-      context: ./tracer
-      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
     depends_on:
     - serverless-integration-extension-mock-with-context
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamSyncWithContext"
@@ -139,8 +139,8 @@ services:
 
   serverless-lambda-two-params-sync-with-context:
     build:
-      context: ./tracer
-      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
     depends_on:
     - serverless-integration-extension-mock-with-context
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsSyncWithContext"
@@ -156,8 +156,8 @@ services:
 
   serverless-lambda-no-param-async:
     build:
-      context: ./tracer
-      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
     depends_on:
     - serverless-integration-extension-mock
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamAsync"
@@ -173,8 +173,8 @@ services:
 
   serverless-lambda-one-param-async:
     build:
-      context: ./tracer
-      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
     depends_on:
     - serverless-integration-extension-mock
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamAsync"
@@ -190,8 +190,8 @@ services:
 
   serverless-lambda-two-params-async:
     build:
-      context: ./tracer
-      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
     depends_on:
     - serverless-integration-extension-mock
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsAsync"
@@ -207,8 +207,8 @@ services:
 
   serverless-lambda-no-param-void:
     build:
-      context: ./tracer
-      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
     depends_on:
     - serverless-integration-extension-mock
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamVoid"
@@ -224,8 +224,8 @@ services:
 
   serverless-lambda-one-param-void:
     build:
-      context: ./tracer
-      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
     depends_on:
     - serverless-integration-extension-mock
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamVoid"
@@ -241,8 +241,8 @@ services:
 
   serverless-lambda-two-params-void:
     build:
-      context: ./tracer
-      dockerfile: build/_build/docker/serverless.lambda.dockerfile
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
     depends_on:
     - serverless-integration-extension-mock
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsVoid"
@@ -258,16 +258,16 @@ services:
 
   serverless-integration-extension-mock:
     build:
-      context: ./tracer
-      dockerfile: build/_build/docker/serverless.extensionmock.dockerfile
+      context: ./tracer/build/_build/docker
+      dockerfile: ./serverless.extensionmock.dockerfile
     image: dd-trace-dotnet/serverless-extension-mock
     ports:
     - "9003:9003"
 
   serverless-integration-extension-mock-with-context:
     build:
-      context: ./tracer
-      dockerfile: build/_build/docker/serverless.extensionmock.with.context.dockerfile
+      context: ./tracer/build/_build/docker
+      dockerfile: serverless.extensionmock.with.context.dockerfile
     image: dd-trace-dotnet/serverless-extension-mock-with-context
     ports:
     - "9004:9004"

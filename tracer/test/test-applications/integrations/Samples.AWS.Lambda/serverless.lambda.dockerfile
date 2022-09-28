@@ -5,12 +5,12 @@ RUN mkdir -p /var/log/datadog/dotnet && \
     chmod a+rwx /var/log/datadog/dotnet
 
 # Add Tracer
-COPY ./test/test-applications/integrations/Samples.AWS.Lambda/bin/artifacts/monitoring-home /opt/datadog
+COPY ./bin/artifacts/monitoring-home /opt/datadog
 
 # Add Tests
-COPY ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.dll /var/task/
-COPY ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.deps.json /var/task/
-COPY ./test/test-applications/integrations/Samples.AWS.Lambda/bin/Release/netcoreapp3.1/*.runtimeconfig.json /var/task/
+COPY ./bin/Release/netcoreapp3.1/*.dll /var/task/
+COPY ./bin/Release/netcoreapp3.1/*.deps.json /var/task/
+COPY ./bin/Release/netcoreapp3.1/*.runtimeconfig.json /var/task/
 
 ENV DD_LOG_LEVEL="DEBUG"
 ENV DD_TRACE_ENABLED=true
