@@ -10,6 +10,10 @@ namespace Datadog.Trace.Ci.Tagging;
 
 internal partial class TestSpanTags : TestSuiteSpanTags
 {
+    public TestSpanTags()
+    {
+    }
+
     public TestSpanTags(TestSuiteSpanTags suiteTags, string testName)
     {
         Name = testName;

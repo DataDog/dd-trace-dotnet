@@ -10,7 +10,7 @@ namespace Datadog.Trace.Ci.Tagging;
 
 internal partial class TestSuiteSpanTags : TestModuleSpanTags
 {
-    protected TestSuiteSpanTags()
+    public TestSuiteSpanTags()
     {
     }
 

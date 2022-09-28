@@ -256,7 +256,7 @@ public sealed class TestModule
     /// </summary>
     /// <param name="name">Name of the test suite</param>
     /// <returns>Test suite instance</returns>
-    public TestSuite? GetSuite(string name)
+    internal TestSuite? GetSuite(string name)
     {
         lock (_suites)
         {
