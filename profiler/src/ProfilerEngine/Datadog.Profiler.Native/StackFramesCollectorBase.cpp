@@ -16,6 +16,7 @@ StackFramesCollectorBase::StackFramesCollectorBase()
     _isRequestedCollectionAbortSuccessful = false;
     _pReusableStackSnapshotResult = new StackSnapshotResultReusableBuffer();
     _pCurrentCollectionThreadInfo = nullptr;
+    _isCurrentCollectionAbortRequested.store(false);
 }
 
 StackFramesCollectorBase::~StackFramesCollectorBase()

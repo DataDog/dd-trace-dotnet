@@ -279,10 +279,7 @@ void StackSamplerLoopManager::WatcherLoopIteration()
 
     _currentStatistics->IncrDeadlockCount();
 
-    if (AllowDeadlockIntervention)
-    {
-        PerformDeadlockIntervention(collectionDurationNs);
-    }
+    PerformDeadlockIntervention(collectionDurationNs);
 }
 
 bool StackSamplerLoopManager::HasMadeProgress(FILETIME userTime, FILETIME kernelTime)

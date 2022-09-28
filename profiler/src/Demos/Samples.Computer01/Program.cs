@@ -23,7 +23,8 @@ namespace Samples.Computer01
         Async,
         Iterator,
         GenericsAllocation,
-        ContentionGenerator
+        ContentionGenerator,
+        LinuxSignalHandler
     }
 
     public class Program
@@ -199,6 +200,13 @@ namespace Samples.Computer01
             if ((iterations != 0) && runAsService)
             {
                 throw new InvalidOperationException("Both --iterations and --service are not supported");
+            }
+
+            if (scenario == Scenario.LinuxSignalHandler &&
+                (Environment.OSVersion.Platform != PlatformID.Unix ||
+                Environment.Version.Major < 6))
+            {
+                throw new InvalidOperationException($"Scenario LinuxSignalHandler can only run on Linux and .NET 6.0");
             }
         }
     }
