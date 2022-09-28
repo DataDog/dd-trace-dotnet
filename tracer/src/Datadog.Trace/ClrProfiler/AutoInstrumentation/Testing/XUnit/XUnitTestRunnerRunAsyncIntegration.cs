@@ -43,10 +43,9 @@ public static class XUnitTestRunnerRunAsyncIntegration
                 Common.Log.Debug("ITR: Test skipped: {class}.{name}", runnerInstance.TestClass?.FullName ?? string.Empty, runnerInstance.TestMethod?.Name ?? string.Empty);
                 skippableRunnerInstance.SkipReason = "Skipped by the Intelligent Test Runner";
             }
-
-            // Skip test support
-            if (runnerInstance.SkipReason != null)
+            else if (runnerInstance.SkipReason is not null)
             {
+                // Skip test support
                 XUnitIntegration.CreateScope(ref runnerInstance, instance.GetType());
             }
         }

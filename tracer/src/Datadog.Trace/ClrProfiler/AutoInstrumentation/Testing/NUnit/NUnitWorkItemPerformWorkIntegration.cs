@@ -4,61 +4,59 @@
 // </copyright>
 
 using System.ComponentModel;
-using System.Runtime.CompilerServices;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
+
+/// <summary>
+/// NUnit.Framework.Internal.Execution.WorkItem.PerformWork() calltarget instrumentation
+/// </summary>
+[InstrumentMethod(
+    AssemblyName = "nunit.framework",
+    TypeName = "NUnit.Framework.Internal.Execution.WorkItem",
+    MethodName = "PerformWork",
+    ReturnTypeName = ClrNames.Void,
+    MinimumVersion = "3.0.0",
+    MaximumVersion = "3.*.*",
+    IntegrationName = NUnitIntegration.IntegrationName,
+    CallTargetIntegrationType = IntegrationType.Derived)]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
+public static class NUnitWorkItemPerformWorkIntegration
 {
     /// <summary>
-    /// NUnit.Framework.Internal.Execution.WorkItem.PerformWork() calltarget instrumentation
+    /// OnMethodBegin callback
     /// </summary>
-    [InstrumentMethod(
-        AssemblyName = "nunit.framework",
-        TypeName = "NUnit.Framework.Internal.Execution.WorkItem",
-        MethodName = "PerformWork",
-        ReturnTypeName = ClrNames.Void,
-        MinimumVersion = "3.0.0",
-        MaximumVersion = "3.*.*",
-        IntegrationName = NUnitIntegration.IntegrationName,
-        CallTargetIntegrationType = IntegrationType.Derived)]
-    [Browsable(false)]
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    public static class NUnitWorkItemPerformWorkIntegration
+    /// <typeparam name="TTarget">Type of the target</typeparam>
+    /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
+    /// <returns>Calltarget state value</returns>
+    internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
+        where TTarget : IWorkItem
     {
-        /// <summary>
-        /// OnMethodBegin callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
-            where TTarget : IWorkItem
+        if (NUnitIntegration.IsEnabled)
         {
-            if (NUnitIntegration.IsEnabled)
+            var item = instance.Test;
+            switch (item.TestType)
             {
-                var item = instance.Test;
-                switch (item.TestType)
-                {
-                    case "Assembly" when item.Instance.TryDuckCast<ITestAssembly>(out var itemAssembly):
-                        var assemblyName = itemAssembly.Assembly?.GetName().Name ?? string.Empty;
-                        var frameworkVersion = item.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
-                        NUnitIntegration.SetTestModuleTo(item, TestModule.Create(assemblyName, "NUnit", frameworkVersion));
-                        break;
-                    case "TestFixture" when NUnitIntegration.GetTestModuleFrom(item) is { } module:
-                        NUnitIntegration.SetTestSuiteTo(item, module.CreateSuite(item.Name));
-                        break;
-                    case "TestMethod" when NUnitIntegration.ShouldSkip(item):
-                        var testMethod = item.Method.MethodInfo;
-                        Common.Log.Debug("ITR: Test skipped: {class}.{name}", testMethod.DeclaringType?.FullName, testMethod.Name);
-                        item.RunState = RunState.Ignored;
-                        item.Properties.Set(NUnitIntegration.SkipReasonKey, "Skipped by the Intelligent Test Runner");
-                        break;
-                }
+                case "Assembly" when item.Instance.TryDuckCast<ITestAssembly>(out var itemAssembly):
+                    var assemblyName = itemAssembly.Assembly?.GetName().Name ?? string.Empty;
+                    var frameworkVersion = item.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
+                    NUnitIntegration.SetTestModuleTo(item, TestModule.Create(assemblyName, "NUnit", frameworkVersion));
+                    break;
+                case "TestFixture" when NUnitIntegration.GetTestModuleFrom(item) is { } module:
+                    NUnitIntegration.SetTestSuiteTo(item, module.CreateSuite(item.Name));
+                    break;
+                case "TestMethod" when NUnitIntegration.ShouldSkip(item):
+                    var testMethod = item.Method.MethodInfo;
+                    Common.Log.Debug("ITR: Test skipped: {class}.{name}", testMethod.DeclaringType?.FullName, testMethod.Name);
+                    item.RunState = RunState.Ignored;
+                    item.Properties.Set(NUnitIntegration.SkipReasonKey, "Skipped by the Intelligent Test Runner");
+                    break;
             }
-
-            return CallTargetState.GetDefault();
         }
+
+        return CallTargetState.GetDefault();
     }
 }

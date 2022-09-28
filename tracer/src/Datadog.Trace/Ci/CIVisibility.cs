@@ -101,7 +101,6 @@ namespace Datadog.Trace.Ci
 
         internal static void FlushSpans()
         {
-            Log.Warning("*** *** *** *** FLUSHING SPANS...");
             var sContext = SynchronizationContext.Current;
             try
             {

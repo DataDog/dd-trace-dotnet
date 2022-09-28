@@ -45,7 +45,6 @@ public static class XUnitTestAssemblyFinishedCtorIntegration
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget, TArg1, TArg2, TArg3, TArg4, TArg5, TArg6>(TTarget instance, TArg1 testCases, TArg2 testAssembly, TArg3 executionTime, TArg4 testsRun, TArg5 testsFailed, TArg6 testsSkipped)
     {
-        Common.Log.Warning("*** *** *** *** *** Closing Module from XUnitTestAssemblyFinishedCtorIntegration");
         if (TestModule.Current is { } testModule)
         {
             testModule.Close();
