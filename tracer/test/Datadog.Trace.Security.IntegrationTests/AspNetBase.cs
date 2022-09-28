@@ -298,18 +298,9 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null, string userAgent = null)
         {
-            var batchSize = 4;
-            for (int x = 0; x < numberOfAttacks;)
+            for (int x = 0; x < numberOfAttacks; x++)
             {
-                var attacks = new ConcurrentBag<Task<(HttpStatusCode, string)>>();
-                for (int y = 0; y < batchSize && x < numberOfAttacks;)
-                {
-                    x++;
-                    y++;
-                    attacks.Add(SubmitRequest(url, body, contentType, userAgent));
-                }
-
-                await Task.WhenAll(attacks);
+                await SubmitRequest(url, body, contentType, userAgent);
             }
         }
 
