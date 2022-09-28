@@ -12,7 +12,7 @@ COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
 RUN dotnet restore "AspNetCoreSmokeTest.csproj"
 
 # install the package
-RUN dotnet add package "Datadog.Trace.Bundle" --prerelease --source /src/artifacts
+RUN dotnet add package "Datadog.Trace.Bundle" --source /src/artifacts
 
 ARG PUBLISH_FRAMEWORK
 RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $PUBLISH_FRAMEWORK -o /src/publish

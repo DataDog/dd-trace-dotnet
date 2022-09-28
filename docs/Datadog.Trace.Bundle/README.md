@@ -1,26 +1,49 @@
 # `Datadog.Trace.Bundle` NuGet package
 
-This package contains the Datadog .NET APM suite. As other setups, it enables Tracing, Continuous Profiler and ASM. For tracing though, it allows both automatic and custom instrumentation. It is meant to be used mainly when access to the application server is limited (eg on Azure Service Fabric). Refer to the next section for more details on when to use this package.
+This package contains the full Datadog .NET APM suite for Tracing (automatic, and custom), Continuous Profiler and Application Security Monitoring (ASM).
+
+## Should I install this package?
+
+Do **not** install this package if any of the following are true:
+
+- You have already installed the [Datadog .NET Tracer MSI](https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=windows#install-the-tracer) on Windows. Install [Datadog.Trace](https://www.nuget.org/packages/Datadog.Trace) instead if you need custom instrumentation.
+- You have already installed the [Datadog .NET package on Linux](https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=linux#install-the-tracer). Install [Datadog.Trace](https://www.nuget.org/packages/Datadog.Trace) instead if you need custom instrumentation.
+- You instrument your application using the .NET dd-trace tool. Install [Datadog.Trace](https://www.nuget.org/packages/Datadog.Trace) instead if you need custom instrumentation.
+- Your application is running in Azure App Services. Install [the AAS extension](https://docs.datadoghq.com/serverless/azure_app_services/?tab=net) instead.
+- Your application is running in IIS on Windows. This package is not supported; [install the MSI](https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=windows#install-the-tracer) instead, and install [Datadog.Trace](https://www.nuget.org/packages/Datadog.Trace) if you also need custom instrumentation.
+
+Install this package if:
+
+- You are running in a scenario where you can't install an MSI or Linux package. Services such as Azure Service Fabric provide limited access to the underlying server.
+- You want to use both custom and automatic instrumentation, and keeping tracer versions in-sync is a chore.
+- You are running multiple applications on a server and some of them use custom instrumentation, as well as automatic instrumentation.
+- You prefer to deploy a static set of binaries rather than relying on existing infrastructure on the host.
 
 > If you are using automatic instrumentation and would like to interact with APM only through C# attributes, see the [Datadog.Trace.Annotations](https://www.nuget.org/packages/Datadog.Trace.Annotations/) NuGet package.
 
-## When should you use Datadog.Trace.Bundle
+## What does Datadog.Trace.Bundle contain?
 
-Consider using this package mainly in scenarios where other setups aren't possible. 
-For instance, [on Windows, please install the tracer using our MSI](https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=windows#install-the-tracer), on [linux, using the appropriate package](https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=linux#install-the-tracer), on AAS Windows, rely on the [AAS extension](https://docs.datadoghq.com/serverless/azure_app_services/?tab=net). 
+Datadog.Trace.Bundle contains two things:
 
-Also note, that `Datadog.Trace.Bundle` will not allow you to trace apps running in IIS.
+- A reference to the [Datadog.Trace NuGet package](https://www.nuget.org/packages/Datadog.Trace) for custom instrumentation.
+- The native binaries required for automatic instrumentation, for the Continuous Profiler, and for ASM.
+
+These native binaries are identical to those installed by the MSI and Linux installer packages, so Datadog.Trace.Bundle should be considered an alternative deployment mechanism for automatic instrumentation. 
+
+The main advantages of Datadog.Trace.Bundle over the MSI or Linux packages are:
+- You can use it in locations where you cannot access the underlying host to install the MSI or Linux package.
+- You can have multiple applications on the same host using different versions of Datadog.Trace.Bundle without issue.
 
 ## Getting Started
 
 1. Configure the Datadog agent for APM [as described in our documentation](https://docs.datadoghq.com/tracing/setup_overview/setup/dotnet-core#configure-the-datadog-agent-for-apm).
-2. Add the `Datadog.Trace.Bundle` to your project.
-3. Configure the tracer on the server, as shown below
+2. Add the [Datadog.Trace.Bundle](https://www.nuget.org/packages/Datadog.Trace.Bundle) NuGet package to your project, using `dotnet add package Datadog.Trace.Bundle`, for example.
+3. Configure the tracer on the server, as [described below](#configure-the-tracer)
 4. [View your live data on Datadog](https://app.datadoghq.com/apm/traces).
 
 ### Configure the tracer
 
-In addition to adding the nuget to your project, you need to set the following required environment variables for automatic instrumentation to attach to your application.
+After adding the NuGet package to your project, set the following **required** environment variables to enable automatic instrumentation of your application.
 
 > **_NOTE:_** 
 The following are the mandatory variables. More options are available in our public documentation for the [Tracer](https://docs.datadoghq.com/tracing/trace_collection/library_config/dotnet-core/?tab=environmentvariables) and the [Continuous Profiler](https://docs.datadoghq.com/profiler/enabling/dotnet/?tab=linux#configuration) to tune your usage. 
