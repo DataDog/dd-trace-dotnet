@@ -1,7 +1,7 @@
 version: '3'
 services:
   # This extends the version in docker-compose.yml, by adding the extra depends_on for the serverless images
-  IntegrationTests:
+  IntegrationTests.Serverless:
     depends_on:
     - serverless-integration-extension-mock
     - serverless-integration-extension-mock-with-context

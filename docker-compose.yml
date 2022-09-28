@@ -369,6 +369,32 @@ services:
       - aws_sqs
       - couchbase
 
+  IntegrationTests.Serverless:
+    build:
+      context: ./tracer/build/_build/
+      dockerfile: docker/${baseImage:-centos7}.dockerfile
+      args:
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-6.0.100}
+    image: dd-trace-dotnet/${baseImage:-centos7}-tester
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --filter Category=Lambda --code-coverage
+    volumes:
+      - ./:/project
+    cap_add:
+      - SYS_PTRACE
+    environment:
+      - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
+      - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
+      - framework=${framework:-netcoreapp3.1}
+      - baseImage=${baseImage:-default}
+      - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
+      - TestAllPackageVersions=${TestAllPackageVersions:-true}
+      - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
+      - enable_crash_dumps=${enable_crash_dumps:-true}
+      - Verify_DisableClipboard=true
+      - DiffEngine_Disabled=true
+      - CONTAINER_HOSTNAME=http://integrationtests
+    hostname: integrationtests
+
   ExplorationTests:
     build:
       context: ./tracer/build/_build/
