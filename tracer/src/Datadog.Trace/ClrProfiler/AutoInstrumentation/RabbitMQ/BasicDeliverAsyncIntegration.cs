@@ -6,9 +6,6 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
@@ -39,9 +36,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class BasicDeliverAsyncIntegration
     {
-        private const string Command = "basic.deliver";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BasicDeliverIntegration));
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -61,36 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             where TBasicProperties : IBasicProperties
             where TBody : IBody // ReadOnlyMemory<byte> body in 6.0.0
         {
-            if (RabbitMQIntegration.IsActiveScopeRabbitMQ(Tracer.Instance))
-            {
-                // we are already instrumenting this,
-                // don't instrument nested methods that belong to the same stacktrace
-                // e.g. DerivedType.HandleBasicDeliver -> BaseType.RabbitMQ.Client.IAsyncBasicConsumer.HandleBasicDeliver
-                return CallTargetState.GetDefault();
-            }
-
-            SpanContext propagatedContext = null;
-
-            // try to extract propagated context values from headers
-            if (basicProperties?.Headers != null)
-            {
-                try
-                {
-                    propagatedContext = SpanContextPropagator.Instance.Extract(basicProperties.Headers, default(ContextPropagation));
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error extracting propagated headers.");
-                }
-            }
-
-            var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out RabbitMQTags tags, Command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, exchange: exchange, routingKey: routingKey);
-            if (tags != null)
-            {
-                tags.MessageSize = body?.Length.ToString() ?? "0";
-            }
-
-            return new CallTargetState(scope);
+            return RabbitMQIntegration.BasicDeliver_OnMethodBegin(instance, consumerTag, deliveryTag, redelivered, exchange, routingKey, basicProperties, body);
         }
 
         /// <summary>
