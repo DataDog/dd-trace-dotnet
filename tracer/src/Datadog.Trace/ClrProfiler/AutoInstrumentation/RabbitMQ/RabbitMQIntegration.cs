@@ -66,19 +66,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             return scope;
         }
 
-        public static Scope GetActiveRabbitMQScope(Tracer tracer)
+        public static bool IsActiveScopeRabbitMQ(Tracer tracer)
         {
             var scope = tracer.InternalActiveScope;
-
             var parent = scope?.Span;
 
-            if (parent != null &&
-                parent.OperationName == OperationName)
-            {
-                return scope;
-            }
-
-            return null;
+            return parent != null && parent.OperationName == OperationName;
         }
 
         /********************

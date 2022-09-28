@@ -61,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             where TBasicProperties : IBasicProperties
             where TBody : IBody // ReadOnlyMemory<byte> body in 6.0.0
         {
-            if (RabbitMQIntegration.GetActiveRabbitMQScope(Tracer.Instance) != null)
+            if (RabbitMQIntegration.IsActiveScopeRabbitMQ(Tracer.Instance))
             {
                 // we are already instrumenting this,
                 // don't instrument nested methods that belong to the same stacktrace
