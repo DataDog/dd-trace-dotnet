@@ -165,6 +165,33 @@ public sealed class TestModule
     }
 
     /// <summary>
+    /// Set Error Info
+    /// </summary>
+    /// <param name="type">Error type</param>
+    /// <param name="message">Error message</param>
+    /// <param name="callStack">Error callstack</param>
+    public void SetErrorInfo(string type, string message, string? callStack = null)
+    {
+        var span = _span;
+        span.Error = true;
+        span.SetTag(Trace.Tags.ErrorType, type);
+        span.SetTag(Trace.Tags.ErrorMsg, message);
+        if (callStack is not null)
+        {
+            span.SetTag(Trace.Tags.ErrorStack, callStack);
+        }
+    }
+
+    /// <summary>
+    /// Set Error Info from Exception
+    /// </summary>
+    /// <param name="exception">Exception instance</param>
+    public void SetErrorInfo(Exception exception)
+    {
+        _span.SetException(exception);
+    }
+
+    /// <summary>
     /// Close test module
     /// </summary>
     /// <param name="duration">Duration of the test module</param>

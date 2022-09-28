@@ -28,71 +28,54 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
 
         internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
-        internal static Scope OnMethodBegin<TTestMethod>(TTestMethod testMethodInfo, Type type)
+        internal static Test OnMethodBegin<TTestMethod>(TTestMethod testMethodInfo, Type type)
             where TTestMethod : ITestMethod
         {
-            MethodInfo testMethod = testMethodInfo.MethodInfo;
-            object[] testMethodArguments = testMethodInfo.Arguments;
+            var testMethod = testMethodInfo.MethodInfo;
+            var testMethodArguments = testMethodInfo.Arguments;
+            var testName = testMethodInfo.TestMethodName;
 
-            string testFramework = "MSTestV2";
-            string testBundle = testMethodInfo.MethodInfo?.DeclaringType?.Assembly?.GetName().Name;
-            string testSuite = testMethodInfo.TestClassName;
-            string testName = testMethodInfo.TestMethodName;
-
-            Scope scope = Tracer.Instance.StartActiveInternal("mstest.test");
-            Span span = scope.Span;
-
-            span.Type = SpanTypes.Test;
-            span.Context.TraceContext?.SetSamplingPriority(SamplingPriorityValues.AutoKeep);
-            span.ResourceName = $"{testSuite}.{testName}";
-            span.SetTag(Tags.Origin, TestTags.CIAppTestOriginName);
-            span.SetTag(TestTags.Bundle, testBundle);
-            span.SetTag(TestTags.Suite, testSuite);
-            span.SetTag(TestTags.Name, testName);
-            span.SetTag(TestTags.Framework, testFramework);
-            span.SetTag(TestTags.FrameworkVersion, type.Assembly?.GetName().Version.ToString());
-            span.SetTag(TestTags.Type, TestTags.TypeTest);
-
-            // Get test parameters
-            ParameterInfo[] methodParameters = testMethod.GetParameters();
-            if (methodParameters?.Length > 0)
+            if (TestSuite.Current is { } suite)
             {
-                TestParameters testParameters = new TestParameters();
-                testParameters.Metadata = new Dictionary<string, object>();
-                testParameters.Arguments = new Dictionary<string, object>();
+                var test = suite.CreateTest(testName);
 
-                for (int i = 0; i < methodParameters.Length; i++)
+                // Get test parameters
+                var methodParameters = testMethod.GetParameters();
+                if (methodParameters?.Length > 0)
                 {
-                    if (testMethodArguments != null && i < testMethodArguments.Length)
+                    var testParameters = new TestParameters();
+                    testParameters.Metadata = new Dictionary<string, object>();
+                    testParameters.Arguments = new Dictionary<string, object>();
+
+                    for (int i = 0; i < methodParameters.Length; i++)
                     {
-                        testParameters.Arguments[methodParameters[i].Name] = Common.GetParametersValueData(testMethodArguments[i]);
+                        if (testMethodArguments != null && i < testMethodArguments.Length)
+                        {
+                            testParameters.Arguments[methodParameters[i].Name] = Common.GetParametersValueData(testMethodArguments[i]);
+                        }
+                        else
+                        {
+                            testParameters.Arguments[methodParameters[i].Name] = "(default)";
+                        }
                     }
-                    else
-                    {
-                        testParameters.Arguments[methodParameters[i].Name] = "(default)";
-                    }
+
+                    test.SetParameters(testParameters);
                 }
 
-                span.SetTag(TestTags.Parameters, testParameters.ToJSON());
+                // Get traits
+                if (GetTraits(testMethod) is { } testTraits)
+                {
+                    test.SetTraits(testTraits);
+                }
+
+                // Set test method
+                test.SetTestMethodInfo(testMethod);
+
+                test.ResetStartDate();
+                return test;
             }
 
-            // Get traits
-            Dictionary<string, List<string>> testTraits = GetTraits(testMethod);
-            if (testTraits != null && testTraits.Count > 0)
-            {
-                span.SetTag(TestTags.Traits, Datadog.Trace.Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(testTraits));
-            }
-
-            // CI Environment Variables and Runtime information
-            Common.DecorateSpanWithRuntimeAndCiInformation(span);
-
-            // Test code and code owners
-            Common.DecorateSpanWithSourceAndCodeOwners(span, testMethod);
-
-            Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
-            Common.StartCoverage();
-            span.ResetStartTime();
-            return scope;
+            return null;
         }
 
         private static Dictionary<string, List<string>> GetTraits(MethodInfo methodInfo)

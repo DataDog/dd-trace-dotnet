@@ -5,6 +5,7 @@
 
 using System;
 using System.ComponentModel;
+using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
@@ -37,7 +38,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            Common.FlushSpans(MsTestIntegration.IntegrationId);
+            if (TestModule.Current is { } module)
+            {
+                module.Close();
+            }
+            else
+            {
+                Common.FlushSpans(MsTestIntegration.IntegrationId);
+            }
+
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }

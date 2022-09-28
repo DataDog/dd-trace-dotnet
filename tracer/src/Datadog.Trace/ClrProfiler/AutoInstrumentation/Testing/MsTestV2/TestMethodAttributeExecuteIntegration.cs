@@ -5,6 +5,7 @@
 
 using System;
 using System.ComponentModel;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
@@ -43,8 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                 return CallTargetState.GetDefault();
             }
 
-            var scope = MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type);
-            return new CallTargetState(scope);
+            return new CallTargetState(null, MsTestIntegration.OnMethodBegin(testMethod, testMethod.Type));
         }
 
         /// <summary>
@@ -59,69 +59,71 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            if (MsTestIntegration.IsEnabled)
+            if (!MsTestIntegration.IsEnabled)
             {
-                Scope scope = state.Scope;
-                if (scope != null)
+                return new CallTargetReturn<TReturn>(returnValue);
+            }
+
+            if (state.State is Test test)
+            {
+                var returnValueArray = returnValue as Array;
+                if (returnValueArray.Length == 1)
                 {
-                    try
-                    {
-                        Array returnValueArray = returnValue as Array;
-                        if (returnValueArray.Length == 1)
-                        {
-                            object testResultObject = returnValueArray.GetValue(0);
+                    var testResultObject = returnValueArray.GetValue(0);
 
-                            if (testResultObject != null &&
-                                testResultObject.TryDuckCast<TestResultStruct>(out var testResult))
+                    if (testResultObject != null &&
+                        testResultObject.TryDuckCast<TestResultStruct>(out var testResult))
+                    {
+                        string errorMessage = null;
+                        string errorStackTrace = null;
+
+                        if (testResult.TestFailureException != null)
+                        {
+                            var testException = testResult.TestFailureException.InnerException ?? testResult.TestFailureException;
+                            var testExceptionName = testException.GetType().Name;
+                            if (testExceptionName != "UnitTestAssertException" && testExceptionName != "AssertInconclusiveException")
                             {
-                                string errorMessage = null;
-                                string errorStackTrace = null;
-
-                                if (testResult.TestFailureException != null)
-                                {
-                                    Exception testException = testResult.TestFailureException.InnerException ?? testResult.TestFailureException;
-                                    string testExceptionName = testException.GetType().Name;
-                                    if (testExceptionName != "UnitTestAssertException" && testExceptionName != "AssertInconclusiveException")
-                                    {
-                                        scope.Span.SetException(testException);
-                                    }
-
-                                    errorMessage = testException.Message;
-                                    errorStackTrace = testException.ToString();
-                                }
-
-                                switch (testResult.Outcome)
-                                {
-                                    case UnitTestOutcome.Error:
-                                    case UnitTestOutcome.Failed:
-                                    case UnitTestOutcome.Timeout:
-                                        scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
-                                        scope.Span.Error = true;
-                                        scope.Span.SetTag(Tags.ErrorMsg, errorMessage);
-                                        scope.Span.SetTag(Tags.ErrorStack, errorStackTrace);
-                                        break;
-                                    case UnitTestOutcome.Inconclusive:
-                                    case UnitTestOutcome.NotRunnable:
-                                        scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
-                                        scope.Span.SetTag(TestTags.SkipReason, errorMessage);
-                                        break;
-                                    case UnitTestOutcome.Passed:
-                                        scope.Span.SetTag(TestTags.Status, TestTags.StatusPass);
-                                        break;
-                                }
+                                test.SetErrorInfo(testException);
                             }
+
+                            errorMessage = testException.Message;
+                            errorStackTrace = testException.ToString();
                         }
 
-                        if (exception != null)
+                        switch (testResult.Outcome)
                         {
-                            scope.Span.SetException(exception);
-                            scope.Span.SetTag(TestTags.Status, TestTags.StatusFail);
+                            case UnitTestOutcome.Error:
+                            case UnitTestOutcome.Failed:
+                            case UnitTestOutcome.Timeout:
+                                test.SetErrorInfo("TestError", errorMessage, errorStackTrace);
+                                test.Close(Test.Status.Fail);
+                                break;
+                            case UnitTestOutcome.Inconclusive:
+                            case UnitTestOutcome.NotRunnable:
+                                if (exception is not null)
+                                {
+                                    test.SetErrorInfo(exception);
+                                    test.Close(Test.Status.Fail);
+                                }
+                                else
+                                {
+                                    test.Close(Test.Status.Skip, skipReason: errorMessage);
+                                }
+
+                                break;
+                            case UnitTestOutcome.Passed:
+                                if (exception is not null)
+                                {
+                                    test.SetErrorInfo(exception);
+                                    test.Close(Test.Status.Fail);
+                                }
+                                else
+                                {
+                                    test.Close(Test.Status.Pass);
+                                }
+
+                                break;
                         }
-                    }
-                    finally
-                    {
-                        scope.Dispose();
-                        Common.StopCoverage(scope.Span);
                     }
                 }
             }

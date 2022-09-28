@@ -5,6 +5,7 @@
 
 using System;
 using System.ComponentModel;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
@@ -48,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
             MsTestIntegration.IsTestMethodRunnableThreadLocal.Value = null;
             if (objTestMethodInfo is not null && returnValue is Array returnValueArray && returnValueArray.Length == 1)
             {
-                object unitTestResultObject = returnValueArray.GetValue(0);
+                var unitTestResultObject = returnValueArray.GetValue(0);
 
                 if (unitTestResultObject != null &&
                     unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult) &&
@@ -58,12 +59,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
                     if (outcome == UnitTestResultOutcome.Inconclusive || outcome == UnitTestResultOutcome.NotRunnable || outcome == UnitTestResultOutcome.Ignored)
                     {
                         // This instrumentation catches all tests being ignored
-                        var scope = MsTestIntegration.OnMethodBegin(testMethodInfo, instance.GetType());
-                        scope.Span.SetTag(TestTags.Status, TestTags.StatusSkip);
-                        scope.Span.SetTag(TestTags.SkipReason, unitTestResult.ErrorMessage);
-                        scope.Span.Finish(TimeSpan.Zero);
-                        scope.Dispose();
-                        Common.StopCoverage(scope.Span);
+                        var test = MsTestIntegration.OnMethodBegin(testMethodInfo, instance.GetType());
+                        test.Close(Test.Status.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
                     }
                 }
             }
