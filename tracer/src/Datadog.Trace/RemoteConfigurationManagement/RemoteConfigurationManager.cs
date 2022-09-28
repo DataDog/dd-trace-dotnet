@@ -11,6 +11,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Numerics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -36,8 +37,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private readonly CancellationTokenSource _cancellationSource;
         private readonly ConcurrentDictionary<string, Product> _products;
 
-        // 32 capabilities ought to be enough for anybody
-        private BitVector32 _capabilities = new();
+        private BigInteger _capabilities = new();
 
         private int _rootVersion;
         private int _targetsVersion;
@@ -162,9 +162,16 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             _cancellationSource.Cancel();
         }
 
-        public void SetCapability(int index, bool available)
+        public void SetCapability(BigInteger index, bool available)
         {
-            _capabilities[index] = available;
+            if (available)
+            {
+                _capabilities |= index;
+            }
+            else
+            {
+                _capabilities &= ~index;
+            }
         }
 
         private async Task Poll()
@@ -201,8 +208,16 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 configStates.Add(new RcmConfigState(cache.Path.Id, cache.Version, cache.Path.Product, cache.ApplyState, cache.Error));
             }
 
+            // capabilitiesArray needs to be big endian
+            // a first for me, until now I had never worked on a code base with an endian issue ...
+#if NETCOREAPP
+            var capabilitiesArray = _capabilities.ToByteArray(true, true);
+#else
+            var capabilitiesArray = _capabilities.ToByteArray().Reverse().ToArray();
+#endif
+
             var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, _lastPollError != null, _lastPollError);
-            var rcmClient = new RcmClient(_id, products.Keys, _rcmTracer, rcmState, BitConverter.GetBytes(_capabilities.Data));
+            var rcmClient = new RcmClient(_id, products.Keys, _rcmTracer, rcmState, capabilitiesArray);
             var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
 
             return rcmRequest;
