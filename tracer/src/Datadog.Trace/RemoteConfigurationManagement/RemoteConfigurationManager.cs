@@ -213,7 +213,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 #if NETCOREAPP
             var capabilitiesArray = _capabilities.ToByteArray(true, true);
 #else
-            var capabilitiesArray = _capabilities.ToByteArray().Reverse().ToArray();
+            var capabilitiesArray = _capabilities.ToByteArray();
+            Array.Reverse(capabilitiesArray);
 #endif
 
             var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, _lastPollError != null, _lastPollError);
