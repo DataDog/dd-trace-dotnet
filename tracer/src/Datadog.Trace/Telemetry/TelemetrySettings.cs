@@ -102,7 +102,7 @@ namespace Datadog.Trace.Telemetry
             }
 
             var rawInterval = source?.GetInt32(ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds);
-            var heartbeatInterval = rawInterval is { } interval and > 0 and < 3600 ? interval : 60;
+            var heartbeatInterval = rawInterval is { } interval and > 0 and <= 3600 ? interval : 60;
 
             return new TelemetrySettings(telemetryEnabled, configurationError, agentless, TimeSpan.FromSeconds(heartbeatInterval));
         }

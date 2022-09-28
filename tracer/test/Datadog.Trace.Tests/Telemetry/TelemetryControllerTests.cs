@@ -107,7 +107,7 @@ namespace Datadog.Trace.Tests.Telemetry
             while (DateTimeOffset.UtcNow < deadline)
             {
                 var heartBeatCount = transport.GetData().Count(x => x.RequestType == TelemetryRequestTypes.AppHeartbeat);
-                if (heartBeatCount > requiredHeartbeats)
+                if (heartBeatCount >= requiredHeartbeats)
                 {
                     break;
                 }
