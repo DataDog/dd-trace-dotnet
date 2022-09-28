@@ -261,11 +261,18 @@ namespace Datadog.Trace.Security.IntegrationTests
                 _httpClient.DefaultRequestHeaders.Add("user-agent", userAgent);
             }
 
-            var url = $"http://localhost:{_httpPort}{path}";
-            var response =
-                body == null ? await _httpClient.GetAsync(url) : await _httpClient.PostAsync(url, new StringContent(body, Encoding.UTF8, contentType ?? "application/json"));
-            var responseText = await response.Content.ReadAsStringAsync();
-            return (response.StatusCode, responseText);
+            try
+            {
+                var url = $"http://localhost:{_httpPort}{path}";
+                var response =
+                    body == null ? await _httpClient.GetAsync(url) : await _httpClient.PostAsync(url, new StringContent(body, Encoding.UTF8, contentType ?? "application/json"));
+                var responseText = await response.Content.ReadAsStringAsync();
+                return (response.StatusCode, responseText);
+            }
+            catch (HttpRequestException ex)
+            {
+                return (HttpStatusCode.BadGateway, ex.ToString());
+            }
         }
 
         protected virtual string GetTestName() => _testName;
