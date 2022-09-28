@@ -20,6 +20,7 @@ using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -225,7 +226,7 @@ namespace Datadog.Trace.TestHelpers
                 throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
             }
 
-            Assert.True(exitCode >= 0, $"Process exited with code {exitCode}");
+            exitCode.Should().Be(0);
 
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
