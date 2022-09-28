@@ -225,14 +225,14 @@ namespace Datadog.Trace.TestHelpers
                 throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
             }
 
-            Assert.True(exitCode >= 0, $"Process exited with code {exitCode}");
+            Assert.True(exitCode == 0, $"Process exited with code {exitCode}");
 
             if (EnvironmentTools.IsLinux())
             {
-                // When COMPlus_DbgEnableMiniDump is set to 1 and the process crashes, the .NET runtime sometimes errantly reports that the process 
+                // When COMPlus_DbgEnableMiniDump is set to 1 and the process crashes, the .NET runtime sometimes errantly reports that the process
                 // terminated with exit code 0, thus hiding the fact we crashed. Try to work around this by explicitly checking if a crash dump was generated.
-                string crashDumpPath = $"/tmp/coredump.{process.Id}"
-                Assert.False(File.Exists(crashDumpPath), $"The child process crashed, and a crash dump was generated at {crashDumpPath}"));
+                string crashDumpPath = $"/tmp/coredump.{process.Id}";
+                Assert.False(File.Exists(crashDumpPath), $"The child process crashed, and a crash dump was generated at {crashDumpPath}");
             }
 
             return new ProcessResult(process, standardOutput, standardError, exitCode);
