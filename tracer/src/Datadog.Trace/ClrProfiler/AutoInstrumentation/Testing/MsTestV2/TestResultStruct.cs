@@ -6,22 +6,21 @@
 using System;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
+
+/// <summary>
+/// TestResult ducktype struct
+/// </summary>
+[DuckCopy]
+internal struct TestResultStruct
 {
     /// <summary>
-    /// TestResult ducktype struct
+    /// Gets the outcome enum
     /// </summary>
-    [DuckCopy]
-    internal struct TestResultStruct
-    {
-        /// <summary>
-        /// Gets the outcome enum
-        /// </summary>
-        public UnitTestOutcome Outcome;
+    public UnitTestOutcome Outcome;
 
-        /// <summary>
-        /// Test failure exception
-        /// </summary>
-        public Exception TestFailureException;
-    }
+    /// <summary>
+    /// Test failure exception
+    /// </summary>
+    public Exception TestFailureException;
 }

@@ -3,56 +3,55 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
+
+/// <summary>
+/// UnitTestResult Outcome
+/// </summary>
+internal enum UnitTestResultOutcome
 {
     /// <summary>
-    /// UnitTestResult Outcome
+    /// Error
     /// </summary>
-    internal enum UnitTestResultOutcome
-    {
-        /// <summary>
-        /// Error
-        /// </summary>
-        Error,
+    Error,
 
-        /// <summary>
-        /// Failed
-        /// </summary>
-        Failed,
+    /// <summary>
+    /// Failed
+    /// </summary>
+    Failed,
 
-        /// <summary>
-        /// Timeout
-        /// </summary>
-        Timeout,
+    /// <summary>
+    /// Timeout
+    /// </summary>
+    Timeout,
 
-        /// <summary>
-        /// Inconclusive
-        /// </summary>
-        Inconclusive,
+    /// <summary>
+    /// Inconclusive
+    /// </summary>
+    Inconclusive,
 
-        /// <summary>
-        /// Ignored
-        /// </summary>
-        Ignored,
+    /// <summary>
+    /// Ignored
+    /// </summary>
+    Ignored,
 
-        /// <summary>
-        /// Not Runnable
-        /// </summary>
-        NotRunnable,
+    /// <summary>
+    /// Not Runnable
+    /// </summary>
+    NotRunnable,
 
-        /// <summary>
-        /// Passed
-        /// </summary>
-        Passed,
+    /// <summary>
+    /// Passed
+    /// </summary>
+    Passed,
 
-        /// <summary>
-        /// Not Found
-        /// </summary>
-        NotFound,
+    /// <summary>
+    /// Not Found
+    /// </summary>
+    NotFound,
 
-        /// <summary>
-        /// In Progress
-        /// </summary>
-        InProgress,
-    }
+    /// <summary>
+    /// In Progress
+    /// </summary>
+    InProgress,
 }

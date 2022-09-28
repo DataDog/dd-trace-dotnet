@@ -5,22 +5,21 @@
 
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
+
+/// <summary>
+/// TestPropertyAttribute ducktype struct
+/// </summary>
+[DuckCopy]
+internal struct TestPropertyAttributeStruct
 {
     /// <summary>
-    /// TestPropertyAttribute ducktype struct
+    /// Gets the name.
     /// </summary>
-    [DuckCopy]
-    internal struct TestPropertyAttributeStruct
-    {
-        /// <summary>
-        /// Gets the name.
-        /// </summary>
-        public string Name;
+    public string Name;
 
-        /// <summary>
-        /// Gets the value.
-        /// </summary>
-        public string Value;
-    }
+    /// <summary>
+    /// Gets the value.
+    /// </summary>
+    public string Value;
 }
