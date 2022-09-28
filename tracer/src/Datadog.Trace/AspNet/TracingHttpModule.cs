@@ -144,11 +144,12 @@ namespace Datadog.Trace.AspNet
 
                 httpContext.Items[_httpContextScopeKey] = scope;
 
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+
                 var security = Security.Instance;
                 if (security.Settings.Enabled)
                 {
                     security.InstrumentationGateway.RaiseRequestStart(httpContext, httpContext.Request, scope.Span);
-                    security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, (_) => { });
 
                     if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     {
@@ -160,9 +161,9 @@ namespace Datadog.Trace.AspNet
 
                         security.InstrumentationGateway.RaiseBodyAvailable(httpContext, scope.Span, formData);
                     }
-                }
 
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+                    security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, (_) => { });
+                }
             }
             catch (Exception ex)
             {
