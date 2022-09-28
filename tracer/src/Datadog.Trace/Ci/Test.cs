@@ -29,19 +29,13 @@ public sealed class Test
         Suite = suite;
         var module = suite.Module;
 
-        if (string.IsNullOrEmpty(module.Framework))
-        {
-            _scope = Tracer.Instance.StartActiveInternal("test", startTime: startDate);
-        }
-        else
-        {
-            _scope = Tracer.Instance.StartActiveInternal($"{module.Framework!.ToLowerInvariant()}.test", startTime: startDate);
-        }
+        _scope = Tracer.Instance.StartActiveInternal(
+            string.IsNullOrEmpty(module.Framework) ? "test" : $"{module.Framework!.ToLowerInvariant()}.test",
+            startTime: startDate);
 
         var span = _scope.Span;
         span.Type = SpanTypes.Test;
         span.ResourceName = $"{suite.Name}.{name}";
-
         span.Tags = new TestSpanTags(Suite.Tags, name);
         span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
         span.SetTag(Trace.Tags.Origin, TestTags.CIAppTestOriginName);
@@ -51,14 +45,14 @@ public sealed class Test
             Coverage.CoverageReporter.Handler.StartSession();
         }
 
+        CurrentTest.Value = this;
+        CIVisibility.Log.Information("######### New Test Created: {name} ({suite} | {module})", Name, Suite.Name, Suite.Module.Name);
+
         if (startDate is null)
         {
             // If a test doesn't have a fixed start time we reset it before running the test code
             span.ResetStartTime();
         }
-
-        CurrentTest.Value = this;
-        CIVisibility.Log.Information("######### New Test Created: {name} ({suite} | {module})", Name, Suite.Name, Suite.Module.Name);
     }
 
     /// <summary>
@@ -215,6 +209,7 @@ public sealed class Test
     {
         if (Interlocked.Exchange(ref _finished, 1) == 1)
         {
+            CIVisibility.Log.Warning("Test.Close() was already called before.");
             return;
         }
 
@@ -222,7 +217,7 @@ public sealed class Test
         var tags = (TestSpanTags)scope.Span.Tags;
 
         // Calculate duration beforehand
-        duration ??= scope.Span.Context.TraceContext.ElapsedSince(scope.Span.StartTime);
+        duration ??= _scope.Span.Context.TraceContext.ElapsedSince(scope.Span.StartTime);
 
         // Set coverage
         if (CIVisibility.Settings.CodeCoverageEnabled == true && Coverage.CoverageReporter.Handler.EndSession() is Coverage.Models.CoveragePayload coveragePayload)

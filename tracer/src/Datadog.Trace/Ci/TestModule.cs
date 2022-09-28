@@ -35,17 +35,11 @@ public sealed class TestModule
         Name = name;
         Framework = framework;
 
-        if (string.IsNullOrEmpty(framework))
-        {
-            _span = Tracer.Instance.StartSpan("test_module", startTime: startDate);
-        }
-        else
-        {
-            _span = Tracer.Instance.StartSpan($"{framework!.ToLowerInvariant()}.test_module", startTime: startDate);
-        }
+        _span = Tracer.Instance.StartSpan(
+            string.IsNullOrEmpty(framework) ? "test_module" : $"{framework!.ToLowerInvariant()}.test_module",
+            startTime: startDate);
 
         var span = _span;
-
         span.Type = SpanTypes.TestModule;
         span.ResourceName = name;
 
@@ -103,6 +97,12 @@ public sealed class TestModule
 
         Current = this;
         CIVisibility.Log.Information("### Test Module Created: {name}", name);
+
+        if (startDate is null)
+        {
+            // If a module doesn't have a fixed start time we reset it before running code
+            span.ResetStartTime();
+        }
     }
 
     /// <summary>

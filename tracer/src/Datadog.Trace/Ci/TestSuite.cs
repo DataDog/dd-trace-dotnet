@@ -26,31 +26,25 @@ public sealed class TestSuite
         Module = module;
         Name = name;
 
-        if (string.IsNullOrEmpty(module.Framework))
-        {
-            _span = Tracer.Instance.StartSpan("test_suite", startTime: startDate);
-        }
-        else
-        {
-            _span = Tracer.Instance.StartSpan($"{module.Framework!.ToLowerInvariant()}.test_suite", startTime: startDate);
-        }
+        _span = Tracer.Instance.StartSpan(
+            string.IsNullOrEmpty(module.Framework) ? "test_suite" : $"{module.Framework!.ToLowerInvariant()}.test_suite",
+            startTime: startDate);
 
         var span = _span;
         span.Type = SpanTypes.TestSuite;
         span.ResourceName = name;
-
         span.Tags = new TestSuiteSpanTags(module.Tags, span.SpanId, name);
         span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
         span.SetTag(Trace.Tags.Origin, TestTags.CIAppTestOriginName);
 
-        if (startDate is null)
-        {
-            // If a test doesn't have a fixed start time we reset it before running the test code
-            span.ResetStartTime();
-        }
-
         Current = this;
         CIVisibility.Log.Information("###### New Test Suite Created: {name} ({module})", Name, Module.Name);
+
+        if (startDate is null)
+        {
+            // If a module doesn't have a fixed start time we reset it before running code
+            span.ResetStartTime();
+        }
     }
 
     /// <summary>
