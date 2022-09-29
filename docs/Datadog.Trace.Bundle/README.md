@@ -43,7 +43,7 @@ The main advantages of Datadog.Trace.Bundle over the MSI or Linux packages are:
 
 ### Configure the tracer
 
-After adding the NuGet package to your project, set the following **required** environment variables to enable automatic instrumentation of your application.
+After adding the NuGet package to your project, set the following **required** environment variables to enable automatic instrumentation of your application and restart the application.
 
 > **_NOTE:_** 
 The following are the mandatory variables. For further configuration options, see our public documentation for the [Tracer](https://docs.datadoghq.com/tracing/trace_collection/library_config/dotnet-core/?tab=environmentvariables) and the [Continuous Profiler](https://docs.datadoghq.com/profiler/enabling/dotnet/?tab=linux#configuration).
