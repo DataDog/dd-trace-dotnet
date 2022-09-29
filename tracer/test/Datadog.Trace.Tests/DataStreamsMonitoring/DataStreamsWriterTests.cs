@@ -221,6 +221,51 @@ public class DataStreamsWriterTests
         api.Sent.Should().ContainSingle();
     }
 
+    [Fact]
+    public async Task WhenUnSupported_DropsPoints()
+    {
+        var api = new StubApi();
+        var writer = CreateWriter(api, out var discovery, bucketDurationMs: 10_000);
+        TriggerSupportUpdate(discovery, isSupported: false);
+
+        // These shouldn't be added
+        writer.Add(CreateStatsPoint());
+        writer.Add(CreateStatsPoint());
+        writer.Add(CreateStatsPoint());
+
+        var pointsDropped = writer.PointsDropped;
+        pointsDropped.Should().Be(3);
+
+        // enable support
+        TriggerSupportUpdate(discovery, isSupported: true);
+
+        // These should be added
+        writer.Add(CreateStatsPoint());
+        writer.Add(CreateStatsPoint());
+        writer.Add(CreateStatsPoint());
+
+        writer.PointsDropped.Should().Be(pointsDropped, "Should be unchanged");
+
+        await writer.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task WhenSupportedUnknown_DoesNotDropPoints()
+    {
+        var api = new StubApi();
+        var writer = CreateWriter(api, out var discovery, bucketDurationMs: 10_000);
+        TriggerSupportUpdate(discovery, isSupported: null);
+
+        // These should be added
+        writer.Add(CreateStatsPoint());
+        writer.Add(CreateStatsPoint());
+        writer.Add(CreateStatsPoint());
+
+        writer.PointsDropped.Should().Be(0);
+
+        await writer.DisposeAsync();
+    }
+
     private static DataStreamsWriter CreateWriter(
         IDataStreamsApi stubApi,
         out DiscoveryServiceMock discoveryService,

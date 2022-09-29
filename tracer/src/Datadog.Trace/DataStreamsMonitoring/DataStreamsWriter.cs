@@ -32,7 +32,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private byte[]? _serializationBuffer;
     private long _pointsDropped;
     private int _flushRequested;
-    private int _isSupported = (int)SupportState.Unknown;
+    private int _isSupported = SupportState.Unknown;
 
     public DataStreamsWriter(
         DataStreamsAggregator aggregator,
@@ -60,12 +60,11 @@ internal class DataStreamsWriter : IDataStreamsWriter
     /// </summary>
     public event EventHandler<EventArgs>? FlushComplete;
 
-    private enum SupportState
-    {
-        Unknown,
-        Supported,
-        Unsupported
-    }
+    /// <summary>
+    /// Gets the number of points dropped due to a full buffer or disabled DSM.
+    /// Public for testing only
+    /// </summary>
+    public long PointsDropped => Interlocked.Read(ref _pointsDropped);
 
     public static DataStreamsWriter Create(
         ImmutableTracerSettings settings,
@@ -81,7 +80,8 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     public void Add(in StatsPoint point)
     {
-        if (_buffer.TryEnqueue(point))
+        if ((Volatile.Read(ref _isSupported) != SupportState.Unsupported)
+         && _buffer.TryEnqueue(point))
         {
             if (!_processingMutex.IsSet)
             {
@@ -154,7 +154,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
         const int offset = 0;
         var bytesWritten = _aggregator.Serialize(ref _serializationBuffer, offset: offset, flushTimeNs);
 
-        if (bytesWritten > 0 && (Volatile.Read(ref _isSupported) == (int)SupportState.Supported))
+        if (bytesWritten > 0 && (Volatile.Read(ref _isSupported) == SupportState.Supported))
         {
             // This flushes on the same thread as the processing loop
             var data = new ArraySegment<byte>(_serializationBuffer, offset, bytesWritten);
@@ -211,11 +211,11 @@ internal class DataStreamsWriter : IDataStreamsWriter
         var isSupported = string.IsNullOrEmpty(config.DataStreamsMonitoringEndpoint)
                               ? SupportState.Unsupported
                               : SupportState.Supported;
-        var wasSupported = (SupportState)Volatile.Read(ref _isSupported);
+        var wasSupported = Volatile.Read(ref _isSupported);
 
         if (isSupported != wasSupported)
         {
-            _isSupported = (int)isSupported;
+            _isSupported = isSupported;
             if (isSupported == SupportState.Supported)
             {
                 Log.Information("Data streams monitoring supported, enabling flush");
@@ -226,5 +226,12 @@ internal class DataStreamsWriter : IDataStreamsWriter
                             "Consider upgrading your Datadog Agent to at least version 7.34.0+");
             }
         }
+    }
+
+    private static class SupportState
+    {
+        public const int Unknown = 0;
+        public const int Supported = 1;
+        public const int Unsupported = 2;
     }
 }
