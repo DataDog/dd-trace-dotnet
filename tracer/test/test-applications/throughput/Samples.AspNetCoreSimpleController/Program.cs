@@ -14,7 +14,7 @@ namespace Samples.AspNetCoreSimpleController
                 Environment.GetEnvironmentVariable("CORECLR_ENABLE_PROFILING") == "1")
             {
                 Console.WriteLine(" Profiler path is: {0}", Environment.GetEnvironmentVariable("CORECLR_PROFILER_PATH"));
-
+sdqfds
                 bool isAttached = SampleHelpers.IsProfilerAttached();
                 Console.WriteLine(" * Checking if the profiler is attached: {0}", isAttached);
 
