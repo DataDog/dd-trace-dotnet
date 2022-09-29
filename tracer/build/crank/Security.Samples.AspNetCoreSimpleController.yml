@@ -75,7 +75,7 @@ scenarios:
         CORECLR_ENABLE_PROFILING: 1
         DD_APPSEC_ENABLED: true
         DD_APPSEC_KEEP_TRACES: false
-        DD_APPSEC_RULES: ../../../Datadog.Trace.Security.IntegrationTests/ruleset.3.0.json
+        DD_APPSEC_RULES: ../../../../../../../Datadog.Trace.Security.IntegrationTests/ruleset.3.0.json
     load:
       job: bombardier
       variables:
