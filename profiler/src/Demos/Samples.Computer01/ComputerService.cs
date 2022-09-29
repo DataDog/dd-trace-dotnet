@@ -29,6 +29,10 @@ namespace Samples.Computer01
         private GenericsAllocation _genericsAllocation;
         private ContentionGenerator _contentionGenerator;
 
+#if NET6_0_OR_GREATER
+        private LinuxSignalHandler _linuxSignalHandler;
+#endif
+
         public void StartService(Scenario scenario, int nbThreads, int parameter)
         {
             _scenario = scenario;
@@ -87,6 +91,12 @@ namespace Samples.Computer01
                     StartContentionGenerator(nbThreads, parameter);
                     break;
 
+#if NET6_0_OR_GREATER
+                case Scenario.LinuxSignalHandler:
+                    StartLinuxSignalHandler();
+                    break;
+#endif
+
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
             }
@@ -144,6 +154,12 @@ namespace Samples.Computer01
                 case Scenario.ContentionGenerator:
                     StopContentionGenerator();
                     break;
+
+#if NET6_0_OR_GREATER
+                case Scenario.LinuxSignalHandler:
+                    StopLinuxSignalHandler();
+                    break;
+#endif
             }
         }
 
@@ -204,6 +220,12 @@ namespace Samples.Computer01
                     case Scenario.ContentionGenerator:
                         RunContentionGenerator(nbThreads, parameter);
                         break;
+
+#if NET6_0_OR_GREATER
+                    case Scenario.LinuxSignalHandler:
+                        RunLinuxSignalHandler();
+                        break;
+#endif
 
                     default:
                         throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
@@ -287,6 +309,14 @@ namespace Samples.Computer01
             _contentionGenerator.Start();
         }
 
+#if NET6_0_OR_GREATER
+        private void StartLinuxSignalHandler()
+        {
+            _linuxSignalHandler = new LinuxSignalHandler();
+            _linuxSignalHandler.Start();
+        }
+#endif
+
         private void StopComputer()
         {
             using (_computer)
@@ -350,6 +380,13 @@ namespace Samples.Computer01
         {
             _contentionGenerator.Stop();
         }
+
+#if NET6_0_OR_GREATER
+        private void StopLinuxSignalHandler()
+        {
+            _linuxSignalHandler.Stop();
+        }
+#endif
 
         private void RunComputer()
         {
@@ -418,6 +455,14 @@ namespace Samples.Computer01
             var contentionGenerator = new ContentionGenerator(nbThreads, parameter);
             contentionGenerator.Run();
         }
+
+#if NET6_0_OR_GREATER
+        private void RunLinuxSignalHandler()
+        {
+            var linuxSignalHandler = new LinuxSignalHandler();
+            linuxSignalHandler.Run();
+        }
+#endif
 
         public class MySpecialClassA
         {

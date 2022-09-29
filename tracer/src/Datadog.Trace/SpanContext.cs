@@ -7,6 +7,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Ci;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
@@ -117,6 +118,7 @@ namespace Datadog.Trace
             {
                 Origin = spanContext.Origin;
                 RawTraceId = spanContext.RawTraceId ?? rawTraceId;
+                PathwayContext = spanContext.PathwayContext;
             }
             else
             {
@@ -201,6 +203,8 @@ namespace Datadog.Trace
         /// Gets the raw spanId
         /// </summary>
         internal string RawSpanId { get; }
+
+        internal PathwayContext? PathwayContext { get; private set; }
 
         /// <inheritdoc/>
         int IReadOnlyCollection<KeyValuePair<string, string>>.Count => KeyNames.Length;
@@ -311,6 +315,44 @@ namespace Datadog.Trace
                 default:
                     value = null;
                     return false;
+            }
+        }
+
+        /// <summary>
+        /// Sets a DataStreams checkpoint
+        /// </summary>
+        /// <param name="manager">The <see cref="DataStreamsManager"/> to use</param>
+        /// <param name="edgeTags">The edge tags for this checkpoint. NOTE: These MUST be sorted alphabetically</param>
+        internal void SetCheckpoint(DataStreamsManager manager, string[] edgeTags)
+        {
+            PathwayContext = manager.SetCheckpoint(PathwayContext, edgeTags);
+        }
+
+        /// <summary>
+        /// Merges two DataStreams <see cref="PathwayContext"/>
+        /// Should be called when a pathway context is extracted from an incoming span
+        /// Used to merge contexts in a "fan in" scenario.
+        /// </summary>
+        internal void MergePathwayContext(PathwayContext? pathwayContext)
+        {
+            if (pathwayContext is null)
+            {
+                return;
+            }
+
+            if (PathwayContext is null)
+            {
+                PathwayContext = pathwayContext;
+                return;
+            }
+
+            // This is purposely not thread safe
+            // The code randomly chooses between the two PathwayContexts.
+            // If there is a race, then that's okay
+            // Randomly select between keeping the current context (0) or replacing (1)
+            if (ThreadSafeRandom.Next(2) == 1)
+            {
+                PathwayContext = pathwayContext;
             }
         }
 

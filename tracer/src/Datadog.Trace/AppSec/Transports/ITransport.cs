@@ -28,6 +28,6 @@ namespace Datadog.Trace.AppSec.Transports
 
         IHeadersCollection GetResponseHeaders();
 
-        void WriteBlockedResponse(string templateJson, string templateHtml);
+        void WriteBlockedResponse(string templateJson, string templateHtml, bool canAccessHeaders);
     }
 }

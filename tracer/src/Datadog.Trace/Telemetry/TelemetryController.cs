@@ -5,6 +5,7 @@
 
 using System;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
@@ -22,23 +23,28 @@ namespace Datadog.Trace.Telemetry
         private readonly IntegrationTelemetryCollector _integrations;
         private readonly TelemetryDataBuilder _dataBuilder = new();
         private readonly ITelemetryTransport _transport;
-        private readonly TimeSpan _sendFrequency;
+        private readonly TimeSpan _flushInterval;
+        private readonly TimeSpan _heartBeatInterval;
         private readonly TaskCompletionSource<bool> _tracerInitialized = new();
         private readonly TaskCompletionSource<bool> _processExit = new();
-        private readonly Task _telemetryTask;
+        private readonly Task _flushTask;
+        private readonly Task _heartbeatTask;
         private readonly TelemetryCircuitBreaker _circuitBreaker = new();
+        private bool _fatalError;
 
         internal TelemetryController(
             ConfigurationTelemetryCollector configuration,
             DependencyTelemetryCollector dependencies,
             IntegrationTelemetryCollector integrations,
             ITelemetryTransport transport,
-            TimeSpan sendFrequency)
+            TimeSpan flushInterval,
+            TimeSpan heartBeatInterval)
         {
             _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
             _dependencies = dependencies ?? throw new ArgumentNullException(nameof(dependencies));
             _integrations = integrations ?? throw new ArgumentNullException(nameof(integrations));
-            _sendFrequency = sendFrequency;
+            _flushInterval = flushInterval;
+            _heartBeatInterval = heartBeatInterval;
             _transport = transport ?? throw new ArgumentNullException(nameof(transport));
 
             try
@@ -58,10 +64,11 @@ namespace Datadog.Trace.Telemetry
                 Log.Warning(ex, "Unable to register a callback to the AppDomain.AssemblyLoad event. Telemetry collection of loaded assemblies will be disabled.");
             }
 
-            _telemetryTask = Task.Run(PushTelemetryLoopAsync);
+            _flushTask = Task.Run(PushTelemetryLoopAsync);
+            _heartbeatTask = Task.Run(PushHeartbeatLoopAsync);
         }
 
-        public bool FatalError { get; private set; }
+        public bool FatalError => Volatile.Read(ref _fatalError);
 
         public void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName, AzureAppServices appServicesMetadata)
         {
@@ -92,7 +99,8 @@ namespace Datadog.Trace.Telemetry
         public async Task DisposeAsync(bool sendAppClosingTelemetry)
         {
             TerminateLoop(sendAppClosingTelemetry);
-            await _telemetryTask.ConfigureAwait(false);
+            await _flushTask.ConfigureAwait(false);
+            await _heartbeatTask.ConfigureAwait(false);
         }
 
         public Task DisposeAsync()
@@ -123,6 +131,40 @@ namespace Datadog.Trace.Telemetry
             catch (Exception ex)
             {
                 Log.Warning(ex, "Error recording loaded assembly");
+            }
+        }
+
+        private async Task PushHeartbeatLoopAsync()
+        {
+#if !NET5_0_OR_GREATER
+            var tasks = new Task[2];
+            tasks[0] = _tracerInitialized.Task;
+            tasks[1] = _processExit.Task;
+
+            // wait for initialization before trying to send first heartbeat
+            // .NET 5.0 has an explicit overload for this
+            await Task.WhenAny(tasks).ConfigureAwait(false);
+#else
+            await Task.WhenAny(_tracerInitialized.Task, _processExit.Task).ConfigureAwait(false);
+#endif
+
+            while (true)
+            {
+#if NET5_0_OR_GREATER
+                // .NET 5.0 has an explicit overload for this
+                await Task.WhenAny(Task.Delay(_heartBeatInterval), _processExit.Task).ConfigureAwait(false);
+#else
+                tasks[0] = Task.Delay(_heartBeatInterval);
+                await Task.WhenAny(tasks).ConfigureAwait(false);
+#endif
+
+                if (_processExit.Task.IsCompleted)
+                {
+                    Log.Debug("Process exit requested, ending heartbeat loop");
+                    return;
+                }
+
+                await PushHeartbeatAsync().ConfigureAwait(false);
             }
         }
 
@@ -158,11 +200,38 @@ namespace Datadog.Trace.Telemetry
 
 #if NET5_0_OR_GREATER
                 // .NET 5.0 has an explicit overload for this
-                await Task.WhenAny(Task.Delay(_sendFrequency), _processExit.Task).ConfigureAwait(false);
+                await Task.WhenAny(Task.Delay(_flushInterval), _processExit.Task).ConfigureAwait(false);
 #else
-                tasks[0] = Task.Delay(_sendFrequency);
+                tasks[0] = Task.Delay(_flushInterval);
                 await Task.WhenAny(tasks).ConfigureAwait(false);
 #endif
+            }
+        }
+
+        private async Task PushHeartbeatAsync()
+        {
+            try
+            {
+                var application = _configuration.GetApplicationData();
+                var host = _configuration.GetHostData();
+                if (application is null || host is null)
+                {
+                    Log.Debug("Telemetry not initialized, skipping");
+                    return;
+                }
+
+                var heartbeatData = _dataBuilder.BuildHeartbeatData(application, host);
+                var result = await _transport.PushTelemetry(heartbeatData).ConfigureAwait(false);
+                if (_circuitBreaker.EvaluateHeartbeat(result) == TelemetryPushResult.FatalError)
+                {
+                    _fatalError = true;
+                    Log.Debug("Unable to send heartbeat, ending heartbeat loop");
+                    TerminateLoop(sendAppClosingTelemetry: false);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Error pushing heartbeat");
             }
         }
 
@@ -179,7 +248,7 @@ namespace Datadog.Trace.Telemetry
                 }
 
                 // These calls change the state of the collectors, so must use the data
-                var success = await PushTelemetry(application, host, sendHeartbeat: !isFinalPush).ConfigureAwait(false);
+                var success = await PushTelemetry(application, host).ConfigureAwait(false);
                 if (!success)
                 {
                     if (isFinalPush)
@@ -189,7 +258,7 @@ namespace Datadog.Trace.Telemetry
                     }
                     else
                     {
-                        FatalError = true;
+                        _fatalError = true;
                         Log.Debug("Unable to send telemetry, ending telemetry loop");
                         TerminateLoop(sendAppClosingTelemetry: false);
                     }
@@ -209,7 +278,7 @@ namespace Datadog.Trace.Telemetry
             }
         }
 
-        private async Task<bool> PushTelemetry(ApplicationTelemetryData application, HostTelemetryData host, bool sendHeartbeat)
+        private async Task<bool> PushTelemetry(ApplicationTelemetryData application, HostTelemetryData host)
         {
             // use values from previous failed attempt if necessary
             var configuration = _configuration.GetConfigurationData() ?? _circuitBreaker.PreviousConfiguration;
@@ -222,7 +291,7 @@ namespace Datadog.Trace.Telemetry
             var aggregatedDependencies = newDependencies ?? _circuitBreaker.PreviousDependencies;
             var integrations = _integrations.GetData() ?? _circuitBreaker.PreviousIntegrations;
 
-            var data = _dataBuilder.BuildTelemetryData(application, host, configuration, aggregatedDependencies, integrations, sendHeartbeat);
+            var data = _dataBuilder.BuildTelemetryData(application, host, configuration, aggregatedDependencies, integrations);
             if (data.Length == 0)
             {
                 return true;

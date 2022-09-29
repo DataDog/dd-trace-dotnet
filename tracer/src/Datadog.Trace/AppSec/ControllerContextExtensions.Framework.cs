@@ -44,6 +44,7 @@ namespace Datadog.Trace.AppSec
                 var scope = SharedItems.TryPeekScope(context, peekScopeKey);
                 security.InstrumentationGateway.RaiseBodyAvailable(context, scope.Span, bodyDic);
                 security.InstrumentationGateway.RaisePathParamsAvailable(context, scope.Span, pathParamsDic);
+                security.InstrumentationGateway.RaiseBlockingOpportunity(context, scope, Tracer.Instance.Settings, (_) => { });
             }
         }
     }

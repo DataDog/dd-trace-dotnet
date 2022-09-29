@@ -34,8 +34,8 @@ namespace Datadog.Trace.Tests.Telemetry
         {
             var builder = new TelemetryDataBuilder();
 
-            Assert.Throws<ArgumentNullException>(() => builder.BuildTelemetryData(null, _host, null, null, null, sendHeartbeat: true));
-            Assert.Throws<ArgumentNullException>(() => builder.BuildTelemetryData(_application, null, null, null, null, sendHeartbeat: true));
+            Assert.Throws<ArgumentNullException>(() => builder.BuildTelemetryData(null, _host, null, null, null));
+            Assert.Throws<ArgumentNullException>(() => builder.BuildTelemetryData(_application, null, null, null, null));
 
             Assert.Throws<ArgumentNullException>(() => builder.BuildAppClosingTelemetryData(null, _host));
             Assert.Throws<ArgumentNullException>(() => builder.BuildAppClosingTelemetryData(_application, null));
@@ -55,20 +55,37 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
         [Fact]
+        public void WhenHasApplicationAndHostData_GeneratesHeartbeatTelemetry()
+        {
+            var builder = new TelemetryDataBuilder();
+
+            var result = builder.BuildHeartbeatData(_application, _host);
+
+            result.Should().NotBeNull();
+            result.Application.Should().Be(_application);
+            result.SeqId.Should().Be(1);
+            result.Payload.Should().BeNull();
+        }
+
+        [Fact]
         public void ShouldGenerateIncrementingIds()
         {
             var builder = new TelemetryDataBuilder();
 
             var config = Array.Empty<TelemetryValue>();
-            var data = builder.BuildTelemetryData(_application, _host, config, null, null, sendHeartbeat: true);
+            var data = builder.BuildTelemetryData(_application, _host, config, null, null);
             data.Should().ContainSingle().Which.SeqId.Should().Be(1);
 
-            data = builder.BuildTelemetryData(_application, _host, config, null, null, sendHeartbeat: true);
+            data = builder.BuildTelemetryData(_application, _host, config, null, null);
             data.Should().ContainSingle().Which.SeqId.Should().Be(2);
 
             var closingData = builder.BuildAppClosingTelemetryData(_application, _host);
             closingData.Should().NotBeNull();
             closingData.SeqId.Should().Be(3);
+
+            var heartbeatData = builder.BuildHeartbeatData(_application, _host);
+            heartbeatData.Should().NotBeNull();
+            heartbeatData.SeqId.Should().Be(4);
         }
 
         [Theory]
@@ -77,7 +94,6 @@ namespace Datadog.Trace.Tests.Telemetry
             bool hasConfiguration,
             bool hasDependencies,
             bool hasIntegrations,
-            bool sendHeartBeat,
             string expectedRequests)
         {
             var config = hasConfiguration ? Array.Empty<TelemetryValue>() : null;
@@ -86,7 +102,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var expected = string.IsNullOrEmpty(expectedRequests) ? Array.Empty<string>() : expectedRequests.Split(',');
             var builder = new TelemetryDataBuilder();
 
-            var result = builder.BuildTelemetryData(_application, _host, config, dependencies, integrations, sendHeartBeat);
+            var result = builder.BuildTelemetryData(_application, _host, config, dependencies, integrations);
 
             result.Should().NotBeNull();
             result.Select(x => x.RequestType)
@@ -131,18 +147,17 @@ namespace Datadog.Trace.Tests.Telemetry
 
         public class TestData
         {
-            public static TheoryData<bool, bool, bool, bool, string> Data => new()
-                // configuration, dependencies, integrations, sendHeartBeat expected request types
+            public static TheoryData<bool, bool, bool, string> Data => new()
+                // configuration, dependencies, integrations, expected request types
                 {
-                    { true, true, true, true, TelemetryRequestTypes.AppStarted },
-                    { true, true, false, true, TelemetryRequestTypes.AppStarted },
-                    { true, false, true, true, TelemetryRequestTypes.AppStarted },
-                    { true, false, false, true, TelemetryRequestTypes.AppStarted },
-                    { false, false, false, true, TelemetryRequestTypes.AppHeartbeat },
-                    { false, false, false, false, string.Empty },
-                    { false, true, false, true, TelemetryRequestTypes.AppDependenciesLoaded },
-                    { false, false, true, true, TelemetryRequestTypes.AppIntegrationsChanged },
-                    { false, true, true, true, $"{TelemetryRequestTypes.AppIntegrationsChanged},{TelemetryRequestTypes.AppDependenciesLoaded}" },
+                    { true, true, true, TelemetryRequestTypes.AppStarted },
+                    { true, true, false, TelemetryRequestTypes.AppStarted },
+                    { true, false, true, TelemetryRequestTypes.AppStarted },
+                    { true, false, false, TelemetryRequestTypes.AppStarted },
+                    { false, false, false, string.Empty },
+                    { false, true, false, TelemetryRequestTypes.AppDependenciesLoaded },
+                    { false, false, true, TelemetryRequestTypes.AppIntegrationsChanged },
+                    { false, true, true, $"{TelemetryRequestTypes.AppIntegrationsChanged},{TelemetryRequestTypes.AppDependenciesLoaded}" },
                 };
         }
     }

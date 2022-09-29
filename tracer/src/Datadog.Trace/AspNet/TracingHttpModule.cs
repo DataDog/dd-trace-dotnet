@@ -144,9 +144,13 @@ namespace Datadog.Trace.AspNet
 
                 httpContext.Items[_httpContextScopeKey] = scope;
 
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+
                 var security = Security.Instance;
                 if (security.Settings.Enabled)
                 {
+                    security.InstrumentationGateway.RaiseRequestStart(httpContext, httpContext.Request, scope.Span);
+
                     if (httpRequest.ContentType?.IndexOf("application/x-www-form-urlencoded", StringComparison.InvariantCultureIgnoreCase) >= 0)
                     {
                         var formData = new Dictionary<string, object>();
@@ -157,15 +161,18 @@ namespace Datadog.Trace.AspNet
 
                         security.InstrumentationGateway.RaiseBodyAvailable(httpContext, scope.Span, formData);
                     }
-                }
 
-                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+                    security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, (_) => { });
+                }
             }
             catch (Exception ex)
             {
                 // Dispose here, as the scope won't be in context items and won't get disposed on request end in that case...
                 scope?.Dispose();
-                Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
+                if (ex is not BlockException)
+                {
+                    Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
+                }
             }
         }
 
@@ -173,7 +180,8 @@ namespace Datadog.Trace.AspNet
         {
             try
             {
-                if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+                var tracer = Tracer.Instance;
+                if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     // integration disabled
                     return;
@@ -236,6 +244,7 @@ namespace Datadog.Trace.AspNet
                             security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, scope.Span, httpContext.Request.RequestContext.RouteData.Values, eraseExistingAddress: false);
                             security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, scope.Span);
                             security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, scope.Span);
+                            security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, (_) => { });
                         }
 
                         scope.Dispose();
@@ -247,7 +256,7 @@ namespace Datadog.Trace.AspNet
                     }
                 }
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not BlockException)
             {
                 Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
             }
@@ -290,7 +299,10 @@ namespace Datadog.Trace.AspNet
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
+                if (ex is not BlockException)
+                {
+                    Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
+                }
             }
         }
 
