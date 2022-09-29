@@ -155,6 +155,18 @@ partial class Build : NukeBuild
         .DependsOn(CopyLibDdwaf)
         .DependsOn(BuildNativeLoader);
 
+    Target BuildTracerHomeNoRestore => _ => _
+        .Description("Builds the native and managed src, and publishes the tracer home directory")
+        .After(Clean)
+        .DependsOn(CreateRequiredDirectories)
+        .DependsOn(CompileManagedSrc)
+        .DependsOn(PublishManagedTracer)
+        .DependsOn(CompileNativeSrc)
+        .DependsOn(PublishNativeTracer)
+        .DependsOn(DownloadLibDdwaf)
+        .DependsOn(CopyLibDdwaf)
+        .DependsOn(BuildNativeLoader);
+
     Target BuildProfilerHome => _ => _
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
         .After(Clean)

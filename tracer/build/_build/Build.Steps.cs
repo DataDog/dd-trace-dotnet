@@ -141,7 +141,7 @@ partial class Build
             if (IsWin)
             {
                 NuGetTasks.NuGetRestore(s => s
-                    .SetTargetPath(Solution)
+                                            .SetTargetPath(Solution)
                     .SetVerbosity(NuGetVerbosity.Normal)
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o =>
                         o.SetPackagesDirectory(NugetPackageDirectory)));
@@ -149,6 +149,8 @@ partial class Build
             else
             {
                 DotNetRestore(s => s
+                    .EnableUseLockFile()
+                    .SetLockFilePath(RootDirectory / "package.lock.json")
                     .SetProjectFile(Solution)
                     .SetVerbosity(DotNetVerbosity.Normal)
                     // .SetTargetPlatform(Platform) // necessary to ensure we restore every project
