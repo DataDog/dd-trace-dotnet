@@ -3,46 +3,54 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
-using System.Reflection;
 
-namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
+namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
+
+internal class LambdaHandler
 {
-    internal class LambdaHandler
+    private static readonly string[] Separator = { "::" };
+
+    internal LambdaHandler(string handlerName)
     {
-        private static readonly string[] Separator = { "::" };
+        var handlerTokens = handlerName.Split(Separator, StringSplitOptions.None);
+        MethodName = handlerTokens[2];
 
-        internal LambdaHandler(string handlerName)
+        var handlerType = Type.GetType($"{handlerTokens[1]},{handlerTokens[0]}");
+
+        var handlerMethod = handlerType?.GetMethod(MethodName);
+        if (handlerMethod is null)
         {
-            var handlerTokens = handlerName.Split(Separator, StringSplitOptions.None);
-            Assembly = handlerTokens[0];
-            FullType = handlerTokens[1];
-            MethodName = handlerTokens[2];
-            ParamTypeArray = BuildParamTypeArray();
+            throw new Exception($"Could not find handler method for {handlerName}");
         }
 
-        internal string[] ParamTypeArray { get; }
+        // The method body may be in a different type, e.g. a base type
+        // In that case we need the FullType to point to the base type
+        FullType = handlerMethod.DeclaringType?.FullName ?? handlerTokens[1];
+        // If the fullType == the declaring type, skip calling Assembly.GetName and use handler token directly
+        Assembly = handlerType == handlerMethod.DeclaringType
+                       ? handlerTokens[0]
+                       : handlerMethod.DeclaringType?.Assembly.GetName().Name ?? handlerTokens[0];
 
-        internal string Assembly { get; }
+        var methodParameters = handlerMethod.GetParameters();
 
-        internal string FullType { get; }
-
-        internal string MethodName { get; }
-
-        private string[] BuildParamTypeArray()
+        var paramType = new string[methodParameters.Length + 1];
+        paramType[0] = handlerMethod.ReturnType.FullName!; // assumes it's not a generic type return etc
+        for (var i = 0; i < methodParameters.Length; i++)
         {
-            Type myClassType = Type.GetType($"{FullType},{Assembly}");
-            MethodInfo customerMethodInfo = myClassType.GetMethod(MethodName);
-            ParameterInfo[] methodParameters = customerMethodInfo.GetParameters();
-
-            string[] paramType = new string[methodParameters.Length + 1];
-            paramType[0] = customerMethodInfo.ReturnType.FullName;
-            for (var i = 0; i < methodParameters.Length; i++)
-            {
-                paramType[i + 1] = methodParameters[i].ParameterType.FullName;
-            }
-
-            return paramType;
+            paramType[i + 1] = methodParameters[i].ParameterType.FullName!; // assumes it's not a generic type return etc
         }
+
+        ParamTypeArray = paramType;
     }
+
+    internal string[] ParamTypeArray { get; }
+
+    internal string Assembly { get; }
+
+    internal string FullType { get; }
+
+    internal string MethodName { get; }
 }
