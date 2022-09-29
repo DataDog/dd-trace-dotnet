@@ -849,6 +849,16 @@ namespace Datadog.Trace.Ci
             {
                 Log.Warning(ex, "Error fixing branch name: {BranchName}", Branch);
             }
+
+            if (string.IsNullOrEmpty(Tag))
+            {
+                Tag = null;
+            }
+
+            if (string.IsNullOrEmpty(Branch))
+            {
+                Branch = null;
+            }
         }
     }
 }

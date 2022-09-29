@@ -162,8 +162,6 @@ namespace Datadog.Trace.Ci.Agent
         private async Task SendPayloadAsync(CIVisibilityProtocolPayload payload)
         {
             var payloadArray = payload.ToArray();
-            var json = Vendors.MessagePack.MessagePackSerializer.ToJson(payloadArray);
-            Log.Information("JSON => {json}", json);
             Log.Debug<int, string>("Sending ({numberOfTraces} events) {bytesValue} bytes...", payload.Count, payloadArray.Length.ToString("N0"));
             await SendPayloadAsync(
                 payload.Url,

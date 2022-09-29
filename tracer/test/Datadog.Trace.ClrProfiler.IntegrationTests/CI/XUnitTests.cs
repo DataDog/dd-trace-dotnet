@@ -63,6 +63,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                     foreach (var targetSpan in spans)
                     {
+                        // Remove decision maker tag (not used by the backend for civisibility)
+                        targetSpan.Tags.Remove(Tags.Propagated.DecisionMaker);
+
                         // check the name
                         Assert.Equal("xunit.test", targetSpan.Name);
 
@@ -74,6 +77,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         // check the bundle name
                         AssertTargetSpanEqual(targetSpan, TestTags.Bundle, TestBundleName);
+                        AssertTargetSpanEqual(targetSpan, TestTags.Module, TestBundleName);
 
                         // check the suite name
                         AssertTargetSpanEqual(targetSpan, TestTags.Suite, TestSuiteName);

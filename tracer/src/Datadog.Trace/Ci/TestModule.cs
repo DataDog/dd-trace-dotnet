@@ -1,4 +1,4 @@
-﻿// <copyright file="TestModule.cs" company="Datadog">
+// <copyright file="TestModule.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -35,17 +35,8 @@ public sealed class TestModule
         Name = name;
         Framework = framework;
 
-        _span = Tracer.Instance.StartSpan(
-            string.IsNullOrEmpty(framework) ? "test_module" : $"{framework!.ToLowerInvariant()}.test_module",
-            startTime: startDate);
-
-        var span = _span;
-        span.Type = SpanTypes.TestModule;
-        span.ResourceName = name;
-
         var tags = new TestModuleSpanTags
         {
-            ModuleId = span.SpanId,
             Type = TestTags.TypeTest,
             Module = name,
             Framework = framework,
@@ -91,12 +82,21 @@ public sealed class TestModule
             tags.TestsSkipped = "true";
         }
 
-        span.Tags = tags;
+        var span = Tracer.Instance.StartSpan(
+            string.IsNullOrEmpty(framework) ? "test_module" : $"{framework!.ToLowerInvariant()}.test_module",
+            tags: tags,
+            startTime: startDate);
+
+        span.Type = SpanTypes.TestModule;
+        span.ResourceName = name;
         span.SetTag(Trace.Tags.Origin, TestTags.CIAppTestOriginName);
         span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
 
+        tags.ModuleId = span.SpanId;
+
+        _span = span;
         Current = this;
-        CIVisibility.Log.Information("### Test Module Created: {name}", name);
+        CIVisibility.Log.Debug("### Test Module Created: {name}", name);
 
         if (startDate is null)
         {
@@ -212,25 +212,26 @@ public sealed class TestModule
         {
             if (_suites.Count > 0)
             {
-                Log.Warning("### Numbers of opened suites: {count}", _suites.Count);
                 remainingSuites = _suites.Values.ToArray();
             }
         }
 
         foreach (var suite in remainingSuites)
         {
-            Log.Warning("###### CLOSING OPEN SUITE: {suite}", suite.Name);
             suite.Close();
         }
 
         // Update status
         Tags.Status ??= TestTags.StatusPass;
 
-        // Finish
-        span.Finish(duration.Value);
+        // Finish if agentless is enabled
+        if (CIVisibility.Settings.Agentless)
+        {
+            span.Finish(duration.Value);
+        }
 
         Current = null;
-        CIVisibility.Log.Information("### Test Module Closed: {name}", Name);
+        CIVisibility.Log.Debug("### Test Module Closed: {name}", Name);
         CIVisibility.FlushSpans();
     }
 

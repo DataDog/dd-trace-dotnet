@@ -1,4 +1,4 @@
-﻿// <copyright file="TestSuite.cs" company="Datadog">
+// <copyright file="TestSuite.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -26,19 +26,22 @@ public sealed class TestSuite
         Module = module;
         Name = name;
 
-        _span = Tracer.Instance.StartSpan(
+        var tags = new TestSuiteSpanTags(module.Tags, name);
+        var span = Tracer.Instance.StartSpan(
             string.IsNullOrEmpty(module.Framework) ? "test_suite" : $"{module.Framework!.ToLowerInvariant()}.test_suite",
+            tags: tags,
             startTime: startDate);
 
-        var span = _span;
         span.Type = SpanTypes.TestSuite;
         span.ResourceName = name;
-        span.Tags = new TestSuiteSpanTags(module.Tags, span.SpanId, name);
         span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
         span.SetTag(Trace.Tags.Origin, TestTags.CIAppTestOriginName);
 
+        tags.SuiteId = span.SpanId;
+
+        _span = span;
         Current = this;
-        CIVisibility.Log.Information("###### New Test Suite Created: {name} ({module})", Name, Module.Name);
+        CIVisibility.Log.Debug("###### New Test Suite Created: {name} ({module})", Name, Module.Name);
 
         if (startDate is null)
         {
@@ -149,12 +152,15 @@ public sealed class TestSuite
             Tags.Status = TestTags.StatusPass;
         }
 
-        // Finish
-        span.Finish(duration.Value);
+        // Finish if agentless is enabled
+        if (CIVisibility.Settings.Agentless)
+        {
+            span.Finish(duration.Value);
+        }
 
         Current = null;
         Module.RemoveSuite(Name);
-        CIVisibility.Log.Information("###### Test Suite Closed: {name} ({module})", Name, Module.Name);
+        CIVisibility.Log.Debug("###### Test Suite Closed: {name} ({module})", Name, Module.Name);
     }
 
     /// <summary>

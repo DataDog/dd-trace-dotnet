@@ -1,4 +1,4 @@
-﻿// <copyright file="TestClassInfoRunClassInitializeIntegration.cs" company="Datadog">
+// <copyright file="TestClassInfoRunClassInitializeIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -51,7 +51,7 @@ public static class TestClassInfoRunClassInitializeIntegration
         {
             instance.TestCleanupMethod ??= EmptyCleanUpMethodInfo;
             var module = TestModule.Current;
-            var suite = module.CreateSuite(instance.ClassType.Name);
+            var suite = module.CreateSuite(instance.ClassType.FullName);
             TestClassInfos.Add(instance.Instance, suite);
             return new CallTargetState(null, suite);
         }

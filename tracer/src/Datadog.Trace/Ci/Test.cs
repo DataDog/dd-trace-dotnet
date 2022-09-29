@@ -1,4 +1,4 @@
-﻿// <copyright file="Test.cs" company="Datadog">
+// <copyright file="Test.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -29,16 +29,18 @@ public sealed class Test
         Suite = suite;
         var module = suite.Module;
 
-        _scope = Tracer.Instance.StartActiveInternal(
+        var tags = new TestSpanTags(Suite.Tags, name);
+        var scope = Tracer.Instance.StartActiveInternal(
             string.IsNullOrEmpty(module.Framework) ? "test" : $"{module.Framework!.ToLowerInvariant()}.test",
+            tags: tags,
             startTime: startDate);
 
-        var span = _scope.Span;
-        span.Type = SpanTypes.Test;
-        span.ResourceName = $"{suite.Name}.{name}";
-        span.Tags = new TestSpanTags(Suite.Tags, name);
-        span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
-        span.SetTag(Trace.Tags.Origin, TestTags.CIAppTestOriginName);
+        scope.Span.Type = SpanTypes.Test;
+        scope.Span.ResourceName = $"{suite.Name}.{name}";
+        scope.Span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
+        scope.Span.SetTag(Trace.Tags.Origin, TestTags.CIAppTestOriginName);
+
+        _scope = scope;
 
         if (CIVisibility.Settings.CodeCoverageEnabled == true)
         {
@@ -46,12 +48,12 @@ public sealed class Test
         }
 
         CurrentTest.Value = this;
-        CIVisibility.Log.Information("######### New Test Created: {name} ({suite} | {module})", Name, Suite.Name, Suite.Module.Name);
+        CIVisibility.Log.Debug("######### New Test Created: {name} ({suite} | {module})", Name, Suite.Name, Suite.Module.Name);
 
         if (startDate is null)
         {
             // If a test doesn't have a fixed start time we reset it before running the test code
-            span.ResetStartTime();
+            scope.Span.ResetStartTime();
         }
     }
 
@@ -253,7 +255,7 @@ public sealed class Test
         scope.Dispose();
 
         Current = null;
-        CIVisibility.Log.Information("######### Test Closed: {name} ({suite} | {module})", Name, Suite.Name, Suite.Module.Name);
+        CIVisibility.Log.Debug("######### Test Closed: {name} ({suite} | {module})", Name, Suite.Name, Suite.Module.Name);
     }
 
     internal void ResetStartDate()

@@ -80,13 +80,14 @@ public static class TestMethodAttributeExecuteIntegration
                     if (testResult.TestFailureException != null)
                     {
                         var testException = testResult.TestFailureException.InnerException ?? testResult.TestFailureException;
-                        var testExceptionName = testException.GetType().Name;
+                        var testExceptionType = testException.GetType();
+                        var testExceptionName = testExceptionType.Name;
                         if (testExceptionName != "UnitTestAssertException" && testExceptionName != "AssertInconclusiveException")
                         {
                             test.SetErrorInfo(testException);
                         }
 
-                        errorType = testExceptionName;
+                        errorType = testExceptionType.FullName;
                         errorMessage = testException.Message;
                         errorStackTrace = testException.ToString();
                     }

@@ -1,4 +1,4 @@
-﻿// <copyright file="NUnitWorkItemPerformWorkIntegration.cs" company="Datadog">
+// <copyright file="NUnitWorkItemPerformWorkIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -47,7 +47,7 @@ public static class NUnitWorkItemPerformWorkIntegration
                     NUnitIntegration.SetTestModuleTo(item, TestModule.Create(assemblyName, "NUnit", frameworkVersion));
                     break;
                 case "TestFixture" when NUnitIntegration.GetTestModuleFrom(item) is { } module:
-                    NUnitIntegration.SetTestSuiteTo(item, module.CreateSuite(item.Name));
+                    NUnitIntegration.SetTestSuiteTo(item, module.CreateSuite(item.FullName));
                     break;
                 case "TestMethod" when NUnitIntegration.ShouldSkip(item):
                     var testMethod = item.Method.MethodInfo;
