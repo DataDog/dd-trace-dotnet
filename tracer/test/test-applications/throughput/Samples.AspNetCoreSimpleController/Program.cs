@@ -14,7 +14,7 @@ namespace Samples.AspNetCoreSimpleController
                 Environment.GetEnvironmentVariable("CORECLR_ENABLE_PROFILING") == "1")
             {
                 Console.WriteLine(" Profiler path is: {0}", Environment.GetEnvironmentVariable("CORECLR_PROFILER_PATH"));
-sdqfds
+
                 bool isAttached = SampleHelpers.IsProfilerAttached();
                 Console.WriteLine(" * Checking if the profiler is attached: {0}", isAttached);
 
@@ -26,11 +26,11 @@ sdqfds
                 {
                     var fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ruleFile);
                     var fullPathExists = File.Exists(fullPath);
-                    Console.WriteLine($"Using rule file: {fullPath}, exists: {fullPathExists}");
+                    Console.WriteLine($" * Using rule file: {fullPath}, exists: {fullPathExists}");
                 }
                 else
                 {
-                    Console.WriteLine($"No rules file found");
+                    Console.WriteLine($" * No rules file found");
                 }
 
                 if (!isAttached && tracerEnabled)
