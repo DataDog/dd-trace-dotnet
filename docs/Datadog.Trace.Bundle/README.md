@@ -83,9 +83,9 @@ For Docker images running on Linux, configure the image to run the createLogPath
 RUN /<APP_DIRECTORY>/datadog/createLogPath.sh
 ```
 
-Docker examples are available [here](https://github.com/DataDog/dd-trace-dotnet/tree/master/tracer/samples/NugetDeployment)
+### Examples
 
-For standalone applications, manually restart the application.
+Docker examples are available [here](https://github.com/DataDog/dd-trace-dotnet/tree/master/tracer/samples/NugetDeployment)
 
 ## Get in touch
 

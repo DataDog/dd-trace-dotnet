@@ -323,7 +323,6 @@ tracer/deploy/linux/
 tracer/deploy/AzureAppServices/
 !tracer/build/artifacts
 tracer/src/Datadog.Trace.Bundle/home
-!tracer/src/Datadog.Trace.Bundle/home/**/*.txt
 build_data
 
 # native tracer build files

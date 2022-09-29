@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <Version>2.16.0</Version>
-    <Version>$(Version)</Version>
     <Title>Datadog APM Auto-instrumentation Assets</Title>
     <Description>Auto-instrumentation assets for Datadog APM</Description>
     <IncludeBuildOutput>false</IncludeBuildOutput>
