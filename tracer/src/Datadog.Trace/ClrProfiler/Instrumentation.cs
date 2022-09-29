@@ -137,6 +137,19 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
+                Log.Debug("Sending CallTarget interface integration definitions to native library.");
+                var payload = InstrumentationDefinitions.GetInterfaceDefinitions();
+                NativeMethods.AddInterfaceInstrumentations(payload.DefinitionsId, payload.Definitions);
+
+                Log.Information<int>("The profiler has been initialized with {count} interface definitions.", payload.Definitions.Length);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
+            try
+            {
                 Log.Debug("Initializing TraceAttribute instrumentation.");
                 var payload = InstrumentationDefinitions.GetTraceAttributeDefinitions();
                 NativeMethods.AddTraceAttributeInstrumentation(payload.DefinitionsId, payload.AssemblyName, payload.TypeName);

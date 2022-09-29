@@ -15,6 +15,11 @@ namespace Datadog.Trace.ClrProfiler
         /// <summary>
         /// Derived calltarget integration
         /// </summary>
-        Derived = 1
+        Derived = 1,
+
+        /// <summary>
+        /// Interface calltarget integration
+        /// </summary>
+        Interface = 2
     }
 }

@@ -1,4 +1,4 @@
-// <copyright file="BasicDeliverIntegration.cs" company="Datadog">
+// <copyright file="BasicDeliverAsyncIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,13 +10,13 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
     /// <summary>
-    /// RabbitMQ.Client BasicDeliver calltarget instrumentation
+    /// RabbitMQ.Client.IAsyncBasicConsumer.BasicDeliver calltarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "RabbitMQ.Client",
-        TypeName = "RabbitMQ.Client.IBasicConsumer",
+        TypeName = "RabbitMQ.Client.IAsyncBasicConsumer",
         MethodName = "HandleBasicDeliver",
-        ReturnTypeName = ClrNames.Void,
+        ReturnTypeName = ClrNames.Task,
         ParameterTypeNames = new[] { ClrNames.String, ClrNames.UInt64, ClrNames.Bool, ClrNames.String, ClrNames.String, RabbitMQConstants.IBasicPropertiesTypeName, ClrNames.Ignore },
         MinimumVersion = "3.6.9",
         MaximumVersion = "6.*.*",
@@ -24,9 +24,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         CallTargetIntegrationType = IntegrationType.Interface)]
     [InstrumentMethod(
         AssemblyName = "RabbitMQ.Client",
-        TypeName = "RabbitMQ.Client.DefaultBasicConsumer",
+        TypeName = "RabbitMQ.Client.AsyncDefaultBasicConsumer",
         MethodName = "HandleBasicDeliver",
-        ReturnTypeName = ClrNames.Void,
+        ReturnTypeName = ClrNames.Task,
         ParameterTypeNames = new[] { ClrNames.String, ClrNames.UInt64, ClrNames.Bool, ClrNames.String, ClrNames.String, RabbitMQConstants.IBasicPropertiesTypeName, ClrNames.Ignore },
         MinimumVersion = "3.6.9",
         MaximumVersion = "6.*.*",
@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         CallTargetIntegrationType = IntegrationType.Derived)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class BasicDeliverIntegration
+    public class BasicDeliverAsyncIntegration
     {
         /// <summary>
         /// OnMethodBegin callback
@@ -59,17 +59,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         }
 
         /// <summary>
-        /// OnMethodEnd callback
+        /// OnAsyncMethodEnd callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
+        /// <typeparam name="TReturn">Type of the result value, in an async scenario will be T of Task of T</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
+        /// <param name="returnValue">Response instance</param>
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
-        /// <returns>A default CallTargetReturn to satisfy the CallTarget contract</returns>
-        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
+        /// <returns>A response value, in an async scenario will be T of Task of T</returns>
+        internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             state.Scope.DisposeWithException(exception);
-            return CallTargetReturn.GetDefault();
+            return returnValue;
         }
     }
 }
