@@ -5,9 +5,13 @@
 
 #nullable enable
 
+using Datadog.Trace.Configuration;
+
 namespace Datadog.Trace.AppSec;
 
 internal static class AsmRemoteConfigurationProducts
 {
     public static AsmFeaturesProduct AsmFeaturesProduct { get; } = new();
+
+    public static AsmDataProduct AsmDataProduct { get; } = new();
 }

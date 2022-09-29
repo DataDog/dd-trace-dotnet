@@ -34,7 +34,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             using var sr = new StreamReader("rule-data1.json");
             using var jsonTextReader = new JsonTextReader(sr);
             var rulesData = js.Deserialize<RuleData[]>(jsonTextReader);
-            var res = waf.UpdateRules(new List<RuleData[]> { rulesData! });
+            var res = waf.UpdateRules(rulesData!);
             res.Should().BeTrue();
             using var context = waf.CreateContext();
             var result = context.Run(
@@ -53,9 +53,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Fact]
         public void TestMergeWithoutWaf()
         {
-            var result = Waf.MergeRuleDatas(
-                new[]
-                {
+            var result = Waf.MergeRuleData(
                     new RuleData[]
                     {
                         new()
@@ -79,10 +77,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                                 new Data { Expiration = null, Value = "2" },
                                 new Data { Expiration = 10, Value = "3" }
                             }
-                        }
-                    },
-                    new RuleData[]
-                    {
+                        },
                         new()
                         {
                             Id = "id3",
@@ -105,8 +100,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                                 new Data { Expiration = 30, Value = "3" }
                             }
                         }
-                    }
-                });
+                    });
 
             result.Should().NotBeEmpty();
             result.Should().ContainItemsAssignableTo<IDictionary<string, object>>();
@@ -137,7 +131,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                         new List<object>
                         {
                             new Dictionary<string, object> { { "expiration", 30L }, { "value", "1" } },
-                            new Dictionary<string, object?> { { "expiration", null }, { "value", "2" } },
+                            new Dictionary<string, object?> { { "value", "2" } },
                             new Dictionary<string, object> { { "expiration", 30L }, { "value", "3" } },
                         }
                     }
@@ -171,7 +165,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             using var jsonTextReader2 = new JsonTextReader(sr2);
             var rulesData = js.Deserialize<RuleData[]>(jsonTextReader);
             var rulesData2 = js.Deserialize<RuleData[]>(jsonTextReader2);
-            var res = waf.UpdateRules(new List<RuleData[]> { rulesData!, rulesData2! });
+            var res = waf.UpdateRules(rulesData!.Concat(rulesData2!));
             res.Should().BeTrue();
             using var context = waf.CreateContext();
             var result = context.Run(

@@ -7,6 +7,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -33,6 +34,7 @@ namespace Datadog.Trace.Security.IntegrationTests
     {
         protected const string DefaultAttackUrl = "/Health/?arg=[$slice]";
         protected const string DefaultRuleFile = "ruleset.3.0.json";
+        protected const string MainIp = "86.242.244.246";
         private const string Prefix = "Security.";
         private static readonly Regex AppSecWafDuration = new(@"_dd.appsec.waf.duration: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecWafDurationWithBindings = new(@"_dd.appsec.waf.duration_ext: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
@@ -55,7 +57,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             _shutdownPath = shutdownPath;
 
             // adding these header so we can later assert it was collect properly
-            _httpClient.DefaultRequestHeaders.Add("X-FORWARDED", "86.242.244.246");
+            _httpClient.DefaultRequestHeaders.Add("X-FORWARDED", MainIp);
             _httpClient.DefaultRequestHeaders.Add("user-agent", "Mistake Not...");
             _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_WAF_TIMEOUT", 10_000_000.ToString());
@@ -122,20 +124,23 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false)
         {
-            settings.ModifySerialization(serializationSettings =>
-            {
-                serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(sp => sp.Tags, (target, value) =>
+            settings.ModifySerialization(
+                serializationSettings =>
                 {
-                    if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
-                    {
-                        var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
-                        var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
-                        target.Tags[Tags.AppSecJson] = orderedAppSecJson;
-                    }
+                    serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(
+                        sp => sp.Tags,
+                        (target, value) =>
+                        {
+                            if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
+                            {
+                                var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
+                                var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
+                                target.Tags[Tags.AppSecJson] = orderedAppSecJson;
+                            }
 
-                    return VerifyHelper.ScrubStackTraceForErrors(target, target.Tags);
+                            return VerifyHelper.ScrubStackTraceForErrors(target, target.Tags);
+                        });
                 });
-            });
             settings.AddRegexScrubber(AppSecWafDuration, "_dd.appsec.waf.duration: 0.0");
             settings.AddRegexScrubber(AppSecWafDurationWithBindings, "_dd.appsec.waf.duration_ext: 0.0");
             if (!testInit)

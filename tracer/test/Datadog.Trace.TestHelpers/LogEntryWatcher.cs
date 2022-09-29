@@ -21,12 +21,7 @@ public class LogEntryWatcher : IDisposable
     public LogEntryWatcher(string logFilePattern)
     {
         var logPath = DatadogLogging.GetLogDirectory();
-        _fileWatcher = new FileSystemWatcher
-        {
-            Path = logPath,
-            Filter = logFilePattern,
-            EnableRaisingEvents = true
-        };
+        _fileWatcher = new FileSystemWatcher { Path = logPath, Filter = logFilePattern, EnableRaisingEvents = true };
 
         var dir = new DirectoryInfo(logPath);
         var lastFile = dir
@@ -49,12 +44,14 @@ public class LogEntryWatcher : IDisposable
         _reader?.Dispose();
     }
 
-    public async Task WaitForLogEntry(string logEntry, TimeSpan? timeout = null)
+    public Task WaitForLogEntry(string logEntry, TimeSpan? timeout = null) => WaitForLogEntries(new[] { logEntry }, timeout);
+
+    public async Task WaitForLogEntries(string[] logEntries, TimeSpan? timeout = null)
     {
         using var cancellationSource = new CancellationTokenSource(timeout ?? TimeSpan.FromSeconds(5));
 
-        var isFound = false;
-        while (!isFound && !cancellationSource.IsCancellationRequested)
+        var i = 0;
+        while (logEntries.Length > i && !cancellationSource.IsCancellationRequested)
         {
             if (_reader == null)
             {
@@ -65,7 +62,10 @@ public class LogEntryWatcher : IDisposable
             var line = await _reader.ReadLineAsync();
             if (line != null)
             {
-                isFound = line.Contains(logEntry) == true;
+                if (line.Contains(logEntries[i]))
+                {
+                    i++;
+                }
             }
             else
             {
@@ -73,7 +73,7 @@ public class LogEntryWatcher : IDisposable
             }
         }
 
-        if (!isFound)
+        if (i != logEntries.Length)
         {
             throw new InvalidOperationException(_reader == null ? $"Log file was not found for path: {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}" : "Log entry was not found.");
         }

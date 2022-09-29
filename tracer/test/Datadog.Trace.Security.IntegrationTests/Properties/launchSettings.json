@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Datadog.Trace.Security.IntegrationTests": {
+      "commandName": "Project",
+      "nativeDebugging": true
+    }
+  }
+}

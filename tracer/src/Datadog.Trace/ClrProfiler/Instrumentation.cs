@@ -342,7 +342,9 @@ namespace Datadog.Trace.ClrProfiler
                         var rcmApi = RemoteConfigurationApiFactory.Create(tracer.Settings.Exporter, rcmSettings, discoveryService);
 
                         var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, tracer.Settings.Environment, tracer.Settings.ServiceVersion);
+                        // see comment above
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmFeaturesProduct);
+                        configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmDataProduct);
 
                         var liveDebugger = LiveDebuggerFactory.Create(discoveryService, configurationManager, tracer.Settings, serviceName);
 
