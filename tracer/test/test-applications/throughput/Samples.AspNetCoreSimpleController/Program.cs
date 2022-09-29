@@ -28,6 +28,10 @@ namespace Samples.AspNetCoreSimpleController
                     var fullPathExists = File.Exists(fullPath);
                     Console.WriteLine($"Using rule file: {fullPath}, exists: {fullPathExists}");
                 }
+                else
+                {
+                    Console.WriteLine($"No rules file found");
+                }
 
                 if (!isAttached && tracerEnabled)
                 {
