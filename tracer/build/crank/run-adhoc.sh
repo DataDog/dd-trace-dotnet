@@ -19,4 +19,4 @@ echo "Using repo=$repo"
 
 repository="--application.source.repository $repo"
 
-crank --config $config_file --scenario $scenario --profile $profile --json $scenario.json $repository --property name=AspNetCoreSimpleController --property scenario=$scenario --property profile=$profile --property arch=x64
+crank --config $config_file --scenario $scenario --profile $profile --json $scenario.json $repository --property name=AspNetCoreSimpleController --property scenario=$scenario --property profile=$profile --property arch=x64 --application.source.branchOrCommit robert/asm/throughput-for-blocking

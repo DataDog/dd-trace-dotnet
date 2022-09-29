@@ -25,7 +25,7 @@ namespace Samples.AspNetCoreSimpleController
                 if (ruleFile != null)
                 {
                     var fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ruleFile);
-                    var fullPathExists = File.Exist(filePath);
+                    var fullPathExists = File.Exists(fullPath);
                     Console.WriteLine($"Using rule file: {fullPath}, exists: {fullPathExists}");
                 }
 
