@@ -5,6 +5,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
@@ -44,9 +46,7 @@ namespace Datadog.Trace.AppSec
         private AppSecRateLimiter _rateLimiter;
         private bool _enabled = false;
 
-#if NETFRAMEWORK
         private bool? _usingIntegratedPipeline = null;
-#endif
 
         static Security()
         {
@@ -434,10 +434,18 @@ namespace Datadog.Trace.AppSec
             }
         }
 
+        private bool CanAccessHeaders()
+        {
+            return _usingIntegratedPipeline == true || _usingIntegratedPipeline is null;
+        }
+
         private void AddResponseHeaderTags(ITransport transport, Span span)
         {
             TryAddEndPoint(span);
-            var headers = transport.GetResponseHeaders();
+            var headers =
+                CanAccessHeaders() ?
+                    transport.GetResponseHeaders() :
+                    new NameValueHeadersCollection(new NameValueCollection());
             AddHeaderTags(span, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
         }
 
@@ -494,7 +502,7 @@ namespace Datadog.Trace.AppSec
                     var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock");
                     if (block)
                     {
-                        e.Transport.WriteBlockedResponse(_settings.BlockedJsonTemplate, _settings.BlockedHtmlTemplate);
+                        e.Transport.WriteBlockedResponse(_settings.BlockedJsonTemplate, _settings.BlockedHtmlTemplate, CanAccessHeaders());
                     }
 
                     Report(e.Transport, span, wafResult, block);

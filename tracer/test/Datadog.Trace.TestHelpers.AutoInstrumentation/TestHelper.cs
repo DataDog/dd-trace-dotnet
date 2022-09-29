@@ -59,6 +59,8 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"Native Loader DLL: {EnvironmentHelper.GetNativeLoaderPath()}");
         }
 
+        public bool SecurityEnabled { get; private set; }
+
         protected EnvironmentHelper EnvironmentHelper { get; }
 
         protected string TestPrefix => $"{EnvironmentTools.GetBuildConfiguration()}.{EnvironmentHelper.GetTargetFramework()}";
@@ -410,6 +412,7 @@ namespace Datadog.Trace.TestHelpers
 
         protected void SetSecurity(bool security)
         {
+            SecurityEnabled = security;
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Enabled, security ? "true" : "false");
         }
 
