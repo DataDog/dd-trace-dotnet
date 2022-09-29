@@ -550,11 +550,11 @@ stages:
         cacheHitVar: 'CACHE_RESTORED'
       displayName: Cache nuget packages
 
-    - script: tracer\build.cmd BuildTracerHome BuildNativeLoader
+    - script: ./tracer/build.sh BuildTracerHome BuildNativeLoader
       condition: ne(variables.CACHE_RESTORED, true)
       displayName: Build tracer home
 
-    - script: tracer\build.cmd BuildTracerHomeNoRestore BuildNativeLoader
+    - script: ./tracer/build.sh BuildTracerHomeNoRestore BuildNativeLoader
       condition: eq(variables.CACHE_RESTORED, true)
       displayName: Build tracer home without restore
 
