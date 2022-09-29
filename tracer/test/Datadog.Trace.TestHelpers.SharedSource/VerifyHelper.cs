@@ -17,14 +17,19 @@ namespace Datadog.Trace.TestHelpers
 {
     public static class VerifyHelper
     {
-        private static readonly Regex LocalhostRegex = new(@"localhost\:\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        // bytes differ slightly depending on platform
-        private static readonly Regex BlockedContent = new(@"http.response.headers.content-length\: 2\d{3}", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex LoopBackRegex = new(@"127.0.0.1\:\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex KeepRateRegex = new(@"_dd.tracer_kr: \d\.\d+", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex ProcessIdRegex = new(@"process_id: \d+\.0", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex ClientIpRegex = new(@"http.client_ip: (.)*(?=,)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-        private static readonly Regex GrpcUserAgentRegex = new(@"http.useragent: grpc-dotnet\/(.)*(?=,)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
+        internal static readonly IEnumerable<(Regex RegexPattern, string Replacement)> SpanScrubbers = new List<(Regex RegexPattern, string Replacement)>
+        {
+            (new(@"localhost\:\d+", RegOptions), "localhost:00000"),
+            // bytes differ slightly depending on platform
+            (new(@"http.response.headers.content-length\: 2\d{3}", RegOptions), "http.response.headers.content-length: 2xxx"),
+            (new(@"127.0.0.1\:\d+", RegOptions), "localhost:00000"),
+            (new(@"_dd.tracer_kr: \d\.\d+", RegOptions), "_dd.tracer_kr: 1.0"),
+            (new(@"process_id: \d+\.0", RegOptions), "process_id: 0"),
+            (new(@"http.client_ip: (.)*(?=,)", RegOptions), "http.client_ip: 127.0.0.1"),
+            (new(@"http.useragent: grpc-dotnet\/(.)*(?=,)", RegOptions), "http.useragent: grpc-dotnet/123")
+        };
+
+        private static readonly RegexOptions RegOptions = RegexOptions.IgnoreCase | RegexOptions.Compiled;
 
         /// <summary>
         /// With <see cref="Verify"/>, parameters are used as part of the filename.
@@ -50,7 +55,9 @@ namespace Datadog.Trace.TestHelpers
                 });
         }
 
-        public static VerifySettings GetSpanVerifierSettings(params object[] parameters)
+        public static VerifySettings GetSpanVerifierSettings(params object[] parameters) => GetSpanVerifierSettings(null, parameters);
+
+        public static VerifySettings GetSpanVerifierSettings(IEnumerable<(Regex RegexPattern, string Replacement)> scrubbers, object[] parameters)
         {
             var settings = new VerifySettings();
 
@@ -67,13 +74,12 @@ namespace Datadog.Trace.TestHelpers
                 _.IgnoreMember<MockSpan>(s => s.Start);
                 _.MemberConverter<MockSpan, Dictionary<string, string>>(x => x.Tags, ScrubStackTraceForErrors);
             });
-            settings.AddRegexScrubber(LocalhostRegex, "localhost:00000");
-            settings.AddRegexScrubber(LoopBackRegex, "localhost:00000");
-            settings.AddRegexScrubber(KeepRateRegex, "_dd.tracer_kr: 1.0");
-            settings.AddRegexScrubber(ProcessIdRegex, "process_id: 0");
-            settings.AddRegexScrubber(ClientIpRegex, "http.client_ip: 127.0.0.1");
-            settings.AddRegexScrubber(BlockedContent, "http.response.headers.content-length: 2xxx");
-            settings.AddRegexScrubber(GrpcUserAgentRegex, "http.useragent: grpc-dotnet/123");
+
+            foreach (var (regexPattern, replacement) in scrubbers ?? SpanScrubbers)
+            {
+                settings.AddRegexScrubber(regexPattern, replacement);
+            }
+
             settings.ScrubInlineGuids();
             return settings;
         }
