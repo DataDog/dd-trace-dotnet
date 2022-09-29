@@ -18,13 +18,13 @@ namespace Datadog.Trace.Tests
         public void LambdaHandlerGetters()
         {
             LambdaHandler handler = new LambdaHandler("mscorlib::System.Environment::ExpandEnvironmentVariables");
-            handler.GetAssembly().Should().Be("mscorlib");
-            handler.GetFullType().Should().Be("System.Environment");
-            handler.GetMethodName().Should().Be("ExpandEnvironmentVariables");
+            handler.Assembly.Should().Be("mscorlib");
+            handler.FullType.Should().Be("System.Environment");
+            handler.MethodName.Should().Be("ExpandEnvironmentVariables");
         }
 
         [Fact]
-        public void LambdaHandlerBuidParamTypeArray()
+        public void LambdaHandlerParamTypeArray()
         {
             LambdaHandler handler = new LambdaHandler("mscorlib::System.Environment::ExpandEnvironmentVariables");
             handler.ParamTypeArray.Length.Should().Be(2);

@@ -11,26 +11,28 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
     internal class LambdaHandler
     {
         private static readonly string[] Separator = { "::" };
-        private string[] _handlerTokens;
 
         internal LambdaHandler(string handlerName)
         {
-            _handlerTokens = handlerName.Split(Separator, StringSplitOptions.None);
-            ParamTypeArray = BuidParamTypeArray();
+            var handlerTokens = handlerName.Split(Separator, StringSplitOptions.None);
+            Assembly = handlerTokens[0];
+            FullType = handlerTokens[1];
+            MethodName = handlerTokens[2];
+            ParamTypeArray = BuildParamTypeArray();
         }
 
         internal string[] ParamTypeArray { get; }
 
-        internal string GetAssembly() => _handlerTokens[0];
+        internal string Assembly { get; }
 
-        internal string GetFullType() => _handlerTokens[1];
+        internal string FullType { get; }
 
-        internal string GetMethodName() => _handlerTokens[2];
+        internal string MethodName { get; }
 
-        private string[] BuidParamTypeArray()
+        private string[] BuildParamTypeArray()
         {
-            Type myClassType = Type.GetType(GetTypeName());
-            MethodInfo customerMethodInfo = myClassType.GetMethod(GetMethodName());
+            Type myClassType = Type.GetType($"{FullType},{Assembly}");
+            MethodInfo customerMethodInfo = myClassType.GetMethod(MethodName);
             ParameterInfo[] methodParameters = customerMethodInfo.GetParameters();
 
             string[] paramType = new string[methodParameters.Length + 1];
@@ -41,11 +43,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             }
 
             return paramType;
-        }
-
-        private string GetTypeName()
-        {
-            return GetFullType() + "," + GetAssembly();
         }
     }
 }
