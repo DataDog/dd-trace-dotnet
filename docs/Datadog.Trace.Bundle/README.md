@@ -46,7 +46,7 @@ The main advantages of Datadog.Trace.Bundle over the MSI or Linux packages are:
 After adding the NuGet package to your project, set the following **required** environment variables to enable automatic instrumentation of your application.
 
 > **_NOTE:_** 
-The following are the mandatory variables. More options are available in our public documentation for the [Tracer](https://docs.datadoghq.com/tracing/trace_collection/library_config/dotnet-core/?tab=environmentvariables) and the [Continuous Profiler](https://docs.datadoghq.com/profiler/enabling/dotnet/?tab=linux#configuration) to tune your usage. 
+The following are the mandatory variables. For further configuration options, see our public documentation for the [Tracer](https://docs.datadoghq.com/tracing/trace_collection/library_config/dotnet-core/?tab=environmentvariables) and the [Continuous Profiler](https://docs.datadoghq.com/profiler/enabling/dotnet/?tab=linux#configuration).
 
 
 .NET Core:
@@ -67,7 +67,7 @@ COR_PROFILER_PATH=<System-dependent path>
 DD_DOTNET_TRACER_HOME=<APP_DIRECTORY>/datadog
 ```
 
-The value for the `<APP_DIRECTORY>`  placeholder is the path to the directory containing the application’s .dll files. The value for the `CORECLR_PROFILER_PATH` environment variable varies based on the system where the application is running:
+The value for the `<APP_DIRECTORY>` placeholder is the path to the directory containing the application’s .dll files. The value for the `CORECLR_PROFILER_PATH`/`COR_PROFILER_PATH` environment variable varies based on the system where the application is running:
 
 | OPERATING SYSTEM AND PROCESS ARCHITECTURE      | CORECLR_PROFILER_PATH VALUE |
 | ----------- | ----------- |
