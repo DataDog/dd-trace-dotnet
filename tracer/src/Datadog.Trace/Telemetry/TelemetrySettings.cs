@@ -13,11 +13,16 @@ namespace Datadog.Trace.Telemetry
 {
     internal class TelemetrySettings
     {
-        public TelemetrySettings(bool telemetryEnabled, string? configurationError, AgentlessSettings? agentlessSettings)
+        public TelemetrySettings(
+            bool telemetryEnabled,
+            string? configurationError,
+            AgentlessSettings? agentlessSettings,
+            TimeSpan heartbeatInterval)
         {
             TelemetryEnabled = telemetryEnabled;
             ConfigurationError = configurationError;
             Agentless = agentlessSettings;
+            HeartbeatInterval = heartbeatInterval;
         }
 
         /// <summary>
@@ -29,6 +34,8 @@ namespace Datadog.Trace.Telemetry
         public string? ConfigurationError { get; }
 
         public AgentlessSettings? Agentless { get; }
+
+        public TimeSpan HeartbeatInterval { get; }
 
         public static TelemetrySettings FromDefaultSources() => FromSource(GlobalConfigurationSource.Instance);
 
@@ -94,7 +101,10 @@ namespace Datadog.Trace.Telemetry
                 agentless = new AgentlessSettings(agentlessUri, apiKey!);
             }
 
-            return new TelemetrySettings(telemetryEnabled, configurationError, agentless);
+            var rawInterval = source?.GetInt32(ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds);
+            var heartbeatInterval = rawInterval is { } interval and > 0 and <= 3600 ? interval : 60;
+
+            return new TelemetrySettings(telemetryEnabled, configurationError, agentless, TimeSpan.FromSeconds(heartbeatInterval));
         }
 
         public class AgentlessSettings

@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration
 {
@@ -519,6 +520,13 @@ namespace Datadog.Trace.Configuration
             /// <see cref="ExporterSettings.AgentUri"/> instead)
             /// </summary>
             public const string Uri = "DD_INSTRUMENTATION_TELEMETRY_URL";
+
+            /// <summary>
+            /// Configuration key for how often telemetry should be sent, in seconds. Must be between 1 and 3600.
+            /// For testing purposes. Defaults to 60
+            /// <see cref="TelemetrySettings.HeartbeatInterval"/>
+            /// </summary>
+            public const string HeartbeatIntervalSeconds = "DD_TELEMETRY_HEARTBEAT_INTERVAL";
         }
 
         internal static class TagPropagation
@@ -531,6 +539,15 @@ namespace Datadog.Trace.Configuration
             /// This value is not used when extracting an incoming propagation header from an upstream service.
             /// </remarks>
             public const string HeaderMaxLength = "DD_TRACE_X_DATADOG_TAGS_MAX_LENGTH";
+        }
+
+        internal static class DataStreamsMonitoring
+        {
+            /// <summary>
+            /// Enables data streams monitoring support
+            /// </summary>
+            /// <see cref="TracerSettings.IsDataStreamsMonitoringEnabled"/>
+            public const string Enabled = "DD_DATA_STREAMS_ENABLED";
         }
     }
 }

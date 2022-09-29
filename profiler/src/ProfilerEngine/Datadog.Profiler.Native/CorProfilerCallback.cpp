@@ -15,6 +15,7 @@
 #include <windows.h>
 #else
 #include "cgroup.h"
+#include <signal.h>
 #endif
 
 #include "AllocationsProvider.h"
@@ -1046,6 +1047,16 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     dupOsThreadHandle = origOsThreadHandle;
 #endif
 
+#ifdef LINUX
+    // check if SIGUSR1 signal is blocked for current thread
+    sigset_t currentMask;
+    pthread_sigmask(SIG_SETMASK, nullptr, &currentMask);
+    if (sigismember(&currentMask, SIGUSR1) == 1)
+    {
+        Log::Debug("The current thread won't be added to the managed threads list because SIGUSR1 is blocked for that thread (managedThreadId=0x", std::hex, managedThreadId, ", osThreadId=", std::dec, osThreadId, ")");
+        return S_OK;
+    }
+#endif
     _pManagedThreadList->SetThreadOsInfo(managedThreadId, osThreadId, dupOsThreadHandle);
 
     return S_OK;

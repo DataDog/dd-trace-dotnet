@@ -1,0 +1,86 @@
+﻿// <copyright file="SpanContextDataStreamsManagerTests.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.TestHelpers.TransportHelpers;
+using FluentAssertions;
+using Xunit;
+
+namespace Datadog.Trace.Tests.DataStreamsMonitoring;
+
+public class SpanContextDataStreamsManagerTests
+{
+    [Fact]
+    public void SetCheckpoint_SetsTheSpanPathwayContext()
+    {
+        var dsm = new DataStreamsManager(enabled: true, "env", "service", new TestRequestFactory());
+        var spanContext = new SpanContext(traceId: 123, spanId: 1234);
+        spanContext.PathwayContext.Should().BeNull();
+
+        spanContext.SetCheckpoint(dsm, new[] { "some-edge" });
+
+        spanContext.PathwayContext.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void MergePathwayContext_WhenNull_UsesOtherContext()
+    {
+        var ctx = new PathwayContext();
+
+        var spanContext = new SpanContext(traceId: 123, spanId: 1234);
+        spanContext.PathwayContext.Should().BeNull();
+
+        spanContext.MergePathwayContext(ctx);
+        spanContext.PathwayContext.Value.Should().Be(ctx);
+    }
+
+    [Fact]
+    public void MergePathwayContext_WhenOtherContextIsNull_KeepsContext()
+    {
+        var dsm = new DataStreamsManager(enabled: true, "env", "service", new TestRequestFactory());
+        var spanContext = new SpanContext(traceId: 123, spanId: 1234);
+        spanContext.SetCheckpoint(dsm, new[] { "some-edge" });
+        spanContext.PathwayContext.Should().NotBeNull();
+        var previous = spanContext.PathwayContext;
+
+        spanContext.MergePathwayContext(null);
+        spanContext.PathwayContext.Should().Be(previous);
+    }
+
+    [Fact]
+    public void MergePathwayContext_WhenOtherContextIsNotNull_KeepsEach50Percent()
+    {
+        int iterations = 1000_000;
+        // When we have a context and there's a new context we pick one randomly
+        var dsm = new DataStreamsManager(enabled: true, "env", "service", new TestRequestFactory());
+        var spanContext = new SpanContext(traceId: 123, spanId: 1234);
+        spanContext.SetCheckpoint(dsm, new[] { "some-edge" });
+
+        // Make sure we have a different hash for comparison purposes
+        while (spanContext.PathwayContext.Value.Hash.Value < (ulong)iterations)
+        {
+            spanContext.SetCheckpoint(dsm, new[] { "some-edge" });
+        }
+
+        var sameCount = 0;
+        var otherCount = 0;
+        for (int i = 0; i < iterations; i++)
+        {
+            var other = new PathwayContext(new PathwayHash((ulong)i), 1234, 5678);
+            spanContext.MergePathwayContext(other);
+            if (spanContext.PathwayContext.Value.Hash.Value == (ulong)i)
+            {
+                otherCount++;
+            }
+            else
+            {
+                sameCount++;
+            }
+        }
+
+        sameCount.Should().BeCloseTo(otherCount, (uint)(iterations / 100)); // roughly 1%
+    }
+}

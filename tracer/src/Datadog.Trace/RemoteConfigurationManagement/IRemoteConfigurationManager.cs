@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Numerics;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.RemoteConfigurationManagement
@@ -18,6 +19,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
         void UnregisterProduct(string productName);
 
-        void SetCapability(int index, bool available);
+        void SetCapability(BigInteger index, bool available);
     }
 }

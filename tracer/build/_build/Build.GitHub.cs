@@ -410,6 +410,8 @@ partial class Build
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
                 "profiler/src/ProfilerEngine/ProductVersion.props",
+                "shared/src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
+                "shared/src/Datadog.Trace.ClrProfiler.Native/Resource.rc",
                 "shared/src/msi-installer/WindowsInstaller.wixproj",
                 "tracer/build/_build/Build.cs",
                 "tracer/samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",

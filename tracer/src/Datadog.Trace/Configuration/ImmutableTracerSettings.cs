@@ -71,6 +71,7 @@ namespace Datadog.Trace.Configuration
             PropagationStyleExtract = settings.PropagationStyleExtract;
             TraceMethods = settings.TraceMethods;
             IsActivityListenerEnabled = settings.IsActivityListenerEnabled;
+            IsDataStreamsMonitoringEnabled = settings.IsDataStreamsMonitoringEnabled;
 
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
             // Logs injection is enabled by default if direct log submission is enabled, otherwise disabled by default
@@ -321,6 +322,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the activity listener is enabled or not.
         /// </summary>
         internal bool IsActivityListenerEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether data streams monitoring is enabled or not.
+        /// </summary>
+        internal bool IsDataStreamsMonitoringEnabled { get; }
 
         /// <summary>
         /// Gets the maximum length of an outgoing propagation header's value ("x-datadog-tags")

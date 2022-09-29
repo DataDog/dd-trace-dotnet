@@ -18,7 +18,8 @@
       http.url: http://localhost/Health/?arg=[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server
+      span.kind: server,
+      _dd.origin: appsec
     }
   },
   {
@@ -81,7 +82,8 @@
       http.url: http://localhost/Health/?arg=[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server
+      span.kind: server,
+      _dd.origin: appsec
     }
   },
   {
@@ -144,7 +146,8 @@
       http.url: http://localhost/Health/?arg=[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server
+      span.kind: server,
+      _dd.origin: appsec
     }
   },
   {
@@ -207,7 +210,8 @@
       http.url: http://localhost/Health/?arg=[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server
+      span.kind: server,
+      _dd.origin: appsec
     }
   },
   {
@@ -270,7 +274,8 @@
       http.url: http://localhost/Health/?arg=[$slice],
       http.useragent: Mistake Not...,
       language: dotnet,
-      span.kind: server
+      span.kind: server,
+      _dd.origin: appsec
     }
   },
   {

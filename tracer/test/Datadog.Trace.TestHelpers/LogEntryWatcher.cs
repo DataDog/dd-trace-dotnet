@@ -65,7 +65,7 @@ public class LogEntryWatcher : IDisposable
             var line = await _reader.ReadLineAsync();
             if (line != null)
             {
-                isFound = line?.Contains(logEntry) == true;
+                isFound = line.Contains(logEntry) == true;
             }
             else
             {
@@ -75,7 +75,7 @@ public class LogEntryWatcher : IDisposable
 
         if (!isFound)
         {
-            throw new InvalidOperationException("Log entry was not found.");
+            throw new InvalidOperationException(_reader == null ? $"Log file was not found for path: {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}" : "Log entry was not found.");
         }
     }
 

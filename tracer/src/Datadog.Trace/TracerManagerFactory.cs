@@ -13,6 +13,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -52,7 +53,8 @@ namespace Datadog.Trace
                 runtimeMetrics: null,
                 logSubmissionManager: previous?.DirectLogSubmission,
                 telemetry: null,
-                discoveryService: null);
+                discoveryService: null,
+                dataStreamsManager: null);
 
             try
             {
@@ -85,7 +87,8 @@ namespace Datadog.Trace
             RuntimeMetricsWriter runtimeMetrics,
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
-            IDiscoveryService discoveryService)
+            IDiscoveryService discoveryService,
+            DataStreamsManager dataStreamsManager)
         {
             settings ??= ImmutableTracerSettings.FromDefaultSources();
 
@@ -121,7 +124,9 @@ namespace Datadog.Trace
 
             SpanContextPropagator.Instance = ContextPropagators.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract);
 
-            var tracerManager = CreateTracerManagerFrom(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, defaultServiceName);
+            dataStreamsManager ??= DataStreamsManager.Create(settings, defaultServiceName);
+
+            var tracerManager = CreateTracerManagerFrom(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName);
             return tracerManager;
         }
 
@@ -138,8 +143,9 @@ namespace Datadog.Trace
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
+            DataStreamsManager dataStreamsManager,
             string defaultServiceName)
-            => new TracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, defaultServiceName);
+            => new TracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName);
 
         protected virtual ITraceSampler GetSampler(ImmutableTracerSettings settings)
         {
