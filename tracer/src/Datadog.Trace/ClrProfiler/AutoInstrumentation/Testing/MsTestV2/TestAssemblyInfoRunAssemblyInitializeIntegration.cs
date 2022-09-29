@@ -1,4 +1,4 @@
-﻿// <copyright file="TestAssemblyInfoRunAssemblyInitializeIntegration.cs" company="Datadog">
+// <copyright file="TestAssemblyInfoRunAssemblyInitializeIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,6 +9,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 
@@ -42,29 +43,24 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
     internal static CallTargetState OnMethodBegin<TTarget, TContext>(TTarget instance, TContext testContext)
         where TTarget : ITestAssemblyInfo
     {
-        if (!MsTestIntegration.IsEnabled)
+        if (!MsTestIntegration.IsEnabled || !testContext.TryDuckCast<TestContextStruct>(out var context))
         {
             return CallTargetState.GetDefault();
         }
 
-        if (!instance.IsAssemblyInitializeExecuted)
+        if (!TestAssemblyInfos.TryGetValue(instance.Instance, out var moduleObject))
         {
-            if (!TestAssemblyInfos.TryGetValue(instance.Instance, out var moduleObject))
-            {
-                var assemblyName = instance.Assembly?.GetName().Name ?? string.Empty;
-                var frameworkVersion = instance.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
-                instance.AssemblyCleanupMethod ??= EmptyCleanUpMethodInfo;
+            var assemblyName = AssemblyName.GetAssemblyName(context.TestMethod.AssemblyName).Name ?? string.Empty;
+            var frameworkVersion = instance.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
+            instance.AssemblyCleanupMethod ??= EmptyCleanUpMethodInfo;
 
-                CIVisibility.WaitForSkippableTaskToFinish();
-                var module = TestModule.Create(assemblyName, "MSTestV2", frameworkVersion);
-                TestAssemblyInfos.Add(instance.Instance, module);
-                return new CallTargetState(null, module);
-            }
-
-            return new CallTargetState(null, moduleObject);
+            CIVisibility.WaitForSkippableTaskToFinish();
+            var module = TestModule.Create(assemblyName, "MSTestV2", frameworkVersion);
+            TestAssemblyInfos.Add(instance.Instance, module);
+            return new CallTargetState(null, module);
         }
 
-        return CallTargetState.GetDefault();
+        return new CallTargetState(null, moduleObject);
     }
 
     /// <summary>
