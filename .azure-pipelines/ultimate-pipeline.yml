@@ -1033,6 +1033,7 @@ stages:
       inputs:
         containerregistrytype: Container Registry
         dockerComposeCommand: down
+        projectName: ddtrace_$(Build.BuildNumber)
       condition: succeededOrFailed()
 
     - publish: tracer/build_data
@@ -1163,12 +1164,6 @@ stages:
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true"
 
     - task: DownloadPipelineArtifact@2
-      displayName: Download linux monitoring home for serverless
-      inputs:
-        artifact: linux-monitoring-home-$(baseImage)
-        path: $(System.DefaultWorkingDirectory)/tracer/serverlessArtifacts
-
-    - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
       inputs:
         artifact: linux-monitoring-home-$(baseImage)
@@ -1198,6 +1193,9 @@ stages:
       inputs:
         containerregistrytype: Container Registry
         dockerComposeCommand: down
+        projectName: ddtrace_$(Build.BuildNumber)
+        additionalDockerComposeFiles: |
+          docker-compose.serverless.yml
       condition: succeededOrFailed()
 
     - script: |      
@@ -1220,6 +1218,137 @@ stages:
     - publish: tracer/test/snapshots
       displayName: Uploading snapshots
       artifact: integration_tests_linux_docker_snapshots_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "CheckBuildLogsForErrors"
+
+  - job: Serverless
+    timeoutInMinutes: 60
+
+    variables:
+      TestAllPackageVersions: false
+      IncludeMinorPackageVersions:  false
+      baseImage: "centos7"
+      publishTargetFramework: "netcoreapp3.1"
+
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        masterCommitId: $(masterCommitId)
+
+    - template: steps/restore-working-directory.yml
+      parameters:
+        artifact: build-linux-$(baseImage)-working-directory
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux monitoring home
+      inputs:
+        artifact: linux-monitoring-home-$(baseImage)
+        path: $(monitoringHome)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Aws.Lambda"
+
+    - script: |
+        # Include the serverless dockerfile
+        docker-compose -p ddtrace_$(Build.BuildNumber) \
+          -f $(System.DefaultWorkingDirectory)/docker-compose.yml \
+          -f docker-compose.serverless.yml \
+          build \
+          --build-arg baseImage=$(baseImage) \
+          --build-arg framework=$(publishTargetFramework) \
+          IntegrationTests.Serverless
+
+        docker-compose -p ddtrace_$(Build.BuildNumber) \
+          -f $(System.DefaultWorkingDirectory)/docker-compose.yml \
+          -f docker-compose.serverless.yml \
+          run --rm StartDependencies.Serverless
+      env:
+        baseImage: $(baseImage)
+        framework: $(publishTargetFramework)
+      displayName: docker-compose build IntegrationTests.Serverless and run StartDependencies.Serverless
+      retryCountOnTaskFailure: 5
+
+    - task: DockerCompose@0
+      displayName: docker-compose run IntegrationTests.Serverless
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeFileArgs: |
+          baseImage=$(baseImage)
+          framework=$(publishTargetFramework)
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests.Serverless
+        additionalDockerComposeFiles: |
+          docker-compose.serverless.yml
+        projectName: ddtrace_$(Build.BuildNumber)
+
+    - script: |
+        mkdir -p tracer/build_data/docker
+
+        docker-compose -p ddtrace_$(Build.BuildNumber) \
+          -f $(System.DefaultWorkingDirectory)/docker-compose.yml \
+          -f docker-compose.serverless.yml \
+          logs \
+          serverless-integration-extension-mock \
+          serverless-integration-extension-mock-with-context \
+          serverless-lambda-no-param-sync \
+          serverless-lambda-one-param-sync \
+          serverless-lambda-two-params-sync \
+          serverless-lambda-no-param-sync-with-context \
+          serverless-lambda-one-param-sync-with-context \
+          serverless-lambda-two-params-sync-with-context \
+          serverless-lambda-no-param-async \
+          serverless-lambda-one-param-async \
+          serverless-lambda-two-params-async \
+          serverless-lambda-no-param-void \
+          serverless-lambda-one-param-void \
+          serverless-lambda-two-params-void
+
+      env:
+        baseImage: $(baseImage)
+        framework: $(publishTargetFramework)
+      displayName: docker-compose logs for serverless services
+      retryCountOnTaskFailure: 5
+
+    - task: DockerCompose@0
+      displayName: docker-compose stop services
+      inputs:
+        containerregistrytype: Container Registry
+        dockerComposeCommand: down
+        projectName: ddtrace_$(Build.BuildNumber)
+        additionalDockerComposeFiles: |
+          docker-compose.serverless.yml
+      condition: succeededOrFailed()
+
+    - script: |      
+        sudo chmod -R 644 tracer/build_data/dumps/* || true
+      displayName: Make dumps uploadable to AzDo
+      condition: succeededOrFailed()
+
+    - publish: tracer/build_data
+      artifact: integration_tests_linux_serverless_tracer_logs_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - task: PublishTestResults@2
+      displayName: publish test results
+      inputs:
+        testResultsFormat: VSTest
+        testResultsFiles: tracer/build_data/results/**/*.trx
+      condition: succeededOrFailed()
+
+    - publish: tracer/test/snapshots
+      displayName: Uploading snapshots
+      artifact: integration_tests_linux_serverless_snapshots_$(baseImage)_$(publishTargetFramework)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
@@ -1615,6 +1744,7 @@ stages:
       inputs:
         containerregistrytype: Container Registry
         dockerComposeCommand: down
+        projectName: ddtrace_$(Build.BuildNumber)
       condition: succeededOrFailed()
 
     - publish: tracer/build_data

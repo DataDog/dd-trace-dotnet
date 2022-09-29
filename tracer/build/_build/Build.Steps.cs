@@ -1408,11 +1408,12 @@ partial class Build
                 null => string.Empty,
             };
 
-            var filter = (string.IsNullOrEmpty(Filter), IsArm64) switch
+            var armFilter = IsArm64 ? "&(Category!=ArmUnsupported)" : string.Empty;
+
+            var filter = string.IsNullOrEmpty(Filter) switch
             {
-                (true, false) => $"(Category!=LinuxUnsupported){dockerFilter}",
-                (true, true) => $"(Category!=LinuxUnsupported){dockerFilter}&(Category!=ArmUnsupported)",
-                _ => Filter
+                false => Filter,
+                true => $"(Category!=LinuxUnsupported)&(Category!=Lambda){dockerFilter}{armFilter}",
             };
 
             try
@@ -1521,6 +1522,19 @@ partial class Build
                 .SetProcessEnvironmentVariable("ToolInstallDirectory", ToolInstallDirectory)
                 .SetLogsDirectory(TestLogsDirectory)
                 .EnableTrxLogOutput(GetResultsDirectory(project)));
+        });
+
+    Target CopyServerlessArtifacts => _ => _
+       .Description("Copies monitoring-home into the serverless artifacts directory")
+       .Unlisted()
+       .After(CompileSamplesLinux, CompileMultiApiPackageVersionSamples)
+       .Executes(() =>
+        {
+
+            var projectFile = TracerDirectory.GlobFiles("test/test-applications/integrations/*/Samples.AWS.Lambda.csproj").FirstOrDefault();
+            var target = projectFile / ".." / "bin" / "artifacts" / "monitoring-home";
+
+            CopyDirectoryRecursively(MonitoringHomeDirectory, target, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
         });
 
 
