@@ -134,7 +134,7 @@ public class DataStreamsManagerTests
     [Fact]
     public async Task DisposeAsync_DisablesDsm()
     {
-        var dsm = GetDataStreamManager(true, out var writer);
+        var dsm = GetDataStreamManager(true, out _);
         var parent = new PathwayContext(new PathwayHash(123), 12340000, 56780000);
 
         dsm.IsEnabled.Should().BeTrue();
