@@ -1,3 +1,4 @@
+#if RABBITMQ_5_0
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -34,12 +35,21 @@ namespace Samples.RabbitMQ
 
         Task IAsyncBasicConsumer.HandleBasicConsumeOk(string consumerTag) => _consumer.HandleBasicConsumeOk(consumerTag);
 
+#if RABBITMQ_6_0
         async Task IAsyncBasicConsumer.HandleBasicDeliver(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IBasicProperties properties, ReadOnlyMemory<byte> body)
         {
             Received?.Invoke(
                 this,
                 new BasicDeliverEventArgs(consumerTag, deliveryTag, redelivered, exchange, routingKey, properties, body));
         }
+#else
+        async Task IAsyncBasicConsumer.HandleBasicDeliver(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IBasicProperties properties, byte[] body)
+        {
+            Received?.Invoke(
+                this,
+                new BasicDeliverEventArgs(consumerTag, deliveryTag, redelivered, exchange, routingKey, properties, body));
+        }
+#endif
 
         Task IAsyncBasicConsumer.HandleModelShutdown(object model, ShutdownEventArgs reason)
             => _consumer.HandleModelShutdown(model, reason);
@@ -67,10 +77,17 @@ namespace Samples.RabbitMQ
             throw new InvalidOperationException("Should never be called.");
         }
 
+#if RABBITMQ_6_0
         void IBasicConsumer.HandleBasicDeliver(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IBasicProperties properties, ReadOnlyMemory<byte> body)
         {
             throw new InvalidOperationException("Should never be called.");
         }
+#else
+        void IBasicConsumer.HandleBasicDeliver(string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, IBasicProperties properties, byte[] body)
+        {
+            throw new InvalidOperationException("Should never be called.");
+        }
+#endif
 
         void IBasicConsumer.HandleModelShutdown(object model, ShutdownEventArgs reason)
         {
@@ -78,3 +95,4 @@ namespace Samples.RabbitMQ
         }
     }
 }
+#endif

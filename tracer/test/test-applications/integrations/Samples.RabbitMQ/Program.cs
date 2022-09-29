@@ -167,7 +167,9 @@ namespace Samples.RabbitMQ
 
             // Configure and listen to RabbitMQ queue
             var factory = new ConnectionFactory() { HostName = Host() };
+#if RABBITMQ_5_0
             factory.DispatchConsumersAsync = isAsyncConsumer;
+#endif
 
             using(var connection = factory.CreateConnection())
             using(var channel = connection.CreateModel())
@@ -228,6 +230,7 @@ namespace Samples.RabbitMQ
                     eventingBasicConsumer.Received += HandleEvent;
                     consumer = eventingBasicConsumer;
                     break;
+#if RABBITMQ_5_0
                 case ConsumerType.InternalAsyncDerived:
                     var asyncEventingBasicConsumer = new global::RabbitMQ.Client.Events.AsyncEventingBasicConsumer(channel);
                     asyncEventingBasicConsumer.Received += (ch, ea) =>
@@ -237,17 +240,24 @@ namespace Samples.RabbitMQ
                     };
                     consumer = asyncEventingBasicConsumer;
                     break;
+#endif
                 case ConsumerType.ExternalSyncImplicit:
                     var customSyncConsumer = new Samples.RabbitMQ.SyncImplicitImplementationConsumer(channel);
                     customSyncConsumer.Received += HandleEvent;
                     consumer = customSyncConsumer;
                     break;
+#if RABBITMQ_5_0
                 case ConsumerType.ExternalAsyncExplicit:
                     var customAsyncConsumer = new Samples.RabbitMQ.AsyncExplicitImplementationConsumer(channel);
                     customAsyncConsumer.Received += HandleEvent;
                     consumer = customAsyncConsumer;
                     break;
+#endif
+                // By default use the EventingBasicConsumer so we don't have to change span expectations across library versions
                 default:
+                    var defaultConsumer = new global::RabbitMQ.Client.Events.EventingBasicConsumer(channel);
+                    defaultConsumer.Received += HandleEvent;
+                    consumer = defaultConsumer;
                     break;
             }
 
