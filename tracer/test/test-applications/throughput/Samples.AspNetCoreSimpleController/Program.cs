@@ -20,7 +20,7 @@ namespace Samples.AspNetCoreSimpleController
 
                 bool tracerEnabled = Environment.GetEnvironmentVariable("DD_TRACE_ENABLED") != "0";
 
-                string ruleFile = Environment.GetEnvironmentVariable("DD_APPSEC_RULE");
+                string ruleFile = Environment.GetEnvironmentVariable("DD_APPSEC_RULES");
 
                 if (ruleFile != null)
                 {
