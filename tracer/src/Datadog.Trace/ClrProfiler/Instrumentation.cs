@@ -201,7 +201,7 @@ namespace Datadog.Trace.ClrProfiler
                 // lived nature of our apps. This appears to be a bug in the runtime (although
                 // we haven't yet confirmed that). Calling the `ToUuid()` method uses an MD5
                 // hash which calls into the native library, triggering the load.
-                var result = string.Empty.ToUUID();
+                _ = string.Empty.ToUUID();
             }
             catch (Exception ex)
             {
