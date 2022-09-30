@@ -92,6 +92,7 @@ partial class Build
 
     bool IsArm64 => RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
     string LinuxArchitectureIdentifier => IsArm64 ? "arm64" : TargetPlatform.ToString();
+    string OsxArchitectureIdentifier => IsArm64 ? "arm64" : "x64";
 
     IEnumerable<string> LinuxPackageTypes => IsAlpine ? new[] { "tar" } : new[] { "deb", "rpm", "tar" };
 
@@ -1845,14 +1846,15 @@ partial class Build
     private (string Arch, string Ext) GetLibDdWafUnixArchitectureAndExtension() =>
         (IsOsx) switch
         {
-            (true) => ("osx-x64", "dylib"),
+            // (true) => ($"osx-{OsxArchitectureIdentifier}", "dylib"), //LibDdWaf doesn't support osx-arm64 yet.
+            (true) => ($"osx-x64", "dylib"),
             (false) => ($"linux-{LinuxArchitectureIdentifier}", "so"), // LibDdWaf doesn't
         };
 
     private (string Arch, string Ext) GetUnixArchitectureAndExtension() =>
         (IsOsx, IsAlpine) switch
         {
-            (true, _) => ("osx-x64", "dylib"),
+            (true, _) => ($"osx-{OsxArchitectureIdentifier}", "dylib"),
             (false, false) => ($"linux-{LinuxArchitectureIdentifier}", "so"),
             (false, true) => ($"linux-musl-{LinuxArchitectureIdentifier}", "so"),
         };
