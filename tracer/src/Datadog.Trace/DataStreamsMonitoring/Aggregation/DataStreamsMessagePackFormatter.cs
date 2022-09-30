@@ -9,7 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -17,8 +16,6 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 {
     internal class DataStreamsMessagePackFormatter
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsWriter>();
-
         private readonly byte[] _environmentBytes = StringEncoding.UTF8.GetBytes("Env");
         private readonly byte[] _environmentValueBytes;
         private readonly byte[] _serviceBytes = StringEncoding.UTF8.GetBytes("Service");
@@ -63,8 +60,6 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         public int Serialize(ref byte[] bytes, int offset, long bucketDurationNs, List<SerializableStatsBucket> statsBuckets)
         {
             var originalOffset = offset;
-            var hashCount = 0;
-            double pointCount = 0;
 
             // 6 entries in StatsPayload:
             // -1 because we don't have a primary tag
@@ -92,7 +87,6 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
             foreach (var statsBucket in statsBuckets)
             {
-                hashCount += statsBucket.Bucket.Count;
                 // 3 entries per StatsBucket:
                 // https://github.com/DataDog/data-streams-go/blob/6772b163707c0a8ecc8c9a3b28e0dab7e0cf58d4/datastreams/payload.go#L27
                 offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 3);
@@ -113,7 +107,6 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
                 foreach (var point in statsBucket.Bucket.Values)
                 {
                     var hasEdges = point.EdgeTags.Length > 0;
-                    pointCount += point.EdgeLatency.GetCount();
 
                     // 6 entries per StatsPoint:
                     // 5 if no edge tags
@@ -148,8 +141,6 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
                     }
                 }
             }
-
-            Log.Debug<int, int, double>("Serialized data stream data: {BucketCount} buckets, {StatsCount} hashes. {PointsCount} points", statsBuckets.Count, hashCount, pointCount);
 
             return offset - originalOffset;
         }
