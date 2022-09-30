@@ -57,7 +57,7 @@ namespace Datadog.Trace.Agent.MessagePack
             return Serialize(ref bytes, offset, value, formatterResolver);
         }
 
-        // a version of IMessagePackFormatter<TraceChunkModel>.Serialize() with `in` modifier on `TraceChunkModel` parameter
+        // overload of IMessagePackFormatter<TraceChunkModel>.Serialize() with `in` modifier on `TraceChunkModel` parameter
         public int Serialize(ref byte[] bytes, int offset, in TraceChunkModel value, IFormatterResolver formatterResolver)
         {
             int originalOffset = offset;
@@ -93,7 +93,7 @@ namespace Datadog.Trace.Agent.MessagePack
             return Serialize(ref bytes, offset, in value, formatterResolver);
         }
 
-        // a version of IMessagePackFormatter<SpanModel>.Serialize() with `in` modifier on `SpanModel` parameter
+        // overload of IMessagePackFormatter<SpanModel>.Serialize() with `in` modifier on `SpanModel` parameter
         public int Serialize(ref byte[] bytes, int offset, in SpanModel value, IFormatterResolver formatterResolver)
         {
             var span = value.Span;

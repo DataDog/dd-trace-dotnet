@@ -49,10 +49,9 @@ internal readonly struct SpanIdLookup
             return false;
         }
 
-        // The local root span (if present) is the usually last span in the chunk
-        // and it is the parent of most spans.
-        // This or _spans.Array![_spans.Offset] would also be a shortcut for,
-        // trace chunks with single spans, be we don't use SpanIdLookup at all for those.
+        // Check the last span first as an optimization for the common case: a root span with children but zero grandchildren
+        // - the local root span is the almost always the last span in the chunk
+        // - the local root span is the parent of all the other spans
         if (value == _spans.Array![_spans.Offset + _spans.Count - 1].SpanId)
         {
             return true;
