@@ -78,11 +78,6 @@
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
-
-        <Content Condition="'$(RuntimeIdentifier)' != 'osx-arm64'" Update="..\Datadog.Monitoring.Distribution\home\osx-arm64\*.*">
-          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-          <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-        </Content>
       </ItemGroup>
     </When>
     <Otherwise>
