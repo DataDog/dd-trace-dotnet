@@ -22,7 +22,7 @@ build:
     - /^release.*$/
   except:
     variables:
-      - $DEPLOY_TO_REL_ENV
+      - $DEPLOY_TO_REL_ENV == "true"
   stage: build
   tags: ["runner:windows-docker", "windowsversion:1809"]
   script:
@@ -47,7 +47,7 @@ publish:
     - /^release.*$/
   except:
     variables:
-      - $DEPLOY_TO_REL_ENV
+      - $DEPLOY_TO_REL_ENV == "true"
   stage: publish
   tags: ["runner:windows-docker", "windowsversion:1809"]
   dependencies: 
