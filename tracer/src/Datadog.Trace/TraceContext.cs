@@ -102,6 +102,12 @@ namespace Datadog.Trace
 
             lock (this)
             {
+                // TODO is this the best spot to sample for single span?
+                if (_samplingPriority <= 0)
+                {
+                    Tracer.SpanSampler.MakeSamplingDecision(span);
+                }
+
                 _spans.Add(span);
                 if (!_rootSpanSent)
                 {
