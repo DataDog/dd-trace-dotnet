@@ -28,13 +28,6 @@ namespace Datadog.Trace.Sampling
         private readonly IRateLimiter _limiter;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="SpanSamplingRule"/> class with default values.
-        /// </summary>
-        public SpanSamplingRule()
-        {
-        }
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="SpanSamplingRule"/> class.
         /// </summary>
         /// <param name="serviceNameGlob">The glob pattern for the <see cref="Span.ServiceName"/>.</param>
