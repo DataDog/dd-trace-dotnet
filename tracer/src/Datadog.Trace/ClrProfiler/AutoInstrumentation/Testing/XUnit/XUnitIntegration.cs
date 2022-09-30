@@ -76,7 +76,7 @@ internal static class XUnitIntegration
         // Skip tests
         if (runnerInstance.SkipReason is { } skipReason)
         {
-            test.Close(Test.Status.Skip, skipReason: skipReason, duration: TimeSpan.Zero);
+            test.Close(TestStatus.Skip, skipReason: skipReason, duration: TimeSpan.Zero);
             return null;
         }
 
@@ -92,23 +92,23 @@ internal static class XUnitIntegration
             {
                 if (exception.GetType().Name == "SkipException")
                 {
-                    test.Close(Test.Status.Skip, skipReason: exception.Message);
+                    test.Close(TestStatus.Skip, skipReason: exception.Message);
                 }
                 else
                 {
                     test.SetErrorInfo(exception);
-                    test.Close(Test.Status.Fail);
+                    test.Close(TestStatus.Fail);
                 }
             }
             else
             {
-                test.Close(Test.Status.Pass);
+                test.Close(TestStatus.Pass);
             }
         }
         catch (Exception ex)
         {
             CIVisibility.Log.Warning(ex, "Error finishing test scope");
-            test.Close(Test.Status.Pass);
+            test.Close(TestStatus.Pass);
         }
     }
 

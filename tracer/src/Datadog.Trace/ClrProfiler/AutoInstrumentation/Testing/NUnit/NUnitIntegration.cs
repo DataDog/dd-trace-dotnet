@@ -120,7 +120,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             // Skip tests
             if (skipReason is not null)
             {
-                test.Close(Test.Status.Skip, skipReason: skipReason, duration: TimeSpan.Zero);
+                test.Close(Ci.TestStatus.Skip, skipReason: skipReason, duration: TimeSpan.Zero);
                 return null;
             }
 
@@ -143,21 +143,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 if (exTypeName == "NUnit.Framework.SuccessException")
                 {
                     test.SetTag(TestTags.Message, ex.Message);
-                    test.Close(Test.Status.Pass);
+                    test.Close(Ci.TestStatus.Pass);
                 }
                 else if (exTypeName is "NUnit.Framework.IgnoreException" or "NUnit.Framework.InconclusiveException")
                 {
-                    test.Close(Test.Status.Skip, skipReason: ex.Message);
+                    test.Close(Ci.TestStatus.Skip, skipReason: ex.Message);
                 }
                 else
                 {
                     test.SetErrorInfo(ex);
-                    test.Close(Test.Status.Fail);
+                    test.Close(Ci.TestStatus.Fail);
                 }
             }
             else
             {
-                test.Close(Test.Status.Pass);
+                test.Close(Ci.TestStatus.Pass);
             }
         }
 

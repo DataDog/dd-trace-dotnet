@@ -65,7 +65,7 @@ public class NUnitCompositeWorkItemSkipChildrenIntegration
                                 if (NUnitIntegration.CreateTest(testResult.Test) is { } test)
                                 {
                                     test.SetErrorInfo("SetUpException", compositeWorkItem.Result.Message, compositeWorkItem.Result.StackTrace);
-                                    test.Close(Test.Status.Fail, TimeSpan.Zero);
+                                    test.Close(Ci.TestStatus.Fail, TimeSpan.Zero);
                                 }
 
                                 // we need to track all items that we tagged as error due this method uses recursion on child spans.
@@ -78,7 +78,7 @@ public class NUnitCompositeWorkItemSkipChildrenIntegration
                             if (NUnitIntegration.CreateTest(testResult.Test) is { } test)
                             {
                                 test.SetErrorInfo("SetUpException", compositeWorkItem.Result.Message, compositeWorkItem.Result.StackTrace);
-                                test.Close(Test.Status.Fail, TimeSpan.Zero);
+                                test.Close(Ci.TestStatus.Fail, TimeSpan.Zero);
                             }
 
                             // we need to track all items that we tagged as error due this method uses recursion on child spans.
@@ -128,7 +128,7 @@ public class NUnitCompositeWorkItemSkipChildrenIntegration
                     {
                         if (NUnitIntegration.CreateTest(item.DuckCast<ITest>()) is { } test)
                         {
-                            test.Close(Test.Status.Skip, TimeSpan.Zero, skipMessage);
+                            test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, skipMessage);
                         }
                     }
                 }
@@ -148,7 +148,7 @@ public class NUnitCompositeWorkItemSkipChildrenIntegration
                         var testResult = item.DuckCast<IWorkItem>().Result;
                         if (NUnitIntegration.CreateTest(testResult.Test) is { } test)
                         {
-                            test.Close(Test.Status.Skip, TimeSpan.Zero, skipMessage);
+                            test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, skipMessage);
                         }
                     }
                 }

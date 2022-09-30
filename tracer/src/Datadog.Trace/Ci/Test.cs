@@ -58,27 +58,6 @@ public sealed class Test
     }
 
     /// <summary>
-    /// Test status
-    /// </summary>
-    public enum Status
-    {
-        /// <summary>
-        /// Pass test status
-        /// </summary>
-        Pass,
-
-        /// <summary>
-        /// Fail test status
-        /// </summary>
-        Fail,
-
-        /// <summary>
-        /// Skip test status
-        /// </summary>
-        Skip
-    }
-
-    /// <summary>
     /// Gets the current Test
     /// </summary>
     public static Test? Current
@@ -207,7 +186,7 @@ public sealed class Test
     /// <param name="status">Test status</param>
     /// <param name="duration">Duration of the test suite</param>
     /// <param name="skipReason">In case </param>
-    public void Close(Status status, TimeSpan? duration = null, string? skipReason = null)
+    public void Close(TestStatus status, TimeSpan? duration = null, string? skipReason = null)
     {
         if (Interlocked.Exchange(ref _finished, 1) == 1)
         {
@@ -237,14 +216,14 @@ public sealed class Test
         // Set status
         switch (status)
         {
-            case Status.Pass:
+            case TestStatus.Pass:
                 tags.Status = TestTags.StatusPass;
                 break;
-            case Status.Fail:
+            case TestStatus.Fail:
                 tags.Status = TestTags.StatusFail;
                 Suite.Tags.Status = TestTags.StatusFail;
                 break;
-            case Status.Skip:
+            case TestStatus.Skip:
                 tags.Status = TestTags.StatusSkip;
                 tags.SkipReason = skipReason;
                 break;

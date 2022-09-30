@@ -44,7 +44,7 @@ public static class NUnitSkipCommandExecuteIntegration
 
         if (NUnitIntegration.CreateTest(executionContext.CurrentTest) is { } test)
         {
-            test.Close(Test.Status.Skip, TimeSpan.Zero);
+            test.Close(Ci.TestStatus.Skip, TimeSpan.Zero);
         }
 
         return CallTargetState.GetDefault();

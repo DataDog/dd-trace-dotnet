@@ -98,18 +98,18 @@ public static class TestMethodAttributeExecuteIntegration
                         case UnitTestOutcome.Failed:
                         case UnitTestOutcome.Timeout:
                             test.SetErrorInfo(errorType, errorMessage, errorStackTrace);
-                            test.Close(Test.Status.Fail);
+                            test.Close(TestStatus.Fail);
                             break;
                         case UnitTestOutcome.Inconclusive:
                         case UnitTestOutcome.NotRunnable:
                             if (exception is not null)
                             {
                                 test.SetErrorInfo(exception);
-                                test.Close(Test.Status.Fail);
+                                test.Close(TestStatus.Fail);
                             }
                             else
                             {
-                                test.Close(Test.Status.Skip, skipReason: errorMessage);
+                                test.Close(TestStatus.Skip, skipReason: errorMessage);
                             }
 
                             break;
@@ -117,11 +117,11 @@ public static class TestMethodAttributeExecuteIntegration
                             if (exception is not null)
                             {
                                 test.SetErrorInfo(exception);
-                                test.Close(Test.Status.Fail);
+                                test.Close(TestStatus.Fail);
                             }
                             else
                             {
-                                test.Close(Test.Status.Pass);
+                                test.Close(TestStatus.Pass);
                             }
 
                             break;

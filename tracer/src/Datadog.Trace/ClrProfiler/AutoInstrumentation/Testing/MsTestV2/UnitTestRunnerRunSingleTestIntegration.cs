@@ -59,7 +59,7 @@ public static class UnitTestRunnerRunSingleTestIntegration
                 {
                     // This instrumentation catches all tests being ignored
                     var test = MsTestIntegration.OnMethodBegin(testMethodInfo, instance.GetType());
-                    test.Close(Test.Status.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
+                    test.Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
                 }
             }
         }
