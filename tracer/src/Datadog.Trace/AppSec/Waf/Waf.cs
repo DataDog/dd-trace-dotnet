@@ -70,7 +70,7 @@ namespace Datadog.Trace.AppSec.Waf
             var wafNative = new WafNative(libraryHandle);
             var encoder = new Encoder(wafNative);
             InitializationResult initalizationResult;
-            if (rulesJson != null)
+            if (!string.IsNullOrEmpty(rulesJson))
             {
                 initalizationResult = WafConfigurator.ConfigureFromRemoteConfig(rulesJson, wafNative, encoder, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
             }
