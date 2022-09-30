@@ -68,12 +68,12 @@ namespace Datadog.Trace.Security.IntegrationTests
             get { return _process?.ProcessName; }
         }
 
-        public Task<MockTracerAgent> RunOnSelfHosted(bool? enableSecurity, string externalRulesFile = null, int? traceRateLimit = null)
+        public MockTracerAgent RunOnSelfHosted(bool? enableSecurity, string externalRulesFile = null, int? traceRateLimit = null, bool startAgent = true)
         {
             if (_agent == null)
             {
                 var agentPort = TcpPortProvider.GetOpenPort();
-                _agent = MockTracerAgent.Create(Output, agentPort);
+                _agent = MockTracerAgent.Create(Output, agentPort, start: startAgent);
             }
 
             StartSample(
@@ -83,7 +83,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 externalRulesFile: externalRulesFile,
                 traceRateLimit: traceRateLimit);
 
-            return Task.FromResult(_agent);
+            return _agent;
         }
 
         public override void Dispose()

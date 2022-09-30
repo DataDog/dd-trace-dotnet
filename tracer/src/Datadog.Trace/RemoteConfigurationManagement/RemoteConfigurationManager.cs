@@ -312,6 +312,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private void SetRcmEnabled(AgentConfiguration c)
         {
             _isRcmEnabled = !string.IsNullOrEmpty(c.ConfigurationEndpoint);
+            Log.Information("Set RemoteConfigurationManager enabled");
         }
     }
 }

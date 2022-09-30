@@ -96,14 +96,18 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         public bool ShouldDeserializeTraces { get; set; } = true;
 
-        public static TcpUdpAgent Create(ITestOutputHelper output, int port = 8126, int retries = 5, bool useStatsd = false, bool doNotBindPorts = false, int? requestedStatsDPort = null, bool useTelemetry = false, AgentConfiguration agentConfiguration = null)
-            => new TcpUdpAgent(port, retries, useStatsd, doNotBindPorts, requestedStatsDPort, useTelemetry) { Output = output, Configuration = agentConfiguration ?? new() };
+        public static TcpUdpAgent Create(ITestOutputHelper output, int port = 8126, int retries = 5, bool useStatsd = false, int? requestedStatsDPort = null, bool useTelemetry = false, AgentConfiguration agentConfiguration = null, bool start = true) =>
+                ApplyStart(new TcpUdpAgent(port, retries, useStatsd, requestedStatsDPort, useTelemetry) { Output = output, Configuration = agentConfiguration ?? new() }, start);
 
 #if NETCOREAPP3_1_OR_GREATER
-        public static UdsAgent Create(ITestOutputHelper output, UnixDomainSocketConfig config, AgentConfiguration agentConfiguration = null) => new UdsAgent(config) { Output = output, Configuration = agentConfiguration ?? new() };
+        public static UdsAgent Create(ITestOutputHelper output, UnixDomainSocketConfig config, AgentConfiguration agentConfiguration = null, bool start = true) =>
+            ApplyStart(new UdsAgent(config) { Output = output, Configuration = agentConfiguration ?? new() }, start);
 #endif
 
-        public static NamedPipeAgent Create(ITestOutputHelper output, WindowsPipesConfig config, AgentConfiguration agentConfiguration = null) => new NamedPipeAgent(config) { Output = output, Configuration = agentConfiguration ?? new() };
+        public static NamedPipeAgent Create(ITestOutputHelper output, WindowsPipesConfig config, AgentConfiguration agentConfiguration = null, bool start = true) =>
+            ApplyStart(new NamedPipeAgent(config) { Output = output, Configuration = agentConfiguration ?? new() }, start);
+
+        public abstract void Start();
 
         /// <summary>
         /// Wait for the given number of spans to appear.
@@ -422,6 +426,17 @@ namespace Datadog.Trace.TestHelpers
             };
         }
 
+        private static T ApplyStart<T>(T agent, bool start)
+            where T : MockTracerAgent
+        {
+            if (start)
+            {
+                agent.Start();
+            }
+
+            return agent;
+        }
+
         private void HandlePotentialTraces(MockHttpParser.MockHttpRequest request)
         {
             if (ShouldDeserializeTraces && request.ContentLength >= 1)
@@ -732,36 +747,61 @@ namespace Datadog.Trace.TestHelpers
 
         public class TcpUdpAgent : MockTracerAgent
         {
-            private readonly HttpListener _listener;
-            private readonly UdpClient _udpClient;
-            private readonly Task _tracesListenerTask;
-            private readonly Task _statsdTask;
+            private readonly bool _useStatsd;
+            private readonly int? _requestedStatsDPort;
 
-            public TcpUdpAgent(int port, int retries, bool useStatsd, bool doNotBindPorts, int? requestedStatsDPort, bool useTelemetry)
+            private HttpListener _listener;
+            private Task _tracesListenerTask;
+            private Task _statsdTask;
+            private UdpClient _udpClient;
+            private int _retries;
+
+            public TcpUdpAgent(int port, int retries, bool useStatsd, int? requestedStatsDPort, bool useTelemetry)
                 : base(useTelemetry, TestTransports.Tcp)
             {
-                if (doNotBindPorts)
-                {
-                    // This is for any tests that want to use a specific port but never actually bind
-                    Port = port;
-                    return;
-                }
+                _retries = retries;
+                _useStatsd = useStatsd;
+                _requestedStatsDPort = requestedStatsDPort;
 
+                // this may not be the final port we choose, but some tests will want to read it before the agent starts
+                Port = port;
+            }
+
+            /// <summary>
+            /// Gets the TCP port that this Agent is listening on.
+            /// Can be different from the request port if listening on that port fails.
+            /// </summary>
+            public int Port { get; private set; }
+
+            /// <summary>
+            /// Gets the UDP port for statsd
+            /// </summary>
+            public int StatsdPort { get; private set; }
+
+            public override void Dispose()
+            {
+                base.Dispose();
+                _listener?.Close();
+                _udpClient?.Close();
+            }
+
+            public override void Start()
+            {
                 var listeners = new List<string>();
 
-                if (useStatsd)
+                if (_useStatsd)
                 {
-                    if (requestedStatsDPort != null)
+                    if (_requestedStatsDPort != null)
                     {
                         // This port is explicit, allow failure if not available
-                        StatsdPort = requestedStatsDPort.Value;
-                        _udpClient = new UdpClient(requestedStatsDPort.Value);
+                        StatsdPort = _requestedStatsDPort.Value;
+                        _udpClient = new UdpClient(_requestedStatsDPort.Value);
                     }
                     else
                     {
                         const int basePort = 11555;
 
-                        var retriesLeft = retries;
+                        var retriesLeft = _retries;
 
                         while (true)
                         {
@@ -791,13 +831,13 @@ namespace Datadog.Trace.TestHelpers
                     // seems like we can't reuse a listener if it fails to start,
                     // so create a new listener each time we retry
                     var listener = new HttpListener();
-                    listener.Prefixes.Add($"http://127.0.0.1:{port}/");
-                    listener.Prefixes.Add($"http://localhost:{port}/");
+                    listener.Prefixes.Add($"http://127.0.0.1:{Port}/");
+                    listener.Prefixes.Add($"http://localhost:{Port}/");
 
                     var containerHostname = EnvironmentHelpers.GetEnvironmentVariable("CONTAINER_HOSTNAME");
                     if (containerHostname != null)
                     {
-                        listener.Prefixes.Add($"{containerHostname}:{port}/");
+                        listener.Prefixes.Add($"{containerHostname}:{Port}/");
                     }
 
                     try
@@ -805,7 +845,6 @@ namespace Datadog.Trace.TestHelpers
                         listener.Start();
 
                         // successfully listening
-                        Port = port;
                         _listener = listener;
 
                         listeners.Add($"Traces at port {Port}");
@@ -813,11 +852,11 @@ namespace Datadog.Trace.TestHelpers
 
                         return;
                     }
-                    catch (HttpListenerException) when (retries > 0)
+                    catch (HttpListenerException) when (_retries > 0)
                     {
                         // only catch the exception if there are retries left
-                        port = TcpPortProvider.GetOpenPort();
-                        retries--;
+                        Port = TcpPortProvider.GetOpenPort();
+                        _retries--;
                     }
                     finally
                     {
@@ -828,24 +867,6 @@ namespace Datadog.Trace.TestHelpers
                     // whether it was caught or not
                     listener.Close();
                 }
-            }
-
-            /// <summary>
-            /// Gets the TCP port that this Agent is listening on.
-            /// Can be different from the request port if listening on that port fails.
-            /// </summary>
-            public int Port { get; }
-
-            /// <summary>
-            /// Gets the UDP port for statsd
-            /// </summary>
-            public int StatsdPort { get; }
-
-            public override void Dispose()
-            {
-                base.Dispose();
-                _listener?.Close();
-                _udpClient?.Close();
             }
 
             private void HandleHttpRequests()
@@ -935,28 +956,46 @@ namespace Datadog.Trace.TestHelpers
 
         public class NamedPipeAgent : MockTracerAgent
         {
-            private readonly PipeServer _statsPipeServer;
-            private readonly PipeServer _tracesPipeServer;
-            private readonly Task _statsdTask;
-            private readonly Task _tracesListenerTask;
+            private readonly WindowsPipesConfig _config;
+
+            private PipeServer _statsPipeServer;
+            private PipeServer _tracesPipeServer;
+            private Task _statsdTask;
+            private Task _tracesListenerTask;
 
             public NamedPipeAgent(WindowsPipesConfig config)
                 : base(config.UseTelemetry, TestTransports.WindowsNamedPipe)
             {
-                ListenerInfo = $"Traces at {config.Traces}";
+                _config = config;
+            }
 
-                if (config.Metrics != null && config.UseDogstatsD)
+            public string TracesWindowsPipeName { get; private set; }
+
+            public string StatsWindowsPipeName { get; private set; }
+
+            public override void Dispose()
+            {
+                base.Dispose();
+                _statsPipeServer?.Dispose();
+                _tracesPipeServer?.Dispose();
+            }
+
+            public override void Start()
+            {
+                ListenerInfo = $"Traces at {_config.Traces}";
+
+                if (_config.Metrics != null && _config.UseDogstatsD)
                 {
-                    if (File.Exists(config.Metrics))
+                    if (File.Exists(_config.Metrics))
                     {
-                        File.Delete(config.Metrics);
+                        File.Delete(_config.Metrics);
                     }
 
-                    StatsWindowsPipeName = config.Metrics;
-                    ListenerInfo += $", Stats at {config.Metrics}";
+                    StatsWindowsPipeName = _config.Metrics;
+                    ListenerInfo += $", Stats at {_config.Metrics}";
 
                     _statsPipeServer = new PipeServer(
-                        config.Metrics,
+                        _config.Metrics,
                         PipeDirection.In, // we don't send responses to stats requests
                         _cancellationTokenSource,
                         (stream, ct) => HandleNamedPipeStats(stream, ct),
@@ -966,15 +1005,15 @@ namespace Datadog.Trace.TestHelpers
                     _statsdTask = Task.Run(_statsPipeServer.Start);
                 }
 
-                if (File.Exists(config.Traces))
+                if (File.Exists(_config.Traces))
                 {
-                    File.Delete(config.Traces);
+                    File.Delete(_config.Traces);
                 }
 
-                TracesWindowsPipeName = config.Traces;
+                TracesWindowsPipeName = _config.Traces;
 
                 _tracesPipeServer = new PipeServer(
-                    config.Traces,
+                    _config.Traces,
                     PipeDirection.InOut,
                     _cancellationTokenSource,
                     (stream, ct) => HandleNamedPipeTraces(stream, ct),
@@ -982,17 +1021,6 @@ namespace Datadog.Trace.TestHelpers
                     x => Output?.WriteLine(x));
 
                 _tracesListenerTask = Task.Run(_tracesPipeServer.Start);
-            }
-
-            public string TracesWindowsPipeName { get; }
-
-            public string StatsWindowsPipeName { get; }
-
-            public override void Dispose()
-            {
-                base.Dispose();
-                _statsPipeServer?.Dispose();
-                _tracesPipeServer?.Dispose();
             }
 
             private async Task HandleNamedPipeStats(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
@@ -1134,53 +1162,24 @@ namespace Datadog.Trace.TestHelpers
 #if NETCOREAPP3_1_OR_GREATER
         public class UdsAgent : MockTracerAgent
         {
-            private readonly UnixDomainSocketEndPoint _tracesEndpoint;
-            private readonly Socket _udsTracesSocket;
-            private readonly UnixDomainSocketEndPoint _statsEndpoint;
-            private readonly Socket _udsStatsSocket;
-            private readonly Task _tracesListenerTask;
-            private readonly Task _statsdTask;
+            private readonly UnixDomainSocketConfig _config;
+
+            private UnixDomainSocketEndPoint _tracesEndpoint;
+            private Socket _udsTracesSocket;
+            private UnixDomainSocketEndPoint _statsEndpoint;
+            private Socket _udsStatsSocket;
+            private Task _tracesListenerTask;
+            private Task _statsdTask;
 
             public UdsAgent(UnixDomainSocketConfig config)
                 : base(config.UseTelemetry, TestTransports.Uds)
             {
-                ListenerInfo = $"Traces at {config.Traces}";
-
-                if (config.Metrics != null && config.UseDogstatsD)
-                {
-                    if (File.Exists(config.Metrics))
-                    {
-                        File.Delete(config.Metrics);
-                    }
-
-                    StatsUdsPath = config.Metrics;
-                    ListenerInfo += $", Stats at {config.Metrics}";
-                    _statsEndpoint = new UnixDomainSocketEndPoint(config.Metrics);
-
-                    _udsStatsSocket = new Socket(AddressFamily.Unix, SocketType.Dgram, ProtocolType.Unspecified);
-
-                    _udsStatsSocket.Bind(_statsEndpoint);
-                    // NOTE: Connectionless protocols don't use Listen()
-                    _statsdTask = Task.Run(HandleUdsStats);
-                }
-
-                _tracesEndpoint = new UnixDomainSocketEndPoint(config.Traces);
-
-                if (File.Exists(config.Traces))
-                {
-                    File.Delete(config.Traces);
-                }
-
-                TracesUdsPath = config.Traces;
-                _udsTracesSocket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
-                _udsTracesSocket.Bind(_tracesEndpoint);
-                _udsTracesSocket.Listen(1000);
-                _tracesListenerTask = Task.Run(HandleUdsTraces);
+                _config = config;
             }
 
-            public string TracesUdsPath { get; }
+            public string TracesUdsPath { get; private set; }
 
-            public string StatsUdsPath { get; }
+            public string StatsUdsPath { get; private set; }
 
             public override void Dispose()
             {
@@ -1201,6 +1200,42 @@ namespace Datadog.Trace.TestHelpers
                     IgnoreException(() => _udsStatsSocket.Dispose());
                     IgnoreException(() => File.Delete(StatsUdsPath));
                 }
+            }
+
+            public override void Start()
+            {
+                ListenerInfo = $"Traces at {_config.Traces}";
+
+                if (_config.Metrics != null && _config.UseDogstatsD)
+                {
+                    if (File.Exists(_config.Metrics))
+                    {
+                        File.Delete(_config.Metrics);
+                    }
+
+                    StatsUdsPath = _config.Metrics;
+                    ListenerInfo += $", Stats at {_config.Metrics}";
+                    _statsEndpoint = new UnixDomainSocketEndPoint(_config.Metrics);
+
+                    _udsStatsSocket = new Socket(AddressFamily.Unix, SocketType.Dgram, ProtocolType.Unspecified);
+
+                    _udsStatsSocket.Bind(_statsEndpoint);
+                    // NOTE: Connectionless protocols don't use Listen()
+                    _statsdTask = Task.Run(HandleUdsStats);
+                }
+
+                _tracesEndpoint = new UnixDomainSocketEndPoint(_config.Traces);
+
+                if (File.Exists(_config.Traces))
+                {
+                    File.Delete(_config.Traces);
+                }
+
+                TracesUdsPath = _config.Traces;
+                _udsTracesSocket = new Socket(AddressFamily.Unix, SocketType.Stream, ProtocolType.IP);
+                _udsTracesSocket.Bind(_tracesEndpoint);
+                _udsTracesSocket.Listen(1000);
+                _tracesListenerTask = Task.Run(HandleUdsTraces);
             }
 
             private void HandleUdsStats()

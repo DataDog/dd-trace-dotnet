@@ -24,14 +24,14 @@ namespace Datadog.Trace.TestHelpers
         }
 
         // doing multiple things here, waiting for the request and return the latest one
-        internal static async Task<GetRcmRequest> WaitRcmRequestAndReturnLast(this MockTracerAgent agent, int timeoutInMilliseconds = 50000)
+        internal static async Task<GetRcmRequest> WaitRcmRequestAndReturnLast(this MockTracerAgent agent, int timeoutInMilliseconds = 5_000)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
 
             GetRcmRequest request = null;
             while (DateTime.UtcNow < deadline)
             {
-                while (agent.RemoteConfigRequests.IsEmpty)
+                while (agent.RemoteConfigRequests.IsEmpty && DateTime.UtcNow < deadline)
                 {
                     await Task.Delay(200);
                 }
