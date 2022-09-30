@@ -25,19 +25,20 @@ internal readonly struct TraceChunkModel
     public readonly TraceTagCollection? Tags;
 
     public TraceChunkModel(in ArraySegment<Span> spans, TraceContext? traceContext)
-        : this(spans, traceContext?.RootSpan, traceContext?.SamplingPriority, traceContext?.Tags)
-    {
-    }
-
-    public TraceChunkModel(
-        in ArraySegment<Span> spans,
-        Span? localRoot,
-        int? samplingPriority,
-        TraceTagCollection? tags)
     {
         Spans = spans;
-        LocalRoot = localRoot;
-        SamplingPriority = samplingPriority;
-        Tags = tags;
+
+        if (traceContext is null)
+        {
+            LocalRoot = null;
+            SamplingPriority = null;
+            Tags = null;
+        }
+        else
+        {
+            LocalRoot = traceContext.RootSpan;
+            SamplingPriority = traceContext.SamplingPriority;
+            Tags = traceContext.Tags;
+        }
     }
 }
