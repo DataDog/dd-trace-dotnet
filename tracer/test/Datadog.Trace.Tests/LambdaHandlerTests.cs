@@ -77,6 +77,38 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
+        [InlineData("")]
+        [InlineData("::")]
+        [InlineData("A::B")]
+        [InlineData("A:::B")]
+        [InlineData("A::B::C::")]
+        [InlineData("A::B::C::D")]
+        public void LambdaHandlerThrowsWhenInvalidFormat(string handlerVariable)
+        {
+            Assert.Throws<ArgumentException>(() => new LambdaHandler(handlerVariable));
+        }
+
+        [Theory]
+        [InlineData("SomeType::Unknown::WhoKnows")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler::IdontExistAnywhere")]
+        [InlineData("SomeType::::WhoKnows")]
+        [InlineData("SomeType::::")]
+        public void LambdaHandlerThrowsWhenUnknownTypes(string handlerVariable)
+        {
+            Assert.Throws<Exception>(() => new LambdaHandler(handlerVariable));
+        }
+
+        [Theory]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod1")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod2")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod3")]
+        public void LambdaHandlerThrowsWhenInstrumentingGenericTypes(string handlerVariable)
+        {
+            // We don't support this yet (we could, we just haven't done the work for it yet)
+            Assert.Throws<Exception>(() => new LambdaHandler(handlerVariable));
+        }
+
+        [Theory]
         [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler+NestedHandler::HandlerMethod", "Datadog.Trace.Tests.TestHandler+NestedHandler")]
         [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler+NestedHandler::HiddenBaseMethod", "Datadog.Trace.Tests.TestHandler+NestedHandler")]
         [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler+NestedHandler::OverridenBaseMethod", "Datadog.Trace.Tests.TestHandler+NestedHandler")]

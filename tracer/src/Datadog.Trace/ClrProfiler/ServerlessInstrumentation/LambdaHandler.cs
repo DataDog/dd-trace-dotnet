@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 
@@ -13,9 +14,19 @@ internal class LambdaHandler
 {
     private static readonly string[] Separator = { "::" };
 
-    internal LambdaHandler(string handlerName)
+    internal LambdaHandler(string? handlerName)
     {
+        if (handlerName is null)
+        {
+            ThrowHelper.ThrowArgumentNullException(nameof(handlerName));
+        }
+
         var handlerTokens = handlerName.Split(Separator, StringSplitOptions.None);
+        if (handlerTokens.Length != 3)
+        {
+            ThrowHelper.ThrowArgumentException($"The handler name {handlerName} did not have the expected format A::B::C");
+        }
+
         MethodName = handlerTokens[2];
 
         var handlerType = Type.GetType($"{handlerTokens[1]},{handlerTokens[0]}");
@@ -24,6 +35,11 @@ internal class LambdaHandler
         if (handlerMethod is null)
         {
             throw new Exception($"Could not find handler method for {handlerName}");
+        }
+
+        if (handlerMethod.IsGenericMethod || handlerMethod.DeclaringType?.IsGenericType == true)
+        {
+            throw new Exception($"Unable to instrument generic handler method {handlerMethod.Name} declared on {handlerMethod.DeclaringType}");
         }
 
         // The method body may be in a different type, e.g. a base type
