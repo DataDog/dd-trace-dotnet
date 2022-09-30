@@ -30,8 +30,7 @@ namespace Datadog.Trace.Sampling
 
         public override void OnDisallowed(Span span, int count, int intervalMs, int maxTracesPerInterval)
         {
-            // TODO - copied from "TracerRateLimiter" - should this get logged?
-            Log.Warning<ulong, int, int>("Dropping span id {SpanId} with count of {Count} for last {Interval}ms.", span.SpanId, count, intervalMs);
+            Log.Debug<ulong, int, int>("Dropping span id {SpanId} with count of {Count} for last {Interval}ms.", span.SpanId, count, intervalMs);
         }
 
         public override void OnFinally(Span span)
