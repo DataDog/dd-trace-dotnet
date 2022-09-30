@@ -29,7 +29,7 @@ namespace Benchmarks.Trace
                 ServiceVersion = "version"
             };
 
-            LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
+            LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null, null);
             Tracer.UnsafeSetTracerInstance(LogInjectionTracer);
 
             var repository = (Hierarchy)log4net.LogManager.GetRepository();

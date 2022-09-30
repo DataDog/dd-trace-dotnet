@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using BenchmarkDotNet.Attributes;
@@ -28,7 +28,7 @@ namespace Benchmarks.Trace
                 ServiceVersion = "version"
             };
 
-            LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null);
+            LogInjectionTracer = new Tracer(logInjectionSettings, new DummyAgentWriter(), null, null, null, null);
             Tracer.UnsafeSetTracerInstance(LogInjectionTracer);
 
             var services = new ServiceCollection();

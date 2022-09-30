@@ -23,7 +23,7 @@ namespace Benchmarks.Trace
                 StartupDiagnosticLogEnabled = false
             };
 
-            Tracer = new Tracer(settings, new DummyAgentWriter(), null, null, null);
+            Tracer = new Tracer(settings, new DummyAgentWriter(), null, null, null, null);
         }
 
         /// <summary>
