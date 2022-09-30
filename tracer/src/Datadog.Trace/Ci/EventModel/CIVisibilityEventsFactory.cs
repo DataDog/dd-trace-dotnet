@@ -9,21 +9,14 @@ namespace Datadog.Trace.Ci.EventModel;
 internal static class CIVisibilityEventsFactory
 {
     public static IEvent FromSpan(Span span)
-    {
-        switch (span.Type)
+        => span.Type switch
         {
-            case SpanTypes.Test:
-                return new TestEvent(span);
-            case SpanTypes.TestSuite:
-                return new TestSuiteEvent(span);
-            case SpanTypes.TestModule:
-                return new TestModuleEvent(span);
-            case SpanTypes.TestSession:
-                return new TestSessionEvent(span);
-        }
-
-        return new SpanEvent(span);
-    }
+            SpanTypes.Test => new TestEvent(span),
+            SpanTypes.TestSuite => new TestSuiteEvent(span),
+            SpanTypes.TestModule => new TestModuleEvent(span),
+            SpanTypes.TestSession => new TestSessionEvent(span),
+            _ => new SpanEvent(span)
+        };
 
     public static Span? GetSpan(IEvent @event)
     {
