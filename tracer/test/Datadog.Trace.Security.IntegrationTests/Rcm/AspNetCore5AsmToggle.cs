@@ -38,9 +38,9 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         // * https://github.com/DataDog/dd-trace-dotnet/pull/3171
         // the verify file names will need adjusting too
         [SkippableTheory]
-        [InlineData(true, ApplyStates.ACKNOWLEDGED,  RcmCapabilitiesIndices.AsmActivationUInt32 | RcmCapabilitiesIndices.AsmIpBlockingUInt32)] // | RcmCapabilitiesIndices.AsmDdRules)]
-        [InlineData(false, ApplyStates.UNACKNOWLEDGED, RcmCapabilitiesIndices.AsmIpBlockingUInt32)] // | RcmCapabilitiesIndices.AsmDdRules)]
-        [InlineData(null, ApplyStates.ACKNOWLEDGED, RcmCapabilitiesIndices.AsmActivationUInt32 | RcmCapabilitiesIndices.AsmIpBlockingUInt32)] // | RcmCapabilitiesIndices.AsmDdRules)]
+        [InlineData(true, ApplyStates.ACKNOWLEDGED,  RcmCapabilitiesIndices.AsmActivationUInt32 | RcmCapabilitiesIndices.AsmIpBlockingUInt32 | RcmCapabilitiesIndices.AsmDdRulesUInt32)]
+        [InlineData(false, ApplyStates.UNACKNOWLEDGED, RcmCapabilitiesIndices.AsmIpBlockingUInt32 | RcmCapabilitiesIndices.AsmDdRulesUInt32)]
+        [InlineData(null, ApplyStates.ACKNOWLEDGED, RcmCapabilitiesIndices.AsmActivationUInt32 | RcmCapabilitiesIndices.AsmIpBlockingUInt32 | RcmCapabilitiesIndices.AsmDdRulesUInt32)]
         [Trait("RunOnWindows", "True")]
         public async Task TestSecurityToggling(bool? enableSecurity, uint expectedState, uint expectedCapabilities)
         {

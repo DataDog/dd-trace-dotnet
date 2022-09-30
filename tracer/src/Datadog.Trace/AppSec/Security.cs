@@ -274,8 +274,7 @@ namespace Datadog.Trace.AppSec
                 rcm =>
                 {
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeEnabled);
-                    // TODO set to '_settings.Rules == null' when https://github.com/DataDog/dd-trace-dotnet/pull/3120 is merged
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, false);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, _settings.Rules == null);
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, true);
                 });
         }
@@ -319,7 +318,7 @@ namespace Datadog.Trace.AppSec
                 e.Acknowledge(asmDataConfig.Name);
             }
 
-            var updated = _waf.UpdateRules(_asmDataConfigs.SelectMany(p => p.Value.RulesData));
+            var updated = UpdateRulesData();
             foreach (var asmDataConfig in asmDataConfigs)
             {
                 if (!updated)
@@ -333,6 +332,11 @@ namespace Datadog.Trace.AppSec
             }
         }
 
+        private bool UpdateRulesData()
+        {
+            return _waf?.UpdateRules(_asmDataConfigs?.SelectMany(p => p.Value.RulesData)) ?? false;
+        }
+
         private void UpdateStatus(bool fromRemoteConfig = false)
         {
             lock (_settings)
@@ -344,6 +348,7 @@ namespace Datadog.Trace.AppSec
                     _waf = Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteRulesJson);
                     if (_waf?.InitializedSuccessfully ?? false)
                     {
+                        UpdateRulesData();
                         EnableWaf(fromRemoteConfig);
                     }
                     else
@@ -364,8 +369,6 @@ namespace Datadog.Trace.AppSec
             if (!_enabled)
             {
                 AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged += AsmDataProductConfigChanged;
-                // reapply rules if existing ones in memory
-                _waf.UpdateRules(_asmDataConfigs?.SelectMany(p => p.Value.RulesData));
                 _instrumentationGateway.StartRequest += RunWafAndReact;
                 _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
                 _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
@@ -589,6 +592,7 @@ namespace Datadog.Trace.AppSec
 
             AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
             AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged -= FeaturesProductConfigChanged;
+            AsmRemoteConfigurationProducts.AsmDDProduct.ConfigChanged -= AsmDDProductConfigChanged;
             Dispose();
         }
 
