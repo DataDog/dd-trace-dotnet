@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RequiresDockerDependency>true</RequiresDockerDependency>
+
+    <!-- Required to build multiple projects with the same Configuration|Platform -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+    <Platforms>x64;x86;AnyCPU</Platforms>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Confluent.Kafka" Version="1.4.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\Samples.Kafka\Config.cs">
+      <Link>Config.cs</Link>
+    </Compile>
+    <Compile Include="..\Samples.Kafka\ConsumerBase.cs">
+      <Link>ConsumerBase.cs</Link>
+    </Compile>
+    <Compile Include="..\Samples.Kafka\Producer.cs">
+      <Link>Producer.cs</Link>
+    </Compile>
+    <Compile Include="..\Samples.Kafka\TopicHelpers.cs">
+      <Link>TopicHelpers.cs</Link>
+    </Compile>
+  </ItemGroup>
+</Project>

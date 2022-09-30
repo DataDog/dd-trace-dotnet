@@ -64,15 +64,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return AssertIntegration(allData, integrationId, enabled, autoEnabled);
         }
 
-        public static TelemetryData AssertConfiguration(this MockTracerAgent mockAgent, string key)
+        public static TelemetryData AssertConfiguration(this MockTracerAgent mockAgent, string key, object value = null)
         {
             mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).RequestType == TelemetryRequestTypes.AppStarted);
 
             var allData = mockAgent.Telemetry.Cast<TelemetryData>().ToArray();
-            return AssertConfiguration(allData, key);
+            return AssertConfiguration(allData, key, value);
         }
 
-        public static TelemetryData AssertConfiguration(this MockTelemetryAgent<TelemetryData> telemetry, string key, string value)
+        public static TelemetryData AssertConfiguration(this MockTelemetryAgent<TelemetryData> telemetry, string key, object value)
         {
             telemetry.WaitForLatestTelemetry(x => x.RequestType == TelemetryRequestTypes.AppStarted);
 
@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static TelemetryData AssertConfiguration(this MockTelemetryAgent<TelemetryData> telemetry, string key) => telemetry.AssertConfiguration(key, value: null);
 
-        private static TelemetryData AssertConfiguration(TelemetryData[] allData, string key, string value = null)
+        private static TelemetryData AssertConfiguration(TelemetryData[] allData, string key, object value = null)
         {
             var (latestConfigurationData, configurationPayload) =
                 allData
