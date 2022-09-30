@@ -91,8 +91,7 @@ partial class Build
             : new[] { MSBuildTargetPlatform.x86 };
 
     bool IsArm64 => RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
-    string LinuxArchitectureIdentifier => IsArm64 ? "arm64" : TargetPlatform.ToString();
-    string OsxArchitectureIdentifier => IsArm64 ? "arm64" : "x64";
+    string UnixArchitectureIdentifier => IsArm64 ? "arm64" : TargetPlatform.ToString();
 
     IEnumerable<string> LinuxPackageTypes => IsAlpine ? new[] { "tar" } : new[] { "deb", "rpm", "tar" };
 
@@ -643,7 +642,7 @@ partial class Build
             CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, assetsDirectory);
             chmod.Invoke($"+x {assetsDirectory / FileNames.CreateLogPathScript}");
 
-            var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
+            var workingDirectory = ArtifactsDirectory / $"linux-{UnixArchitectureIdentifier}";
             EnsureCleanDirectory(workingDirectory);
 
             const string packageName = "datadog-dotnet-apm";
@@ -1846,17 +1845,17 @@ partial class Build
     private (string Arch, string Ext) GetLibDdWafUnixArchitectureAndExtension() =>
         (IsOsx) switch
         {
-            // (true) => ($"osx-{OsxArchitectureIdentifier}", "dylib"), //LibDdWaf doesn't support osx-arm64 yet.
+            // (true) => ($"osx-{UnixArchitectureIdentifier}", "dylib"), //LibDdWaf doesn't support osx-arm64 yet.
             (true) => ($"osx-x64", "dylib"),
-            (false) => ($"linux-{LinuxArchitectureIdentifier}", "so"), // LibDdWaf doesn't
+            (false) => ($"linux-{UnixArchitectureIdentifier}", "so"), // LibDdWaf doesn't
         };
 
     private (string Arch, string Ext) GetUnixArchitectureAndExtension() =>
         (IsOsx, IsAlpine) switch
         {
-            (true, _) => ($"osx-{OsxArchitectureIdentifier}", "dylib"),
-            (false, false) => ($"linux-{LinuxArchitectureIdentifier}", "so"),
-            (false, true) => ($"linux-musl-{LinuxArchitectureIdentifier}", "so"),
+            (true, _) => ($"osx-{UnixArchitectureIdentifier}", "dylib"),
+            (false, false) => ($"linux-{UnixArchitectureIdentifier}", "so"),
+            (false, true) => ($"linux-musl-{UnixArchitectureIdentifier}", "so"),
         };
 
     // the integration tests need their own copy of the profiler, this achieved through build.props on Windows, but doesn't seem to work under Linux
