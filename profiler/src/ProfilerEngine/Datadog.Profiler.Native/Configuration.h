@@ -47,6 +47,7 @@ public:
     int32_t AllocationSampleLimit() const override;
     int32_t ContentionSampleLimit() const override;
     int32_t ContentionDurationThreshold() const override;
+    std::chrono::nanoseconds CpuWallTimeSamplingRate() const override;
 
 private:
     static tags ExtractUserTags();
@@ -61,6 +62,7 @@ private:
     static bool GetDefaultDebugLogEnabled();
     template <typename T>
     static T GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue);
+    static std::chrono::nanoseconds ExtractCpuWallTimeSamplingRate();
 
 private:
     static std::string const DefaultProdSite;
@@ -100,5 +102,7 @@ private:
     int32_t _allocationSampleLimit;
     int32_t _contentionSampleLimit;
     int32_t _contentionDurationThreshold;
+    std::chrono::nanoseconds _cpuWallTimeSamplingRate;
+
     double _minimumCores;
 };

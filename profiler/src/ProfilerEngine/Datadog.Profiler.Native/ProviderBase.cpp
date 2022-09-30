@@ -10,3 +10,8 @@ ProviderBase::ProviderBase(const char* name)
     _name {name}
 {
 }
+
+const char* ProviderBase::GetName()
+{
+    return _name.c_str();
+}

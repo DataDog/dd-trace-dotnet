@@ -31,8 +31,6 @@
 
 // Configuration constants:
 using namespace std::chrono_literals;
-constexpr std::chrono::nanoseconds SamplingPeriod = 9ms;
-constexpr uint64_t SamplingPeriodMs = SamplingPeriod.count() / 1000000;
 constexpr int32_t MaxThreadsPerIterationForWallTime = 5;
 constexpr int32_t MaxThreadsPerIterationForCpuTime = 60;
 constexpr const WCHAR* ThreadName = WStr("DD.Profiler.StackSamplerLoop.Thread");
@@ -69,6 +67,8 @@ StackSamplerLoop::StackSamplerLoop(
     _iteratorWallTime{0},
     _iteratorCpuTime{0}
 {
+    _samplingPeriod = _pConfiguration->CpuWallTimeSamplingRate();
+
     _pCorProfilerInfo->AddRef();
 
     _iteratorWallTime = _pManagedThreadList->CreateIterator();
@@ -154,7 +154,7 @@ void StackSamplerLoop::MainLoop()
 
 void StackSamplerLoop::WaitOnePeriod(void)
 {
-    std::this_thread::sleep_for(SamplingPeriod);
+    std::this_thread::sleep_for(_samplingPeriod);
 }
 
 void StackSamplerLoop::MainLoopIteration(void)
@@ -432,7 +432,7 @@ int64_t StackSamplerLoop::ComputeWallTime(int64_t currentTimestampNs, int64_t pr
     {
         // prevTimestampNs = 0 means that it is the first time the wall time is computed for a given thread
         // --> at least one sampling period has elapsed
-        return static_cast<int64_t>(SamplingPeriod.count());
+        return static_cast<int64_t>(_samplingPeriod.count());
     }
 
     if (prevTimestampNs > 0)
@@ -444,7 +444,7 @@ int64_t StackSamplerLoop::ComputeWallTime(int64_t currentTimestampNs, int64_t pr
     {
         // this should never happen
         // count at least one sampling period
-        return static_cast<int64_t>(SamplingPeriod.count());
+        return static_cast<int64_t>(_samplingPeriod.count());
     }
 }
 

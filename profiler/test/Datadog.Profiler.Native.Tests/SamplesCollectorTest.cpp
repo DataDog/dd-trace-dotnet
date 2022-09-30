@@ -88,6 +88,11 @@ public:
         return samples;
     }
 
+    const char* GetName()
+    {
+        return "FakeSamplesProvider";
+    }
+
 private:
     std::string_view _runtimeId;
     int _nbSamples;
@@ -296,6 +301,12 @@ TEST(SamplesCollectorTest, MustdNotAddSampleInExporterIfEmptyCallstack)
             // add sample with empty callstack
             samples.push_back({runtimeId.c_str()});
             return samples;
+        }));
+
+    EXPECT_CALL(mockSamplesProvider, GetName())
+        .Times(AtLeast(1))
+        .WillRepeatedly(InvokeWithoutArgs([runtimeId] {
+            return "MockedProvider";
         }));
 
     auto [exporter, mockExporter] = CreateExporter();

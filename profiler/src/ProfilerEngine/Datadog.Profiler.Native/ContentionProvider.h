@@ -34,4 +34,5 @@ private:
     IManagedThreadList* _pManagedThreadList;
     GenericSampler _sampler;
     int32_t _contentionDurationThreshold;
+    int32_t _sampleLimit;
 };

@@ -39,4 +39,5 @@ private:
     IManagedThreadList* _pManagedThreadList;
     IFrameStore* _pFrameStore;
     GroupSampler<ClassID> _sampler;
+    int32_t _sampleLimit;
 };

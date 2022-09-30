@@ -52,9 +52,10 @@ Configuration::Configuration()
     _serviceName = GetEnvironmentValue(EnvironmentVariables::ServiceName, OpSysTools::GetProcessName());
     _isAgentLess = GetEnvironmentValue(EnvironmentVariables::Agentless, false);
     _exceptionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ExceptionSampleLimit, 100);
-    _allocationSampleLimit = GetEnvironmentValue(EnvironmentVariables::AllocationSampleLimit, 100);
-    _contentionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ContentionSampleLimit, 100);
+    _allocationSampleLimit = GetEnvironmentValue(EnvironmentVariables::AllocationSampleLimit, 2000);
+    _contentionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ContentionSampleLimit, 1500);
     _contentionDurationThreshold = GetEnvironmentValue(EnvironmentVariables::ContentionDurationThreshold, 100);
+    _cpuWallTimeSamplingRate = ExtractCpuWallTimeSamplingRate();
     _minimumCores = GetEnvironmentValue<double>(EnvironmentVariables::CoreMinimumOverride, 1.0);
 }
 
@@ -139,6 +140,11 @@ int32_t Configuration::ContentionSampleLimit() const
 int32_t Configuration::ContentionDurationThreshold() const
 {
     return _contentionDurationThreshold;
+}
+
+std::chrono::nanoseconds Configuration::CpuWallTimeSamplingRate() const
+{
+    return _cpuWallTimeSamplingRate;
 }
 
 double Configuration::MinimumCores() const
@@ -309,6 +315,14 @@ std::chrono::seconds Configuration::ExtractUploadInterval()
     }
 
     return GetDefaultUploadInterval();
+}
+
+std::chrono::nanoseconds Configuration::ExtractCpuWallTimeSamplingRate()
+{
+    // default sampling rate is 13 ms; could be changed via env vars but down to a minimum of 9 ms
+    int64_t rate = std::max(GetEnvironmentValue(EnvironmentVariables::CpuWallTimeSamplingRate, 13), 9);
+    rate *= 1000000;
+    return std::chrono::nanoseconds(rate);
 }
 
 bool Configuration::GetDefaultDebugLogEnabled()

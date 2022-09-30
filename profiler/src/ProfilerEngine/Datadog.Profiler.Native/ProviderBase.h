@@ -14,6 +14,7 @@ class ProviderBase : public ISamplesProvider
 public:
     ProviderBase(const char* name);
     std::list<Sample> GetSamples() override = 0;
+    const char* GetName() override;
 
 protected:
     std::mutex _samplesLock;

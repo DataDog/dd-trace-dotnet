@@ -48,7 +48,7 @@ private:
     std::chrono::seconds _uploadInterval;
     bool _mustStop;
     IThreadsCpuManager* _pThreadsCpuManager;
-    std::forward_list<ISamplesProvider*> _samplesProviders;
+    std::forward_list<std::pair<ISamplesProvider*, uint64_t>> _samplesProviders;
     std::thread _workerThread;
     std::thread _exporterThread;
     std::mutex _exportLock;

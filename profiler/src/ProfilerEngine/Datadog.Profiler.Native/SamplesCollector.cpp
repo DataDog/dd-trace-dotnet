@@ -21,7 +21,7 @@ SamplesCollector::SamplesCollector(
 
 void SamplesCollector::Register(ISamplesProvider* samplesProvider)
 {
-    _samplesProviders.push_front(samplesProvider);
+    _samplesProviders.push_front(std::make_pair(samplesProvider, 0));
 }
 
 bool SamplesCollector::Start()
@@ -93,6 +93,15 @@ void SamplesCollector::Export()
     try
     {
         std::lock_guard lock(_exportLock);
+
+        Log::Info("Collected samples per provider:");
+        for (auto& samplesProvider : _samplesProviders)
+        {
+            auto name = samplesProvider.first->GetName();
+            Log::Info(name, " : ", samplesProvider.second);
+            samplesProvider.second = 0;
+        }
+
         success = _exporter->Export();
     }
     catch (std::exception const& ex)
@@ -107,13 +116,14 @@ void SamplesCollector::Export()
 
 void SamplesCollector::CollectSamples()
 {
-    for (auto const& samplesProvider : _samplesProviders)
+    for (auto& samplesProvider : _samplesProviders)
     {
         try
         {
             std::lock_guard lock(_exportLock);
 
-            auto result = samplesProvider->GetSamples();
+            auto result = samplesProvider.first->GetSamples();
+            samplesProvider.second += result.size();
 
             for (auto const& sample : result)
             {

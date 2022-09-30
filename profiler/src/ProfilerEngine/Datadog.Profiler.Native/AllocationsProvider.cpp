@@ -28,6 +28,7 @@ AllocationsProvider::AllocationsProvider(
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),
+    _sampleLimit(pConfiguration->AllocationSampleLimit()),
     _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval().count() * 1000)
 {
 }
@@ -39,7 +40,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
                                        uintptr_t address,
                                        uint64_t objectSize)
 {
-    if (!_sampler.Sample(classId))
+    if ((_sampleLimit > 0) && (!_sampler.Sample(classId)))
     {
         return;
     }

@@ -24,15 +24,15 @@ ContentionProvider::ContentionProvider(
     _pCorProfilerInfo{pCorProfilerInfo},
     _pManagedThreadList{pManagedThreadList},
     _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval().count() * 1000),
-    _contentionDurationThreshold{pConfiguration->ContentionDurationThreshold()}
+    _contentionDurationThreshold{pConfiguration->ContentionDurationThreshold()},
+    _sampleLimit{pConfiguration->ContentionSampleLimit()}
 {
 }
 
 void ContentionProvider::OnContention(double contentionDuration)
 {
-
     // sample contentions with a duration greater then a threshold (100ms by default)
-    if (contentionDuration < _contentionDurationThreshold)
+    if ((_sampleLimit > 0) && (contentionDuration < _contentionDurationThreshold))
     {
         if (!_sampler.Sample())
         {
