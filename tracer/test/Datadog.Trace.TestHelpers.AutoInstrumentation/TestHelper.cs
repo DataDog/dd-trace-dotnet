@@ -628,6 +628,19 @@ namespace Datadog.Trace.TestHelpers
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
         }
 
+        protected string UseTempLogFile()
+        {
+            string tmpFile = Path.GetTempFileName();
+            // Using obsolete variable so we can be sure it will only
+            // contain logs from this sample
+            SetEnvironmentVariable("DD_TRACE_LOG_PATH", tmpFile);
+
+            // Clear any existing log path values, as these take precedence over DD_TRACE_LOG_PATH
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.LogDirectory, string.Empty);
+
+            return tmpFile;
+        }
+
         private bool IsServerSpan(MockSpan span) =>
             span.Tags.GetValueOrDefault(Tags.SpanKind) == SpanKinds.Server;
 

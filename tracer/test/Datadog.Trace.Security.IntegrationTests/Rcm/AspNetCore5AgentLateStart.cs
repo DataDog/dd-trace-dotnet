@@ -37,6 +37,10 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         [Trait("RunOnWindows", "True")]
         public async Task TestAgentLateStart()
         {
+            // we expect exceptions in the logs, so write them outside of the usual place
+            // this is so they won't be checked in a later phase of the tests
+            UseTempLogFile();
+
             var url = "/Health/?[$slice]=value";
             var settings = VerifyHelper.GetSpanVerifierSettings();
 

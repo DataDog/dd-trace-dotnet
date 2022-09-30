@@ -26,13 +26,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         public void SingleLoaderTest()
         {
-            string tmpFile = Path.GetTempFileName();
-            // Using obsolete variable so we can be sure it will only
-            // contain logs from this sample
-            SetEnvironmentVariable("DD_TRACE_LOG_PATH", tmpFile);
-
-            // Clear any existing log path values, as these take precedence over DD_TRACE_LOG_PATH
-            SetEnvironmentVariable(Configuration.ConfigurationKeys.LogDirectory, string.Empty);
+            var tmpFile = UseTempLogFile();
 
             using ProcessResult processResult = RunSampleAndWaitForExit(MockTracerAgent.Create(Output, 9696, start: false));
             string[] logFileContent = File.ReadAllLines(tmpFile);
