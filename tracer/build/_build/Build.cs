@@ -315,14 +315,13 @@ partial class Build : NukeBuild
         {
             var runtimes = new[] 
             { 
-                (framework: TargetFramework.NETCOREAPP3_1, rid: "win-x86", archiveFormat: ".zip"),  
-                (framework: TargetFramework.NETCOREAPP3_1, rid: "win-x64", archiveFormat: ".zip"),  
-                (framework: TargetFramework.NETCOREAPP3_1, rid: "linux-x64", archiveFormat: ".tar.gz"),  
-                (framework: TargetFramework.NETCOREAPP3_1, rid: "linux-musl-x64", archiveFormat: ".tar.gz"),  
-                (framework: TargetFramework.NETCOREAPP3_1, rid: "osx-x64", archiveFormat: ".tar.gz"),  
-                (framework: TargetFramework.NETCOREAPP3_1, rid: "linux-arm64", archiveFormat: ".tar.gz"),
-                (framework: TargetFramework.NET6_0, rid: "osx-arm64", archiveFormat: ".tar.gz")
-            }.Select(x => (x.framework, x.rid, archive: ArtifactsDirectory / $"dd-trace-{x.rid}{x.archiveFormat}", output: ArtifactsDirectory / "tool" / x.rid))
+                (rid: "win-x86", archiveFormat: ".zip"),  
+                (rid: "win-x64", archiveFormat: ".zip"),  
+                (rid: "linux-x64", archiveFormat: ".tar.gz"),  
+                (rid: "linux-musl-x64", archiveFormat: ".tar.gz"),  
+                (rid: "osx-x64", archiveFormat: ".tar.gz"),  
+                (rid: "linux-arm64", archiveFormat: ".tar.gz"),
+            }.Select(x => (x.rid, archive: ArtifactsDirectory / $"dd-trace-{x.rid}{x.archiveFormat}", output: ArtifactsDirectory / "tool" / x.rid))
              .ToArray();
 
             runtimes.ForEach(runtime => EnsureCleanDirectory(runtime.output));
@@ -333,6 +332,7 @@ partial class Build : NukeBuild
                 // Have to do a restore currently as we're specifying specific runtime
                 // .EnableNoRestore()
                 .EnableNoDependencies()
+                .SetFramework(TargetFramework.NETCOREAPP3_1)
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
@@ -341,7 +341,6 @@ partial class Build : NukeBuild
                 .SetProperty("DebugType", "None")
                 .CombineWith(runtimes, (c, runtime) => c
                                 .SetProperty("PublishDir", runtime.output)
-                                .SetFramework(runtime.framework)
                                 .SetRuntime(runtime.rid)));
 
             runtimes.ForEach(

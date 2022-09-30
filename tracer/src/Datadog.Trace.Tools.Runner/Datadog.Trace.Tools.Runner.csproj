@@ -25,7 +25,7 @@
         <OutputPath>bin\$(Configuration)\Console</OutputPath>
         <PublishDir Condition="'$(PublishDir)' == '' ">bin\$(Configuration)\Console\publish\$(RuntimeIdentifier)</PublishDir>
         <AssemblyName>dd-trace</AssemblyName>
-        <RuntimeIdentifiers>win-x64;win-x86;linux-x64;linux-musl-x64;osx-x64;linux-arm64;osx-arm64</RuntimeIdentifiers>
+        <RuntimeIdentifiers>win-x64;win-x86;linux-x64;linux-musl-x64;osx-x64;linux-arm64</RuntimeIdentifiers>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <PublishTrimmed>true</PublishTrimmed>
         <PublishSingleFile>true</PublishSingleFile>
@@ -75,11 +75,6 @@
         </Content>
 
         <Content Condition="'$(RuntimeIdentifier)' != 'osx-x64'" Update="..\Datadog.Monitoring.Distribution\home\osx-x64\*.*">
-          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-          <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-        </Content>
-
-        <Content Condition="'$(RuntimeIdentifier)' != 'osx-arm64'" Update="..\Datadog.Monitoring.Distribution\home\osx-arm64\*.*">
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
