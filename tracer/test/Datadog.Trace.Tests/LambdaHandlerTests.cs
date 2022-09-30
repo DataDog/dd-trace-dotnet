@@ -38,11 +38,54 @@ namespace Datadog.Trace.Tests
         [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler::HiddenBaseMethod", "Datadog.Trace.Tests.TestHandler")]
         [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler::OverridenBaseMethod", "Datadog.Trace.Tests.TestHandler")]
         [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler2::AbstractBaseMethod", "Datadog.Trace.Tests.TestHandler2")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler3::AbstractBaseMethod", "Datadog.Trace.Tests.TestHandler3")]
         [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler::BaseHandlerMethod", "Datadog.Trace.Tests.BaseHandler")]
         [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler::NonOverridenBaseMethod", "Datadog.Trace.Tests.BaseHandler")]
         public void LambdaHandlerCanParseCustomType(string handlerVariable, string expectedType)
         {
             LambdaHandler handler = new LambdaHandler(handlerVariable);
+            handler.FullType.Should().Be(expectedType);
+            handler.ParamTypeArray.Length.Should().Be(1);
+            handler.ParamTypeArray[0].Should().Be(ClrNames.Void);
+        }
+
+        [Theory]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler3::AbstractGenericBaseMethod1", "Datadog.Trace.Tests.TestHandler3", "AbstractGenericBaseMethod1")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler3::AbstractGenericBaseMethod2", "Datadog.Trace.Tests.TestHandler3", "AbstractGenericBaseMethod2")]
+        public void LambdaHandlerCanHandleClosedGenericTypes(string handlerVariable, string expectedType, string expectedMethod)
+        {
+            LambdaHandler handler = new LambdaHandler(handlerVariable);
+            handler.Assembly.Should().Be("Datadog.Trace.Tests");
+            handler.FullType.Should().Be(expectedType);
+            handler.MethodName.Should().Be(expectedMethod);
+            handler.ParamTypeArray.Length.Should().Be(2);
+            handler.ParamTypeArray[0].Should().Be(ClrNames.Int32);
+            handler.ParamTypeArray[1].Should().Be(ClrNames.Int32);
+        }
+
+        [Theory(Skip = "We don't currently support open generics in Lambda")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod1", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod1")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod2", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod2")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler4::GenericBaseMethod3", "Datadog.Trace.Tests.GenericBaseHandler`1", "GenericBaseMethod3")]
+        public void LambdaHandlerCanHandleOpenGenericTypes(string handlerVariable, string expectedType, string expectedMethod, params string[] args)
+        {
+            LambdaHandler handler = new LambdaHandler(handlerVariable);
+            handler.Assembly.Should().Be("Datadog.Trace.Tests");
+            handler.FullType.Should().Be(expectedType);
+            handler.MethodName.Should().Be(expectedMethod);
+            handler.ParamTypeArray.Should().BeSameAs(args);
+        }
+
+        [Theory]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler+NestedHandler::HandlerMethod", "Datadog.Trace.Tests.TestHandler+NestedHandler")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler+NestedHandler::HiddenBaseMethod", "Datadog.Trace.Tests.TestHandler+NestedHandler")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler+NestedHandler::OverridenBaseMethod", "Datadog.Trace.Tests.TestHandler+NestedHandler")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler+NestedHandler::BaseHandlerMethod", "Datadog.Trace.Tests.BaseHandler")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TestHandler+NestedHandler::NonOverridenBaseMethod", "Datadog.Trace.Tests.BaseHandler")]
+        public void LambdaHandlerCanHandleNestedTypes(string handlerVariable, string expectedType)
+        {
+            LambdaHandler handler = new LambdaHandler(handlerVariable);
+            handler.Assembly.Should().Be("Datadog.Trace.Tests");
             handler.FullType.Should().Be(expectedType);
             handler.ParamTypeArray.Length.Should().Be(1);
             handler.ParamTypeArray[0].Should().Be(ClrNames.Void);
@@ -76,6 +119,21 @@ namespace Datadog.Trace.Tests
         public override void OverridenBaseMethod()
         {
         }
+
+        public class NestedHandler : BaseHandler
+        {
+            public void HandlerMethod()
+            {
+            }
+
+            public new void HiddenBaseMethod()
+            {
+            }
+
+            public override void OverridenBaseMethod()
+            {
+            }
+        }
     }
 
     public class TestHandler2 : AbstractBaseHandler
@@ -90,6 +148,14 @@ namespace Datadog.Trace.Tests
         public override void AbstractBaseMethod()
         {
         }
+
+        public override int AbstractGenericBaseMethod1(int value) => 1;
+
+        public override int AbstractGenericBaseMethod2(int value) => 1;
+    }
+
+    public class TestHandler4 : GenericBaseHandler<int>
+    {
     }
 
     public class BaseHandler
@@ -119,6 +185,21 @@ namespace Datadog.Trace.Tests
     public abstract class AbstractGenericBaseHandler<T>
     {
         public abstract void AbstractBaseMethod();
+
+        public abstract int AbstractGenericBaseMethod1(T value);
+
+        public abstract T AbstractGenericBaseMethod2(int value);
+    }
+
+    public class GenericBaseHandler<T>
+    {
+        public void GenericBaseMethod1(T value)
+        {
+        }
+
+        public T GenericBaseMethod2() => default;
+
+        public T2 GenericBaseMethod3<T2>() => default;
     }
 
     public class TestMockSpan : MockSpan
