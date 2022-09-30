@@ -175,6 +175,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableFact]
+        public void MethodInterface()
+        {
+            int agentPort = TcpPortProvider.GetOpenPort();
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var processResult = RunSampleAndWaitForExit(agent, arguments: "interface"))
+            {
+                int begin1MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+
+                string[] typeNames = new string[]
+                {
+                    ".VoidMethod",
+                };
+
+                Assert.Equal(2, begin1MethodCount);
+                Assert.Equal(2, endMethodCount);
+
+                foreach (var typeName in typeNames)
+                {
+                    Assert.Contains(typeName, processResult.StandardOutput);
+                }
+            }
+        }
+
+        [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
         public void RemoveIntegrations()
         {

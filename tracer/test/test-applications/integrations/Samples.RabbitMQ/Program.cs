@@ -26,118 +26,93 @@ namespace Samples.RabbitMQ
 
         public static void Main(string[] args)
         {
-            RunRabbitMQ();
+            // Test a derived type for the sync consumer from the library
+            RunProducersAndConsumers(useQueue: false, ConsumerType.InternalSyncDerived, isAsyncConsumer: false);
+
+            // Test a derived type for the async consumer from the library
+            RunProducersAndConsumers(useQueue: true, ConsumerType.InternalAsyncDerived, isAsyncConsumer: true);
+
+            // Test a custom type that implements the sync consumer interface, using implicit interface implementation
+            RunProducersAndConsumers(useQueue: true, ConsumerType.ExternalSyncImplicit, isAsyncConsumer: false);
+
+            // Test a custom type that implements the async consumer inteface, using explicit interface implementation
+            RunProducersAndConsumers(useQueue: true, ConsumerType.ExternalAsyncExplicit, isAsyncConsumer: true);
         }
 
-        private static void RunRabbitMQ()
+        private static void RunProducersAndConsumers(bool useQueue, ConsumerType consumerType, bool isAsyncConsumer)
         {
-            PublishAndGet();
-            PublishAndGetDefault();
+            PublishAndGet(useDefaultQueue: false);
+            PublishAndGet(useDefaultQueue: true);
 
             var sendThread = new Thread(Send);
             sendThread.Start();
 
-            var receiveThread = new Thread(o => Receive(false));
+            var receiveThread = new Thread(o => Receive(useQueue, consumerType, isAsyncConsumer));
             receiveThread.Start();
 
             sendThread.Join();
             receiveThread.Join();
 
             _sendFinished.Reset();
-
-            // Doing the test twice to make sure that both our context propagation works but also manual propagation (when users enqueue messages for instance)
-            PublishAndGet();
-            PublishAndGetDefault();
-
-            sendThread = new Thread(Send);
-            sendThread.Start();
-
-            receiveThread = new Thread(o => Receive(true));
-            receiveThread.Start();
-
-            sendThread.Join();
-            receiveThread.Join();
-
         }
 
-        private static void PublishAndGet()
+        private static void PublishAndGet(bool useDefaultQueue)
         {
-            // Configure and send to RabbitMQ queue
-            var factory = new ConnectionFactory() { HostName = Host() };
+            string messagePrefix = $"Program.PublishAndGetDefault(useDefaultQueue: {useDefaultQueue})";
 
-            using (var connection = factory.CreateConnection())
-            using (var channel = connection.CreateModel())
-            {
-                using (SampleHelpers.CreateScope("PublishAndGet()"))
-                {
-                    channel.ExchangeDeclare(exchangeName, "direct");
-                    channel.QueueDeclare(queue: queueName,
-                                            durable: false,
-                                            exclusive: false,
-                                            autoDelete: false,
-                                            arguments: null);
-                    channel.QueueBind(queueName, exchangeName, routingKey);
-                    channel.QueuePurge(queueName); // Ensure there are no more messages in this queue
-
-                    // Test an empty BasicGetResult
-                    channel.BasicGet(queueName, true);
-
-                    // Send message to the exchange
-                    byte[] body = null;
-
-                    channel.BasicPublish(exchange: exchangeName,
-                                            routingKey: routingKey,
-                                            basicProperties: null,
-                                            body: body);
-                    Console.WriteLine($"[Program.PublishAndGet] BasicPublish - Sent message: {string.Empty}");
-                }
-
-                // Immediately get a message from the queue (bound to the exchange)
-                // Move this outside of the manual span to ensure that the operation
-                // uses the distributed tracing context
-                var result = channel.BasicGet(queueName, true);
-#if RABBITMQ_6_0
-                var resultMessage = Encoding.UTF8.GetString(result.Body.ToArray());
-#else
-                var resultMessage = Encoding.UTF8.GetString(result.Body);
-#endif
-
-                Console.WriteLine($"[Program.PublishAndGet] BasicGet - Received message: {resultMessage}");
-            }
-        }
-
-        private static void PublishAndGetDefault()
-        {
             // Configure and send to RabbitMQ queue
             var factory = new ConnectionFactory() { HostName = Host() };
             
             using (var connection = factory.CreateConnection())
             using (var channel = connection.CreateModel())
             {
-                string defaultQueueName;
+                string publishExchangeName;
+                string publishQueueName;
+                string publishRoutingKey;
 
-                using (SampleHelpers.CreateScope("PublishAndGetDefault()"))
+                using (SampleHelpers.CreateScope(messagePrefix))
                 {
-                    defaultQueueName = channel.QueueDeclare().QueueName;
-                    channel.QueuePurge(queueName); // Ensure there are no more messages in this queue
+                    if (useDefaultQueue)
+                    {
+                        publishExchangeName = "";
+                        publishQueueName = channel.QueueDeclare().QueueName;
+                        publishRoutingKey = publishQueueName;
+                    }
+                    else
+                    {
+                        publishExchangeName = exchangeName;
+                        publishQueueName = queueName;
+                        publishRoutingKey = routingKey;
+
+                        channel.ExchangeDeclare(publishExchangeName, "direct");
+                        channel.QueueDeclare(queue: publishQueueName,
+                                            durable: false,
+                                            exclusive: false,
+                                            autoDelete: false,
+                                            arguments: null);
+                        channel.QueueBind(publishQueueName, publishExchangeName, publishRoutingKey);
+                    }
+
+                    // Ensure there are no more messages in this queue
+                    channel.QueuePurge(publishQueueName);
 
                     // Test an empty BasicGetResult
-                    channel.BasicGet(defaultQueueName, true);
+                    channel.BasicGet(publishQueueName, true);
 
                     // Send message to the default exchange and use new queue as the routingKey
-                    string message = "PublishAndGetDefault - Message";
+                    string message = $"{messagePrefix} - Message";
                     var body = Encoding.UTF8.GetBytes(message);
-                    channel.BasicPublish(exchange: "",
-                                            routingKey: defaultQueueName,
+                    channel.BasicPublish(exchange: publishExchangeName,
+                                            routingKey: publishRoutingKey,
                                             basicProperties: null,
                                             body: body);
-                    Console.WriteLine($"[Program.PublishAndGetDefault] BasicPublish - Sent message: {message}");
+                    Console.WriteLine($"BasicPublish - Sent message: {message}");
                 }
 
                 // Immediately get a message from the queue
                 // Move this outside of the manual span to ensure that the operation
                 // uses the distributed tracing context
-                var result = channel.BasicGet(defaultQueueName, true);
+                var result = channel.BasicGet(publishQueueName, true);
 #if RABBITMQ_6_0
                 var resultMessage = Encoding.UTF8.GetString(result.Body.ToArray());
 #else
@@ -185,13 +160,17 @@ namespace Samples.RabbitMQ
             Console.WriteLine("[Send] Exiting Thread.");
         }
 
-        private static void Receive(bool useQueue)
+        private static void Receive(bool useQueue, ConsumerType consumerType, bool isAsyncConsumer)
         {
             // Let's just wait for all sending activity to finish before doing any work
             _sendFinished.WaitOne();
 
             // Configure and listen to RabbitMQ queue
             var factory = new ConnectionFactory() { HostName = Host() };
+#if RABBITMQ_5_0
+            factory.DispatchConsumersAsync = isAsyncConsumer;
+#endif
+
             using(var connection = factory.CreateConnection())
             using(var channel = connection.CreateModel())
             {
@@ -202,18 +181,7 @@ namespace Samples.RabbitMQ
                                     arguments: null);
 
                 var queue = new BlockingCollection<BasicDeliverEventArgs>();
-                var consumer = new EventingBasicConsumer(channel);
-                consumer.Received += (model, ea) =>
-                {
-                    if (useQueue)
-                    {
-                        queue.Add(ea);
-                    }
-                    else
-                    {
-                        TraceOnTheReceivingEnd(ea);
-                    }
-                };
+                var consumer = CreateConsumer(channel, queue, useQueue: useQueue, consumerType);
                 channel.BasicConsume("hello",
                                     true,
                                     consumer);
@@ -238,6 +206,62 @@ namespace Samples.RabbitMQ
 
                 Console.WriteLine("[Receive] Exiting Thread.");
             }
+        }
+
+        private static IBasicConsumer CreateConsumer(IModel channel, BlockingCollection<BasicDeliverEventArgs> queue, bool useQueue, ConsumerType consumerType)
+        {
+            void HandleEvent(object sender, BasicDeliverEventArgs ea)
+            {
+                if (useQueue)
+                {
+                    queue.Add(ea);
+                }
+                else
+                {
+                    TraceOnTheReceivingEnd(ea);
+                }
+            }
+
+            IBasicConsumer consumer = null;
+            switch (consumerType)
+            {
+                case ConsumerType.InternalSyncDerived:
+                    var eventingBasicConsumer = new global::RabbitMQ.Client.Events.EventingBasicConsumer(channel);
+                    eventingBasicConsumer.Received += HandleEvent;
+                    consumer = eventingBasicConsumer;
+                    break;
+#if RABBITMQ_5_0
+                case ConsumerType.InternalAsyncDerived:
+                    var asyncEventingBasicConsumer = new global::RabbitMQ.Client.Events.AsyncEventingBasicConsumer(channel);
+                    asyncEventingBasicConsumer.Received += (ch, ea) =>
+                    {
+                        HandleEvent(ch, ea);
+                        return Task.CompletedTask;
+                    };
+                    consumer = asyncEventingBasicConsumer;
+                    break;
+#endif
+                case ConsumerType.ExternalSyncImplicit:
+                    var customSyncConsumer = new Samples.RabbitMQ.SyncImplicitImplementationConsumer(channel);
+                    customSyncConsumer.Received += HandleEvent;
+                    consumer = customSyncConsumer;
+                    break;
+#if RABBITMQ_5_0
+                case ConsumerType.ExternalAsyncExplicit:
+                    var customAsyncConsumer = new Samples.RabbitMQ.AsyncExplicitImplementationConsumer(channel);
+                    customAsyncConsumer.Received += HandleEvent;
+                    consumer = customAsyncConsumer;
+                    break;
+#endif
+                // By default use the EventingBasicConsumer so we don't have to change span expectations across library versions
+                default:
+                    var defaultConsumer = new global::RabbitMQ.Client.Events.EventingBasicConsumer(channel);
+                    defaultConsumer.Received += HandleEvent;
+                    consumer = defaultConsumer;
+                    break;
+            }
+
+            return consumer;
         }
 
         private static void ConsumeFromQueue(BlockingCollection<BasicDeliverEventArgs> queue)
@@ -275,6 +299,14 @@ namespace Samples.RabbitMQ
 
                 return Enumerable.Empty<string>();
             }
+        }
+
+        enum ConsumerType
+        {
+            InternalSyncDerived,
+            ExternalSyncImplicit,
+            ExternalAsyncExplicit,
+            InternalAsyncDerived,
         }
     }
 }
