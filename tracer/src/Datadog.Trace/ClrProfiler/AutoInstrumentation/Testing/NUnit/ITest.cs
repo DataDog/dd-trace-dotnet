@@ -105,11 +105,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         ITest Parent { get; }
     }
 
-    internal interface ITestAssembly : ITest
+    internal struct TestAssemblyStruct
     {
         /// <summary>
         /// Gets the assembly in which the type is declared
         /// </summary>
-        Assembly Assembly { get; }
+        public Assembly Assembly;
     }
 }

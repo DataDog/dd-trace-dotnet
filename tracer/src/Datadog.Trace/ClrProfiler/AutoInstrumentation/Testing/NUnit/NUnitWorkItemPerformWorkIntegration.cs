@@ -40,7 +40,7 @@ public static class NUnitWorkItemPerformWorkIntegration
             var item = instance.Test;
             switch (item.TestType)
             {
-                case "Assembly" when item.Instance.TryDuckCast<ITestAssembly>(out var itemAssembly):
+                case "Assembly" when item.Instance.TryDuckCast<TestAssemblyStruct>(out var itemAssembly):
                     var assemblyName = itemAssembly.Assembly?.GetName().Name ?? string.Empty;
                     var frameworkVersion = item.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
                     CIVisibility.WaitForSkippableTaskToFinish();
