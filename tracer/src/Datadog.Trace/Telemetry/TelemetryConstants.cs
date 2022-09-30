@@ -18,6 +18,6 @@ namespace Datadog.Trace.Telemetry
         public const string ApiVersionHeader = "DD-Telemetry-API-Version";
         public const string RequestTypeHeader = "DD-Telemetry-Request-Type";
 
-        public static readonly TimeSpan RefreshInterval = TimeSpan.FromMinutes(1);
+        public static readonly TimeSpan DefaultFlushInterval = TimeSpan.FromMinutes(1);
     }
 }

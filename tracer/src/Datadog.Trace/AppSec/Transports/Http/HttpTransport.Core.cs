@@ -26,7 +26,7 @@ namespace Datadog.Trace.AppSec.Transports.Http
 
         public bool IsSecureConnection => _context.Request.IsHttps;
 
-        public bool Blocked => _context.Items["block"] != null;
+        public bool Blocked => _context.Items["block"] is bool blocked && blocked;
 
         public Func<string, string> GetHeader => key => _context.Request.Headers[key];
 
@@ -52,17 +52,28 @@ namespace Datadog.Trace.AppSec.Transports.Http
             return new HeadersCollectionAdapter(_context.Response.Headers);
         }
 
-        public void WriteBlockedResponse(string templateJson, string templateHtml)
+        public void WriteBlockedResponse(string templateJson, string templateHtml, bool canAccessHeaders)
         {
             _context.Items["block"] = true;
             var httpResponse = _context.Response;
             httpResponse.Clear();
-            httpResponse.Headers.Clear();
+
+            foreach (var cookie in _context.Request.Cookies)
+            {
+                httpResponse.Cookies.Delete(cookie.Key);
+            }
+
+            // this should always be true for core, but it would seem foolish to ignore it, as potential source of future bugs
+            if (canAccessHeaders)
+            {
+                httpResponse.Headers.Clear();
+            }
+
             httpResponse.StatusCode = 403;
             var syncIOFeature = _context.Features.Get<IHttpBodyControlFeature>();
             if (syncIOFeature != null)
             {
-                // allow synchronous operatoin for net core >=3.1 otherwise invalidoperation exception
+                // allow synchronous operations for net core >=3.1 otherwise invalidoperation exception
                 syncIOFeature.AllowSynchronousIO = true;
             }
 
@@ -83,9 +94,7 @@ namespace Datadog.Trace.AppSec.Transports.Http
             _completeAsync ??= httpResponse.GetType().GetMethod("CompleteAsync");
             if (_completeAsync != null)
             {
-                var t = (Task)_completeAsync.Invoke(httpResponse, null);
-                t.ConfigureAwait(false);
-                t.Wait();
+                _completeAsync.Invoke(httpResponse, null);
             }
             else
             {

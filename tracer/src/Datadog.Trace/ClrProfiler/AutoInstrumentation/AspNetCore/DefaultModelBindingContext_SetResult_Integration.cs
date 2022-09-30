@@ -9,6 +9,7 @@ using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AspNetCore
@@ -61,6 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
                         if (defaultModelBindingContext.BindingSource.Id == "Body")
                         {
                             security.InstrumentationGateway.RaiseBodyAvailable(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
+                            security.InstrumentationGateway.RaiseBlockingOpportunity(defaultModelBindingContext.HttpContext, state.Scope, Tracer.Instance.Settings, (args) => AspNetCoreDiagnosticObserver.DoBeforeRequestStops(args.Context, args.Scope, args.TracerSettings));
                         }
                         else
                         {
@@ -72,6 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AspNetCore
                                     if (prov.BindingSource.Id == "Form" || prov.BindingSource.Id == "Body")
                                     {
                                         security.InstrumentationGateway.RaiseBodyAvailable(defaultModelBindingContext.HttpContext, span, defaultModelBindingContext.Result.Model);
+                                        security.InstrumentationGateway.RaiseBlockingOpportunity(defaultModelBindingContext.HttpContext, state.Scope, Tracer.Instance.Settings, (args) => AspNetCoreDiagnosticObserver.DoBeforeRequestStops(args.Context, args.Scope, args.TracerSettings));
                                         break;
                                     }
                                 }

@@ -20,6 +20,7 @@ using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -57,6 +58,8 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
             Output.WriteLine($"Native Loader DLL: {EnvironmentHelper.GetNativeLoaderPath()}");
         }
+
+        public bool SecurityEnabled { get; private set; }
 
         protected EnvironmentHelper EnvironmentHelper { get; }
 
@@ -225,7 +228,7 @@ namespace Datadog.Trace.TestHelpers
                 throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
             }
 
-            Assert.True(exitCode >= 0, $"Process exited with code {exitCode}");
+            exitCode.Should().Be(0);
 
             return new ProcessResult(process, standardOutput, standardError, exitCode);
         }
@@ -409,6 +412,7 @@ namespace Datadog.Trace.TestHelpers
 
         protected void SetSecurity(bool security)
         {
+            SecurityEnabled = security;
             SetEnvironmentVariable(Configuration.ConfigurationKeys.AppSec.Enabled, security ? "true" : "false");
         }
 
@@ -667,7 +671,15 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"[dump][stdout] {helper.StandardOutput}");
             Output.WriteLine($"[dump][stderr] {helper.ErrorOutput}");
 
-            Output.WriteLine($"Memory dump captured using '{tool} {args}', exit code: {dumpToolProcess.ExitCode}");
+            if (dumpToolProcess.ExitCode == 0)
+            {
+                Output.WriteLine($"Memory dump successfully captured using '{tool} {args}'.");
+            }
+            else
+            {
+                Output.WriteLine($"Failed to capture memory dump using '{tool} {args}'. {tool}'s exit code was {dumpToolProcess.ExitCode}.");
+            }
+
             return true;
         }
 

@@ -5,9 +5,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.AppSec.Transports;
 using Datadog.Trace.AppSec.Transports.Http;
 using Datadog.Trace.AppSec.Waf;
@@ -43,10 +46,9 @@ namespace Datadog.Trace.AppSec
         private IWaf _waf;
         private AppSecRateLimiter _rateLimiter;
         private bool _enabled = false;
+        private IDictionary<string, Payload> _asmDataConfigs;
 
-#if NETFRAMEWORK
         private bool? _usingIntegratedPipeline = null;
-#endif
 
         static Security()
         {
@@ -272,8 +274,7 @@ namespace Datadog.Trace.AppSec
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeEnabled);
                     // TODO set to '_settings.Rules == null' when https://github.com/DataDog/dd-trace-dotnet/pull/3120 is merged
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, false);
-                    // TODO set to true when https://github.com/DataDog/dd-trace-dotnet/pull/3171 is merged
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, false);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, true);
                 });
         }
 
@@ -287,6 +288,35 @@ namespace Datadog.Trace.AppSec
             }
 
             e.Acknowledge(features.Name);
+        }
+
+        private void AsmDataProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
+        {
+            if (!_enabled)
+            {
+                return;
+            }
+
+            _asmDataConfigs ??= new Dictionary<string, Payload>();
+            var asmDataConfigs = e.GetDeserializedConfigurations<Payload>();
+            foreach (var asmDataConfig in asmDataConfigs)
+            {
+                _asmDataConfigs[asmDataConfig.Name] = asmDataConfig.TypedFile;
+                e.Acknowledge(asmDataConfig.Name);
+            }
+
+            var updated = _waf.UpdateRules(_asmDataConfigs.SelectMany(p => p.Value.RulesData));
+            foreach (var asmDataConfig in asmDataConfigs)
+            {
+                if (!updated)
+                {
+                    e.Error(asmDataConfig.Name, "Waf could not update the rules");
+                }
+                else
+                {
+                    e.Acknowledge(asmDataConfig.Name);
+                }
+            }
         }
 
         private void UpdateStatus(bool fromRemoteConfig = false)
@@ -321,6 +351,9 @@ namespace Datadog.Trace.AppSec
         {
             if (!_enabled)
             {
+                AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged += AsmDataProductConfigChanged;
+                // reapply rules if existing ones in memory
+                _waf.UpdateRules(_asmDataConfigs?.SelectMany(p => p.Value.RulesData));
                 _instrumentationGateway.StartRequest += RunWafAndReact;
                 _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
                 _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
@@ -355,7 +388,7 @@ namespace Datadog.Trace.AppSec
 
                 _enabled = true;
 
-                Log.Information("AppSec is now Enabled, coming from remote config: {enableFromRemoteConfig}", fromRemoteConfig);
+                Log.Information("AppSec is now Enabled, _settings.Enabled is {EnabledValue}, coming from remote config: {enableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
             }
         }
 
@@ -371,11 +404,12 @@ namespace Datadog.Trace.AppSec
                 _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
                 _instrumentationGateway.StartRequest -= ReportWafInitInfoOnce;
 
+                AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
                 RemoveAppsecSpecificInstrumentations();
 
                 _enabled = false;
 
-                Log.Information("AppSec is now Disabled, coming from remote config: {enableFromRemoteConfig}", fromRemoteConfig);
+                Log.Information("AppSec is now Disabled, _settings.Enabled is {EnabledValue}, coming from remote config: {enableFromRemoteConfig}", _settings.Enabled, fromRemoteConfig);
             }
         }
 
@@ -434,10 +468,18 @@ namespace Datadog.Trace.AppSec
             }
         }
 
+        private bool CanAccessHeaders()
+        {
+            return _usingIntegratedPipeline == true || _usingIntegratedPipeline is null;
+        }
+
         private void AddResponseHeaderTags(ITransport transport, Span span)
         {
             TryAddEndPoint(span);
-            var headers = transport.GetResponseHeaders();
+            var headers =
+                CanAccessHeaders() ?
+                    transport.GetResponseHeaders() :
+                    new NameValueHeadersCollection(new NameValueCollection());
             AddHeaderTags(span, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
         }
 
@@ -489,12 +531,12 @@ namespace Datadog.Trace.AppSec
 
                 // run the WAF and execute the results
                 using var wafResult = additiveContext.Run(e.EventData, _settings.WafTimeoutMicroSeconds);
-                if (wafResult.ReturnCode == ReturnCode.Match || wafResult.ReturnCode == ReturnCode.Block)
+                if (wafResult.ReturnCode is ReturnCode.Match or ReturnCode.Block)
                 {
-                    var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock");
+                    var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock") || wafResult.Actions.Contains("block");
                     if (block)
                     {
-                        e.Transport.WriteBlockedResponse(_settings.BlockedJsonTemplate, _settings.BlockedHtmlTemplate);
+                        e.Transport.WriteBlockedResponse(_settings.BlockedJsonTemplate, _settings.BlockedHtmlTemplate, CanAccessHeaders());
                     }
 
                     Report(e.Transport, span, wafResult, block);
@@ -533,6 +575,8 @@ namespace Datadog.Trace.AppSec
                 _instrumentationGateway.LastChanceToWriteTags -= InstrumentationGateway_AddHeadersResponseTags;
             }
 
+            AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
+            AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged -= FeaturesProductConfigChanged;
             Dispose();
         }
 

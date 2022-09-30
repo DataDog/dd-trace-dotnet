@@ -14,10 +14,13 @@ using Amazon.Lambda.Core;
 
 namespace Samples.AWS.Lambda
 {
-    public class Function
+    public class Function: BaseFunction
     {
         private static async Task Main(string[] args)
         {
+            Console.WriteLine($"Is Tracer Attached: {SampleHelpers.IsProfilerAttached()}");
+            Console.WriteLine($"Tracer location: {SampleHelpers.GetTracerAssemblyLocation()}");
+            
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_NO_PARAM_SYNC"));
             Thread.Sleep(1000);
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_ONE_PARAM_SYNC"));
@@ -43,6 +46,18 @@ namespace Samples.AWS.Lambda
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_ONE_PARAM_SYNC_WITH_CONTEXT"));
             Thread.Sleep(1000);
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_TWO_PARAMS_SYNC_WITH_CONTEXT"));
+            
+            // base functions
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_BASE_NO_PARAM_SYNC"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_BASE_TWO_PARAMS_SYNC"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_BASE_ONE_PARAM_SYNC_WITH_CONTEXT"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_BASE_ONE_PARAM_ASYNC"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_BASE_TWO_PARAMS_VOID"));
         }
         private static async Task<string> Post(string url)
         {
@@ -58,19 +73,6 @@ namespace Samples.AWS.Lambda
 
             HttpResponseMessage response = await client.SendAsync(request);
             return await response.Content.ReadAsStringAsync();
-        }
-
-        private void Get(string url)
-        {
-            WebRequest request = WebRequest.Create(url);
-            request.Credentials = CredentialCache.DefaultCredentials;
-            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-            using (Stream dataStream = response.GetResponseStream())
-            {
-                StreamReader reader = new StreamReader(dataStream);
-                reader.ReadToEnd();
-            }
-            response.Close();
         }
 
         public object HandlerNoParamSync()
@@ -156,5 +158,53 @@ namespace Samples.AWS.Lambda
     {
         public string Field1 { get; set; }
         public int Field2 { get; set; }
+    }
+
+    public class BaseFunction
+    {
+        public object BaseHandlerNoParamSync()
+        {
+            Get("http://localhost/function/BaseHandlerNoParamSync");
+            return new { statusCode = 200, body = "ok!" };
+        }
+
+        public object BaseHandlerTwoParamsSync(CustomInput request, ILambdaContext context)
+        {
+            Get("http://localhost/function/BaseHandlerTwoParamsSync");
+            return new { statusCode = 200, body = "ok!" };
+        }
+
+        public object BaseHandlerOneParamSyncWithContext(CustomInput request)
+        {
+            Get("http://localhost/function/BaseHandlerOneParamSyncWithContext");
+            return new { statusCode = 200, body = "ok!" };
+        }
+
+        public async Task<int> BaseHandlerOneParamAsync(CustomInput request)
+        {
+            await Task.Run(() => {
+                Get("http://localhost/function/BaseHandlerOneParamAsync");
+                Thread.Sleep(100);
+            });
+            return 10;
+        }
+
+        public void BaseHandlerTwoParamsVoid(CustomInput request, ILambdaContext context)
+        {
+            Get("http://localhost/function/BaseHandlerTwoParamsVoid");
+        }
+
+        protected void Get(string url)
+        {
+            WebRequest request = WebRequest.Create(url);
+            request.Credentials = CredentialCache.DefaultCredentials;
+            HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+            using (Stream dataStream = response.GetResponseStream())
+            {
+                StreamReader reader = new StreamReader(dataStream);
+                reader.ReadToEnd();
+            }
+            response.Close();
+        }
     }
 }

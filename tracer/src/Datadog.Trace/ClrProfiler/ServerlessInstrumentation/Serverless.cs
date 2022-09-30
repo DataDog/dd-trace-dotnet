@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
                     var integrationType = GetIntegrationType(handler.ParamTypeArray[0], paramCount);
                     callTargetDefinitions = new NativeCallTargetDefinition[]
                     {
-                        new(handler.GetAssembly(), handler.GetFullType(), handler.GetMethodName(), handler.ParamTypeArray, 0, 0, 0, 65535, 65535, 65535, assemblyName, integrationType)
+                        new(handler.Assembly, handler.FullType, handler.MethodName, handler.ParamTypeArray, 0, 0, 0, 65535, 65535, 65535, assemblyName, integrationType)
                     };
 
                     LifetimeManager.Instance.AddShutdownTask(RunShutdown);

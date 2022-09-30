@@ -68,5 +68,42 @@ namespace Datadog.Trace.Telemetry
             PreviousIntegrations = integrations;
             return TelemetryPushResult.TransientFailure;
         }
+
+        public TelemetryPushResult EvaluateHeartbeat(TelemetryPushResult result)
+        {
+            if (result == TelemetryPushResult.Success)
+            {
+                _hasSentSuccessfully = true;
+                _failureCount = 0;
+                return result;
+            }
+            else if (result == TelemetryPushResult.FatalError && !_hasSentSuccessfully)
+            {
+                _initialFatalCount++;
+                if (_initialFatalCount >= MaxFatalErrors)
+                {
+                    // we've had MaxFatalErrors 404s, 1 minute apart, prob never going to work.
+                    PreviousConfiguration = null;
+                    PreviousDependencies = null;
+                    PreviousIntegrations = null;
+                    return TelemetryPushResult.FatalError;
+                }
+            }
+            else
+            {
+                _failureCount++;
+                if (_failureCount >= MaxTransientErrors)
+                {
+                    // we've had MaxTransientErrors in a row, 1 minute apart, probably something bigger wrong
+                    PreviousConfiguration = null;
+                    PreviousDependencies = null;
+                    PreviousIntegrations = null;
+                    return TelemetryPushResult.FatalError;
+                }
+            }
+
+            // We should retry next time
+            return TelemetryPushResult.TransientFailure;
+        }
     }
 }

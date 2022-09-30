@@ -6,9 +6,6 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Logging;
-using Datadog.Trace.Propagators;
-using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
@@ -17,20 +14,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "RabbitMQ.Client",
-        TypeName = "RabbitMQ.Client.Events.EventingBasicConsumer",
+        TypeName = "RabbitMQ.Client.IBasicConsumer",
         MethodName = "HandleBasicDeliver",
         ReturnTypeName = ClrNames.Void,
         ParameterTypeNames = new[] { ClrNames.String, ClrNames.UInt64, ClrNames.Bool, ClrNames.String, ClrNames.String, RabbitMQConstants.IBasicPropertiesTypeName, ClrNames.Ignore },
         MinimumVersion = "3.6.9",
         MaximumVersion = "6.*.*",
-        IntegrationName = RabbitMQConstants.IntegrationName)]
+        IntegrationName = RabbitMQConstants.IntegrationName,
+        CallTargetIntegrationType = IntegrationType.Interface)]
+    [InstrumentMethod(
+        AssemblyName = "RabbitMQ.Client",
+        TypeName = "RabbitMQ.Client.DefaultBasicConsumer",
+        MethodName = "HandleBasicDeliver",
+        ReturnTypeName = ClrNames.Void,
+        ParameterTypeNames = new[] { ClrNames.String, ClrNames.UInt64, ClrNames.Bool, ClrNames.String, ClrNames.String, RabbitMQConstants.IBasicPropertiesTypeName, ClrNames.Ignore },
+        MinimumVersion = "3.6.9",
+        MaximumVersion = "6.*.*",
+        IntegrationName = RabbitMQConstants.IntegrationName,
+        CallTargetIntegrationType = IntegrationType.Derived)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class BasicDeliverIntegration
     {
-        private const string Command = "basic.deliver";
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BasicDeliverIntegration));
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -50,28 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             where TBasicProperties : IBasicProperties
             where TBody : IBody // ReadOnlyMemory<byte> body in 6.0.0
         {
-            SpanContext propagatedContext = null;
-
-            // try to extract propagated context values from headers
-            if (basicProperties?.Headers != null)
-            {
-                try
-                {
-                    propagatedContext = SpanContextPropagator.Instance.Extract(basicProperties.Headers, default(ContextPropagation));
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error extracting propagated headers.");
-                }
-            }
-
-            var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out RabbitMQTags tags, Command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, exchange: exchange, routingKey: routingKey);
-            if (tags != null)
-            {
-                tags.MessageSize = body?.Length.ToString() ?? "0";
-            }
-
-            return new CallTargetState(scope);
+            return RabbitMQIntegration.BasicDeliver_OnMethodBegin(instance, consumerTag, deliveryTag, redelivered, exchange, routingKey, basicProperties, body);
         }
 
         /// <summary>

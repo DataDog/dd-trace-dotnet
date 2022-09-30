@@ -583,7 +583,7 @@ namespace Datadog.Trace.DiagnosticListeners
             return span;
         }
 
-        private static void DoBeforeRequestStops(HttpContext httpContext, Scope scope, ImmutableTracerSettings tracerSettings)
+        internal static void DoBeforeRequestStops(HttpContext httpContext, Scope scope, ImmutableTracerSettings tracerSettings)
         {
             var span = scope.Span;
             var isMissingHttpStatusCode = !span.HasHttpStatusCode();
