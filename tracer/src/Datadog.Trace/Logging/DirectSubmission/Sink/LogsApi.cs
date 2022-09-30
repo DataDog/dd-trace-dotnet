@@ -9,6 +9,7 @@ using System.Net.Sockets;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Util.Http;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink
 {
@@ -129,14 +130,16 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                 if (!shouldRetry || isFinalTry)
                 {
                     // stop retrying
-                    Log.Error<int, string>(exception, "An error occurred while sending {Count} traces to the intake at {IntakeEndpoint}", numberOfLogs, _apiRequestFactory.Info(_logsIntakeEndpoint));
+                    Log.Error<int, string>(exception, "An error occurred while sending {Count} logs to the intake at {IntakeEndpoint}", numberOfLogs, _apiRequestFactory.Info(_logsIntakeEndpoint));
                     return false;
                 }
 
                 // Before retry delay
-                if (exception.IsSocketException())
+                if (exception.IsSocketException() && Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    Log.Debug(exception, "Unable to communicate with the logs intake at {IntakeEndpoint}", _apiRequestFactory.Info(_logsIntakeEndpoint));
+                    var endpoint = _apiRequestFactory.Info(_logsIntakeEndpoint);
+                    var tlsSettings = System.Net.ServicePointManager.SecurityProtocol;
+                    Log.Debug(exception, "Unable to communicate with the logs intake at {IntakeEndpoint}. Protocols enabled: {TtlsSettings} ", endpoint, tlsSettings);
                 }
 
                 // Execute retry delay
