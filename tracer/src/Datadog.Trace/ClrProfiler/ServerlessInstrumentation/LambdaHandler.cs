@@ -29,7 +29,7 @@ internal class LambdaHandler
         // The method body may be in a different type, e.g. a base type
         // In that case we need the FullType to point to the base type
         FullType = handlerMethod.DeclaringType?.FullName ?? handlerTokens[1];
-        // If the fullType == the declaring type, skip calling Assembly.GetName and use handler token directly
+        // If the handlerType == the declaring type, skip calling Assembly.GetName and use handler token directly
         Assembly = handlerType == handlerMethod.DeclaringType
                        ? handlerTokens[0]
                        : handlerMethod.DeclaringType?.Assembly.GetName().Name ?? handlerTokens[0];
