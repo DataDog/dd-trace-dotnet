@@ -2,16 +2,20 @@
 
   <PropertyGroup>
     <Version>2.16.0</Version>
-    <Version>$(Version)-beta01</Version> <!-- Unconditionally add a beta suffix to the package, but keep the rest of the name so we can associate it with the rest of the release -->
     <Title>Datadog APM Auto-instrumentation Assets</Title>
     <Description>Auto-instrumentation assets for Datadog APM</Description>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <EmbedUntrackedSources>true</EmbedUntrackedSources>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <NoWarn>NU5100;NU5128</NoWarn>
     <PackageOutputPath Condition="'$(PackageOutputPath)' == '' ">bin\$(Configuration)\packages</PackageOutputPath>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\..\docs\Datadog.Trace.Bundle\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
   <ItemGroup>
     <Content Include="home\**\*.*" Pack="true" PackagePath="content\datadog;contentFiles\any\any\datadog">

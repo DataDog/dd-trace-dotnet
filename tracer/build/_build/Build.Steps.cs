@@ -66,7 +66,7 @@ partial class Build
     AbsolutePath SourceDirectory => TracerDirectory / "src";
     AbsolutePath BuildDirectory => TracerDirectory / "build";
     AbsolutePath TestsDirectory => TracerDirectory / "test";
-    AbsolutePath DistributionHomeDirectory => Solution.GetProject(Projects.DatadogMonitoringDistribution).Directory / "home";
+    AbsolutePath BundleHomeDirectory => Solution.GetProject(Projects.DatadogTraceBundle).Directory / "home";
 
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
@@ -482,22 +482,22 @@ partial class Build
                 degreeOfParallelism: 2);
         });
 
-    Target CreateDistributionHome => _ => _
+    Target CreateBundleHome => _ => _
         .Unlisted()
         .After(BuildTracerHome)
         .Executes(() =>
         {
             // clean directory of everything except the text files
-            DistributionHomeDirectory
+            BundleHomeDirectory
                .GlobFiles("*.*")
                .Where(filepath => Path.GetExtension(filepath) != ".txt")
                .ForEach(DeleteFile);
 
-            // Copy existing files from tracer home to the Distribution location
-            CopyDirectoryRecursively(MonitoringHomeDirectory, DistributionHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            // Copy existing files from tracer home to the Bundle location
+            CopyDirectoryRecursively(MonitoringHomeDirectory, BundleHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
             // Add the create log path script
-            CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, DistributionHomeDirectory);
+            CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, BundleHomeDirectory);
         });
 
     Target ExtractDebugInfoLinux => _ => _

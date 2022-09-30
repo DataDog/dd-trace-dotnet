@@ -1893,7 +1893,7 @@ stages:
     - template: steps/restore-working-directory.yml
 
     # Download everything to monitoring home
-    # BuildDistributionNuget moves everything to the required folders
+    # BuildBundleNuget moves everything to the required folders
     - task: DownloadPipelineArtifact@2
       displayName: Download linux tracer home
       inputs:
@@ -1964,12 +1964,12 @@ stages:
           **/loader.conf
         path: $(monitoringHome)
 
-    - script: tracer\build.cmd CreateDistributionHome BuildDistributionNuget BuildRunnerTool BuildStandaloneTool
-      displayName: Build Distribution NuGet and runner tools
+    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool BuildStandaloneTool
+      displayName: Build Bundle NuGet and runner tools
 
-    - publish: $(artifacts)/nuget/distribution
-      displayName: Uploading Distribution package
-      artifact: distribution-nuget-package
+    - publish: $(artifacts)/nuget/bundle
+      displayName: Uploading Bundle package
+      artifact: bundle-nuget-package
 
     - publish: $(artifacts)/nuget/dd-trace
       displayName: Uploading runner dotnet tool artifact
@@ -2348,9 +2348,9 @@ stages:
 
         # NuGet
         - task: DownloadPipelineArtifact@2
-          displayName: Download distribution nuget package
+          displayName: Download bundle nuget package
           inputs:
-            artifact: distribution-nuget-package
+            artifact: bundle-nuget-package
             path: $(Build.ArtifactStagingDirectory)
 
         # runner tool
@@ -2851,9 +2851,9 @@ stages:
         masterCommitId: $(masterCommitId)
 
     - task: DownloadPipelineArtifact@2
-      displayName: Download distribution nuget
+      displayName: Download bundle nuget
       inputs:
-        artifact: distribution-nuget-package
+        artifact: bundle-nuget-package
         path: $(smokeTestAppDir)/artifacts
 
     - task: DownloadPipelineArtifact@2
@@ -3108,9 +3108,9 @@ stages:
         masterCommitId: $(masterCommitId)
 
     - task: DownloadPipelineArtifact@2
-      displayName: Download distribution nuget
+      displayName: Download bundle nuget
       inputs:
-        artifact: distribution-nuget-package
+        artifact: bundle-nuget-package
         path: $(smokeTestAppDir)/artifacts
 
     - task: DownloadPipelineArtifact@2
@@ -3239,9 +3239,9 @@ stages:
         masterCommitId: $(masterCommitId)
 
     - task: DownloadPipelineArtifact@2
-      displayName: Download distribution nuget
+      displayName: Download bundle nuget
       inputs:
-        artifact: distribution-nuget-package
+        artifact: bundle-nuget-package
         path: $(smokeTestAppDir)/artifacts
 
     - task: DownloadPipelineArtifact@2
