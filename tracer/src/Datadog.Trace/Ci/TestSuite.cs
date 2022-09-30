@@ -21,7 +21,7 @@ public sealed class TestSuite
     private readonly Span _span;
     private int _finished;
 
-    internal TestSuite(TestModule module, string name, DateTimeOffset? startDate = null)
+    internal TestSuite(TestModule module, string name, DateTimeOffset? startDate)
     {
         Module = module;
         Name = name;
@@ -167,9 +167,19 @@ public sealed class TestSuite
     /// Create a new test for this suite
     /// </summary>
     /// <param name="name">Name of the test</param>
+    /// <returns>Test instance</returns>
+    public Test CreateTest(string name)
+    {
+        return new Test(this, name, null);
+    }
+
+    /// <summary>
+    /// Create a new test for this suite
+    /// </summary>
+    /// <param name="name">Name of the test</param>
     /// <param name="startDate">Test start date</param>
     /// <returns>Test instance</returns>
-    public Test CreateTest(string name, DateTimeOffset? startDate = null)
+    public Test CreateTest(string name, DateTimeOffset? startDate)
     {
         return new Test(this, name, startDate);
     }

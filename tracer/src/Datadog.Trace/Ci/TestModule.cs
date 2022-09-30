@@ -26,7 +26,7 @@ public sealed class TestModule
     private readonly Dictionary<string, TestSuite> _suites;
     private int _finished;
 
-    private TestModule(string name, string? framework = null, string? frameworkVersion = null, DateTimeOffset? startDate = null)
+    private TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
     {
         var environment = CIEnvironmentValues.Instance;
         var frameworkDescription = FrameworkDescription.Instance;
@@ -135,11 +135,33 @@ public sealed class TestModule
     /// Create a new Test Module
     /// </summary>
     /// <param name="name">Test module name</param>
+    /// <returns>New test session instance</returns>
+    public static TestModule Create(string name)
+    {
+        return new TestModule(name, null, null, null);
+    }
+
+    /// <summary>
+    /// Create a new Test Module
+    /// </summary>
+    /// <param name="name">Test module name</param>
+    /// <param name="framework">Testing framework name</param>
+    /// <param name="frameworkVersion">Testing framework version</param>
+    /// <returns>New test session instance</returns>
+    public static TestModule Create(string name, string? framework, string? frameworkVersion)
+    {
+        return new TestModule(name, framework, frameworkVersion, null);
+    }
+
+    /// <summary>
+    /// Create a new Test Module
+    /// </summary>
+    /// <param name="name">Test module name</param>
     /// <param name="framework">Testing framework name</param>
     /// <param name="frameworkVersion">Testing framework version</param>
     /// <param name="startDate">Test session start date</param>
     /// <returns>New test session instance</returns>
-    public static TestModule Create(string name, string? framework = null, string? frameworkVersion = null, DateTimeOffset? startDate = null)
+    public static TestModule Create(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
     {
         return new TestModule(name, framework, frameworkVersion, startDate);
     }
@@ -239,9 +261,19 @@ public sealed class TestModule
     /// Create a new test suite for this session
     /// </summary>
     /// <param name="name">Name of the test suite</param>
+    /// <returns>Test suite instance</returns>
+    public TestSuite CreateSuite(string name)
+    {
+        return CreateSuite(name, null);
+    }
+
+    /// <summary>
+    /// Create a new test suite for this session
+    /// </summary>
+    /// <param name="name">Name of the test suite</param>
     /// <param name="startDate">Test suite start date</param>
     /// <returns>Test suite instance</returns>
-    public TestSuite CreateSuite(string name, DateTimeOffset? startDate = null)
+    public TestSuite CreateSuite(string name, DateTimeOffset? startDate)
     {
         var suite = new TestSuite(this, name, startDate);
         lock (_suites)

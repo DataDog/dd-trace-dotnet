@@ -24,7 +24,7 @@ public sealed class Test
     private readonly Scope _scope;
     private int _finished;
 
-    internal Test(TestSuite suite, string name, DateTimeOffset? startDate = null)
+    internal Test(TestSuite suite, string name, DateTimeOffset? startDate)
     {
         Suite = suite;
         var module = suite.Module;
