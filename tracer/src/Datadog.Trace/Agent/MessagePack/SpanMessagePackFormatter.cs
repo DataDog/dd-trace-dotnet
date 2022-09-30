@@ -52,16 +52,16 @@ namespace Datadog.Trace.Agent.MessagePack
         }
 
         // this method creates a TraceChunkModel copy so try to avoid it
-        int IMessagePackFormatter<TraceChunkModel>.Serialize(ref byte[] bytes, int offset, TraceChunkModel value, IFormatterResolver formatterResolver)
+        int IMessagePackFormatter<TraceChunkModel>.Serialize(ref byte[] bytes, int offset, TraceChunkModel traceChunk, IFormatterResolver formatterResolver)
         {
-            return Serialize(ref bytes, offset, value, formatterResolver);
+            return Serialize(ref bytes, offset, traceChunk, formatterResolver);
         }
 
         // overload of IMessagePackFormatter<TraceChunkModel>.Serialize() with `in` modifier on `TraceChunkModel` parameter
-        public int Serialize(ref byte[] bytes, int offset, in TraceChunkModel value, IFormatterResolver formatterResolver)
+        public int Serialize(ref byte[] bytes, int offset, in TraceChunkModel traceChunk, IFormatterResolver formatterResolver)
         {
             int originalOffset = offset;
-            var spans = value.Spans;
+            var spans = traceChunk.Spans;
             var spanIds = new SpanIdLookup(in spans);
 
             // start writing span[]
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 bool isOrphan = isLocalRoot || !spanIds.Contains(parentSpanId, startIndex: i + 1);
                 bool isFirst = i == 0;
 
-                var spanModel = new SpanModel(span, value, isLocalRoot, isOrphan, isFirst);
+                var spanModel = new SpanModel(span, traceChunk, isLocalRoot, isOrphan, isFirst);
                 offset += Serialize(ref bytes, offset, in spanModel, formatterResolver);
             }
 
@@ -88,15 +88,15 @@ namespace Datadog.Trace.Agent.MessagePack
         }
 
         // this method creates a SpanModel copy so try to avoid it
-        int IMessagePackFormatter<SpanModel>.Serialize(ref byte[] bytes, int offset, SpanModel value, IFormatterResolver formatterResolver)
+        int IMessagePackFormatter<SpanModel>.Serialize(ref byte[] bytes, int offset, SpanModel spanModel, IFormatterResolver formatterResolver)
         {
-            return Serialize(ref bytes, offset, in value, formatterResolver);
+            return Serialize(ref bytes, offset, in spanModel, formatterResolver);
         }
 
         // overload of IMessagePackFormatter<SpanModel>.Serialize() with `in` modifier on `SpanModel` parameter
-        public int Serialize(ref byte[] bytes, int offset, in SpanModel value, IFormatterResolver formatterResolver)
+        public int Serialize(ref byte[] bytes, int offset, in SpanModel spanModel, IFormatterResolver formatterResolver)
         {
-            var span = value.Span;
+            var span = spanModel.Span;
 
             // First, pack array length (or map length).
             // It should be the number of members of the object to be serialized.
@@ -160,8 +160,8 @@ namespace Datadog.Trace.Agent.MessagePack
                 tagProcessors = tracer.TracerManager?.TagProcessors;
             }
 
-            offset += WriteTags(ref bytes, offset, value, tagProcessors);
-            offset += WriteMetrics(ref bytes, offset, value, tagProcessors);
+            offset += WriteTags(ref bytes, offset, spanModel, tagProcessors);
+            offset += WriteMetrics(ref bytes, offset, spanModel, tagProcessors);
 
             return offset - originalOffset;
         }
