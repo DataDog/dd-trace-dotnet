@@ -322,8 +322,7 @@ BenchmarkDotNet.Artifacts/
 tracer/deploy/linux/
 tracer/deploy/AzureAppServices/
 !tracer/build/artifacts
-tracer/src/Datadog.Monitoring.Distribution/home
-!tracer/src/Datadog.Monitoring.Distribution/home/**/*.txt
+tracer/src/Datadog.Trace.Bundle/home
 build_data
 
 # native tracer build files

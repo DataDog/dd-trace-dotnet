@@ -1,0 +1,218 @@
+﻿{
+  Env: integration_tests,
+  Service: Samples.DataStreams.Kafka,
+  TracerVersion: 2.x.x.x,
+  Lang: dotnet,
+  Stats: [
+    {
+      Start: 1661520120000000000,
+      Duration: 10000000000,
+      Stats: [
+        {
+          EdgeTags: [
+            type:internal
+          ],
+          Hash: 12926600137239154356,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            group:Samples.DataStreams.Kafka.consumer-1,
+            topic:data-streams-1,
+            type:kafka
+          ],
+          Hash: 3184837087859198448,
+          ParentHash: 12926600137239154356,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            group:Samples.DataStreams.Kafka.consumer-2,
+            topic:data-streams-2,
+            type:kafka
+          ],
+          Hash: 9146411116191305908,
+          ParentHash: 12926600137239154356,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            type:internal
+          ],
+          Hash: 428893431238664991,
+          ParentHash: 3184837087859198448,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            type:internal
+          ],
+          Hash: 9288243326407318747,
+          ParentHash: 9146411116191305908,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            group:Samples.DataStreams.Kafka.consumer-2,
+            topic:data-streams-2,
+            type:kafka
+          ],
+          Hash: 4701874528067105417,
+          ParentHash: 428893431238664991,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            group:Samples.DataStreams.Kafka.consumer-3,
+            topic:data-streams-3,
+            type:kafka
+          ],
+          Hash: 17029362228578737937,
+          ParentHash: 9288243326407318747,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            type:internal
+          ],
+          Hash: 5603712524956936337,
+          ParentHash: 4701874528067105417,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            group:Samples.DataStreams.Kafka.consumer-3,
+            topic:data-streams-3,
+            type:kafka
+          ],
+          Hash: 713412453862704155,
+          ParentHash: 5603712524956936337,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: current
+        }
+      ]
+    },
+    {
+      Start: 1661520120000000000,
+      Duration: 10000000000,
+      Stats: [
+        {
+          EdgeTags: [
+            type:internal
+          ],
+          Hash: 12926600137239154356,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: origin
+        },
+        {
+          EdgeTags: [
+            group:Samples.DataStreams.Kafka.consumer-1,
+            topic:data-streams-1,
+            type:kafka
+          ],
+          Hash: 3184837087859198448,
+          ParentHash: 12926600137239154356,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: origin
+        },
+        {
+          EdgeTags: [
+            group:Samples.DataStreams.Kafka.consumer-2,
+            topic:data-streams-2,
+            type:kafka
+          ],
+          Hash: 9146411116191305908,
+          ParentHash: 12926600137239154356,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: origin
+        },
+        {
+          EdgeTags: [
+            type:internal
+          ],
+          Hash: 428893431238664991,
+          ParentHash: 3184837087859198448,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: origin
+        },
+        {
+          EdgeTags: [
+            type:internal
+          ],
+          Hash: 9288243326407318747,
+          ParentHash: 9146411116191305908,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: origin
+        },
+        {
+          EdgeTags: [
+            group:Samples.DataStreams.Kafka.consumer-2,
+            topic:data-streams-2,
+            type:kafka
+          ],
+          Hash: 4701874528067105417,
+          ParentHash: 428893431238664991,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: origin
+        },
+        {
+          EdgeTags: [
+            group:Samples.DataStreams.Kafka.consumer-3,
+            topic:data-streams-3,
+            type:kafka
+          ],
+          Hash: 17029362228578737937,
+          ParentHash: 9288243326407318747,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: origin
+        },
+        {
+          EdgeTags: [
+            type:internal
+          ],
+          Hash: 5603712524956936337,
+          ParentHash: 4701874528067105417,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: origin
+        },
+        {
+          EdgeTags: [
+            group:Samples.DataStreams.Kafka.consumer-3,
+            topic:data-streams-3,
+            type:kafka
+          ],
+          Hash: 713412453862704155,
+          ParentHash: 5603712524956936337,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: origin
+        }
+      ]
+    }
+  ]
+}
