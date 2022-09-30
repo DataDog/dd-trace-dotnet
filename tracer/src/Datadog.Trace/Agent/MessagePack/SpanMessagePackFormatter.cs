@@ -63,24 +63,52 @@ namespace Datadog.Trace.Agent.MessagePack
             int originalOffset = offset;
             var spans = traceChunk.Spans;
             var spanIds = new SpanIdLookup(in spans);
+            ulong localTraceRootSpanId = traceChunk.LocalRoot?.SpanId ?? 0;
+            ulong localChunkRootSpanId = 0;
 
             // start writing span[]
             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, spans.Count);
 
-            // Using a for loop to avoid the boxing allocation on ArraySegment.GetEnumerator
+            // Find the local root span first as an optimization for the common case of a "two-level" trace,
+            // i.e. a trace where all spans are direct descendants of the local root span, so there are no grandchildren.
+            // The local root span is the almost always the last span in the chunk.
+            if (localTraceRootSpanId == spans.Array![spans.Offset + spans.Count - 1].SpanId)
+            {
+                localChunkRootSpanId = localTraceRootSpanId;
+            }
+            else
+            {
+                // if it's not the last span, then look for the local root span everywhere
+                for (var i = 0; i < spans.Count; i++)
+                {
+                    var span = spans.Array![i + spans.Offset];
+
+                    if (localTraceRootSpanId == span.SpanId)
+                    {
+                        localChunkRootSpanId = localTraceRootSpanId;
+                    }
+                }
+            }
+
+            // serialize each span
             for (var i = 0; i < spans.Count; i++)
             {
                 var span = spans.Array![i + spans.Offset];
-                var parentSpanId = span.Context.ParentId ?? 0;
+                ulong parentSpanId = span.Context.ParentId ?? 0;
 
                 // when serializing each span, we need additional information that is not
                 // available in the span object itself, like its position in the trace chunk
-                // or if its parent can also be found in the same chunk
-                bool isLocalRoot = parentSpanId == 0 || spans.Count == 1 || span == span.Context.TraceContext.RootSpan;
-                bool isOrphan = isLocalRoot || !spanIds.Contains(parentSpanId, startIndex: i + 1);
-                bool isFirst = i == 0;
+                // or if its parent can also be found in the same chunk.
+                bool isLocalRoot = span.SpanId == localChunkRootSpanId;
 
-                var spanModel = new SpanModel(span, traceChunk, isLocalRoot, isOrphan, isFirst);
+                // A span's parent is usually the local root span, so check that first.
+                // Otherwise, a span's parent usually closes after its child,
+                // so start the search at index + 1 (and loop back to the beginning if needed).
+                bool isChildOfLocalRoot = parentSpanId == localChunkRootSpanId;
+                bool isOrphan = isLocalRoot || (!isChildOfLocalRoot && !spanIds.Contains(parentSpanId, startIndex: i + 1));
+                bool isFirstSpan = (i == 0);
+
+                var spanModel = new SpanModel(span, traceChunk, isLocalRoot, isOrphan, isFirstSpan);
                 offset += Serialize(ref bytes, offset, in spanModel, formatterResolver);
             }
 

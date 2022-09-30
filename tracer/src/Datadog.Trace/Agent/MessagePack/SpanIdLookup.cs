@@ -49,25 +49,13 @@ internal readonly struct SpanIdLookup
             return false;
         }
 
-        // Check the last span first as an optimization for the common case: a root span with children but zero grandchildren
-        // - the local root span is the almost always the last span in the chunk
-        // - the local root span is the parent of all the other spans
-        if (value == _spans.Array![_spans.Offset + _spans.Count - 1].SpanId)
-        {
-            return true;
-        }
-
         // if we created a HashSet, use it
         if (_hashSet is not null)
         {
             return _hashSet.Contains(value);
         }
 
-        // If we didn't create a HashSet, iterate over the span array.
-        // A span's parent usually closes after its child,
-        // so start at the specified index then loop back to the beginning if needed.
-
-        // Using a for loop to avoid the boxing allocation on ArraySegment.GetEnumerator
+        // if we didn't create a HashSet, iterate over the span array starting at the specified index
         for (var i = startIndex; i < _spans.Count; i++)
         {
             if (value == _spans.Array![i + _spans.Offset].SpanId)
@@ -76,6 +64,7 @@ internal readonly struct SpanIdLookup
             }
         }
 
+        // if not found above, loop back to the beginning of the array
         for (var i = 0; i < startIndex; i++)
         {
             if (value == _spans.Array![i + _spans.Offset].SpanId)
