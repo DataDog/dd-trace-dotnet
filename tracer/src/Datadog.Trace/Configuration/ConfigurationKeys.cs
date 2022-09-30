@@ -166,6 +166,13 @@ namespace Datadog.Trace.Configuration
         public const string CustomSamplingRules = "DD_TRACE_SAMPLING_RULES";
 
         /// <summary>
+        /// Configuration key for setting custom sampling rules based on regular expressions.
+        /// TODO examples
+        /// </summary>
+        /// <seealso cref="TracerSettings.SpanSamplingRules"/>
+        public const string SpanSamplingRules = "DD_SPAN_SAMPLING_RULES";
+
+        /// <summary>
         /// Configuration key for setting the global rate for the sampler.
         /// </summary>
         public const string GlobalSamplingRate = "DD_TRACE_SAMPLE_RATE";

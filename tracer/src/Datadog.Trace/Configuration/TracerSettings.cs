@@ -129,6 +129,8 @@ namespace Datadog.Trace.Configuration
 
             CustomSamplingRules = source?.GetString(ConfigurationKeys.CustomSamplingRules);
 
+            SpanSamplingRules = source?.GetString(ConfigurationKeys.SpanSamplingRules);
+
             GlobalSamplingRate = source?.GetDouble(ConfigurationKeys.GlobalSamplingRate);
 
             StartupDiagnosticLogEnabled = source?.GetBool(ConfigurationKeys.StartupDiagnosticLogEnabled) ??
@@ -302,6 +304,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
         public string CustomSamplingRules { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating span sampling rules.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.SpanSamplingRules"/>
+        public string SpanSamplingRules { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating a global rate for sampling.

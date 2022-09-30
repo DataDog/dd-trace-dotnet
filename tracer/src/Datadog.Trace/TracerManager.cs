@@ -463,6 +463,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("data_streams_enabled");
                     writer.WriteValue(instanceSettings.IsDataStreamsMonitoringEnabled);
 
+                    writer.WritePropertyName("span_sampling_rules");
+                    writer.WriteValue(instanceSettings.SpanSamplingRules);
+
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }
