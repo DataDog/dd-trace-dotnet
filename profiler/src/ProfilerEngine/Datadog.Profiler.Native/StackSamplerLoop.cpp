@@ -68,6 +68,7 @@ StackSamplerLoop::StackSamplerLoop(
     _iteratorCpuTime{0}
 {
     _samplingPeriod = _pConfiguration->CpuWallTimeSamplingRate();
+    Log::Info("CPU and wall time sampling period = ", _samplingPeriod.count() / 1000000, " ms");
 
     _pCorProfilerInfo->AddRef();
 
