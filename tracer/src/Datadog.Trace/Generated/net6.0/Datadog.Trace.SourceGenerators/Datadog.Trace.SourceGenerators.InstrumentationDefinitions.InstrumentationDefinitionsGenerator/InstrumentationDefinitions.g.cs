@@ -12,18 +12,20 @@ namespace Datadog.Trace.ClrProfiler
     {
         private static IDictionary<InstrumentationCategory, Payload> Instrumentations = new Dictionary<InstrumentationCategory, Payload>();
         private static IDictionary<InstrumentationCategory, Payload> DerivedInstrumentations = new Dictionary<InstrumentationCategory, Payload>();
+        private static IDictionary<InstrumentationCategory, Payload> InterfaceInstrumentations = new Dictionary<InstrumentationCategory, Payload>();
         private static IEnumerable<NativeCallTargetDefinition> InstrumentationsNatives = new List<NativeCallTargetDefinition>();
         private static IEnumerable<NativeCallTargetDefinition> DerivedInstrumentationsNatives = new List<NativeCallTargetDefinition>();
+        private static IEnumerable<NativeCallTargetDefinition> InterfaceInstrumentationsNatives = new List<NativeCallTargetDefinition>();
 
         static InstrumentationDefinitions()
         {
             Payload payload = default;
-            // root types for InstrumentationCategory Tracing
-            payload = new Payload
-            {
-                DefinitionsId = "FFAFA5168C4F4718B40CA8788875C2DA",
-                Definitions = new NativeCallTargetDefinition[]
+                // root types for InstrumentationCategory Tracing
+                payload = new Payload
                 {
+                    DefinitionsId = "FFAFA5168C4F4718B40CA8788875C2DA",
+                    Definitions = new NativeCallTargetDefinition[]
+                    {
                 // AdoNet
                new ("System.Data", "System.Data.Common.DbCommand", "ExecuteDbDataReaderAsync",  new[] { "System.Threading.Tasks.Task`1<System.Data.Common.DbDataReader>", "System.Data.CommandBehavior", "System.Threading.CancellationToken" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorAndCancellationAsyncIntegration"),
                new ("System.Data", "System.Data.Common.DbCommand", "ExecuteNonQueryAsync",  new[] { "System.Threading.Tasks.Task`1<System.Int32>", "System.Threading.CancellationToken" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryAsyncIntegration"),
@@ -279,7 +281,6 @@ namespace Datadog.Trace.ClrProfiler
                new ("System.Diagnostics.Process", "System.Diagnostics.Process", "Start",  new[] { "System.Diagnostics.Process" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Process.ProcessStartIntegration"),
 
                 // RabbitMQ
-               new ("RabbitMQ.Client", "RabbitMQ.Client.Events.EventingBasicConsumer", "HandleBasicDeliver",  new[] { "System.Void", "System.String", "System.UInt64", "System.Boolean", "System.String", "System.String", "RabbitMQ.Client.IBasicProperties", "_" }, 3, 6, 9, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverIntegration"),
                new ("RabbitMQ.Client", "RabbitMQ.Client.Framing.Impl.Model", "_Private_BasicPublish",  new[] { "System.Void", "System.String", "System.String", "System.Boolean", "RabbitMQ.Client.IBasicProperties", "_" }, 3, 6, 9, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicPublishIntegration"),
                new ("RabbitMQ.Client", "RabbitMQ.Client.Framing.Impl.Model", "_Private_ExchangeDeclare",  new[] { "System.Void", "System.String", "System.String", "System.Boolean", "System.Boolean", "System.Boolean", "System.Boolean", "System.Boolean", "System.Collections.Generic.IDictionary`2[System.String,System.Object]" }, 3, 6, 9, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.ExchangeDeclareIntegration"),
                new ("RabbitMQ.Client", "RabbitMQ.Client.Framing.Impl.Model", "_Private_QueueDeclare",  new[] { "System.Void", "System.String", "System.Boolean", "System.Boolean", "System.Boolean", "System.Boolean", "System.Boolean", "System.Collections.Generic.IDictionary`2[System.String,System.Object]" }, 3, 6, 9, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.QueueDeclareIntegration"),
@@ -388,31 +389,31 @@ namespace Datadog.Trace.ClrProfiler
                new ("xunit.execution.dotnet", "Xunit.Sdk.TestInvoker`1", "RunAsync",  new[] { "System.Threading.Tasks.Task`1<System.Decimal>" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestInvokerRunAsyncIntegration"),
                new ("xunit.execution.dotnet", "Xunit.Sdk.TestOutputHelper", "QueueTestOutput",  new[] { "System.Void", "System.String" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestOutputHelperQueueTestOutputIntegration"),
                new ("xunit.execution.dotnet", "Xunit.Sdk.TestRunner`1", "RunAsync",  new[] { "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestRunnerRunAsyncIntegration"),
-                }
-            };
-            Instrumentations.Add(InstrumentationCategory.Tracing, payload);
-            InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
+                    }
+                };
+                Instrumentations.Add(InstrumentationCategory.Tracing, payload);
+                InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-            // root types for InstrumentationCategory AppSec
-            payload = new Payload
-            {
-                DefinitionsId = "8A0651DE92625A7EF3E2BBF32F0D2048",
-                Definitions = new NativeCallTargetDefinition[]
+                // root types for InstrumentationCategory AppSec
+                payload = new Payload
                 {
+                    DefinitionsId = "8A0651DE92625A7EF3E2BBF32F0D2048",
+                    Definitions = new NativeCallTargetDefinition[]
+                    {
 
                 // AspNetCore
                new ("Microsoft.AspNetCore.Mvc.Core", "Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext", "set_Result",  new[] { "System.Void", "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" }, 2, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_SetResult_Integration"),
-                }
-            };
-            Instrumentations.Add(InstrumentationCategory.AppSec, payload);
-            InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
+                    }
+                };
+                Instrumentations.Add(InstrumentationCategory.AppSec, payload);
+                InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
-            // derived types for InstrumentationCategory Tracing
-            payload = new Payload
-            {
-                DefinitionsId = "61BF627FA9B5477F85595A9F0D68B29C",
-                Definitions = new NativeCallTargetDefinition[]
+                // derived types for InstrumentationCategory Tracing
+                payload = new Payload
                 {
+                    DefinitionsId = "61BF627FA9B5477F85595A9F0D68B29C",
+                    Definitions = new NativeCallTargetDefinition[]
+                    {
                 // AdoNet
                new ("netstandard", "System.Data.Common.DbCommand", "ExecuteDbDataReader",  new[] { "System.Data.Common.DbDataReader", "System.Data.CommandBehavior" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderWithBehaviorIntegration"),
                new ("netstandard", "System.Data.Common.DbCommand", "ExecuteNonQuery",  new[] { "System.Int32" }, 2, 0, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteNonQueryIntegration"),
@@ -426,25 +427,54 @@ namespace Datadog.Trace.ClrProfiler
 
                 // NUnit
                new ("nunit.framework", "NUnit.Framework.Internal.Execution.WorkItem", "PerformWork",  new[] { "System.Void" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemIntegration"),
-                }
-            };
-            DerivedInstrumentations.Add(InstrumentationCategory.Tracing, payload);
-            DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
-            
-            // derived types for InstrumentationCategory AppSec
-            payload = new Payload
-            {
-                DefinitionsId = "02043D9EE45819725C08A53565EFDB14",
-                Definitions = new NativeCallTargetDefinition[]
+
+                // RabbitMQ
+               new ("RabbitMQ.Client", "RabbitMQ.Client.AsyncDefaultBasicConsumer", "HandleBasicDeliver",  new[] { "System.Threading.Tasks.Task", "System.String", "System.UInt64", "System.Boolean", "System.String", "System.String", "RabbitMQ.Client.IBasicProperties", "_" }, 3, 6, 9, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverAsyncIntegration"),
+               new ("RabbitMQ.Client", "RabbitMQ.Client.DefaultBasicConsumer", "HandleBasicDeliver",  new[] { "System.Void", "System.String", "System.UInt64", "System.Boolean", "System.String", "System.String", "RabbitMQ.Client.IBasicProperties", "_" }, 3, 6, 9, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverIntegration"),
+                    }
+                };
+                DerivedInstrumentations.Add(InstrumentationCategory.Tracing, payload);
+                DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
+                
+                // derived types for InstrumentationCategory AppSec
+                payload = new Payload
                 {
+                    DefinitionsId = "02043D9EE45819725C08A53565EFDB14",
+                    Definitions = new NativeCallTargetDefinition[]
+                    {
 
                 // AspNetCore
                new ("Microsoft.AspNetCore.Mvc.Core", "Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext", "set_Result",  new[] { "System.Void", "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" }, 2, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_SetResult_Integration"),
-                }
-            };
-            DerivedInstrumentations.Add(InstrumentationCategory.AppSec, payload);
-            DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
-            
+                    }
+                };
+                DerivedInstrumentations.Add(InstrumentationCategory.AppSec, payload);
+                DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
+                
+                // interface types for InstrumentationCategory Tracing
+                payload = new Payload
+                {
+                    DefinitionsId = "6410E14A2A2343BABBB45940190E1C3F",
+                    Definitions = new NativeCallTargetDefinition[]
+                    {
+                // RabbitMQ
+               new ("RabbitMQ.Client", "RabbitMQ.Client.IAsyncBasicConsumer", "HandleBasicDeliver",  new[] { "System.Threading.Tasks.Task", "System.String", "System.UInt64", "System.Boolean", "System.String", "System.String", "RabbitMQ.Client.IBasicProperties", "_" }, 3, 6, 9, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverAsyncIntegration"),
+               new ("RabbitMQ.Client", "RabbitMQ.Client.IBasicConsumer", "HandleBasicDeliver",  new[] { "System.Void", "System.String", "System.UInt64", "System.Boolean", "System.String", "System.String", "RabbitMQ.Client.IBasicProperties", "_" }, 3, 6, 9, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverIntegration"),
+                    }
+                };
+                InterfaceInstrumentations.Add(InstrumentationCategory.Tracing, payload);
+                InterfaceInstrumentationsNatives = InterfaceInstrumentationsNatives.Concat(payload.Definitions);
+                
+                // interface types for InstrumentationCategory AppSec
+                payload = new Payload
+                {
+                    DefinitionsId = "ED012C3038C94D4FBE65900C7C29DD16",
+                    Definitions = new NativeCallTargetDefinition[]
+                    {
+                    }
+                };
+                InterfaceInstrumentations.Add(InstrumentationCategory.AppSec, payload);
+                InterfaceInstrumentationsNatives = InterfaceInstrumentationsNatives.Concat(payload.Definitions);
+                
         }
 
         private static Payload GetDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
@@ -452,6 +482,9 @@ namespace Datadog.Trace.ClrProfiler
 
         private static Payload GetDerivedDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
             => DerivedInstrumentations[instrumentationCategory];
+
+        private static Payload GetInterfaceDefinitionsArray(InstrumentationCategory instrumentationCategory = InstrumentationCategory.Tracing)
+            => InterfaceInstrumentations[instrumentationCategory];
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(
             string? integrationTypeName, System.Type targetType)
@@ -631,10 +664,13 @@ namespace Datadog.Trace.ClrProfiler
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Process.ProcessStartIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Process.ProcessStartIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Process,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicPublishIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.ExchangeDeclareIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.QueueDeclareIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicGetIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.QueueBindIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.RabbitMQ,

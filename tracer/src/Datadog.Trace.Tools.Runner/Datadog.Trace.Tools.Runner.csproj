@@ -32,49 +32,49 @@
         <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
       </PropertyGroup>
       <ItemGroup>
-        <Content Include="..\Datadog.Monitoring.Distribution\home\**\*.*" LinkBase="home">
+        <Content Include="..\Datadog.Trace.Bundle\home\**\*.*" LinkBase="home">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
           <CopyToPublishDirectory>Always</CopyToPublishDirectory>
         </Content>
 
-        <Content Update="..\Datadog.Monitoring.Distribution\home\**\readme.txt">
+        <Content Update="..\Datadog.Trace.Bundle\home\**\readme.txt">
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
         
-        <Content Update="..\Datadog.Monitoring.Distribution\home\**\*.pdb">
+        <Content Update="..\Datadog.Trace.Bundle\home\**\*.pdb">
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
 
         <!-- Remove the assets for other platforms than the one we're targetting (as they'll never be used anyway) -->
         <!-- Need to include the win-x86 and win-x64 assets in both versions -->
-        <Content Condition="'$(RuntimeIdentifier)' != 'win-x86' AND '$(RuntimeIdentifier)' != 'win-x64'" Update="..\Datadog.Monitoring.Distribution\home\win-x86\*.*">
+        <Content Condition="'$(RuntimeIdentifier)' != 'win-x86' AND '$(RuntimeIdentifier)' != 'win-x64'" Update="..\Datadog.Trace.Bundle\home\win-x86\*.*">
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
 
-        <Content Condition="'$(RuntimeIdentifier)' != 'win-x86' AND '$(RuntimeIdentifier)' != 'win-x64'" Update="..\Datadog.Monitoring.Distribution\home\win-x64\*.*">
+        <Content Condition="'$(RuntimeIdentifier)' != 'win-x86' AND '$(RuntimeIdentifier)' != 'win-x64'" Update="..\Datadog.Trace.Bundle\home\win-x64\*.*">
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
 
-        <Content Condition="'$(RuntimeIdentifier)' != 'linux-x64'" Update="..\Datadog.Monitoring.Distribution\home\linux-x64\*.*">
+        <Content Condition="'$(RuntimeIdentifier)' != 'linux-x64'" Update="..\Datadog.Trace.Bundle\home\linux-x64\*.*">
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
 
-        <Content Condition="'$(RuntimeIdentifier)' != 'linux-musl-x64'" Update="..\Datadog.Monitoring.Distribution\home\linux-musl-x64\*.*">
+        <Content Condition="'$(RuntimeIdentifier)' != 'linux-musl-x64'" Update="..\Datadog.Trace.Bundle\home\linux-musl-x64\*.*">
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
 
-        <Content Condition="'$(RuntimeIdentifier)' != 'linux-arm64'" Update="..\Datadog.Monitoring.Distribution\home\linux-arm64\*.*">
+        <Content Condition="'$(RuntimeIdentifier)' != 'linux-arm64'" Update="..\Datadog.Trace.Bundle\home\linux-arm64\*.*">
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
 
-        <Content Condition="'$(RuntimeIdentifier)' != 'osx-x64'" Update="..\Datadog.Monitoring.Distribution\home\osx-x64\*.*">
+        <Content Condition="'$(RuntimeIdentifier)' != 'osx-x64'" Update="..\Datadog.Trace.Bundle\home\osx-x64\*.*">
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
@@ -92,11 +92,11 @@
         <OutputPath>bin\$(Configuration)\Tool</OutputPath>
       </PropertyGroup>
       <ItemGroup>
-        <Content Include="..\Datadog.Monitoring.Distribution\home\**\*.*" Pack="true" PackagePath="\home" LinkBase="home">
+        <Content Include="..\Datadog.Trace.Bundle\home\**\*.*" Pack="true" PackagePath="\home" LinkBase="home">
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
         </Content>
 
-        <Content Update="..\Datadog.Monitoring.Distribution\home\**\readme.txt" Pack="false">
+        <Content Update="..\Datadog.Trace.Bundle\home\**\readme.txt" Pack="false">
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
         </Content>
       </ItemGroup>

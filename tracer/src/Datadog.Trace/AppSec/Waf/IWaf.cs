@@ -21,6 +21,6 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IContext CreateContext();
 
-        public bool UpdateRules(IEnumerable<RuleData[]> res);
+        public bool UpdateRules(IEnumerable<RuleData> res);
     }
 }

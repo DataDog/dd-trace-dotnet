@@ -1,9 +1,57 @@
 {
   "version": "2.2",
   "metadata": {
-    "rules_version": "1.3.1"
+    "rules_version": "1.3.2"
   },
   "rules": [
+    {
+      "id": "blk-001-001",
+      "name": "Block IP Addresses",
+      "tags": {
+        "type": "block_ip",
+        "category": "security_response"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "http.client_ip"
+              }
+            ],
+            "data": "blocked_ips"
+          },
+          "operator": "ip_match"
+        }
+      ],
+      "transformers": [],
+      "on_match": [
+        "block"
+      ]
+    },
+    {
+      "id": "block_users",
+      "name": "Block authenticated users",
+      "tags": {
+        "type": "users",
+        "category": "blocking"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              { "address": "usr.id" }
+            ],
+            "data": "blocked_users"
+          },
+          "operator": "exact_match"
+        }
+      ],
+      "transformers": [],
+      "on_match": [
+        "block"
+      ]
+    },
     {
       "id": "ublock-600-12x",
       "name": "Hello",
@@ -2272,7 +2320,7 @@
                 "address": "grpc.server.request.message"
               }
             ],
-            "regex": "[\\s\\\"'`;\\/0-9=\\x0B\\x09\\x0C\\x3B\\x2C\\x28\\x3B]on[a-zA-Z]{3,25}[\\s\\x0B\\x09\\x0C\\x3B\\x2C\\x28\\x3B]*?=[^=]",
+            "regex": "[\\s\\\"'`;\\/0-9=\\x0B\\x09\\x0C\\x3B\\x2C\\x28\\x3B]on(?:s(?:e(?:ek(?:ing|ed)|arch|lect)|t(?:alled|orage)|u(?:spend|bmit)|croll)|d(?:r(?:ag(?:en(?:ter|d)|leave|start|over)?|op)|urationchange|blclick)|c(?:anplay(?:through)?|o(?:ntextmenu|py)|u(?:echange|t)|hange|lick)|p(?:a(?:ge(?:hide|show)|(?:st|us)e)|lay(?:ing)?|opstate|rogress)|(?:(?:volume|hash)chang|t(?:imeupdat|oggl)|o(?:ff|n)lin)e|m(?:ouse(?:o(?:ver|ut)|wheel|down|move|up)|essage)|b(?:efore(?:unload|print)|lur)|load(?:ed(?:meta)?data|start)?|r(?:es(?:ize|et)|atechange)|e(?:(?:mpti|nd)ed|rror)|key(?:press|down|up)|a(?:fterprin|bor)t|w(?:aiting|heel)|in(?:valid|put)|unload|focus)[\\s\\x0B\\x09\\x0C\\x3B\\x2C\\x28\\x3B]*?=[^=/]",
             "options": {
               "min_length": 8
             }
@@ -3409,6 +3457,9 @@
           "parameters": {
             "inputs": [
               {
+                "address": "server.request.uri.raw"
+              },
+              {
                 "address": "server.request.query"
               },
               {
@@ -3488,6 +3539,74 @@
               "case_sensitive": false
             }
           }
+        }
+      ],
+      "transformers": [
+        "keys_only"
+      ]
+    },
+    {
+      "id": "dog-000-005",
+      "name": "Node.js: Prototype pollution through __proto__",
+      "tags": {
+        "type": "js_code_injection",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              }
+            ],
+            "regex": "^__proto__$"
+          },
+          "operator": "match_regex"
+        }
+      ],
+      "transformers": [
+        "keys_only"
+      ]
+    },
+    {
+      "id": "dog-000-006",
+      "name": "Node.js: Prototype pollution through constructor.prototype",
+      "tags": {
+        "type": "js_code_injection",
+        "category": "attack_attempt"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              }
+            ],
+            "regex": "^constructor$"
+          },
+          "operator": "match_regex"
+        },
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "server.request.query"
+              },
+              {
+                "address": "server.request.body"
+              }
+            ],
+            "regex": "^prototype$"
+          },
+          "operator": "match_regex"
         }
       ],
       "transformers": [
@@ -4371,7 +4490,7 @@
                 "address": "grpc.server.request.message"
               }
             ],
-            "regex": "^(http|https):\\/\\/(.*burpcollaborator\\.net|localtest\\.me|mail\\.ebc\\.apple\\.com|bugbounty\\.dod\\.network|.*\\.[nx]ip\\.io)"
+            "regex": "^(http|https):\\/\\/(?:.*\\.)?(?:burpcollaborator\\.net|localtest\\.me|mail\\.ebc\\.apple\\.com|bugbounty\\.dod\\.network|.*\\.[nx]ip\\.io|oastify\\.com|oast\\.(?:pro|live|site|online|fun|me)|sslip\\.io|requestbin\\.com|requestbin\\.net|hookbin\\.com|webhook\\.site|canarytokens\\.com|interact\\.sh|ngrok\\.io|bugbounty\\.click)"
           },
           "operator": "match_regex"
         }

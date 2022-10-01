@@ -64,8 +64,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             {
                 // This sets the span as active and either disposes it immediately
                 // or disposes it on the next call to Consumer.Consume()
+                var tracer = Tracer.Instance;
                 Scope scope = KafkaHelper.CreateConsumerScope(
-                    Tracer.Instance,
+                    tracer,
+                    tracer.TracerManager.DataStreamsManager,
                     instance,
                     consumeResult.Topic,
                     consumeResult.Partition,

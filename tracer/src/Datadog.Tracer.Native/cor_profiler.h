@@ -105,7 +105,7 @@ private:
     //
     // Initialization methods
     //
-    void InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived, bool enable = true);
+    void InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived, bool isInterface, bool enable = true);
 
 public:
     CorProfiler() = default;
@@ -167,6 +167,7 @@ public:
     void EnableByRefInstrumentation();
     void EnableCallTargetStateByRef();
     void AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* items, int size);
+    void AddInterfaceInstrumentations(WCHAR* id, CallTargetDefinition* items, int size);
     void AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration_assembly_name_ptr,
                                           WCHAR* integration_type_name_ptr);
     void InitializeTraceMethods(WCHAR* id, WCHAR* integration_assembly_name_ptr, WCHAR* integration_type_name_ptr,

@@ -16,6 +16,7 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger;
+using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.DiagnosticListeners;
 using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
@@ -137,6 +138,19 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
+                Log.Debug("Sending CallTarget interface integration definitions to native library.");
+                var payload = InstrumentationDefinitions.GetInterfaceDefinitions();
+                NativeMethods.AddInterfaceInstrumentations(payload.DefinitionsId, payload.Definitions);
+
+                Log.Information<int>("The profiler has been initialized with {count} interface definitions.", payload.Definitions.Length);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
+            try
+            {
                 Log.Debug("Initializing TraceAttribute instrumentation.");
                 var payload = InstrumentationDefinitions.GetTraceAttributeDefinitions();
                 NativeMethods.AddTraceAttributeInstrumentation(payload.DefinitionsId, payload.AssemblyName, payload.TypeName);
@@ -179,6 +193,21 @@ namespace Datadog.Trace.ClrProfiler
                 }
             }
 
+#if NETSTANDARD2_0 || NETCOREAPP3_1
+            try
+            {
+                // On .NET Core 2.0-3.0 we see an occasional hang caused by OpenSSL being loaded
+                // while the app is shutting down, which results in flaky tests due to the short-
+                // lived nature of our apps. This appears to be a bug in the runtime (although
+                // we haven't yet confirmed that). Calling the `ToUuid()` method uses an MD5
+                // hash which calls into the native library, triggering the load.
+                _ = string.Empty.ToUUID();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error triggering eager OpenSSL load");
+            }
+#endif
             LifetimeManager.Instance.AddShutdownTask(RunShutdown);
 
             Log.Debug("Initialization finished.");
@@ -342,7 +371,9 @@ namespace Datadog.Trace.ClrProfiler
                         var rcmApi = RemoteConfigurationApiFactory.Create(tracer.Settings.Exporter, rcmSettings, discoveryService);
 
                         var configurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, tracer.Settings.Environment, tracer.Settings.ServiceVersion);
+                        // see comment above
                         configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmFeaturesProduct);
+                        configurationManager.RegisterProduct(AsmRemoteConfigurationProducts.AsmDataProduct);
 
                         var liveDebugger = LiveDebuggerFactory.Create(discoveryService, configurationManager, tracer.Settings, serviceName);
 

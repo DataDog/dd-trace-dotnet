@@ -57,7 +57,7 @@ partial class Build
     AbsolutePath ProfilerBuildDataDirectory => ProfilerDirectory / "build_data";
     AbsolutePath ProfilerTestLogsDirectory => ProfilerBuildDataDirectory / "logs";
 
-    const string LibDdwafVersion = "1.5.0";
+    const string LibDdwafVersion = "1.5.1";
 
     const string OlderLibDdwafVersion = "1.4.0";
 
@@ -66,7 +66,7 @@ partial class Build
     AbsolutePath SourceDirectory => TracerDirectory / "src";
     AbsolutePath BuildDirectory => TracerDirectory / "build";
     AbsolutePath TestsDirectory => TracerDirectory / "test";
-    AbsolutePath DistributionHomeDirectory => Solution.GetProject(Projects.DatadogMonitoringDistribution).Directory / "home";
+    AbsolutePath BundleHomeDirectory => Solution.GetProject(Projects.DatadogTraceBundle).Directory / "home";
 
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
@@ -91,7 +91,7 @@ partial class Build
             : new[] { MSBuildTargetPlatform.x86 };
 
     bool IsArm64 => RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
-    string LinuxArchitectureIdentifier => IsArm64 ? "arm64" : TargetPlatform.ToString();
+    string UnixArchitectureIdentifier => IsArm64 ? "arm64" : TargetPlatform.ToString();
 
     IEnumerable<string> LinuxPackageTypes => IsAlpine ? new[] { "tar" } : new[] { "deb", "rpm", "tar" };
 
@@ -449,7 +449,7 @@ partial class Build
         .Executes(() =>
         {
             var (arch, extension) = GetUnixArchitectureAndExtension();
-            
+
             // Copy Native file
             CopyFileToDirectory(
                 NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
@@ -482,22 +482,22 @@ partial class Build
                 degreeOfParallelism: 2);
         });
 
-    Target CreateDistributionHome => _ => _
+    Target CreateBundleHome => _ => _
         .Unlisted()
         .After(BuildTracerHome)
         .Executes(() =>
         {
             // clean directory of everything except the text files
-            DistributionHomeDirectory
+            BundleHomeDirectory
                .GlobFiles("*.*")
                .Where(filepath => Path.GetExtension(filepath) != ".txt")
                .ForEach(DeleteFile);
 
-            // Copy existing files from tracer home to the Distribution location
-            CopyDirectoryRecursively(MonitoringHomeDirectory, DistributionHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-            
+            // Copy existing files from tracer home to the Bundle location
+            CopyDirectoryRecursively(MonitoringHomeDirectory, BundleHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+
             // Add the create log path script
-            CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, DistributionHomeDirectory);
+            CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, BundleHomeDirectory);
         });
 
     Target ExtractDebugInfoLinux => _ => _
@@ -515,7 +515,7 @@ partial class Build
                 var outputFile = outputDir / Path.GetFileNameWithoutExtension(file);
 
                 Logger.Info($"Extracting debug symbol for {file} to {outputFile}.debug");
-                ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {outputFile}.debug");    
+                ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {outputFile}.debug");
 
                 Logger.Info($"Stripping out unneeded information from {file}");
                 StripBinary.Value(arguments: $"--strip-unneeded {file}");
@@ -602,23 +602,23 @@ partial class Build
             var assetsDirectory = TemporaryDirectory / arch;
             EnsureCleanDirectory(assetsDirectory);
             CopyDirectoryRecursively(MonitoringHomeDirectory, assetsDirectory, DirectoryExistsPolicy.Merge);
-            
+
             // For back-compat reasons, we must always have the Datadog.ClrProfiler.Native.so file in the root folder
             // as it's set in the COR_PROFILER_PATH etc env var
             // so create a symlink to avoid bloating package sizes
             var archSpecificFile = assetsDirectory / arch / $"{FileNames.NativeLoader}.{ext}";
             var linkLocation = assetsDirectory / $"{FileNames.NativeLoader}.{ext}";
             HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
-            
+
             // For back-compat reasons, we have to keep the libddwaf.so file in the root folder
             // because the way AppSec probes the paths won't find the linux-musl-x64 target currently
             archSpecificFile = assetsDirectory / arch / FileNames.AppSecLinuxWaf;
             linkLocation = assetsDirectory / FileNames.AppSecLinuxWaf;
             HardLinkUtil.Value($"-v {archSpecificFile} {linkLocation}");
-            
+
             // we must always have the Datadog.Linux.ApiWrapper.x64.so file in the continuousprofiler subfolder
             // as it's set in the LD_PRELOAD env var
-            var continuousProfilerDir = assetsDirectory / "continuousprofiler"; 
+            var continuousProfilerDir = assetsDirectory / "continuousprofiler";
             EnsureExistingDirectory(continuousProfilerDir);
             archSpecificFile = assetsDirectory / arch / FileNames.ProfilerLinuxApiWrapper;
             linkLocation = continuousProfilerDir / FileNames.ProfilerLinuxApiWrapper;
@@ -638,11 +638,11 @@ partial class Build
                 replacement:$@";$1;./{arch}/Datadog.");
             File.WriteAllText(assetsDirectory / FileNames.LoaderConf, contents: loaderConfContents);
 
-            // Copy createLogPath.sh script and set the permissions 
+            // Copy createLogPath.sh script and set the permissions
             CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, assetsDirectory);
             chmod.Invoke($"+x {assetsDirectory / FileNames.CreateLogPathScript}");
 
-            var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
+            var workingDirectory = ArtifactsDirectory / $"linux-{UnixArchitectureIdentifier}";
             EnsureCleanDirectory(workingDirectory);
 
             const string packageName = "datadog-dotnet-apm";
@@ -1408,11 +1408,12 @@ partial class Build
                 null => string.Empty,
             };
 
-            var filter = (string.IsNullOrEmpty(Filter), IsArm64) switch
+            var armFilter = IsArm64 ? "&(Category!=ArmUnsupported)" : string.Empty;
+
+            var filter = string.IsNullOrEmpty(Filter) switch
             {
-                (true, false) => $"(Category!=LinuxUnsupported){dockerFilter}",
-                (true, true) => $"(Category!=LinuxUnsupported){dockerFilter}&(Category!=ArmUnsupported)",
-                _ => Filter
+                false => Filter,
+                true => $"(Category!=LinuxUnsupported)&(Category!=Lambda){dockerFilter}{armFilter}",
             };
 
             try
@@ -1523,6 +1524,19 @@ partial class Build
                 .EnableTrxLogOutput(GetResultsDirectory(project)));
         });
 
+    Target CopyServerlessArtifacts => _ => _
+       .Description("Copies monitoring-home into the serverless artifacts directory")
+       .Unlisted()
+       .After(CompileSamplesLinux, CompileMultiApiPackageVersionSamples)
+       .Executes(() =>
+        {
+
+            var projectFile = TracerDirectory.GlobFiles("test/test-applications/integrations/*/Samples.AWS.Lambda.csproj").FirstOrDefault();
+            var target = projectFile / ".." / "bin" / "artifacts" / "monitoring-home";
+
+            CopyDirectoryRecursively(MonitoringHomeDirectory, target, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+        });
+
 
     Target CheckBuildLogsForErrors => _ => _
        .Unlisted()
@@ -1553,7 +1567,7 @@ partial class Build
        .Executes(() =>
        {
            var knownPatterns = new List<Regex>();
-           
+
            if (IsAlpine)
            {
                // AppSec complains about not loading initially on alpine, but can be ignored
@@ -1622,9 +1636,9 @@ partial class Build
                              && nativeProfilerFiles.Count > 0
                              && nativeLoaderFiles.Count > 0);
 
-        if (hasRequiredFiles 
-         && managedErrors.Count == 0 
-         && nativeTracerErrors.Count == 0 
+        if (hasRequiredFiles
+         && managedErrors.Count == 0
+         && nativeTracerErrors.Count == 0
          && nativeProfilerErrors.Count == 0
          && nativeLoaderErrors.Count == 0)
         {
@@ -1831,18 +1845,19 @@ partial class Build
     private (string Arch, string Ext) GetLibDdWafUnixArchitectureAndExtension() =>
         (IsOsx) switch
         {
-            (true) => ("osx-x64", "dylib"),
-            (false) => ($"linux-{LinuxArchitectureIdentifier}", "so"), // LibDdWaf doesn't 
+            // (true) => ($"osx-{UnixArchitectureIdentifier}", "dylib"), //LibDdWaf doesn't support osx-arm64 yet.
+            (true) => ($"osx-x64", "dylib"),
+            (false) => ($"linux-{UnixArchitectureIdentifier}", "so"), // LibDdWaf doesn't
         };
 
     private (string Arch, string Ext) GetUnixArchitectureAndExtension() =>
         (IsOsx, IsAlpine) switch
         {
-            (true, _) => ("osx-x64", "dylib"),
-            (false, false) => ($"linux-{LinuxArchitectureIdentifier}", "so"),
-            (false, true) => ($"linux-musl-{LinuxArchitectureIdentifier}", "so"),
+            (true, _) => ($"osx-{UnixArchitectureIdentifier}", "dylib"),
+            (false, false) => ($"linux-{UnixArchitectureIdentifier}", "so"),
+            (false, true) => ($"linux-musl-{UnixArchitectureIdentifier}", "so"),
         };
-    
+
     // the integration tests need their own copy of the profiler, this achieved through build.props on Windows, but doesn't seem to work under Linux
     private void IntegrationTestLinuxProfilerDirFudge(string project)
     {

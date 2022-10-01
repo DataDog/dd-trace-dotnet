@@ -4,6 +4,8 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -76,6 +78,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
         internal static Scope CreateConsumerScope(
             Tracer tracer,
+            DataStreamsManager dataStreamsManager,
             object consumer,
             string topic,
             Partition? partition,
@@ -101,6 +104,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
 
                 SpanContext propagatedContext = null;
+                PathwayContext? pathwayContext = null;
+
                 // Try to extract propagated context from headers
                 if (message is not null && message.Headers is not null)
                 {
@@ -113,6 +118,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     catch (Exception ex)
                     {
                         Log.Error(ex, "Error extracting propagated headers from Kafka message");
+                    }
+
+                    if (dataStreamsManager.IsEnabled)
+                    {
+                        try
+                        {
+                            pathwayContext = dataStreamsManager.ExtractPathwayContext(headers);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error(ex, "Error extracting PathwayContext from Kafka message");
+                        }
                     }
                 }
 
@@ -159,6 +176,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 span.SetTag(Tags.Measured, "1");
 
                 tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+
+                if (dataStreamsManager.IsEnabled)
+                {
+                    span.Context.MergePathwayContext(pathwayContext);
+
+                    // TODO: we could cache this list in a thread local similar to StringBuilderCache to reduce allocations
+                    var edgeTags = string.IsNullOrEmpty(topic)
+                                       ? new[] { $"group:{groupId}", "type:kafka", }
+                                       : new[] { $"group:{groupId}", $"topic:{topic}", "type:kafka", };
+
+                    span.Context.SetCheckpoint(dataStreamsManager, edgeTags);
+                }
             }
             catch (Exception ex)
             {
@@ -200,10 +229,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// Try to inject the prop
         /// </summary>
         /// <param name="context">The Span context to propagate</param>
+        /// <param name="dataStreamsManager">The global data streams manager</param>
         /// <param name="message">The duck-typed Kafka Message object</param>
         /// <typeparam name="TTopicPartitionMarker">The TopicPartition type (used  optimisation purposes)</typeparam>
         /// <typeparam name="TMessage">The type of the duck-type proxy</typeparam>
-        internal static void TryInjectHeaders<TTopicPartitionMarker, TMessage>(SpanContext context, TMessage message)
+        internal static void TryInjectHeaders<TTopicPartitionMarker, TMessage>(
+            SpanContext context,
+            DataStreamsManager dataStreamsManager,
+            TMessage message)
             where TMessage : IMessage
         {
             if (!_headersInjectionEnabled)
@@ -221,6 +254,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 var adapter = new KafkaHeadersCollectionAdapter(message.Headers);
 
                 SpanContextPropagator.Instance.Inject(context, adapter);
+
+                if (dataStreamsManager.IsEnabled)
+                {
+                    context.SetCheckpoint(dataStreamsManager, DataStreamsManager.InternalEdgeTags);
+                    dataStreamsManager.InjectPathwayContext(context.PathwayContext, adapter);
+                }
             }
             catch (Exception ex)
             {
