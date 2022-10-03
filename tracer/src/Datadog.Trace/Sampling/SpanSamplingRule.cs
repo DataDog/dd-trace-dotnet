@@ -6,7 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+#if NETCOREAPP3_1_OR_GREATER
+using Datadog.Trace.Vendors.IndieSystem.Text.RegularExpressions;
+#else
 using System.Text.RegularExpressions;
+#endif
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -127,7 +131,12 @@ namespace Datadog.Trace.Sampling
         {
             // TODO default glob (maybe null/empty/whitespace) should be *
             var regexPattern = "^" + Regex.Escape(glob).Replace("\\?", ".").Replace("\\*", ".*") + "$";
+#if NETCOREAPP3_1_OR_GREATER
+            var regex = new Regex(regexPattern, RegexOptions.Compiled | RegexOptions.NonBacktracking, RegexTimeout);
+#else
             var regex = new Regex(regexPattern, RegexOptions.Compiled, RegexTimeout);
+#endif
+
             return regex;
         }
 
