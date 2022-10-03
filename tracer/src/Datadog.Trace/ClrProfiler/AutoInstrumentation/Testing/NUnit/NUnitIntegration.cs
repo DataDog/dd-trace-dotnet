@@ -147,7 +147,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 }
                 else if (exTypeName is "NUnit.Framework.IgnoreException" or "NUnit.Framework.InconclusiveException")
                 {
-                    test.Close(Ci.TestStatus.Skip, skipReason: ex.Message);
+                    test.Close(Ci.TestStatus.Skip, TimeSpan.Zero, ex.Message);
                 }
                 else
                 {

@@ -69,7 +69,7 @@ public static class TestAssemblyInfoRunAssemblyCleanupIntegration
 
             if (returnValue is string { } strWarning)
             {
-                module.SetErrorInfo("AssemblyCleanUp", strWarning);
+                module.SetErrorInfo("AssemblyCleanUp", strWarning, null);
             }
 
             module.Close();

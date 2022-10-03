@@ -109,7 +109,7 @@ public static class TestMethodAttributeExecuteIntegration
                             }
                             else
                             {
-                                test.Close(TestStatus.Skip, skipReason: errorMessage);
+                                test.Close(TestStatus.Skip, TimeSpan.Zero, errorMessage);
                             }
 
                             break;

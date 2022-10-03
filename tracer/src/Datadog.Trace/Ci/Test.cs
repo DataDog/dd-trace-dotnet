@@ -109,7 +109,7 @@ public sealed class Test
     /// <param name="type">Error type</param>
     /// <param name="message">Error message</param>
     /// <param name="callStack">Error callstack</param>
-    public void SetErrorInfo(string type, string message, string? callStack = null)
+    public void SetErrorInfo(string type, string message, string? callStack)
     {
         var span = _scope.Span;
         span.Error = true;
@@ -184,9 +184,28 @@ public sealed class Test
     /// Close test
     /// </summary>
     /// <param name="status">Test status</param>
+    public void Close(TestStatus status)
+    {
+        Close(status, null, null);
+    }
+
+    /// <summary>
+    /// Close test
+    /// </summary>
+    /// <param name="status">Test status</param>
+    /// <param name="duration">Duration of the test suite</param>
+    public void Close(TestStatus status, TimeSpan? duration)
+    {
+        Close(status, duration, null);
+    }
+
+    /// <summary>
+    /// Close test
+    /// </summary>
+    /// <param name="status">Test status</param>
     /// <param name="duration">Duration of the test suite</param>
     /// <param name="skipReason">In case </param>
-    public void Close(TestStatus status, TimeSpan? duration = null, string? skipReason = null)
+    public void Close(TestStatus status, TimeSpan? duration, string? skipReason)
     {
         if (Interlocked.Exchange(ref _finished, 1) == 1)
         {

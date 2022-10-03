@@ -102,7 +102,7 @@ public sealed class TestSuite
     /// <param name="type">Error type</param>
     /// <param name="message">Error message</param>
     /// <param name="callStack">Error callstack</param>
-    public void SetErrorInfo(string type, string message, string? callStack = null)
+    public void SetErrorInfo(string type, string message, string? callStack)
     {
         var span = _span;
         span.Error = true;
@@ -126,8 +126,16 @@ public sealed class TestSuite
     /// <summary>
     /// Close test suite
     /// </summary>
+    public void Close()
+    {
+        Close(null);
+    }
+
+    /// <summary>
+    /// Close test suite
+    /// </summary>
     /// <param name="duration">Duration of the test suite</param>
-    public void Close(TimeSpan? duration = null)
+    public void Close(TimeSpan? duration)
     {
         if (Interlocked.Exchange(ref _finished, 1) == 1)
         {

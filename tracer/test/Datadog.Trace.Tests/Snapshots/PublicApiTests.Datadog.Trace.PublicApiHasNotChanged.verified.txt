@@ -203,20 +203,16 @@ namespace Datadog.Trace.Ci
         public System.DateTimeOffset StartDate { get; }
         public Datadog.Trace.Ci.TestSuite Suite { get; }
         public static Datadog.Trace.Ci.Test? Current { get; }
-        public void Close(Datadog.Trace.Ci.Test.Status status, System.TimeSpan? duration = default, string? skipReason = null) { }
+        public void Close(Datadog.Trace.Ci.TestStatus status) { }
+        public void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration) { }
+        public void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration, string? skipReason) { }
         public void SetErrorInfo(System.Exception exception) { }
-        public void SetErrorInfo(string type, string message, string? callStack = null) { }
+        public void SetErrorInfo(string type, string message, string? callStack) { }
         public void SetParameters(Datadog.Trace.Ci.TestParameters parameters) { }
         public void SetTag(string key, double? value) { }
         public void SetTag(string key, string? value) { }
         public void SetTestMethodInfo(System.Reflection.MethodInfo methodInfo) { }
         public void SetTraits(System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>> traits) { }
-        public enum Status
-        {
-            Pass = 0,
-            Fail = 1,
-            Skip = 2,
-        }
     }
     public sealed class TestModule
     {
@@ -224,13 +220,17 @@ namespace Datadog.Trace.Ci
         public string Name { get; }
         public System.DateTimeOffset StartDate { get; }
         public static Datadog.Trace.Ci.TestModule? Current { get; }
-        public void Close(System.TimeSpan? duration = default) { }
-        public Datadog.Trace.Ci.TestSuite CreateSuite(string name, System.DateTimeOffset? startDate = default) { }
+        public void Close() { }
+        public void Close(System.TimeSpan? duration) { }
+        public Datadog.Trace.Ci.TestSuite CreateSuite(string name) { }
+        public Datadog.Trace.Ci.TestSuite CreateSuite(string name, System.DateTimeOffset? startDate) { }
         public void SetErrorInfo(System.Exception exception) { }
-        public void SetErrorInfo(string type, string message, string? callStack = null) { }
+        public void SetErrorInfo(string type, string message, string? callStack) { }
         public void SetTag(string key, double? value) { }
         public void SetTag(string key, string? value) { }
-        public static Datadog.Trace.Ci.TestModule Create(string name, string? framework = null, string? frameworkVersion = null, System.DateTimeOffset? startDate = default) { }
+        public static Datadog.Trace.Ci.TestModule Create(string name) { }
+        public static Datadog.Trace.Ci.TestModule Create(string name, string? framework, string? frameworkVersion) { }
+        public static Datadog.Trace.Ci.TestModule Create(string name, string? framework, string? frameworkVersion, System.DateTimeOffset? startDate) { }
     }
     public class TestParameters
     {
@@ -238,16 +238,24 @@ namespace Datadog.Trace.Ci
         public System.Collections.Generic.Dictionary<string, object>? Arguments { get; set; }
         public System.Collections.Generic.Dictionary<string, object>? Metadata { get; set; }
     }
+    public enum TestStatus
+    {
+        Pass = 0,
+        Fail = 1,
+        Skip = 2,
+    }
     public sealed class TestSuite
     {
         public Datadog.Trace.Ci.TestModule Module { get; }
         public string Name { get; }
         public System.DateTimeOffset StartDate { get; }
         public static Datadog.Trace.Ci.TestSuite? Current { get; }
-        public void Close(System.TimeSpan? duration = default) { }
-        public Datadog.Trace.Ci.Test CreateTest(string name, System.DateTimeOffset? startDate = default) { }
+        public void Close() { }
+        public void Close(System.TimeSpan? duration) { }
+        public Datadog.Trace.Ci.Test CreateTest(string name) { }
+        public Datadog.Trace.Ci.Test CreateTest(string name, System.DateTimeOffset? startDate) { }
         public void SetErrorInfo(System.Exception exception) { }
-        public void SetErrorInfo(string type, string message, string? callStack = null) { }
+        public void SetErrorInfo(string type, string message, string? callStack) { }
         public void SetTag(string key, double? value) { }
         public void SetTag(string key, string? value) { }
     }

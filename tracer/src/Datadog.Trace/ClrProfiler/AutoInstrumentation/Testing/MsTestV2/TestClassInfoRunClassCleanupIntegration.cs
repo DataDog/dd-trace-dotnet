@@ -71,7 +71,7 @@ public static class TestClassInfoRunClassCleanupIntegration
 
             if (returnValue is string { } strWarning)
             {
-                suite.SetErrorInfo("SuiteCleanUp", strWarning);
+                suite.SetErrorInfo("SuiteCleanUp", strWarning, null);
             }
 
             suite.Close();

@@ -92,7 +92,7 @@ internal static class XUnitIntegration
             {
                 if (exception.GetType().Name == "SkipException")
                 {
-                    test.Close(TestStatus.Skip, skipReason: exception.Message);
+                    test.Close(TestStatus.Skip, TimeSpan.Zero, exception.Message);
                 }
                 else
                 {

@@ -192,7 +192,7 @@ public sealed class TestModule
     /// <param name="type">Error type</param>
     /// <param name="message">Error message</param>
     /// <param name="callStack">Error callstack</param>
-    public void SetErrorInfo(string type, string message, string? callStack = null)
+    public void SetErrorInfo(string type, string message, string? callStack)
     {
         var span = _span;
         span.Error = true;
@@ -216,8 +216,16 @@ public sealed class TestModule
     /// <summary>
     /// Close test module
     /// </summary>
+    public void Close()
+    {
+        Close(null);
+    }
+
+    /// <summary>
+    /// Close test module
+    /// </summary>
     /// <param name="duration">Duration of the test module</param>
-    public void Close(TimeSpan? duration = null)
+    public void Close(TimeSpan? duration)
     {
         if (Interlocked.Exchange(ref _finished, 1) == 1)
         {
