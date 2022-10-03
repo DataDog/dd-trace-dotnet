@@ -527,11 +527,13 @@ bool LibddprofExporter::Send(ddog_Request* request, ddog_ProfileExporter* export
     }
 
     // Although we expect only 200, this range represents successful sends
-    auto isSuccess = result.http_response.code >= 200 && result.http_response.code < 300;
-    Log::Info("The profile was sent. Success?", std::boolalpha, isSuccess, std::noboolalpha, ", Http code: ", result.http_response.code);
+    auto failed = result.http_response.code < 200 || result.http_response.code >= 300;
+    if (failed)
+    {
+        Log::Error("Failed to send profile. Http code: ", result.http_response.code);
+    }
 
-
-    return isSuccess;
+    return !failed;
 }
 
 fs::path LibddprofExporter::CreatePprofOutputPath(IConfiguration* configuration) const
