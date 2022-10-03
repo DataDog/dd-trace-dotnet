@@ -16,8 +16,17 @@ internal readonly struct SpanModel
 
     public readonly TraceChunkModel? TraceChunk;
 
+    /// <remarks>
+    /// The "local root span" is the root span of the local trace. If there is no upstream service,
+    /// this is also the root span of the entire distributed trace and it's parent span id is null or zero.
+    /// If there is an upstream service, then the parent span id will be greater than zero.
+    /// </remarks>
     public readonly bool IsLocalRoot;
 
+    /// <remarks>
+    /// By "chunk orphan" we meed that this span's parent is not found in the same chunk.
+    /// The trace agent chooses one of these are the "chunk root", but the choice is not deterministic.
+    /// </remarks>
     public readonly bool IsChunkOrphan;
 
     public readonly bool IsFirstSpanInChunk;
