@@ -204,15 +204,15 @@ namespace Datadog.Trace.Agent.MessagePack
                 tagProcessors = tracer.TracerManager?.TagProcessors;
             }
 
-            offset += WriteTags(ref bytes, offset, spanModel, tagProcessors);
-            offset += WriteMetrics(ref bytes, offset, spanModel, tagProcessors);
+            offset += WriteTags(ref bytes, offset, in spanModel, tagProcessors);
+            offset += WriteMetrics(ref bytes, offset, in spanModel, tagProcessors);
 
             return offset - originalOffset;
         }
 
         // TAGS
 
-        private int WriteTags(ref byte[] bytes, int offset, SpanModel model, ITagProcessor[] tagProcessors)
+        private int WriteTags(ref byte[] bytes, int offset, in SpanModel model, ITagProcessor[] tagProcessors)
         {
             var span = model.Span;
             int originalOffset = offset;
@@ -315,7 +315,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
         // METRICS
 
-        private int WriteMetrics(ref byte[] bytes, int offset, SpanModel model, ITagProcessor[] tagProcessors)
+        private int WriteMetrics(ref byte[] bytes, int offset, in SpanModel model, ITagProcessor[] tagProcessors)
         {
             var span = model.Span;
             int originalOffset = offset;
