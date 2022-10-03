@@ -16,8 +16,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 50
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.HMACMD5"
       }
@@ -51,8 +50,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 51
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.HMACMD5"
       }
@@ -86,8 +84,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 52
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.HMACMD5"
       }
@@ -121,8 +118,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 50
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.MD5CryptoServiceProvider"
       }
@@ -156,8 +152,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 51
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.MD5CryptoServiceProvider"
       }
@@ -191,8 +186,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 52
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.MD5CryptoServiceProvider"
       }
@@ -226,8 +220,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 50
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.MD5+Implementation"
       }
@@ -261,8 +254,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 51
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.MD5+Implementation"
       }
@@ -296,8 +288,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 52
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.MD5+Implementation"
       }
@@ -331,8 +322,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 50
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.HMACSHA1"
       }
@@ -366,8 +356,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 51
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.HMACSHA1"
       }
@@ -401,8 +390,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 52
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.HMACSHA1"
       }
@@ -436,8 +424,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 50
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.SHA1+Implementation"
       }
@@ -471,8 +458,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 51
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.SHA1+Implementation"
       }
@@ -506,8 +492,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 52
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.SHA1+Implementation"
       }
@@ -541,8 +526,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 50
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
       }
@@ -576,8 +560,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 51
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
       }
@@ -611,8 +594,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 52
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
       }
@@ -646,8 +628,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 50
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.HMACMD5"
       }
@@ -681,8 +662,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 51
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.HMACMD5"
       }
@@ -716,8 +696,7 @@
     {
       "Type": "WEAK_HASH",
       "Location": {
-                "Line": 52
-      },
+                      },
       "Evidence": {
         "Value": "System.Security.Cryptography.HMACMD5"
       }
