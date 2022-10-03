@@ -22,6 +22,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
     {
         private const string ExpectedOperationName = "weak_hashing";
         private static readonly Regex PathMsgRegex = new(@"(\S)*""Path"": "".*"",(\r|\n){1,2}");
+        private static readonly Regex LineMsgRegex = new(@"(\S)*""Line"": .*(\r|\n){1,2}");
 
         public WeakHashingTests(ITestOutputHelper output)
             : base("WeakHashing", output)
@@ -50,6 +51,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(PathMsgRegex, string.Empty);
+            settings.AddRegexScrubber(LineMsgRegex, string.Empty);
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();

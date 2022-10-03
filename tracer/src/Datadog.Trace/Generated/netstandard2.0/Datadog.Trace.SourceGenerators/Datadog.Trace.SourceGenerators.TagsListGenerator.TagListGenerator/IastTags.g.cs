@@ -4,7 +4,7 @@
 using Datadog.Trace.Processors;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.IAST
+namespace Datadog.Trace.Iast
 {
     partial class IastTags
     {
