@@ -5,7 +5,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Util;
@@ -84,6 +86,9 @@ internal class TestApiRequestFactory : IApiRequestFactory
         }
 
         public Task<IApiResponse> PostAsync(ArraySegment<byte> traces, string contentType)
+            => PostAsync(traces, contentType, null);
+
+        public Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
         {
             var response = _createResponseFunc(this, contentType);
             Responses.Add(response);
@@ -114,6 +119,8 @@ internal class TestApiRequestFactory : IApiRequestFactory
 
         public string ContentType { get; }
 
+        public Encoding ContentEncoding => Encoding.UTF8;
+
         public Dictionary<string, string> Headers { get; }
 
         public int StatusCode { get; }
@@ -129,6 +136,6 @@ internal class TestApiRequestFactory : IApiRequestFactory
                    ? headerValue
                    : null;
 
-        public Task<string> ReadAsStringAsync() => Task.FromResult(_body);
+        public Task<Stream> GetStreamAsync() => Task.FromResult(new StreamReader(_body).BaseStream);
     }
 }
