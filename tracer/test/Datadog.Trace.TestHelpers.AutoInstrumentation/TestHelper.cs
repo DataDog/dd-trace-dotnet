@@ -179,6 +179,11 @@ namespace Datadog.Trace.TestHelpers
         {
             var process = StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework);
 
+            return WaitForProcessResult(process);
+        }
+
+        public ProcessResult WaitForProcessResult(Process process)
+        {
             using var helper = new ProcessHelper(process);
 
             // this is _way_ too long, but we want to be v. safe
