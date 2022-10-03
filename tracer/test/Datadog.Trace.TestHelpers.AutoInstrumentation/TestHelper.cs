@@ -178,17 +178,17 @@ namespace Datadog.Trace.TestHelpers
         public ProcessResult RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000)
         {
             var process = StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework);
-
-            return WaitForProcessResult(process);
-        }
-
-        public ProcessResult WaitForProcessResult(Process process)
-        {
             using var helper = new ProcessHelper(process);
 
+            return WaitForProcessResult(helper);
+        }
+
+        public ProcessResult WaitForProcessResult(ProcessHelper helper)
+        {
             // this is _way_ too long, but we want to be v. safe
             // the goal is just to make sure we kill the test before
             // the whole CI run times out
+            var process = helper.Process;
             var timeoutMs = (int)TimeSpan.FromMinutes(10).TotalMilliseconds;
             var ranToCompletion = process.WaitForExit(timeoutMs) && helper.Drain(timeoutMs / 2);
 

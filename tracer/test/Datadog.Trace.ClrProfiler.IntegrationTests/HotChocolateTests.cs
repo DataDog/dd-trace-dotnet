@@ -72,35 +72,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
 
-                process.OutputDataReceived += (sender, args) =>
-                {
-                    if (args.Data != null)
+                using var helper = new ProcessHelper(
+                    process,
+                    onDataReceived: data =>
                     {
-                        if (args.Data.Contains("Now listening on:"))
+                        if (data.Contains("Now listening on:"))
                         {
-                            var splitIndex = args.Data.LastIndexOf(':');
-                            aspNetCorePort = int.Parse(args.Data.Substring(splitIndex + 1));
+                            var splitIndex = data.LastIndexOf(':');
+                            aspNetCorePort = int.Parse(data.Substring(splitIndex + 1));
 
                             wh.Set();
                         }
-                        else if (args.Data.Contains("Unable to start Kestrel"))
+                        else if (data.Contains("Unable to start Kestrel"))
                         {
                             wh.Set();
                         }
 
-                        Output.WriteLine($"[webserver][stdout] {args.Data}");
-                    }
-                };
-                process.BeginOutputReadLine();
-
-                process.ErrorDataReceived += (sender, args) =>
-                {
-                    if (args.Data != null)
-                    {
-                        Output.WriteLine($"[webserver][stderr] {args.Data}");
-                    }
-                };
-                process.BeginErrorReadLine();
+                        Output.WriteLine($"[webserver][stdout] {data}");
+                    },
+                    onErrorReceived: data => Output.WriteLine($"[webserver][stderr] {data}"));
 
                 wh.WaitOne(15_000);
                 if (!aspNetCorePort.HasValue)
@@ -118,7 +108,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     var shutdownRequest = new RequestInfo() { HttpMethod = "GET", Url = "/shutdown" };
                     SubmitRequest(aspNetCorePort.Value, shutdownRequest);
 
-                    WaitForProcessResult(process);
+                    WaitForProcessResult(helper);
                 }
 
                 var spans = agent.WaitForSpans(expectedSpans);
