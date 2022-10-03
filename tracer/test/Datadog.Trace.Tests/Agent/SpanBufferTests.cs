@@ -28,10 +28,9 @@ namespace Datadog.Trace.Tests.Agent
             for (int i = 0; i < traceCount; i++)
             {
                 var spans = CreateTraceChunk(spanCount);
-                var localRoot = spans.Array![spans.Offset];
-                var traceChunk = new TraceChunkModel(spans, localRoot, samplingPriority: null, tags: null);
+                var traceChunk = new TraceChunkModel(spans, traceContext: null);
 
-                Assert.True(buffer.TryWrite(traceChunk, ref _temporaryBuffer));
+                buffer.TryWrite(traceChunk, ref _temporaryBuffer).Should().BeTrue();
             }
 
             buffer.Lock();
@@ -59,8 +58,7 @@ namespace Datadog.Trace.Tests.Agent
             buffer.IsFull.Should().BeFalse();
 
             var spans = CreateTraceChunk(1);
-            var localRoot = spans.Array![spans.Offset];
-            var traceChunk = new TraceChunkModel(spans, localRoot, samplingPriority: null, tags: null);
+            var traceChunk = new TraceChunkModel(spans, traceContext: null);
             var result = buffer.TryWrite(traceChunk, ref _temporaryBuffer);
 
             result.Should().BeFalse();
@@ -82,8 +80,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
             var spans = CreateTraceChunk(1);
-            var localRoot = spans.Array![spans.Offset];
-            var traceChunk = new TraceChunkModel(spans, localRoot, samplingPriority: null, tags: null);
+            var traceChunk = new TraceChunkModel(spans, traceContext: null);
 
             buffer.TryWrite(traceChunk, ref _temporaryBuffer).Should().BeTrue();
 
@@ -101,8 +98,7 @@ namespace Datadog.Trace.Tests.Agent
         {
             var buffer = new SpanBuffer(10 * 1024 * 1024, SpanFormatterResolver.Instance);
             var spans = CreateTraceChunk(3);
-            var localRoot = spans.Array![spans.Offset];
-            var traceChunk = new TraceChunkModel(spans, localRoot, samplingPriority: null, tags: null);
+            var traceChunk = new TraceChunkModel(spans, traceContext: null);
 
             buffer.TryWrite(traceChunk, ref _temporaryBuffer).Should().BeTrue();
             buffer.TraceCount.Should().Be(1);
