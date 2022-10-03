@@ -15,7 +15,7 @@ using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.ClrProfiler.IntegrationTests
+namespace Datadog.Trace.Security.IntegrationTests.Iast
 {
     [UsesVerify]
     public class WeakHashingTests : TestHelper
@@ -44,7 +44,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var filename = "WeakHashingTestsTests.SubmitsTraces";
 #endif
 
-            using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
@@ -56,8 +55,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .DisableRequireUniquePrefix();
 
             VerifyInstrumentation(process.Process);
-
-            telemetry.AssertIntegrationEnabled(IntegrationId.HashAlgorithm);
         }
 
         [SkippableTheory]
@@ -70,7 +67,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable(variableName, variableValue);
             const int expectedSpanCount = 21;
-            using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent);
             var spans = agent.WaitForSpans(expectedSpanCount, returnAllOperations: true);
