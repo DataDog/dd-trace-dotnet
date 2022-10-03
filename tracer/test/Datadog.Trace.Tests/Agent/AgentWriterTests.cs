@@ -47,8 +47,7 @@ namespace Datadog.Trace.Tests.Agent
         public async Task WriteTrace_2Traces_SendToApi()
         {
             var spans = CreateTraceChunk(1);
-            var localRoot = spans.Array![spans.Offset];
-            var traceChunk = new TraceChunkModel(spans, localRoot, samplingPriority: null, tags: null);
+            var traceChunk = new TraceChunkModel(spans, traceContext: null);
             var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk, SpanFormatterResolver.Instance);
 
             _agentWriter.WriteTrace(spans);
@@ -59,8 +58,7 @@ namespace Datadog.Trace.Tests.Agent
             _api.Invocations.Clear();
 
             spans = CreateTraceChunk(1, 2);
-            localRoot = spans.Array![spans.Offset];
-            traceChunk = new TraceChunkModel(spans, localRoot, samplingPriority: null, tags: null);
+            traceChunk = new TraceChunkModel(spans, traceContext: null);
             var expectedData2 = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk, SpanFormatterResolver.Instance);
 
             _agentWriter.WriteTrace(spans);
@@ -380,8 +378,7 @@ namespace Datadog.Trace.Tests.Agent
 
         private static int ComputeSize(ArraySegment<Span> spans)
         {
-            var localRoot = spans.Array![spans.Offset];
-            var traceChunk = new TraceChunkModel(spans, localRoot, samplingPriority: null, tags: null);
+            var traceChunk = new TraceChunkModel(spans, traceContext: null);
             return Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk, SpanFormatterResolver.Instance).Length;
         }
 
