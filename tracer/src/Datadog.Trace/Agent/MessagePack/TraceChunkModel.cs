@@ -41,4 +41,12 @@ internal readonly struct TraceChunkModel
             Tags = traceContext.Tags;
         }
     }
+
+    public TraceChunkModel(in ArraySegment<Span> spans, Span? localRootSpan)
+    {
+        Spans = spans;
+        LocalRoot = localRootSpan;
+        SamplingPriority = null;
+        Tags = null;
+    }
 }
