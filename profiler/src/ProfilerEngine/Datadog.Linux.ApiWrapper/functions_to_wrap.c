@@ -1,10 +1,9 @@
 #define _GNU_SOURCE
 #include <dlfcn.h>
-#include <signal.h>
 #include <link.h>
+#include <signal.h>
 #include <stddef.h>
 #include <stdio.h>
-#include <dlfcn.h>
 
 /* dl_iterate_phdr wrapper
 The .NET profiler on Linux uses a classic signal-based approach to collect thread callstack.
@@ -34,11 +33,10 @@ This is done by libunwind, just taking advantage of it.
 
 */
 
-
 /* Function pointers to hold the value of the glibc functions */
-static int (*__real_dl_iterate_phdr)(int (*callback) (struct dl_phdr_info* info, size_t size, void* data), void* data) = NULL;
+static int (*__real_dl_iterate_phdr)(int (*callback)(struct dl_phdr_info* info, size_t size, void* data), void* data) = NULL;
 
-int dl_iterate_phdr(int (*callback) (struct dl_phdr_info* info, size_t size, void* data), void* data)
+int dl_iterate_phdr(int (*callback)(struct dl_phdr_info* info, size_t size, void* data), void* data)
 {
     if (__real_dl_iterate_phdr == NULL)
     {
@@ -70,7 +68,7 @@ int dl_iterate_phdr(int (*callback) (struct dl_phdr_info* info, size_t size, voi
 /* Function pointers to hold the value of the glibc functions */
 static void* (*__real_dlopen)(const char* file, int mode) = NULL;
 
-void *dlopen(const char *file, int mode)
+void* dlopen(const char* file, int mode)
 {
     if (__real_dlopen == NULL)
     {
@@ -122,3 +120,34 @@ int dladdr(const void* addr_arg, Dl_info* info)
 
     return result;
 }
+
+#define INHIBIT_SIGNALS_FOR(fn_name)                                            \
+    /* Function pointers to hold the value of the musl libc functions */            \
+    static void (*__real_##fn_name)() = NULL;                                       \
+                                                                                    \
+    void fn_name()                                                                  \
+    {                                                                               \
+        if (__real_##fn_name == NULL)                                               \
+        {                                                                           \
+            __real_##fn_name = dlsym(RTLD_NEXT, #fn_name);                          \
+        }                                                                           \
+                                                                                    \
+        sigset_t oldOne;                                                            \
+        sigset_t newOne;                                                            \
+                                                                                    \
+        /* initialize the set to all signals*/                                      \
+        sigfillset(&newOne);                                                        \
+                                                                                    \
+        /* prevent any signals from interrupting the execution of the real dladdr*/ \
+        pthread_sigmask(SIG_SETMASK, &newOne, &oldOne);                             \
+                                                                                    \
+        /* call the real __inhibit_ptc (musl-libc) */                               \
+        __real_##fn_name();                                                         \
+                                                                                    \
+        /* restore the previous state for signals*/                                 \
+        pthread_sigmask(SIG_SETMASK, &oldOne, NULL);                                \
+    }
+
+INHIBIT_SIGNALS_FOR(__inhibit_ptc)
+INHIBIT_SIGNALS_FOR(__acquire_ptc)
+INHIBIT_SIGNALS_FOR(__release_ptc)
