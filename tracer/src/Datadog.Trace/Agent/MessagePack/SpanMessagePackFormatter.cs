@@ -109,14 +109,14 @@ namespace Datadog.Trace.Agent.MessagePack
                 // A span is a "chunk orphan" if:
                 // - it's the local root span (it does NOT have a parent in the local trace, by definition)
                 // - its parent is the local root span (very common), but the root span was NOT found in this chunk
-                // - its parent is NOT the local root span and its parent is NOT found in `spanIds`
+                // - its parent is NOT the local root span and its parent is NOT found in the spanIds lookup
 
                 // A span's parent usually finishes after its child,
                 // so if we need to iterate in spanIds.Contains(), start the search at i + 1
                 // (and loop back to the beginning if needed).
-                bool isOrphan = isLocalRoot ||
-                                (isChildOfLocalRoot && !localRootFound) ||
-                                (!isChildOfLocalRoot && !spanIds.Contains(parentSpanId, startIndex: i + 1));
+                bool isChunkOrphan = isLocalRoot ||
+                                     (isChildOfLocalRoot && !localRootFound) ||
+                                     (!isChildOfLocalRoot && !spanIds.Contains(parentSpanId, startIndex: i + 1));
 
                 bool isFirstSpan = (i == 0);
 
@@ -124,7 +124,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 // available in the span object itself, like its position in the trace chunk
                 // or if its parent can also be found in the same chunk, so we use SpanModel
                 // to pass that information to the serializer
-                var spanModel = new SpanModel(span, traceChunk, isLocalRoot, isOrphan, isFirstSpan);
+                var spanModel = new SpanModel(span, traceChunk, isLocalRoot, isChunkOrphan, isFirstSpan);
                 offset += Serialize(ref bytes, offset, in spanModel, formatterResolver);
             }
 
