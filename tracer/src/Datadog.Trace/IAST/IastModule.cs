@@ -9,7 +9,7 @@ using System;
 using System.Diagnostics;
 using System.Linq;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Tagging;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Iast
@@ -38,13 +38,14 @@ namespace Datadog.Trace.Iast
             var tracer = Tracer.Instance;
             var frame = StackWalker.GetFrame();
             // Sometimes we do not have the file/line but we have the method/class.
-            var vulnerability = new Vulnerability(VulnerabilityType.WEAK_HASH, new Location(frame?.GetFileName() ?? GetMethodName(frame), frame?.GetFileLineNumber()), new Evidence(evidenceValue));
+            var filename = frame?.GetFileName();
+            var vulnerability = new Vulnerability(VulnerabilityType.WEAK_HASH, new Location(filename ?? GetMethodName(frame), filename != null ? frame?.GetFileLineNumber() : null), new Evidence(evidenceValue));
             // The VulnerabilityBatch class is not very useful right now, but we will need it when handling requests
             var batch = new VulnerabilityBatch();
             batch.Add(vulnerability);
 
             // Right now, we always set the IastEnabled tag to "1", but in the future, it might be zero to indicate that a request has not been analyzed
-            var tags = new InsecureHashingTags()
+            var tags = new IastTags()
             {
                 IastJson = batch.ToString(),
                 IastEnabled = "1"

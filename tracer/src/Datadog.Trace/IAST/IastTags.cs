@@ -1,20 +1,22 @@
-// <copyright file="InsecureHashingTags.cs" company="Datadog">
+// <copyright file="IastTags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
 
+using Datadog;
 using Datadog.Trace.SourceGenerators;
+using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.Tagging
+namespace Datadog.Trace.Iast
 {
-    internal partial class InsecureHashingTags : CommonTags
+    internal partial class IastTags : CommonTags
     {
-        [Tag(Trace.Tags.IastJson)]
+        [Tag(Tags.IastJson)]
         public string? IastJson { get; set; }
 
-        [Tag(Trace.Tags.IastEnabled)]
+        [Tag(Tags.IastEnabled)]
         public string? IastEnabled { get; set; }
     }
 }
