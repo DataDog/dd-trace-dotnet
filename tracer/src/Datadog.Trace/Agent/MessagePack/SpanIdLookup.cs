@@ -42,7 +42,7 @@ internal readonly struct SpanIdLookup
         }
     }
 
-    public bool Contains(ulong value, int startIndex = 0)
+    public bool Contains(ulong spanId, int startIndex = 0)
     {
         if (_spans.Count == 0)
         {
@@ -52,13 +52,18 @@ internal readonly struct SpanIdLookup
         // if we created a HashSet, use it
         if (_hashSet is not null)
         {
-            return _hashSet.Contains(value);
+            return _hashSet.Contains(spanId);
+        }
+
+        if (startIndex >= _spans.Count || startIndex < 0)
+        {
+            startIndex = 0;
         }
 
         // if we didn't create a HashSet, iterate over the span array starting at the specified index
         for (var i = startIndex; i < _spans.Count; i++)
         {
-            if (value == _spans.Array![i + _spans.Offset].SpanId)
+            if (spanId == _spans.Array![i + _spans.Offset].SpanId)
             {
                 return true;
             }
@@ -67,7 +72,7 @@ internal readonly struct SpanIdLookup
         // if not found above, loop back to the beginning of the array
         for (var i = 0; i < startIndex; i++)
         {
-            if (value == _spans.Array![i + _spans.Offset].SpanId)
+            if (spanId == _spans.Array![i + _spans.Offset].SpanId)
             {
                 return true;
             }
