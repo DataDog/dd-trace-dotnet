@@ -8,8 +8,8 @@
 GenericSampler::GenericSampler(int32_t samplesLimit, int32_t uploadInterval) :
     _sampler(
         SamplingWindow,
-        SamplesPerWindow(samplesLimit, SamplingWindowsPerRecording(uploadInterval, SamplingWindow.count())),
-        SamplingWindowsPerRecording(uploadInterval, SamplingWindow.count()),
+        SamplesPerWindow(samplesLimit, SamplingWindowsPerRecording(uploadInterval, static_cast<int32_t>(SamplingWindow.count()))),
+        SamplingWindowsPerRecording(uploadInterval, static_cast<int32_t>(SamplingWindow.count())),
         16, [this] { RollWindow(); }
         )
 {
