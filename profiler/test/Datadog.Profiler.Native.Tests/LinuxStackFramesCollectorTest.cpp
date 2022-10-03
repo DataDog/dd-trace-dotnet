@@ -4,6 +4,7 @@
 #ifdef LINUX
 
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/LinuxStackFramesCollector.h"
+#include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/ProfilerSignalManager.h"
 #include "ManagedThreadInfo.h"
 #include "OpSysTools.h"
 #include "StackSnapshotResultReusableBuffer.h"
@@ -148,6 +149,8 @@ public:
         StopTest();
         _workerThread.reset();
 
+        ProfilerSignalManager::Get()->Reset();
+
         SignalHandlerForTest::_instance.reset();
         sigaction(SIGUSR1, &_oldAction, nullptr);
     }
@@ -201,6 +204,11 @@ public:
 
         EXPECT_EQ(ips[collectedNbFrames - 1], (uintptr_t)expectedCallstack[expectedNbFrames - 1]);
         EXPECT_EQ(ips[collectedNbFrames - 2], (uintptr_t)expectedCallstack[expectedNbFrames - 2]);
+    }
+
+    ProfilerSignalManager* GetSignalManager()
+    {
+        return ProfilerSignalManager::Get();
     }
 
 private:
@@ -266,7 +274,8 @@ private:
 
 TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
 {
-    auto collector = LinuxStackFramesCollector();
+    auto* signalManager = GetSignalManager();
+    auto collector = LinuxStackFramesCollector(signalManager);
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
     threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)0);
@@ -283,20 +292,10 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
     ValidateCallstack(ips);
 }
 
-TEST_F(LinuxStackFramesCollectorFixture, CheckSignalHandlerIsSetForSignalUSR1)
-{
-    auto collector = LinuxStackFramesCollector();
-
-    struct sigaction currentAction;
-    EXPECT_EQ(sigaction(SIGUSR1, nullptr, &currentAction), 0) << "Unable to setup Test handler.";
-    EXPECT_EQ(currentAction.sa_flags & SA_SIGINFO, SA_SIGINFO) << "sa_flags must contain the SA_SIGINFO mask to use sigaction handler.";
-    EXPECT_EQ(currentAction.sa_flags & SA_RESTART, SA_RESTART) << "sa_flags must contain the SA_RESTART mask for threads that were interrupted while waiting on IO.";
-    EXPECT_NE(currentAction.sa_sigaction, nullptr) << "sa_sigaction handler must not be nullptr.";
-}
-
 TEST_F(LinuxStackFramesCollectorFixture, MustNotCollectIfUnknownThreadId)
 {
-    auto collector = LinuxStackFramesCollector();
+    auto* signalManager = ProfilerSignalManager::Get();
+    auto collector = LinuxStackFramesCollector(signalManager);
 
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
     threadInfo.SetOsInfo(0, (HANDLE)0);
@@ -312,7 +311,8 @@ TEST_F(LinuxStackFramesCollectorFixture, MustNotCollectIfUnknownThreadId)
 TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfAnotherHandlerReplacedIt)
 {
     // 1st setup the signal handler
-    auto collector = LinuxStackFramesCollector();
+    auto* signalManager = GetSignalManager();
+    auto collector = LinuxStackFramesCollector(signalManager);
 
     // Validate the profiler is working correctly
     auto threadId = (DWORD)GetWorkerThreadId();
@@ -368,7 +368,8 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     ResetCallbackState();
 
     // 2nd install profiler handler
-    auto collector = LinuxStackFramesCollector();
+    auto* signalManager = GetSignalManager();
+    auto collector = LinuxStackFramesCollector(signalManager);
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
@@ -406,7 +407,8 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     ResetCallbackState();
 
     // 2nd install profiler handler
-    auto collector = LinuxStackFramesCollector();
+    auto* signalManager = GetSignalManager();
+    auto collector = LinuxStackFramesCollector(signalManager);
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
@@ -444,7 +446,8 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     ResetCallbackState();
 
     // 2nd install profiler handler
-    auto collector = LinuxStackFramesCollector();
+    auto* signalManager = GetSignalManager();
+    auto collector = LinuxStackFramesCollector(signalManager);
 
     std::uint32_t hr;
     StackSnapshotResultBuffer* buffer;
@@ -470,25 +473,6 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerHandlerIsInstalledCorrectl
     EXPECT_TRUE(WasCallbackCalled()) << "Test handler was not called.";
 }
 
-TEST_F(LinuxStackFramesCollectorFixture, CheckNoCrashIfNoPreviousHandlerInstalled)
-{
-    testing::FLAGS_gtest_death_test_style = "threadsafe";
-
-    struct sigaction currentAction;
-    EXPECT_EQ(sigaction(SIGUSR1, nullptr, &currentAction), 0) << "Unable to get current action.";
-    EXPECT_EQ(currentAction.sa_handler, SIG_DFL) << "Current handler is not the default one";
-
-    // create collector to setup profiler signal handler
-    auto collector = LinuxStackFramesCollector();
-
-    EXPECT_EQ(sigaction(SIGUSR1, nullptr, &currentAction), 0) << "Unable to get current action.";
-    EXPECT_NE(currentAction.sa_handler, SIG_DFL);
-    EXPECT_NE(currentAction.sa_handler, SIG_IGN);
-
-    SendSignal();
-    EXPECT_EXIT(exit(WasCallbackCalled() ? 1 : 0), testing::ExitedWithCode(0), "");
-}
-
 TEST_F(LinuxStackFramesCollectorFixture, CheckNoCrashIfPreviousHandlerWasMarkedAsIgnored)
 {
     testing::FLAGS_gtest_death_test_style = "threadsafe";
@@ -499,7 +483,8 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckNoCrashIfPreviousHandlerWasMarkedA
     EXPECT_EQ(sigaction(SIGUSR1, &currentAction, nullptr), 0) << "Unable to update the current action with SIG_IGN handler";
 
     // create collector to setup profiler signal handler
-    auto collector = LinuxStackFramesCollector();
+    auto* signalManager = GetSignalManager();
+    auto collector = LinuxStackFramesCollector(signalManager);
 
     EXPECT_EQ(sigaction(SIGUSR1, nullptr, &currentAction), 0) << "Unable to get current action.";
     EXPECT_NE(currentAction.sa_handler, SIG_DFL);
@@ -515,7 +500,8 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckThatProfilerHandlerAndOtherHandler
     InstallHandler(SA_SIGINFO);
 
     // 2nd setup the signal handler (which will points to the custom handler)
-    auto collector = LinuxStackFramesCollector();
+    auto* signalManager = GetSignalManager();
+    auto collector = LinuxStackFramesCollector(signalManager);
 
     // 3rd now point to the profiler handler
     InstallHandler(SA_SIGINFO, true);
@@ -539,9 +525,30 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckThatProfilerHandlerAndOtherHandler
     EXPECT_TRUE(WasCallbackCalled()) << "Test handler was not called.";
 }
 
+TEST_F(LinuxStackFramesCollectorFixture, CheckNoCrashIfNoPreviousHandlerInstalled)
+{
+    testing::FLAGS_gtest_death_test_style = "threadsafe";
+
+    struct sigaction currentAction;
+    EXPECT_EQ(sigaction(SIGUSR1, nullptr, &currentAction), 0) << "Unable to get current action.";
+    EXPECT_EQ(currentAction.sa_handler, SIG_DFL) << "Current handler is not the default one";
+
+    // create collector to setup profiler signal handler
+    auto* signalManager = GetSignalManager();
+    auto collector = LinuxStackFramesCollector(signalManager);
+
+    EXPECT_EQ(sigaction(SIGUSR1, nullptr, &currentAction), 0) << "Unable to get current action.";
+    EXPECT_NE(currentAction.sa_handler, SIG_DFL);
+    EXPECT_NE(currentAction.sa_handler, SIG_IGN);
+
+    SendSignal();
+    EXPECT_EXIT(exit(WasCallbackCalled() ? 1 : 0), testing::ExitedWithCode(0), "");
+}
+
 TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHandlerKeepsChanging)
 {
-    auto collector = LinuxStackFramesCollector();
+    auto* signalManager = GetSignalManager();
+    auto collector = LinuxStackFramesCollector(signalManager);
 
     const auto threadId = GetWorkerThreadId();
     auto threadInfo = ManagedThreadInfo((ThreadID)0);
@@ -552,7 +559,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
     {
         collector.PrepareForNextCollection();
         // validate it's working
-        ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
+        ASSERT_DURATION_LE(100s, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, S_OK);
 
         std::vector<uintptr_t> ips;
@@ -565,12 +572,12 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
     {
         // profiler handler was replaced, so the signal will be lost and we will return after 2s
         collector.PrepareForNextCollection();
-        ASSERT_DURATION_LE(3s, buffer = collector.CollectStackSample(&threadInfo, &hr));
+        ASSERT_DURATION_LE(100s, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, E_FAIL);
 
         // At this point, the profiler restored its handler, ensure it's working as expected
         collector.PrepareForNextCollection();
-        ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
+        ASSERT_DURATION_LE(100s, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, S_OK);
     }
 
@@ -581,12 +588,14 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckTheProfilerStopWorkingIfSignalHand
     {
         // profiler handler was replaced, so the signal will be lost and we will return after 2s
         collector.PrepareForNextCollection();
-        ASSERT_DURATION_LE(3s, buffer = collector.CollectStackSample(&threadInfo, &hr));
+        ASSERT_DURATION_LE(100s, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, E_FAIL);
+
+        ResetCallbackState();
 
         // At this point, we stop restoring the profiler signal handler and stop profiling
         collector.PrepareForNextCollection();
-        ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
+        ASSERT_DURATION_LE(100s, buffer = collector.CollectStackSample(&threadInfo, &hr));
         EXPECT_EQ(hr, E_FAIL);
     }
 }

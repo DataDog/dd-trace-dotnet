@@ -10,7 +10,6 @@ namespace Datadog.Profiler.SmokeTests
 {
     public class Computer01Test
     {
-        private static readonly Dictionary<string, string> ActivateNewPipeline = new Dictionary<string, string>() { { "DD_INTERNAL_PROFILING_LIBDDPROF_ENABLED", "1" } };
         private readonly ITestOutputHelper _output;
 
         public Computer01Test(ITestOutputHelper output)
