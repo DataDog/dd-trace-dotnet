@@ -24,6 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
        ReturnTypeName = ClrNames.Task,
        MinimumVersion = "1.0.0",
        MaximumVersion = "7.*.*",
+       InstrumentationCategory = InstrumentationCategory.Iast,
        IntegrationName = nameof(Configuration.IntegrationId.HashAlgorithm))]
 
     [Browsable(false)]
