@@ -32,7 +32,7 @@ namespace Datadog.Trace.IntegrationTests
             using (var agent = MockTracerAgent.Create(_output, agentPort))
             {
                 var settings = new TracerSettings { Exporter = new ExporterSettings() { AgentUri = new Uri($"http://localhost:{agent.Port}") } };
-                var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null);
+                var tracer = new Tracer(settings, agentWriter: null, sampler: null, spanSampler: null, scopeManager: null, statsd: null);
 
                 using (var scope = tracer.StartActive("operationName"))
                 {

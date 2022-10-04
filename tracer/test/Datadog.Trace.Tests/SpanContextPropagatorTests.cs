@@ -64,7 +64,7 @@ namespace Datadog.Trace.Tests
                 };
 
             var settings = new TracerSettings { OutgoingTagPropagationHeaderMaxLength = 0 };
-            var traceContext = new TraceContext(new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, null, telemetry: null));
+            var traceContext = new TraceContext(new Tracer(settings, agentWriter: null, sampler: null, spanSampler: null, scopeManager: null, null, telemetry: null));
             var context = new SpanContext(null, traceContext, serviceName: null, TraceId, SpanId) { PropagatedTags = PropagatedTags };
 
             var headers = new Mock<IHeadersCollection>();

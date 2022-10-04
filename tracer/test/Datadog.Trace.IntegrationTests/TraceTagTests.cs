@@ -25,7 +25,7 @@ namespace Datadog.Trace.IntegrationTests
 
             var settings = new TracerSettings();
             var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
-            _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
+            _tracer = new Tracer(settings, agentWriter, sampler: null, spanSampler: null, scopeManager: null, statsd: null);
         }
 
         [Fact]
