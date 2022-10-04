@@ -359,13 +359,12 @@ public class SpanModelBuilderTests
     {
         // all spans have parentId = 5 except the first one, which has spanId = 5 and parentId = 0
         var rootSpan = CreateSpan(traceId: 1, spanId: 5, parentId: 0);
+        var childSpans = Enumerable.Range(10, 1000)
+                                   .Select(spanId => CreateSpan(traceId: 1, spanId: (ulong)spanId, parentId: 5));
+        var spans = new[] { rootSpan }.Concat(childSpans)
+                                      .ToArray();
 
-        var range = Enumerable.Range(10, 1000);
-        var spans = range.Select(spanId => CreateSpan(traceId: 1, spanId: (ulong)spanId, parentId: 5))
-                         .Prepend(rootSpan)
-                         .ToArray();
-
-        var traceChunk = CreateTraceChunk(spans,  root: rootSpan);
+        var traceChunk = CreateTraceChunk(spans, root: rootSpan);
         var builder = new SpanModelBuilder(traceChunk);
 
         builder.HashSetCreated.Should().BeFalse();
