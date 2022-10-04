@@ -16,8 +16,7 @@
     {
       "type": "WEAK_HASH",
       "location": {
-        "path": "Samples.WeakHashing.Program::testHashAlgorithm"
-      },
+                      },
       "evidence": {
         "value": "HMACMD5"
       }
@@ -119,8 +118,7 @@
     {
       "type": "WEAK_HASH",
       "location": {
-        "path": "Samples.WeakHashing.Program::testHashAlgorithm"
-      },
+                      },
       "evidence": {
         "value": "MD5"
       }
@@ -222,8 +220,7 @@
     {
       "type": "WEAK_HASH",
       "location": {
-        "path": "Samples.WeakHashing.Program::testHashAlgorithm"
-      },
+                      },
       "evidence": {
         "value": "MD5"
       }
@@ -325,8 +322,7 @@
     {
       "type": "WEAK_HASH",
       "location": {
-        "path": "Samples.WeakHashing.Program::testHashAlgorithm"
-      },
+                      },
       "evidence": {
         "value": "HMACSHA1"
       }
@@ -428,8 +424,7 @@
     {
       "type": "WEAK_HASH",
       "location": {
-        "path": "Samples.WeakHashing.Program::testHashAlgorithm"
-      },
+                      },
       "evidence": {
         "value": "SHA1"
       }
@@ -531,8 +526,7 @@
     {
       "type": "WEAK_HASH",
       "location": {
-        "path": "Samples.WeakHashing.Program::testHashAlgorithm"
-      },
+                      },
       "evidence": {
         "value": "SHA1"
       }
@@ -634,8 +628,7 @@
     {
       "type": "WEAK_HASH",
       "location": {
-        "path": "Samples.WeakHashing.Program::testHashAlgorithm"
-      },
+                      },
       "evidence": {
         "value": "HMACMD5"
       }
