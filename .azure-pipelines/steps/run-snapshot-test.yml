@@ -69,10 +69,18 @@ steps:
     
     echo "Dumping all requests"
     docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) -o /debug_snapshots/${{ parameters.snapshotPrefix }}_requests.json "http://localhost:8126$(REQUESTS_DUMP_ENDPOINT)"
-    
-    echo "Verifying snapshot session (fail on mis-match)"
-    docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --w '\nGetting a 400 means there is a diff in snapshots. You can diff the files with the artifacts generated. You can also run the tests locally. Follow the doc in /docs/development/CI/RunSmokeTestsLocally\n' --fail "http://localhost:8126$(VERIFY_ENDPOINT)"
-  displayName: check snapshots
+  displayName: dump snapshots
+
+- ${{ if eq(parameters.isLinux, true) }}:
+  - bash: |
+      echo "Verifying snapshot session (fail on mis-match)"
+      docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --w '\nGetting a 400 means there is a diff in snapshots. You can diff the files with the artifacts generated. You can also run the tests locally. Follow the doc in /docs/development/CI/RunSmokeTestsLocally\n' --fail "http://localhost:8126$(VERIFY_ENDPOINT)"
+    displayName: check snapshots
+- ${{ else }}:
+  - bash: |
+      echo "Verifying snapshot session (fail on mis-match)"
+      docker-compose -f $(COMPOSE_PATH) -p ddtrace_$(Build.BuildNumber) exec -T $(TEST_AGENT_TARGET) $(CURL_COMMAND) --fail "http://localhost:8126$(VERIFY_ENDPOINT)"
+    displayName: check snapshots
 
 - task: DockerCompose@0
   displayName: dump docker-compose logs for $(TEST_AGENT_TARGET)

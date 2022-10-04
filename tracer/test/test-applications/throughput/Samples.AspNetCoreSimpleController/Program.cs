@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Hosting;
 using System;
+using System.IO;
 using System.Net.Http;
 
 namespace Samples.AspNetCoreSimpleController
@@ -18,6 +19,19 @@ namespace Samples.AspNetCoreSimpleController
                 Console.WriteLine(" * Checking if the profiler is attached: {0}", isAttached);
 
                 bool tracerEnabled = Environment.GetEnvironmentVariable("DD_TRACE_ENABLED") != "0";
+
+                string ruleFile = Environment.GetEnvironmentVariable("DD_APPSEC_RULES");
+
+                if (ruleFile != null)
+                {
+                    var fullPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, ruleFile);
+                    var fullPathExists = File.Exists(fullPath);
+                    Console.WriteLine($" * Using rule file: {fullPath}, exists: {fullPathExists}");
+                }
+                else
+                {
+                    Console.WriteLine($" * No rules file found");
+                }
 
                 if (!isAttached && tracerEnabled)
                 {
