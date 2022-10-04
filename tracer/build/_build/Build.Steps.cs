@@ -1585,6 +1585,11 @@ partial class Build
 
             // profiler occasionally throws this if shutting down
             knownPatterns.Add(new(@".*LinuxStackFramesCollector::CollectStackSampleImplementation: Unable to send signal .*Error code: No such process", RegexOptions.Compiled));
+            // Temporary workaround until PyPi version is updated with profiler support
+            if (IsWin)
+            {
+                knownPatterns.Add(new(@".*Failed to send profile. Http code: 404", RegexOptions.Compiled));
+            }
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });
