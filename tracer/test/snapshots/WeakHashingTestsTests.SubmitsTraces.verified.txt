@@ -12,13 +12,14 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
-                      },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.HMACMD5"
+      "type": "WEAK_HASH",
+      "location": {
+        "path": "Samples.WeakHashing.Program::testHashAlgorithm"
+      },
+      "evidence": {
+        "value": "System.Security.Cryptography.HMACMD5"
       }
     }
   ]
@@ -46,13 +47,13 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
+      "type": "WEAK_HASH",
+      "location": {
                       },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.HMACMD5"
+      "evidence": {
+        "value": "System.Security.Cryptography.HMACMD5"
       }
     }
   ]
@@ -80,13 +81,13 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
+      "type": "WEAK_HASH",
+      "location": {
                       },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.HMACMD5"
+      "evidence": {
+        "value": "System.Security.Cryptography.HMACMD5"
       }
     }
   ]
@@ -114,13 +115,14 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
-                      },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.MD5CryptoServiceProvider"
+      "type": "WEAK_HASH",
+      "location": {
+        "path": "Samples.WeakHashing.Program::testHashAlgorithm"
+      },
+      "evidence": {
+        "value": "System.Security.Cryptography.MD5CryptoServiceProvider"
       }
     }
   ]
@@ -148,13 +150,13 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
+      "type": "WEAK_HASH",
+      "location": {
                       },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.MD5CryptoServiceProvider"
+      "evidence": {
+        "value": "System.Security.Cryptography.MD5CryptoServiceProvider"
       }
     }
   ]
@@ -182,13 +184,13 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
+      "type": "WEAK_HASH",
+      "location": {
                       },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.MD5CryptoServiceProvider"
+      "evidence": {
+        "value": "System.Security.Cryptography.MD5CryptoServiceProvider"
       }
     }
   ]
@@ -216,13 +218,14 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
-                      },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.MD5+Implementation"
+      "type": "WEAK_HASH",
+      "location": {
+        "path": "Samples.WeakHashing.Program::testHashAlgorithm"
+      },
+      "evidence": {
+        "value": "System.Security.Cryptography.MD5+Implementation"
       }
     }
   ]
@@ -250,13 +253,13 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
+      "type": "WEAK_HASH",
+      "location": {
                       },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.MD5+Implementation"
+      "evidence": {
+        "value": "System.Security.Cryptography.MD5+Implementation"
       }
     }
   ]
@@ -284,13 +287,13 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
+      "type": "WEAK_HASH",
+      "location": {
                       },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.MD5+Implementation"
+      "evidence": {
+        "value": "System.Security.Cryptography.MD5+Implementation"
       }
     }
   ]
@@ -318,13 +321,14 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
-                      },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.HMACSHA1"
+      "type": "WEAK_HASH",
+      "location": {
+        "path": "Samples.WeakHashing.Program::testHashAlgorithm"
+      },
+      "evidence": {
+        "value": "System.Security.Cryptography.HMACSHA1"
       }
     }
   ]
@@ -352,13 +356,13 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
+      "type": "WEAK_HASH",
+      "location": {
                       },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.HMACSHA1"
+      "evidence": {
+        "value": "System.Security.Cryptography.HMACSHA1"
       }
     }
   ]
@@ -386,13 +390,13 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
+      "type": "WEAK_HASH",
+      "location": {
                       },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.HMACSHA1"
+      "evidence": {
+        "value": "System.Security.Cryptography.HMACSHA1"
       }
     }
   ]
@@ -420,13 +424,14 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
-                      },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.SHA1+Implementation"
+      "type": "WEAK_HASH",
+      "location": {
+        "path": "Samples.WeakHashing.Program::testHashAlgorithm"
+      },
+      "evidence": {
+        "value": "System.Security.Cryptography.SHA1+Implementation"
       }
     }
   ]
@@ -454,13 +459,13 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
+      "type": "WEAK_HASH",
+      "location": {
                       },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.SHA1+Implementation"
+      "evidence": {
+        "value": "System.Security.Cryptography.SHA1+Implementation"
       }
     }
   ]
@@ -488,13 +493,13 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
+      "type": "WEAK_HASH",
+      "location": {
                       },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.SHA1+Implementation"
+      "evidence": {
+        "value": "System.Security.Cryptography.SHA1+Implementation"
       }
     }
   ]
@@ -522,13 +527,14 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
-                      },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
+      "type": "WEAK_HASH",
+      "location": {
+        "path": "Samples.WeakHashing.Program::testHashAlgorithm"
+      },
+      "evidence": {
+        "value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
       }
     }
   ]
@@ -556,13 +562,13 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
+      "type": "WEAK_HASH",
+      "location": {
                       },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
+      "evidence": {
+        "value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
       }
     }
   ]
@@ -590,13 +596,13 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
+      "type": "WEAK_HASH",
+      "location": {
                       },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
+      "evidence": {
+        "value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
       }
     }
   ]
@@ -624,13 +630,14 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
-                      },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.HMACMD5"
+      "type": "WEAK_HASH",
+      "location": {
+        "path": "Samples.WeakHashing.Program::testHashAlgorithm"
+      },
+      "evidence": {
+        "value": "System.Security.Cryptography.HMACMD5"
       }
     }
   ]
@@ -658,13 +665,13 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
+      "type": "WEAK_HASH",
+      "location": {
                       },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.HMACMD5"
+      "evidence": {
+        "value": "System.Security.Cryptography.HMACMD5"
       }
     }
   ]
@@ -692,13 +699,13 @@
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
-  "Vulnerabilities": [
+  "vulnerabilities": [
     {
-      "Type": "WEAK_HASH",
-      "Location": {
+      "type": "WEAK_HASH",
+      "location": {
                       },
-      "Evidence": {
-        "Value": "System.Security.Cryptography.HMACMD5"
+      "evidence": {
+        "value": "System.Security.Cryptography.HMACMD5"
       }
     }
   ]
