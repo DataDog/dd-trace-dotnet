@@ -22,24 +22,7 @@ namespace Samples.Kafka
             Console.WriteLine($"{ConsumerName}: Consuming {kafkaMessage.Key}, {consumeResult.TopicPartitionOffset}");
 
             var messageHeaders = kafkaMessage.Headers;
-            SampleHelpers.ExtractScope(messageHeaders, GetValues, out var traceId, out var spanId);
-
-            IEnumerable<string> GetValues(Headers headers, string name)
-            {
-                if (headers.TryGetLastBytes(name, out var bytes))
-                {
-                    try
-                    {
-                        return new[] { Encoding.UTF8.GetString(bytes) };
-                    }
-                    catch (Exception)
-                    {
-                        // ignored
-                    }
-                }
-
-                return Enumerable.Empty<string>();
-            }
+            SampleHelpers.ExtractScope(messageHeaders, ExtractValues, out var traceId, out var spanId);
 
             if (traceId is 0 || spanId is 0)
             {

@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
@@ -62,26 +63,153 @@ public class DataStreamsMonitoringTests : TestHelper
     ///    T2-->>-C2: Consume
     ///    C2->>+T3: Produce
     /// </summary>
-    [SkippableFact]
+    /// <param name="enableConsumerScopeCreation">Is the scope created manually or using built-in support</param>
+    [SkippableTheory]
+    [InlineData(true)]
+    [InlineData(false)]
     [Trait("Category", "EndToEnd")]
     [Trait("Category", "ArmUnsupported")]
-    public async Task SubmitsDataStreams()
+    public async Task SubmitsDataStreams(bool enableConsumerScopeCreation)
     {
         SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.KafkaCreateConsumerScopeEnabled, enableConsumerScopeCreation ? "1" : "0");
 
         using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
 
         using var processResult = RunSampleAndWaitForExit(agent);
 
         using var assertionScope = new AssertionScope();
-        var dataStreams = agent.WaitForDataStreams(2);
 
-        // This is nasty and hacky, but it's the only way I could get any semblence
+        var payload = NormalizeDataStreams(agent.DataStreams);
+
+        agent.AssertConfiguration(ConfigTelemetryData.DataStreamsMonitoringEnabled, true);
+
+        // using span verifier to add all the default scrubbers
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
+        settings.ModifySerialization(
+            _ =>
+            {
+                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.EdgeLatency, ScrubByteArray);
+                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.PathwayLatency, ScrubByteArray);
+            });
+
+        await Verifier.Verify(payload, settings)
+                      .UseFileName($"{nameof(DataStreamsMonitoringTests)}.{nameof(SubmitsDataStreams)}")
+                      .DisableRequireUniquePrefix();
+    }
+
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
+    /// <summary>
+    /// This sample tests a fan in + out scenario:
+    ///  - service -> topic 1 -|
+    ///  - service -> topic 1 -|---> Consumer 1  -| -> topic 2 -> Consumer 2
+    ///  - service -> topic 1 -|                  | -> topic 2 -> Consumer 2
+    /// Each node (apart from 'service') in the pipelines above have a unique hash
+    ///
+    /// In mermaid (view at https://mermaid.live/), this looks a little like:
+    /// sequenceDiagram
+    ///     participant A as Root Service<br>(12926600137239154356)
+    ///     participant T1 as Topic 1<br>(3184837087859198448)
+    ///     participant C1 as Consumer 1<br>(428893431238664991)
+    ///     participant T2a as Topic 2<br>(4701874528067105417)
+    ///     participant C2a as Consumer 2<br>(5603712524956936337)
+    ///     participant T3a as Topic 3<br>(713412453862704155)
+    ///     participant T2 as Topic 2<br>(9146411116191305908)
+    ///     participant C2 as Consumer 2<br>(9288243326407318747)
+    ///     participant T3 as Topic 3<br>(17029362228578737937 )
+    ///
+    ///     A->>+T1: Produce
+    ///     T1-->>-C1: Consume
+    ///     C1->>+T2a: Produce
+    ///     T2a-->>-C2a: Consume
+    ///     C2a->>+T3a: Produce
+    ///
+    ///     A->>+T2: Produce
+    ///     T2-->>-C2: Consume
+    ///     C2->>+T3: Produce
+    /// </summary>
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")]
+    public async Task HandlesFanIn()
+    {
+        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+        SetEnvironmentVariable(ConfigurationKeys.KafkaCreateConsumerScopeEnabled, "0"); // only way to do fan-in properly
+
+        using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
+
+        using var processResult = RunSampleAndWaitForExit(agent, arguments: "--fan-in");
+
+        using var assertionScope = new AssertionScope();
+
+        var payload = NormalizeDataStreams(agent.DataStreams);
+
+        agent.AssertConfiguration(ConfigTelemetryData.DataStreamsMonitoringEnabled, true);
+
+        // using span verifier to add all the default scrubbers
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
+        settings.ModifySerialization(
+            _ =>
+            {
+                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.EdgeLatency, ScrubByteArray);
+                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.PathwayLatency, ScrubByteArray);
+            });
+
+        await Verifier.Verify(payload, settings)
+                      .UseFileName($"{nameof(DataStreamsMonitoringTests)}.{nameof(HandlesFanIn)}")
+                      .DisableRequireUniquePrefix();
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")]
+    public void WhenDisabled_DoesNotSubmitDataStreams()
+    {
+        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "0");
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        using var processResult = RunSampleAndWaitForExit(agent);
+
+        using var assertionScope = new AssertionScope();
+        var dataStreams = agent.WaitForDataStreams(2);
+        dataStreams.Should().BeEmpty();
+    }
+
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("Category", "ArmUnsupported")]
+    public void WhenNotSupported_DoesNotSubmitDataStreams()
+    {
+        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        agent.Configuration = new MockTracerAgent.AgentConfiguration { Endpoints = Array.Empty<string>() };
+        using var processResult = RunSampleAndWaitForExit(agent);
+
+        using var assertionScope = new AssertionScope();
+        var dataStreams = agent.DataStreams;
+        dataStreams.Should().BeEmpty();
+    }
+
+    private static byte[] ScrubByteArray(MockDataStreamsStatsPoint target, byte[] value)
+    {
+        if (value is null || value.Length == 0)
+        {
+            return value;
+        }
+
+        // return a different value so we can identify that we have some data
+        return new byte[] { 0xFF };
+    }
+
+    private static MockDataStreamsPayload NormalizeDataStreams(IImmutableList<MockDataStreamsPayload> dataStreams)
+    {
+        // This is nasty and hacky, but it's the only way I could get any semblance
         // of snapshots. We could have more than one payload due to the way flushing works,
         // but if we ignore the start times of the buckets, we can group them in a consistent way
         dataStreams.Should().NotBeEmpty();
-
-        agent.AssertConfiguration(ConfigTelemetryData.DataStreamsMonitoringEnabled, true);
 
         // make sure they all have the same top level properties
         var payload = dataStreams.First();
@@ -118,18 +246,7 @@ public class DataStreamsMonitoringTests : TestHelper
         currentBucket.Stats = StableSort(currentBucketStats);
         originBucket.Stats = StableSort(originBucketStats);
         payload.Stats = new[] { currentBucket, originBucket };
-
-        // using span verifier to add all the default scrubbers
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
-        settings.ModifySerialization(
-            _ =>
-            {
-                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.EdgeLatency, ScrubByteArray);
-                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.PathwayLatency, ScrubByteArray);
-            });
-
-        await Verifier.Verify(payload, settings);
+        return payload;
 
         static MockDataStreamsStatsPoint[] StableSort(IReadOnlyCollection<MockDataStreamsStatsPoint> points)
         {
@@ -177,47 +294,5 @@ public class DataStreamsMonitoringTests : TestHelper
 
             return depth;
         }
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("Category", "ArmUnsupported")]
-    public void WhenDisabled_DoesNotSubmitDataStreams()
-    {
-        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "0");
-
-        using var agent = EnvironmentHelper.GetMockAgent();
-        using var processResult = RunSampleAndWaitForExit(agent);
-
-        using var assertionScope = new AssertionScope();
-        var dataStreams = agent.DataStreams;
-        dataStreams.Should().BeEmpty();
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("Category", "ArmUnsupported")]
-    public void WhenNotSupported_DoesNotSubmitDataStreams()
-    {
-        SetEnvironmentVariable(ConfigurationKeys.DataStreamsMonitoring.Enabled, "1");
-
-        using var agent = EnvironmentHelper.GetMockAgent();
-        agent.Configuration = new MockTracerAgent.AgentConfiguration { Endpoints = Array.Empty<string>() };
-        using var processResult = RunSampleAndWaitForExit(agent);
-
-        using var assertionScope = new AssertionScope();
-        var dataStreams = agent.DataStreams;
-        dataStreams.Should().BeEmpty();
-    }
-
-    private byte[] ScrubByteArray(MockDataStreamsStatsPoint target, byte[] value)
-    {
-        if (value is null || value.Length == 0)
-        {
-            return value;
-        }
-
-        // return a different value so we can identify that we have some data
-        return new byte[] { 0xFF };
     }
 }
