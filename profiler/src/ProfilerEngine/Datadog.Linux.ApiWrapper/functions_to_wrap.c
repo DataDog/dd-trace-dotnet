@@ -124,6 +124,14 @@ int dladdr(const void* addr_arg, Dl_info* info)
 /* Function pointers to hold the value of the glibc functions */
 static int (*__real___pthread_create)(pthread_t* restrict res, const pthread_attr_t* restrict attrp, void* (*entry)(void*), void* restrict arg) = NULL;
 
+__thread int _dd_in_pthread_create = 0;
+
+// this function is called in by the profiler
+int dd_IsInPthreadCreate()
+{
+    return _dd_in_pthread_create;
+}
+
 int __pthread_create(pthread_t* restrict res, const pthread_attr_t* restrict attrp, void* (*entry)(void*), void* restrict arg)
 {
     if (__real___pthread_create == NULL)
@@ -131,20 +139,11 @@ int __pthread_create(pthread_t* restrict res, const pthread_attr_t* restrict att
         __real___pthread_create = dlsym(RTLD_NEXT, "__pthread_create");
     }
 
-    sigset_t oldOne;
-    sigset_t newOne;
-
-    // initialize the set to all signals
-    sigfillset(&newOne);
-
-    // prevent any signals from interrupting the execution of the real dladdr
-    pthread_sigmask(SIG_SETMASK, &newOne, &oldOne);
-
+    _dd_in_pthread_create = 1;
     // call the real dladdr (libc/musl-libc)
     int result = __real___pthread_create(res, attrp, entry, arg);
 
-    // restore the previous state for signals
-    pthread_sigmask(SIG_SETMASK, &oldOne, NULL);
+    _dd_in_pthread_create = 0;
 
     return result;
 }

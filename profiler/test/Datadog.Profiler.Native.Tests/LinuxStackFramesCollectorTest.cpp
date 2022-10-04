@@ -24,6 +24,14 @@
 
 using namespace std::literals;
 
+// This global variable and function are use defined/declared for the test only
+// In production, those symbols will be defined in the Wrapper library
+int dd_IsPthreadCreateCall = 0;
+extern "C" int dd_IsInPthreadCreate()
+{
+    return dd_IsPthreadCreateCall;
+}
+
 #define ASSERT_DURATION_LE(secs, stmt)                                            \
     {                                                                             \
         std::promise<bool> completed;                                             \
@@ -141,6 +149,7 @@ public:
 
         _processId = OpSysTools::GetProcId();
         SignalHandlerForTest::_instance = std::make_unique<SignalHandlerForTest>();
+        dd_IsPthreadCreateCall = 0;
     }
 
     void TearDown() override
@@ -150,6 +159,7 @@ public:
 
         SignalHandlerForTest::_instance.reset();
         sigaction(SIGUSR1, &_oldAction, nullptr);
+        dd_IsPthreadCreateCall = 0;
     }
 
     void StopTest()
@@ -159,6 +169,11 @@ public:
 
         _isStopped = true;
         _stopWorker = true;
+    }
+
+    void SimulateInPthreadCreate()
+    {
+        dd_IsPthreadCreateCall = 1;
     }
 
     pid_t GetWorkerThreadId()
@@ -281,6 +296,22 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckSamplingThreadCollectCallStack)
     buffer->CopyInstructionPointers(ips);
 
     ValidateCallstack(ips);
+}
+
+TEST_F(LinuxStackFramesCollectorFixture, CheckCollectionAbortIfInPthreadCreateCall)
+{
+    SimulateInPthreadCreate();
+    auto collector = LinuxStackFramesCollector();
+
+    auto threadInfo = ManagedThreadInfo((ThreadID)0);
+    threadInfo.SetOsInfo((DWORD)GetWorkerThreadId(), (HANDLE)0);
+
+    std::uint32_t hr;
+    StackSnapshotResultBuffer* buffer;
+
+    ASSERT_DURATION_LE(100ms, buffer = collector.CollectStackSample(&threadInfo, &hr));
+    EXPECT_EQ(hr, E_FAIL);
+    EXPECT_EQ(buffer->GetFramesCount(), 0);
 }
 
 TEST_F(LinuxStackFramesCollectorFixture, CheckSignalHandlerIsSetForSignalUSR1)

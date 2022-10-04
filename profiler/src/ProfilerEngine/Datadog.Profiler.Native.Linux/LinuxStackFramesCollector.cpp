@@ -267,8 +267,20 @@ char const* LinuxStackFramesCollector::ErrorCodeToString(int32_t errorCode)
     }
 }
 
+// This symbol is defined in the Datadog.Linux.ApiWrapper to handle the special case of __pthread_create
+// For __pthread_create we cannot block the signals while calling the *real* pthread_create and restore it after,
+// because the newly created thread will inherit the signal mask from its parent (which will be "block all signals").
+// So to prevent it, dd_IsInPthreadCreate will indicate if the current callstack is executing __pthread_create.
+// If it's the case, we just bail, otherwise we stackwalk the current thread.
+extern "C" int dd_IsInPthreadCreate() __attribute__((weak));
+
 std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 {
+    if (dd_IsInPthreadCreate() == 1)
+    {
+        return E_ABORT;
+    }
+
     try
     {
         std::int32_t resultErrorCode;
