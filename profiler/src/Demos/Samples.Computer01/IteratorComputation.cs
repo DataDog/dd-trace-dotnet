@@ -78,6 +78,13 @@ namespace Samples.Computer01
         private void CallIterators()
         {
             Iterator it = new Iterator(1000);
+
+            // check for lambda methods from method in callstacks
+            var isAboveThreshold = Iterator.GetEvenSequence(1000).Any(v =>
+            {
+                Thread.Sleep(10);
+                return v > 9999;
+            });
         }
 
         private bool IsEventSet()
@@ -91,10 +98,18 @@ namespace Samples.Computer01
             public Iterator(int count)
             {
                 var sequence = GetEvenSequence(count);
+
+                // check for lambda methods from constructor in callstacks
+                var isAboveThreshold = sequence.Any(v =>
+                {
+                    Thread.Sleep(10);
+                    return v > 9999;
+                });
+
                 Console.WriteLine($"sequence has {sequence.Count()} elements");
             }
 
-            private static IEnumerable<int> GetEvenSequence(int count)
+            public static IEnumerable<int> GetEvenSequence(int count)
             {
                 int i = 0;
                 while (true)
