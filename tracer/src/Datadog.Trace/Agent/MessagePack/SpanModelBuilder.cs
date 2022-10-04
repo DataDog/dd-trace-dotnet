@@ -31,7 +31,7 @@ internal struct SpanModelBuilder
         _spans = traceChunk.Spans;
         _hashSet = null;
 
-        LocalTraceRootSpanId = traceChunk.LocalRoot?.SpanId ?? 0;
+        LocalTraceRootSpanId = traceChunk.LocalRootSpan?.SpanId ?? 0;
         LocalRootExists = false;
 
         // find the local root span to optimize for the common case of a "two-level" trace,

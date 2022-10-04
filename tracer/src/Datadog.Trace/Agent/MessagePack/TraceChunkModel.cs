@@ -18,7 +18,7 @@ internal readonly struct TraceChunkModel
 {
     public readonly ArraySegment<Span> Spans;
 
-    public readonly Span? LocalRoot;
+    public readonly Span? LocalRootSpan;
 
     public readonly int? SamplingPriority;
 
@@ -30,13 +30,13 @@ internal readonly struct TraceChunkModel
 
         if (traceContext is null)
         {
-            LocalRoot = null;
+            LocalRootSpan = null;
             SamplingPriority = null;
             Tags = null;
         }
         else
         {
-            LocalRoot = traceContext.RootSpan;
+            LocalRootSpan = traceContext.RootSpan;
             SamplingPriority = traceContext.SamplingPriority;
             Tags = traceContext.Tags;
         }
@@ -45,7 +45,7 @@ internal readonly struct TraceChunkModel
     public TraceChunkModel(in ArraySegment<Span> spans, Span? localRootSpan)
     {
         Spans = spans;
-        LocalRoot = localRootSpan;
+        LocalRootSpan = localRootSpan;
         SamplingPriority = null;
         Tags = null;
     }
