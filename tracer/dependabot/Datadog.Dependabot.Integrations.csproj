@@ -39,7 +39,7 @@
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.30.1 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.30.1" />
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.31.0" />
 
     <!-- Integration: Couchbase.NetClient -->
     <!-- Assembly: Couchbase.NetClient -->
