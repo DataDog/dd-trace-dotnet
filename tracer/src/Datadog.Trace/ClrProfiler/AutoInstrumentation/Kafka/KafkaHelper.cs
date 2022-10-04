@@ -181,7 +181,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 {
                     span.Context.MergePathwayContext(pathwayContext);
 
-                    // TODO: we could cache this list in a thread local similar to StringBuilderCache to reduce allocations
+                    // TODO: we could pool these arrays to reduce allocations
                     var edgeTags = string.IsNullOrEmpty(topic)
                                        ? new[] { $"group:{groupId}", "type:kafka", }
                                        : new[] { $"group:{groupId}", $"topic:{topic}", "type:kafka", };
