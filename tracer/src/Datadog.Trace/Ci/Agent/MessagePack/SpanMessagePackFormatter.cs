@@ -68,7 +68,7 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
             if (testModuleTags is not null)
             {
-                // we need to add SuiteId value to the root
+                // we need to add ModuleId value to the root
                 len++;
             }
 
