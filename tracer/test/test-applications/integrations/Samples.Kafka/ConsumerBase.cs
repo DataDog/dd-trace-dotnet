@@ -164,4 +164,9 @@ internal abstract class ConsumerBase : IDisposable
 
         return Enumerable.Empty<string>();
     }
+
+    public static byte[] ExtractBinaryValue(Headers headers, string name)
+    {
+        return headers.TryGetLastBytes(name, out var bytes) ? bytes : null;
+    }
 }

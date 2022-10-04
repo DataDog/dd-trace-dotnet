@@ -414,4 +414,21 @@ public class DataStreamsWriterTests
             return Task.FromResult(false);
         }
     }
+
+    private class HangingApi : StubApi
+    {
+        public ManualResetEventSlim SendStartedMutex { get; } = new();
+
+        public ManualResetEventSlim FinishSendMutex { get; } = new();
+
+        public override Task<bool> SendAsync(ArraySegment<byte> bytes)
+        {
+            base.SendAsync(bytes);
+
+            SendStartedMutex.Set();
+            FinishSendMutex.Wait();
+
+            return Task.FromResult(false);
+        }
+    }
 }

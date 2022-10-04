@@ -17,4 +17,9 @@ namespace Datadog.Trace.Propagators
     {
         void Set(TCarrier carrier, string key, string value);
     }
+
+    internal interface IBinaryCarrierSetter<in TCarrier>
+    {
+        void Set(TCarrier carrier, string key, byte[] value);
+    }
 }

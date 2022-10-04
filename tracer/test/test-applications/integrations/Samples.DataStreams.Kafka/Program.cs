@@ -109,7 +109,9 @@ async Task RunStandardPipelineScenario()
 
     void HandleAndProduce(ConsumeResult<string, string> consumeResult, string produceToTopic)
     {
+        using var outer = SampleHelpers.CreateScope("manual.outer");
         using var scope = CreateScope(consumeResult, "kafka.consume");
+        using var inner = SampleHelpers.CreateScope("manual.inner");
         Handle(consumeResult);
 
         Console.WriteLine($"Producing to {produceToTopic}");
@@ -214,7 +216,8 @@ async Task RunFanInAndOutScenario()
                     SampleHelpers.CreateScopeWithPropagation(
                         "kafka.consume",
                         fanInMessage.Message.Headers,
-                        ConsumerBase.ExtractValues));
+                        ConsumerBase.ExtractValues,
+                        ConsumerBase.ExtractBinaryValue));
             }
             
             Console.WriteLine($"Producing to {topic2} x2");
@@ -255,7 +258,8 @@ IDisposable CreateScope(ConsumeResult<string, string> consumeResult, string oper
     return SampleHelpers.CreateScopeWithPropagation(
         operationName,
         consumeResult.Message.Headers,
-        ConsumerBase.ExtractValues);
+        ConsumerBase.ExtractValues,
+        ConsumerBase.ExtractBinaryValue);
 }
 
 class NoOpDisposable : IDisposable

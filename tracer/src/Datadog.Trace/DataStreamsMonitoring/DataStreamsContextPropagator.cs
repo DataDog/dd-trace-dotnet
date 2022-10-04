@@ -5,7 +5,9 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DataStreamsMonitoring;
@@ -41,12 +43,74 @@ internal class DataStreamsContextPropagator
     /// <typeparam name="TCarrier">Type of header collection</typeparam>
     /// <returns>A new <see cref="PathwayContext"/> that contains the values obtained from <paramref name="headers"/>.</returns>
     public PathwayContext? Extract<TCarrier>(TCarrier headers)
+        where TCarrier : IBinaryHeadersCollection =>
+        Extract(headers, default(HeadersCollectionGetterAndSetter<TCarrier>));
+
+    /// <summary>
+    /// Extracts a <see cref="PathwayContext"/> from the values found in the specified headers.
+    /// </summary>
+    /// <param name="headers">The headers that contain the values to be extracted.</param>
+    /// <param name="getter">The function that can extract the last byte[] for a given header name
+    /// (or null if the name does not exist).</param>
+    /// <typeparam name="TCarrier">Type of header collection</typeparam>
+    /// <returns>A new <see cref="PathwayContext"/> that contains the values obtained from <paramref name="headers"/>.</returns>
+    public PathwayContext? Extract<TCarrier>(TCarrier headers, Func<TCarrier, string, byte[]?> getter)
+    {
+        if (getter == null) { ThrowHelper.ThrowArgumentNullException(nameof(getter)); }
+
+        return Extract(headers, new FuncGetter<TCarrier>(getter));
+    }
+
+    private PathwayContext? Extract<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter carrierGetter)
+        where TCarrierGetter : struct, IBinaryCarrierGetter<TCarrier>
+    {
+        if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
+
+        var bytes = carrierGetter.Get(carrier, PropagationKey);
+        return bytes is { } ? PathwayContextEncoder.Decode(bytes) : null;
+    }
+
+    private readonly struct HeadersCollectionGetterAndSetter<TCarrier> : IBinaryCarrierGetter<TCarrier>, IBinaryCarrierSetter<TCarrier>
         where TCarrier : IBinaryHeadersCollection
     {
-        if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
+        public byte[]? Get(TCarrier carrier, string key)
+        {
+            return carrier.TryGetBytes(key);
+        }
 
-        var bytes = headers.TryGetBytes(PropagationKey);
+        public void Set(TCarrier carrier, string key, byte[] value)
+        {
+            carrier.Add(key, value);
+        }
+    }
 
-        return bytes is { } ? PathwayContextEncoder.Decode(bytes) : null;
+    private readonly struct FuncGetter<TCarrier> : IBinaryCarrierGetter<TCarrier>
+    {
+        private readonly Func<TCarrier, string, byte[]?> _getter;
+
+        public FuncGetter(Func<TCarrier, string, byte[]?> getter)
+        {
+            _getter = getter;
+        }
+
+        public byte[]? Get(TCarrier carrier, string key)
+        {
+            return _getter(carrier, key);
+        }
+    }
+
+    private readonly struct ActionSetter<TCarrier> : IBinaryCarrierSetter<TCarrier>
+    {
+        private readonly Action<TCarrier, string, byte[]> _setter;
+
+        public ActionSetter(Action<TCarrier, string, byte[]> setter)
+        {
+            _setter = setter;
+        }
+
+        public void Set(TCarrier carrier, string key, byte[] value)
+        {
+            _setter(carrier, key, value);
+        }
     }
 }

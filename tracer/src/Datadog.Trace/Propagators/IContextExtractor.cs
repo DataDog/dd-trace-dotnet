@@ -19,4 +19,9 @@ namespace Datadog.Trace.Propagators
     {
         IEnumerable<string?> Get(TCarrier carrier, string key);
     }
+
+    internal interface IBinaryCarrierGetter<in TCarrier>
+    {
+        byte[]? Get(TCarrier carrier, string key);
+    }
 }

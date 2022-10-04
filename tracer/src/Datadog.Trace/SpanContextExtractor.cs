@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Propagators;
 
 #nullable enable
@@ -17,5 +18,22 @@ namespace Datadog.Trace
         /// <inheritdoc />
         public ISpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
             => SpanContextPropagator.Instance.Extract(carrier, getter);
+
+        /// <inheritdoc />
+        public ISpanContext? Extract<TCarrier>(
+            TCarrier carrier,
+            Func<TCarrier, string, IEnumerable<string?>> stringGetter,
+            Func<TCarrier, string, byte[]?> binaryGetter)
+        {
+            var spanContext = SpanContextPropagator.Instance.Extract(carrier, stringGetter);
+            if (spanContext is not null)
+            {
+                var pathwayContext = DataStreamsContextPropagator.Instance.Extract(carrier, binaryGetter);
+                spanContext.MergePathwayContext(pathwayContext);
+                return spanContext;
+            }
+
+            return null;
+        }
     }
 }

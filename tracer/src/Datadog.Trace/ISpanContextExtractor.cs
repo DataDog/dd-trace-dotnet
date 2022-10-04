@@ -25,5 +25,19 @@ namespace Datadog.Trace
         /// <typeparam name="TCarrier">Type of the carrier</typeparam>
         /// <returns>A potentially null Datadog SpanContext</returns>
         public ISpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter);
+
+        /// <summary>
+        /// Given a SpanContext carrier and a function to access the values, this method will extract SpanContext if any.
+        /// If the carrier contains PathwayContext information, this is included in the SpanContext
+        /// </summary>
+        /// <param name="carrier">The carrier of the SpanContext. Often a header (kafka message header...)</param>
+        /// <param name="stringGetter">Given a key name, returns values from the carrier as a string</param>
+        /// <param name="binaryGetter">Given a key name, returns  the first values from the carrier as a byte[]</param>
+        /// <typeparam name="TCarrier">Type of the carrier</typeparam>
+        /// <returns>A potentially null Datadog SpanContext</returns>
+        public ISpanContext? Extract<TCarrier>(
+            TCarrier carrier,
+            Func<TCarrier, string, IEnumerable<string?>> stringGetter,
+            Func<TCarrier, string, byte[]?> binaryGetter);
     }
 }

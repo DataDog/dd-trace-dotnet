@@ -22,7 +22,8 @@ namespace Samples
         private static readonly MethodInfo GetTracerInstance = TracerType?.GetProperty("Instance")?.GetMethod;
         private static readonly MethodInfo StartActiveMethod = TracerType?.GetMethod("StartActive", types: new[] { typeof(string) });
         private static readonly MethodInfo StartActiveWithContextMethod;
-        private static readonly MethodInfo ExtractMethod = SpanContextExtractorType?.GetMethod("Extract");
+        private static readonly MethodInfo ExtractMethod = SpanContextExtractorType?.GetMethods().FirstOrDefault(x=>x.Name == "Extract" && x.GetParameters().Length == 2);
+        private static readonly MethodInfo ExtractWithPathwayMethod = SpanContextExtractorType?.GetMethods().FirstOrDefault(x=>x.Name == "Extract" && x.GetParameters().Length == 3);
         private static readonly MethodInfo SetParent = SpanCreationSettingsType?.GetProperty("Parent")?.SetMethod;
         private static readonly MethodInfo ForceFlushAsyncMethod = TracerType?.GetMethod("ForceFlushAsync", BindingFlags.Public | BindingFlags.Instance);
         private static readonly MethodInfo ActiveScopeProperty = TracerType?.GetProperty("ActiveScope")?.GetMethod;
@@ -121,7 +122,10 @@ namespace Samples
             return (IDisposable) StartActiveMethod.Invoke(tracer, new object[] { operationName });
         }
 
-        public static IDisposable CreateScopeWithPropagation<TCarrier>(string operationName, TCarrier carrier, Func<TCarrier, string, IEnumerable<string>> getter)
+        public static IDisposable CreateScopeWithPropagation<TCarrier>(
+        string operationName, 
+        TCarrier carrier, 
+        Func<TCarrier, string, IEnumerable<string>> getter)
         {
             if (GetTracerInstance is null || SpanContextExtractorType is null || ExtractMethod is null || SetParent is null || StartActiveWithContextMethod is null || carrier == null || SpanCreationSettingsType is null)
             {
@@ -131,6 +135,28 @@ namespace Samples
             var scopeExtractor = Activator.CreateInstance(SpanContextExtractorType);
             var genericMethod = ExtractMethod.MakeGenericMethod(carrier.GetType());
             var parentScope = genericMethod.Invoke(scopeExtractor, new object[] { carrier, getter });
+
+            var spanCreationSettings = Activator.CreateInstance(SpanCreationSettingsType);
+            SetParent.Invoke(spanCreationSettings, new object[] { parentScope });
+
+            var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
+            return (IDisposable) StartActiveWithContextMethod.Invoke(tracer, new object[] { operationName, spanCreationSettings });
+        }
+
+        public static IDisposable CreateScopeWithPropagation<TCarrier>(
+        string operationName, 
+        TCarrier carrier, 
+        Func<TCarrier, string, IEnumerable<string>> stringGetter,
+        Func<TCarrier, string, byte[]> binaryGetter)
+        {
+            if (GetTracerInstance is null || SpanContextExtractorType is null || ExtractWithPathwayMethod is null || SetParent is null || StartActiveWithContextMethod is null || carrier == null || SpanCreationSettingsType is null)
+            {
+                return new NoOpDisposable();
+            }
+
+            var scopeExtractor = Activator.CreateInstance(SpanContextExtractorType);
+            var genericMethod = ExtractWithPathwayMethod.MakeGenericMethod(carrier.GetType());
+            var parentScope = genericMethod.Invoke(scopeExtractor, new object[] { carrier, stringGetter, binaryGetter });
 
             var spanCreationSettings = Activator.CreateInstance(SpanCreationSettingsType);
             SetParent.Invoke(spanCreationSettings, new object[] { parentScope });
