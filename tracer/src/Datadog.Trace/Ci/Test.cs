@@ -74,7 +74,7 @@ public sealed class Test
     /// <summary>
     /// Gets the test start date
     /// </summary>
-    public DateTimeOffset StartDate => _scope.Span.StartTime;
+    public DateTimeOffset StartTime => _scope.Span.StartTime;
 
     /// <summary>
     /// Gets the test suite for this test

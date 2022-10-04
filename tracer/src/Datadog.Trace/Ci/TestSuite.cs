@@ -67,7 +67,7 @@ public sealed class TestSuite
     /// <summary>
     /// Gets the test suite start date
     /// </summary>
-    public DateTimeOffset StartDate => _span.StartTime;
+    public DateTimeOffset StartTime => _span.StartTime;
 
     /// <summary>
     /// Gets the test module for this suite

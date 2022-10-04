@@ -122,7 +122,7 @@ public sealed class TestModule
     /// <summary>
     /// Gets the test module start date
     /// </summary>
-    public DateTimeOffset StartDate => _span.StartTime;
+    public DateTimeOffset StartTime => _span.StartTime;
 
     /// <summary>
     /// Gets the test framework
