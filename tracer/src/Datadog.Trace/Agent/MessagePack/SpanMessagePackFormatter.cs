@@ -18,6 +18,7 @@ namespace Datadog.Trace.Agent.MessagePack
     {
         public static readonly SpanMessagePackFormatter Instance = new();
 
+        // name of top-level span fields
         private readonly byte[] _traceIdBytes = StringEncoding.UTF8.GetBytes("trace_id");
         private readonly byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
         private readonly byte[] _nameBytes = StringEncoding.UTF8.GetBytes("name");
@@ -41,6 +42,7 @@ namespace Datadog.Trace.Agent.MessagePack
         // name of numeric tag dictionary
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
 
+        private readonly byte[] _samplingPriorityNameBytes = StringEncoding.UTF8.GetBytes(Trace.Metrics.SamplingPriority);
         private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Metrics.ProcessId);
         private readonly byte[] _processIdValueBytes;
 
@@ -275,15 +277,20 @@ namespace Datadog.Trace.Agent.MessagePack
             offset = tagWriter.Offset;
             count += tagWriter.Count;
 
-            if (model.IsLocalRoot)
+            // add "process_id" tag to local root span (if present)
+            if (model.IsLocalRoot && _processIdValueBytes != null)
             {
-                // add "process_id" tag
-                if (_processIdValueBytes != null)
-                {
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processIdNameBytes);
-                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, _processIdValueBytes);
-                }
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processIdNameBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, _processIdValueBytes);
+            }
+
+            // add "_sampling_priority_v1" tag to all "chunk orphans" (spans whose parents it not in the same chunk)
+            if (model.IsChunkOrphan && model.TraceChunk?.SamplingPriority is { } samplingPriority)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _samplingPriorityNameBytes);
+                offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingPriority);
             }
 
             if (span.IsTopLevel && (!Ci.CIVisibility.IsRunning || !Ci.CIVisibility.Settings.Agentless))
