@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Sampling;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Util;
 using FluentAssertions;
@@ -19,7 +18,6 @@ namespace Datadog.Trace.Tests
     [AzureAppServicesRestorer]
     public class TraceContextTests
     {
-        private const ulong KnuthFactor = 1_111_111_111_111_111_111;
         private readonly Mock<IDatadogTracer> _tracerMock = new Mock<IDatadogTracer>();
 
         [Fact]
@@ -168,9 +166,9 @@ namespace Datadog.Trace.Tests
 
             spans.Value.Should().NotBeNullOrEmpty("a full flush should have been triggered");
 
-            rootSpan.GetMetric(Metrics.SamplingPriority).Should().Be(SamplingPriorityValues.UserKeep, "priority should be assigned to the root span");
+            rootSpan.GetMetric(Metrics.SamplingPriority).Should().Be(null, "because sampling priority is not added until serialization");
 
-            spans.Value.Should().OnlyContain(s => s == rootSpan || s.GetMetric(Metrics.SamplingPriority) == null, "only the root span should have a priority");
+            spans.Value.Should().OnlyContain(s => s.GetMetric(Metrics.SamplingPriority) == null, "because sampling priority is not added until serialization");
         }
 
         [Theory]
@@ -209,8 +207,7 @@ namespace Datadog.Trace.Tests
             traceContext.CloseSpan(rootSpan);
 
             spans.Value.Should().NotBeNullOrEmpty("a full flush should have been triggered");
-            rootSpan.GetMetric(Metrics.SamplingPriority).Should().Be(SamplingPriorityValues.UserKeep, "priority should be assigned to the root span");
-            spans.Value.Should().OnlyContain(s => s == rootSpan || s.GetMetric(Metrics.SamplingPriority) == null, "only the root span should have a priority");
+            rootSpan.GetMetric(Metrics.SamplingPriority).Should().Be(null, "because sampling priority is not added until serialization");
 
             CheckAASDecoration(inAASContext, spans);
 
@@ -226,7 +223,7 @@ namespace Datadog.Trace.Tests
             spans.Value.Should().NotBeNullOrEmpty("a full flush should have been triggered containing the new span");
 
             CheckAASDecoration(inAASContext, spans);
-            spans.Value.Should().OnlyContain(s => (int)s.GetMetric(Metrics.SamplingPriority) == SamplingPriorityValues.UserKeep, "all spans should have a priority");
+            spans.Value.Should().OnlyContain(s => s.GetMetric(Metrics.SamplingPriority) == null, "because sampling priority is not added until serialization");
         }
 
         [Theory]
@@ -274,7 +271,7 @@ namespace Datadog.Trace.Tests
 
             spans.Value.Should().NotBeNullOrEmpty("partial flush should have been triggered");
 
-            spans.Value.Should().OnlyContain(s => (int)s.GetMetric(Metrics.SamplingPriority) == SamplingPriorityValues.UserKeep);
+            spans.Value.Should().OnlyContain(s => s.GetMetric(Metrics.SamplingPriority) == null, "because sampling priority is not added until serialization");
 
             CheckAASDecoration(inAASContext, spans);
         }
