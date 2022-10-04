@@ -12,7 +12,7 @@ namespace Datadog.Trace.Iast.Settings
 {
     internal class IastSettings
     {
-        public static readonly string InsecureHashingAlgorithmsDefault = "System.Security.Cryptography.HMACMD5,System.Security.Cryptography.MD5,System.Security.Cryptography.HMACSHA1,System.Security.Cryptography.SHA1,System.Security.Cryptography.MD5+Implementation,System.Security.Cryptography.MD5CryptoServiceProvider,System.Security.Cryptography.SHA1+Implementation,System.Security.Cryptography.SHA1CryptoServiceProvider";
+        public static readonly string InsecureHashingAlgorithmsDefault = "HMACMD5,MD5,HMACSHA1,SHA1";
 
         public IastSettings(IConfigurationSource source)
         {

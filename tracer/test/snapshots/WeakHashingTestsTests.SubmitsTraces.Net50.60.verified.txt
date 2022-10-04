@@ -18,7 +18,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.HMACMD5"
+        "value": "HMACMD5"
       }
     }
   ]
@@ -52,7 +52,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.HMACMD5"
+        "value": "HMACMD5"
       }
     }
   ]
@@ -86,7 +86,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.HMACMD5"
+        "value": "HMACMD5"
       }
     }
   ]
@@ -120,7 +120,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.HMACMD5"
+        "value": "HMACMD5"
       }
     }
   ]
@@ -154,7 +154,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.MD5CryptoServiceProvider"
+        "value": "MD5"
       }
     }
   ]
@@ -188,7 +188,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.MD5CryptoServiceProvider"
+        "value": "MD5"
       }
     }
   ]
@@ -222,7 +222,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.MD5CryptoServiceProvider"
+        "value": "MD5"
       }
     }
   ]
@@ -256,7 +256,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.MD5CryptoServiceProvider"
+        "value": "MD5"
       }
     }
   ]
@@ -290,7 +290,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.MD5+Implementation"
+        "value": "MD5"
       }
     }
   ]
@@ -324,7 +324,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.MD5+Implementation"
+        "value": "MD5"
       }
     }
   ]
@@ -358,7 +358,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.MD5+Implementation"
+        "value": "MD5"
       }
     }
   ]
@@ -392,7 +392,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.MD5+Implementation"
+        "value": "MD5"
       }
     }
   ]
@@ -426,7 +426,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.HMACSHA1"
+        "value": "HMACSHA1"
       }
     }
   ]
@@ -460,7 +460,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.HMACSHA1"
+        "value": "HMACSHA1"
       }
     }
   ]
@@ -494,7 +494,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.HMACSHA1"
+        "value": "HMACSHA1"
       }
     }
   ]
@@ -528,7 +528,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.HMACSHA1"
+        "value": "HMACSHA1"
       }
     }
   ]
@@ -562,7 +562,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.SHA1+Implementation"
+        "value": "SHA1"
       }
     }
   ]
@@ -596,7 +596,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.SHA1+Implementation"
+        "value": "SHA1"
       }
     }
   ]
@@ -630,7 +630,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.SHA1+Implementation"
+        "value": "SHA1"
       }
     }
   ]
@@ -664,7 +664,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.SHA1+Implementation"
+        "value": "SHA1"
       }
     }
   ]
@@ -698,7 +698,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
+        "value": "SHA1"
       }
     }
   ]
@@ -732,7 +732,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
+        "value": "SHA1"
       }
     }
   ]
@@ -766,7 +766,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
+        "value": "SHA1"
       }
     }
   ]
@@ -800,7 +800,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.SHA1CryptoServiceProvider"
+        "value": "SHA1"
       }
     }
   ]
@@ -834,7 +834,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.HMACMD5"
+        "value": "HMACMD5"
       }
     }
   ]
@@ -868,7 +868,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.HMACMD5"
+        "value": "HMACMD5"
       }
     }
   ]
@@ -902,7 +902,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.HMACMD5"
+        "value": "HMACMD5"
       }
     }
   ]
@@ -936,7 +936,7 @@
       "location": {
                       },
       "evidence": {
-        "value": "System.Security.Cryptography.HMACMD5"
+        "value": "HMACMD5"
       }
     }
   ]

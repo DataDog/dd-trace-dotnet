@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
 
         internal static Scope? CreateScope(System.Security.Cryptography.HashAlgorithm instance)
         {
-            var iast = Datadog.Trace.Iast.Iast.Instance;
+            var iast = Iast.Iast.Instance;
             if (!iast.Settings.Enabled || instance == null)
             {
                 return null;
@@ -27,13 +27,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
 
             try
             {
-                return IastModule.OnHashingAlgorithm(instance.GetType().FullName, IntegrationId, iast);
+                return IastModule.OnHashingAlgorithm(GetAlgorithmName(instance.GetType()), IntegrationId, iast);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error creating or populating hash algorithm scope.");
                 return null;
             }
+        }
+
+        private static string? GetAlgorithmName(Type type)
+        {
+            return type.BaseType?.BaseType == typeof(System.Security.Cryptography.HashAlgorithm) ? type.BaseType?.Name : type.Name;
         }
     }
 }
