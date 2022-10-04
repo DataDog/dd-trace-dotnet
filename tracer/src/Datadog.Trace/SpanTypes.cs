@@ -60,17 +60,17 @@ namespace Datadog.Trace
         /// <summary>
         /// The span type for a Test Suite integration.
         /// </summary>
-        public const string TestSuite = "test_suite_end";
+        internal const string TestSuite = "test_suite_end";
 
         /// <summary>
         /// The span type for a Test Module integration.
         /// </summary>
-        public const string TestModule = "test_module_end";
+        internal const string TestModule = "test_module_end";
 
         /// <summary>
         /// The span type for a Test Module integration.
         /// </summary>
-        public const string TestSession = "test_session_end";
+        internal const string TestSession = "test_session_end";
 
         /// <summary>
         /// The span type for a Benchmark integration.

@@ -114,9 +114,6 @@ namespace Datadog.Trace
         public const string Serverless = "serverless";
         public const string Sql = "sql";
         public const string Test = "test";
-        public const string TestModule = "test_module_end";
-        public const string TestSession = "test_session_end";
-        public const string TestSuite = "test_suite_end";
         public const string Web = "web";
     }
     public static class Tags
