@@ -272,8 +272,9 @@ public class SpanModelBuilderTests
     public void LargeArray_NoParents()
     {
         // all spans have parentId = 5, which is not found
-        var range = Enumerable.Range(10, 1000);
-        var spans = range.Select(spanId => CreateSpan(traceId: 1, spanId: (ulong)spanId, parentId: 5)).ToArray();
+        var spans = Enumerable.Range(10, 1000)
+                              .Select(spanId => CreateSpan(traceId: 1, spanId: (ulong)spanId, parentId: 5))
+                              .ToArray();
 
         var traceChunk = CreateTraceChunk(spans, root: spans[0]);
         var builder = new SpanModelBuilder(traceChunk);
@@ -313,10 +314,11 @@ public class SpanModelBuilderTests
     public void LargeArray_NestedParents()
     {
         // all spans have parentId = spanId - 1, which is found for every span except the first one (parentId = 9)
-        var range = Enumerable.Range(10, 1000);
-        var spans = range.Select(spanId => CreateSpan(traceId: 1, spanId: (ulong)spanId, parentId: (ulong)spanId - 1)).ToArray();
+        var spans = Enumerable.Range(10, 1000)
+                              .Select(spanId => CreateSpan(traceId: 1, spanId: (ulong)spanId, parentId: (ulong)spanId - 1))
+                              .ToArray();
 
-        var traceChunk = CreateTraceChunk(spans,  root: spans[0]);
+        var traceChunk = CreateTraceChunk(spans, root: spans[0]);
         var builder = new SpanModelBuilder(traceChunk);
 
         builder.HashSetCreated.Should().BeFalse();
@@ -404,10 +406,11 @@ public class SpanModelBuilderTests
         var rootSpan = CreateSpan(traceId: 1, spanId: 9, parentId: 0);
 
         // all spans have parentId = spanId - 1, which is found for every span except the first one (parentId = 9)
-        var range = Enumerable.Range(10, 1000);
-        var spans = range.Select(spanId => CreateSpan(traceId: 1, spanId: (ulong)spanId, parentId: (ulong)spanId - 1)).ToArray();
+        var spans = Enumerable.Range(10, 1000)
+                              .Select(spanId => CreateSpan(traceId: 1, spanId: (ulong)spanId, parentId: (ulong)spanId - 1))
+                              .ToArray();
 
-        var traceChunk = CreateTraceChunk(spans,  root: rootSpan);
+        var traceChunk = CreateTraceChunk(spans, root: rootSpan);
         var builder = new SpanModelBuilder(traceChunk);
 
         builder.HashSetCreated.Should().BeFalse();
