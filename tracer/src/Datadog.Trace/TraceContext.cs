@@ -187,19 +187,6 @@ namespace Datadog.Trace
             return Elapsed + (_utcStart - date);
         }
 
-        private static void AddSamplingPriorityTags(Span span, int samplingPriority)
-        {
-            // set sampling priority tag on the span
-            if (span.Tags is CommonTags tags)
-            {
-                tags.SamplingPriority = samplingPriority;
-            }
-            else
-            {
-                span.Tags.SetMetric(Metrics.SamplingPriority, samplingPriority);
-            }
-        }
-
         private static void AddAASMetadata(Span span)
         {
             if (AzureAppServices.Metadata.IsRelevant)
@@ -228,7 +215,6 @@ namespace Datadog.Trace
             // This should be the most common case as usually we close the root span last
             if (closedSpan == RootSpan)
             {
-                AddSamplingPriorityTags(closedSpan, _samplingPriority.Value);
                 _rootSpanSent = true;
                 return;
             }
@@ -244,22 +230,12 @@ namespace Datadog.Trace
                     var span = spansToWrite.Array![i + spansToWrite.Offset];
                     if (span == RootSpan)
                     {
-                        AddSamplingPriorityTags(span, _samplingPriority.Value);
                         _rootSpanSent = true;
                         return;
                     }
                 }
 
                 Log.Warning("Root span wasn't found even though expected here.");
-            }
-
-            // Here we must be in the case when rootspan has already been sent or we are in a partial flush.
-            // Agent versions < 7.34.0 look for the sampling priority in one of the spans whose parent is not found in the same chunk.
-            // If there are multiple orphans, the agent picks one nondeterministically and does not check the others.
-            // Finding those spans is not trivial, so instead we apply the priority to every span.
-            for (var i = 0; i < spansToWrite.Count; i++)
-            {
-                AddSamplingPriorityTags(spansToWrite.Array![i + spansToWrite.Offset], _samplingPriority.Value);
             }
         }
     }
