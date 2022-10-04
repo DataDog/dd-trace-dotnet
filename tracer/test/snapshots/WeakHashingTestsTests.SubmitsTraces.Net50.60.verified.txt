@@ -15,8 +15,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "HMACMD5"
       }
@@ -49,8 +48,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "HMACMD5"
       }
@@ -83,8 +81,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "HMACMD5"
       }
@@ -117,8 +114,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "HMACMD5"
       }
@@ -151,8 +147,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "MD5"
       }
@@ -185,8 +180,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "MD5"
       }
@@ -219,8 +213,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "MD5"
       }
@@ -253,8 +246,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "MD5"
       }
@@ -287,8 +279,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "MD5"
       }
@@ -321,8 +312,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "MD5"
       }
@@ -355,8 +345,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "MD5"
       }
@@ -389,8 +378,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "MD5"
       }
@@ -423,8 +411,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "HMACSHA1"
       }
@@ -457,8 +444,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "HMACSHA1"
       }
@@ -491,8 +477,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "HMACSHA1"
       }
@@ -525,8 +510,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "HMACSHA1"
       }
@@ -559,8 +543,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "SHA1"
       }
@@ -593,8 +576,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "SHA1"
       }
@@ -627,8 +609,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "SHA1"
       }
@@ -661,8 +642,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "SHA1"
       }
@@ -695,8 +675,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "SHA1"
       }
@@ -729,8 +708,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "SHA1"
       }
@@ -763,8 +741,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "SHA1"
       }
@@ -797,8 +774,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "SHA1"
       }
@@ -831,8 +807,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "HMACMD5"
       }
@@ -865,8 +840,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "HMACMD5"
       }
@@ -899,8 +873,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "HMACMD5"
       }
@@ -933,8 +906,7 @@
   "vulnerabilities": [
     {
       "type": "WEAK_HASH",
-      "location": {
-                      },
+      
       "evidence": {
         "value": "HMACMD5"
       }
