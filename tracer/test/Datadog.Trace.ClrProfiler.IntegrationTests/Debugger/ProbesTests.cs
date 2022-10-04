@@ -70,7 +70,7 @@ public class ProbesTests : TestHelper, IDisposable
         await RunSingleTestWithApprovals(testType, isMultiPhase: false, expectedNumberOfSnapshots, probes);
     }
 
-    [SkippableFact(Skip = "Too flaky")]
+    [SkippableFact(Skip = "Too flakey")]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public async Task TransparentCodeCtorInstrumentationTest()
