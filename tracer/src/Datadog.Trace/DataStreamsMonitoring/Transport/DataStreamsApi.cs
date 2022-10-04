@@ -33,14 +33,15 @@ internal class DataStreamsApi : IDataStreamsApi
             Log.Debug<int>("Sending {Count} bytes to the data streams intake", bytes.Count);
             var request = _requestFactory.Create(_endpoint);
 
-            using var response = await request.PostAsync(bytes, MimeTypes.MsgPack).ConfigureAwait(false);
+            using var response = await request.PostAsync(bytes, MimeTypes.MsgPack, "gzip").ConfigureAwait(false);
             if (response.StatusCode is >= 200 and < 300)
             {
                 Log.Debug("Data streams monitoring data sent successfully");
                 return true;
             }
 
-            Log.Warning<string, int>("Error sending data streams monitoring data to '{Endpoint}' {StatusCode} ", _requestFactory.Info(_endpoint), response.StatusCode);
+            var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+            Log.Warning<string, int, string>("Error sending data streams monitoring data to '{Endpoint}' {StatusCode} {Content}", _requestFactory.Info(_endpoint), response.StatusCode, responseContent);
             return false;
         }
         catch (Exception ex)

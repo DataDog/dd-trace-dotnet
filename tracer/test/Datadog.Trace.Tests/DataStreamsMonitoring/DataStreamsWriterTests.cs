@@ -5,6 +5,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -13,9 +15,12 @@ using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.DataStreamsMonitoring.Transport;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Util;
 using FluentAssertions;
+using MessagePack;
 using Xunit;
 
 namespace Datadog.Trace.Tests.DataStreamsMonitoring;
@@ -23,6 +28,8 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring;
 public class DataStreamsWriterTests
 {
     private const int BucketDurationMs = 1_000; // 1 second
+    private const string Environment = "env";
+    private const string Service = "service";
     private int _flushCount;
 
     [Theory]
@@ -61,7 +68,7 @@ public class DataStreamsWriterTests
     [Fact]
     public async Task WhenSupported_WritesAStatsPointAfterDelay()
     {
-        var bucketDurationMs = 100; // 100 ms
+        var bucketDurationMs = 100;
         var api = new StubApi();
         var writer = CreateWriter(api, out var discovery, bucketDurationMs);
         TriggerSupportUpdate(discovery, isSupported: true);
@@ -74,6 +81,22 @@ public class DataStreamsWriterTests
 
         await writer.DisposeAsync();
 
+        // The origin and current points _might_ be sent in separate payloads
+        api.Sent.Should().HaveCountGreaterOrEqualTo(1).And.HaveCountLessOrEqualTo(2);
+    }
+
+    [Fact]
+    public async Task DoesNotCrashWhenWritingAStatsPointFails()
+    {
+        var bucketDurationMs = 100_000_000;
+        var api = new FaultyApi();
+        var writer = CreateWriter(api, out var discovery, bucketDurationMs);
+        TriggerSupportUpdate(discovery, isSupported: true);
+
+        writer.Add(CreateStatsPoint());
+
+        await writer.DisposeAsync();
+
         api.Sent.Should().ContainSingle();
     }
 
@@ -82,7 +105,7 @@ public class DataStreamsWriterTests
     [InlineData(null)]
     public async Task WhenNotSupported_DoesNotWritesAStatsPointAfterDelay(bool? isSupported)
     {
-        var bucketDurationMs = 100; // 100 ms
+        var bucketDurationMs = 100;
         var api = new StubApi();
         var writer = CreateWriter(api, out var discovery, bucketDurationMs * 1_000_000);
         writer.FlushComplete += (_, _) => Interlocked.Increment(ref _flushCount);
@@ -222,6 +245,32 @@ public class DataStreamsWriterTests
     }
 
     [Fact]
+    public async Task GZipsDataWhenSendingToApi()
+    {
+        var bucketDurationMs = 100; // 100 ms
+        var api = new StubApi();
+        var writer = CreateWriter(api, out var discovery, bucketDurationMs);
+        TriggerSupportUpdate(discovery, isSupported: true);
+
+        writer.Add(CreateStatsPoint());
+
+        await api.WaitForCount(1, 30_000);
+
+        var data = api.Sent.Should().ContainSingle().Subject;
+
+        using var compressed = new MemoryStream(data.Array!);
+        using var gzip = new GZipStream(compressed, CompressionMode.Decompress);
+        using var decompressed = new MemoryStream();
+        await gzip.CopyToAsync(decompressed);
+
+        var result = MessagePackSerializer.Deserialize<MockDataStreamsPayload>(decompressed.GetBuffer());
+        result.Env.Should().Be(Environment);
+        result.Service.Should().Be(Service);
+        result.Stats.Should().ContainSingle(x => x.Stats.Any(x => x.TimestampType == "current"));
+        result.Stats.Should().ContainSingle(x => x.Stats.Any(x => x.TimestampType == "origin"));
+    }
+
+    [Fact]
     public async Task WhenUnSupported_DropsPoints()
     {
         var api = new StubApi();
@@ -274,7 +323,7 @@ public class DataStreamsWriterTests
         discoveryService = new DiscoveryServiceMock();
         return new DataStreamsWriter(
             new DataStreamsAggregator(
-                new DataStreamsMessagePackFormatter("env", "service"),
+                new DataStreamsMessagePackFormatter(Environment, Service),
                 bucketDurationMs),
             stubApi,
             bucketDurationMs: bucketDurationMs,
@@ -326,7 +375,7 @@ public class DataStreamsWriterTests
             }
         }
 
-        public Task<bool> SendAsync(ArraySegment<byte> bytes)
+        public virtual Task<bool> SendAsync(ArraySegment<byte> bytes)
         {
             lock (_sent)
             {
@@ -343,6 +392,15 @@ public class DataStreamsWriterTests
             {
                 await Task.Delay(100);
             }
+        }
+    }
+
+    private class FaultyApi : StubApi
+    {
+        public override Task<bool> SendAsync(ArraySegment<byte> bytes)
+        {
+            base.SendAsync(bytes);
+            return Task.FromResult(false);
         }
     }
 }
