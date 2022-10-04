@@ -25,7 +25,7 @@ internal class SpanSampler : ISpanSampler
     }
 
     /// <inheritdoc/>
-    public void MakeSamplingDecision(Span span)
+    public SamplingDecision MakeSamplingDecision(Span span)
     {
         if (_rules.Count > 0)
         {
@@ -33,11 +33,13 @@ internal class SpanSampler : ISpanSampler
             {
                 if (rule.ShouldKeep(span))
                 {
-                    Tag(span, rule);
-                    return;
+                    Tag(span, rule); // TODO maybe this shouldn't be here
+                    return new SamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.SpanSamplingRule);
                 }
             }
         }
+
+        return SamplingDecision.Default;
     }
 
     /// <inheritdoc/>

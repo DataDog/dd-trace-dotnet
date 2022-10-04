@@ -14,7 +14,7 @@ namespace Datadog.Trace.Sampling
         ///     Makes a <see cref="SamplingDecision"/> for the given <paramref name="span"/>.
         /// </summary>
         /// <param name="span">The <see cref="Span"/> to sample.</param>
-        void MakeSamplingDecision(Span span);
+        SamplingDecision MakeSamplingDecision(Span span);
 
         /// <summary>
         ///     Tags the <paramref name="span"/> with the necessary tags for single span ingestion.
