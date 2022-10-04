@@ -32,7 +32,6 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void LetsFuzz()
         {
             // if we don't throw any exceptions and generate a valid object the the test is successful
-
             var libraryHandle = LibraryLoader.LoadAndGetHandle();
             var wafNative = new WafNative(libraryHandle);
             var encoder = new AppSec.Waf.Encoder(wafNative);
