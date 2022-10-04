@@ -21,7 +21,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
     public class WeakHashingTests : TestHelper
     {
         private const string ExpectedOperationName = "weak_hashing";
-        private static readonly Regex PathMsgRegex = new(@"(\S)*""path"": "".*"",(\r|\n){1,2}");
+        private static readonly Regex PathMsgRegex = new(@"(\S)*""path"": "".*"",{0,1}(\r|\n){1,2}");
         private static readonly Regex LineMsgRegex = new(@"(\S)*""line"": .*(\r|\n){1,2}");
 
         public WeakHashingTests(ITestOutputHelper output)
