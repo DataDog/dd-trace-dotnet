@@ -6,7 +6,9 @@
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.TestHelpers.TransportHelpers;
+using Datadog.Trace.Tests.Agent;
 using FluentAssertions;
+using Moq;
 using Xunit;
 
 namespace Datadog.Trace.Tests.DataStreamsMonitoring;
@@ -16,7 +18,7 @@ public class SpanContextDataStreamsManagerTests
     [Fact]
     public void SetCheckpoint_SetsTheSpanPathwayContext()
     {
-        var dsm = new DataStreamsManager(enabled: true, "env", "service", new TestRequestFactory());
+        var dsm = GetEnabledDataStreamManager();
         var spanContext = new SpanContext(traceId: 123, spanId: 1234);
         spanContext.PathwayContext.Should().BeNull();
 
@@ -40,7 +42,7 @@ public class SpanContextDataStreamsManagerTests
     [Fact]
     public void MergePathwayContext_WhenOtherContextIsNull_KeepsContext()
     {
-        var dsm = new DataStreamsManager(enabled: true, "env", "service", new TestRequestFactory());
+        var dsm = GetEnabledDataStreamManager();
         var spanContext = new SpanContext(traceId: 123, spanId: 1234);
         spanContext.SetCheckpoint(dsm, new[] { "some-edge" });
         spanContext.PathwayContext.Should().NotBeNull();
@@ -55,7 +57,7 @@ public class SpanContextDataStreamsManagerTests
     {
         int iterations = 1000_000;
         // When we have a context and there's a new context we pick one randomly
-        var dsm = new DataStreamsManager(enabled: true, "env", "service", new TestRequestFactory());
+        var dsm = GetEnabledDataStreamManager();
         var spanContext = new SpanContext(traceId: 123, spanId: 1234);
         spanContext.SetCheckpoint(dsm, new[] { "some-edge" });
 
@@ -82,5 +84,14 @@ public class SpanContextDataStreamsManagerTests
         }
 
         sameCount.Should().BeCloseTo(otherCount, (uint)(iterations / 100)); // roughly 1%
+    }
+
+    private static DataStreamsManager GetEnabledDataStreamManager()
+    {
+        var dsm = new DataStreamsManager(
+            env: "env",
+            defaultServiceName: "service",
+            new Mock<IDataStreamsWriter>().Object);
+        return dsm;
     }
 }

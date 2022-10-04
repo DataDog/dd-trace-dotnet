@@ -55,12 +55,11 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var request1 = await agent.WaitRcmRequestAndReturnLast();
             if (enableSecurity == true)
             {
-                await logEntryWatcher.WaitForLogEntry(AppSecDisabledMessage, logEntryWatcherTimeout);
+                await logEntryWatcher.WaitForLogEntry(AppSecDisabledMessage(), logEntryWatcherTimeout);
             }
 
             CheckAckState(request1, expectedState, null, "First RCM call");
             CheckCapabilities(request1, expectedCapabilities, "First RCM call");
-            await Task.Delay(1500);
 
             var spans2 = await SendRequestsAsync(agent, url);
 
@@ -68,12 +67,11 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var request2 = await agent.WaitRcmRequestAndReturnLast();
             if (enableSecurity != false)
             {
-                await logEntryWatcher.WaitForLogEntry(AppSecEnabledMessage, logEntryWatcherTimeout);
+                await logEntryWatcher.WaitForLogEntry(AppSecEnabledMessage(), logEntryWatcherTimeout);
             }
 
             CheckAckState(request2, expectedState, null, "Second RCM call");
             CheckCapabilities(request2, expectedCapabilities, "Second RCM call");
-            await Task.Delay(1500);
 
             var spans3 = await SendRequestsAsync(agent, url);
 

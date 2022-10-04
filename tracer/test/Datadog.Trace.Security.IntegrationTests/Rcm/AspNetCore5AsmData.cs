@@ -27,8 +27,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
     public class AspNetCore5AsmData : RcmBase
     {
-        private const string _rulesUpdatedMessage = "rules have been updated and waf status is \"DDWAF_OK\"";
-
         public AspNetCore5AsmData(ITestOutputHelper outputHelper)
             : base(outputHelper, testName: nameof(AspNetCore5AsmData))
         {
@@ -63,7 +61,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var request1 = await agent.WaitRcmRequestAndReturnLast();
             if (enableSecurity)
             {
-                await logEntryWatcher.WaitForLogEntry($"1 {_rulesUpdatedMessage}", logEntryWatcherTimeout);
+                await logEntryWatcher.WaitForLogEntry($"1 {RulesUpdatedMessage()}", logEntryWatcherTimeout);
             }
             else
             {
@@ -102,22 +100,20 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
                 product.Name);
 
             var request1 = await agent.WaitRcmRequestAndReturnLast();
-            await logEntryWatcher.WaitForLogEntry($"1 {_rulesUpdatedMessage}", logEntryWatcherTimeout);
-            await Task.Delay(1500);
+            var rulesUpdatedMessage = RulesUpdatedMessage();
+            await logEntryWatcher.WaitForLogEntry($"1 {rulesUpdatedMessage}", logEntryWatcherTimeout);
 
             var spanAfterAsmData = await SendRequestsAsync(agent, url);
             spanAfterAsmData.First().GetTag(Tags.AppSecEvent).Should().NotBeNull();
             agent.SetupRcm(Output, new[] { ((object)new AsmFeatures { Asm = new Asm { Enabled = false } }, "1") }, "ASM_FEATURES");
             var requestAfterDeactivation = await agent.WaitRcmRequestAndReturnLast();
-            await logEntryWatcher.WaitForLogEntry(AppSecDisabledMessage, logEntryWatcherTimeout);
-            await Task.Delay(1500);
+            await logEntryWatcher.WaitForLogEntry(AppSecDisabledMessage(), logEntryWatcherTimeout);
 
             var spanAfterAsmDeactivated = await SendRequestsAsync(agent, url);
 
             agent.SetupRcm(Output, new[] { ((object)new AsmFeatures { Asm = new Asm { Enabled = true } }, "1") }, "ASM_FEATURES");
             var requestAfterReactivation = await agent.WaitRcmRequestAndReturnLast();
-            await logEntryWatcher.WaitForLogEntries(new[] { $"1 {_rulesUpdatedMessage}", AppSecEnabledMessage }, logEntryWatcherTimeout);
-            await Task.Delay(1500);
+            await logEntryWatcher.WaitForLogEntries(new[] { $"1 {rulesUpdatedMessage}", AppSecEnabledMessage() }, logEntryWatcherTimeout);
 
             var spanAfterAsmDataReactivated = await SendRequestsAsync(agent, url);
 
