@@ -201,7 +201,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             for (var i = 0; i < BatchingSink.FailuresBeforeCircuitBreak; i++)
             {
                 sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, "A message"));
-                mutex.Wait(10_000).Should().BeTrue();
+                mutex.Wait(30_000).Should().BeTrue();
                 mutex.Reset();
             }
 
