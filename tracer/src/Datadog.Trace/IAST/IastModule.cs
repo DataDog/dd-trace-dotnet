@@ -74,9 +74,9 @@ namespace Datadog.Trace.Iast
             return StringBuilderCache.GetStringAndRelease(StringBuilderCache.Acquire(0).Append(namespaceName).Append('.').Append(typeName).Append("::").Append(methodName));
         }
 
-        private static bool InvalidHashAlgorithm(string algorithm, Datadog.Trace.Iast.Iast iast)
+        private static bool InvalidHashAlgorithm(string algorithm, Iast iast)
         {
-            return iast.Settings.InsecureHashingAlgorithms.Contains(algorithm);
+            return iast.Settings.InsecureHashingAlgorithmsArray.Contains(algorithm);
         }
     }
 }

@@ -17,12 +17,15 @@ namespace Datadog.Trace.Iast.Settings
         public IastSettings(IConfigurationSource source)
         {
             Enabled = source?.GetBool(ConfigurationKeys.Iast.Enabled) ?? false;
-            InsecureHashingAlgorithms = (source?.GetString(ConfigurationKeys.Iast.WeakHashAlgorithms) ?? InsecureHashingAlgorithmsDefault).Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
+            InsecureHashingAlgorithms = source?.GetString(ConfigurationKeys.Iast.WeakHashAlgorithms) ?? InsecureHashingAlgorithmsDefault;
+            InsecureHashingAlgorithmsArray = InsecureHashingAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
         }
 
         public bool Enabled { get; set; }
 
-        public string[] InsecureHashingAlgorithms { get; }
+        public string[] InsecureHashingAlgorithmsArray { get; }
+
+        public string InsecureHashingAlgorithms { get; }
 
         public static IastSettings FromDefaultSources()
         {
