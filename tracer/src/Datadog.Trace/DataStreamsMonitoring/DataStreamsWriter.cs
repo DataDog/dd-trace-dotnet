@@ -5,6 +5,8 @@
 
 #nullable enable
 using System;
+using System.IO;
+using System.IO.Compression;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -29,7 +31,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private readonly IDiscoveryService _discoveryService;
     private readonly IDataStreamsApi _api;
     private readonly Timer _flushTimer;
-    private byte[]? _serializationBuffer;
+    private MemoryStream? _serializationBuffer;
     private long _pointsDropped;
     private int _flushRequested;
     private int _isSupported = SupportState.Unknown;
@@ -145,30 +147,34 @@ internal class DataStreamsWriter : IDataStreamsWriter
         // but they will continue to be added to the queue, and will be processed later
         // Default buffer capacity matches Java implementation:
         // https://cs.github.com/DataDog/dd-trace-java/blob/3386bd137e58ed7450d1704e269d3567aeadf4c0/dd-trace-core/src/main/java/datadog/trace/core/datastreams/MsgPackDatastreamsPayloadWriter.java?q=MsgPackDatastreamsPayloadWriter#L28
-        _serializationBuffer ??= new byte[512 * 1024];
+        _serializationBuffer ??= new MemoryStream(capacity: 512 * 1024);
 
         var flushTimeNs = _processExit.Task.IsCompleted
-                          ? long.MaxValue // flush all buckets
-                          : DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(); // don't flush current bucket
+                              ? long.MaxValue // flush all buckets
+                              : DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(); // don't flush current bucket
 
-        const int offset = 0;
-        var bytesWritten = _aggregator.Serialize(ref _serializationBuffer, offset: offset, flushTimeNs);
+        bool wasDataWritten;
+        _serializationBuffer.SetLength(0); // reset the stream
+        using (var gzip = new GZipStream(_serializationBuffer, CompressionLevel.Fastest, leaveOpen: true))
+        {
+            wasDataWritten = _aggregator.Serialize(gzip, flushTimeNs);
+        }
 
-        if (bytesWritten > 0 && (Volatile.Read(ref _isSupported) == SupportState.Supported))
+        if (wasDataWritten && (Volatile.Read(ref _isSupported) == SupportState.Supported))
         {
             // This flushes on the same thread as the processing loop
-            var data = new ArraySegment<byte>(_serializationBuffer, offset, bytesWritten);
+            var data = new ArraySegment<byte>(_serializationBuffer.GetBuffer(), offset: 0, (int)_serializationBuffer.Length);
 
             var success = await _api.SendAsync(data).ConfigureAwait(false);
 
             var dropCount = Interlocked.Exchange(ref _pointsDropped, 0);
             if (success)
             {
-                Log.Debug("Flushed {Count}bytes to data streams intake. {Dropped} points were dropped since last flush", bytesWritten, dropCount);
+                Log.Debug("Flushed {Count}bytes to data streams intake. {Dropped} points were dropped since last flush", data.Count, dropCount);
             }
             else
             {
-                Log.Warning("Error flushing {Count}bytes to data streams intake. {Dropped} points were dropped since last flush", bytesWritten, dropCount);
+                Log.Warning("Error flushing {Count}bytes to data streams intake. {Dropped} points were dropped since last flush", data.Count, dropCount);
             }
         }
     }

@@ -66,17 +66,6 @@ extern "C"
                 // *****************************************************************************************************************
                 break;
             }
-            case DLL_THREAD_ATTACH:
-                // Do thread-specific initialization.
-                Log::Debug("DllMain: DLL_THREAD_ATTACH");
-
-                break;
-
-            case DLL_THREAD_DETACH:
-                // Do thread-specific cleanup.
-                Log::Debug("DllMain: DLL_THREAD_DETACH");
-
-                break;
 
             case DLL_PROCESS_DETACH:
                 // Perform any necessary cleanup.
