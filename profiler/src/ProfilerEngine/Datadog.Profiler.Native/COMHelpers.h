@@ -10,10 +10,10 @@
         HRESULT hr = x;                                                                                       \
         if (FAILED(hr))                                                                                       \
         {                                                                                                     \
-            static bool ddAlreadyLogged = false;                                                              \
-            if (ddAlreadyLogged)                                                                              \
+            static bool callAlreadyLogged = false;                                                            \
+            if (callAlreadyLogged)                                                                            \
                 return;                                                                                       \
-            ddAlreadyLogged = true;                                                                           \
+            callAlreadyLogged = true;                                                                           \
             Log::Warn("Profiler call failed with result ", HResultConverter::ToStringWithCode(hr), ": ", #x); \
             return;                                                                                           \
         }                                                                                                     \
@@ -24,10 +24,10 @@
         HRESULT hr = x;                                                                                       \
         if (FAILED(hr))                                                                                       \
         {                                                                                                     \
-            static bool ddAlreadyLogged = false;                                                              \
-            if (ddAlreadyLogged)                                                                              \
+            static bool invokeAlreadyLogged = false;                                                          \
+            if (invokeAlreadyLogged)                                                                          \
                 return false;                                                                                 \
-            ddAlreadyLogged = true;                                                                           \
+            invokeAlreadyLogged = true;                                                                           \
             Log::Warn("Profiler call failed with result ", HResultConverter::ToStringWithCode(hr), ": ", #x); \
             return false;                                                                                     \
         }                                                                                                     \
