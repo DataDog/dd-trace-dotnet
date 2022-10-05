@@ -47,14 +47,26 @@ namespace Datadog.Trace.Agent.MessagePack
 
         // numeric tags
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
-        private readonly byte[] _samplingPriorityNameBytes = StringEncoding.UTF8.GetBytes(Trace.Metrics.SamplingPriority);
-        private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Metrics.ProcessId);
+        private readonly byte[] _samplingPriorityNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingPriority);
+        private readonly byte[][] _samplingPriorityValueBytes;
+
+        private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Metrics.ProcessId);
         private readonly byte[] _processIdValueBytes;
 
         private SpanMessagePackFormatter()
         {
             double processId = DomainMetadata.Instance.ProcessId;
             _processIdValueBytes = processId > 0 ? MessagePackSerializer.Serialize(processId) : null;
+
+            // values begin at -1, so they are shifted by 1 from their array index: [-1, 0, 1, 2]
+            // these must serialized as msgpack float64 (Double in .NET).
+            _samplingPriorityValueBytes = new[]
+                                          {
+                                              MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserReject),
+                                              MessagePackSerializer.Serialize((double)SamplingPriorityValues.AutoReject),
+                                              MessagePackSerializer.Serialize((double)SamplingPriorityValues.AutoKeep),
+                                              MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserKeep),
+                                          };
         }
 
         int IMessagePackFormatter<TraceChunkModel>.Serialize(ref byte[] bytes, int offset, TraceChunkModel traceChunk, IFormatterResolver formatterResolver)
@@ -296,7 +308,17 @@ namespace Datadog.Trace.Agent.MessagePack
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _samplingPriorityNameBytes);
-                offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingPriority);
+
+                if (samplingPriority is >= -1 and <= 2)
+                {
+                    // values begin at -1, so they are shifted by 1 from their array index: [-1, 0, 1, 2]
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, _samplingPriorityValueBytes[samplingPriority + 1]);
+                }
+                else
+                {
+                    // fallback to support unknown future values that are not cached
+                    offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingPriority);
+                }
             }
 
             if (span.IsTopLevel && (!Ci.CIVisibility.IsRunning || !Ci.CIVisibility.Settings.Agentless))
