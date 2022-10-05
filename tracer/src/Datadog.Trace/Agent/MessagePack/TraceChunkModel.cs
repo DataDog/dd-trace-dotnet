@@ -31,6 +31,8 @@ internal readonly struct TraceChunkModel
 
     public readonly int? SamplingPriority = null;
 
+    public readonly string? Origin = null;
+
     public readonly TraceTagCollection? Tags = null;
 
     public readonly ulong? LocalRootSpanId = null;
@@ -55,6 +57,7 @@ internal readonly struct TraceChunkModel
         if (traceContext is not null)
         {
             SamplingPriority = traceContext.SamplingPriority;
+            Origin = traceContext.Origin;
             Tags = traceContext.Tags;
         }
     }

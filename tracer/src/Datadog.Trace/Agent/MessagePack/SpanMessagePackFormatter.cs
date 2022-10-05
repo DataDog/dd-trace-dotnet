@@ -226,7 +226,7 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             // add "_dd.origin" tag to all spans
-            string origin = span.Context.Origin;
+            string origin = model.TraceChunk.Origin;
 
             if (!string.IsNullOrEmpty(origin))
             {
