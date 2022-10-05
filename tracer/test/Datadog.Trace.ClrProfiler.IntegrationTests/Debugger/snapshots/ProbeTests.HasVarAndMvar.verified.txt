@@ -12,37 +12,40 @@
               "k": {
                 "fields": {
                   "Message": {
-                    "fields": null,
                     "type": "String",
                     "value": "Hello"
                   }
                 },
                 "type": "Generic",
                 "value": "Generic"
+              },
+              "this": {
+                "type": "Test`1",
+                "value": "Test`1"
               }
-            },
-            "fields": null
+            }
           },
           "return": {
             "arguments": {
               "k": {
                 "fields": {
                   "Message": {
-                    "fields": null,
                     "type": "String",
                     "value": "Hello"
                   }
                 },
                 "type": "Generic",
                 "value": "Generic"
+              },
+              "this": {
+                "type": "Test`1",
+                "value": "Test`1"
               }
             },
-            "fields": null,
             "locals": {
               "@return": {
-                "Collection": [
+                "elements": [
                   {
-                    "fields": null,
                     "type": "Test`1",
                     "value": "Test`1"
                   }
@@ -51,9 +54,8 @@
                 "value": "count: 1"
               },
               "kk": {
-                "Collection": [
+                "elements": [
                   {
-                    "fields": null,
                     "type": "Test`1",
                     "value": "Test`1"
                   }
@@ -62,14 +64,12 @@
                 "value": "count: 1"
               },
               "string": {
-                "fields": null,
                 "type": "String",
                 "value": "Samples.Probes.Shared.Generic"
               },
               "tt": {
-                "Collection": [
+                "elements": [
                   {
-                    "fields": null,
                     "type": "Test`1",
                     "value": "Test`1"
                   }
@@ -121,7 +121,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "HasVarAndMvar+Test`1.Method(k=Generic): count: 1\r\n@return=count: 1, kk=count: 1, string=Samples.Probes.Shared.Generic, tt=count: 1",
+    "message": "HasVarAndMvar+Test`1.Method(k=Generic, this=Test`1): count: 1\r\n@return=count: 1, kk=count: 1, string=Samples.Probes.Shared.Generic, tt=count: 1",
     "service": "Probes"
   }
 ]

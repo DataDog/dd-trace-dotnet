@@ -1,0 +1,89 @@
+﻿{
+  local0: {
+    fields: {
+      notCapturedReason: fieldCount,
+      _numField1: {
+        type: Int32,
+        value: 1
+      },
+      _numField10: {
+        type: Int32,
+        value: 10
+      },
+      _numField11: {
+        type: Int32,
+        value: 11
+      },
+      _numField12: {
+        type: Int32,
+        value: 12
+      },
+      _numField13: {
+        type: Int32,
+        value: 13
+      },
+      _numField14: {
+        type: Int32,
+        value: 14
+      },
+      _numField15: {
+        type: Int32,
+        value: 15
+      },
+      _numField16: {
+        type: Int32,
+        value: 16
+      },
+      _numField17: {
+        type: Int32,
+        value: 17
+      },
+      _numField18: {
+        type: Int32,
+        value: 18
+      },
+      _numField19: {
+        type: Int32,
+        value: 19
+      },
+      _numField2: {
+        type: Int32,
+        value: 2
+      },
+      _numField20: {
+        type: Int32,
+        value: 20
+      },
+      _numField3: {
+        type: Int32,
+        value: 3
+      },
+      _numField4: {
+        type: Int32,
+        value: 4
+      },
+      _numField5: {
+        type: Int32,
+        value: 5
+      },
+      _numField6: {
+        type: Int32,
+        value: 6
+      },
+      _numField7: {
+        type: Int32,
+        value: 7
+      },
+      _numField8: {
+        type: Int32,
+        value: 8
+      },
+      _numField9: {
+        type: Int32,
+        value: 9
+      }
+    },
+    type: ClassWithLotsOFields,
+    value: ClassWithLotsOFields
+  }
+}

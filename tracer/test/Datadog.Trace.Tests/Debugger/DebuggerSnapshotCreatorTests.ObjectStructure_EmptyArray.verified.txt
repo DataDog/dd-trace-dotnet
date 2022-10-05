@@ -1,0 +1,7 @@
+﻿{
+  local0: {
+    elements: [],
+    type: Int32[],
+    value: count: 0
+  }
+}

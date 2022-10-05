@@ -11,6 +11,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security;
+using System.Text;
 
 namespace Datadog.Trace.Debugger.Snapshots
 {
@@ -23,9 +24,6 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(LinkedList<>),
             typeof(SortedList),
             typeof(SortedList<,>),
-            typeof(Dictionary<,>),
-            typeof(SortedDictionary<,>),
-            typeof(ConcurrentDictionary<,>),
             typeof(Stack),
             typeof(Stack<>),
             typeof(ConcurrentStack<>),
@@ -33,11 +31,18 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(Queue<>),
             typeof(ConcurrentQueue<>),
             typeof(HashSet<>),
-            typeof(Hashtable),
             typeof(SortedSet<>),
             typeof(ConcurrentBag<>),
             typeof(BlockingCollection<>),
             typeof(ConditionalWeakTable<,>),
+        };
+
+        private static readonly Type[] AllowedDictionaryTypes =
+        {
+            typeof(Dictionary<,>),
+            typeof(SortedDictionary<,>),
+            typeof(ConcurrentDictionary<,>),
+            typeof(Hashtable),
         };
 
         private static readonly string[] AllowedSpecialCasedCollectionTypeNames = { }; // "RangeIterator"
@@ -50,7 +55,8 @@ namespace Datadog.Trace.Debugger.Snapshots
             typeof(Uri),
             typeof(Guid),
             typeof(Version),
-            typeof(StackTrace)
+            typeof(StackTrace),
+            typeof(StringBuilder)
         };
 
         private static readonly Type[] DeniedTypes =
@@ -83,9 +89,15 @@ namespace Datadog.Trace.Debugger.Snapshots
                 || type.Equals(typeof(decimal));
         }
 
-        internal static bool IsSupportedCollection(string reflectionFullName)
+        internal static bool IsSupportedDictionary(object o)
         {
-            return AllowedCollectionTypes.Any(t => t.FullName == reflectionFullName);
+            if (o == null)
+            {
+                return false;
+            }
+
+            var type = o.GetType();
+            return AllowedDictionaryTypes.Any(whiteType => whiteType == type || (type.IsGenericType && whiteType == type.GetGenericTypeDefinition()));
         }
 
         internal static bool IsSupportedCollection(object o)

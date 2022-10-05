@@ -10,25 +10,28 @@
           "entry": {
             "arguments": {
               "lastName": {
-                "fields": null,
                 "type": "String",
                 "value": "Last"
+              },
+              "this": {
+                "type": "InstanceMethodWithArguments",
+                "value": "InstanceMethodWithArguments"
               }
-            },
-            "fields": null
+            }
           },
           "return": {
             "arguments": {
               "lastName": {
-                "fields": null,
                 "type": "String",
                 "value": "Last"
+              },
+              "this": {
+                "type": "InstanceMethodWithArguments",
+                "value": "InstanceMethodWithArguments"
               }
             },
-            "fields": null,
             "locals": {
               "@return": {
-                "fields": null,
                 "type": "String",
                 "value": "Last"
               }
@@ -76,7 +79,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "InstanceMethodWithArguments.Method(lastName=Last): Last\r\n@return=Last",
+    "message": "InstanceMethodWithArguments.Method(lastName=Last, this=InstanceMethodWithArguments): Last\r\n@return=Last",
     "service": "Probes"
   },
   {
@@ -91,12 +94,14 @@
             "18": {
               "arguments": {
                 "lastName": {
-                  "fields": null,
                   "type": "String",
                   "value": "Last"
+                },
+                "this": {
+                  "type": "InstanceMethodWithArguments",
+                  "value": "InstanceMethodWithArguments"
                 }
-              },
-              "fields": null
+              }
             }
           }
         },
@@ -143,7 +148,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "InstanceMethodWithArguments.Method(lastName=Last)",
+    "message": "InstanceMethodWithArguments.Method(lastName=Last, this=InstanceMethodWithArguments)",
     "service": "Probes"
   }
 ]

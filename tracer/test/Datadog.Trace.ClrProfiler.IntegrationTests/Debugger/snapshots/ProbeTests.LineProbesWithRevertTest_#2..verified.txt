@@ -11,25 +11,24 @@
             "41": {
               "arguments": {
                 "callerName": {
-                  "fields": null,
                   "type": "String",
                   "value": "Run"
+                },
+                "this": {
+                  "type": "LineProbesWithRevertTest",
+                  "value": "LineProbesWithRevertTest"
                 }
               },
-              "fields": null,
               "locals": {
                 "a": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "0"
                 },
                 "i": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "0"
                 },
                 "sum": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "0"
                 }
@@ -80,7 +79,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run)\r\na=0, i=0, sum=0",
+    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run, this=LineProbesWithRevertTest)\r\na=0, i=0, sum=0",
     "service": "Probes"
   },
   {
@@ -95,25 +94,24 @@
             "55": {
               "arguments": {
                 "callerName": {
-                  "fields": null,
                   "type": "String",
                   "value": "Run"
+                },
+                "this": {
+                  "type": "LineProbesWithRevertTest",
+                  "value": "LineProbesWithRevertTest"
                 }
               },
-              "fields": null,
               "locals": {
                 "a": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "3"
                 },
                 "i": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "5"
                 },
                 "sum": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "72"
                 }
@@ -164,7 +162,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run)\r\na=3, i=5, sum=72",
+    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run, this=LineProbesWithRevertTest)\r\na=3, i=5, sum=72",
     "service": "Probes"
   },
   {
@@ -179,25 +177,24 @@
             "56": {
               "arguments": {
                 "callerName": {
-                  "fields": null,
                   "type": "String",
                   "value": "Run"
+                },
+                "this": {
+                  "type": "LineProbesWithRevertTest",
+                  "value": "LineProbesWithRevertTest"
                 }
               },
-              "fields": null,
               "locals": {
                 "a": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "4"
                 },
                 "i": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "5"
                 },
                 "sum": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "72"
                 }
@@ -248,7 +245,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run)\r\na=4, i=5, sum=72",
+    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run, this=LineProbesWithRevertTest)\r\na=4, i=5, sum=72",
     "service": "Probes"
   },
   {
@@ -263,25 +260,24 @@
             "57": {
               "arguments": {
                 "callerName": {
-                  "fields": null,
                   "type": "String",
                   "value": "Run"
+                },
+                "this": {
+                  "type": "LineProbesWithRevertTest",
+                  "value": "LineProbesWithRevertTest"
                 }
               },
-              "fields": null,
               "locals": {
                 "a": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "5"
                 },
                 "i": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "5"
                 },
                 "sum": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "72"
                 }
@@ -332,7 +328,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run)\r\na=5, i=5, sum=72",
+    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run, this=LineProbesWithRevertTest)\r\na=5, i=5, sum=72",
     "service": "Probes"
   },
   {
@@ -347,25 +343,24 @@
             "58": {
               "arguments": {
                 "callerName": {
-                  "fields": null,
                   "type": "String",
                   "value": "Run"
+                },
+                "this": {
+                  "type": "LineProbesWithRevertTest",
+                  "value": "LineProbesWithRevertTest"
                 }
               },
-              "fields": null,
               "locals": {
                 "a": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "6"
                 },
                 "i": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "5"
                 },
                 "sum": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "72"
                 }
@@ -416,7 +411,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run)\r\na=6, i=5, sum=72",
+    "message": "LineProbesWithRevertTest.MethodToInstrument(callerName=Run, this=LineProbesWithRevertTest)\r\na=6, i=5, sum=72",
     "service": "Probes"
   }
 ]
