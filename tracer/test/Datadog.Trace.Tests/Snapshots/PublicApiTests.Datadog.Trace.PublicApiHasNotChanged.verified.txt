@@ -199,7 +199,6 @@ namespace Datadog.Trace.Ci
         public string? Name { get; }
         public System.DateTimeOffset StartDate { get; }
         public Datadog.Trace.Ci.TestSuite Suite { get; }
-        public static Datadog.Trace.Ci.Test? Current { get; }
         public void Close(Datadog.Trace.Ci.TestStatus status) { }
         public void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration) { }
         public void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration, string? skipReason) { }
@@ -216,11 +215,10 @@ namespace Datadog.Trace.Ci
         public string? Framework { get; }
         public string Name { get; }
         public System.DateTimeOffset StartDate { get; }
-        public static Datadog.Trace.Ci.TestModule? Current { get; }
         public void Close() { }
         public void Close(System.TimeSpan? duration) { }
-        public Datadog.Trace.Ci.TestSuite CreateSuite(string name) { }
-        public Datadog.Trace.Ci.TestSuite CreateSuite(string name, System.DateTimeOffset? startDate) { }
+        public Datadog.Trace.Ci.TestSuite GetOrCreateSuite(string name) { }
+        public Datadog.Trace.Ci.TestSuite GetOrCreateSuite(string name, System.DateTimeOffset? startDate) { }
         public void SetErrorInfo(System.Exception exception) { }
         public void SetErrorInfo(string type, string message, string? callStack) { }
         public void SetTag(string key, double? value) { }
@@ -246,7 +244,6 @@ namespace Datadog.Trace.Ci
         public Datadog.Trace.Ci.TestModule Module { get; }
         public string Name { get; }
         public System.DateTimeOffset StartDate { get; }
-        public static Datadog.Trace.Ci.TestSuite? Current { get; }
         public void Close() { }
         public void Close(System.TimeSpan? duration) { }
         public Datadog.Trace.Ci.Test CreateTest(string name) { }

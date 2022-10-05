@@ -51,7 +51,7 @@ public static class TestClassInfoRunClassInitializeIntegration
         {
             instance.TestCleanupMethod ??= EmptyCleanUpMethodInfo;
             var module = TestModule.Current;
-            var suite = module.CreateSuite(instance.ClassType.FullName);
+            var suite = module.GetOrCreateSuite(instance.ClassType.FullName);
             TestClassInfos.Add(instance.Instance, suite);
             return new CallTargetState(null, suite);
         }

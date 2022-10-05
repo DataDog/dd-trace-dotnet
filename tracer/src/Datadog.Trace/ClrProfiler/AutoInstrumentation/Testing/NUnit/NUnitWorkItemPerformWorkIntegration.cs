@@ -47,7 +47,7 @@ public static class NUnitWorkItemPerformWorkIntegration
                     NUnitIntegration.SetTestModuleTo(item, TestModule.Create(assemblyName, "NUnit", frameworkVersion));
                     break;
                 case "TestFixture" when NUnitIntegration.GetTestModuleFrom(item) is { } module:
-                    NUnitIntegration.SetTestSuiteTo(item, module.CreateSuite(item.FullName));
+                    NUnitIntegration.SetTestSuiteTo(item, module.GetOrCreateSuite(item.FullName));
                     break;
                 case "TestMethod" when NUnitIntegration.ShouldSkip(item):
                     var testMethod = item.Method.MethodInfo;

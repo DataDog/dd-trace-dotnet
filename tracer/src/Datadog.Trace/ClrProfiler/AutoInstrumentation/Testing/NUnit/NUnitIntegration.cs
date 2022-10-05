@@ -124,7 +124,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 return null;
             }
 
-            test.ResetStartDate();
+            test.ResetStartTime();
             return test;
         }
 

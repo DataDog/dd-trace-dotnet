@@ -58,18 +58,9 @@ public sealed class Test
     }
 
     /// <summary>
-    /// Gets the current Test
-    /// </summary>
-    public static Test? Current
-    {
-        get => CurrentTest.Value;
-        internal set => CurrentTest.Value = value;
-    }
-
-    /// <summary>
     /// Gets the test name
     /// </summary>
-    public string? Name => Tags.Name;
+    public string? Name => ((TestSpanTags)_scope.Span.Tags).Name;
 
     /// <summary>
     /// Gets the test start date
@@ -81,7 +72,14 @@ public sealed class Test
     /// </summary>
     public TestSuite Suite { get; }
 
-    private TestSpanTags Tags => (TestSpanTags)_scope.Span.Tags;
+    /// <summary>
+    /// Gets or sets the current Test
+    /// </summary>
+    internal static Test? Current
+    {
+        get => CurrentTest.Value;
+        set => CurrentTest.Value = value;
+    }
 
     /// <summary>
     /// Sets a string tag into the test
@@ -256,7 +254,7 @@ public sealed class Test
         CIVisibility.Log.Debug("######### Test Closed: {name} ({suite} | {module})", Name, Suite.Name, Suite.Module.Name);
     }
 
-    internal void ResetStartDate()
+    internal void ResetStartTime()
     {
         _scope.Span.ResetStartTime();
     }

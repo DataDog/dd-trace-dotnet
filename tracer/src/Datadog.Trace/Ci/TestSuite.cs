@@ -51,15 +51,6 @@ public sealed class TestSuite
     }
 
     /// <summary>
-    /// Gets the current TestSuite
-    /// </summary>
-    public static TestSuite? Current
-    {
-        get => CurrentSuite.Value;
-        internal set => CurrentSuite.Value = value;
-    }
-
-    /// <summary>
     /// Gets the test suite name
     /// </summary>
     public string Name { get; }
@@ -73,6 +64,15 @@ public sealed class TestSuite
     /// Gets the test module for this suite
     /// </summary>
     public TestModule Module { get; }
+
+    /// <summary>
+    /// Gets or sets the current TestSuite
+    /// </summary>
+    internal static TestSuite? Current
+    {
+        get => CurrentSuite.Value;
+        set => CurrentSuite.Value = value;
+    }
 
     internal TestSuiteSpanTags Tags => (TestSuiteSpanTags)_span.Tags;
 
@@ -160,11 +160,7 @@ public sealed class TestSuite
             Tags.Status = TestTags.StatusPass;
         }
 
-        // Finish if agentless is enabled
-        if (CIVisibility.Settings.Agentless)
-        {
-            span.Finish(duration.Value);
-        }
+        span.Finish(duration.Value);
 
         Current = null;
         Module.RemoveSuite(Name);

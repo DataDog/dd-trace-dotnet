@@ -67,7 +67,7 @@ internal static class MsTestIntegration
             // Set test method
             test.SetTestMethodInfo(testMethod);
 
-            test.ResetStartDate();
+            test.ResetStartTime();
             return test;
         }
 

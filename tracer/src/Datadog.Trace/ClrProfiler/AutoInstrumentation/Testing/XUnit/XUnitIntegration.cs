@@ -80,7 +80,7 @@ internal static class XUnitIntegration
             return null;
         }
 
-        test.ResetStartDate();
+        test.ResetStartTime();
         return test;
     }
 

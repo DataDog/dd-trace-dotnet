@@ -106,15 +106,6 @@ public sealed class TestModule
     }
 
     /// <summary>
-    /// Gets the current TestModule
-    /// </summary>
-    public static TestModule? Current
-    {
-        get => CurrentModule.Value;
-        internal set => CurrentModule.Value = value;
-    }
-
-    /// <summary>
     /// Gets the module name
     /// </summary>
     public string Name { get; }
@@ -128,6 +119,15 @@ public sealed class TestModule
     /// Gets the test framework
     /// </summary>
     public string? Framework { get; }
+
+    /// <summary>
+    /// Gets or sets the current TestModule
+    /// </summary>
+    internal static TestModule? Current
+    {
+        get => CurrentModule.Value;
+        set => CurrentModule.Value = value;
+    }
 
     internal TestModuleSpanTags Tags => (TestModuleSpanTags)_span.Tags;
 
@@ -148,7 +148,7 @@ public sealed class TestModule
     /// <param name="framework">Testing framework name</param>
     /// <param name="frameworkVersion">Testing framework version</param>
     /// <returns>New test session instance</returns>
-    public static TestModule Create(string name, string? framework, string? frameworkVersion)
+    public static TestModule Create(string name, string framework, string frameworkVersion)
     {
         return new TestModule(name, framework, frameworkVersion, null);
     }
@@ -254,11 +254,7 @@ public sealed class TestModule
         // Update status
         Tags.Status ??= TestTags.StatusPass;
 
-        // Finish if agentless is enabled
-        if (CIVisibility.Settings.Agentless)
-        {
-            span.Finish(duration.Value);
-        }
+        span.Finish(duration.Value);
 
         Current = null;
         CIVisibility.Log.Debug("### Test Module Closed: {name}", Name);
@@ -270,9 +266,9 @@ public sealed class TestModule
     /// </summary>
     /// <param name="name">Name of the test suite</param>
     /// <returns>Test suite instance</returns>
-    public TestSuite CreateSuite(string name)
+    public TestSuite GetOrCreateSuite(string name)
     {
-        return CreateSuite(name, null);
+        return GetOrCreateSuite(name, null);
     }
 
     /// <summary>
@@ -281,15 +277,19 @@ public sealed class TestModule
     /// <param name="name">Name of the test suite</param>
     /// <param name="startDate">Test suite start date</param>
     /// <returns>Test suite instance</returns>
-    public TestSuite CreateSuite(string name, DateTimeOffset? startDate)
+    public TestSuite GetOrCreateSuite(string name, DateTimeOffset? startDate)
     {
-        var suite = new TestSuite(this, name, startDate);
         lock (_suites)
         {
-            _suites[name] = suite;
-        }
+            if (_suites.TryGetValue(name, out var suite))
+            {
+                return suite;
+            }
 
-        return suite;
+            suite = new TestSuite(this, name, startDate);
+            _suites[name] = suite;
+            return suite;
+        }
     }
 
     /// <summary>
