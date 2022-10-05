@@ -224,8 +224,8 @@ namespace Datadog.Trace.Ci
         public void SetTag(string key, double? value) { }
         public void SetTag(string key, string? value) { }
         public static Datadog.Trace.Ci.TestModule Create(string name) { }
-        public static Datadog.Trace.Ci.TestModule Create(string name, string? framework, string? frameworkVersion) { }
-        public static Datadog.Trace.Ci.TestModule Create(string name, string? framework, string? frameworkVersion, System.DateTimeOffset? startDate) { }
+        public static Datadog.Trace.Ci.TestModule Create(string name, string framework, string frameworkVersion) { }
+        public static Datadog.Trace.Ci.TestModule Create(string name, string framework, string frameworkVersion, System.DateTimeOffset startDate) { }
     }
     public class TestParameters
     {
@@ -247,7 +247,7 @@ namespace Datadog.Trace.Ci
         public void Close() { }
         public void Close(System.TimeSpan? duration) { }
         public Datadog.Trace.Ci.Test CreateTest(string name) { }
-        public Datadog.Trace.Ci.Test CreateTest(string name, System.DateTimeOffset? startDate) { }
+        public Datadog.Trace.Ci.Test CreateTest(string name, System.DateTimeOffset startDate) { }
         public void SetErrorInfo(System.Exception exception) { }
         public void SetErrorInfo(string type, string message, string? callStack) { }
         public void SetTag(string key, double? value) { }

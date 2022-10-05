@@ -183,7 +183,7 @@ public sealed class TestSuite
     /// <param name="name">Name of the test</param>
     /// <param name="startDate">Test start date</param>
     /// <returns>Test instance</returns>
-    public Test CreateTest(string name, DateTimeOffset? startDate)
+    public Test CreateTest(string name, DateTimeOffset startDate)
     {
         return new Test(this, name, startDate);
     }

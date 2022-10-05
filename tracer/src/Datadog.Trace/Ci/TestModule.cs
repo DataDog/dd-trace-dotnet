@@ -161,7 +161,7 @@ public sealed class TestModule
     /// <param name="frameworkVersion">Testing framework version</param>
     /// <param name="startDate">Test session start date</param>
     /// <returns>New test session instance</returns>
-    public static TestModule Create(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
+    public static TestModule Create(string name, string framework, string frameworkVersion, DateTimeOffset startDate)
     {
         return new TestModule(name, framework, frameworkVersion, startDate);
     }
