@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 namespace Datadog.Trace.Sampling
 {
     /// <summary>
@@ -11,10 +13,11 @@ namespace Datadog.Trace.Sampling
     internal interface ISpanSampler
     {
         /// <summary>
-        ///     Makes a <see cref="SamplingDecision"/> for the given <paramref name="span"/>.
+        ///     Makes a sampling decision on the given <paramref name="span"/>.
         /// </summary>
-        /// <param name="span">The <see cref="Span"/> to sample.</param>
-        SamplingDecision MakeSamplingDecision(Span span);
+        /// <param name="span">The <see cref="Span"/> to make the sampling decision on.</param>
+        /// <returns>A <see cref="ISpanSamplingRule"/> of the first rule that sampled the <paramref name="span"/>; otherwise, <see langword="null"/> when not sampled.</returns>
+        ISpanSamplingRule? MakeSamplingDecision(Span span);
 
         /// <summary>
         ///     Tags the <paramref name="span"/> with the necessary tags for single span ingestion.

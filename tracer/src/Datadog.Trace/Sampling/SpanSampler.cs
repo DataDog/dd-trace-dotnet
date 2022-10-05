@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -21,11 +22,16 @@ internal class SpanSampler : ISpanSampler
 
     public SpanSampler(IEnumerable<ISpanSamplingRule> rules)
     {
-        _rules = rules.ToList() ?? throw new ArgumentNullException(nameof(rules));
+        if (rules is null)
+        {
+            throw new ArgumentNullException(nameof(rules));
+        }
+
+        _rules = rules.ToList();
     }
 
     /// <inheritdoc/>
-    public SamplingDecision MakeSamplingDecision(Span span)
+    public ISpanSamplingRule? MakeSamplingDecision(Span span)
     {
         if (_rules.Count > 0)
         {
@@ -33,13 +39,12 @@ internal class SpanSampler : ISpanSampler
             {
                 if (rule.ShouldKeep(span))
                 {
-                    AddTags(span, rule); // TODO maybe this shouldn't be here
-                    return new SamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.SpanSamplingRule);
+                    return rule;
                 }
             }
         }
 
-        return SamplingDecision.Default;
+        return null;
     }
 
     /// <inheritdoc/>
