@@ -18,9 +18,9 @@ public class LogEntryWatcher : IDisposable
     private readonly FileSystemWatcher _fileWatcher;
     private StreamReader _reader;
 
-    public LogEntryWatcher(string logFilePattern)
+    public LogEntryWatcher(string logFilePattern, string logDirectory = null)
     {
-        var logPath = DatadogLogging.GetLogDirectory();
+        var logPath = logDirectory ?? DatadogLogging.GetLogDirectory();
         _fileWatcher = new FileSystemWatcher { Path = logPath, Filter = logFilePattern, EnableRaisingEvents = true };
 
         var dir = new DirectoryInfo(logPath);
@@ -75,7 +75,7 @@ public class LogEntryWatcher : IDisposable
 
         if (i != logEntries.Length)
         {
-            throw new InvalidOperationException(_reader == null ? $"Log file was not found for path: {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}" : $"Log entry was not found {logEntries[i]} in {_fileWatcher.Path} with filter {_fileWatcher.Filter}.");
+            throw new InvalidOperationException(_reader == null ? $"Log file was not found for path: {_fileWatcher.Path} with file pattern {_fileWatcher.Filter}" : $"Log entry was not found {logEntries[i]} in {_fileWatcher.Path} with filter {_fileWatcher.Filter}. Cancellation token reached: {cancellationSource.IsCancellationRequested}");
         }
     }
 

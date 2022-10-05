@@ -9,12 +9,14 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.RcmModels.AsmData;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.Tagging;
@@ -27,10 +29,15 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
     public class AspNetCore5AsmData : RcmBase
     {
+        private readonly string _logDirectory;
+
         public AspNetCore5AsmData(ITestOutputHelper outputHelper)
             : base(outputHelper, testName: nameof(AspNetCore5AsmData))
         {
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
+            var logPath = DatadogLogging.GetLogDirectory();
+            _logDirectory = Path.Combine(logPath, $"{nameof(AspNetCore5AsmData)}Logs");
+            SetEnvironmentVariable(ConfigurationKeys.LogDirectory, _logDirectory);
         }
 
         [SkippableTheory]
@@ -39,8 +46,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         [Trait("RunOnWindows", "True")]
         public async Task TestBlockedRequestIp(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
         {
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*");
             var agent = await RunOnSelfHosted(enableSecurity);
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", _logDirectory);
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             // we want to see the ip here
             var scrubbers = VerifyHelper.SpanScrubbers.Where(s => s.RegexPattern.ToString() != @"http.client_ip: (.)*(?=,)");
