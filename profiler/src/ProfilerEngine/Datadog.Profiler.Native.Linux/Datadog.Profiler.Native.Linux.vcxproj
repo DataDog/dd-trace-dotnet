@@ -115,12 +115,14 @@
     <ClCompile Include="LinuxStackFramesCollector.cpp" />
     <ClCompile Include="LinuxThreadsCpuManager.cpp" />
     <ClCompile Include="OsSpecificApi.cpp" />
+    <ClCompile Include="ProfilerSignalManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="prepare_loader_for_linking.sh" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LinuxStackFramesCollector.h" />
+    <ClInclude Include="ProfilerSignalManager.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
