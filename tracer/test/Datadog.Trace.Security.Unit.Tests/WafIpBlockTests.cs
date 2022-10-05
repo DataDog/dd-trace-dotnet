@@ -158,7 +158,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestMergeWithWaf()
         {
             var js = JsonSerializer.Create();
-            using var waf = Waf.Create(string.Empty, string.Empty, "ruleset-withblockips.json");
+            using var waf = Waf.Create(string.Empty, string.Empty);
             using var sr = new StreamReader("rule-data1.json");
             using var sr2 = new StreamReader("rule-data2.json");
             using var jsonTextReader = new JsonTextReader(sr);
