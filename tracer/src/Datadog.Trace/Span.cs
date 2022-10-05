@@ -166,7 +166,7 @@ namespace Datadog.Trace
             switch (key)
             {
                 case Trace.Tags.Origin:
-                    Context.Origin = value;
+                    Context.TraceContext.Origin = value;
                     break;
                 case Trace.Tags.SamplingPriority:
                     // allow setting the sampling priority via a tag
@@ -322,9 +322,9 @@ namespace Datadog.Trace
             switch (key)
             {
                 case Trace.Tags.SamplingPriority:
-                    return Context.TraceContext?.SamplingPriority.ToString();
+                    return Context.TraceContext?.SamplingPriority?.ToString();
                 case Trace.Tags.Origin:
-                    return Context.Origin;
+                    return Context.TraceContext?.Origin;
                 default:
                     return Tags.GetTag(key);
             }

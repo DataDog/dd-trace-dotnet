@@ -116,9 +116,9 @@ namespace Datadog.Trace
             SpanId = spanId ?? SpanIdGenerator.CreateNew();
             Parent = parent;
             TraceContext = traceContext;
+
             if (parent is SpanContext spanContext)
             {
-                Origin = spanContext.Origin;
                 RawTraceId = spanContext.RawTraceId ?? rawTraceId;
                 PathwayContext = spanContext.PathwayContext;
             }
