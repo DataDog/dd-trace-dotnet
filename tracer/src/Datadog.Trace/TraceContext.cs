@@ -55,6 +55,8 @@ namespace Datadog.Trace
             get => _samplingPriority;
         }
 
+        public string Origin { get; set; }
+
         /// <summary>
         /// Gets the iast context.
         /// </summary>
@@ -101,6 +103,11 @@ namespace Datadog.Trace
                             SetSamplingPriority(samplingDecision);
                         }
                     }
+
+                    // if the trace's origin is not set and this span has an origin
+                    // (probably propagated from an upstream service),
+                    // copy the span's origin into the trace
+                    Origin ??= span.Context.Origin;
                 }
 
                 _openSpans++;
