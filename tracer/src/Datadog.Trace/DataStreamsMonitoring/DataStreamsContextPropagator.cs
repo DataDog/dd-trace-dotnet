@@ -15,7 +15,7 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 /// </summary>
 internal class DataStreamsContextPropagator
 {
-    private const string PropagationKey = "dd-pathway-ctx";
+    internal const string PropagationKey = "dd-pathway-ctx";
 
     public static DataStreamsContextPropagator Instance { get; } = new();
 

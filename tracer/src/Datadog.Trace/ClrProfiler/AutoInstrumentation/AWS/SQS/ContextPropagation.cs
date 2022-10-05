@@ -7,6 +7,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
@@ -44,7 +45,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 // Make sure we do not propagate any other datadog header here in the rare cases where users would have added them manually
                 foreach (var attribute in carrier.MessageAttributes.Keys)
                 {
-                    if (attribute is string attributeName && attributeName.StartsWith("x-datadog", StringComparison.OrdinalIgnoreCase))
+                    if (attribute is string attributeName && 
+                        (attributeName.StartsWith("x-datadog", StringComparison.OrdinalIgnoreCase)
+                            || attributeName.Equals(DataStreamsContextPropagator.PropagationKey, StringComparison.OrdinalIgnoreCase)))
                     {
 #if !NETCOREAPP2_1_OR_GREATER
                         attributesToRemove ??= new List<string>();
