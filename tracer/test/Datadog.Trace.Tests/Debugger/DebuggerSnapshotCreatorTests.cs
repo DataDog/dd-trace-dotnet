@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests.Debugger
         [SkippableFact]
         public async Task Limits_LargeDictionary()
         {
-            if (FrameworkDescription.Instance.OSPlatform == OSPlatformName.MacOS 
+            if (FrameworkDescription.Instance.OSPlatform == OSPlatformName.MacOS
                 || FrameworkDescription.Instance.ProcessArchitecture == ProcessArchitecture.Arm64)
             {
                 throw new SkipException("This test fails only on MacOS and Arm64, but it's not clear why. It's not a high priority to investigate, so we're skipping it for now.");
