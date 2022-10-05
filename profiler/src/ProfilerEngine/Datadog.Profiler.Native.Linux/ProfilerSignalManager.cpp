@@ -22,8 +22,11 @@ ProfilerSignalManager::ProfilerSignalManager() noexcept :
 
 ProfilerSignalManager::~ProfilerSignalManager() noexcept
 {
-    _isHandlerInPlace = false;
-    sigaction(_signalToSend, &_previousAction, nullptr);
+    if (_isHandlerInPlace)
+    {
+        _isHandlerInPlace = false;
+        sigaction(_signalToSend, &_previousAction, nullptr);
+    }
     _handler = nullptr;
 }
 
@@ -51,9 +54,12 @@ bool ProfilerSignalManager::RegisterHandler(HandlerFn_t handler)
         return current == handler;
     }
 
-    _handler = handler;
-
     _isHandlerInPlace = SetupSignalHandler();
+
+    if (_isHandlerInPlace)
+    {
+        _handler = handler;
+    }
 
     return _isHandlerInPlace;
 }
@@ -88,9 +94,9 @@ bool ProfilerSignalManager::CheckSignalHandler()
 
     Log::Debug("Profiler signal handler handler has been replaced. Restoring it.");
 
+    // restore profiler handler
     _isHandlerInPlace = SetupSignalHandler();
 
-    // restore profiler handler
     if (!_isHandlerInPlace)
     {
         Log::Warn("Fail to restore profiler signal handler.");
@@ -152,6 +158,10 @@ bool ProfilerSignalManager::CallCustomHandler(int32_t signal, siginfo_t* info, v
 
 void ProfilerSignalManager::CallOrignalHandler(int32_t signal, siginfo_t* info, void* context)
 {
+    // This thread local variable helps in detecting the case where the profiler handler and
+    // the previous handler are referencing/calling each other.
+    // As it's synchchronous, we can check if we already executed the previous handler and
+    // stop if it's the case.
     static thread_local bool isExecuting = false;
 
     if (isExecuting)
@@ -163,14 +173,12 @@ void ProfilerSignalManager::CallOrignalHandler(int32_t signal, siginfo_t* info, 
     {
         if ((_previousAction.sa_flags & SA_SIGINFO) == SA_SIGINFO && _previousAction.sa_sigaction != nullptr)
         {
-            assert(_previousAction.sa_sigaction != nullptr);
             _previousAction.sa_sigaction(signal, info, context);
         }
         else
         {
             if (_previousAction.sa_handler != SIG_DFL && _previousAction.sa_handler != SIG_IGN)
             {
-                assert(_previousAction.sa_handler != nullptr);
                 _previousAction.sa_handler(signal);
             }
         }
