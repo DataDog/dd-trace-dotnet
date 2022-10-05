@@ -121,9 +121,6 @@ int dladdr(const void* addr_arg, Dl_info* info)
     return result;
 }
 
-/* Function pointers to hold the value of the glibc functions */
-static int (*__real___pthread_create)(pthread_t* restrict res, const pthread_attr_t* restrict attrp, void* (*entry)(void*), void* restrict arg) = NULL;
-
 __thread int _dd_in_pthread_create = 0;
 
 // this function is called in by the profiler
@@ -131,6 +128,11 @@ int dd_IsInPthreadCreate()
 {
     return _dd_in_pthread_create;
 }
+
+#ifdef DD_ALPINE
+
+/* Function pointers to hold the value of the glibc functions */
+static int (*__real___pthread_create)(pthread_t* restrict res, const pthread_attr_t* restrict attrp, void* (*entry)(void*), void* restrict arg) = NULL;
 
 int __pthread_create(pthread_t* restrict res, const pthread_attr_t* restrict attrp, void* (*entry)(void*), void* restrict arg)
 {
@@ -259,3 +261,5 @@ pid_t fork()
 
     return result;
 }
+
+#endif
