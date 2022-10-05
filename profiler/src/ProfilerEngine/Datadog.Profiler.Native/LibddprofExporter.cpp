@@ -87,7 +87,12 @@ LibddprofExporter::~LibddprofExporter()
 
 ddog_ProfileExporter* LibddprofExporter::CreateExporter(const ddog_Vec_tag* tags, ddog_Endpoint endpoint)
 {
-    auto result = ddog_ProfileExporter_new(FfiHelper::StringToCharSlice(LanguageFamily), tags, endpoint);
+    auto result = ddog_ProfileExporter_new(
+        FfiHelper::StringToCharSlice(std::string("dd-profiling-dotnet")),
+        FfiHelper::StringToCharSlice(std::string(PROFILER_VERSION)),
+        FfiHelper::StringToCharSlice(LanguageFamily),
+        tags,
+        endpoint);
     if (result.tag == DDOG_NEW_PROFILE_EXPORTER_RESULT_OK)
     {
         return result.ok;
