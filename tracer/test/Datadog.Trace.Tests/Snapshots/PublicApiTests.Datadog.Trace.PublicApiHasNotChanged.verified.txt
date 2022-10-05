@@ -197,7 +197,7 @@ namespace Datadog.Trace.Ci
     public sealed class Test
     {
         public string? Name { get; }
-        public System.DateTimeOffset StartDate { get; }
+        public System.DateTimeOffset StartTime { get; }
         public Datadog.Trace.Ci.TestSuite Suite { get; }
         public void Close(Datadog.Trace.Ci.TestStatus status) { }
         public void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration) { }
@@ -214,7 +214,7 @@ namespace Datadog.Trace.Ci
     {
         public string? Framework { get; }
         public string Name { get; }
-        public System.DateTimeOffset StartDate { get; }
+        public System.DateTimeOffset StartTime { get; }
         public void Close() { }
         public void Close(System.TimeSpan? duration) { }
         public Datadog.Trace.Ci.TestSuite GetOrCreateSuite(string name) { }
@@ -243,7 +243,7 @@ namespace Datadog.Trace.Ci
     {
         public Datadog.Trace.Ci.TestModule Module { get; }
         public string Name { get; }
-        public System.DateTimeOffset StartDate { get; }
+        public System.DateTimeOffset StartTime { get; }
         public void Close() { }
         public void Close(System.TimeSpan? duration) { }
         public Datadog.Trace.Ci.Test CreateTest(string name) { }
