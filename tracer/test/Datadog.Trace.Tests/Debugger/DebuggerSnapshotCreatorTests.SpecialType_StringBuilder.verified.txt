@@ -1,0 +1,6 @@
+﻿{
+  local0: {
+    type: StringBuilder,
+    value: hi from stringbuilder
+  }
+}

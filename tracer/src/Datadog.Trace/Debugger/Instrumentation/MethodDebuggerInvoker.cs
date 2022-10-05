@@ -46,13 +46,13 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return CreateInvalidatedDebuggerState();
             }
 
-            var state = new MethodDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex);
+            var state = new MethodDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, instance);
             state.SnapshotCreator.StartDebugger();
 
             state.SnapshotCreator.StartSnapshot();
             state.SnapshotCreator.StartCaptures();
             state.SnapshotCreator.StartEntry();
-            state.SnapshotCreator.CaptureInstance(instance, state.MethodMetadataInfo.DeclaringType);
+            state.SnapshotCreator.CaptureStaticFields(state.MethodMetadataInfo.DeclaringType);
             return state;
         }
 
@@ -75,8 +75,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
+            state.SnapshotCreator.CaptureInstance(state.InvocationTarget, state.MethodMetadataInfo.DeclaringType);
+
             var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
-                                       state.MethodMetadataInfo.ParameterNames.Length > 0;
+                                       state.MethodMetadataInfo.ParameterNames.Length > 0 ||
+                                       !state.MethodMetadataInfo.Method.IsStatic;
             state.HasLocalsOrReturnValue = false;
             state.SnapshotCreator.EndEntry(hasArgumentsOrLocals);
         }
@@ -97,7 +100,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             var paramName = state.MethodMetadataInfo.ParameterNames[index];
-            state.SnapshotCreator.CaptureArgument(arg, paramName, index == 0, state.HasLocalsOrReturnValue);
+            state.SnapshotCreator.CaptureArgument(arg, paramName);
             state.HasLocalsOrReturnValue = false;
         }
 
@@ -122,7 +125,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
-            state.SnapshotCreator.CaptureLocal(local, localName, index == 0 && !state.HasLocalsOrReturnValue);
+            state.SnapshotCreator.CaptureLocal(local, localName);
             state.HasLocalsOrReturnValue = true;
         }
 
@@ -167,7 +170,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             state.SnapshotCreator.StartReturn();
-            state.SnapshotCreator.CaptureInstance(instance, state.MethodMetadataInfo.DeclaringType);
+            state.SnapshotCreator.CaptureStaticFields(state.MethodMetadataInfo.DeclaringType);
             if (exception != null)
             {
                 state.SnapshotCreator.CaptureException(exception);
@@ -195,14 +198,14 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             state.SnapshotCreator.StartReturn();
-            state.SnapshotCreator.CaptureInstance(instance, state.MethodMetadataInfo.DeclaringType);
+            state.SnapshotCreator.CaptureStaticFields(state.MethodMetadataInfo.DeclaringType);
             if (exception != null)
             {
                 state.SnapshotCreator.CaptureException(exception);
             }
             else
             {
-                state.SnapshotCreator.CaptureLocal(returnValue, "@return", true);
+                state.SnapshotCreator.CaptureLocal(returnValue, "@return");
                 state.HasLocalsOrReturnValue = true;
             }
 
@@ -221,8 +224,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return;
             }
 
+            state.SnapshotCreator.CaptureInstance(state.InvocationTarget, state.MethodMetadataInfo.DeclaringType);
+
             var hasArgumentsOrLocals = state.HasLocalsOrReturnValue ||
-                                       state.MethodMetadataInfo.ParameterNames.Length > 0;
+                                       state.MethodMetadataInfo.ParameterNames.Length > 0 ||
+                                       !state.MethodMetadataInfo.Method.IsStatic;
             state.SnapshotCreator.MethodProbeEndReturn(hasArgumentsOrLocals);
             FinalizeSnapshot(ref state);
         }

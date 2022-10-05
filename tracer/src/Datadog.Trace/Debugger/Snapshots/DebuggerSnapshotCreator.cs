@@ -6,6 +6,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.Util;
@@ -138,19 +139,29 @@ namespace Datadog.Trace.Debugger.Snapshots
 
         internal void CaptureInstance<TInstance>(TInstance instance, Type type)
         {
-            DebuggerSnapshotSerializer.SerializeObjectFields(instance, type, _jsonWriter);
+            if (instance == null)
+            {
+                return;
+            }
+
+            CaptureArgument(instance, "this", type);
         }
 
-        internal void CaptureArgument<TArg>(TArg argument, string name, bool isFirstArgument, bool shouldEndLocals, Type argType = null)
+        public void CaptureStaticFields(Type declaringType)
         {
-            StartLocalsOrArgs(isFirstArgument, shouldEndLocals, "arguments");
+            DebuggerSnapshotSerializer.SerializeStaticFields(declaringType, _jsonWriter);
+        }
+
+        internal void CaptureArgument<TArg>(TArg argument, string name, Type argType = null)
+        {
+            StartLocalsOrArgsIfNeeded("arguments");
             // in case TArg is object and we have the concrete type, use it
             DebuggerSnapshotSerializer.Serialize(argument, argType ?? typeof(TArg), name, _jsonWriter);
         }
 
-        internal void CaptureLocal<TLocal>(TLocal local, string name, bool isFirstLocal, Type localType = null)
+        internal void CaptureLocal<TLocal>(TLocal local, string name, Type localType = null)
         {
-            StartLocalsOrArgs(isFirstLocal, false, "locals");
+            StartLocalsOrArgsIfNeeded("locals");
             // in case TLocal is object and we have the concrete type, use it
             DebuggerSnapshotSerializer.Serialize(local, localType ?? typeof(TLocal), name, _jsonWriter);
         }
@@ -176,7 +187,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             .EndSnapshot(startTime)
             .EndDebugger()
             .AddLoggerInfo(methodName, typeFullName, probeFilePath)
-            .AddGeneralInfo(LiveDebugger.Instance.ServiceName, null, null) // internal ticket ID 929
+            .AddGeneralInfo(LiveDebugger.Instance?.ServiceName, null, null) // internal ticket ID 929
             .AddMessage()
             .Complete();
         }
@@ -331,18 +342,24 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        private void StartLocalsOrArgs(bool isFirstLocalOrArg, bool shouldEndObject, string name)
+        private void StartLocalsOrArgsIfNeeded(string newParent)
         {
-            if (shouldEndObject)
+            var currentParent = _jsonWriter.Path.Split('.').LastOrDefault(p => p is "locals" or "arguments");
+            if (currentParent == newParent)
             {
+                // We're already there!
+                return;
+            }
+
+            // "locals" should always come after "arguments"
+            if (currentParent == "locals" && newParent == "arguments")
+            {
+                // We need to close the previous node first.
                 _jsonWriter.WriteEndObject();
             }
 
-            if (isFirstLocalOrArg)
-            {
-                _jsonWriter.WritePropertyName(name);
-                _jsonWriter.WriteStartObject();
-            }
+            _jsonWriter.WritePropertyName(newParent);
+            _jsonWriter.WriteStartObject();
         }
 
         internal string GetSnapshotJson()

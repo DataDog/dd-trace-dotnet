@@ -10,59 +10,56 @@
           "entry": {
             "arguments": {
               "lastName": {
-                "fields": null,
                 "type": "String",
                 "value": "First"
-              }
-            },
-            "fields": {
-              "FirstName": {
-                "fields": {
-                  "IsValueCreated": {
-                    "fields": null,
-                    "type": "Boolean",
-                    "value": "True"
+              },
+              "this": {
+                "FirstName": {
+                  "fields": {
+                    "IsValueCreated": {
+                      "type": "Boolean",
+                      "value": "True"
+                    },
+                    "Value": {
+                      "type": "String",
+                      "value": "First"
+                    }
                   },
-                  "Value": {
-                    "fields": null,
-                    "type": "String",
-                    "value": "First"
-                  }
+                  "type": "Lazy`1",
+                  "value": "Lazy`1"
                 },
-                "type": "Lazy`1",
-                "value": "Lazy`1"
+                "type": "HasFieldLazyValueInitialized",
+                "value": "HasFieldLazyValueInitialized"
               }
             }
           },
           "return": {
             "arguments": {
               "lastName": {
-                "fields": null,
                 "type": "String",
                 "value": "First"
-              }
-            },
-            "fields": {
-              "FirstName": {
-                "fields": {
-                  "IsValueCreated": {
-                    "fields": null,
-                    "type": "Boolean",
-                    "value": "True"
+              },
+              "this": {
+                "FirstName": {
+                  "fields": {
+                    "IsValueCreated": {
+                      "type": "Boolean",
+                      "value": "True"
+                    },
+                    "Value": {
+                      "type": "String",
+                      "value": "First"
+                    }
                   },
-                  "Value": {
-                    "fields": null,
-                    "type": "String",
-                    "value": "First"
-                  }
+                  "type": "Lazy`1",
+                  "value": "Lazy`1"
                 },
-                "type": "Lazy`1",
-                "value": "Lazy`1"
+                "type": "HasFieldLazyValueInitialized",
+                "value": "HasFieldLazyValueInitialized"
               }
             },
             "locals": {
               "@return": {
-                "fields": null,
                 "type": "String",
                 "value": "First"
               }
@@ -110,7 +107,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "HasFieldLazyValueInitialized.Method(lastName=First): First\r\n@return=First",
+    "message": "HasFieldLazyValueInitialized.Method(lastName=First, this=HasFieldLazyValueInitialized): First\r\n@return=First",
     "service": "Probes"
   }
 ]
