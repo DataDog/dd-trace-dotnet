@@ -30,7 +30,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestOk()
         {
             var js = JsonSerializer.Create();
-            using var waf = Waf.Create(string.Empty, string.Empty, "ruleset-withblockips.json");
+            using var waf = Waf.Create(string.Empty, string.Empty);
             using var sr = new StreamReader("rule-data1.json");
             using var jsonTextReader = new JsonTextReader(sr);
             var rulesData = js.Deserialize<RuleData[]>(jsonTextReader);
