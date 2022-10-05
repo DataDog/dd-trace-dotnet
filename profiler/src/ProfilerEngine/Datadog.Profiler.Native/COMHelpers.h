@@ -10,6 +10,10 @@
         HRESULT hr = x;                                                                                       \
         if (FAILED(hr))                                                                                       \
         {                                                                                                     \
+            static bool ddAlreadyLogged = false;                                                              \
+            if (ddAlreadyLogged)                                                                              \
+                return;                                                                                       \
+            ddAlreadyLogged = true;                                                                           \
             Log::Warn("Profiler call failed with result ", HResultConverter::ToStringWithCode(hr), ": ", #x); \
             return;                                                                                           \
         }                                                                                                     \
@@ -20,6 +24,10 @@
         HRESULT hr = x;                                                                                       \
         if (FAILED(hr))                                                                                       \
         {                                                                                                     \
+            static bool ddAlreadyLogged = false;                                                              \
+            if (ddAlreadyLogged)                                                                              \
+                return false;                                                                                 \
+            ddAlreadyLogged = true;                                                                           \
             Log::Warn("Profiler call failed with result ", HResultConverter::ToStringWithCode(hr), ": ", #x); \
             return false;                                                                                     \
         }                                                                                                     \
