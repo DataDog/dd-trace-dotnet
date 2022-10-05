@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 // Make sure we do not propagate any other datadog header here in the rare cases where users would have added them manually
                 foreach (var attribute in carrier.MessageAttributes.Keys)
                 {
-                    if (attribute is string attributeName && 
+                    if (attribute is string attributeName &&
                         (attributeName.StartsWith("x-datadog", StringComparison.OrdinalIgnoreCase)
                             || attributeName.Equals(DataStreamsContextPropagator.PropagationKey, StringComparison.OrdinalIgnoreCase)))
                     {
