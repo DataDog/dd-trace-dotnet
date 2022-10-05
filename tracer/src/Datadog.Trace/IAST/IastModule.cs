@@ -22,6 +22,16 @@ namespace Datadog.Trace.Iast
         {
         }
 
+        public static Scope? OnCipherAlgorithm(string? algorithm, IntegrationId integrationId, Datadog.Trace.Iast.Iast iast)
+        {
+            if (algorithm == null || !InvalidHashAlgorithm(algorithm, iast))
+            {
+                return null;
+            }
+
+            return GetScope(algorithm, integrationId);
+        }
+
         public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, Datadog.Trace.Iast.Iast iast)
         {
             if (algorithm == null || !InvalidHashAlgorithm(algorithm, iast))
