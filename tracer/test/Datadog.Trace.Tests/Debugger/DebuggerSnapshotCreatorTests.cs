@@ -30,9 +30,9 @@ namespace Datadog.Trace.Tests.Debugger
         }
 
         [SkippableFact]
-        public async Task Limits_LargeDictionary()
+        public void Limits_LargeDictionary()
         {
-            throw new SkipException("This test fails only on MacOS and Arm64, but it's not clear why. It's not a high priority to investigate, so we're skipping it for now.");
+            throw new SkipException("This test fails sometimes, but it's not clear why. It's not a high priority to investigate, so we're skipping it for now.");
 
             // await ValidateSingleValue(Enumerable.Range(1, 2000).ToDictionary(k => k.ToString(), k => k));
         }
