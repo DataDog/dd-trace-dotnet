@@ -33,7 +33,7 @@ internal class SpanSampler : ISpanSampler
             {
                 if (rule.ShouldKeep(span))
                 {
-                    Tag(span, rule); // TODO maybe this shouldn't be here
+                    AddTags(span, rule); // TODO maybe this shouldn't be here
                     return new SamplingDecision(SamplingPriorityValues.UserKeep, SamplingMechanism.SpanSamplingRule);
                 }
             }
@@ -43,7 +43,7 @@ internal class SpanSampler : ISpanSampler
     }
 
     /// <inheritdoc/>
-    public void Tag(Span span, ISpanSamplingRule rule)
+    public void AddTags(Span span, ISpanSamplingRule rule)
     {
         // TODO do we want to tag here?
         // TODO maybe do a TryAdd? is SetTag safe?

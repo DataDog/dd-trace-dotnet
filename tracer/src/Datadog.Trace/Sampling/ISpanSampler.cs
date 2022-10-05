@@ -21,6 +21,6 @@ namespace Datadog.Trace.Sampling
         /// </summary>
         /// <param name="span">The <see cref="Span"/> to tag.</param>
         /// <param name="rule">The <see cref="ISpanSamplingRule"/> that contains the tag information.</param>
-        void Tag(Span span, ISpanSamplingRule rule);
+        void AddTags(Span span, ISpanSamplingRule rule);
     }
 }
