@@ -10,37 +10,38 @@
           "entry": {
             "arguments": {
               "callerName": {
-                "fields": null,
                 "type": "String",
                 "value": "Run"
+              },
+              "this": {
+                "type": "SimpleTypeNameTest",
+                "value": "SimpleTypeNameTest"
               }
-            },
-            "fields": null
+            }
           },
           "return": {
             "arguments": {
               "callerName": {
-                "fields": null,
                 "type": "String",
                 "value": "Run"
+              },
+              "this": {
+                "type": "SimpleTypeNameTest",
+                "value": "SimpleTypeNameTest"
               }
             },
-            "fields": null,
             "locals": {
               "arr": {
-                "Collection": [
+                "elements": [
                   {
-                    "fields": null,
                     "type": "String",
                     "value": "Run"
                   },
                   {
-                    "fields": null,
                     "type": "String",
                     "value": "MethodToInstrument"
                   },
                   {
-                    "fields": null,
                     "type": "String",
                     "value": "SimpleTypeNameTest"
                   }
@@ -106,7 +107,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "SimpleTypeNameTest.MethodToInstrument(callerName=Run)\r\narr=count: 3",
+    "message": "SimpleTypeNameTest.MethodToInstrument(callerName=Run, this=SimpleTypeNameTest)\r\narr=count: 3",
     "service": "Probes"
   }
 ]

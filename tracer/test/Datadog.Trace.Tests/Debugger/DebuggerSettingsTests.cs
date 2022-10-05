@@ -24,7 +24,7 @@ namespace Datadog.Trace.Tests.Debugger
                 { ConfigurationKeys.Debugger.MaxDepthToSerialize, value },
             }));
 
-            settings.MaximumDepthOfMembersToCopy.Should().Be(1);
+            settings.MaximumDepthOfMembersToCopy.Should().Be(3);
         }
 
         [Theory]
@@ -39,7 +39,7 @@ namespace Datadog.Trace.Tests.Debugger
                 { ConfigurationKeys.Debugger.MaxTimeToSerialize, value },
             }));
 
-            settings.MaxSerializationTimeInMilliseconds.Should().Be(150);
+            settings.MaxSerializationTimeInMilliseconds.Should().Be(200);
         }
 
         [Theory]
@@ -98,7 +98,7 @@ namespace Datadog.Trace.Tests.Debugger
                 { ConfigurationKeys.Debugger.DiagnosticsInterval, value },
             }));
 
-            settings.DiagnosticsIntervalSeconds.Should().Be(3600);
+            settings.DiagnosticsIntervalSeconds.Should().Be(5);
         }
 
         [Theory]

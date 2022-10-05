@@ -12,13 +12,14 @@
 
 #include "Log.h"
 #include "LinuxStackFramesCollector.h"
+#include "ProfilerSignalManager.h"
 #include "StackFramesCollectorBase.h"
 #include "shared/src/native-src/loader.h"
 
 namespace OsSpecificApi {
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo)
 {
-    return std::make_unique<LinuxStackFramesCollector>();
+    return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get());
 }
 
 // https://linux.die.net/man/5/proc

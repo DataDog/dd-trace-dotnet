@@ -10,25 +10,28 @@
           "entry": {
             "arguments": {
               "callerName": {
-                "fields": null,
                 "type": "String",
                 "value": "Run"
+              },
+              "this": {
+                "type": "MultipleLineProbes",
+                "value": "MultipleLineProbes"
               }
-            },
-            "fields": null
+            }
           },
           "return": {
             "arguments": {
               "callerName": {
-                "fields": null,
                 "type": "String",
                 "value": "Run"
+              },
+              "this": {
+                "type": "MultipleLineProbes",
+                "value": "MultipleLineProbes"
               }
             },
-            "fields": null,
             "locals": {
               "a": {
-                "fields": null,
                 "type": "Int32",
                 "value": "6"
               }
@@ -76,7 +79,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultipleLineProbes.MethodToInstrument(callerName=Run)\r\na=6",
+    "message": "MultipleLineProbes.MethodToInstrument(callerName=Run, this=MultipleLineProbes)\r\na=6",
     "service": "Probes"
   },
   {
@@ -91,15 +94,16 @@
             "21": {
               "arguments": {
                 "callerName": {
-                  "fields": null,
                   "type": "String",
                   "value": "Run"
+                },
+                "this": {
+                  "type": "MultipleLineProbes",
+                  "value": "MultipleLineProbes"
                 }
               },
-              "fields": null,
               "locals": {
                 "a": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "0"
                 }
@@ -150,7 +154,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultipleLineProbes.MethodToInstrument(callerName=Run)\r\na=0",
+    "message": "MultipleLineProbes.MethodToInstrument(callerName=Run, this=MultipleLineProbes)\r\na=0",
     "service": "Probes"
   },
   {
@@ -165,15 +169,16 @@
             "22": {
               "arguments": {
                 "callerName": {
-                  "fields": null,
                   "type": "String",
                   "value": "Run"
+                },
+                "this": {
+                  "type": "MultipleLineProbes",
+                  "value": "MultipleLineProbes"
                 }
               },
-              "fields": null,
               "locals": {
                 "a": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "3"
                 }
@@ -224,7 +229,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultipleLineProbes.MethodToInstrument(callerName=Run)\r\na=3",
+    "message": "MultipleLineProbes.MethodToInstrument(callerName=Run, this=MultipleLineProbes)\r\na=3",
     "service": "Probes"
   },
   {
@@ -239,15 +244,16 @@
             "23": {
               "arguments": {
                 "callerName": {
-                  "fields": null,
                   "type": "String",
                   "value": "Run"
+                },
+                "this": {
+                  "type": "MultipleLineProbes",
+                  "value": "MultipleLineProbes"
                 }
               },
-              "fields": null,
               "locals": {
                 "a": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "4"
                 }
@@ -298,7 +304,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultipleLineProbes.MethodToInstrument(callerName=Run)\r\na=4",
+    "message": "MultipleLineProbes.MethodToInstrument(callerName=Run, this=MultipleLineProbes)\r\na=4",
     "service": "Probes"
   },
   {
@@ -313,15 +319,16 @@
             "24": {
               "arguments": {
                 "callerName": {
-                  "fields": null,
                   "type": "String",
                   "value": "Run"
+                },
+                "this": {
+                  "type": "MultipleLineProbes",
+                  "value": "MultipleLineProbes"
                 }
               },
-              "fields": null,
               "locals": {
                 "a": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "5"
                 }
@@ -372,7 +379,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultipleLineProbes.MethodToInstrument(callerName=Run)\r\na=5",
+    "message": "MultipleLineProbes.MethodToInstrument(callerName=Run, this=MultipleLineProbes)\r\na=5",
     "service": "Probes"
   },
   {
@@ -387,15 +394,16 @@
             "25": {
               "arguments": {
                 "callerName": {
-                  "fields": null,
                   "type": "String",
                   "value": "Run"
+                },
+                "this": {
+                  "type": "MultipleLineProbes",
+                  "value": "MultipleLineProbes"
                 }
               },
-              "fields": null,
               "locals": {
                 "a": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "6"
                 }
@@ -446,7 +454,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultipleLineProbes.MethodToInstrument(callerName=Run)\r\na=6",
+    "message": "MultipleLineProbes.MethodToInstrument(callerName=Run, this=MultipleLineProbes)\r\na=6",
     "service": "Probes"
   }
 ]

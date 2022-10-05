@@ -8,58 +8,54 @@
       "snapshot": {
         "captures": {
           "entry": {
-            "fields": {
+            "arguments": {
+              "this": {
+                "type": "MultidimensionalArrayTest",
+                "value": "MultidimensionalArrayTest"
+              }
+            },
+            "staticFields": {
               "StateArray": {
-                "Collection": [
+                "elements": [
                   {
-                    "Collection": [
+                    "elements": [
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       }
@@ -68,54 +64,44 @@
                     "value": "count: 10"
                   },
                   {
-                    "Collection": [
+                    "elements": [
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       }
@@ -130,58 +116,54 @@
             }
           },
           "return": {
-            "fields": {
+            "arguments": {
+              "this": {
+                "type": "MultidimensionalArrayTest",
+                "value": "MultidimensionalArrayTest"
+              }
+            },
+            "staticFields": {
               "StateArray": {
-                "Collection": [
+                "elements": [
                   {
-                    "Collection": [
+                    "elements": [
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       }
@@ -190,54 +172,44 @@
                     "value": "count: 10"
                   },
                   {
-                    "Collection": [
+                    "elements": [
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       },
                       {
-                        "fields": null,
                         "type": "State",
                         "value": "Error"
                       }
@@ -293,7 +265,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "MultidimensionalArrayTest.Method()",
+    "message": "MultidimensionalArrayTest.Method(this=MultidimensionalArrayTest)",
     "service": "Probes"
   }
 ]

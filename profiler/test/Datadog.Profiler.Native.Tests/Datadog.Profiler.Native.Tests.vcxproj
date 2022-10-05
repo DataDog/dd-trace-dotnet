@@ -54,6 +54,7 @@
     <ClCompile Include="ManagedThreadListTest.cpp" />
     <ClCompile Include="OpSysToolsTest.cpp" />
     <ClCompile Include="ProfilerMockedInterface.cpp" />
+    <ClCompile Include="ProfilerSignalManagerTest.cpp" />
     <ClCompile Include="RuntimeIdStoreHelper.cpp" />
     <ClCompile Include="RuntimeIdTest.cpp" />
     <ClCompile Include="RuntimeInfoHelper.cpp" />
