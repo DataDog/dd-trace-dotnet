@@ -4,6 +4,8 @@
 // </copyright>
 
 #if NETCOREAPP
+using System;
+using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -35,6 +37,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         public async Task SubmitsTraces()
         {
             SetEnvironmentVariable("DD_IAST_ENABLED", "true");
+            // Avoid tests parallel log collision
+            SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "WeakHashingLogs"));
 
 #if NET6_0 || NET5_0
             const int expectedSpanCount = 28;
@@ -66,6 +70,9 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         public void IntegrationDisabled(string variableName, string variableValue)
         {
             SetEnvironmentVariable(variableName, variableValue);
+            // Avoid tests parallel log collision
+            SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "WeakHashingLogs"));
+
             const int expectedSpanCount = 21;
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent);
