@@ -76,7 +76,7 @@ public class DataStreamsWriterTests
 
         await api.WaitForCount(1, 30_000);
 
-        api.Sent.Should().ContainSingle();
+        HasOneOrTwoPoints(api);
 
         await writer.DisposeAsync();
 
