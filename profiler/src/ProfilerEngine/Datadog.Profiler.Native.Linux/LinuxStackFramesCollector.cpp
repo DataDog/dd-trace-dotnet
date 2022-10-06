@@ -164,7 +164,7 @@ extern "C" int dd_IsInPthreadCreate() __attribute__((weak));
 
 std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 {
-    if (dd_IsInPthreadCreate() == 1)
+    if (dd_IsInPthreadCreate != nullptr && dd_IsInPthreadCreate() == 1)
     {
         return E_ABORT;
     }

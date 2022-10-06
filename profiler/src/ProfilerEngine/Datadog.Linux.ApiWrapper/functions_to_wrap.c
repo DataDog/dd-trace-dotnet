@@ -142,7 +142,7 @@ int __pthread_create(pthread_t* restrict res, const pthread_attr_t* restrict att
     }
 
     _dd_in_pthread_create = 1;
-    // call the real dladdr (libc/musl-libc)
+    // call the real __pthread_create (libc/musl-libc)
     int result = __real___pthread_create(res, attrp, entry, arg);
 
     _dd_in_pthread_create = 0;
@@ -169,7 +169,7 @@ int pthread_attr_init(pthread_attr_t* a)
     // prevent any signals from interrupting the execution of the real dladdr
     pthread_sigmask(SIG_SETMASK, &newOne, &oldOne);
 
-    // call the real dladdr (libc/musl-libc)
+    // call the real pthread_attr_init (libc/musl-libc)
     int result = __real_pthread_attr_init(a);
 
     // restore the previous state for signals
@@ -197,7 +197,7 @@ int pthread_getattr_default_np(pthread_attr_t* a)
     // prevent any signals from interrupting the execution of the real dladdr
     pthread_sigmask(SIG_SETMASK, &newOne, &oldOne);
 
-    // call the real dladdr (libc/musl-libc)
+    // call the real pthread_getattr_default_np (libc/musl-libc)
     int result = __real_pthread_getattr_default_np(a);
 
     // restore the previous state for signals
@@ -209,7 +209,7 @@ int pthread_getattr_default_np(pthread_attr_t* a)
 /* Function pointers to hold the value of the glibc functions */
 static int (*__real_pthread_setattr_default_np)(const pthread_attr_t* attrp) = NULL;
 
-int pthread_setattr_default_np(pthread_attr_t* a)
+int pthread_setattr_default_np(const pthread_attr_t* a)
 {
     if (__real_pthread_setattr_default_np == NULL)
     {
@@ -225,7 +225,7 @@ int pthread_setattr_default_np(pthread_attr_t* a)
     // prevent any signals from interrupting the execution of the real dladdr
     pthread_sigmask(SIG_SETMASK, &newOne, &oldOne);
 
-    // call the real dladdr (libc/musl-libc)
+    // call the real pthread_setattr_default_np (libc/musl-libc)
     int result = __real_pthread_setattr_default_np(a);
 
     // restore the previous state for signals
@@ -253,7 +253,7 @@ pid_t fork()
     // prevent any signals from interrupting the execution of the real dladdr
     pthread_sigmask(SIG_SETMASK, &newOne, &oldOne);
 
-    // call the real dladdr (libc/musl-libc)
+    // call the real fork (libc/musl-libc)
     pid_t result = __real_fork();
 
     // restore the previous state for signals
