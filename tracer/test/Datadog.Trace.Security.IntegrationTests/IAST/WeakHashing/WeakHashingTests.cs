@@ -42,10 +42,10 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
 
 #if NET6_0 || NET5_0
             const int expectedSpanCount = 28;
-            var filename = "WeakHashingTestsTests.SubmitsTraces.Net50.60";
+            var filename = "WeakHashingTests.SubmitsTraces.Net50.60";
 #else
             const int expectedSpanCount = 21;
-            var filename = "WeakHashingTestsTests.SubmitsTraces";
+            var filename = "WeakHashingTests.SubmitsTraces";
 #endif
 
             using var agent = EnvironmentHelper.GetMockAgent();
