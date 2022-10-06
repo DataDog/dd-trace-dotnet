@@ -237,7 +237,6 @@ add_library("Datadog.Tracer.Native.static" STATIC
         tracer_tokens.cpp
         debugger_environment_variables_util.cpp
         probes_tracker.cpp
-        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
         ${GENERATED_OBJ_FILES}
 )
 
@@ -245,10 +244,6 @@ set_target_properties("Datadog.Tracer.Native.static" PROPERTIES PREFIX "")
 
 # Define directories includes
 target_include_directories("Datadog.Tracer.Native.static"
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc/rt
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/inc
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/inc
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/spdlog/include
         PUBLIC ${OUTPUT_DEPS_DIR}/fmt/include
         PUBLIC ${OUTPUT_DEPS_DIR}/re2
@@ -257,12 +252,14 @@ target_include_directories("Datadog.Tracer.Native.static"
 # Define linker libraries
 if (ISMACOS)
     target_link_libraries("Datadog.Tracer.Native.static"
+        coreclr-lib
         ${OUTPUT_DEPS_DIR}/re2/obj/libre2.a
         ${OUTPUT_DEPS_DIR}/fmt/libfmt.a
         ${CMAKE_DL_LIBS}
     )
 elseif(ISLINUX)
     target_link_libraries("Datadog.Tracer.Native.static"
+        coreclr-lib
         ${OUTPUT_DEPS_DIR}/re2/obj/libre2.a
         ${OUTPUT_DEPS_DIR}/fmt/libfmt.a
         ${CMAKE_DL_LIBS}
