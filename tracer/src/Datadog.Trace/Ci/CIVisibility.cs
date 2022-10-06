@@ -116,6 +116,23 @@ namespace Datadog.Trace.Ci
             }
         }
 
+        internal static void WaitForSkippableTaskToFinish()
+        {
+            if (_skippableTestsTask is { IsCompleted: false })
+            {
+                var sContext = SynchronizationContext.Current;
+                try
+                {
+                    SynchronizationContext.SetSynchronizationContext(null);
+                    _skippableTestsTask.GetAwaiter().GetResult();
+                }
+                finally
+                {
+                    SynchronizationContext.SetSynchronizationContext(sContext);
+                }
+            }
+        }
+
         internal static Task<IList<SkippableTest>> GetSkippableTestsFromSuiteAndNameAsync(string suite, string name)
         {
             if (_skippableTestsTask is { } skippableTask)

@@ -5,27 +5,26 @@
 
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
+
+/// <summary>
+/// UnitTestResult ducktype struct
+/// </summary>
+[DuckCopy]
+internal struct UnitTestResultStruct
 {
     /// <summary>
-    /// UnitTestResult ducktype struct
+    /// Gets the error message
     /// </summary>
-    [DuckCopy]
-    internal struct UnitTestResultStruct
-    {
-        /// <summary>
-        /// Gets the error message
-        /// </summary>
-        public string ErrorMessage;
+    public string ErrorMessage;
 
-        /// <summary>
-        /// Gets the error stacktrace
-        /// </summary>
-        public string ErrorStackTrace;
+    /// <summary>
+    /// Gets the error stacktrace
+    /// </summary>
+    public string ErrorStackTrace;
 
-        /// <summary>
-        /// Gets the outcome enum
-        /// </summary>
-        public UnitTestResultOutcome Outcome;
-    }
+    /// <summary>
+    /// Gets the outcome enum
+    /// </summary>
+    public UnitTestResultOutcome Outcome;
 }

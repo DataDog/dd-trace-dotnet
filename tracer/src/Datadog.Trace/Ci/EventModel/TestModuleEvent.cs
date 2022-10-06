@@ -1,13 +1,15 @@
-// <copyright file="ITestRunnerSkippeable.cs" company="Datadog">
+﻿// <copyright file="TestModuleEvent.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #nullable enable
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit
+namespace Datadog.Trace.Ci.EventModel;
+
+internal class TestModuleEvent : CIVisibilityEvent<Span>
 {
-    internal interface ITestRunnerSkippeable
+    public TestModuleEvent(Span span)
+        : base(SpanTypes.TestModule, 1, span)
     {
-        string? SkipReason { get; set; }
     }
 }

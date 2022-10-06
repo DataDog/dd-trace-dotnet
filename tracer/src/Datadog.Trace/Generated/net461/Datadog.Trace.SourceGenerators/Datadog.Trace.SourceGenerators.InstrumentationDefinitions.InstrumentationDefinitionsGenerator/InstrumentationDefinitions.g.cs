@@ -203,6 +203,10 @@ namespace Datadog.Trace.ClrProfiler
                new ("System.Messaging", "System.Messaging.MessageQueue", "SendInternal",  new[] { "System.Void", "System.Object", "System.Messaging.MessageQueueTransaction", "System.Messaging.MessageQueueTransactionType" }, 4, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueue_SendInternal_Integration"),
 
                 // MsTestV2
+               new ("Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestAssemblyInfo", "RunAssemblyCleanup",  new[] { "System.String" }, 14, 0, 0, 14, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestAssemblyInfoRunAssemblyCleanupIntegration"),
+               new ("Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestAssemblyInfo", "RunAssemblyInitialize",  new[] { "System.Void", "_" }, 14, 0, 0, 14, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestAssemblyInfoRunAssemblyInitializeIntegration"),
+               new ("Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo", "RunClassCleanup",  new[] { "System.String", "_" }, 14, 0, 0, 14, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoRunClassCleanupIntegration"),
+               new ("Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestClassInfo", "RunClassInitialize",  new[] { "System.Void", "_" }, 14, 0, 0, 14, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoRunClassInitializeIntegration"),
                new ("Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner", "Execute",  new[] { "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult[]" }, 14, 0, 0, 14, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteIntegration"),
                new ("Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner", "IsTestMethodRunnable",  new[] { "System.Boolean", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestMethod", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult[]&" }, 14, 0, 0, 14, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerIsTestMethodRunnableIntegration"),
                new ("Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner", "RunCleanup",  new[] { "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.RunCleanupResult" }, 14, 0, 0, 14, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunCleanupIntegration"),
@@ -256,10 +260,10 @@ namespace Datadog.Trace.ClrProfiler
                new ("Npgsql", "Npgsql.NpgsqlCommand", "ExecuteScalarAsync",  new[] { "System.Threading.Tasks.Task`1<System.Object>", "System.Threading.CancellationToken" }, 4, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarAsyncIntegration"),
 
                 // NUnit
-               new ("nunit.framework", "NUnit.Framework.Api.NUnitTestAssemblyRunner", "WaitForCompletion",  new[] { "System.Boolean", "System.Int32" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestAssemblyRunnerWaitForCompletionIntegration"),
                new ("nunit.framework", "NUnit.Framework.Internal.Commands.SkipCommand", "Execute",  new[] { "NUnit.Framework.Internal.TestResult", "NUnit.Framework.Internal.TestExecutionContext" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitSkipCommandExecuteIntegration"),
                new ("nunit.framework", "NUnit.Framework.Internal.Commands.TestMethodCommand", "Execute",  new[] { "NUnit.Framework.Internal.TestResult", "NUnit.Framework.Internal.TestExecutionContext" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestMethodCommandExecuteIntegration"),
                new ("nunit.framework", "NUnit.Framework.Internal.Execution.CompositeWorkItem", "SkipChildren",  new[] { "System.Void", "_", "NUnit.Framework.Interfaces.ResultState", "System.String" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCompositeWorkItemSkipChildrenIntegration"),
+               new ("nunit.framework", "NUnit.Framework.Internal.Execution.WorkItem", "WorkItemComplete",  new[] { "System.Void" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemWorkItemCompleteIntegration"),
                new ("NUnit3.TestAdapter", "NUnit.VisualStudio.TestAdapter.NUnitTestAdapter", "Unload",  new[] { "System.Void" }, 3, 0, 0, 4, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestAdapterUnloadIntegration"),
 
                 // Oracle
@@ -390,12 +394,14 @@ namespace Datadog.Trace.ClrProfiler
 
                 // XUnit
                new ("xunit.execution.desktop", "Xunit.Sdk.TestAssemblyFinished", ".ctor",  new[] { "System.Void", "_", "_", "_", "_", "_", "_" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyFinishedCtorIntegration"),
-               new ("xunit.execution.desktop", "Xunit.Sdk.TestAssemblyRunner`1", "RunTestCollectionAsync",  new[] { "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>", "Xunit.Sdk.IMessageBus", "_", "_", "_" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerRunTestCollectionAsyncIntegration"),
+               new ("xunit.execution.desktop", "Xunit.Sdk.TestAssemblyRunner`1", "RunAsync",  new[] { "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerRunAsyncIntegration"),
+               new ("xunit.execution.desktop", "Xunit.Sdk.TestClassRunner`1", "RunAsync",  new[] { "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestClassRunnerRunAsyncIntegration"),
                new ("xunit.execution.desktop", "Xunit.Sdk.TestInvoker`1", "RunAsync",  new[] { "System.Threading.Tasks.Task`1<System.Decimal>" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestInvokerRunAsyncIntegration"),
                new ("xunit.execution.desktop", "Xunit.Sdk.TestOutputHelper", "QueueTestOutput",  new[] { "System.Void", "System.String" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestOutputHelperQueueTestOutputIntegration"),
                new ("xunit.execution.desktop", "Xunit.Sdk.TestRunner`1", "RunAsync",  new[] { "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestRunnerRunAsyncIntegration"),
                new ("xunit.execution.dotnet", "Xunit.Sdk.TestAssemblyFinished", ".ctor",  new[] { "System.Void", "_", "_", "_", "_", "_", "_" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyFinishedCtorIntegration"),
-               new ("xunit.execution.dotnet", "Xunit.Sdk.TestAssemblyRunner`1", "RunTestCollectionAsync",  new[] { "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>", "Xunit.Sdk.IMessageBus", "_", "_", "_" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerRunTestCollectionAsyncIntegration"),
+               new ("xunit.execution.dotnet", "Xunit.Sdk.TestAssemblyRunner`1", "RunAsync",  new[] { "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerRunAsyncIntegration"),
+               new ("xunit.execution.dotnet", "Xunit.Sdk.TestClassRunner`1", "RunAsync",  new[] { "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestClassRunnerRunAsyncIntegration"),
                new ("xunit.execution.dotnet", "Xunit.Sdk.TestInvoker`1", "RunAsync",  new[] { "System.Threading.Tasks.Task`1<System.Decimal>" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestInvokerRunAsyncIntegration"),
                new ("xunit.execution.dotnet", "Xunit.Sdk.TestOutputHelper", "QueueTestOutput",  new[] { "System.Void", "System.String" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestOutputHelperQueueTestOutputIntegration"),
                new ("xunit.execution.dotnet", "Xunit.Sdk.TestRunner`1", "RunAsync",  new[] { "System.Threading.Tasks.Task`1<Xunit.Sdk.RunSummary>" }, 2, 2, 0, 2, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestRunnerRunAsyncIntegration"),
@@ -439,7 +445,7 @@ namespace Datadog.Trace.ClrProfiler
                new ("System.Data.Common", "System.Data.Common.DbCommand", "ExecuteScalar",  new[] { "System.Object" }, 4, 0, 0, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteScalarIntegration"),
 
                 // NUnit
-               new ("nunit.framework", "NUnit.Framework.Internal.Execution.WorkItem", "PerformWork",  new[] { "System.Void" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemIntegration"),
+               new ("nunit.framework", "NUnit.Framework.Internal.Execution.WorkItem", "PerformWork",  new[] { "System.Void" }, 3, 0, 0, 3, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemPerformWorkIntegration"),
 
                 // RabbitMQ
                new ("RabbitMQ.Client", "RabbitMQ.Client.AsyncDefaultBasicConsumer", "HandleBasicDeliver",  new[] { "System.Threading.Tasks.Task", "System.String", "System.UInt64", "System.Boolean", "System.String", "System.String", "RabbitMQ.Client.IBasicProperties", "_" }, 3, 6, 9, 6, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ.BasicDeliverAsyncIntegration"),
@@ -654,7 +660,11 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueue_ReceiveCurrent_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq.MessageQueue_SendInternal_Integration"
                     => Datadog.Trace.Configuration.IntegrationId.Msmq,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestAssemblyInfoRunAssemblyCleanupIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestAssemblyInfoRunAssemblyInitializeIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoRunClassCleanupIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestClassInfoRunClassInitializeIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.TestMethodRunnerExecuteIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerIsTestMethodRunnableIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunCleanupIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2.UnitTestRunnerRunSingleTestIntegration"
@@ -664,11 +674,11 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.LogFactoryGetConfigurationForLoggerInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection.LoggerImplWriteIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.NLog,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestAssemblyRunnerWaitForCompletionIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitSkipCommandExecuteIntegration"
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitSkipCommandExecuteIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestMethodCommandExecuteIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitCompositeWorkItemSkipChildrenIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemPerformWorkIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitWorkItemWorkItemCompleteIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit.NUnitTestAdapterUnloadIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.NUnit,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Process.ProcessStartIntegration"
@@ -730,12 +740,14 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest.WebRequest_GetResponseAsync_Integration"
                     => Datadog.Trace.Configuration.IntegrationId.WebRequest,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyFinishedCtorIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerRunTestCollectionAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerRunAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestClassRunnerRunAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestInvokerRunAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestOutputHelperQueueTestOutputIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestRunnerRunAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyFinishedCtorIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerRunTestCollectionAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestAssemblyRunnerRunAsyncIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestClassRunnerRunAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestInvokerRunAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestOutputHelperQueueTestOutputIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit.XUnitTestRunnerRunAsyncIntegration"

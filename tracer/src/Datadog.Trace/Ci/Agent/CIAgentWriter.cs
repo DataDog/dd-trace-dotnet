@@ -51,14 +51,9 @@ namespace Datadog.Trace.Ci.Agent
                 _spanArray = spanArray;
             }
 
-            if (@event is TestEvent testEvent)
+            if (CIVisibilityEventsFactory.GetSpan(@event) is { } span)
             {
-                spanArray[0] = testEvent.Content;
-                WriteTrace(new ArraySegment<Span>(spanArray));
-            }
-            else if (@event is SpanEvent spanEvent)
-            {
-                spanArray[0] = spanEvent.Content;
+                spanArray[0] = span;
                 WriteTrace(new ArraySegment<Span>(spanArray));
             }
         }
