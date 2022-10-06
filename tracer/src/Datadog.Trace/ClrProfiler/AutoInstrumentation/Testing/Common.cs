@@ -7,10 +7,8 @@ using System;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci;
-using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Pdb;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
 {
@@ -60,76 +58,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing
             }
 
             return paramValue.ToString();
-        }
-
-        internal static void DecorateSpanWithSourceAndCodeOwners(Span span, MethodInfo testMethod)
-        {
-            if (MethodSymbolResolver.Instance.TryGetMethodSymbol(testMethod, out var methodSymbol))
-            {
-                span.SetTag(TestTags.SourceFile, CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
-                span.SetMetric(TestTags.SourceStart, methodSymbol.StartLine);
-                span.SetMetric(TestTags.SourceEnd, methodSymbol.EndLine);
-
-                if (CIEnvironmentValues.Instance.CodeOwners is { } codeOwners)
-                {
-                    var match = codeOwners.Match("/" + CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(methodSymbol.File, false));
-                    if (match is not null)
-                    {
-                        span.SetTag(TestTags.CodeOwners, match.Value.GetOwnersString());
-                    }
-                }
-            }
-        }
-
-        internal static void DecorateSpanWithRuntimeAndCiInformation(Span span)
-        {
-            // CI Environment variables data
-            CIEnvironmentValues.Instance.DecorateSpan(span);
-
-            // Runtime information
-            var framework = FrameworkDescription.Instance;
-            span.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
-            span.SetTag(CommonTags.RuntimeName, framework.Name);
-            span.SetTag(CommonTags.RuntimeVersion, framework.ProductVersion);
-            span.SetTag(CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
-            span.SetTag(CommonTags.OSArchitecture, framework.OSArchitecture);
-            span.SetTag(CommonTags.OSPlatform, framework.OSPlatform);
-            span.SetTag(CommonTags.OSVersion, Environment.OSVersion.VersionString);
-
-            // Check if Intelligent Test Runner
-            if (CIVisibility.HasSkippableTests())
-            {
-                span.SetTag("_dd.ci.itr.tests_skipped", "true");
-            }
-        }
-
-        internal static void StartCoverage()
-        {
-            if (CIVisibility.Settings.CodeCoverageEnabled == true)
-            {
-                Ci.Coverage.CoverageReporter.Handler.StartSession();
-            }
-        }
-
-        internal static void StopCoverage(Span span)
-        {
-            if (CIVisibility.Settings.CodeCoverageEnabled == true && Ci.Coverage.CoverageReporter.Handler.EndSession() is Ci.Coverage.Models.CoveragePayload coveragePayload)
-            {
-                if (span is not null)
-                {
-                    coveragePayload.TraceId = span.TraceId;
-                    coveragePayload.SpanId = span.SpanId;
-                }
-
-                Log.Debug("Coverage data for TraceId={traceId} and SpanId={spanId} processed.", coveragePayload.TraceId, coveragePayload.SpanId);
-                Ci.CIVisibility.Manager?.WriteEvent(coveragePayload);
-            }
-        }
-
-        internal static void Prepare(MethodInfo methodInfo)
-        {
-            // Initialize Method Symbol Resolver
-            _ = MethodSymbolResolver.Instance.GetModuleDef(methodInfo.Module);
         }
 
         internal static bool ShouldSkip(string testSuite, string testName, object[] testMethodArguments, ParameterInfo[] methodParameters)

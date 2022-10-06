@@ -6,38 +6,37 @@
 using System;
 using System.Reflection;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
+
+/// <summary>
+/// TestMethod ducktype interface
+/// </summary>
+internal interface ITestMethod
 {
     /// <summary>
-    /// TestMethod ducktype interface
+    /// Gets the test method name
     /// </summary>
-    internal interface ITestMethod
-    {
-        /// <summary>
-        /// Gets the test method name
-        /// </summary>
-        string TestMethodName { get; }
+    string TestMethodName { get; }
 
-        /// <summary>
-        /// Gets the test class name
-        /// </summary>
-        string TestClassName { get; }
+    /// <summary>
+    /// Gets the test class name
+    /// </summary>
+    string TestClassName { get; }
 
-        /// <summary>
-        /// Gets the MethodInfo
-        /// </summary>
-        MethodInfo MethodInfo { get; }
+    /// <summary>
+    /// Gets the MethodInfo
+    /// </summary>
+    MethodInfo MethodInfo { get; }
 
-        /// <summary>
-        /// Gets the test arguments
-        /// </summary>
-        object[] Arguments { get; }
+    /// <summary>
+    /// Gets the test arguments
+    /// </summary>
+    object[] Arguments { get; }
 
-        /// <summary>
-        /// Gets all attributes
-        /// </summary>
-        /// <param name="inherit">Injerits all the attributes from base classes</param>
-        /// <returns>Attribute array</returns>
-        Attribute[] GetAllAttributes(bool inherit);
-    }
+    /// <summary>
+    /// Gets all attributes
+    /// </summary>
+    /// <param name="inherit">Injerits all the attributes from base classes</param>
+    /// <returns>Attribute array</returns>
+    Attribute[] GetAllAttributes(bool inherit);
 }
