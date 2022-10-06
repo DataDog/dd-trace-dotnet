@@ -5,34 +5,33 @@
 
 #nullable enable
 
-using System;
 using System.Diagnostics;
 using System.Linq;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Iast;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Iast
 {
     internal class IastModule
     {
-        private const string OperationNameHash = "weak_hashing";
+        private const string OperationNameWeakHash = "weak_hashing";
+        private const string OperationNameWeakCipher = "weak_cipher";
 
         public IastModule()
         {
         }
 
-        public static Scope? OnCipherAlgorithm(string? algorithm, IntegrationId integrationId, Datadog.Trace.Iast.Iast iast)
+        public static Scope? OnCipherAlgorithm(string? algorithm, IntegrationId integrationId, Iast iast)
         {
-            if (algorithm == null || !InvalidHashAlgorithm(algorithm, iast))
+            if (algorithm == null || !InvalidCipherAlgorithm(algorithm, iast))
             {
                 return null;
             }
 
-            return GetScope(algorithm, integrationId);
+            return GetScope(algorithm, integrationId, VulnerabilityType.WEAK_CIPHER, OperationNameWeakCipher, ServiceWeakCipher);
         }
 
-        public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, Datadog.Trace.Iast.Iast iast)
+        public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, Iast iast)
         {
             if (algorithm == null || !InvalidHashAlgorithm(algorithm, iast))
             {
@@ -98,6 +97,11 @@ namespace Datadog.Trace.Iast
             }
 
             return false;
+        }
+
+        private static bool InvalidCipherAlgorithm(string algorithm, Iast iast)
+        {
+            return iast.Settings.WeakCipherAlgorithmsArray.Contains(algorithm);
         }
     }
 }

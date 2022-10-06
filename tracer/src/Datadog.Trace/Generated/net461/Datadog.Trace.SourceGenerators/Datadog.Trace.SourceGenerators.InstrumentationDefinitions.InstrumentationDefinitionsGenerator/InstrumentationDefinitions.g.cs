@@ -440,6 +440,9 @@ namespace Datadog.Trace.ClrProfiler
                new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.IO.Stream" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationBis"),
                new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.Byte[]" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationBis"),
                new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHashAsync",  new[] { "System.Threading.Tasks.Task", "System.IO.Stream", "System.Threading.CancellationToken" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationTer"),
+
+                // SymmetricAlgorithm
+               new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.SymmetricAlgorithm", ".ctor",  new[] { "System.Void" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.SymmetricAlgorithmIntegration"),
                     }
                 };
                 Instrumentations.Add(InstrumentationCategory.Iast, payload);
@@ -767,6 +770,8 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration_2_6_48"
                     => Datadog.Trace.Configuration.IntegrationId.StackExchangeRedis,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.SymmetricAlgorithmIntegration"
+                    => Datadog.Trace.Configuration.IntegrationId.SymmetricAlgorithm,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.AsyncMethodInvoker_InvokeBegin_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.AsyncMethodInvoker_InvokeEnd_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.ChannelHandlerIntegration"

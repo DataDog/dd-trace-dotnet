@@ -28,18 +28,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
 
             try
             {
-                return IastModule.OnCipherAlgorithm(GetAlgorithmName(instance.GetType()), IntegrationId, iast);
+                return IastModule.OnCipherAlgorithm(instance.GetType()?.BaseType?.Name, IntegrationId, iast);
             }
             catch (Exception ex)
             {
                 Log.Error(ex, "Error creating or populating SymmetricAlgorithm scope.");
                 return null;
             }
-        }
-
-        private static string? GetAlgorithmName(Type type)
-        {
-            return type.BaseType?.BaseType == typeof(SymmetricAlgorithm) ? type.BaseType?.Name : type.Name;
         }
     }
 }

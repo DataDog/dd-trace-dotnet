@@ -12,6 +12,7 @@ namespace Samples.WeakHashing
     {
         private static void Main()
         {
+#pragma warning disable SYSLIB0021 // Type or member is obsolete
             // Vulnerable section
             //https://rules.sonarsource.com/csharp/type/Vulnerability/RSPEC-5547
             testSymmetricAlgorithm(DES.Create());
@@ -23,10 +24,13 @@ namespace Samples.WeakHashing
             testSymmetricAlgorithm(new TripleDESCryptoServiceProvider());
 
             // Not vulnerable section
+#pragma warning disable SYSLIB0022 // Type or member is obsolete
             testSymmetricAlgorithm(Rijndael.Create());
             testSymmetricAlgorithm(new RijndaelManaged());
+#pragma warning restore SYSLIB0022 // Type or member is obsolete
             testSymmetricAlgorithm(Aes.Create());
             testSymmetricAlgorithm(new AesCryptoServiceProvider());
+#pragma warning restore SYSLIB0021 // Type or member is obsolete
         }
 
         private static void testSymmetricAlgorithm(SymmetricAlgorithm algorithm)
