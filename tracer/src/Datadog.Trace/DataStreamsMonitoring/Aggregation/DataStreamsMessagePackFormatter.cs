@@ -57,48 +57,48 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             _serviceValueBytes = StringEncoding.UTF8.GetBytes(defaultServiceName);
         }
 
-        public int Serialize(ref byte[] bytes, int offset, long bucketDurationNs, List<SerializableStatsBucket> statsBuckets)
+        public int Serialize(Stream stream, long bucketDurationNs, List<SerializableStatsBucket> statsBuckets)
         {
-            var originalOffset = offset;
+            var bytesWritten = 0;
 
             // 6 entries in StatsPayload:
             // -1 because we don't have a primary tag
             // https://github.com/DataDog/data-streams-go/blob/6772b163707c0a8ecc8c9a3b28e0dab7e0cf58d4/datastreams/payload.go#L11
-            offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 5);
+            bytesWritten += MessagePackBinary.WriteMapHeader(stream, 5);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentValueBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _environmentBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _environmentValueBytes);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _serviceBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _serviceValueBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _serviceBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _serviceValueBytes);
 
             // We never have a primary tag currently, make sure to increase header size if/when we add it
-            // offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _primaryTagBytes);
-            // offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _primaryTagValueBytes);
+            // offset += MessagePackBinary.WriteStringBytes(stream, _primaryTagBytes);
+            // offset += MessagePackBinary.WriteStringBytes(stream, _primaryTagValueBytes);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _langBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _langValueBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _langBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _langValueBytes);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _tracerVersionBytes);
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _tracerVersionValueBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _tracerVersionBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _tracerVersionValueBytes);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _statsBytes);
-            offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, statsBuckets.Count);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _statsBytes);
+            bytesWritten += MessagePackBinary.WriteArrayHeader(stream, statsBuckets.Count);
 
             foreach (var statsBucket in statsBuckets)
             {
                 // 3 entries per StatsBucket:
                 // https://github.com/DataDog/data-streams-go/blob/6772b163707c0a8ecc8c9a3b28e0dab7e0cf58d4/datastreams/payload.go#L27
-                offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, 3);
+                bytesWritten += MessagePackBinary.WriteMapHeader(stream, 3);
 
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _startBytes);
-                offset += MessagePackBinary.WriteInt64(ref bytes, offset, statsBucket.BucketStartTimeNs);
+                bytesWritten += MessagePackBinary.WriteStringBytes(stream, _startBytes);
+                bytesWritten += MessagePackBinary.WriteInt64(stream, statsBucket.BucketStartTimeNs);
 
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _durationBytes);
-                offset += MessagePackBinary.WriteInt64(ref bytes, offset, bucketDurationNs);
+                bytesWritten += MessagePackBinary.WriteStringBytes(stream, _durationBytes);
+                bytesWritten += MessagePackBinary.WriteInt64(stream, bucketDurationNs);
 
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _statsBytes);
-                offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, statsBucket.Bucket.Values.Count);
+                bytesWritten += MessagePackBinary.WriteStringBytes(stream, _statsBytes);
+                bytesWritten += MessagePackBinary.WriteArrayHeader(stream, statsBucket.Bucket.Values.Count);
 
                 var timestampTypeBytes = statsBucket.TimestampType == TimestampType.Current
                                          ? _currentTimestampTypeBytes
@@ -112,54 +112,50 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
                     // 5 if no edge tags
                     // https://github.com/DataDog/data-streams-go/blob/6772b163707c0a8ecc8c9a3b28e0dab7e0cf58d4/datastreams/payload.go#L44
                     var itemCount = hasEdges ? 6 : 5;
-                    offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, itemCount);
+                    bytesWritten += MessagePackBinary.WriteMapHeader(stream, itemCount);
 
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _hashBytes);
-                    offset += MessagePackBinary.WriteUInt64(ref bytes, offset, point.Hash.Value);
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, _hashBytes);
+                    bytesWritten += MessagePackBinary.WriteUInt64(stream, point.Hash.Value);
 
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _parentHashBytes);
-                    offset += MessagePackBinary.WriteUInt64(ref bytes, offset, point.ParentHash.Value);
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, _parentHashBytes);
+                    bytesWritten += MessagePackBinary.WriteUInt64(stream, point.ParentHash.Value);
 
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _timestampTypeBytes);
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, timestampTypeBytes);
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, _timestampTypeBytes);
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, timestampTypeBytes);
 
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _pathwayLatencyBytes);
-                    offset += SerializeSketch(ref bytes, offset, point.PathwayLatency);
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, _pathwayLatencyBytes);
+                    bytesWritten += SerializeSketch(stream, point.PathwayLatency);
 
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _edgeLatencyBytes);
-                    offset += SerializeSketch(ref bytes, offset, point.EdgeLatency);
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, _edgeLatencyBytes);
+                    bytesWritten += SerializeSketch(stream, point.EdgeLatency);
 
                     if (hasEdges)
                     {
-                        offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _edgeTagsBytes);
-                        offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, point.EdgeTags.Length);
+                        bytesWritten += MessagePackBinary.WriteStringBytes(stream, _edgeTagsBytes);
+                        bytesWritten += MessagePackBinary.WriteArrayHeader(stream, point.EdgeTags.Length);
 
                         foreach (var edgeTag in point.EdgeTags)
                         {
-                            offset += MessagePackBinary.WriteString(ref bytes, offset, edgeTag);
+                            bytesWritten += MessagePackBinary.WriteString(stream, edgeTag);
                         }
                     }
                 }
             }
 
-            return offset - originalOffset;
+            return bytesWritten;
         }
 
-        private static int SerializeSketch(ref byte[] bytes, int offset, DDSketch sketch)
+        private static int SerializeSketch(Stream stream, DDSketch sketch)
         {
             var size = sketch.ComputeSerializedSize();
-            var totalBytes = size + 5; // 5 header bytes
+            stream.WriteByte(MessagePackCode.Bin32);
+            stream.WriteByte((byte)(size >> 24));
+            stream.WriteByte((byte)(size >> 16));
+            stream.WriteByte((byte)(size >> 8));
+            stream.WriteByte((byte)size);
 
-            MessagePackBinary.EnsureCapacity(ref bytes, offset, totalBytes);
-            bytes[offset] = MessagePackCode.Bin32;
-            bytes[offset + 1] = (byte)(size >> 24);
-            bytes[offset + 2] = (byte)(size >> 16);
-            bytes[offset + 3] = (byte)(size >> 8);
-            bytes[offset + 4] = (byte)size;
-
-            using var stream = new MemoryStream(bytes, index: offset + 5, count: size);
             sketch.Serialize(stream);
-            return totalBytes;
+            return size + 5; // 5 headers
         }
     }
 }

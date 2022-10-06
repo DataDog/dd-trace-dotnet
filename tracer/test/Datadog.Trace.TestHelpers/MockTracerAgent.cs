@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.IO;
+using System.IO.Compression;
 using System.IO.Pipes;
 using System.Linq;
 using System.Net;
@@ -91,6 +92,8 @@ namespace Datadog.Trace.TestHelpers
         public AgentConfiguration Configuration { get; set; }
 
         public IImmutableList<NameValueCollection> TelemetryRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
+
+        public IImmutableList<NameValueCollection> DataStreamsRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
         public ConcurrentQueue<string> RemoteConfigRequests { get; } = new();
 
@@ -627,12 +630,27 @@ namespace Datadog.Trace.TestHelpers
                 try
                 {
                     var body = ReadStreamBody(request);
+                    if (request.Headers.GetValue("Content-Encoding") == "gzip")
+                    {
+                        using var compressed = new MemoryStream(body);
+                        using var gzip = new GZipStream(compressed, CompressionMode.Decompress);
+                        using var decompressed = new MemoryStream();
+                        gzip.CopyTo(decompressed);
+                        gzip.Flush();
+                        body = decompressed.GetBuffer();
+                    }
 
                     var dataStreamsPayload = MessagePackSerializer.Deserialize<MockDataStreamsPayload>(body);
+                    var headerCollection = new NameValueCollection();
+                    foreach (var header in request.Headers)
+                    {
+                        headerCollection.Add(header.Name, header.Value);
+                    }
 
                     lock (this)
                     {
                         DataStreams = DataStreams.Add(dataStreamsPayload);
+                        DataStreamsRequestHeaders = DataStreamsRequestHeaders.Add(headerCollection);
                     }
                 }
                 catch (Exception ex)

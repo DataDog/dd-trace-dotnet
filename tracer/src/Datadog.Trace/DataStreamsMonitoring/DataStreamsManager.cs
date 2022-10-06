@@ -7,11 +7,10 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
-using Datadog.Trace.DataStreamsMonitoring.Transport;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Logging;
@@ -27,21 +26,17 @@ internal class DataStreamsManager
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsManager>();
     private readonly NodeHashBase _nodeHashBase;
     private bool _isEnabled;
-    private DataStreamsWriter? _writer;
+    private IDataStreamsWriter? _writer = null;
 
     public DataStreamsManager(
-        bool enabled,
         string env,
         string defaultServiceName,
-        IApiRequestFactory apiRequestFactory)
+        IDataStreamsWriter? writer)
     {
         // We don't yet support primary tag in .NET yet
         _nodeHashBase = HashHelper.CalculateNodeHashBase(defaultServiceName, env, primaryTag: null);
-        // TODO: dynamically enable/disable based on discovery service
-        _isEnabled = enabled;
-        _writer = enabled
-                      ? _writer = CreateWriter(env, defaultServiceName, apiRequestFactory)
-                      : null;
+        _isEnabled = writer is not null;
+        _writer = writer;
     }
 
     /// <summary>
@@ -55,12 +50,15 @@ internal class DataStreamsManager
 
     public static DataStreamsManager Create(
         ImmutableTracerSettings settings,
+        IDiscoveryService discoveryService,
         string defaultServiceName)
-        => new(
-            settings.IsDataStreamsMonitoringEnabled,
-            settings.Environment,
-            defaultServiceName,
-            DataStreamsTransportStrategy.GetAgentIntakeFactory(settings.Exporter));
+    {
+        var writer = settings.IsDataStreamsMonitoringEnabled
+                         ? DataStreamsWriter.Create(settings, discoveryService, defaultServiceName)
+                         : null;
+
+        return new DataStreamsManager(settings.Environment, defaultServiceName, writer);
+    }
 
     public async Task DisposeAsync()
     {
@@ -167,15 +165,4 @@ internal class DataStreamsManager
             return null;
         }
     }
-
-    private static DataStreamsWriter CreateWriter(
-        string env,
-        string defaultServiceName,
-        IApiRequestFactory requestFactory) =>
-        new DataStreamsWriter(
-            new DataStreamsAggregator(
-                new DataStreamsMessagePackFormatter(env, defaultServiceName),
-                bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs),
-            new DataStreamsApi(requestFactory),
-            bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs);
 }

@@ -68,6 +68,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             get { return _process?.ProcessName; }
         }
 
+        public int? SampleProcessId
+        {
+            get { return _process?.Id; }
+        }
+
         public Task<MockTracerAgent> RunOnSelfHosted(bool? enableSecurity, string externalRulesFile = null, int? traceRateLimit = null)
         {
             if (_agent == null)

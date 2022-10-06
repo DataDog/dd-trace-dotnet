@@ -65,13 +65,14 @@ public class DataStreamsAggregatorTests
     {
         var aggregator = CreateAggregatorWithData(T1, T2);
 
-        var buffer = Array.Empty<byte>();
-        var bytesWritten = aggregator.Serialize(ref buffer, offset: 0, maxBucketFlushTimeNs: T2);
-        bytesWritten.Should().BePositive();
+        using var ms1 = new MemoryStream();
+        var bytesWritten = aggregator.Serialize(ms1, maxBucketFlushTimeNs: T2);
+        bytesWritten.Should().BeTrue();
 
         // serializing clears the stats, so shouldn't write anything on the second attempt;
-        bytesWritten = aggregator.Serialize(ref buffer, offset: 0, maxBucketFlushTimeNs: T2);
-        bytesWritten.Should().Be(0);
+        using var ms2 = new MemoryStream();
+        bytesWritten = aggregator.Serialize(ms2, maxBucketFlushTimeNs: T2);
+        bytesWritten.Should().BeFalse();
     }
 
     [Fact]

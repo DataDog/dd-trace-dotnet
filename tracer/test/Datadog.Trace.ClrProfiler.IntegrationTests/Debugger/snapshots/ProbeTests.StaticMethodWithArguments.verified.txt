@@ -10,25 +10,20 @@
           "entry": {
             "arguments": {
               "lastName": {
-                "fields": null,
                 "type": "String",
                 "value": "Last"
               }
-            },
-            "fields": null
+            }
           },
           "return": {
             "arguments": {
               "lastName": {
-                "fields": null,
                 "type": "String",
                 "value": "Last"
               }
             },
-            "fields": null,
             "locals": {
               "@return": {
-                "fields": null,
                 "type": "String",
                 "value": "Last"
               }
@@ -91,12 +86,10 @@
             "18": {
               "arguments": {
                 "lastName": {
-                  "fields": null,
                   "type": "String",
                   "value": "Last"
                 }
-              },
-              "fields": null
+              }
             }
           }
         },

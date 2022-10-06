@@ -104,6 +104,9 @@
     <ClCompile Include="LinuxStackFramesCollectorTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="ProfilerSignalManagerTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">

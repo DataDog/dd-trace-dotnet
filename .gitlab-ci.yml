@@ -10,6 +10,9 @@ variables:
   DEPLOY_TO_REL_ENV:
     value: "false"
     description: "Set to true to override rules in the reliability-env pipeline (e.g. override 'only deploy master')"
+  DOWNSTREAM_BRANCH:
+    value: "master"
+    description: "Run a specific datadog-reliability-env branch downstream"
     
 build:
   only:
@@ -17,6 +20,9 @@ build:
     - main
     - /^hotfix.*$/
     - /^release.*$/
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
   stage: build
   tags: ["runner:windows-docker", "windowsversion:1809"]
   script:
@@ -39,6 +45,9 @@ publish:
     - main
     - /^hotfix.*$/
     - /^release.*$/
+  except:
+    variables:
+      - $DEPLOY_TO_REL_ENV == "true"
   stage: publish
   tags: ["runner:windows-docker", "windowsversion:1809"]
   dependencies: 
@@ -76,7 +85,7 @@ deploy_to_reliability_env:
     - if: '$DEPLOY_TO_REL_ENV == "true"'
   trigger:
     project: DataDog/apm-reliability/datadog-reliability-env
-    branch: master
+    branch: $DOWNSTREAM_BRANCH
   variables:
     UPSTREAM_PACKAGE_JOB: build
     UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME

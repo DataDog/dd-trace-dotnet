@@ -10,42 +10,40 @@
           "entry": {
             "arguments": {
               "num": {
-                "fields": null,
                 "type": "Int32",
                 "value": "7"
-              }
-            },
-            "fields": {
-              "Number": {
-                "fields": null,
-                "type": "Int32",
-                "value": "7"
+              },
+              "this": {
+                "Number": {
+                  "type": "Int32",
+                  "value": "7"
+                },
+                "type": "HasLocalsAndReturnValue",
+                "value": "HasLocalsAndReturnValue"
               }
             }
           },
           "return": {
             "arguments": {
               "num": {
-                "fields": null,
                 "type": "Int32",
                 "value": "7"
-              }
-            },
-            "fields": {
-              "Number": {
-                "fields": null,
-                "type": "Int32",
-                "value": "7"
+              },
+              "this": {
+                "Number": {
+                  "type": "Int32",
+                  "value": "7"
+                },
+                "type": "HasLocalsAndReturnValue",
+                "value": "HasLocalsAndReturnValue"
               }
             },
             "locals": {
               "@return": {
-                "fields": null,
                 "type": "String",
                 "value": "00:00:07"
               },
               "timeSpan": {
-                "fields": null,
                 "type": "TimeSpan",
                 "value": "00:00:07"
               }
@@ -93,7 +91,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "HasLocalsAndReturnValue.Method(num=7): 00:00:07\r\n@return=00:00:07, timeSpan=00:00:07",
+    "message": "HasLocalsAndReturnValue.Method(num=7, this=HasLocalsAndReturnValue): 00:00:07\r\n@return=00:00:07, timeSpan=00:00:07",
     "service": "Probes"
   },
   {
@@ -106,18 +104,20 @@
         "captures": {
           "lines": {
             "16": {
-              "fields": {
-                "Number": {
-                  "fields": null,
-                  "type": "Int32",
-                  "value": "7"
+              "arguments": {
+                "this": {
+                  "Number": {
+                    "type": "Int32",
+                    "value": "7"
+                  },
+                  "type": "HasLocalsAndReturnValue",
+                  "value": "HasLocalsAndReturnValue"
                 }
               },
               "locals": {
                 "result": {
-                  "fields": null,
-                  "type": "String",
-                  "value": "null"
+                  "isNull": "true",
+                  "type": "String"
                 }
               }
             }
@@ -161,7 +161,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "HasLocalsAndReturnValue.Run()\r\nresult=null",
+    "message": "HasLocalsAndReturnValue.Run(this=HasLocalsAndReturnValue)\r\nresult=",
     "service": "Probes"
   },
   {
@@ -174,16 +174,18 @@
         "captures": {
           "lines": {
             "17": {
-              "fields": {
-                "Number": {
-                  "fields": null,
-                  "type": "Int32",
-                  "value": "7"
+              "arguments": {
+                "this": {
+                  "Number": {
+                    "type": "Int32",
+                    "value": "7"
+                  },
+                  "type": "HasLocalsAndReturnValue",
+                  "value": "HasLocalsAndReturnValue"
                 }
               },
               "locals": {
                 "result": {
-                  "fields": null,
                   "type": "String",
                   "value": "00:00:07"
                 }
@@ -229,7 +231,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "HasLocalsAndReturnValue.Run()\r\nresult=00:00:07",
+    "message": "HasLocalsAndReturnValue.Run(this=HasLocalsAndReturnValue)\r\nresult=00:00:07",
     "service": "Probes"
   },
   {
@@ -244,21 +246,20 @@
             "25": {
               "arguments": {
                 "num": {
-                  "fields": null,
                   "type": "Int32",
                   "value": "7"
-                }
-              },
-              "fields": {
-                "Number": {
-                  "fields": null,
-                  "type": "Int32",
-                  "value": "7"
+                },
+                "this": {
+                  "Number": {
+                    "type": "Int32",
+                    "value": "7"
+                  },
+                  "type": "HasLocalsAndReturnValue",
+                  "value": "HasLocalsAndReturnValue"
                 }
               },
               "locals": {
                 "timeSpan": {
-                  "fields": null,
                   "type": "TimeSpan",
                   "value": "00:00:07"
                 }
@@ -309,7 +310,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "HasLocalsAndReturnValue.Method(num=7)\r\ntimeSpan=00:00:07",
+    "message": "HasLocalsAndReturnValue.Method(num=7, this=HasLocalsAndReturnValue)\r\ntimeSpan=00:00:07",
     "service": "Probes"
   }
 ]

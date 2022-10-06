@@ -1,4 +1,4 @@
-// <copyright file="AspNetCore5WafInitialization.cs" company="Datadog">
+// <copyright file="AspNetCore5AsmInitialization.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,10 +15,10 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
-    public class AspNetCore5WafInitialization : AspNetBase, IDisposable
+    public class AspNetCore5AsmInitialization : AspNetBase, IDisposable
     {
-        public AspNetCore5WafInitialization(ITestOutputHelper outputHelper)
-            : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5WafInitialization))
+        public AspNetCore5AsmInitialization(ITestOutputHelper outputHelper)
+            : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5AsmInitialization))
         {
         }
 
