@@ -15,7 +15,6 @@ using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.DataStreamsMonitoring.Transport;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Util;
@@ -81,8 +80,7 @@ public class DataStreamsWriterTests
 
         await writer.DisposeAsync();
 
-        // The origin and current points _might_ be sent in separate payloads
-        api.Sent.Should().HaveCountGreaterOrEqualTo(1).And.HaveCountLessOrEqualTo(2);
+        HasOneOrTwoPoints(api);
     }
 
     [Fact]
@@ -218,7 +216,7 @@ public class DataStreamsWriterTests
 
         await writer.DisposeAsync();
 
-        api.Sent.Should().ContainSingle();
+        HasOneOrTwoPoints(api);
     }
 
     [Fact]
@@ -233,7 +231,7 @@ public class DataStreamsWriterTests
 
         await api.WaitForCount(1, 30_000);
 
-        api.Sent.Should().ContainSingle();
+        HasOneOrTwoPoints(api);
 
         TriggerSupportUpdate(discovery, isSupported: false); // change in support
 
@@ -241,33 +239,40 @@ public class DataStreamsWriterTests
 
         await writer.DisposeAsync();
 
-        api.Sent.Should().ContainSingle();
+        HasOneOrTwoPoints(api);
     }
 
     [Fact]
     public async Task GZipsDataWhenSendingToApi()
     {
-        var bucketDurationMs = 100; // 100 ms
+        var bucketDurationMs = 100_000_000;
         var api = new StubApi();
         var writer = CreateWriter(api, out var discovery, bucketDurationMs);
         TriggerSupportUpdate(discovery, isSupported: true);
 
         writer.Add(CreateStatsPoint());
 
-        await api.WaitForCount(1, 30_000);
+        await writer.DisposeAsync();
 
-        var data = api.Sent.Should().ContainSingle().Subject;
+        HasOneOrTwoPoints(api);
 
-        using var compressed = new MemoryStream(data.Array!);
-        using var gzip = new GZipStream(compressed, CompressionMode.Decompress);
-        using var decompressed = new MemoryStream();
-        await gzip.CopyToAsync(decompressed);
+        var payloads = new List<MockDataStreamsPayload>();
+        foreach (var payload in api.Sent)
+        {
+            using var compressed = new MemoryStream(payload.Array!);
+            using var gzip = new GZipStream(compressed, CompressionMode.Decompress);
+            using var decompressed = new MemoryStream();
+            await gzip.CopyToAsync(decompressed);
 
-        var result = MessagePackSerializer.Deserialize<MockDataStreamsPayload>(decompressed.GetBuffer());
-        result.Env.Should().Be(Environment);
-        result.Service.Should().Be(Service);
-        result.Stats.Should().ContainSingle(x => x.Stats.Any(x => x.TimestampType == "current"));
-        result.Stats.Should().ContainSingle(x => x.Stats.Any(x => x.TimestampType == "origin"));
+            var result = MessagePackSerializer.Deserialize<MockDataStreamsPayload>(decompressed.GetBuffer());
+
+            payloads.Add(result);
+        }
+
+        payloads.Should().OnlyContain(x => x.Env == Environment);
+        payloads.Should().OnlyContain(x => x.Service == Service);
+        payloads.Should().Contain(x => x.Stats.Any(y => y.Stats.Any(z => z.TimestampType == "current")));
+        payloads.Should().Contain(x => x.Stats.Any(y => y.Stats.Any(z => z.TimestampType == "origin")));
     }
 
     [Fact]
@@ -313,6 +318,12 @@ public class DataStreamsWriterTests
         writer.PointsDropped.Should().Be(0);
 
         await writer.DisposeAsync();
+    }
+
+    private static void HasOneOrTwoPoints(StubApi api)
+    {
+        // The origin and current points _might_ be sent in separate payloads
+        api.Sent.Should().HaveCountGreaterOrEqualTo(1).And.HaveCountLessOrEqualTo(2);
     }
 
     private static DataStreamsWriter CreateWriter(

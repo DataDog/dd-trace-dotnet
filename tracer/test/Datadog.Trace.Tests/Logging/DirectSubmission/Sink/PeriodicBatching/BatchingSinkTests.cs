@@ -161,7 +161,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
 
         private static ConcurrentStack<IList<DatadogLogEvent>> WaitForBatches(InMemoryBatchedSink pbs, int batchCount = 1)
         {
-            var deadline = DateTime.UtcNow.AddSeconds(10);
+            var deadline = DateTime.UtcNow.AddSeconds(30);
             var batches = pbs.Batches;
             while (batches.Count < batchCount && DateTime.UtcNow < deadline)
             {

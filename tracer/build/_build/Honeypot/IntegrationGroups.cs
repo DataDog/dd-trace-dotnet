@@ -23,6 +23,7 @@ namespace Honeypot
             NugetPackages.Add("netstandard", new string[] { });
             NugetPackages.Add("System.Messaging", new string[] { });
             NugetPackages.Add("System", new string[] { });
+            NugetPackages.Add("System.Diagnostics.Process", new string[] { });
 
             NugetPackages.Add("Oracle.DataAccess", new string[] { });
 

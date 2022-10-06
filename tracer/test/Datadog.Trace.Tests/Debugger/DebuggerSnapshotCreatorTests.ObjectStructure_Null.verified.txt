@@ -1,0 +1,6 @@
+﻿{
+  local0: {
+    isNull: true,
+    type: Object
+  }
+}

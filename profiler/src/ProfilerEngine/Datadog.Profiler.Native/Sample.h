@@ -26,7 +26,7 @@ SampleValueType const SampleTypeDefinitions[] =
     {"alloc-samples", "count"}, // AllocationCount
     {"alloc-size", "bytes"},    // AllocationSize
     {"lock-count", "count"},
-    {"lock-duration", "nanoseconds"}
+    {"lock-time", "nanoseconds"}
 
     // the new ones should be added here at the same time
     // new identifiers are added to SampleValue

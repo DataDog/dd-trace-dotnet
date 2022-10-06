@@ -1,0 +1,16 @@
+﻿{
+  local0: {
+    fields: {
+      IsValueCreated: {
+        type: Boolean,
+        value: True
+      },
+      Value: {
+        type: Int32,
+        value: 2
+      }
+    },
+    type: Lazy`1,
+    value: Lazy`1
+  }
+}

@@ -8,18 +8,16 @@
       "snapshot": {
         "captures": {
           "entry": {
-            "fields": {
+            "staticFields": {
               "Number": {
-                "fields": null,
                 "type": "Int32",
                 "value": "0"
               }
             }
           },
           "return": {
-            "fields": {
+            "staticFields": {
               "Number": {
-                "fields": null,
                 "type": "Int32",
                 "value": "7"
               }

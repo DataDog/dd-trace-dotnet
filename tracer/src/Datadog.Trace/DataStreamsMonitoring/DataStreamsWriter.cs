@@ -181,6 +181,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
     private async Task ProcessQueueLoopAsync()
     {
+        var isFinalFlush = false;
         while (true)
         {
             try
@@ -204,7 +205,15 @@ internal class DataStreamsWriter : IDataStreamsWriter
 
             if (_processExit.Task.IsCompleted)
             {
-                return;
+                if (isFinalFlush)
+                {
+                    return;
+                }
+
+                // do one more loop to make sure everything is flushed
+                RequestFlush();
+                isFinalFlush = true;
+                continue;
             }
 
             _processingMutex.Wait();

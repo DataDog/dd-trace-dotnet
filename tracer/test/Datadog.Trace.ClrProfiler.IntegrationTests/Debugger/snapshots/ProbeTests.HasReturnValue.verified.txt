@@ -8,25 +8,30 @@
       "snapshot": {
         "captures": {
           "entry": {
-            "fields": {
-              "Number": {
-                "fields": null,
-                "type": "Int32",
-                "value": "0"
+            "arguments": {
+              "this": {
+                "Number": {
+                  "type": "Int32",
+                  "value": "0"
+                },
+                "type": "HasReturnValue",
+                "value": "HasReturnValue"
               }
             }
           },
           "return": {
-            "fields": {
-              "Number": {
-                "fields": null,
-                "type": "Int32",
-                "value": "7"
+            "arguments": {
+              "this": {
+                "Number": {
+                  "type": "Int32",
+                  "value": "7"
+                },
+                "type": "HasReturnValue",
+                "value": "HasReturnValue"
               }
             },
             "locals": {
               "@return": {
-                "fields": null,
                 "type": "String",
                 "value": "7"
               }
@@ -74,7 +79,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "HasReturnValue.Method(): 7\r\n@return=7",
+    "message": "HasReturnValue.Method(this=HasReturnValue): 7\r\n@return=7",
     "service": "Probes"
   }
 ]

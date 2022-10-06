@@ -20,14 +20,12 @@ namespace Datadog.Trace.TestHelpers
         private readonly TaskCompletionSource<bool> _outputTask = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly StringBuilder _outputBuffer = new();
         private readonly StringBuilder _errorBuffer = new();
-        private readonly Action<string> _onDataReceived;
 
-        public ProcessHelper(Process process, Action<string> onDataReceived = null)
+        public ProcessHelper(Process process, Action<string> onDataReceived = null, Action<string> onErrorReceived = null)
         {
-            _onDataReceived = onDataReceived;
             Task = Task.WhenAll(_outputTask.Task, _errorTask.Task);
-            process.OutputDataReceived += (_, e) => DrainOutput(e, _outputBuffer, _outputTask);
-            process.ErrorDataReceived += (_, e) => DrainOutput(e, _errorBuffer, _errorTask);
+            process.OutputDataReceived += (_, e) => DrainOutput(e, _outputBuffer, _outputTask, onDataReceived);
+            process.ErrorDataReceived += (_, e) => DrainOutput(e, _errorBuffer, _errorTask, onErrorReceived ?? onDataReceived);
 
             process.BeginOutputReadLine();
             process.BeginErrorReadLine();
@@ -61,7 +59,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        private void DrainOutput(DataReceivedEventArgs e, StringBuilder buffer, TaskCompletionSource<bool> tcs)
+        private void DrainOutput(DataReceivedEventArgs e, StringBuilder buffer, TaskCompletionSource<bool> tcs, Action<string> onDataReceived)
         {
             if (e.Data == null)
             {
@@ -70,7 +68,7 @@ namespace Datadog.Trace.TestHelpers
             else
             {
                 buffer.AppendLine(e.Data);
-                _onDataReceived?.Invoke(e.Data);
+                onDataReceived?.Invoke(e.Data);
             }
         }
     }

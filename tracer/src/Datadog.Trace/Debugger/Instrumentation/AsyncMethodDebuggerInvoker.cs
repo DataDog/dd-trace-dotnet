@@ -183,7 +183,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void LogArg<TArg>(ref TArg arg, Type type, string paramName, int index, ref AsyncMethodDebuggerState asyncState)
         {
-            asyncState.SnapshotCreator.CaptureArgument(arg, paramName, index == 0, asyncState.HasLocalsOrReturnValue, type);
+            asyncState.SnapshotCreator.CaptureArgument(arg, paramName, type);
             asyncState.HasLocalsOrReturnValue = false;
             asyncState.HasArguments = true;
         }
@@ -191,7 +191,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static void LogLocal<TLocal>(ref TLocal local, Type type, string localName, int index, ref AsyncMethodDebuggerState asyncState)
         {
-            asyncState.SnapshotCreator.CaptureLocal(local, localName, index == 0 && !asyncState.HasLocalsOrReturnValue, type);
+            asyncState.SnapshotCreator.CaptureLocal(local, localName, type);
             asyncState.HasLocalsOrReturnValue = true;
             asyncState.HasArguments = false;
         }
@@ -280,7 +280,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
             else
             {
-                asyncState.SnapshotCreator.CaptureLocal(returnValue, "@return", true);
+                asyncState.SnapshotCreator.CaptureLocal(returnValue, "@return");
                 asyncState.HasLocalsOrReturnValue = true;
             }
 

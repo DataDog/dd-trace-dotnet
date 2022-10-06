@@ -43,7 +43,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// <param name="methodMetadataIndex">The unique index of the method's <see cref="Instrumentation.MethodMetadataInfo"/></param>
         /// <param name="lineNumber">The line number where the probe is located on</param>
         /// <param name="probeFilePath">The path to the file of the probe</param>
-        internal LineDebuggerState(string probeId, Scope scope, DateTimeOffset? startTime, int methodMetadataIndex, int lineNumber, string probeFilePath)
+        /// <param name="invocationTarget">The instance object (or null for static methods)</param>
+        internal LineDebuggerState(string probeId, Scope scope, DateTimeOffset? startTime, int methodMetadataIndex, int lineNumber, string probeFilePath, object invocationTarget)
         {
             _probeId = probeId;
             _scope = scope;
@@ -53,6 +54,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             _probeFilePath = probeFilePath;
             HasLocalsOrReturnValue = false;
             SnapshotCreator = new DebuggerSnapshotCreator();
+            InvocationTarget = invocationTarget;
         }
 
         internal ref MethodMetadataInfo MethodMetadataInfo => ref MethodMetadataProvider.Get(_methodMetadataIndex);
@@ -86,6 +88,8 @@ namespace Datadog.Trace.Debugger.Instrumentation
         /// Gets the Line Number
         /// </summary>
         internal int LineNumber => _lineNumber;
+
+        internal object InvocationTarget { get; }
 
         /// <summary>
         /// Gets the default live debugger state (used by the native side to initialize the locals)
