@@ -1,15 +1,17 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
+#include <chrono>
+
 #include "GenericSampler.h"
 #include "Configuration.h"
 
 
-GenericSampler::GenericSampler(int32_t samplesLimit, int32_t uploadInterval) :
+GenericSampler::GenericSampler(int32_t samplesLimit, std::chrono::seconds uploadInterval) :
     _sampler(
         SamplingWindow,
-        SamplesPerWindow(samplesLimit, SamplingWindowsPerRecording(uploadInterval, static_cast<int32_t>(SamplingWindow.count()))),
-        SamplingWindowsPerRecording(uploadInterval, static_cast<int32_t>(SamplingWindow.count())),
+        SamplesPerWindow(samplesLimit, SamplingWindowsPerRecording(uploadInterval, SamplingWindow)),
+        SamplingWindowsPerRecording(uploadInterval, SamplingWindow),
         16, [this] { RollWindow(); }
         )
 {
@@ -29,9 +31,11 @@ void GenericSampler::OnRollWindow()
 {
 }
 
-int32_t GenericSampler::SamplingWindowsPerRecording(int32_t intervalMs, int32_t samplingWindowMs)
+int32_t GenericSampler::SamplingWindowsPerRecording(std::chrono::seconds intervalSec, std::chrono::milliseconds samplingWindowMs)
 {
-    return intervalMs / samplingWindowMs;
+    const auto uploadIntervalMs = std::chrono::duration_cast<std::chrono::milliseconds>(intervalSec);
+
+    return static_cast<int32_t>(uploadIntervalMs / samplingWindowMs);
 }
 
 int32_t GenericSampler::SamplesPerWindow(int32_t samplesLimit, int32_t samplingWindowsPerRecording)

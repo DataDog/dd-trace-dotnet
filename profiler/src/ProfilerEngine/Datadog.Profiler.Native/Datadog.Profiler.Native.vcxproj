@@ -256,7 +256,6 @@
     <ClInclude Include="DogFood.hpp" />
     <ClInclude Include="DogstatsdService.h" />
     <ClInclude Include="EnvironmentVariables.h" />
-    <ClInclude Include="ExceptionSampler.h" />
     <ClInclude Include="ExceptionsProvider.h" />
     <ClInclude Include="FfiHelper.h" />
     <ClInclude Include="FrameStore.h" />
@@ -329,7 +328,6 @@
     <ClCompile Include="CpuTimeProvider.cpp" />
     <ClCompile Include="DogstatsdService.cpp" />
     <ClCompile Include="EnabledProfilers.cpp" />
-    <ClCompile Include="ExceptionSampler.cpp" />
     <ClCompile Include="ExceptionsProvider.cpp" />
     <ClCompile Include="FfiHelper.cpp" />
     <ClCompile Include="FrameStore.cpp" />

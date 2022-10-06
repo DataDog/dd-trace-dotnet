@@ -3,18 +3,23 @@
 
 #pragma once
 
+#include <chrono>
+
 #include "AdaptiveSampler.h"
 #include "IConfiguration.h"
+
+
+using namespace std::literals;
 
 
 // Base class for samplers that takes care of AdaptiveSampler logistics
 class GenericSampler
 {
 private:
-    static constexpr inline std::chrono::milliseconds SamplingWindow = std::chrono::milliseconds(500);
+    static constexpr inline std::chrono::milliseconds SamplingWindow = 500ms;
 
 public:
-    GenericSampler(int32_t samplesLimit, int32_t uploadInterval);
+    GenericSampler(int32_t samplesLimit, std::chrono::seconds uploadInterval);
     virtual ~GenericSampler() = default;
 
     bool Sample();
@@ -27,8 +32,8 @@ protected:
     virtual void OnRollWindow();
 
 private:
-    int32_t SamplingWindowsPerRecording(int32_t intervalMs, int32_t samplingWindowMs);
-    int32_t SamplesPerWindow(int32_t samplesLimit, int32_t samplingWindowsPerRecording);
+    static int32_t SamplingWindowsPerRecording(std::chrono::seconds intervalSec, std::chrono::milliseconds samplingWindowMs);
+    static int32_t SamplesPerWindow(int32_t samplesLimit, int32_t samplingWindowsPerRecording);
     void RollWindow();
 
 };

@@ -94,11 +94,11 @@ void SamplesCollector::Export()
     {
         std::lock_guard lock(_exportLock);
 
-        Log::Info("Collected samples per provider:");
+        Log::Debug("Collected samples per provider:");
         for (auto& samplesProvider : _samplesProviders)
         {
             auto name = samplesProvider.first->GetName();
-            Log::Info(name, " : ", samplesProvider.second);
+            Log::Debug(name, " : ", samplesProvider.second);
             samplesProvider.second = 0;
         }
 

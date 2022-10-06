@@ -29,7 +29,7 @@ AllocationsProvider::AllocationsProvider(
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),
     _sampleLimit(pConfiguration->AllocationSampleLimit()),
-    _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval().count() * 1000)
+    _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval())
 {
 }
 

@@ -23,7 +23,7 @@ ContentionProvider::ContentionProvider(
     CollectorBase<RawContentionSample>("ContentionProvider", pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo{pCorProfilerInfo},
     _pManagedThreadList{pManagedThreadList},
-    _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval().count() * 1000),
+    _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval()),
     _contentionDurationThreshold{pConfiguration->ContentionDurationThreshold()},
     _sampleLimit{pConfiguration->ContentionSampleLimit()}
 {

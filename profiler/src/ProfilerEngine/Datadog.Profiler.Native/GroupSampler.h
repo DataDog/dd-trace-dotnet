@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <chrono>
 #include <unordered_set>
 
 #include "GenericSampler.h"
@@ -15,9 +16,9 @@ template <class TGroup>
 class GroupSampler : public GenericSampler
 {
 public:
-    GroupSampler<TGroup>(int32_t samplesLimit, int32_t uploadIntervalMs)
+    GroupSampler<TGroup>(int32_t samplesLimit, std::chrono::seconds uploadInterval)
         :
-        GenericSampler(samplesLimit, uploadIntervalMs)
+        GenericSampler(samplesLimit, uploadInterval)
     {
     }
 
@@ -25,12 +26,11 @@ public:
     {
         std::unique_lock lock(_knownGroupsMutex);
 
-        if (_knownGroups.find(group) == _knownGroups.end())
+        auto [it, inserted] = _knownGroups.insert(group);
+        if (inserted)
         {
             // This is the first time we see this group in this time window,
             // force the sampling decision
-            _knownGroups.insert(group);
-
             return _sampler.Keep();
         }
 
