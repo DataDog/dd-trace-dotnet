@@ -5,8 +5,10 @@
 
 #nullable enable
 
+using System;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
 
@@ -21,9 +23,10 @@ namespace Datadog.Trace.Iast
         {
         }
 
-        public static Scope? OnCipherAlgorithm(string? algorithm, IntegrationId integrationId, Iast iast)
+        public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId, Iast iast)
         {
-            if (algorithm == null || !InvalidCipherAlgorithm(algorithm, iast))
+            var algorithm = type.BaseType?.Name;
+            if (algorithm == null || InvalidCipherAlgorithm(type, algorithm, iast))
             {
                 return null;
             }
@@ -99,9 +102,10 @@ namespace Datadog.Trace.Iast
             return false;
         }
 
-        private static bool InvalidCipherAlgorithm(string algorithm, Iast iast)
+        private static bool InvalidCipherAlgorithm(Type type, string algorithm, Iast iast)
         {
-            return iast.Settings.WeakCipherAlgorithmsArray.Contains(algorithm);
+            // TripleDESCryptoServiceProvider internally creates a DES algorithm instance.
+            return type.Name == "TripleDESCryptoServiceProvider" || !iast.Settings.WeakCipherAlgorithmsArray.Contains(algorithm);
         }
     }
 }

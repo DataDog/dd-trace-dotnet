@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm
 
             try
             {
-                return IastModule.OnCipherAlgorithm(instance.GetType()?.BaseType?.Name, IntegrationId, iast);
+                return IastModule.OnCipherAlgorithm(instance.GetType(), IntegrationId, iast);
             }
             catch (Exception ex)
             {
