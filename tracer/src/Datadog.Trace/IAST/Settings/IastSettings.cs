@@ -5,7 +5,6 @@
 
 #nullable enable
 
-using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Iast.Settings

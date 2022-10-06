@@ -9,7 +9,7 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm
 {
     /// <summary>
     /// System.Security.Cryptography.HashAlgorithm instrumentation
@@ -49,16 +49,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
         /// OnMethodEnd callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TReturn">Type of the return value</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="returnValue">the return value processce</param>
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>CallTargetReturn</returns>
-        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, CallTargetState state)
+        internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, CallTargetState state)
         {
             state.Scope.DisposeWithException(exception);
-            return new CallTargetReturn<TReturn>(returnValue);
+            return CallTargetReturn.GetDefault();
         }
     }
 }

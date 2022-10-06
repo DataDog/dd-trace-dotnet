@@ -11,7 +11,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm
 {
     internal class SymmetricAlgorithmIntegrationCommon
     {
