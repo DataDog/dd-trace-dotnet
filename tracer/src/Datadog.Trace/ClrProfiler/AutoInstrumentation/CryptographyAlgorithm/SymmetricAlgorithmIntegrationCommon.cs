@@ -40,10 +40,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm;
                 return null;
             }
         }
-
-        private static string? GetAlgorithmName(Type type)
-        {
-            return type.BaseType?.BaseType == typeof(SymmetricAlgorithm) ? type.BaseType?.Name : type.Name;
-        }
     }
 }
