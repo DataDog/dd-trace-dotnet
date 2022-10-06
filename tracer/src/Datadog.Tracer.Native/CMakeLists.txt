@@ -107,23 +107,6 @@ endif()
 # Dependencies
 # ******************************************************
 
-# Prepare dependencies
-if (NOT EXISTS ${OUTPUT_DEPS_DIR}/re2)
-    add_custom_command(
-        OUTPUT ${OUTPUT_DEPS_DIR}/re2
-        COMMAND git clone --quiet --depth 1 --branch 2018-10-01 https://github.com/google/re2.git && cd re2 && env ARFLAGS=\"-r -s -c\" CXXFLAGS=\"-O3 -g -fPIC -D_GLIBCXX_USE_CXX11_ABI=0\" make -j
-        WORKING_DIRECTORY ${OUTPUT_DEPS_DIR}
-    )
-endif()
-
-if (NOT EXISTS ${OUTPUT_DEPS_DIR}/fmt)
-    add_custom_command(
-        OUTPUT ${OUTPUT_DEPS_DIR}/fmt
-        COMMAND git clone --quiet --depth 1 --branch 5.3.0 https://github.com/fmtlib/fmt.git && cd fmt && CXXFLAGS=\"-D_GLIBCXX_USE_CXX11_ABI=0\" && cmake -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0 . && make -j
-        WORKING_DIRECTORY ${OUTPUT_DEPS_DIR}
-    )
-endif()
-
 # Set Managed Loader folder
 SET(MANAGED_LOADER_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../bin/ProfilerResources/netcoreapp2.0)
 
@@ -132,26 +115,26 @@ if (ISMACOS)
     add_custom_command(
             OUTPUT ${OUTPUT_TMP_DIR}/Datadog.Trace.ClrProfiler.Managed.Loader.dll.o
             COMMAND touch stub.c && gcc -o stub.o -c stub.c && cp ${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.dll Datadog.Trace.ClrProfiler.Managed.Loader.dll && ld -r -o Datadog.Trace.ClrProfiler.Managed.Loader.dll.o -sectcreate binary dll Datadog.Trace.ClrProfiler.Managed.Loader.dll stub.o
-            DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.dll ${OUTPUT_DEPS_DIR}/re2 ${OUTPUT_DEPS_DIR}/fmt
+            DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.dll
             WORKING_DIRECTORY ${OUTPUT_TMP_DIR}
     )
     add_custom_command(
             OUTPUT ${OUTPUT_TMP_DIR}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb.o
             COMMAND touch stub.c && gcc -o stub.o -c stub.c && cp "${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb" Datadog.Trace.ClrProfiler.Managed.Loader.pdb && ld -r -o Datadog.Trace.ClrProfiler.Managed.Loader.pdb.o -sectcreate binary pdb Datadog.Trace.ClrProfiler.Managed.Loader.pdb stub.o
-            DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb ${OUTPUT_DEPS_DIR}/re2 ${OUTPUT_DEPS_DIR}/fmt
+            DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb
             WORKING_DIRECTORY ${OUTPUT_TMP_DIR}
     )
 elseif(ISLINUX)
     add_custom_command(
             OUTPUT ${OUTPUT_TMP_DIR}/Datadog.Trace.ClrProfiler.Managed.Loader.dll.o
             COMMAND cp "${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.dll" Datadog.Trace.ClrProfiler.Managed.Loader.dll && ld -r -b binary -o Datadog.Trace.ClrProfiler.Managed.Loader.dll.o Datadog.Trace.ClrProfiler.Managed.Loader.dll
-            DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.dll ${OUTPUT_DEPS_DIR}/re2 ${OUTPUT_DEPS_DIR}/fmt
+            DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.dll
             WORKING_DIRECTORY ${OUTPUT_TMP_DIR}
     )
     add_custom_command(
             OUTPUT ${OUTPUT_TMP_DIR}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb.o
             COMMAND cp "${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb" Datadog.Trace.ClrProfiler.Managed.Loader.pdb && ld -r -b binary -o Datadog.Trace.ClrProfiler.Managed.Loader.pdb.o Datadog.Trace.ClrProfiler.Managed.Loader.pdb
-            DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb ${OUTPUT_DEPS_DIR}/re2 ${OUTPUT_DEPS_DIR}/fmt
+            DEPENDS ${MANAGED_LOADER_DIRECTORY}/Datadog.Trace.ClrProfiler.Managed.Loader.pdb
             WORKING_DIRECTORY ${OUTPUT_TMP_DIR}
     )
 endif()
@@ -245,28 +228,28 @@ set_target_properties("Datadog.Tracer.Native.static" PROPERTIES PREFIX "")
 # Define directories includes
 target_include_directories("Datadog.Tracer.Native.static"
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/spdlog/include
-        PUBLIC ${OUTPUT_DEPS_DIR}/fmt/include
-        PUBLIC ${OUTPUT_DEPS_DIR}/re2
 )
 
 # Define linker libraries
 if (ISMACOS)
     target_link_libraries("Datadog.Tracer.Native.static"
         coreclr-lib
-        ${OUTPUT_DEPS_DIR}/re2/obj/libre2.a
-        ${OUTPUT_DEPS_DIR}/fmt/libfmt.a
+        fmt-lib
+        re2-lib
         ${CMAKE_DL_LIBS}
     )
 elseif(ISLINUX)
     target_link_libraries("Datadog.Tracer.Native.static"
         coreclr-lib
-        ${OUTPUT_DEPS_DIR}/re2/obj/libre2.a
-        ${OUTPUT_DEPS_DIR}/fmt/libfmt.a
+        fmt-lib
+        re2-lib
         ${CMAKE_DL_LIBS}
         -static-libgcc
         -static-libstdc++
     )
 endif()
+
+add_dependencies("Datadog.Tracer.Native.static" fmt-lib coreclr-lib re2-lib)
 
 # ******************************************************
 # Define shared target
