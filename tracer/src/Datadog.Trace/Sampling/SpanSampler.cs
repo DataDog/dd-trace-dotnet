@@ -37,9 +37,12 @@ internal class SpanSampler : ISpanSampler
         {
             foreach (var rule in _rules)
             {
-                if (rule.ShouldKeep(span))
+                if (rule.IsMatch(span))
                 {
-                    return rule;
+                    if (rule.ShouldSample(span))
+                    {
+                        return rule;
+                    }
                 }
             }
         }
