@@ -62,6 +62,18 @@ namespace Datadog.Profiler.IntegrationTests
                 text = reader.ReadToEnd();
             }
 
+            /*
+             we want to extract the "tags_profiler" attribute from the http body. The format is as followed:
+             {
+                 "start":"<START DATE>",
+                 "end":"<END DATE>",
+                 "attachments":["<ATTACHMENT1>", "<ATTACHMENT2>"],
+                 "tags_profiler":"<PROFILER TAGS>",
+                 "family":"<FAMILY>",
+                 "version":"4"
+             }
+             <PROFILER TAGS> is a list of tag (2 strings separated by ':') separated by ','
+             */
             var match_tags = Regex.Match(text, "\"tags_profiler\":\"(?<tags>[^\"]*)\"", RegexOptions.Compiled);
 
             if (!match_tags.Success || string.IsNullOrWhiteSpace(match_tags.Groups["tags"].Value))
