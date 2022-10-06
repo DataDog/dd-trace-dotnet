@@ -79,8 +79,17 @@ namespace Samples.Computer01
         {
             Iterator it = new Iterator(1000);
 
-            // check for lambda methods from method in callstacks
+            // check for lambda methods with parameter from method in callstacks
+            int elementsCount = 0;
             var isAboveThreshold = Iterator.GetEvenSequence(1000).Any(v =>
+            {
+                elementsCount++;
+                Thread.Sleep(10);
+                return v > 9999;
+            });
+
+            // check for lambda methods from method in callstacks
+            isAboveThreshold = Iterator.GetEvenSequence(1000).Any(v =>
             {
                 Thread.Sleep(10);
                 return v > 9999;
@@ -99,8 +108,17 @@ namespace Samples.Computer01
             {
                 var sequence = GetEvenSequence(count);
 
+                // check for lambda methods with parameter from method in callstacks
+                int elementsCount = 0;
+                var isAboveThreshold = Iterator.GetEvenSequence(1000).Any(v =>
+                {
+                    elementsCount++;
+                    Thread.Sleep(10);
+                    return v > 9999;
+                });
+
                 // check for lambda methods from constructor in callstacks
-                var isAboveThreshold = sequence.Any(v =>
+                isAboveThreshold = sequence.Any(v =>
                 {
                     Thread.Sleep(10);
                     return v > 9999;
