@@ -71,7 +71,16 @@ namespace Datadog.Trace.Iast
                 return null;
             }
 
-            return StringBuilderCache.GetStringAndRelease(StringBuilderCache.Acquire(0).Append(namespaceName).Append('.').Append(typeName).Append("::").Append(methodName));
+            var length = namespaceName.Length + typeName.Length + methodName.Length + 3;
+            var sb = StringBuilderCache.Acquire(length);
+            
+            sb.Append(namespaceName)
+              .Append('.')
+              .Append(typeName)
+              .Append("::")
+              .Append(methodName);
+            
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         private static bool InvalidHashAlgorithm(string algorithm, Iast iast)
