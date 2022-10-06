@@ -118,38 +118,47 @@ namespace Datadog.Trace.Tests.Sampling
         }
 
         [Fact]
-        public void ShouldKeep_ShouldReturnFalse_ForNullSpan()
+        public void IsMatch_ShouldReturnFalse_ForNullSpan()
         {
             var rule = new SpanSamplingRule("*", "*");
 
-            Assert.False(rule.ShouldKeep(null));
+            Assert.False(rule.IsMatch(null));
         }
 
         [Fact]
-        public void ShouldKeep_ShouldReturnFalse_WhenServiceAndOperationDontMatch()
+        public void ShouldSample_ShouldReturnFalse_ForNullSpan()
+        {
+            var rule = new SpanSamplingRule("*", "*");
+
+            Assert.False(rule.ShouldSample(null));
+        }
+
+        [Fact]
+        public void IsMatch_ShouldReturnFalse_WhenServiceAndOperationDontMatch()
         {
             var config = "[{\"service\":\"test\", \"name\":\"test\"}]";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
-            Assert.False(rule.ShouldKeep(CartCheckoutSpan));
+            Assert.False(rule.IsMatch(CartCheckoutSpan));
         }
 
         [Fact]
-        public void ShouldKeep_ShouldReturnFalse_WhenSamplerIsZero()
+        public void ShouldSample_ShouldReturnFalse_WhenSamplerIsZero()
         {
             var config = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":0.0}]";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
-            Assert.False(rule.ShouldKeep(CartCheckoutSpan));
+            Assert.False(rule.ShouldSample(CartCheckoutSpan));
         }
 
         [Fact]
-        public void ShouldKeep_ShouldReturnTrue_WhenEverythingMatches()
+        public void ShouldSample_ShouldReturnTrue_WhenEverythingMatches()
         {
             var config = "[{\"service\":\"*\", \"name\":\"*\"}]";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
-            Assert.True(rule.ShouldKeep(CartCheckoutSpan));
+            Assert.True(rule.IsMatch(CartCheckoutSpan));
+            Assert.True(rule.ShouldSample(CartCheckoutSpan));
         }
 
         [Fact]

@@ -29,10 +29,17 @@ namespace Datadog.Trace.Sampling
         float? MaxPerSecond { get; }
 
         /// <summary>
-        ///     Determines whether or not the <paramref name="span"/> should be kept or dropped based on this rule.
+        ///     Checks whether or not the <paramref name="span"/> matches the glob patterns defined by this rule.
+        /// </summary>
+        /// <param name="span">The <see cref="Span"/> to check.</param>
+        /// <returns><see langword="true"/> when the span matches the rule's glob patterns; otherwise, <see langword="false"/>.</returns>
+        bool IsMatch(Span span);
+
+        /// <summary>
+        ///     Checks whether or not the <paramref name="span"/> should be sampled after matching on a rule.
         /// </summary>
         /// <param name="span">The <see cref="Span"/> to check.</param>
         /// <returns><see langword="true"/> when the span should be kept; otherwise, <see langword="false"/>.</returns>
-        bool ShouldKeep(Span span);
+        bool ShouldSample(Span span);
     }
 }

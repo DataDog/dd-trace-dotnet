@@ -97,14 +97,19 @@ namespace Datadog.Trace.Sampling
         }
 
         /// <inheritdoc/>
-        public bool ShouldKeep(Span span)
+        public bool IsMatch(Span span)
         {
-            // TODO should we log here?
-            if (!IsMatch(span))
+            if (span is null)
             {
                 return false;
             }
 
+            return _serviceNameRegex.Match(span.ServiceName).Success && _operationNameRegex.Match(span.OperationName).Success;
+        }
+
+        /// <inheritdoc/>
+        public bool ShouldSample(Span span)
+        {
             var sampleKeep = SamplingHelpers.SampleByRate(span.SpanId, SamplingRate);
 
             if (!sampleKeep)
@@ -115,16 +120,6 @@ namespace Datadog.Trace.Sampling
             var limitKeep = _limiter.Allowed(span);
 
             return limitKeep;
-        }
-
-        internal bool IsMatch(Span span)
-        {
-            if (span is null)
-            {
-                return false;
-            }
-
-            return _serviceNameRegex.Match(span.ServiceName).Success && _operationNameRegex.Match(span.OperationName).Success;
         }
 
         private static Regex ConvertGlobToRegex(string glob)
