@@ -11,7 +11,6 @@ using System.Text.RegularExpressions;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.SmokeTests;
 using FluentAssertions;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests
@@ -71,9 +70,15 @@ namespace Datadog.Profiler.IntegrationTests
 
         private static string ExtractTag(string tagName, string input)
         {
-            var match = Regex.Match(input, $"^{tagName}:(?<tag>[A-Z0-9-]+)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
+            var match_tags = Regex.Match(input, "\"tags_profiler\":\"(?<tags>[^\"]*)\"", RegexOptions.Compiled);
 
-            return match.Success ? match.Groups["tag"].Value : null;
+            if (!match_tags.Success || string.IsNullOrWhiteSpace(match_tags.Groups["tags"].Value))
+            {
+                return null;
+            }
+
+            var tags = match_tags.Groups["tags"].Value.Split(',').Select(s => s.Split(':')).ToDictionary(s => s[0], s => s[1]);
+            return tags.GetValueOrDefault(tagName);
         }
     }
 }
