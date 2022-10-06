@@ -76,7 +76,7 @@ else()
     message(STATUS "CLANG++ was found")
 endif()
 
-if (NOT EXISTS ${CMAKE_SOURCE_DIR}/../bin/ProfilerResources/netcoreapp2.0)
+if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../bin/ProfilerResources/netcoreapp2.0)
     message(FATAL_ERROR "Datadog.Trace.ClrProfiler.Loader must be built first.")
 else()
     message(STATUS "Datadog.Trace.ClrProfiler.Loader was found")
@@ -87,9 +87,9 @@ endif()
 # ******************************************************
 
 # Set output folders
-SET(OUTPUT_BIN_DIR ${CMAKE_BINARY_DIR}/bin)
-SET(OUTPUT_TMP_DIR ${CMAKE_BINARY_DIR}/tmp.${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_PROCESSOR})
-SET(OUTPUT_DEPS_DIR ${CMAKE_BINARY_DIR}/deps)
+SET(OUTPUT_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/bin)
+SET(OUTPUT_TMP_DIR ${CMAKE_CURRENT_BINARY_DIR}/tmp.${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_PROCESSOR})
+SET(OUTPUT_DEPS_DIR ${CMAKE_CURRENT_BINARY_DIR}/deps)
 FILE(MAKE_DIRECTORY ${OUTPUT_BIN_DIR})
 FILE(MAKE_DIRECTORY ${OUTPUT_TMP_DIR})
 FILE(MAKE_DIRECTORY ${OUTPUT_DEPS_DIR})
@@ -99,7 +99,9 @@ SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 
 
-SET(DOTNET_TRACER_REPO_ROOT_PATH ${CMAKE_SOURCE_DIR}/../../../)
+if (NOT DEFINED DOTNET_TRACER_REPO_ROOT_PATH)
+    SET(DOTNET_TRACER_REPO_ROOT_PATH ${CMAKE_CURRENT_BINARY_DIR}/../../../)
+endif()
 
 # ******************************************************
 # Dependencies
@@ -123,7 +125,7 @@ if (NOT EXISTS ${OUTPUT_DEPS_DIR}/fmt)
 endif()
 
 # Set Managed Loader folder
-SET(MANAGED_LOADER_DIRECTORY ${CMAKE_SOURCE_DIR}/../bin/ProfilerResources/netcoreapp2.0)
+SET(MANAGED_LOADER_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/../bin/ProfilerResources/netcoreapp2.0)
 
 # Set specific custom commands to embed the loader
 if (ISMACOS)
