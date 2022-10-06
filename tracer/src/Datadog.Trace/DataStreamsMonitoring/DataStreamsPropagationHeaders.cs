@@ -8,4 +8,6 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 internal static class DataStreamsPropagationHeaders
 {
     public const string PropagationKey = "dd-pathway-ctx";
+    public const string TemporaryEdgeTags = "x-datadog-temp-edge-tags";
+    public const string TemporaryBase64PathwayContext = "x-datadog-temp-base64-context";
 }
