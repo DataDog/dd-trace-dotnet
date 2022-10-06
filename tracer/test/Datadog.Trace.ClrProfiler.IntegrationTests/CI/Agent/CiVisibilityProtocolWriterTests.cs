@@ -1,4 +1,4 @@
-// <copyright file="CIAgentlessWriterTests.cs" company="Datadog">
+// <copyright file="CiVisibilityProtocolWriterTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -21,14 +21,14 @@ using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 {
-    public class CIAgentlessWriterTests
+    public class CiVisibilityProtocolWriterTests
     {
         [Fact]
         public async Task AgentlessTestEventTest()
         {
             var settings = CIVisibility.Settings;
-            var sender = new Mock<ICIAgentlessWriterSender>();
-            var agentlessWriter = new CIAgentlessWriter(settings, sender.Object);
+            var sender = new Mock<ICIVisibilityProtocolWriterSender>();
+            var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object);
 
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             span.Type = SpanTypes.Test;
@@ -57,8 +57,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         public async Task AgentlessCodeCoverageEvent()
         {
             var settings = CIVisibility.Settings;
-            var sender = new Mock<ICIAgentlessWriterSender>();
-            var agentlessWriter = new CIAgentlessWriter(settings, sender.Object);
+            var sender = new Mock<ICIVisibilityProtocolWriterSender>();
+            var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object);
             var coveragePayload = new CoveragePayload
             {
                 TraceId = 42,
@@ -111,8 +111,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
             var settings = CIVisibility.Settings;
             var flushTcs = new TaskCompletionSource<bool>();
 
-            var sender = new Mock<ICIAgentlessWriterSender>();
-            var agentlessWriter = new CIAgentlessWriter(settings, sender.Object, concurrency: 1);
+            var sender = new Mock<ICIVisibilityProtocolWriterSender>();
+            var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object, concurrency: 1);
             var lstPayloads = new List<byte[]>();
 
             sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.CIVisibilityProtocolPayload>()))
@@ -163,9 +163,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         public async Task ConcurrencyFlushTest()
         {
             var settings = CIVisibility.Settings;
-            var sender = new Mock<ICIAgentlessWriterSender>();
+            var sender = new Mock<ICIVisibilityProtocolWriterSender>();
             // We set 8 threads of concurrency and a batch interval of 10 seconds to avoid the autoflush.
-            var agentlessWriter = new CIAgentlessWriter(settings, sender.Object, concurrency: 8, batchInterval: 10_000);
+            var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object, concurrency: 8, batchInterval: 10_000);
             var lstPayloads = new List<byte[]>();
 
             const int numSpans = 2_000;

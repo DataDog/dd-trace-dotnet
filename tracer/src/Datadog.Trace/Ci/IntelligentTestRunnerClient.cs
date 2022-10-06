@@ -23,6 +23,7 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Ci;
 
@@ -33,6 +34,9 @@ internal class IntelligentTestRunnerClient
 {
     private const string ApiKeyHeader = "DD-API-KEY";
     private const string ApplicationKeyHeader = "DD-APPLICATION-KEY";
+    private const string EvpSubdomainHeader = "X-Datadog-EVP-Subdomain";
+    private const string EvpNeedsApplicationKeyHeader = "X-Datadog-NeedsAppKey";
+
     private const int MaxRetries = 3;
     private const int MaxPackFileSizeInMb = 3;
 
@@ -54,6 +58,7 @@ internal class IntelligentTestRunnerClient
     private readonly Uri _searchCommitsUrl;
     private readonly Uri _packFileUrl;
     private readonly Uri _skippableTestsUrl;
+    private readonly bool _useEvpProxy;
     private readonly Task<string> _getRepositoryUrlTask;
     private readonly Task<string> _getBranchNameTask;
     private readonly Task<string?> _getShaTask;
@@ -71,54 +76,58 @@ internal class IntelligentTestRunnerClient
         _getShaTask = ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse HEAD", _workingDirectory));
         _apiRequestFactory = CIVisibility.GetRequestFactory(_settings.TracerSettings.Build(), TimeSpan.FromSeconds(45));
 
-        var agentlessUrl = _settings.AgentlessUrl;
-        if (!string.IsNullOrWhiteSpace(agentlessUrl))
+        const string settingsUrlPath = "api/v2/libraries/tests/services/setting";
+        const string searchCommitsUrlPath = "api/v2/git/repository/search_commits";
+        const string packFileUrlPath = "api/v2/git/repository/packfile";
+        const string skippableTestsUrlPath = "api/v2/ci/tests/skippable";
+
+        if (_settings.Agentless)
         {
-            _settingsUrl = new UriBuilder(agentlessUrl)
+            _useEvpProxy = false;
+            var agentlessUrl = _settings.AgentlessUrl;
+            if (!string.IsNullOrWhiteSpace(agentlessUrl))
             {
-                Path = "api/v2/libraries/tests/services/setting"
-            }.Uri;
+                _settingsUrl = new UriBuilder(agentlessUrl) { Path = settingsUrlPath }.Uri;
+                _searchCommitsUrl = new UriBuilder(agentlessUrl) { Path = searchCommitsUrlPath }.Uri;
+                _packFileUrl = new UriBuilder(agentlessUrl) { Path = packFileUrlPath }.Uri;
+                _skippableTestsUrl = new UriBuilder(agentlessUrl) { Path = skippableTestsUrlPath }.Uri;
+            }
+            else
+            {
+                _settingsUrl = new UriBuilder(
+                    scheme: "https",
+                    host: "api." + _settings.Site,
+                    port: 443,
+                    pathValue: settingsUrlPath).Uri;
 
-            _searchCommitsUrl = new UriBuilder(agentlessUrl)
-            {
-                Path = "api/v2/git/repository/search_commits"
-            }.Uri;
+                _searchCommitsUrl = new UriBuilder(
+                    scheme: "https",
+                    host: "api." + _settings.Site,
+                    port: 443,
+                    pathValue: searchCommitsUrlPath).Uri;
 
-            _packFileUrl = new UriBuilder(agentlessUrl)
-            {
-                Path = "api/v2/git/repository/packfile"
-            }.Uri;
+                _packFileUrl = new UriBuilder(
+                    scheme: "https",
+                    host: "api." + _settings.Site,
+                    port: 443,
+                    pathValue: packFileUrlPath).Uri;
 
-            _skippableTestsUrl = new UriBuilder(agentlessUrl)
-            {
-                Path = "api/v2/ci/tests/skippable"
-            }.Uri;
+                _skippableTestsUrl = new UriBuilder(
+                    scheme: "https",
+                    host: "api." + _settings.Site,
+                    port: 443,
+                    pathValue: skippableTestsUrlPath).Uri;
+            }
         }
         else
         {
-            _settingsUrl = new UriBuilder(
-                scheme: "https",
-                host: "api." + _settings.Site,
-                port: 443,
-                pathValue: "api/v2/libraries/tests/services/setting").Uri;
-
-            _searchCommitsUrl = new UriBuilder(
-                scheme: "https",
-                host: "api." + _settings.Site,
-                port: 443,
-                pathValue: "api/v2/git/repository/search_commits").Uri;
-
-            _packFileUrl = new UriBuilder(
-                scheme: "https",
-                host: "api." + _settings.Site,
-                port: 443,
-                pathValue: "api/v2/git/repository/packfile").Uri;
-
-            _skippableTestsUrl = new UriBuilder(
-                scheme: "https",
-                host: "api." + _settings.Site,
-                port: 443,
-                pathValue: "api/v2/ci/tests/skippable").Uri;
+            // Use Agent EVP Proxy
+            _useEvpProxy = true;
+            var agentUrl = _settings.TracerSettings.Exporter.AgentUri;
+            _settingsUrl = new UriBuilder(agentUrl) { Path = $"/evp_proxy/v1/{settingsUrlPath}" }.Uri;
+            _searchCommitsUrl = new UriBuilder(agentUrl) { Path = $"/evp_proxy/v1/{searchCommitsUrlPath}" }.Uri;
+            _packFileUrl = new UriBuilder(agentUrl) { Path = $"/evp_proxy/v1/{packFileUrlPath}" }.Uri;
+            _skippableTestsUrl = new UriBuilder(agentUrl) { Path = $"/evp_proxy/v1/{skippableTestsUrlPath}" }.Uri;
         }
     }
 
@@ -186,11 +195,24 @@ internal class IntelligentTestRunnerClient
         async Task<SettingsResponse> InternalGetSettingsAsync(byte[] state, bool finalTry)
         {
             var request = _apiRequestFactory.Create(_settingsUrl);
-            request.AddHeader(ApiKeyHeader, _settings.ApiKey);
-            request.AddHeader(ApplicationKeyHeader, _settings.ApplicationKey);
             request.AddHeader(HttpHeaderNames.TraceId, _id);
             request.AddHeader(HttpHeaderNames.ParentId, _id);
-            Log.Debug("ITR: Getting settings from: {url}", _settingsUrl.ToString());
+            if (_useEvpProxy)
+            {
+                request.AddHeader(EvpSubdomainHeader, "api");
+                request.AddHeader(EvpNeedsApplicationKeyHeader, "true");
+            }
+            else
+            {
+                request.AddHeader(ApiKeyHeader, _settings.ApiKey);
+                request.AddHeader(ApplicationKeyHeader, _settings.ApplicationKey);
+            }
+
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("ITR: Getting settings from: {url}", _settingsUrl.ToString());
+            }
+
             using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
             if (response.StatusCode is < 200 or >= 300 && response.StatusCode != 404)
@@ -249,11 +271,24 @@ internal class IntelligentTestRunnerClient
         async Task<SkippableTest[]> InternalGetSkippableTestsAsync(byte[] state, bool finalTry)
         {
             var request = _apiRequestFactory.Create(_skippableTestsUrl);
-            request.AddHeader(ApiKeyHeader, _settings.ApiKey);
-            request.AddHeader(ApplicationKeyHeader, _settings.ApplicationKey);
             request.AddHeader(HttpHeaderNames.TraceId, _id);
             request.AddHeader(HttpHeaderNames.ParentId, _id);
-            Log.Debug("ITR: Searching skippable tests from: {url}", _skippableTestsUrl.ToString());
+            if (_useEvpProxy)
+            {
+                request.AddHeader(EvpSubdomainHeader, "api");
+                request.AddHeader(EvpNeedsApplicationKeyHeader, "true");
+            }
+            else
+            {
+                request.AddHeader(ApiKeyHeader, _settings.ApiKey);
+                request.AddHeader(ApplicationKeyHeader, _settings.ApplicationKey);
+            }
+
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("ITR: Searching skippable tests from: {url}", _skippableTestsUrl.ToString());
+            }
+
             using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
             if (response.StatusCode is < 200 or >= 300 && response.StatusCode != 404)
@@ -316,10 +351,22 @@ internal class IntelligentTestRunnerClient
         async Task<string[]> InternalSearchCommitAsync(byte[] state, bool finalTry)
         {
             var request = _apiRequestFactory.Create(_searchCommitsUrl);
-            request.AddHeader(ApiKeyHeader, _settings.ApiKey);
             request.AddHeader(HttpHeaderNames.TraceId, _id);
             request.AddHeader(HttpHeaderNames.ParentId, _id);
-            Log.Debug("ITR: Searching commits from: {url}", _searchCommitsUrl.ToString());
+            if (_useEvpProxy)
+            {
+                request.AddHeader(EvpSubdomainHeader, "api");
+            }
+            else
+            {
+                request.AddHeader(ApiKeyHeader, _settings.ApiKey);
+            }
+
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("ITR: Searching commits from: {url}", _searchCommitsUrl.ToString());
+            }
+
             using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
             var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
             if (response.StatusCode is < 200 or >= 300)
@@ -404,9 +451,17 @@ internal class IntelligentTestRunnerClient
         async Task<long> InternalSendObjectsPackFileAsync(string packFile, bool finalTry)
         {
             var request = _apiRequestFactory.Create(_packFileUrl);
-            request.AddHeader(ApiKeyHeader, _settings.ApiKey);
             request.AddHeader(HttpHeaderNames.TraceId, _id);
             request.AddHeader(HttpHeaderNames.ParentId, _id);
+            if (_useEvpProxy)
+            {
+                request.AddHeader(EvpSubdomainHeader, "api");
+            }
+            else
+            {
+                request.AddHeader(ApiKeyHeader, _settings.ApiKey);
+            }
+
             var multipartRequest = (IMultipartApiRequest)request;
 
             using var fileStream = File.Open(packFile, FileMode.Open, FileAccess.Read, FileShare.Read);

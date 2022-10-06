@@ -60,7 +60,7 @@ namespace Datadog.Trace.Ci
             {
                 if (!string.IsNullOrEmpty(_settings.ApiKey))
                 {
-                    return new CIAgentlessWriter(_settings, new CIWriterHttpSender(CIVisibility.GetRequestFactory(settings)));
+                    return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(CIVisibility.GetRequestFactory(settings)));
                 }
                 else
                 {
@@ -74,7 +74,7 @@ namespace Datadog.Trace.Ci
 
                 // Set the tracer buffer size to the max
                 var traceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
-                return new CIAgentWriter(settings, sampler, discoveryService, traceBufferSize);
+                return new ApmAgentWriter(settings, sampler, discoveryService, traceBufferSize);
             }
         }
 

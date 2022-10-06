@@ -23,6 +23,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private const string SupportedConfigurationEndpoint = "v0.7/config";
         private const string SupportedStatsEndpoint = "v0.6/stats";
         private const string SupportedDataStreamsEndpoint = "v0.1/pipeline_stats";
+        private const string SupportedEventPlatformProxyEndpoint = "evp_proxy/v1";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DiscoveryService>();
         private readonly IApiRequestFactory _apiRequestFactory;
@@ -200,6 +201,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             string? debuggerEndpoint = null;
             string? statsEndpoint = null;
             string? dataStreamsMonitoringEndpoint = null;
+            string? eventPlatformProxyEndpoint = null;
 
             if (discoveredEndpoints is { Length: > 0 })
             {
@@ -228,6 +230,10 @@ namespace Datadog.Trace.Agent.DiscoveryService
                     {
                         dataStreamsMonitoringEndpoint = endpoint;
                     }
+                    else if (endpoint.Equals(SupportedEventPlatformProxyEndpoint, StringComparison.OrdinalIgnoreCase))
+                    {
+                        eventPlatformProxyEndpoint = endpoint;
+                    }
                 }
             }
 
@@ -239,6 +245,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 agentVersion: agentVersion,
                 statsEndpoint: statsEndpoint,
                 dataStreamsMonitoringEndpoint: dataStreamsMonitoringEndpoint,
+                eventPlatformProxyEndpoint: eventPlatformProxyEndpoint,
                 clientDropP0: clientDropP0);
 
             // AgentConfiguration is a record, so this compares by value

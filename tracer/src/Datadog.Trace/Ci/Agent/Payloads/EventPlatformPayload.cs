@@ -25,6 +25,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             }
 
             _settings = settings;
+            UseEvpProxy = !settings.Agentless;
         }
 
         /// <summary>
@@ -84,6 +85,11 @@ namespace Datadog.Trace.Ci.Agent.Payloads
                 _url = value;
             }
         }
+
+        /// <summary>
+        /// Gets a value indicating whether the payload is configured to use the agent proxy
+        /// </summary>
+        public virtual bool UseEvpProxy { get; }
 
         /// <summary>
         /// Gets a value indicating whether the payload contains events or not

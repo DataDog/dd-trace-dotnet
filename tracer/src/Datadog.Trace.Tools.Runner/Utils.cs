@@ -253,7 +253,7 @@ namespace Datadog.Trace.Tools.Runner
             var settings = tracerSettings.Build();
             var discoveryService = DiscoveryService.Create(settings.Exporter);
 
-            var agentWriter = new CIAgentWriter(settings, new CISampler(), discoveryService);
+            var agentWriter = new ApmAgentWriter(settings, new CISampler(), discoveryService);
 
             try
             {
