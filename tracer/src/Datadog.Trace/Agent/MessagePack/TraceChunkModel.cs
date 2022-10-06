@@ -33,11 +33,6 @@ internal readonly struct TraceChunkModel
 
     public readonly bool ContainsLocalRootSpan;
 
-    public TraceChunkModel(in ArraySegment<Span> spans)
-        : this(spans, (TraceContext?)null)
-    {
-    }
-
     public TraceChunkModel(in ArraySegment<Span> spans, TraceContext? traceContext)
     {
         _spans = spans;
