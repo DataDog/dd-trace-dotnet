@@ -34,7 +34,7 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new SpanSampler(rules);
             var span = new Span(new SpanContext(5, 6, null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
-            sampler.MakeSamplingDecision(span);
+            Assert.Null(sampler.MakeSamplingDecision(span));
 
             Assert.Null(span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate));
             Assert.Null(span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond));
@@ -53,7 +53,9 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new SpanSampler(rules);
             var span = new Span(new SpanContext(5, 6, null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
-            sampler.MakeSamplingDecision(span);
+            var matchedRule = sampler.MakeSamplingDecision(span);
+            Assert.Equal(rule1, matchedRule);
+            sampler.AddTags(span, matchedRule);
 
             Assert.Equal(expectedRuleRate.ToString(), span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate));
             Assert.Equal(expectedMaxPerSecond.ToString(), span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond));
@@ -72,7 +74,9 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new SpanSampler(rules);
             var span = new Span(new SpanContext(5, 6, null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
-            sampler.MakeSamplingDecision(span);
+            var matchedRule = sampler.MakeSamplingDecision(span);
+            Assert.Equal(rule2, matchedRule);
+            sampler.AddTags(span, matchedRule);
 
             Assert.Equal(expectedRuleRate.ToString(), span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate));
             Assert.Equal(expectedMaxPerSecond.ToString(), span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond));
@@ -85,7 +89,8 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new SpanSampler(new List<SpanSamplingRule>());
             var span = new Span(new SpanContext(5, 6, null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
-            sampler.MakeSamplingDecision(span);
+            var matchedRule = sampler.MakeSamplingDecision(span);
+            Assert.Null(matchedRule);
 
             Assert.Null(span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate));
             Assert.Null(span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond));
@@ -102,7 +107,9 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new SpanSampler(rules);
             var span = new Span(new SpanContext(5, 6, null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
-            sampler.MakeSamplingDecision(span);
+            var matchedRule = sampler.MakeSamplingDecision(span);
+            Assert.Equal(rule1, matchedRule);
+            sampler.AddTags(span, matchedRule);
 
             Assert.Equal(expectedRuleRate.ToString(), span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate));
             Assert.Null(span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond));
@@ -120,7 +127,9 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new SpanSampler(rules);
             var span = new Span(new SpanContext(5, 6, null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
-            sampler.MakeSamplingDecision(span).Should().Be(true);
+            var matchedRule = sampler.MakeSamplingDecision(span);
+            Assert.Equal(rule1, matchedRule);
+            sampler.AddTags(span, matchedRule);
 
             Assert.Equal(expectedRuleRate.ToString(), span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate));
             Assert.Equal(expectedMaxPerSecond.ToString(), span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond));
@@ -154,7 +163,7 @@ namespace Datadog.Trace.Tests.Sampling
             var rules = new List<SpanSamplingRule>() { allowHalfRule };
             var sampler = new SpanSampler(rules);
 
-            RunSamplerTest(sampler, 500, expectedAutoKeepRate: 0.5f, expectedUserKeepRate: 0.5f, acceptableVariancePercent: 0.05f);
+            RunSamplerTest(sampler, 500, expectedAutoKeepRate: 0.5f, expectedUserKeepRate: 0.5f, acceptableVariancePercent: 0.1f);
         }
 
         // TODO rate limiter test? didn't seem to be reliable though
@@ -171,7 +180,7 @@ namespace Datadog.Trace.Tests.Sampling
             {
                 var traceId = SpanIdGenerator.CreateNew();
                 var span = GetSpan(traceId);
-                var decision = sampler.MakeSamplingDecision(span);
+                var decision = sampler.MakeSamplingDecision(span); // not actually tagging the span
 
                 if (decision is null)
                 {
