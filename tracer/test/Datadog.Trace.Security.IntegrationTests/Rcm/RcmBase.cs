@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using System.IO;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.Rcm;
@@ -14,6 +16,7 @@ public class RcmBase : AspNetBase
     protected const string LogFileNamePrefix = "dotnet-tracer-managed-";
 
 #pragma warning disable SA1401
+    protected readonly string logDirectory;
     protected readonly TimeSpan logEntryWatcherTimeout = TimeSpan.FromSeconds(20);
 #pragma warning restore SA1401
 
@@ -21,6 +24,9 @@ public class RcmBase : AspNetBase
         : base("AspNetCore5", outputHelper, "/shutdown", testName: testName)
     {
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "500");
+        var logPath = DatadogLogging.GetLogDirectory();
+        logDirectory = Path.Combine(logPath, $"{testName}Logs");
+        SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDirectory);
     }
 
     protected string AppSecDisabledMessage() => $"AppSec is now Disabled, _settings.Enabled is false, coming from remote config: true  {{ MachineName: \".\", Process: \"[{SampleProcessId}";

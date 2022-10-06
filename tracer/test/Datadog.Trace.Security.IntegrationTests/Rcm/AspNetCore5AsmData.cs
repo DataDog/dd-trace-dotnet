@@ -29,15 +29,10 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
     public class AspNetCore5AsmData : RcmBase
     {
-        private readonly string _logDirectory;
-
         public AspNetCore5AsmData(ITestOutputHelper outputHelper)
             : base(outputHelper, testName: nameof(AspNetCore5AsmData))
         {
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "0");
-            var logPath = DatadogLogging.GetLogDirectory();
-            _logDirectory = Path.Combine(logPath, $"{nameof(AspNetCore5AsmData)}Logs");
-            SetEnvironmentVariable(ConfigurationKeys.LogDirectory, _logDirectory);
         }
 
         [SkippableTheory]
@@ -47,7 +42,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         public async Task TestBlockedRequestIp(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
         {
             var agent = await RunOnSelfHosted(enableSecurity);
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", _logDirectory);
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", logDirectory);
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             // we want to see the ip here
             var scrubbers = VerifyHelper.SpanScrubbers.Where(s => s.RegexPattern.ToString() != @"http.client_ip: (.)*(?=,)");
@@ -92,7 +87,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             // we want to see the ip here
             var scrubbers = VerifyHelper.SpanScrubbers.Where(s => s.RegexPattern.ToString() != @"http.client_ip: (.)*(?=,)");
             var settings = VerifyHelper.GetSpanVerifierSettings(scrubbers: scrubbers, parameters: new object[] { test, enableSecurity, (int)expectedStatusCode, sanitisedUrl });
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*");
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", logDirectory);
             var spanBeforeAsmData = await SendRequestsAsync(agent, url);
 
             var product = new AsmDataProduct();

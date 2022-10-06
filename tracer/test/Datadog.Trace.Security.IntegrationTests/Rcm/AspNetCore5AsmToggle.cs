@@ -47,7 +47,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var url = "/Health/?[$slice]=value";
             var agent = await RunOnSelfHosted(enableSecurity);
             var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, expectedState, expectedCapabilities);
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*");
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", logDirectory);
 
             var spans1 = await SendRequestsAsync(agent, url);
 
