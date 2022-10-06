@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -56,10 +57,10 @@ namespace Datadog.Trace.AppSec.Waf
         private static string TruncateLongString(string s) =>
             s.Length > WafConstants.MaxStringLength ? s.Substring(0, WafConstants.MaxStringLength) : s;
 
-        public Obj Encode(object o, List<Obj> argCache, bool applySafetyLimits) =>
+        public Obj Encode(object o, List<Obj>? argCache = null, bool applySafetyLimits = true) =>
             EncodeInternal(o, argCache, WafConstants.MaxContainerDepth, applySafetyLimits);
 
-        private Obj EncodeInternal(object o, List<Obj> argCache, int remainingDepth, bool applyLimits)
+        private Obj EncodeInternal(object o, List<Obj>? argCache, int remainingDepth, bool applyLimits)
         {
             var value =
                 o switch
@@ -71,10 +72,12 @@ namespace Datadog.Trace.AppSec.Waf
                     long i => CreateNativeString(i.ToString(), applyLimits),
                     uint i => CreateNativeString(i.ToString(), applyLimits),
                     ulong i => CreateNativeString(i.ToString(), applyLimits),
+                    bool b => CreateNativeBool(b),
                     IEnumerable<KeyValuePair<string, JToken>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits),
                     IEnumerable<KeyValuePair<string, string>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits),
                     IEnumerable<KeyValuePair<string, List<string>>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits),
                     IEnumerable<KeyValuePair<string, string[]>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits),
+                    IEnumerable<KeyValuePair<string, bool>> objDict => EncodeDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), argCache, remainingDepth, applyLimits),
                     IEnumerable<KeyValuePair<string, object>> objDict => EncodeDictionary(objDict, argCache, remainingDepth, applyLimits),
                     IList<JToken> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth, applyLimits),
                     IList<string> objs => EncodeList(objs.Select(x => (object)x), argCache, remainingDepth, applyLimits),
@@ -82,12 +85,12 @@ namespace Datadog.Trace.AppSec.Waf
                     _ => throw new Exception($"Couldn't encode type: {o?.GetType()}")
                 };
 
-            argCache.Add(value);
+            argCache?.Add(value);
 
             return value;
         }
 
-        private Obj EncodeList(IEnumerable<object> objEnumerator, List<Obj> argCache, int remainingDepth, bool applyLimits)
+        private Obj EncodeList(IEnumerable<object> objEnumerator, List<Obj>? argCache, int remainingDepth, bool applyLimits)
         {
             var arrNat = _wafNative.ObjectArray();
 
@@ -113,7 +116,7 @@ namespace Datadog.Trace.AppSec.Waf
             return new Obj(arrNat);
         }
 
-        private Obj EncodeDictionary(IEnumerable<KeyValuePair<string, object>> objDictEnumerator, List<Obj> argCache, int remainingDepth, bool applyLimits)
+        private Obj EncodeDictionary(IEnumerable<KeyValuePair<string, object>> objDictEnumerator, List<Obj>? argCache, int remainingDepth, bool applyLimits)
         {
             var mapNat = _wafNative.ObjectMap();
 
@@ -155,6 +158,11 @@ namespace Datadog.Trace.AppSec.Waf
                         ? TruncateLongString(s)
                         : s;
             return new Obj(_wafNative.ObjectStringLength(encodeString, Convert.ToUInt64(encodeString.Length)));
+        }
+
+        private Obj CreateNativeBool(bool b)
+        {
+            return new Obj(_wafNative.ObjectBool(b));
         }
 
         public static string FormatArgs(object o)

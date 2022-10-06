@@ -51,9 +51,9 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             var spans1 = await SendRequestsAsync(agent, url);
 
-            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures() { Asm = new Asm() { Enabled = false } }, "1") }, "ASM_FEATURES", "first");
+            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures() { Asm = new AsmFeature() { Enabled = false } }, "1") }, "ASM_FEATURES", "first");
 
-            CheckAckState(request1, expectedState, null, "First RCM call");
+            RcmBase.CheckAckState(request1, "ASM_FEATURES", expectedState, null, "First RCM call");
             CheckCapabilities(request1, expectedCapabilities, "First RCM call");
             request1.Client.State.BackendClientState.Should().Be("first");
             if (enableSecurity == true)
@@ -61,14 +61,14 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
                 await logEntryWatcher.WaitForLogEntry(AppSecDisabledMessage(), LogEntryWatcherTimeout);
             }
 
-            CheckAckState(request1, expectedState, null, "First RCM call");
+            RcmBase.CheckAckState(request1, "ASM_FEATURES", expectedState, null, "First RCM call");
             CheckCapabilities(request1, expectedCapabilities, "First RCM call");
 
             var spans2 = await SendRequestsAsync(agent, url);
 
-            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures() { Asm = new Asm() { Enabled = true } }, "2") }, "ASM_FEATURES", "second");
+            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures() { Asm = new AsmFeature() { Enabled = true } }, "2") }, "ASM_FEATURES", "second");
 
-            CheckAckState(request2, expectedState, null, "Second RCM call");
+            RcmBase.CheckAckState(request2, "ASM_FEATURES", expectedState, null, "Second RCM call");
             CheckCapabilities(request2, expectedCapabilities, "Second RCM call");
             if (enableSecurity != false)
             {
@@ -101,24 +101,9 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             var request = await agent.SetupRcmAndWait(Output, new[] { ((object)"haha, you weren't expect this!", "1") }, "ASM_FEATURES");
 
-            CheckAckState(request, ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.AppSec.AsmFeatures'. Path '', line 1, position 32.", "First RCM call");
+            RcmBase.CheckAckState(request, "ASM_FEATURES", ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.AppSec.AsmFeatures'. Path '', line 1, position 32.", "First RCM call");
 
             await VerifySpans(spans1.ToImmutableList(), settings, true);
-        }
-
-        private void CheckAckState(GetRcmRequest request, uint expectedState, string expectedError, string message)
-        {
-            var state = request?.Client?.State?.ConfigStates?.SingleOrDefault(x => x.Product == "ASM_FEATURES");
-
-            state.Should().NotBeNull();
-            state.ApplyState.Should().Be(expectedState, message);
-            state.ApplyError.Should().Be(expectedError, message);
-        }
-
-        private void CheckCapabilities(GetRcmRequest request, uint expectedState, string message)
-        {
-            var capabilities = new BigInteger(request?.Client?.Capabilities, true, true);
-            capabilities.Should().Be(expectedState, message);
         }
     }
 }

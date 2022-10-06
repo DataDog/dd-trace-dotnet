@@ -16,4 +16,6 @@ internal static class AsmRemoteConfigurationProducts
     public static AsmDataProduct AsmDataProduct { get; } = new();
 
     public static AsmDDProduct AsmDDProduct { get; } = new();
+
+    public static AsmProduct AsmProduct { get; } = new();
 }
