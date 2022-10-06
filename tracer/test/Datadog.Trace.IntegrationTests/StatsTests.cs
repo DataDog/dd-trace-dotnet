@@ -61,7 +61,7 @@ namespace Datadog.Trace.IntegrationTests
             };
 
             var discovery = DiscoveryService.Create(settings.Build().Exporter);
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, spanSampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
+            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
             Span span;
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
@@ -209,7 +209,7 @@ namespace Datadog.Trace.IntegrationTests
             };
 
             var discovery = DiscoveryService.Create(settings.Build().Exporter);
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, spanSampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
+            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
             var spinSucceeded = SpinWait.SpinUntil(() => tracer.TracerManager.AgentWriter is AgentWriter { CanComputeStats: true }, 5_000);
@@ -369,7 +369,7 @@ namespace Datadog.Trace.IntegrationTests
             var immutableSettings = settings.Build();
 
             var discovery = DiscoveryService.Create(immutableSettings.Exporter);
-            var tracer = new Tracer(settings, agentWriter: null, sampler: null, spanSampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
+            var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd: null, discoveryService: discovery);
 
             // Wait until the discovery service has been reached and we've confirmed that we can send stats
             if (expectStats)

@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tests
             IConfigurationSource source = new NameValueConfigurationSource(collection);
             var settings = new TracerSettings(source);
 
-            var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, spanSampler: null, scopeManager: null, statsd: null);
+            var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
 
             Assert.Equal(span.GetTag(tagKey), value);
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tests
             var settings = new TracerSettings(source);
             Assert.True(settings.GlobalTags.Any());
 
-            var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, spanSampler: null, scopeManager: null, statsd: null);
+            var tracer = new Tracer(settings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("Operation");
 
             Assert.Equal(span.GetTag(tagKey), envValue);
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Tests
 
             _writerMock.Invocations.Clear();
 
-            var tracer = new Tracer(tracerSettings, _writerMock.Object, _samplerMock.Object, spanSampler: null, scopeManager: null, statsd: null);
+            var tracer = new Tracer(tracerSettings, _writerMock.Object, _samplerMock.Object, scopeManager: null, statsd: null);
             var span = tracer.StartSpan("TestTracerDisabled");
             span.Dispose();
 

@@ -19,11 +19,10 @@ namespace Datadog.Trace.TestHelpers
             TracerSettings settings = null,
             IAgentWriter agentWriter = null,
             ITraceSampler sampler = null,
-            ISpanSampler spanSampler = null,
             IScopeManager scopeManager = null,
             IDogStatsd statsd = null)
         {
-            return new Tracer(settings, agentWriter, sampler, spanSampler, scopeManager, statsd);
+            return new Tracer(settings, agentWriter, sampler, scopeManager, statsd);
         }
     }
 }

@@ -39,7 +39,6 @@ namespace Datadog.Trace.Tests.Telemetry
                 settings,
                 new Mock<IAgentWriter>().Object,
                 new Mock<ITraceSampler>().Object,
-                spanSampler: null,
                 scopeManager: null,
                 statsd: null,
                 telemetry: telemetry);

@@ -114,7 +114,7 @@ namespace Datadog.Trace.Tests
                     StartupDiagnosticLogEnabled = false,
                 };
 
-                var tracer = new Tracer(settings, agentWriter: null, sampler: null, spanSampler: null, scopeManager: null, statsd);
+                var tracer = new Tracer(settings, agentWriter: null, sampler: null, scopeManager: null, statsd);
 
                 using (var scope = tracer.StartActive("root"))
                 {
