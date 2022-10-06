@@ -102,6 +102,7 @@ endif()
 
 SET(ARCH_BASENAME "linux")
 if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
+    SET(IS_ALPINE)
     SET(ARCH_BASENAME "${ARCH_BASENAME}-musl")
 endif()
 
