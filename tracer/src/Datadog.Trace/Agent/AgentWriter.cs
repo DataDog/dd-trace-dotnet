@@ -359,7 +359,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private void SerializeTrace(ArraySegment<Span> trace)
+        private void SerializeTrace(ArraySegment<Span> spans)
         {
             // Declaring as inline method because only safe to invoke in the context of SerializeTrace
             SpanBuffer SwapBuffers()
@@ -385,36 +385,31 @@ namespace Datadog.Trace.Agent
             }
 
             // Eagerly return if the trace is empty
-            if (trace.Count == 0)
+            if (spans.Count == 0)
             {
                 return;
             }
 
             if (CanComputeStats)
             {
-                trace = _statsAggregator?.ProcessTrace(trace) ?? trace;
-                bool shouldSendTrace = _statsAggregator?.ShouldKeepTrace(trace) ?? true;
-                _statsAggregator?.AddRange(trace);
+                spans = _statsAggregator?.ProcessTrace(spans) ?? spans;
+                bool shouldSendTrace = _statsAggregator?.ShouldKeepTrace(spans) ?? true;
+                _statsAggregator?.AddRange(spans);
 
                 // If stats computation determined that we can drop the P0 Trace,
                 // skip all other processing
                 if (!shouldSendTrace)
                 {
                     Interlocked.Increment(ref _droppedP0Traces);
-                    Interlocked.Add(ref _droppedP0Spans, trace.Count);
+                    Interlocked.Add(ref _droppedP0Spans, spans.Count);
                     return;
                 }
             }
 
-            // since all we have is an array of spans, use the trace context from the first span
-            // to get the other values we need (sampling priority, origin, trace tags, etc) for now.
-            // the idea is that as we refactor further, we can pass more than just the spans,
-            // and these values can come directly from the trace context.
-            var traceContext = trace.Array![trace.Offset].Context.TraceContext;
-            var traceChunk = new TraceChunkModel(trace, traceContext);
-
             // Add the current keep rate to the root span
-            if (traceChunk.LocalRootSpan is { } rootSpan)
+            var rootSpan = spans.Array![spans.Offset].Context.TraceContext?.RootSpan;
+
+            if (rootSpan is not null)
             {
                 var currentKeepRate = _traceKeepRateCalculator.GetKeepRate();
 
@@ -432,7 +427,7 @@ namespace Datadog.Trace.Agent
             // This allows the serialization thread to keep doing its job while a buffer is being flushed
             var buffer = _activeBuffer;
 
-            if (buffer.TryWrite(traceChunk, ref _temporaryBuffer))
+            if (buffer.TryWrite(spans, ref _temporaryBuffer))
             {
                 // Serialization to the primary buffer succeeded
                 return;
@@ -446,7 +441,7 @@ namespace Datadog.Trace.Agent
                 // One buffer is full, request an eager flush
                 RequestFlush();
 
-                if (buffer.TryWrite(traceChunk, ref _temporaryBuffer))
+                if (buffer.TryWrite(spans, ref _temporaryBuffer))
                 {
                     // Serialization to the secondary buffer succeeded
                     return;
@@ -460,7 +455,7 @@ namespace Datadog.Trace.Agent
             if (_statsd != null)
             {
                 _statsd.Increment(TracerMetricNames.Queue.DroppedTraces);
-                _statsd.Increment(TracerMetricNames.Queue.DroppedSpans, trace.Count);
+                _statsd.Increment(TracerMetricNames.Queue.DroppedSpans, spans.Count);
             }
         }
 
@@ -513,7 +508,7 @@ namespace Datadog.Trace.Agent
                 }
                 else
                 {
-                    // No traces were pushed in the last period, wait undefinitely
+                    // No traces were pushed in the last period, wait indefinitely
                     _serializationMutex.Wait();
                     _serializationMutex.Reset();
                 }

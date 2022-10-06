@@ -66,7 +66,7 @@ namespace Datadog.Trace.Agent
         // For tests only
         internal bool IsEmpty => !_locked && !IsFull && TraceCount == 0 && SpanCount == 0 && _offset == HeaderSize;
 
-        public bool TryWrite(TraceChunkModel traceChunk, ref byte[] temporaryBuffer)
+        public bool TryWrite(ArraySegment<Span> spans, ref byte[] temporaryBuffer)
         {
             bool lockTaken = false;
 
@@ -79,6 +79,13 @@ namespace Datadog.Trace.Agent
                     // A flush operation is in progress, consider this buffer full
                     return false;
                 }
+
+                // since all we have is an array of spans, use the trace context from the first span
+                // to get the other values we need (sampling priority, origin, trace tags, etc) for now.
+                // the idea is that as we refactor further, we can pass more than just the spans,
+                // and these values can come directly from the trace context.
+                var traceContext = spans.Array![spans.Offset].Context.TraceContext;
+                var traceChunk = new TraceChunkModel(spans, traceContext);
 
                 // We don't know what the serialized size of the payload will be,
                 // so we need to write to a temporary buffer first
@@ -103,7 +110,7 @@ namespace Datadog.Trace.Agent
 
                 _offset += size;
                 TraceCount++;
-                SpanCount += traceChunk.Spans.Count;
+                SpanCount += traceChunk.SpanCount;
 
                 return true;
             }

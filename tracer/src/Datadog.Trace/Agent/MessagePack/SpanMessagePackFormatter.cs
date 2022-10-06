@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Processors;
@@ -61,20 +62,21 @@ namespace Datadog.Trace.Agent.MessagePack
         public int Serialize(ref byte[] bytes, int offset, in TraceChunkModel traceChunk, IFormatterResolver formatterResolver)
         {
             int originalOffset = offset;
-            var spanModelBuilder = new SpanModelBuilder(in traceChunk);
-            var spansCount = traceChunk.Spans.Count;
+
+            // TODO: if root span is present, we don't need to look for orphans, just mark the root as the only orphan
+            var spanCount = traceChunk.SpanCount;
 
             // start writing span[]
-            offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, spansCount);
+            offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, spanCount);
 
             // serialize each span
-            for (var i = 0; i < spansCount; i++)
+            for (var i = 0; i < spanCount; i++)
             {
                 // when serializing each span, we need additional information that is not
                 // available in the span object itself, like its position in the trace chunk
                 // or if its parent can also be found in the same chunk, so we use SpanModel
                 // to pass that information to the serializer
-                var spanModel = spanModelBuilder.GetSpanModel(i);
+                var spanModel = traceChunk.GetSpanModel(i);
                 offset += Serialize(ref bytes, offset, in spanModel, formatterResolver);
             }
 
