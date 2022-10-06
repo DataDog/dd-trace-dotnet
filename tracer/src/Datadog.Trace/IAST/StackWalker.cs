@@ -22,7 +22,7 @@ namespace Datadog.Trace.Iast
 
             foreach (var frame in stackTrace.GetFrames())
             {
-                var assembly = frame?.GetMethod()?.DeclaringType?.Assembly?.GetName()?.Name;
+                var assembly = frame.GetMethod()?.DeclaringType?.Assembly.GetName().Name;
                 if (assembly != null && !AssemblyNamesToSkip.Contains(assembly))
                 {
                     return frame;
