@@ -105,4 +105,7 @@ message(STATUS "FMT library " ${FMT_VERSION})
 find_package(Re2 REQUIRED)
 message(STATUS "Re2 library " ${RE2_VERSION})
 
+find_package(Spdlog REQUIRED)
+message(STATUS "Spdlog headers")
+
 add_subdirectory(src/Datadog.Tracer.Native)

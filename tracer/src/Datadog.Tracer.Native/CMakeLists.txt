@@ -225,17 +225,13 @@ add_library("Datadog.Tracer.Native.static" STATIC
 
 set_target_properties("Datadog.Tracer.Native.static" PROPERTIES PREFIX "")
 
-# Define directories includes
-target_include_directories("Datadog.Tracer.Native.static"
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/spdlog/include
-)
-
 # Define linker libraries
 if (ISMACOS)
     target_link_libraries("Datadog.Tracer.Native.static"
         coreclr-lib
         fmt-lib
         re2-lib
+        spdlog-headers
         ${CMAKE_DL_LIBS}
     )
 elseif(ISLINUX)
@@ -243,13 +239,14 @@ elseif(ISLINUX)
         coreclr-lib
         fmt-lib
         re2-lib
+        spdlog-headers
         ${CMAKE_DL_LIBS}
         -static-libgcc
         -static-libstdc++
     )
 endif()
 
-add_dependencies("Datadog.Tracer.Native.static" fmt-lib coreclr-lib re2-lib)
+add_dependencies("Datadog.Tracer.Native.static" fmt-lib coreclr-lib re2-lib spdlog-headers)
 
 # ******************************************************
 # Define shared target
