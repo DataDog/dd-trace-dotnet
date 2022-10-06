@@ -46,7 +46,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
             else if (runnerInstance.SkipReason is not null)
             {
                 // Skip test support
-                XUnitIntegration.CreateScope(ref runnerInstance, instance.GetType());
+                XUnitIntegration.CreateTest(ref runnerInstance, instance.GetType());
             }
         }
 

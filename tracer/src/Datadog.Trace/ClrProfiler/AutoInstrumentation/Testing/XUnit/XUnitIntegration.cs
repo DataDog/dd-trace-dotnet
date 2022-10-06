@@ -19,7 +19,7 @@ internal static class XUnitIntegration
 
     internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
 
-    internal static Test? CreateScope(ref TestRunnerStruct runnerInstance, Type targetType)
+    internal static Test? CreateTest(ref TestRunnerStruct runnerInstance, Type targetType)
     {
         // Get the test suite instance
         var testSuite = TestSuite.Current;
@@ -84,7 +84,7 @@ internal static class XUnitIntegration
         return test;
     }
 
-    internal static void FinishScope(Test test, IExceptionAggregator? exceptionAggregator)
+    internal static void FinishTest(Test test, IExceptionAggregator? exceptionAggregator)
     {
         try
         {

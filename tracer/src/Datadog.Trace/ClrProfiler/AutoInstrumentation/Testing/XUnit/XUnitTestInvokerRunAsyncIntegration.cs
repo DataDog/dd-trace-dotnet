@@ -54,7 +54,7 @@ public static class XUnitTestInvokerRunAsyncIntegration
             TestMethodArguments = invokerInstance.TestMethodArguments
         };
 
-        return new CallTargetState(null, XUnitIntegration.CreateScope(ref runnerInstance, instance.GetType()));
+        return new CallTargetState(null, XUnitIntegration.CreateTest(ref runnerInstance, instance.GetType()));
     }
 
     /// <summary>
@@ -95,7 +95,7 @@ public static class XUnitTestInvokerRunAsyncIntegration
         if (state.State is Test test)
         {
             var invokerInstance = instance.DuckCast<TestInvokerStruct>();
-            XUnitIntegration.FinishScope(test, invokerInstance.Aggregator);
+            XUnitIntegration.FinishTest(test, invokerInstance.Aggregator);
         }
 
         return returnValue;
