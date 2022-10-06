@@ -87,7 +87,7 @@ namespace Datadog.Trace.Sampling
                                       rule.OperationNameGlob,
                                       rule.SampleRate,
                                       rule.MaxPerSecond))
-                             .ToList() ?? Enumerable.Empty<SpanSamplingRule>();
+                             ?? Enumerable.Empty<SpanSamplingRule>();
             }
             catch (Exception e)
             {
