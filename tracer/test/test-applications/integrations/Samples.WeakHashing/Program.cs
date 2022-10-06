@@ -49,7 +49,7 @@ namespace Samples.WeakHashing
             algorithm.ComputeHash(byteArg, 0, 3);
             algorithm.ComputeHash(byteArg);
             algorithm.ComputeHash(stream);
-#if NET50 || NET60
+#if NET5_0_OR_GREATER
             _ = algorithm.ComputeHashAsync(stream, CancellationToken.None).Result;
 #endif
         }
