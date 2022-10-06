@@ -85,7 +85,7 @@ namespace Datadog.Trace.Telemetry
             => _configuration.RecordSecuritySettings(settings);
 
         public void RecordIastSettings(IastSettings settings)
-    => _configuration.RecordIastSettings(settings);
+            => _configuration.RecordIastSettings(settings);
 
         public void RecordProfilerSettings(Profiler profiler)
             => _configuration.RecordProfilerSettings(profiler);
