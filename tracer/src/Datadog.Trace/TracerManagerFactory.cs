@@ -48,14 +48,14 @@ namespace Datadog.Trace
                 settings,
                 agentWriter: null,
                 sampler: null,
-                spanSampler: null,
                 scopeManager: previous?.ScopeManager, // no configuration, so can always use the same one
                 statsd: null,
                 runtimeMetrics: null,
                 logSubmissionManager: previous?.DirectLogSubmission,
                 telemetry: null,
                 discoveryService: null,
-                dataStreamsManager: null);
+                dataStreamsManager: null,
+                spanSampler: null);
 
             try
             {
@@ -77,20 +77,20 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Internal for use in tests that create "standalone" <see cref="TracerManager"/> by
-        /// <see cref="Tracer(TracerSettings, IAgentWriter, ITraceSampler, ISpanSampler, IScopeManager, IDogStatsd, ITelemetryController, IDiscoveryService)"/>
+        /// <see cref="Tracer(TracerSettings, IAgentWriter, ITraceSampler, IScopeManager, IDogStatsd, ITelemetryController, IDiscoveryService, ISpanSampler)"/>
         /// </summary>
         internal TracerManager CreateTracerManager(
             ImmutableTracerSettings settings,
             IAgentWriter agentWriter,
             ITraceSampler sampler,
-            ISpanSampler spanSampler,
             IScopeManager scopeManager,
             IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetrics,
             DirectLogSubmissionManager logSubmissionManager,
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
-            DataStreamsManager dataStreamsManager)
+            DataStreamsManager dataStreamsManager,
+            ISpanSampler spanSampler)
         {
             settings ??= ImmutableTracerSettings.FromDefaultSources();
 
