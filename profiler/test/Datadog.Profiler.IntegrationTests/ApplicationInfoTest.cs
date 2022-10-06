@@ -62,23 +62,19 @@ namespace Datadog.Profiler.IntegrationTests
                 text = reader.ReadToEnd();
             }
 
-            return (
-                ServiceName: ExtractTag("service", text),
-                Environment: ExtractTag("env", text),
-                Version: ExtractTag("version", text));
-        }
-
-        private static string ExtractTag(string tagName, string input)
-        {
-            var match_tags = Regex.Match(input, "\"tags_profiler\":\"(?<tags>[^\"]*)\"", RegexOptions.Compiled);
+            var match_tags = Regex.Match(text, "\"tags_profiler\":\"(?<tags>[^\"]*)\"", RegexOptions.Compiled);
 
             if (!match_tags.Success || string.IsNullOrWhiteSpace(match_tags.Groups["tags"].Value))
             {
-                return null;
+                return (ServiceName: null, Environment: null, Version: null);
             }
 
             var tags = match_tags.Groups["tags"].Value.Split(',').Select(s => s.Split(':')).ToDictionary(s => s[0], s => s[1]);
-            return tags.GetValueOrDefault(tagName);
+
+            return (
+                ServiceName: tags.GetValueOrDefault("service"),
+                Environment: tags.GetValueOrDefault("env"),
+                Version: tags.GetValueOrDefault("version"));
         }
     }
 }
