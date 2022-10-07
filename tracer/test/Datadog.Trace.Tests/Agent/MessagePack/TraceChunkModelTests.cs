@@ -15,8 +15,6 @@ namespace Datadog.Trace.Tests.Agent.MessagePack;
 
 public class TraceChunkModelTests
 {
-    private readonly TraceContext _traceContext = new(Mock.Of<IDatadogTracer>());
-
     [Fact]
     public void NewTraceChunk()
     {
@@ -435,7 +433,8 @@ public class TraceChunkModelTests
     private Span CreateSpan(ulong traceId, ulong spanId, ulong parentId)
     {
         var parentContent = new SpanContext(traceId, parentId);
-        var spanContext = new SpanContext(parentContent, _traceContext, serviceName: null, spanId: spanId);
+        var traceContext = new TraceContext(Mock.Of<IDatadogTracer>());
+        var spanContext = new SpanContext(parentContent, traceContext, serviceName: null, spanId: spanId);
         return new Span(spanContext, DateTimeOffset.UtcNow);
     }
 }
