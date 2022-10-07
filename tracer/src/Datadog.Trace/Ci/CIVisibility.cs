@@ -436,7 +436,6 @@ namespace Datadog.Trace.Ci
         private static bool IsEventPlatformProxySupportedByAgent(ref IDiscoveryService discoveryService)
         {
             var eventPlatformProxyEnabled = false;
-
             discoveryService = DiscoveryService.Create(new ImmutableExporterSettings(_settings.TracerSettings.Exporter));
             AgentConfiguration? agentConfiguration = null;
             ManualResetEventSlim manualResetEventSlim = new(false);
