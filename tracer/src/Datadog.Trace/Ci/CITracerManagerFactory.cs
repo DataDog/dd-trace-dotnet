@@ -4,10 +4,8 @@
 // </copyright>
 
 using System;
-using System.Net;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Agent;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Sampling;
@@ -25,11 +23,15 @@ namespace Datadog.Trace.Ci
     internal class CITracerManagerFactory : TracerManagerFactory
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CITracerManagerFactory>();
-        private CIVisibilitySettings _settings;
+        private readonly CIVisibilitySettings _settings;
+        private readonly IDiscoveryService _discoveryService;
+        private readonly bool _enabledEventPlatformProxy;
 
-        public CITracerManagerFactory(CIVisibilitySettings settings)
+        public CITracerManagerFactory(CIVisibilitySettings settings, IDiscoveryService discoveryService, bool enabledEventPlatformProxy = false)
         {
             _settings = settings;
+            _discoveryService = discoveryService;
+            _enabledEventPlatformProxy = enabledEventPlatformProxy;
         }
 
         protected override TracerManager CreateTracerManagerFrom(
@@ -62,23 +64,24 @@ namespace Datadog.Trace.Ci
                 {
                     return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(CIVisibility.GetRequestFactory(settings)));
                 }
-                else
-                {
-                    Environment.FailFast("An API key is required in Agentless mode.");
-                    return null;
-                }
-            }
-            else
-            {
-                // With agent scenario:
 
-                // Set the tracer buffer size to the max
-                var traceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
-                return new ApmAgentWriter(settings, sampler, discoveryService, traceBufferSize);
+                Environment.FailFast("An API key is required in Agentless mode.");
+                return null;
             }
+
+            // With agent scenario:
+            if (_enabledEventPlatformProxy)
+            {
+                return new CIVisibilityProtocolWriter(_settings, new CIWriterHttpSender(CIVisibility.GetRequestFactory(settings)));
+            }
+
+            // Event platform proxy not found
+            // Set the tracer buffer size to the max
+            var traceBufferSize = 1024 * 1024 * 45; // slightly lower than the 50mb payload agent limit.
+            return new ApmAgentWriter(settings, sampler, discoveryService, traceBufferSize);
         }
 
         protected override IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)
-            => _settings.Agentless ? NullDiscoveryService.Instance : base.GetDiscoveryService(settings);
+            => _discoveryService;
     }
 }

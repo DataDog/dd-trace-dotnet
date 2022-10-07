@@ -79,6 +79,9 @@ namespace Datadog.Trace.ClrProfiler
 
             Log.Debug("Initialization started.");
 
+            InitializeNoNativeParts();
+            var tracer = Tracer.Instance;
+
             try
             {
                 Log.Debug("Enabling by ref instrumentation.");
@@ -160,9 +163,6 @@ namespace Datadog.Trace.ClrProfiler
             {
                 Log.Error(ex, ex.Message);
             }
-
-            InitializeNoNativeParts();
-            var tracer = Tracer.Instance;
 
             if (tracer is null)
             {

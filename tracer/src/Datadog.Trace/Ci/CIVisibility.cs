@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.ClrProfiler;
@@ -60,6 +61,41 @@ namespace Datadog.Trace.Ci
 
             Log.Information("Initializing CI Visibility");
 
+            // In case we are running using the agent, check if the event platform proxy is supported.
+            IDiscoveryService discoveryService = NullDiscoveryService.Instance;
+            bool eventPlatformProxyEnabled = false;
+            if (!_settings.Agentless)
+            {
+                discoveryService = DiscoveryService.Create(new ImmutableExporterSettings(_settings.TracerSettings.Exporter));
+                AgentConfiguration? agentConfiguration = null;
+                ManualResetEventSlim manualResetEventSlim = new(false);
+                LifetimeManager.Instance.AddShutdownTask(() => manualResetEventSlim.Set());
+
+                Log.Debug("Waiting for agent configuration...");
+                discoveryService.SubscribeToChanges(CallBack);
+
+                void CallBack(AgentConfiguration aConfiguration)
+                {
+                    agentConfiguration = aConfiguration;
+                    manualResetEventSlim.Set();
+                    discoveryService.RemoveSubscription(CallBack);
+                }
+
+                // We wait up to 5 seconds for the configuration to be retrieved.
+                manualResetEventSlim.Wait(5_000);
+                if (!string.IsNullOrEmpty(agentConfiguration?.EventPlatformProxyEndpoint))
+                {
+                    Log.Information("Event platform proxy supported by agent.");
+                    eventPlatformProxyEnabled = true;
+                }
+                else
+                {
+                    Log.Information("Event platform proxy is not supported by the agent. Falling back to the APM protocol.");
+                }
+
+                Log.Debug("Agent configuration received.");
+            }
+
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
             TracerSettings tracerSettings = _settings.TracerSettings;
@@ -74,7 +110,7 @@ namespace Datadog.Trace.Ci
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings));
+            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings, discoveryService, eventPlatformProxyEnabled));
             _ = Tracer.Instance;
 
             // Initialize FrameworkDescription
@@ -83,19 +119,24 @@ namespace Datadog.Trace.Ci
             // Initialize CIEnvironment
             _ = CIEnvironmentValues.Instance;
 
-            // Intelligent Test Runner
-            if (_settings.IntelligentTestRunnerEnabled)
+            // If we are running in agentless mode or the agent support the event platform proxy endpoint.
+            // We can use the intelligent test runner
+            if (_settings.Agentless || eventPlatformProxyEnabled)
             {
-                Log.Information("ITR: Update and uploading git tree metadata and getting skippable tests.");
-                _skippableTestsTask = GetIntelligentTestRunnerSkippableTestsAsync();
-                LifetimeManager.Instance.AddAsyncShutdownTask(() => _skippableTestsTask);
-            }
-            else if (_settings.GitUploadEnabled)
-            {
-                // Update and upload git tree metadata.
-                Log.Information("ITR: Update and uploading git tree metadata.");
-                var tskItrUpdate = UploadGitMetadataAsync();
-                LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
+                // Intelligent Test Runner or GitUploadEnabled
+                if (_settings.IntelligentTestRunnerEnabled)
+                {
+                    Log.Information("ITR: Update and uploading git tree metadata and getting skippable tests.");
+                    _skippableTestsTask = GetIntelligentTestRunnerSkippableTestsAsync();
+                    LifetimeManager.Instance.AddAsyncShutdownTask(() => _skippableTestsTask);
+                }
+                else if (_settings.GitUploadEnabled)
+                {
+                    // Update and upload git tree metadata.
+                    Log.Information("ITR: Update and uploading git tree metadata.");
+                    var tskItrUpdate = UploadGitMetadataAsync();
+                    LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
+                }
             }
         }
 
