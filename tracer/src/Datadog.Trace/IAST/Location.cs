@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.Iast
 {
-    internal class Location
+    internal readonly struct Location
     {
         public Location(string? path, int? line)
         {

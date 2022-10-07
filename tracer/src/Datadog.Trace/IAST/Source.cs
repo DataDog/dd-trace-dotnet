@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.Iast
 {
-    internal class Source
+    internal readonly struct Source
     {
         public Source(byte origin, string name, string value)
         {

@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.Iast
 {
-    internal class Range
+    internal readonly struct Range
     {
         public Range(int start, int length, Source source)
         {

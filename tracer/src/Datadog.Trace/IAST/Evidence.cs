@@ -7,7 +7,7 @@
 
 namespace Datadog.Trace.Iast
 {
-    internal class Evidence
+    internal readonly struct Evidence
     {
         public Evidence(string value, Range[]? ranges = null)
         {
