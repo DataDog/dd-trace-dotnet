@@ -20,14 +20,14 @@ public class TraceChunkModelTests
     {
         var traceChunk = new TraceChunkModel();
 
-        traceChunk.HashSetCreated.Should().BeFalse();
+        traceChunk.SpanCount.Should().Be(0);
+        traceChunk.HashSetInitialized.Should().BeFalse();
         traceChunk.LocalRootSpanId.Should().BeNull();
         traceChunk.ContainsLocalRootSpan.Should().BeFalse();
 
-        traceChunk.ParentExistsForSpanAtIndex(0).Should().BeFalse();
-        traceChunk.ParentExistsForSpanAtIndex(1).Should().BeFalse(); // index out of range
+        traceChunk.Invoking(t => t.GetSpanModel(0)).Should().Throw<ArgumentOutOfRangeException>();
 
-        traceChunk.HashSetCreated.Should().BeFalse();
+        traceChunk.HashSetInitialized.Should().BeFalse();
     }
 
     [Fact]
@@ -35,14 +35,14 @@ public class TraceChunkModelTests
     {
         TraceChunkModel traceChunk = default;
 
-        traceChunk.HashSetCreated.Should().BeFalse();
+        traceChunk.SpanCount.Should().Be(0);
+        traceChunk.HashSetInitialized.Should().BeFalse();
         traceChunk.LocalRootSpanId.Should().BeNull();
         traceChunk.ContainsLocalRootSpan.Should().BeFalse();
 
-        traceChunk.ParentExistsForSpanAtIndex(0).Should().BeFalse();
-        traceChunk.ParentExistsForSpanAtIndex(1).Should().BeFalse(); // index out of range
+        traceChunk.Invoking(t => t.GetSpanModel(0)).Should().Throw<ArgumentOutOfRangeException>();
 
-        traceChunk.HashSetCreated.Should().BeFalse();
+        traceChunk.HashSetInitialized.Should().BeFalse();
     }
 
     [Fact]
@@ -53,14 +53,14 @@ public class TraceChunkModelTests
         var spans = new ArraySegment<Span>(Array.Empty<Span>());
         var traceChunk = new TraceChunkModel(spans, traceContext: null);
 
-        traceChunk.HashSetCreated.Should().BeFalse();
+        traceChunk.SpanCount.Should().Be(0);
+        traceChunk.HashSetInitialized.Should().BeFalse();
         traceChunk.LocalRootSpanId.Should().BeNull();
         traceChunk.ContainsLocalRootSpan.Should().BeFalse();
 
-        traceChunk.ParentExistsForSpanAtIndex(0).Should().BeFalse();
-        traceChunk.ParentExistsForSpanAtIndex(1).Should().BeFalse(); // index out of range
+        traceChunk.Invoking(t => t.GetSpanModel(0)).Should().Throw<ArgumentOutOfRangeException>();
 
-        traceChunk.HashSetCreated.Should().BeFalse();
+        traceChunk.HashSetInitialized.Should().BeFalse();
     }
 
     [Fact]
@@ -71,14 +71,14 @@ public class TraceChunkModelTests
         var spans = new ArraySegment<Span>();
         var traceChunk = new TraceChunkModel(spans, traceContext: null);
 
-        traceChunk.HashSetCreated.Should().BeFalse();
+        traceChunk.SpanCount.Should().Be(0);
+        traceChunk.HashSetInitialized.Should().BeFalse();
         traceChunk.LocalRootSpanId.Should().BeNull();
         traceChunk.ContainsLocalRootSpan.Should().BeFalse();
 
-        traceChunk.ParentExistsForSpanAtIndex(0).Should().BeFalse();
-        traceChunk.ParentExistsForSpanAtIndex(1).Should().BeFalse(); // index out of range
+        traceChunk.Invoking(t => t.GetSpanModel(0)).Should().Throw<ArgumentOutOfRangeException>();
 
-        traceChunk.HashSetCreated.Should().BeFalse();
+        traceChunk.HashSetInitialized.Should().BeFalse();
     }
 
     [Fact]
@@ -87,14 +87,14 @@ public class TraceChunkModelTests
         ArraySegment<Span> spans = default;
         var traceChunk = new TraceChunkModel(spans, traceContext: null);
 
-        traceChunk.HashSetCreated.Should().BeFalse();
+        traceChunk.SpanCount.Should().Be(0);
+        traceChunk.HashSetInitialized.Should().BeFalse();
         traceChunk.LocalRootSpanId.Should().BeNull();
         traceChunk.ContainsLocalRootSpan.Should().BeFalse();
 
-        traceChunk.ParentExistsForSpanAtIndex(0).Should().BeFalse();
-        traceChunk.ParentExistsForSpanAtIndex(1).Should().BeFalse(); // index out of range
+        traceChunk.Invoking(t => t.GetSpanModel(0)).Should().Throw<ArgumentOutOfRangeException>();
 
-        traceChunk.HashSetCreated.Should().BeFalse();
+        traceChunk.HashSetInitialized.Should().BeFalse();
     }
 
     [Fact]
@@ -109,32 +109,31 @@ public class TraceChunkModelTests
 
         var traceChunk = CreateTraceChunk(spans, root: spans[0]);
 
-        traceChunk.HashSetCreated.Should().BeFalse();
+        traceChunk.SpanCount.Should().Be(3);
+        traceChunk.HashSetInitialized.Should().BeFalse();
         traceChunk.LocalRootSpanId.Should().Be(10);
         traceChunk.ContainsLocalRootSpan.Should().BeTrue();
-
-        traceChunk.ParentExistsForSpanAtIndex(0).Should().BeFalse(); // first span is root and has no parent
-        traceChunk.ParentExistsForSpanAtIndex(1).Should().BeTrue();
-        traceChunk.ParentExistsForSpanAtIndex(2).Should().BeTrue();
-        traceChunk.ParentExistsForSpanAtIndex(3).Should().BeFalse(); // index out of range
-
-        // still no HashSet
-        traceChunk.HashSetCreated.Should().BeFalse();
 
         var span0 = traceChunk.GetSpanModel(0);
         span0.IsLocalRoot.Should().BeTrue();
         span0.IsChunkOrphan.Should().BeTrue();
         span0.IsFirstSpanInChunk.Should().BeTrue();
+        span0.Span.Should().BeSameAs(spans[0]);
 
         var span1 = traceChunk.GetSpanModel(1);
         span1.IsLocalRoot.Should().BeFalse();
         span1.IsChunkOrphan.Should().BeFalse();
         span1.IsFirstSpanInChunk.Should().BeFalse();
+        span1.Span.Should().BeSameAs(spans[1]);
 
         var span2 = traceChunk.GetSpanModel(2);
         span2.IsLocalRoot.Should().BeFalse();
         span2.IsChunkOrphan.Should().BeFalse();
         span2.IsFirstSpanInChunk.Should().BeFalse();
+        span2.Span.Should().BeSameAs(spans[2]);
+
+        traceChunk.Invoking(t => t.GetSpanModel(3)).Should().Throw<ArgumentOutOfRangeException>();
+        traceChunk.HashSetInitialized.Should().BeFalse();
     }
 
     [Fact]
@@ -149,31 +148,31 @@ public class TraceChunkModelTests
 
         var traceChunk = CreateTraceChunk(spans, root: spans[1]);
 
-        traceChunk.HashSetCreated.Should().BeFalse();
+        traceChunk.SpanCount.Should().Be(3);
+        traceChunk.HashSetInitialized.Should().BeFalse();
         traceChunk.LocalRootSpanId.Should().Be(10);
         traceChunk.ContainsLocalRootSpan.Should().BeTrue();
-
-        traceChunk.ParentExistsForSpanAtIndex(0).Should().BeTrue();
-        traceChunk.ParentExistsForSpanAtIndex(1).Should().BeFalse(); // second span is root and has no parent
-        traceChunk.ParentExistsForSpanAtIndex(2).Should().BeTrue();
-        traceChunk.ParentExistsForSpanAtIndex(3).Should().BeFalse(); // index out of range
-
-        traceChunk.HashSetCreated.Should().BeFalse();
 
         var span0 = traceChunk.GetSpanModel(0);
         span0.IsLocalRoot.Should().BeFalse();
         span0.IsChunkOrphan.Should().BeFalse();
         span0.IsFirstSpanInChunk.Should().BeTrue();
+        span0.Span.Should().BeSameAs(spans[0]);
 
         var span1 = traceChunk.GetSpanModel(1);
         span1.IsLocalRoot.Should().BeTrue();
         span1.IsChunkOrphan.Should().BeTrue();
         span1.IsFirstSpanInChunk.Should().BeFalse();
+        span1.Span.Should().BeSameAs(spans[1]);
 
         var span2 = traceChunk.GetSpanModel(2);
         span2.IsLocalRoot.Should().BeFalse();
         span2.IsChunkOrphan.Should().BeFalse();
         span2.IsFirstSpanInChunk.Should().BeFalse();
+        span2.Span.Should().BeSameAs(spans[2]);
+
+        traceChunk.Invoking(t => t.GetSpanModel(3)).Should().Throw<ArgumentOutOfRangeException>();
+        traceChunk.HashSetInitialized.Should().BeFalse();
     }
 
     [Fact]
@@ -188,31 +187,31 @@ public class TraceChunkModelTests
 
         var traceChunk = CreateTraceChunk(spans, root: spans[2]);
 
-        traceChunk.HashSetCreated.Should().BeFalse();
+        traceChunk.SpanCount.Should().Be(3);
+        traceChunk.HashSetInitialized.Should().BeFalse();
         traceChunk.LocalRootSpanId.Should().Be(10);
         traceChunk.ContainsLocalRootSpan.Should().BeTrue();
-
-        traceChunk.ParentExistsForSpanAtIndex(0).Should().BeTrue();
-        traceChunk.ParentExistsForSpanAtIndex(1).Should().BeTrue();
-        traceChunk.ParentExistsForSpanAtIndex(2).Should().BeFalse(); // third span has no parent
-        traceChunk.ParentExistsForSpanAtIndex(3).Should().BeFalse(); // index out of range
-
-        traceChunk.HashSetCreated.Should().BeFalse();
 
         var span0 = traceChunk.GetSpanModel(0);
         span0.IsLocalRoot.Should().BeFalse();
         span0.IsChunkOrphan.Should().BeFalse();
         span0.IsFirstSpanInChunk.Should().BeTrue();
+        span0.Span.Should().BeSameAs(spans[0]);
 
         var span1 = traceChunk.GetSpanModel(1);
         span1.IsLocalRoot.Should().BeFalse();
         span1.IsChunkOrphan.Should().BeFalse();
         span1.IsFirstSpanInChunk.Should().BeFalse();
+        span1.Span.Should().BeSameAs(spans[1]);
 
         var span2 = traceChunk.GetSpanModel(2);
         span2.IsLocalRoot.Should().BeTrue();
         span2.IsChunkOrphan.Should().BeTrue();
         span2.IsFirstSpanInChunk.Should().BeFalse();
+        span2.Span.Should().BeSameAs(spans[2]);
+
+        traceChunk.Invoking(t => t.GetSpanModel(3)).Should().Throw<ArgumentOutOfRangeException>();
+        traceChunk.HashSetInitialized.Should().BeFalse();
     }
 
     [Fact]
@@ -230,33 +229,33 @@ public class TraceChunkModelTests
 
         var traceChunk = CreateTraceChunk(spans, root: rootSpan);
 
-        traceChunk.HashSetCreated.Should().BeFalse();
+        traceChunk.SpanCount.Should().Be(3);
+        traceChunk.HashSetInitialized.Should().BeFalse();
         traceChunk.LocalRootSpanId.Should().Be(5);
 
         // local root span not found in trace chunk
         traceChunk.ContainsLocalRootSpan.Should().BeFalse();
 
-        traceChunk.ParentExistsForSpanAtIndex(0).Should().BeFalse(); // first span has no parent
-        traceChunk.ParentExistsForSpanAtIndex(1).Should().BeTrue();
-        traceChunk.ParentExistsForSpanAtIndex(2).Should().BeTrue();
-        traceChunk.ParentExistsForSpanAtIndex(3).Should().BeFalse(); // index out of range
-
-        traceChunk.HashSetCreated.Should().BeFalse();
-
         var span0 = traceChunk.GetSpanModel(0);
         span0.IsLocalRoot.Should().BeFalse();
         span0.IsChunkOrphan.Should().BeTrue();
         span0.IsFirstSpanInChunk.Should().BeTrue();
+        span0.Span.Should().BeSameAs(spans[0]);
 
         var span1 = traceChunk.GetSpanModel(1);
         span1.IsLocalRoot.Should().BeFalse();
         span1.IsChunkOrphan.Should().BeFalse();
         span1.IsFirstSpanInChunk.Should().BeFalse();
+        span1.Span.Should().BeSameAs(spans[1]);
 
         var span2 = traceChunk.GetSpanModel(2);
         span2.IsLocalRoot.Should().BeFalse();
         span2.IsChunkOrphan.Should().BeFalse();
         span2.IsFirstSpanInChunk.Should().BeFalse();
+        span2.Span.Should().BeSameAs(spans[2]);
+
+        traceChunk.Invoking(t => t.GetSpanModel(3)).Should().Throw<ArgumentOutOfRangeException>();
+        traceChunk.HashSetInitialized.Should().BeFalse();
     }
 
     [Fact]
@@ -269,28 +268,19 @@ public class TraceChunkModelTests
 
         var traceChunk = CreateTraceChunk(spans, root: spans[0]);
 
-        // HashSet created, but not initialized until used
-        traceChunk.HashSetCreated.Should().BeTrue();
+        traceChunk.SpanCount.Should().Be(1000);
         traceChunk.HashSetInitialized.Should().BeFalse();
         traceChunk.LocalRootSpanId.Should().Be(10);
         traceChunk.ContainsLocalRootSpan.Should().BeTrue();
-
-        // the first span is the root span, so HashSet is not initialized yet (not needed)
-        traceChunk.ParentExistsForSpanAtIndex(0).Should().BeFalse();
-        traceChunk.HashSetInitialized.Should().BeFalse();
-
-        for (var i = 1; i < 1000; i++)
-        {
-            traceChunk.ParentExistsForSpanAtIndex(i).Should().BeFalse();
-        }
-
-        // HashSet was initialized and used
-        traceChunk.HashSetInitialized.Should().BeTrue();
 
         var span0 = traceChunk.GetSpanModel(0);
         span0.IsLocalRoot.Should().BeTrue();
         span0.IsChunkOrphan.Should().BeTrue();
         span0.IsFirstSpanInChunk.Should().BeTrue();
+        span0.Span.Should().BeSameAs(spans[0]);
+
+        // the first span is the root span, so HashSet is not initialized yet (not needed)
+        traceChunk.HashSetInitialized.Should().BeFalse();
 
         for (var i = 1; i < 1000; i++)
         {
@@ -298,11 +288,15 @@ public class TraceChunkModelTests
             span.IsLocalRoot.Should().BeFalse();
             span.IsChunkOrphan.Should().BeTrue();
             span.IsFirstSpanInChunk.Should().BeFalse();
+            span.Span.Should().BeSameAs(spans[i]);
         }
+
+        // HashSet was initialized and used for other spans
+        traceChunk.HashSetInitialized.Should().BeTrue();
     }
 
     [Fact]
-    public void LargeArray_NestedParents()
+    public void LargeArray_NestedParents_WithRoot_WithUpstream()
     {
         // all spans have parentId = spanId - 1, which is found for every span except the first one (parentId = 9)
         var spans = Enumerable.Range(10, 1000)
@@ -311,77 +305,70 @@ public class TraceChunkModelTests
 
         var traceChunk = CreateTraceChunk(spans, root: spans[0]);
 
-        // HashSet created, but not initialized until used
-        traceChunk.HashSetCreated.Should().BeTrue();
+        traceChunk.SpanCount.Should().Be(1000);
         traceChunk.HashSetInitialized.Should().BeFalse();
         traceChunk.LocalRootSpanId.Should().Be(10);
         traceChunk.ContainsLocalRootSpan.Should().BeTrue();
 
+        var span0 = traceChunk.GetSpanModel(0);
+        span0.IsLocalRoot.Should().BeTrue();
+        span0.IsChunkOrphan.Should().BeTrue();
+        span0.IsFirstSpanInChunk.Should().BeTrue();
+        span0.Span.Should().BeSameAs(spans[0]);
+
         // the first span is the root span, so HashSet is not initialized yet (not needed)
-        traceChunk.ParentExistsForSpanAtIndex(0).Should().BeFalse();
         traceChunk.HashSetInitialized.Should().BeFalse();
 
-        // the second span is a direct descendant of root span, so parent is found,
-        // but HashSet is not initialized yet (not needed)
-        traceChunk.ParentExistsForSpanAtIndex(1).Should().BeTrue();
+        var span1 = traceChunk.GetSpanModel(1);
+        span1.IsLocalRoot.Should().BeFalse();
+        span1.IsChunkOrphan.Should().BeFalse();
+        span1.IsFirstSpanInChunk.Should().BeFalse();
+        span1.Span.Should().BeSameAs(spans[1]);
+
+        // the second span is a direct descendant of root span,
+        // so parent is found and HashSet is not initialized yet (not needed)
         traceChunk.HashSetInitialized.Should().BeFalse();
 
         for (var i = 2; i < 1000; i++)
         {
-            traceChunk.ParentExistsForSpanAtIndex(i).Should().BeTrue("because parent id {0} was expected in the HashSet", spans[i].Context.ParentId);
+            var span = traceChunk.GetSpanModel(i);
+            span.IsLocalRoot.Should().BeFalse();
+            span.IsChunkOrphan.Should().BeFalse();
+            span.IsFirstSpanInChunk.Should().BeFalse();
+            span.Span.Should().BeSameAs(spans[i]);
         }
 
         // HashSet was initialized and used for other spans
         traceChunk.HashSetInitialized.Should().BeTrue();
-
-        var span0 = traceChunk.GetSpanModel(0);
-        span0.IsLocalRoot.Should().BeTrue();
-        span0.IsChunkOrphan.Should().BeTrue();
-        span0.IsFirstSpanInChunk.Should().BeTrue();
-
-        for (var i = 1; i < 1000; i++)
-        {
-            var span = traceChunk.GetSpanModel(i);
-            span.IsLocalRoot.Should().BeFalse();
-            span.IsChunkOrphan.Should().BeFalse();
-            span.IsFirstSpanInChunk.Should().BeFalse();
-        }
     }
 
     [Fact]
-    public void LargeArray_FlatParents()
+    public void LargeArray_NestedParents_WithRoot_NoUpstream()
     {
-        // all spans have parentId = 5 except the first one, which has spanId = 5 and parentId = 0
+        // all spans have parentId = spanId - 1, except the first one (parentId = 0)
         var rootSpan = CreateSpan(traceId: 1, spanId: 5, parentId: 0);
+
         var childSpans = Enumerable.Range(10, 1000)
-                                   .Select(spanId => CreateSpan(traceId: 1, spanId: (ulong)spanId, parentId: 5));
-        var spans = new[] { rootSpan }.Concat(childSpans)
-                                      .ToArray();
+                                   .Select(spanId => CreateSpan(traceId: 1, spanId: (ulong)spanId, parentId: (ulong)spanId - 1))
+                                   .ToArray();
+
+        var spans = new[] { rootSpan }.Concat(childSpans).ToArray();
 
         var traceChunk = CreateTraceChunk(spans, root: rootSpan);
 
-        // HashSet created, but not initialized until used
-        traceChunk.HashSetCreated.Should().BeTrue();
+        traceChunk.SpanCount.Should().Be(1001);
         traceChunk.HashSetInitialized.Should().BeFalse();
         traceChunk.LocalRootSpanId.Should().Be(5);
         traceChunk.ContainsLocalRootSpan.Should().BeTrue();
 
-        // the first span is the root span, so HashSet is not initialized yet (not needed)
-        traceChunk.ParentExistsForSpanAtIndex(0).Should().BeFalse();
-        traceChunk.HashSetInitialized.Should().BeFalse();
-
-        for (var i = 1; i < 1000; i++)
-        {
-            // all spans are direct descendants of root span, so parent is found
-            // and HashSet is never initialized (not needed)
-            traceChunk.ParentExistsForSpanAtIndex(i).Should().BeTrue("because parent id {0} was expected in the HashSet", spans[i].Context.ParentId);
-            traceChunk.HashSetInitialized.Should().BeFalse();
-        }
-
         var span0 = traceChunk.GetSpanModel(0);
         span0.IsLocalRoot.Should().BeTrue();
         span0.IsChunkOrphan.Should().BeTrue();
         span0.IsFirstSpanInChunk.Should().BeTrue();
+        span0.Span.Should().BeSameAs(spans[0]);
+
+        // the first span is the root span, so HashSet is not initialized yet (not needed)
+        traceChunk.HashSetInitialized.Should().BeFalse();
 
         for (var i = 1; i < 1000; i++)
         {
@@ -389,39 +376,94 @@ public class TraceChunkModelTests
             span.IsLocalRoot.Should().BeFalse();
             span.IsChunkOrphan.Should().BeFalse();
             span.IsFirstSpanInChunk.Should().BeFalse();
+            span.Span.Should().BeSameAs(spans[i]);
         }
+
+        // if chunk contains the distributed root span, we don't mark any other spans as orphans
+        traceChunk.HashSetInitialized.Should().BeFalse();
     }
 
     [Fact]
-    public void LargeArray_NoRoot()
+    public void LargeArray_NestedParents_NoRoot()
     {
         // the root span is not in the same trace chunk
-        var rootSpan = CreateSpan(traceId: 1, spanId: 9, parentId: 0);
+        var rootSpan = CreateSpan(traceId: 1, spanId: 9, parentId: 8);
 
-        // all spans have parentId = spanId - 1, which is found for every span except the first one (parentId = 9)
+        // all spans have parentId = spanId - 1,
+        // parent is found for every span except the first one (parentId = 9)
         var spans = Enumerable.Range(10, 1000)
                               .Select(spanId => CreateSpan(traceId: 1, spanId: (ulong)spanId, parentId: (ulong)spanId - 1))
                               .ToArray();
 
         var traceChunk = CreateTraceChunk(spans, root: rootSpan);
 
-        // HashSet created, but not initialized until used
-        traceChunk.HashSetCreated.Should().BeTrue();
+        traceChunk.SpanCount.Should().Be(1000);
         traceChunk.HashSetInitialized.Should().BeFalse();
         traceChunk.LocalRootSpanId.Should().Be(9);
         traceChunk.ContainsLocalRootSpan.Should().BeFalse();
 
-        // HashSet is not used for the first span because we know its parent is the local root,
-        // and that it's not in this trace chunk
-        traceChunk.ParentExistsForSpanAtIndex(0).Should().BeFalse();
+        var span0 = traceChunk.GetSpanModel(0);
+        span0.IsLocalRoot.Should().BeFalse();
+        span0.IsChunkOrphan.Should().BeTrue();
+        span0.IsFirstSpanInChunk.Should().BeTrue();
+        span0.Span.Should().BeSameAs(spans[0]);
+
+        // HashSet is not used for the first span because we know its parent is the local root
+        // and that it's not present in this trace chunk
         traceChunk.HashSetInitialized.Should().BeFalse();
 
-        // HashSet is used for all the other spans
-        for (var i = 2; i < 1000; i++)
+        for (var i = 1; i < 1000; i++)
         {
-            traceChunk.ParentExistsForSpanAtIndex(i).Should().BeTrue("because parent id {0} was expected in the HashSet", spans[i].Context.ParentId);
-            traceChunk.HashSetInitialized.Should().BeTrue();
+            var span = traceChunk.GetSpanModel(i);
+            span.IsLocalRoot.Should().BeFalse();
+            span.IsChunkOrphan.Should().BeFalse();
+            span.IsFirstSpanInChunk.Should().BeFalse();
+            span.Span.Should().BeSameAs(spans[i]);
         }
+
+        // HashSet was initialized and used for other spans
+        traceChunk.HashSetInitialized.Should().BeTrue();
+    }
+
+    [Fact]
+    public void LargeArray_FlatParents()
+    {
+        // all spans have parentId = 5 except the first one, which has spanId = 5 and parentId = 2
+        var rootSpan = CreateSpan(traceId: 1, spanId: 5, parentId: 2);
+
+        var childSpans = Enumerable.Range(10, 1000)
+                                   .Select(spanId => CreateSpan(traceId: 1, spanId: (ulong)spanId, parentId: 5));
+
+        var spans = new[] { rootSpan }.Concat(childSpans).ToArray();
+
+        var traceChunk = CreateTraceChunk(spans, root: rootSpan);
+
+        traceChunk.SpanCount.Should().Be(1001);
+        traceChunk.HashSetInitialized.Should().BeFalse();
+        traceChunk.LocalRootSpanId.Should().Be(5);
+        traceChunk.ContainsLocalRootSpan.Should().BeTrue();
+
+        var span0 = traceChunk.GetSpanModel(0);
+        span0.IsLocalRoot.Should().BeTrue();
+        span0.IsChunkOrphan.Should().BeTrue();
+        span0.IsFirstSpanInChunk.Should().BeTrue();
+        span0.Span.Should().BeSameAs(spans[0]);
+
+        // the first span is the root span, so HashSet is not initialized yet (not needed)
+        traceChunk.HashSetInitialized.Should().BeFalse();
+
+        for (var i = 1; i < 1000; i++)
+        {
+            var span = traceChunk.GetSpanModel(i);
+            span.IsLocalRoot.Should().BeFalse();
+            span.IsChunkOrphan.Should().BeFalse();
+            span.IsFirstSpanInChunk.Should().BeFalse();
+            span.Span.Should().BeSameAs(spans[i]);
+        }
+
+        // all other spans are direct descendants of root span,
+        // so parent is found and HashSet is not initialized (not needed)
+        traceChunk.HashSetInitialized.Should().BeFalse();
     }
 
     private static TraceChunkModel CreateTraceChunk(IEnumerable<Span> spans, Span root)
