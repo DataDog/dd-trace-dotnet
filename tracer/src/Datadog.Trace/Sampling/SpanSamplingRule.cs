@@ -61,7 +61,7 @@ namespace Datadog.Trace.Sampling
 
             // cache strings for tagging to reduce allocations
             SamplingRateString = SamplingRate.ToString();
-            MaxPerSecondString ??= MaxPerSecondString.ToString();
+            MaxPerSecondString = MaxPerSecond?.ToString();
             SamplingMechanismString = SamplingMechanism.SpanSamplingRule.ToString();
         }
 
