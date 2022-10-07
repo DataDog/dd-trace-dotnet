@@ -124,6 +124,11 @@ namespace Datadog.Trace.Sampling
         /// <inheritdoc/>
         public bool ShouldSample(Span span)
         {
+            if (span is null)
+            {
+                return false;
+            }
+
             var sampleKeep = SamplingHelpers.SampleByRate(span.SpanId, SamplingRate);
 
             if (!sampleKeep)
