@@ -179,6 +179,42 @@ namespace Datadog.Trace.Tests.Sampling
             Assert.Equal(1.0f, rule.SamplingRate);
         }
 
+        [Fact]
+        public void SampleRateString_ShouldMatch_SampleRate()
+        {
+            var config = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":0.5}]";
+            var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
+
+            Assert.Equal("0.5", rule.SamplingRateString);
+        }
+
+        [Fact]
+        public void MaxPerSecondString_ShouldMatch_MaxPerSecond()
+        {
+            var config = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":0.5, \"max_per_second\":1000.5}]";
+            var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
+
+            Assert.Equal("1000.5", rule.SamplingRateString);
+        }
+
+        [Fact]
+        public void MaxPerSecondString_ShouldBeNull_WhenMaxPerSecondNull()
+        {
+            var config = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":0.5}]";
+            var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
+
+            Assert.Null(rule.SamplingRateString);
+        }
+
+        [Fact]
+        public void SamplingMechanismString_ShouldBe_SpanSamplingMechanism()
+        {
+            var config = "[{\"service\":\"*\", \"name\":\"*\"}]";
+            var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
+
+            Assert.Equal("8", rule.SamplingMechanismString);
+        }
+
         private void VerifySingleRule(string config, Span span, bool isMatch)
         {
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
