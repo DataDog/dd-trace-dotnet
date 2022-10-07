@@ -76,7 +76,15 @@ namespace Datadog.Trace.Iast
 
         private static bool InvalidHashAlgorithm(string algorithm, Iast iast)
         {
-            return iast.Settings.InsecureHashingAlgorithmsArray.Contains(algorithm);
+            foreach (var insecureAlgorithm in iast.Settings.InsecureHashingAlgorithmsArray)
+            {
+                if (string.Equals(algorithm, insecureAlgorithm, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            
+            return false;
         }
     }
 }
