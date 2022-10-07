@@ -101,6 +101,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { ConfigurationKeys.GlobalTags, "keyonly:,nocolon,:,:valueonly,k2:v2", CreateFunc(s => s.GlobalTags), TagsK2V2 };
             yield return new object[] { "DD_TRACE_GLOBAL_TAGS", "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2 };
             yield return new object[] { ConfigurationKeys.GlobalTags, "k1:v1,k1:v2", CreateFunc(s => s.GlobalTags.Count), 1 };
+            yield return new object[] { ConfigurationKeys.GlobalTags, "k1:v1, a.b_c:a://b.c, k2:v2", CreateFunc(s => s.GlobalTags), { "k1", "v1" }, { "a.b_c", "a://b.c" }, { "k2", "v2" }  };
 
 #pragma warning disable 618 // App Analytics is deprecated but still supported
             yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "true", CreateFunc(s => s.AnalyticsEnabled), true };
