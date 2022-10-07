@@ -43,7 +43,7 @@ internal class DataStreamsContextPropagator
     {
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
-        var bytes = headers.TryGetBytes(DataStreamsPropagationHeaders.PropagationKey);
+        var bytes = headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKey);
 
         return bytes is { } ? PathwayContextEncoder.Decode(bytes) : null;
     }
