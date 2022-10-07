@@ -23,16 +23,17 @@ namespace Datadog.Trace.Agent.MessagePack
 
         public IMessagePackFormatter<T> GetFormatter<T>()
         {
-            if (typeof(T) == typeof(TraceChunkModel) ||
-                typeof(T) == typeof(SpanModel))
+            if (typeof(T) == typeof(TraceChunkModel))
             {
                 return (IMessagePackFormatter<T>)_formatter;
             }
 
-            if (typeof(T) == typeof(Span))
+            if (typeof(T) == typeof(Span) || typeof(T) == typeof(SpanModel))
             {
-                // We block IMessagePackFormatter<Span> since it can return wrong results and we want to catch any tests trying to use it.
-                // Note that this also covers Span collections, like Span[] and ArraySegment<Span>.
+                // We block IMessagePackFormatter<Span> and IMessagePackFormatter<SpanModel> since it
+                // can return wrong results and we want to catch any tests trying to use it.
+                // Do not serialize individual spans. Only serialize entire trace chunks.
+                // Note that this also covers collections, like Span[] and ArraySegment<Span>.
                 throw new NotSupportedException("Serializing Span with IMessagePackFormatter<Span> is not supported. Use IMessagePackFormatter<SpanModel> instead.");
             }
 

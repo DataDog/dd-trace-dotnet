@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Processors;
@@ -15,8 +14,7 @@ using Datadog.Trace.Vendors.MessagePack.Formatters;
 
 namespace Datadog.Trace.Agent.MessagePack
 {
-    internal class SpanMessagePackFormatter : IMessagePackFormatter<TraceChunkModel>,
-                                              IMessagePackFormatter<SpanModel>
+    internal class SpanMessagePackFormatter : IMessagePackFormatter<TraceChunkModel>
     {
         public static readonly SpanMessagePackFormatter Instance = new();
 
@@ -77,20 +75,14 @@ namespace Datadog.Trace.Agent.MessagePack
                 // or if its parent can also be found in the same chunk, so we use SpanModel
                 // to pass that information to the serializer
                 var spanModel = traceChunk.GetSpanModel(i);
-                offset += Serialize(ref bytes, offset, in spanModel, formatterResolver);
+                offset += Serialize(ref bytes, offset, in spanModel);
             }
 
             return offset - originalOffset;
         }
 
-        // this method creates a SpanModel copy so try to avoid it
-        int IMessagePackFormatter<SpanModel>.Serialize(ref byte[] bytes, int offset, SpanModel spanModel, IFormatterResolver formatterResolver)
-        {
-            return Serialize(ref bytes, offset, in spanModel, formatterResolver);
-        }
-
         // overload of IMessagePackFormatter<SpanModel>.Serialize() with `in` modifier on `SpanModel` parameter
-        public int Serialize(ref byte[] bytes, int offset, in SpanModel spanModel, IFormatterResolver formatterResolver)
+        private int Serialize(ref byte[] bytes, int offset, in SpanModel spanModel)
         {
             var span = spanModel.Span;
 
@@ -346,11 +338,6 @@ namespace Datadog.Trace.Agent.MessagePack
         }
 
         TraceChunkModel IMessagePackFormatter<TraceChunkModel>.Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
-        {
-            throw new NotSupportedException($"{nameof(SpanMessagePackFormatter)} does not support deserialization. For testing purposes, deserialize using the MessagePack NuGet package.");
-        }
-
-        SpanModel IMessagePackFormatter<SpanModel>.Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
         {
             throw new NotSupportedException($"{nameof(SpanMessagePackFormatter)} does not support deserialization. For testing purposes, deserialize using the MessagePack NuGet package.");
         }
