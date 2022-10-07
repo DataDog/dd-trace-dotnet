@@ -194,7 +194,7 @@ namespace Datadog.Trace.Tests.Sampling
             var config = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":0.5, \"max_per_second\":1000.5}]";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
-            Assert.Equal("1000.5", rule.SamplingRateString);
+            Assert.Equal("1000.5", rule.MaxPerSecondString);
         }
 
         [Fact]
@@ -203,7 +203,7 @@ namespace Datadog.Trace.Tests.Sampling
             var config = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":0.5}]";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
-            Assert.Null(rule.SamplingRateString);
+            Assert.Null(rule.MaxPerSecondString);
         }
 
         [Fact]
