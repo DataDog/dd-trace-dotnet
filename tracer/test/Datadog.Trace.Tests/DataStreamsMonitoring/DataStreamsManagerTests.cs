@@ -4,8 +4,11 @@
 // </copyright>
 
 using System.Collections.Concurrent;
+using System.Collections.Specialized;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
@@ -16,6 +19,27 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring;
 
 public class DataStreamsManagerTests
 {
+    [Fact]
+    public void WhenEnabled_ButKafkaConsumerIsDisabled_DoesNotInjectContext()
+    {
+        var settings = new TracerSettings(
+            new NameValueConfigurationSource(
+                new NameValueCollection
+                {
+                    { ConfigurationKeys.KafkaCreateConsumerScopeEnabled, "0" },
+                    { ConfigurationKeys.DataStreamsMonitoring.Enabled, "1" },
+                })).Build();
+
+        var dsm = DataStreamsManager.Create(settings, new NullDiscoveryService(), "service");
+
+        var headers = new TestHeadersCollection();
+        var context = new PathwayContext(new PathwayHash(123), 1234, 5678);
+
+        dsm.InjectPathwayContext(context, headers);
+
+        headers.Values.Should().BeEmpty();
+    }
+
     [Fact]
     public void WhenDisabled_DoesNotInjectContext()
     {
