@@ -10,7 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
-using Datadog.Trace.Tests.Util;
+using Datadog.Trace.TestHelpers.TransportHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -25,8 +25,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         private static readonly ArraySegment<byte> Logs = new(
             Encoding.UTF8.GetBytes("{\"Level\":\"Debug\",\"Message\":\"Well done, you sent a message\"}"));
 
-        private static readonly Func<Uri, TestApiRequestFactory.TestApiRequest> SingleFaultyRequest
-            = x => new TestApiRequestFactory.FaultyApiRequest(x);
+        private static readonly Func<Uri, TestApiRequest> SingleFaultyRequest
+            = x => new FaultyApiRequest(x);
 
         [Theory]
         [InlineData("http://http-intake.logs.datadoghq.com", "http://http-intake.logs.datadoghq.com/api/v2/logs")]
@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         public async Task SendsRequestToCorrectUrl(string baseUri, string expected)
         {
             var baseEndpoint = new Uri(baseUri);
-            var requestFactory = new TestApiRequestFactory(baseEndpoint);
+            var requestFactory = new TestRequestFactory(baseEndpoint);
 
             var api = new LogsApi("SECR3TZ", requestFactory);
             var result = await api.SendLogsAsync(Logs, NumberOfLogs);
@@ -53,19 +53,19 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         public async Task ShouldRetryRequestsWhenTheyFail()
         {
             // two faults, then success
-            var requestFactory = new TestApiRequestFactory(new Uri(DefaultIntake), SingleFaultyRequest, SingleFaultyRequest);
+            var requestFactory = new TestRequestFactory(new Uri(DefaultIntake), SingleFaultyRequest, SingleFaultyRequest);
 
             var apiKey = "SECR3TZ";
             var api = new LogsApi(apiKey, requestFactory);
             var result = await api.SendLogsAsync(Logs, NumberOfLogs);
 
             requestFactory.RequestsSent
-                          .Where(x => x is TestApiRequestFactory.FaultyApiRequest)
+                          .Where(x => x is FaultyApiRequest)
                           .Should()
                           .HaveCount(2);
 
             requestFactory.RequestsSent
-                          .Where(x => x is not TestApiRequestFactory.FaultyApiRequest)
+                          .Where(x => x is not FaultyApiRequest)
                           .Should()
                           .HaveCount(1);
             result.Should().BeTrue();
@@ -74,7 +74,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [Fact]
         public async Task ShouldAddApiKeyToAllRequests()
         {
-            var requestFactory = new TestApiRequestFactory(new Uri(DefaultIntake), SingleFaultyRequest);
+            var requestFactory = new TestRequestFactory(new Uri(DefaultIntake), SingleFaultyRequest);
 
             var apiKey = "SECR3TZ";
             var api = new LogsApi(apiKey, requestFactory);
@@ -89,7 +89,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [Fact]
         public async Task ShouldSetContentTypeForAllRequests()
         {
-            var requestFactory = new TestApiRequestFactory(new Uri(DefaultIntake), SingleFaultyRequest);
+            var requestFactory = new TestRequestFactory(new Uri(DefaultIntake), SingleFaultyRequest);
 
             var api = new LogsApi("SECR3TZ", requestFactory);
             await api.SendLogsAsync(Logs, NumberOfLogs);
@@ -107,7 +107,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
         [Fact]
         public async Task ShouldNotRetryWhenClientError()
         {
-            var requestFactory = new TestApiRequestFactory(new Uri(DefaultIntake), x => new TestApiRequestFactory.FaultyApiRequest(x, statusCode: 400));
+            var requestFactory = new TestRequestFactory(new Uri(DefaultIntake), x => new FaultyApiRequest(x, statusCode: 400));
 
             var api = new LogsApi("SECR3TZ", requestFactory);
             var result = await api.SendLogsAsync(Logs, NumberOfLogs);
