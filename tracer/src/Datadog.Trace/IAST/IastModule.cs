@@ -32,13 +32,19 @@ namespace Datadog.Trace.Iast
             return GetScope(algorithm, integrationId);
         }
 
-        private static Scope GetScope(string evidenceValue, IntegrationId integrationId)
+        private static Scope? GetScope(string evidenceValue, IntegrationId integrationId)
         {
             var tracer = Tracer.Instance;
-            var frame = StackWalker.GetFrame();
+            var frameInfo = StackWalker.GetFrame();
+
+            if (!frameInfo.IsValid)
+            {
+                return null;
+            }
+
             // Sometimes we do not have the file/line but we have the method/class.
-            var filename = frame?.GetFileName();
-            var vulnerability = new Vulnerability(VulnerabilityType.WeakHash, new Location(filename ?? GetMethodName(frame), filename != null ? frame?.GetFileLineNumber() : null), new Evidence(evidenceValue));
+            var filename = frameInfo.StackFrame?.GetFileName();
+            var vulnerability = new Vulnerability(VulnerabilityType.WeakHash, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null), new Evidence(evidenceValue));
             // The VulnerabilityBatch class is not very useful right now, but we will need it when handling requests
             var batch = new VulnerabilityBatch();
             batch.Add(vulnerability);
