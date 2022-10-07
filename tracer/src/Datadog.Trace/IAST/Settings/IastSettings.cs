@@ -16,9 +16,9 @@ namespace Datadog.Trace.Iast.Settings
 
         public IastSettings(IConfigurationSource source)
         {
-            Enabled = source?.GetBool(ConfigurationKeys.Iast.Enabled) ?? false;
             InsecureHashingAlgorithms = source?.GetString(ConfigurationKeys.Iast.WeakHashAlgorithms) ?? InsecureHashingAlgorithmsDefault;
             InsecureHashingAlgorithmsArray = InsecureHashingAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
+            Enabled = (source?.GetBool(ConfigurationKeys.Iast.Enabled) ?? false) && InsecureHashingAlgorithmsArray.Length > 0;
         }
 
         public bool Enabled { get; set; }
