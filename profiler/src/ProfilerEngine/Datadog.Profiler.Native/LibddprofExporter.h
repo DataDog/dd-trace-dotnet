@@ -129,6 +129,8 @@ private:
     static tags CommonTags;
     static std::string const ProcessId;
     static int const RequestTimeOutMs;
+    static std::string const LibraryName;
+    static std::string const LibraryVersion;
     static std::string const LanguageFamily;
 
     // TODO: this should be passed in the constructor to avoid overwriting

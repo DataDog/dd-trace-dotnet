@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
@@ -143,5 +146,22 @@ internal abstract class ConsumerBase : IDisposable
         Console.WriteLine($"{ConsumerName}: Closing consumer");
         _consumer?.Close();
         _consumer?.Dispose();
+    }
+
+    public static IEnumerable<string> ExtractValues(Headers headers, string name)
+    {
+        if (headers.TryGetLastBytes(name, out var bytes))
+        {
+            try
+            {
+                return new[] { Encoding.UTF8.GetString(bytes) };
+            }
+            catch (Exception)
+            {
+                // ignored
+            }
+        }
+
+        return Enumerable.Empty<string>();
     }
 }

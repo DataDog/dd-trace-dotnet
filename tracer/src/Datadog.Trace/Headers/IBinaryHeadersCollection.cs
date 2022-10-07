@@ -13,11 +13,11 @@ namespace Datadog.Trace.Headers;
 internal interface IBinaryHeadersCollection
 {
     /// <summary>
-    /// Returns the first header value for a specified header stored in the collection.
+    /// Returns the last header value for a specified header stored in the collection.
     /// </summary>
     /// <param name="name">The specified header to return values for.</param>
     /// <returns>Zero or more header strings.</returns>
-    byte[]? TryGetBytes(string name);
+    byte[]? TryGetLastBytes(string name);
 
     /// <summary>
     /// Adds the specified header and its value into the collection.

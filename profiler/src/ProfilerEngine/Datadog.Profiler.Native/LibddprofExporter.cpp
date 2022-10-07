@@ -41,6 +41,10 @@ std::string const LibddprofExporter::ProcessId = std::to_string(OpSysTools::GetP
 
 int32_t const LibddprofExporter::RequestTimeOutMs = 10000;
 
+std::string const LibddprofExporter::LibraryName = "dd-profiling-dotnet";
+
+std::string const LibddprofExporter::LibraryVersion = PROFILER_VERSION;
+
 std::string const LibddprofExporter::LanguageFamily = "dotnet";
 
 std::string const LibddprofExporter::RequestFileName = "auto.pprof";
@@ -87,7 +91,13 @@ LibddprofExporter::~LibddprofExporter()
 
 ddog_ProfileExporter* LibddprofExporter::CreateExporter(const ddog_Vec_tag* tags, ddog_Endpoint endpoint)
 {
-    auto result = ddog_ProfileExporter_new(FfiHelper::StringToCharSlice(LanguageFamily), tags, endpoint);
+    auto result = ddog_ProfileExporter_new(
+        FfiHelper::StringToCharSlice(LibraryName),
+        FfiHelper::StringToCharSlice(LibraryVersion),
+        FfiHelper::StringToCharSlice(LanguageFamily),
+        tags,
+        endpoint);
+
     if (result.tag == DDOG_NEW_PROFILE_EXPORTER_RESULT_OK)
     {
         return result.ok;

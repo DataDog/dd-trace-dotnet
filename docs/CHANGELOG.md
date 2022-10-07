@@ -9,6 +9,93 @@
 
 
 
+
+## [Release 2.16.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.16.0)
+
+## Summary
+
+* [ASM] IP Blocking by remote config
+* [Tracer] Making `Datadog.Trace.Bundle` Nuget package Generally Available. This package contains the full Datadog .NET APM suite for Tracing (automatic, and custom), Continuous Profiler and Application Security Monitoring (ASM). 
+* [Tracer] Add support for instrumenting interface methods, allowing for instance for more support of some RabbitMq libraries.
+
+
+## Changes
+
+### Tracer
+* Data Stream Monitoring .NET implementation
+    * Initial data streams monitoring propagation (#3174)
+    * Add Kafka data streams monitoring implementation (#3192)
+    * Added support for `IDiscoveryService` to `DataStreamsManager` (#3220)
+    * Add checkpointing and aggregation for data streams monitoring (#3191)
+    * Fix edge case in `DataStreamsWriter` (#3304)
+    * Disable DSM if `DD_TRACE_KAFKA_CREATE_CONSUMER_SCOPE_ENABLED=0` (#3311)
+    * GZip the data streams monitoring data sent to the agent (#3249)
+    * Make sure we remove the DSM propagation header from SQS attributes (#3312)
+* Send Telemetry heartbeat independently of flushed data (#3239)
+* Remove unneeded logs (#3265)
+* Try loading OpenSSL eagerly on `netcoreapp2.0`-`net5.0` (#3284)
+* [Tracer] Add support for instrumenting interface methods (#3256)
+* [Tracer] Rename `Datadog.Monitoring.Distrib` into `Datadog.Trace.Bundle` (#3263)
+
+### CI Visibility
+* [CI Visibility] - Test API and Test Suite Visibility (#3276)
+* [CI Visibility] - Initialize tracer earlier (#3295)
+
+### ASM
+* [ASM] ASM_DATA  - IP blocking data (#3235)
+* [ASM] IP Blocking for .NET Framework (#3207)
+* [ASM] upgrade waf and rules (#3274)
+* [ASM] remote config update (#3120)
+* [ASM] Fix asm RCM tests flakiness (#3266)
+* [ASM][RCM] Reduce Flake > fix integration tests log watching (#3287)
+* [ASM] Optimize blocking (#3306)
+
+### Continuous Profiler
+* [Profiler] Fix throughput tests on Linux (#3246)
+* [Profiler] Prevent profiler from getting stuck on lost signal (#3255)
+* [Profiler] Fix deadlock on alpine on thread creation (#3288)
+* [Profiler] Change message when exporting profile (#3290)
+* [Profiler] Change lock-duration to lock-time (#3298)
+* [Profiler] Initialize signal handler only once (#3308)
+* [Profiler] Log INVOKE and CALL warning message only once (#3309)
+* [Profiler] Change log level from error to info in StackSamplerLoopManager (#3314)
+
+### Debugger
+* [Debugger] Adjust debugger snapshot json structure to new schema (#3297)
+* [Debugger] Skip `DebuggerSnapshotCreatorTests.Limits_LargeDictionary` as it's flaky (#3310)
+
+### Serverless
+* Serverless build tidy up (#3110)
+* [Serverless] Support base-class AWS Lambda methods (#3275)
+
+### Miscellaneous
+* Remove useless logs (#3230)
+* Update coreclr files to fix errors on Alpine (#3260)
+* Fix endian bug (#3270)
+
+### Build / Test
+* Throughput for blocking (#3277)
+* Re-enable collecting crash dumps on Linux (#3227)
+* Add ability to capture hang dumps on Linux (#3229)
+* Update the list of expected file changes when doing a version bump (#3259)
+* Samples.Probes must always be built (#3262)
+* Bump timeouts in installer smoke tests (#3267)
+* [CI] Fix permissions issue when uploading crash dumps on Linux in some cases (#3269)
+* Exitcode should be zero (#3271)
+* Give proper warning if the `createdump` tool crashes. (#3272)
+* Add Apple Silicon support on tracer builds (#3279)
+* Improve gitlab deployment (#3285)
+* Bump some timeouts to reduce test flake (#3289)
+* Fix test version package bump (#3291)
+* Skip flakey test ProbesTests.TransparentCodeCtorInstrumentationTest (#3296)
+* Add a workaround for missing profiling support in PyPI version of dd-apm-test-agent (#3299)
+* Remove workaround for missing profiler support in PyPI version of dd-apm-test-agent (#3303)
+* Run IP blocking tests with default rules (#3307)
+* Fix flaky `DataStreamsWriter` test (#3317)
+
+
+[Changes since 2.15.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.15.0...v2.16.0)
+
 ## [Release 2.15.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.15.0)
 
 ## Summary
