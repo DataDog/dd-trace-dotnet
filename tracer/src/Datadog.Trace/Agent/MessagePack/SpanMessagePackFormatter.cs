@@ -304,7 +304,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
             // add "_sampling_priority_v1" tag to all "chunk orphans"
             // (spans whose parents are not found in the same chunk)
-            if (model.IsChunkOrphan && model.TraceChunk?.SamplingPriority is { } samplingPriority)
+            if (model.IsChunkOrphan && model.TraceChunk.SamplingPriority is { } samplingPriority)
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _samplingPriorityNameBytes);
