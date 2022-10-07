@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.TestHelpers;
 using Xunit;
 
 namespace Datadog.Trace.IntegrationTests
@@ -14,12 +15,12 @@ namespace Datadog.Trace.IntegrationTests
     public class OriginTagSendTraces
     {
         private readonly Tracer _tracer;
-        private readonly TestApi _testApi;
+        private readonly MockApi _testApi;
 
         public OriginTagSendTraces()
         {
             var settings = new TracerSettings();
-            _testApi = new TestApi();
+            _testApi = new MockApi();
             var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
             _tracer = new Tracer(settings, agentWriter, sampler: null, scopeManager: null, statsd: null);
         }

@@ -14,9 +14,9 @@ using Datadog.Trace.Vendors.MessagePack.Formatters;
 
 namespace Datadog.Trace.Agent.MessagePack
 {
-    internal class SpanMessagePackFormatter : IMessagePackFormatter<Span>
+    internal class SpanMessagePackFormatter : IMessagePackFormatter<TraceChunkModel>
     {
-        public static readonly IMessagePackFormatter<Span> Instance = new SpanMessagePackFormatter();
+        public static readonly SpanMessagePackFormatter Instance = new();
 
         private readonly byte[] _traceIdBytes = StringEncoding.UTF8.GetBytes("trace_id");
         private readonly byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
@@ -50,18 +50,47 @@ namespace Datadog.Trace.Agent.MessagePack
             _processIdValueBytes = processId > 0 ? MessagePackSerializer.Serialize(processId) : null;
         }
 
-        public int Serialize(ref byte[] bytes, int offset, Span value, IFormatterResolver formatterResolver)
+        int IMessagePackFormatter<TraceChunkModel>.Serialize(ref byte[] bytes, int offset, TraceChunkModel traceChunk, IFormatterResolver formatterResolver)
         {
+            return Serialize(ref bytes, offset, traceChunk, formatterResolver);
+        }
+
+        // overload of IMessagePackFormatter<TraceChunkModel>.Serialize() with `in` modifier on `TraceChunkModel` parameter
+        public int Serialize(ref byte[] bytes, int offset, in TraceChunkModel traceChunk, IFormatterResolver formatterResolver)
+        {
+            int originalOffset = offset;
+
+            // start writing span[]
+            offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, traceChunk.SpanCount);
+
+            // serialize each span
+            for (var i = 0; i < traceChunk.SpanCount; i++)
+            {
+                // when serializing each span, we need additional information that is not
+                // available in the span object itself, like its position in the trace chunk
+                // or if its parent can also be found in the same chunk, so we use SpanModel
+                // to pass that information to the serializer
+                var spanModel = traceChunk.GetSpanModel(i);
+                offset += Serialize(ref bytes, offset, in spanModel);
+            }
+
+            return offset - originalOffset;
+        }
+
+        private int Serialize(ref byte[] bytes, int offset, in SpanModel spanModel)
+        {
+            var span = spanModel.Span;
+
             // First, pack array length (or map length).
             // It should be the number of members of the object to be serialized.
             var len = 8;
 
-            if (value.Context.ParentId != null)
+            if (span.Context.ParentId > 0)
             {
                 len++;
             }
 
-            if (value.Error)
+            if (span.Error)
             {
                 len++;
             }
@@ -73,66 +102,58 @@ namespace Datadog.Trace.Agent.MessagePack
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, len);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdBytes);
-            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.Context.TraceId);
+            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, span.Context.TraceId);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
-            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, value.Context.SpanId);
+            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, span.Context.SpanId);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _nameBytes);
-            offset += MessagePackBinary.WriteString(ref bytes, offset, value.OperationName);
+            offset += MessagePackBinary.WriteString(ref bytes, offset, span.OperationName);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _resourceBytes);
-            offset += MessagePackBinary.WriteString(ref bytes, offset, value.ResourceName);
+            offset += MessagePackBinary.WriteString(ref bytes, offset, span.ResourceName);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _serviceBytes);
-            offset += MessagePackBinary.WriteString(ref bytes, offset, value.ServiceName);
+            offset += MessagePackBinary.WriteString(ref bytes, offset, span.ServiceName);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _typeBytes);
-            offset += MessagePackBinary.WriteString(ref bytes, offset, value.Type);
+            offset += MessagePackBinary.WriteString(ref bytes, offset, span.Type);
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _startBytes);
-            offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.StartTime.ToUnixTimeNanoseconds());
+            offset += MessagePackBinary.WriteInt64(ref bytes, offset, span.StartTime.ToUnixTimeNanoseconds());
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _durationBytes);
-            offset += MessagePackBinary.WriteInt64(ref bytes, offset, value.Duration.ToNanoseconds());
+            offset += MessagePackBinary.WriteInt64(ref bytes, offset, span.Duration.ToNanoseconds());
 
-            if (value.Context.ParentId != null)
+            if (span.Context.ParentId > 0)
             {
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _parentIdBytes);
-                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, (ulong)value.Context.ParentId);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, (ulong)span.Context.ParentId);
             }
 
-            if (value.Error)
+            if (span.Error)
             {
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _errorBytes);
                 offset += MessagePackBinary.WriteByte(ref bytes, offset, 1);
             }
 
             ITagProcessor[] tagProcessors = null;
-            if (value.Context.TraceContext?.Tracer is Tracer tracer)
+            if (span.Context.TraceContext?.Tracer is Tracer tracer)
             {
                 tagProcessors = tracer.TracerManager?.TagProcessors;
             }
 
-            offset += SerializeTags(ref bytes, offset, value, value.Tags, tagProcessors);
-
-            return offset - originalOffset;
-        }
-
-        private int SerializeTags(ref byte[] bytes, int offset, Span span, ITags tags, ITagProcessor[] tagProcessors)
-        {
-            int originalOffset = offset;
-
-            offset += WriteTags(ref bytes, offset, span, tags, tagProcessors);
-            offset += WriteMetrics(ref bytes, offset, span, tags, tagProcessors);
+            offset += WriteTags(ref bytes, offset, in spanModel, tagProcessors);
+            offset += WriteMetrics(ref bytes, offset, in spanModel, tagProcessors);
 
             return offset - originalOffset;
         }
 
         // TAGS
 
-        private int WriteTags(ref byte[] bytes, int offset, Span span, ITags tags, ITagProcessor[] tagProcessors)
+        private int WriteTags(ref byte[] bytes, int offset, in SpanModel model, ITagProcessor[] tagProcessors)
         {
+            var span = model.Span;
             int originalOffset = offset;
 
             // Start of "meta" dictionary. Do not add any string tags before this line.
@@ -146,7 +167,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
             // add "language=dotnet" tag to all spans, except those that
             // represents a downstream service or external dependency
-            if (tags is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
+            if (span.Tags is not InstrumentationTags { SpanKind: SpanKinds.Client or SpanKinds.Producer })
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _languageNameBytes);
@@ -155,15 +176,16 @@ namespace Datadog.Trace.Agent.MessagePack
 
             // Write span tags
             var tagWriter = new TagWriter(this, tagProcessors, bytes, offset);
-            tags.EnumerateTags(ref tagWriter);
+            span.Tags.EnumerateTags(ref tagWriter);
             bytes = tagWriter.Bytes;
             offset = tagWriter.Offset;
             count += tagWriter.Count;
 
-            if (span.IsRootSpan && span.Context.TraceContext != null)
+            // TODO: for each trace tag, determine if it should be added to the local root,
+            // to the first span in the chunk, or to all orphan spans.
+            // For now, we add them to the local root which is correct in most cases.
+            if (model.IsLocalRoot && model.TraceChunk.Tags?.ToArray() is { Length: > 0 } traceTags)
             {
-                // write trace-level string tags
-                var traceTags = span.Context.TraceContext.Tags.ToArray();
                 count += traceTags.Length;
 
                 foreach (var tag in traceTags)
@@ -182,6 +204,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
             // add "_dd.origin" tag to all spans
             string origin = span.Context.Origin;
+
             if (!string.IsNullOrEmpty(origin))
             {
                 count++;
@@ -231,8 +254,9 @@ namespace Datadog.Trace.Agent.MessagePack
 
         // METRICS
 
-        private int WriteMetrics(ref byte[] bytes, int offset, Span span, ITags tags, ITagProcessor[] tagProcessors)
+        private int WriteMetrics(ref byte[] bytes, int offset, in SpanModel model, ITagProcessor[] tagProcessors)
         {
+            var span = model.Span;
             int originalOffset = offset;
 
             // Start of "metrics" dictionary. Do not add any numeric tags before this line.
@@ -246,12 +270,12 @@ namespace Datadog.Trace.Agent.MessagePack
 
             // Write span metrics
             var tagWriter = new TagWriter(this, tagProcessors, bytes, offset);
-            tags.EnumerateMetrics(ref tagWriter);
+            span.Tags.EnumerateMetrics(ref tagWriter);
             bytes = tagWriter.Bytes;
             offset = tagWriter.Offset;
             count += tagWriter.Count;
 
-            if (span.IsRootSpan)
+            if (model.IsLocalRoot)
             {
                 // add "process_id" tag
                 if (_processIdValueBytes != null)
@@ -308,9 +332,9 @@ namespace Datadog.Trace.Agent.MessagePack
             offset += MessagePackBinary.WriteDouble(ref bytes, offset, value);
         }
 
-        public Span Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
+        TraceChunkModel IMessagePackFormatter<TraceChunkModel>.Deserialize(byte[] bytes, int offset, IFormatterResolver formatterResolver, out int readSize)
         {
-            throw new NotImplementedException();
+            throw new NotSupportedException($"{nameof(SpanMessagePackFormatter)} does not support deserialization. For testing purposes, deserialize using the MessagePack NuGet package.");
         }
 
         internal struct TagWriter : IItemProcessor<string>, IItemProcessor<double>
