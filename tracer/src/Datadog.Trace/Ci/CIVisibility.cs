@@ -63,37 +63,10 @@ namespace Datadog.Trace.Ci
 
             // In case we are running using the agent, check if the event platform proxy is supported.
             IDiscoveryService discoveryService = NullDiscoveryService.Instance;
-            bool eventPlatformProxyEnabled = false;
+            var eventPlatformProxyEnabled = false;
             if (!_settings.Agentless)
             {
-                discoveryService = DiscoveryService.Create(new ImmutableExporterSettings(_settings.TracerSettings.Exporter));
-                AgentConfiguration? agentConfiguration = null;
-                ManualResetEventSlim manualResetEventSlim = new(false);
-                LifetimeManager.Instance.AddShutdownTask(() => manualResetEventSlim.Set());
-
-                Log.Debug("Waiting for agent configuration...");
-                discoveryService.SubscribeToChanges(CallBack);
-
-                void CallBack(AgentConfiguration aConfiguration)
-                {
-                    agentConfiguration = aConfiguration;
-                    manualResetEventSlim.Set();
-                    discoveryService.RemoveSubscription(CallBack);
-                }
-
-                // We wait up to 5 seconds for the configuration to be retrieved.
-                manualResetEventSlim.Wait(5_000);
-                if (!string.IsNullOrEmpty(agentConfiguration?.EventPlatformProxyEndpoint))
-                {
-                    Log.Information("Event platform proxy supported by agent.");
-                    eventPlatformProxyEnabled = true;
-                }
-                else
-                {
-                    Log.Information("Event platform proxy is not supported by the agent. Falling back to the APM protocol.");
-                }
-
-                Log.Debug("Agent configuration received.");
+                eventPlatformProxyEnabled = IsEventPlatformProxySupportedByAgent(ref discoveryService);
             }
 
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
@@ -458,6 +431,41 @@ namespace Datadog.Trace.Ci
             {
                 Log.Error(ex, "ITR: Error getting skippeable tests.");
             }
+        }
+
+        private static bool IsEventPlatformProxySupportedByAgent(ref IDiscoveryService discoveryService)
+        {
+            var eventPlatformProxyEnabled = false;
+
+            discoveryService = DiscoveryService.Create(new ImmutableExporterSettings(_settings.TracerSettings.Exporter));
+            AgentConfiguration? agentConfiguration = null;
+            ManualResetEventSlim manualResetEventSlim = new(false);
+            LifetimeManager.Instance.AddShutdownTask(() => manualResetEventSlim.Set());
+
+            Log.Debug("Waiting for agent configuration...");
+            var discoveryServiceCopy = discoveryService;
+            discoveryServiceCopy.SubscribeToChanges(CallBack);
+            void CallBack(AgentConfiguration aConfiguration)
+            {
+                agentConfiguration = aConfiguration;
+                manualResetEventSlim.Set();
+                discoveryServiceCopy.RemoveSubscription(CallBack);
+            }
+
+            // We wait up to 5 seconds for the configuration to be retrieved.
+            manualResetEventSlim.Wait(5_000);
+            if (!string.IsNullOrEmpty(agentConfiguration?.EventPlatformProxyEndpoint))
+            {
+                Log.Information("Event platform proxy supported by agent.");
+                eventPlatformProxyEnabled = true;
+            }
+            else
+            {
+                Log.Information("Event platform proxy is not supported by the agent. Falling back to the APM protocol.");
+            }
+
+            Log.Debug("Agent configuration received.");
+            return eventPlatformProxyEnabled;
         }
     }
 }
