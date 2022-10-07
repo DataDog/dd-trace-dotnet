@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Ci.Agent;
-using Datadog.Trace.Ci.Agent.MessagePack;
 using Moq;
 using Xunit;
 
@@ -34,20 +33,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task WriteTrace_2Traces_SendToApi()
         {
-            var trace = new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) };
-            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, SpanFormatterResolver.Instance);
+            var spans1 = new ArraySegment<Span>(new[] { new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow) });
+            var traceChunk1 = new TraceChunkModel(spans1, traceContext: null);
+            var expectedData1 = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk1, SpanFormatterResolver.Instance);
 
-            _ciAgentWriter.WriteTrace(new ArraySegment<Span>(trace));
+            _ciAgentWriter.WriteTrace(spans1);
             await _ciAgentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData1)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()), Times.Once);
-
             _api.Invocations.Clear();
 
-            trace = new[] { new Span(new SpanContext(2, 2), DateTimeOffset.UtcNow) };
-            var expectedData2 = Vendors.MessagePack.MessagePackSerializer.Serialize(trace, SpanFormatterResolver.Instance);
+            var spans2 = new ArraySegment<Span>(new[] { new Span(new SpanContext(2, 2), DateTimeOffset.UtcNow) });
+            var traceChunk2 = new TraceChunkModel(spans2, traceContext: null);
+            var expectedData2 = Vendors.MessagePack.MessagePackSerializer.Serialize(traceChunk2, SpanFormatterResolver.Instance);
 
-            _ciAgentWriter.WriteTrace(new ArraySegment<Span>(trace));
+            _ciAgentWriter.WriteTrace(spans2);
             await _ciAgentWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
 
             _api.Verify(x => x.SendTracesAsync(It.Is<ArraySegment<byte>>(y => Equals(y, expectedData2)), It.Is<int>(i => i == 1), It.IsAny<bool>(), It.IsAny<long>(), It.IsAny<long>()), Times.Once);
@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 
         private static bool Equals(ArraySegment<byte> data, byte[] expectedData)
         {
-            return data.Array.Skip(data.Offset).Take(data.Count).Skip(SpanBuffer.HeaderSize).SequenceEqual(expectedData);
+            return data.Array!.Skip(data.Offset).Take(data.Count).Skip(SpanBuffer.HeaderSize).SequenceEqual(expectedData);
         }
     }
 }

@@ -5,6 +5,7 @@
 
 using System;
 using System.Threading;
+using Datadog.Trace.Agent.MessagePack;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.MessagePack.Formatters;
@@ -16,9 +17,9 @@ namespace Datadog.Trace.Agent
         internal const int HeaderSize = 5;
         internal const int InitialBufferSize = 64 * 1024;
 
-        private readonly IMessagePackFormatter<ArraySegment<Span>> _formatter;
+        private readonly IMessagePackFormatter<TraceChunkModel> _formatter;
         private readonly IFormatterResolver _formatterResolver;
-        private readonly object _syncRoot = new object();
+        private readonly object _syncRoot = new();
         private readonly int _maxBufferSize;
 
         private byte[] _buffer;
@@ -36,7 +37,7 @@ namespace Datadog.Trace.Agent
             _offset = HeaderSize;
             _buffer = new byte[Math.Min(InitialBufferSize, maxBufferSize)];
             _formatterResolver = formatterResolver;
-            _formatter = _formatterResolver.GetFormatter<ArraySegment<Span>>();
+            _formatter = _formatterResolver.GetFormatter<TraceChunkModel>();
         }
 
         public ArraySegment<byte> Data
@@ -65,7 +66,7 @@ namespace Datadog.Trace.Agent
         // For tests only
         internal bool IsEmpty => !_locked && !IsFull && TraceCount == 0 && SpanCount == 0 && _offset == HeaderSize;
 
-        public bool TryWrite(ArraySegment<Span> trace, ref byte[] temporaryBuffer)
+        public bool TryWrite(ArraySegment<Span> spans, ref byte[] temporaryBuffer)
         {
             bool lockTaken = false;
 
@@ -79,9 +80,25 @@ namespace Datadog.Trace.Agent
                     return false;
                 }
 
+                // since all we have is an array of spans, use the trace context from the first span
+                // to get the other values we need (sampling priority, origin, trace tags, etc) for now.
+                // the idea is that as we refactor further, we can pass more than just the spans,
+                // and these values can come directly from the trace context.
+                var traceContext = spans.Array![spans.Offset].Context.TraceContext;
+                var traceChunk = new TraceChunkModel(spans, traceContext);
+
                 // We don't know what the serialized size of the payload will be,
                 // so we need to write to a temporary buffer first
-                var size = _formatter.Serialize(ref temporaryBuffer, 0, trace, _formatterResolver);
+                int size;
+
+                if (_formatter is SpanMessagePackFormatter spanFormatter)
+                {
+                    size = spanFormatter.Serialize(ref temporaryBuffer, 0, in traceChunk, _formatterResolver);
+                }
+                else
+                {
+                    size = _formatter.Serialize(ref temporaryBuffer, 0, traceChunk, _formatterResolver);
+                }
 
                 if (!EnsureCapacity(size + _offset))
                 {
@@ -93,7 +110,7 @@ namespace Datadog.Trace.Agent
 
                 _offset += size;
                 TraceCount++;
-                SpanCount += trace.Count;
+                SpanCount += traceChunk.SpanCount;
 
                 return true;
             }

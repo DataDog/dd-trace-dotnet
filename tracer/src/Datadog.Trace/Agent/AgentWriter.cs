@@ -359,7 +359,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private void SerializeTrace(ArraySegment<Span> trace)
+        private void SerializeTrace(ArraySegment<Span> spans)
         {
             // Declaring as inline method because only safe to invoke in the context of SerializeTrace
             SpanBuffer SwapBuffers()
@@ -385,32 +385,34 @@ namespace Datadog.Trace.Agent
             }
 
             // Eagerly return if the trace is empty
-            if (trace.Count == 0)
+            if (spans.Count == 0)
             {
                 return;
             }
 
             if (CanComputeStats)
             {
-                trace = _statsAggregator?.ProcessTrace(trace) ?? trace;
-                bool shouldSendTrace = _statsAggregator?.ShouldKeepTrace(trace) ?? true;
-                _statsAggregator?.AddRange(trace);
+                spans = _statsAggregator?.ProcessTrace(spans) ?? spans;
+                bool shouldSendTrace = _statsAggregator?.ShouldKeepTrace(spans) ?? true;
+                _statsAggregator?.AddRange(spans);
 
                 // If stats computation determined that we can drop the P0 Trace,
                 // skip all other processing
                 if (!shouldSendTrace)
                 {
                     Interlocked.Increment(ref _droppedP0Traces);
-                    Interlocked.Add(ref _droppedP0Spans, trace.Count);
+                    Interlocked.Add(ref _droppedP0Spans, spans.Count);
                     return;
                 }
             }
 
             // Add the current keep rate to the root span
-            var rootSpan = trace.Array[trace.Offset].Context.TraceContext?.RootSpan;
+            var rootSpan = spans.Array![spans.Offset].Context.TraceContext?.RootSpan;
+
             if (rootSpan is not null)
             {
                 var currentKeepRate = _traceKeepRateCalculator.GetKeepRate();
+
                 if (rootSpan.Tags is CommonTags commonTags)
                 {
                     commonTags.TracesKeepRate = currentKeepRate;
@@ -425,7 +427,7 @@ namespace Datadog.Trace.Agent
             // This allows the serialization thread to keep doing its job while a buffer is being flushed
             var buffer = _activeBuffer;
 
-            if (buffer.TryWrite(trace, ref _temporaryBuffer))
+            if (buffer.TryWrite(spans, ref _temporaryBuffer))
             {
                 // Serialization to the primary buffer succeeded
                 return;
@@ -439,7 +441,7 @@ namespace Datadog.Trace.Agent
                 // One buffer is full, request an eager flush
                 RequestFlush();
 
-                if (buffer.TryWrite(trace, ref _temporaryBuffer))
+                if (buffer.TryWrite(spans, ref _temporaryBuffer))
                 {
                     // Serialization to the secondary buffer succeeded
                     return;
@@ -453,7 +455,7 @@ namespace Datadog.Trace.Agent
             if (_statsd != null)
             {
                 _statsd.Increment(TracerMetricNames.Queue.DroppedTraces);
-                _statsd.Increment(TracerMetricNames.Queue.DroppedSpans, trace.Count);
+                _statsd.Increment(TracerMetricNames.Queue.DroppedSpans, spans.Count);
             }
         }
 
@@ -506,7 +508,7 @@ namespace Datadog.Trace.Agent
                 }
                 else
                 {
-                    // No traces were pushed in the last period, wait undefinitely
+                    // No traces were pushed in the last period, wait indefinitely
                     _serializationMutex.Wait();
                     _serializationMutex.Reset();
                 }
