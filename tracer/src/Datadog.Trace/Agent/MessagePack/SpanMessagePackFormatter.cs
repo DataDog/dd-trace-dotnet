@@ -50,7 +50,6 @@ namespace Datadog.Trace.Agent.MessagePack
             _processIdValueBytes = processId > 0 ? MessagePackSerializer.Serialize(processId) : null;
         }
 
-        // this method creates a TraceChunkModel copy so try to avoid it
         int IMessagePackFormatter<TraceChunkModel>.Serialize(ref byte[] bytes, int offset, TraceChunkModel traceChunk, IFormatterResolver formatterResolver)
         {
             return Serialize(ref bytes, offset, traceChunk, formatterResolver);
@@ -61,14 +60,11 @@ namespace Datadog.Trace.Agent.MessagePack
         {
             int originalOffset = offset;
 
-            // TODO: if root span is present, we don't need to look for orphans, just mark the root as the only orphan
-            var spanCount = traceChunk.SpanCount;
-
             // start writing span[]
-            offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, spanCount);
+            offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, traceChunk.SpanCount);
 
             // serialize each span
-            for (var i = 0; i < spanCount; i++)
+            for (var i = 0; i < traceChunk.SpanCount; i++)
             {
                 // when serializing each span, we need additional information that is not
                 // available in the span object itself, like its position in the trace chunk
@@ -81,7 +77,6 @@ namespace Datadog.Trace.Agent.MessagePack
             return offset - originalOffset;
         }
 
-        // overload of IMessagePackFormatter<SpanModel>.Serialize() with `in` modifier on `SpanModel` parameter
         private int Serialize(ref byte[] bytes, int offset, in SpanModel spanModel)
         {
             var span = spanModel.Span;
