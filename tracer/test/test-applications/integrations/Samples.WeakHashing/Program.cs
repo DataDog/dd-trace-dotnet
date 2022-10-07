@@ -13,7 +13,7 @@ namespace Samples.WeakHashing
         private static void Main()
         {
             //Vulnerable section
-
+#pragma warning disable SYSLIB0021 // Type or member is obsolete
             testHashAlgorithm(new HMACMD5(new byte[] { 4, 4 }));
             testHashAlgorithm(new MD5CryptoServiceProvider());
             testHashAlgorithm(MD5.Create());
@@ -21,6 +21,8 @@ namespace Samples.WeakHashing
             testHashAlgorithm(SHA1.Create());
             testHashAlgorithm(new SHA1CryptoServiceProvider());
             testHashAlgorithm(HMAC.Create("HMACMD5"));
+            testHashAlgorithm(new CustomMD5());
+#pragma warning restore SYSLIB0021 // Type or member is obsolete
 
             // not vulnerable section
 
