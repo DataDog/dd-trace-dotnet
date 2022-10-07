@@ -56,7 +56,8 @@ internal readonly struct TraceChunkModel
         }
     }
 
-    public TraceChunkModel(in ArraySegment<Span> spans, Span? localRootSpan)
+    // used in tests
+    internal TraceChunkModel(in ArraySegment<Span> spans, Span? localRootSpan)
     {
         _spans = spans;
         _hashSet = spans.Count > 50 ? _hashSet = CreateHashSet(spans.Count) : null;
@@ -119,7 +120,7 @@ internal readonly struct TraceChunkModel
             isFirstSpanInChunk: isFirstSpan);
     }
 
-    public bool ParentExistsForSpanAtIndex(int spanIndex)
+    internal bool ParentExistsForSpanAtIndex(int spanIndex)
     {
         var spanCount = _spans.Count;
 
