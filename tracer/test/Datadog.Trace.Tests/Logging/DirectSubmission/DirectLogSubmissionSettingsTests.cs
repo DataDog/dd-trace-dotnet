@@ -56,11 +56,11 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission
         [Fact]
         public void LogSpecificGlobalTagsFallBackToTracerGlobalTags()
         {
-            var expected = new Dictionary<string, string> { { "test1", "value1" }, { "test2", "value2" }, };
+            var expected = new Dictionary<string, string> { { "test1", "value1" }, { "a.b_c", "a://b.c" }, { "test2", "value2" }, };
 
             var tracerSettings = new TracerSettings(new NameValueConfigurationSource(new()
             {
-                { ConfigurationKeys.GlobalTags, "test1:value1, test2:value2" },
+                { ConfigurationKeys.GlobalTags, "test1:value1, a.b_c:a://b.c, test2:value2" },
             }));
 
             tracerSettings.LogSubmissionSettings.DirectLogSubmissionGlobalTags
