@@ -1699,6 +1699,7 @@ partial class Build
                     if (currentLine is not null)
                     {
                         allLogs.Add(currentLine);
+                        currentLine = null;
                     }
 
                     try
@@ -1726,6 +1727,11 @@ partial class Build
                     }
                 }
             }
+            
+            if (currentLine is not null)
+            {
+                allLogs.Add(currentLine);
+            }
 
             return allLogs;
         }
@@ -1746,6 +1752,7 @@ partial class Build
         {
             var allLines = File.ReadAllLines(logFile);
             var allLogs = new List<ParsedLogLine>(allLines.Length);
+            ParsedLogLine currentLine = null;
 
             foreach (var line in allLines)
             {
@@ -1757,14 +1764,19 @@ partial class Build
                 var match = regex.Match(line);
                 if (match.Success)
                 {
+                    if (currentLine is not null)
+                    {
+                        allLogs.Add(currentLine);
+                        currentLine = null;
+                    }
+
                     try
                     {
                         // native logs are on one line
                         var timestamp = DateTimeOffset.ParseExact(match.Groups[1].Value, dateFormat, null);
                         var level = ParseNativeLogLevel(match.Groups[2].Value);
                         var message = match.Groups[3].Value;
-                        var currentLine = new ParsedLogLine(timestamp, level, message, logFile);
-                        allLogs.Add(currentLine);
+                        currentLine = new ParsedLogLine(timestamp, level, message, logFile);
                     }
                     catch (Exception ex)
                     {
@@ -1773,8 +1785,20 @@ partial class Build
                 }
                 else
                 {
-                    Logger.Warn("Incomplete log line: " + line);
+                    if (currentLine is null)
+                    {
+                        Logger.Warn("Incomplete log line: " + line);
+                    }
+                    else
+                    {
+                        currentLine = currentLine with { Message = $"{currentLine.Message}{Environment.NewLine}{line}" };
+                    }
                 }
+            }
+
+            if (currentLine is not null)
+            {
+                allLogs.Add(currentLine);
             }
 
             return allLogs;
