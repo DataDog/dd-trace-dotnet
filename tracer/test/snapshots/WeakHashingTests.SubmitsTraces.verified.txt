@@ -4,11 +4,12 @@
     SpanId: Id_2,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -37,11 +38,12 @@
     SpanId: Id_4,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -70,11 +72,12 @@
     SpanId: Id_6,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -103,11 +106,12 @@
     SpanId: Id_8,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -136,11 +140,12 @@
     SpanId: Id_10,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -169,11 +174,12 @@
     SpanId: Id_12,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -202,11 +208,12 @@
     SpanId: Id_14,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -235,11 +242,12 @@
     SpanId: Id_16,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -268,11 +276,12 @@
     SpanId: Id_18,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -301,11 +310,12 @@
     SpanId: Id_20,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -334,11 +344,12 @@
     SpanId: Id_22,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -367,11 +378,12 @@
     SpanId: Id_24,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -400,11 +412,12 @@
     SpanId: Id_26,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -433,11 +446,12 @@
     SpanId: Id_28,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -466,11 +480,12 @@
     SpanId: Id_30,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -499,11 +514,12 @@
     SpanId: Id_32,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -532,11 +548,12 @@
     SpanId: Id_34,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -565,11 +582,12 @@
     SpanId: Id_36,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -598,11 +616,12 @@
     SpanId: Id_38,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -631,11 +650,12 @@
     SpanId: Id_40,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -664,11 +684,12 @@
     SpanId: Id_42,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -697,11 +718,12 @@
     SpanId: Id_44,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -730,11 +752,12 @@
     SpanId: Id_46,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
@@ -763,11 +786,12 @@
     SpanId: Id_48,
     Name: weak_hashing,
     Resource: weak_hashing,
-    Service: Samples.WeakHashing-weak_hashing,
+    Service: Samples.WeakHashing,
     Tags: {
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      version: 1.0.0,
       _dd.iast.enabled: 1,
       _dd.iast.json:
 {
