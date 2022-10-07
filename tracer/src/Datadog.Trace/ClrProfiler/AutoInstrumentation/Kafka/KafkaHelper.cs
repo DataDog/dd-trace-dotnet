@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -107,7 +108,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 PathwayContext? pathwayContext = null;
 
                 // Try to extract propagated context from headers
-                if (message is not null && message.Headers is not null)
+                if (message?.Headers is not null)
                 {
                     var headers = new KafkaHeadersCollectionAdapter(message.Headers);
 
@@ -179,14 +180,43 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                 if (dataStreamsManager.IsEnabled)
                 {
-                    span.Context.MergePathwayContext(pathwayContext);
+                    // remove any leftover junk they may be left in the headers
+                    message?.Headers?.Remove(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext);
+                    message?.Headers?.Remove(DataStreamsPropagationHeaders.TemporaryEdgeTags);
 
-                    // TODO: we could cache this list in a thread local similar to StringBuilderCache to reduce allocations
-                    var edgeTags = string.IsNullOrEmpty(topic)
-                                       ? new[] { $"group:{groupId}", "type:kafka", }
-                                       : new[] { $"group:{groupId}", $"topic:{topic}", "type:kafka", };
+                    if (!tracer.Settings.KafkaCreateConsumerScopeEnabled && message?.Headers is not null)
+                    {
+                        // This is a brilliant and horrible approach to let customers who are already
+                        // extracting the span context from a Kafka message automatically get
+                        // checkpointing support in their custom instrumentation
+                        if (message.Headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKey, out var bytes))
+                        {
+                            // annoyingly we have to re-encode the pathwayContext as base64 so we can read it as
+                            // a string in SpanContextExtractor.Extract
+                            // if there was no pathway context, we don't need to encode it
+                            var base64PathwayContext = System.Convert.ToBase64String(bytes);
+                            message.Headers.Add(DataStreamsPropagationHeaders.TemporaryBase64PathwayContext, Encoding.UTF8.GetBytes(base64PathwayContext));
+                        }
 
-                    span.Context.SetCheckpoint(dataStreamsManager, edgeTags);
+                        // ','is not a valid character in kafka topic or group names, so we use as the
+                        // separator here NOTE: the tags must be sorted in alphabetical order
+                        var edgeTags = string.IsNullOrEmpty(topic)
+                                           ? $"group:{groupId},type:kafka"
+                                           : $"group:{groupId},topic:{topic},type:kafka";
+                        message.Headers.Add(DataStreamsPropagationHeaders.TemporaryEdgeTags, Encoding.UTF8.GetBytes(edgeTags));
+                    }
+                    else
+                    {
+                        span.Context.MergePathwayContext(pathwayContext);
+
+                        // TODO: we could pool these arrays to reduce allocations
+                        // NOTE: the tags must be sorted in alphabetical order
+                        var edgeTags = string.IsNullOrEmpty(topic)
+                                           ? new[] { $"group:{groupId}", "type:kafka", }
+                                           : new[] { $"group:{groupId}", $"topic:{topic}", "type:kafka", };
+
+                        span.Context.SetCheckpoint(dataStreamsManager, edgeTags);
+                    }
                 }
             }
             catch (Exception ex)

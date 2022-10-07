@@ -53,16 +53,7 @@ internal class DataStreamsManager
         IDiscoveryService discoveryService,
         string defaultServiceName)
     {
-        var enableDsm = settings.IsDataStreamsMonitoringEnabled;
-        if (enableDsm && !settings.KafkaCreateConsumerScopeEnabled)
-        {
-            Log.Warning(
-                $"Data Streams Monitoring was enabled, but required setting {ConfigurationKeys.KafkaCreateConsumerScopeEnabled} was disabled. "
-              + $"Data Streams Monitoring currently requires {ConfigurationKeys.KafkaCreateConsumerScopeEnabled}=1. This will be relaxed in a future version.");
-            enableDsm = false;
-        }
-
-        var writer = enableDsm
+        var writer = settings.IsDataStreamsMonitoringEnabled
                          ? DataStreamsWriter.Create(settings, discoveryService, defaultServiceName)
                          : null;
 

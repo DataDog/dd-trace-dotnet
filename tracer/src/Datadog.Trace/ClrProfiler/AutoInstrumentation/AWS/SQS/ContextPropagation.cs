@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 {
                     if (attribute is string attributeName &&
                         (attributeName.StartsWith("x-datadog", StringComparison.OrdinalIgnoreCase)
-                            || attributeName.Equals(DataStreamsContextPropagator.PropagationKey, StringComparison.OrdinalIgnoreCase)))
+                            || attributeName.Equals(DataStreamsPropagationHeaders.PropagationKey, StringComparison.OrdinalIgnoreCase)))
                     {
 #if !NETCOREAPP2_1_OR_GREATER
                         attributesToRemove ??= new List<string>();
