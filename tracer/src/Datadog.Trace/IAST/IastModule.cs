@@ -38,7 +38,7 @@ namespace Datadog.Trace.Iast
             var frame = StackWalker.GetFrame();
             // Sometimes we do not have the file/line but we have the method/class.
             var filename = frame?.GetFileName();
-            var vulnerability = new Vulnerability(VulnerabilityType.WEAK_HASH, new Location(filename ?? GetMethodName(frame), filename != null ? frame?.GetFileLineNumber() : null), new Evidence(evidenceValue));
+            var vulnerability = new Vulnerability(VulnerabilityType.WeakHash, new Location(filename ?? GetMethodName(frame), filename != null ? frame?.GetFileLineNumber() : null), new Evidence(evidenceValue));
             // The VulnerabilityBatch class is not very useful right now, but we will need it when handling requests
             var batch = new VulnerabilityBatch();
             batch.Add(vulnerability);
