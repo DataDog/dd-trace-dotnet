@@ -40,12 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, Stream data, CancellationToken token)
         {
-            if (instance is System.Security.Cryptography.HashAlgorithm algorithm)
-            {
-                return new CallTargetState(scope: HashAlgorithmIntegrationCommon.CreateScope(algorithm));
-            }
-
-            return CallTargetState.GetDefault();
+            return new CallTargetState(scope: HashAlgorithmIntegrationCommon.CreateScope(instance));
         }
 
         /// <summary>

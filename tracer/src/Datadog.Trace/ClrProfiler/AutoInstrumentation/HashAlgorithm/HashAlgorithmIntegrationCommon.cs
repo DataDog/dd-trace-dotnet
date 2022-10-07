@@ -17,23 +17,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.HashAlgorithm;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HashAlgorithmIntegrationCommon));
 
-        internal static Scope? CreateScope(System.Security.Cryptography.HashAlgorithm instance)
+        internal static Scope? CreateScope<TTarget>(TTarget instance)
         {
-            var iast = Iast.Iast.Instance;
-            if (!iast.Settings.Enabled || instance == null)
+            if (instance is System.Security.Cryptography.HashAlgorithm algorithm)
             {
-                return null;
+                var iast = Iast.Iast.Instance;
+                if (!iast.Settings.Enabled || algorithm == null)
+                {
+                    return null;
+                }
+
+                try
+                {
+                    return IastModule.OnHashingAlgorithm(GetAlgorithmName(algorithm.GetType()), IntegrationId, iast);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error creating or populating hash algorithm scope.");
+                    return null;
+                }
             }
 
-            try
-            {
-                return IastModule.OnHashingAlgorithm(GetAlgorithmName(instance.GetType()), IntegrationId, iast);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating hash algorithm scope.");
-                return null;
-            }
+            return null;
         }
 
         private static string? GetAlgorithmName(Type type)
