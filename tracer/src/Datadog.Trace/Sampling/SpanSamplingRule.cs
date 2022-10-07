@@ -71,19 +71,13 @@ namespace Datadog.Trace.Sampling
         /// <inheritdoc/>
         public float? MaxPerSecond { get; } = null;
 
-        /// <summary>
-        ///     Gets the cached <see cref="SamplingRate"/> string for tagging.
-        /// </summary>
+        /// <inheritdoc/>
         public string SamplingRateString { get; }
 
-        /// <summary>
-        ///     Gets the cached <see cref="MaxPerSecond"/> string for tagging.
-        /// </summary>
+        /// <inheritdoc/>
         public string MaxPerSecondString { get; }
 
-        /// <summary>
-        ///     Gets the cached <see cref="SamplingMechanism"/> string for tagging.
-        /// </summary>
+        /// <inheritdoc/>
         public string SamplingMechanismString { get; }
 
         /// <summary>
