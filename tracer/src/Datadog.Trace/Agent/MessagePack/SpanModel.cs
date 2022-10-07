@@ -14,7 +14,7 @@ internal readonly struct SpanModel
 {
     public readonly Span Span;
 
-    public readonly TraceChunkModel? TraceChunk;
+    public readonly TraceChunkModel TraceChunk;
 
     /// <remarks>
     /// The "local root span" is the root span of the local trace. If there is no upstream service,
@@ -33,7 +33,7 @@ internal readonly struct SpanModel
 
     public SpanModel(
         Span span,
-        in TraceChunkModel? traceChunk,
+        in TraceChunkModel traceChunk,
         bool isLocalRoot,
         bool isChunkOrphan,
         bool isFirstSpanInChunk)

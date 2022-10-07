@@ -197,7 +197,7 @@ namespace Datadog.Trace.Agent.MessagePack
             // TODO: for each trace tag, determine if it should be added to the local root,
             // to the first span in the chunk, or to all orphan spans.
             // For now, we add them to the local root which is correct in most cases.
-            if (model.IsLocalRoot && model.TraceChunk?.Tags?.ToArray() is { Length: > 0 } traceTags)
+            if (model.IsLocalRoot && model.TraceChunk.Tags?.ToArray() is { Length: > 0 } traceTags)
             {
                 count += traceTags.Length;
 
