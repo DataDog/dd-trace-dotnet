@@ -55,14 +55,14 @@ internal class SpanSampler : ISpanSampler
     {
         // TODO do we want to tag here?
         // TODO maybe do a TryAdd? is SetTag safe?
-        span.SetTag(Tags.SingleSpanSampling.RuleRate, rule.SamplingRate.ToString());
+        span.SetTag(Tags.SingleSpanSampling.RuleRate, rule.SamplingRateString);
 
         if (rule.MaxPerSecond is not null)
         {
-            span.SetTag(Tags.SingleSpanSampling.MaxPerSecond, rule.MaxPerSecond.ToString());
+            span.SetTag(Tags.SingleSpanSampling.MaxPerSecond, rule.MaxPerSecondString);
         }
 
         // TODO is this where we set this tag or should it be somewhere else?
-        span.SetTag(Tags.SingleSpanSampling.SamplingMechanism, SamplingMechanism.SpanSamplingRule.ToString());
+        span.SetTag(Tags.SingleSpanSampling.SamplingMechanism, rule.SamplingMechanismString);
     }
 }
