@@ -5,9 +5,9 @@ SET(RE2_VERSION "2018-10-01")
 ExternalProject_Add(re2
     DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch ${RE2_VERSION} --config advice.detachedHead=false https://github.com/google/re2.git
     TIMEOUT 5
-    CMAKE_ARGS ARFLAGS=-r\ -s\ -c -DCMAKE_CXX_FLAGS=-O3\ -g\ -fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0
     INSTALL_COMMAND ""
-    BUILD_COMMAND make -j
+    CMAKE_ARGS -DCMAKE_CXX_FLAGS=-O3\ -g\ -fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0
+    BUILD_COMMAND ${CMAKE_COMMAND} -E env "ARFLAGS=-r -s -c" make -j
 )
 
 ExternalProject_Get_property(re2 SOURCE_DIR)
