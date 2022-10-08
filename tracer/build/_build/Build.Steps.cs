@@ -189,7 +189,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var buildDirectory = TracerDirectory / "build";
+            var buildDirectory = TracerDirectory / "_build";
             EnsureExistingDirectory(buildDirectory);
 
             CMake.Value(
