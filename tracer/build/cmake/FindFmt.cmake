@@ -2,14 +2,17 @@ include(ExternalProject)
 
 SET(FMT_VERSION "5.3.0")
 
-
 ExternalProject_Add(fmt
-	GIT_REPOSITORY https://github.com/DataDog/fmt.git
-	GIT_TAG 5.3.0
-	CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0 .
-	INSTALL_COMMAND ""
-	BUILD_COMMAND make -j
+    DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch ${FMT_VERSION} --config advice.detachedHead=false https://github.com/DataDog/fmt.git
+    TIMEOUT 5
+    CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0 .
+    INSTALL_COMMAND ""
+    BUILD_COMMAND make -j
 )
+
+ExternalProject_Get_property(fmt SOURCE_DIR)
+
+set_property(DIRECTORY PROPERTY ADDITIONAL_MAKE_CLEAN_FILES "${FOLDERS_TO_DELETE};${CMAKE_CURRENT_BINARY_DIR}/fmt-prefix/src/fmt/")
 
 add_library(fmt-lib STATIC IMPORTED)
 

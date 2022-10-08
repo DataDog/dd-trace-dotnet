@@ -3,12 +3,17 @@ include(ExternalProject)
 SET(RE2_VERSION "2018-10-01")
 
 ExternalProject_Add(re2
-	GIT_REPOSITORY https://github.com/google/re2.git
-	GIT_TAG 2018-10-01
-	CMAKE_ARGS ARFLAGS=-r\ -s\ -c -DCMAKE_CXX_FLAGS=-O3\ -g\ -fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0
-	INSTALL_COMMAND ""
-	BUILD_COMMAND make -j
+    DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch ${RE2_VERSION} --config advice.detachedHead=false https://github.com/google/re2.git
+    TIMEOUT 5
+    CMAKE_ARGS ARFLAGS=-r\ -s\ -c -DCMAKE_CXX_FLAGS=-O3\ -g\ -fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0
+    INSTALL_COMMAND ""
+    BUILD_COMMAND make -j
 )
+
+ExternalProject_Get_property(re2 SOURCE_DIR)
+
+get_property(FOLDERS_TO_DELETE DIRECTORY PROPERTY ADDITIONAL_MAKE_CLEAN_FILES)
+set_property(DIRECTORY PROPERTY ADDITIONAL_MAKE_CLEAN_FILES "${FOLDERS_TO_DELETE};${SOURCE_DIR}")
 
 add_library(re2-lib STATIC IMPORTED)
 
