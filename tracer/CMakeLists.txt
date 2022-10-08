@@ -108,7 +108,7 @@ message(STATUS "Re2 library " ${RE2_VERSION})
 find_package(Spdlog REQUIRED)
 message(STATUS "Spdlog headers")
 
-find_package(Managedloader REQUIRED)
+find_package(ManagedLoader REQUIRED)
 message(STATUS "Tracer Managed Loader")
 
 add_subdirectory(src/Datadog.Tracer.Native)
