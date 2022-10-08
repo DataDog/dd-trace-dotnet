@@ -204,8 +204,8 @@ partial class Build
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {
-            var sourceDirectory = NativeTracerProject.Directory;
-            var buildDirectory = sourceDirectory / "build";
+            var sourceDirectory = TracerDirectory;
+            var buildDirectory = sourceDirectory / "_build";
             EnsureExistingDirectory(buildDirectory);
 
             CMake.Value(arguments: $"-B {buildDirectory} -S {sourceDirectory}");
