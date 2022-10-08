@@ -189,11 +189,11 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var buildDirectory = NativeTracerProject.Directory / "build";
+            var buildDirectory = TracerDirectory / "build";
             EnsureExistingDirectory(buildDirectory);
 
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {buildDirectory} -S {NativeTracerProject.Directory} -DCMAKE_BUILD_TYPE=Release");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {buildDirectory} -S {TracerDirectory} -DCMAKE_BUILD_TYPE=Release");
             CMake.Value(
                 arguments: $"--build {buildDirectory} --parallel");
         });
@@ -452,7 +452,7 @@ partial class Build
 
             // Copy Native file
             CopyFileToDirectory(
-                NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
+                TracerDirectory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
                 MonitoringHomeDirectory / arch,
                 FileExistsPolicy.Overwrite);
         });
