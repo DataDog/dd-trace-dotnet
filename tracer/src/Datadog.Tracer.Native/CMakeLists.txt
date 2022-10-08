@@ -99,11 +99,6 @@ SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 
 
-if (NOT DEFINED DOTNET_TRACER_REPO_ROOT_PATH)
-    SET(DOTNET_TRACER_REPO_ROOT_PATH ${CMAKE_CURRENT_BINARY_DIR}/../../../)
-endif()
-
-
 # ******************************************************
 # Compiler options
 # ******************************************************

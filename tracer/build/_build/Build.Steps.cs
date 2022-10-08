@@ -452,7 +452,7 @@ partial class Build
 
             // Copy Native file
             CopyFileToDirectory(
-                TracerDirectory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
+                NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
                 MonitoringHomeDirectory / arch,
                 FileExistsPolicy.Overwrite);
         });
