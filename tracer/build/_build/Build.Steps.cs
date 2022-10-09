@@ -189,13 +189,13 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var buildDirectory = TracerDirectory / "_build";
+            var buildDirectory = RootDirectory / "_build";
             EnsureExistingDirectory(buildDirectory);
 
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {buildDirectory} -S {TracerDirectory} -DCMAKE_BUILD_TYPE=Release");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE=Release");
             CMake.Value(
-                arguments: $"--build {buildDirectory} --parallel");
+                arguments: $"--build {buildDirectory} --parallel --target {FileNames.NativeTracer}");
         });
 
     Target CompileNativeSrcMacOs => _ => _
@@ -204,12 +204,13 @@ partial class Build
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {
-            var sourceDirectory = TracerDirectory;
+            var sourceDirectory = RootDirectory;
             var buildDirectory = sourceDirectory / "_build";
             EnsureExistingDirectory(buildDirectory);
 
             CMake.Value(arguments: $"-B {buildDirectory} -S {sourceDirectory}");
-            Make.Value(workingDirectory: buildDirectory);
+            CMake.Value(
+                arguments: $"--build {buildDirectory} --parallel --target {FileNames.NativeTracer}");
         });
 
     Target CompileNativeSrc => _ => _

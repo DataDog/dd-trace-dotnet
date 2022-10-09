@@ -45,13 +45,13 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var buildDirectory = NativeLoaderProject.Directory;
+            var buildDirectory = RootDirectory / "_build";
+            EnsureExistingDirectory(buildDirectory);
 
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -S .",
-                workingDirectory: buildDirectory);
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {buildDirectory} -S {RootDirectory}");
             CMake.Value(
-                arguments: $"--build . --parallel",
+                arguments: $"--build . --parallel --target {FileNames.NativeLoader}",
                 workingDirectory: buildDirectory);
         });
 
@@ -60,9 +60,10 @@ partial class Build
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {
-            var buildDirectory = NativeLoaderProject.Directory;
-            CMake.Value(arguments: ".", workingDirectory: buildDirectory);
-            Make.Value(workingDirectory: buildDirectory);
+            var buildDirectory = RootDirectory / "_build";
+            CMake.Value(arguments: $"-B {buildDirectory} -S {RootDirectory}");
+            CMake.Value(
+                arguments: $"--build {buildDirectory} --parallel --target {FileNames.NativeLoader}");
         });
 
     Target PublishNativeLoader => _ => _
