@@ -18,6 +18,7 @@ ExternalProject_Add(managed-loader-dll
     BUILD_COMMAND ""
     CONFIGURE_COMMAND ""
     COMMAND ${DLL_COMMAND}
+    BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/managed-loader-dll-prefix/src/managed-loader-dll-build/Datadog.Trace.ClrProfiler.Managed.Loader.dll.o
 )
 
 ExternalProject_Add(managed-loader-pdb
@@ -26,6 +27,7 @@ ExternalProject_Add(managed-loader-pdb
     BUILD_COMMAND ""
     CONFIGURE_COMMAND ""
     COMMAND ${PDB_COMMAND}
+    BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/managed-loader-pdb-prefix/src/managed-loader-pdb-build/Datadog.Trace.ClrProfiler.Managed.Loader.pdb.o
 )
 
 SET(GENERATED_OBJ_FILES

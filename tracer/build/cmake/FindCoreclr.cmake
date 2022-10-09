@@ -6,6 +6,6 @@ target_include_directories(coreclr-lib INTERFACE
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/inc
 )
 
-target_sources(coreclr-lib INTERFACE
-    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
+target_sources(coreclr-lib
+    INTERFACE ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
 )
