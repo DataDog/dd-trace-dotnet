@@ -155,18 +155,27 @@ add_library("Datadog.Trace.ClrProfiler.Native" SHARED
 
 target_compile_definitions("Datadog.Trace.ClrProfiler.Native" PRIVATE "-D_GLIBCXX_USE_CXX11_ABI=0")
 
-add_dependencies("Datadog.Trace.ClrProfiler.Native" "fmt")
-
 set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
 
 # Define linker libraries
-if(ISLINUX)
-    target_link_libraries("Datadog.Trace.ClrProfiler.Native"
-            -static-libgcc
-            -static-libstdc++
-            -ldl
-            coreclr-lib
-            fmt-lib
-            spdlog-headers
-            )
+if (ISMACOS)
+    target_link_libraries("Datadog.Tracer.Native.static"
+        ${CMAKE_DL_LIBS}
+        coreclr-lib
+        fmt-lib
+        spdlog-headers
+        managed-loader-objs
+    )
+elseif(ISLINUX)
+    target_link_libraries("Datadog.Tracer.Native.static"
+        -static-libgcc
+        -static-libstdc++
+        ${CMAKE_DL_LIBS}
+        coreclr-lib
+        fmt-lib
+        spdlog-headers
+        managed-loader-objs
+    )
 endif()
+
+add_dependencies("Datadog.Tracer.Native.static" fmt-lib coreclr-lib re2-lib spdlog-headers managed-loader-objs)
