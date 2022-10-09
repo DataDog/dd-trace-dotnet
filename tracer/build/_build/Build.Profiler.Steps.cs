@@ -60,19 +60,20 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            EnsureExistingDirectory(ProfilerLinuxBuildDirectory);
+            var buildDirectory = RootDirectory / "_build";
+            EnsureExistingDirectory(buildDirectory);
 
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {ProfilerLinuxBuildDirectory} -S {ProfilerDirectory} -DCMAKE_BUILD_TYPE=Release");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {buildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE=Release");
 
             CMake.Value(
-                arguments: $"--build {ProfilerLinuxBuildDirectory} --parallel");
+                arguments: $"--build {buildDirectory} --parallel --target all-profiler");
 
             if (IsAlpine)
             {
                 // On Alpine, we do not have permission to access the file libunwind-prefix/src/libunwind/config/config.guess
                 // Make the whole folder and its content accessible by everyone to make sure the upload process does not fail
-                Chmod.Value.Invoke(" -R 777 " + ProfilerLinuxBuildDirectory);
+                Chmod.Value.Invoke(" -R 777 " + buildDirectory);
             }
         });
 

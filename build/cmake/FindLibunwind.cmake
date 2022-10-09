@@ -22,6 +22,7 @@ target_include_directories(libunwind-lib INTERFACE
 
 target_link_libraries(libunwind-lib INTERFACE
     ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind-${CMAKE_SYSTEM_PROCESSOR}.a
-    ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind.a)
+    ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind.a
+)
 
 add_dependencies(libunwind-lib libunwind)

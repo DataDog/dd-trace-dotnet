@@ -83,8 +83,6 @@ add_library(${PROFILER_STATIC_LIB_NAME} STATIC
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/util.cpp
     ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
-    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
-    ${GENERATED_OBJ_FILES}
 )
 
 set_target_properties(${PROFILER_STATIC_LIB_NAME} PROPERTIES PREFIX "")
@@ -92,14 +90,8 @@ set_target_properties(${PROFILER_STATIC_LIB_NAME} PROPERTIES PREFIX "")
 # Define directories includes
 target_include_directories(${PROFILER_STATIC_LIB_NAME}
         PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../Datadog.Profiler.Native
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc/rt
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/inc
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/inc
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/spdlog/include
-        PUBLIC ${FMT_INCLUDE}
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}
-        PUBLIC ${LIBDATADOG_INCLUDE_DIR}
+        PRIVATE $<TARGET_PROPERTY:libdatadog-lib,INCLUDE_DIRECTORIES>
 )
 
 # Define linker libraries
@@ -120,6 +112,8 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     fmt-lib
     libunwind-lib
     libdatadog-lib
+    coreclr-lib
+    spdlog-headers
     -static-libgcc
     -static-libstdc++
     -lstdc++fs
@@ -127,7 +121,7 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -ldl
 )
 
-add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt libdatadog-lib libunwind-lib)
+add_dependencies(${PROFILER_STATIC_LIB_NAME} fmt-lib libdatadog-lib libunwind-lib coreclr-lib spdlog-headers)
 
 # ******************************************************
 # Define shared target

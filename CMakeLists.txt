@@ -1,6 +1,10 @@
 cmake_minimum_required (VERSION 3.8..3.19)
 cmake_policy(SET CMP0015 NEW)
 
+if(POLICY CMP0135)
+    cmake_policy(SET CMP0135 NEW)
+endif()
+
 # ******************************************************
 # Project definition
 # ******************************************************
@@ -46,7 +50,7 @@ endif()
 
 SET(DOTNET_TRACER_REPO_ROOT_PATH ${CMAKE_CURRENT_SOURCE_DIR})
 
-LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/build/cmake")
 
 find_package(Coreclr REQUIRED)
 message(STATUS "Coreclr files ")
@@ -63,5 +67,17 @@ message(STATUS "Spdlog headers")
 find_package(ManagedLoader REQUIRED)
 message(STATUS "Tracer Managed Loader")
 
+find_package(Libunwind REQUIRED)
+message(STATUS "Libunwind library " ${LIBUNWIND_VERSION})
+
+find_package(Libdatadog REQUIRED)
+message(STATUS "Libdatadog library " ${LIBDATADOG_VERSION})
+
 add_subdirectory(tracer)
+
+# profiler cannot be built on MacOS (yet)
+if (NOT ISMACOS)
+    add_subdirectory(profiler)
+endif()
+
 add_subdirectory(shared)

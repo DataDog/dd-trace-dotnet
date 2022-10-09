@@ -76,12 +76,6 @@ else()
     message(STATUS "CLANG++ was found")
 endif()
 
-if (NOT EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/../bin/ProfilerResources/netcoreapp2.0)
-    message(FATAL_ERROR "Datadog.Trace.ClrProfiler.Loader must be built first.")
-else()
-    message(STATUS "Datadog.Trace.ClrProfiler.Loader was found")
-endif()
-
 # ******************************************************
 # Output folders
 # ******************************************************
