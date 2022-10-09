@@ -91,7 +91,6 @@ set_target_properties(${PROFILER_STATIC_LIB_NAME} PROPERTIES PREFIX "")
 target_include_directories(${PROFILER_STATIC_LIB_NAME}
         PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../Datadog.Profiler.Native
         PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}
-        PRIVATE $<TARGET_PROPERTY:libdatadog-lib,INCLUDE_DIRECTORIES>
 )
 
 # Define linker libraries
