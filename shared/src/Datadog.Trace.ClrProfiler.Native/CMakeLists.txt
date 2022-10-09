@@ -81,7 +81,7 @@ SET(OUTPUT_DEPS_DIR ${CMAKE_BINARY_DIR}/deps)
 FILE(MAKE_DIRECTORY ${OUTPUT_BIN_DIR})
 FILE(MAKE_DIRECTORY ${OUTPUT_TMP_DIR})
 FILE(MAKE_DIRECTORY ${OUTPUT_DEPS_DIR})
-FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/loader.conf DESTINATION ${CMAKE_BINARY_DIR}/bin)
+FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/loader.conf DESTINATION ${OUTPUT_BIN_DIR})
 
 
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
@@ -159,7 +159,7 @@ set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
 
 # Define linker libraries
 if (ISMACOS)
-    target_link_libraries("Datadog.Tracer.Native.static"
+    target_link_libraries("Datadog.Trace.ClrProfiler.Native"
         ${CMAKE_DL_LIBS}
         coreclr-lib
         fmt-lib
@@ -167,7 +167,7 @@ if (ISMACOS)
         managed-loader-objs
     )
 elseif(ISLINUX)
-    target_link_libraries("Datadog.Tracer.Native.static"
+    target_link_libraries("Datadog.Trace.ClrProfiler.Native"
         -static-libgcc
         -static-libstdc++
         ${CMAKE_DL_LIBS}
@@ -178,4 +178,4 @@ elseif(ISLINUX)
     )
 endif()
 
-add_dependencies("Datadog.Tracer.Native.static" fmt-lib coreclr-lib re2-lib spdlog-headers managed-loader-objs)
+add_dependencies("Datadog.Trace.ClrProfiler.Native" fmt-lib coreclr-lib re2-lib spdlog-headers managed-loader-objs)
