@@ -13,7 +13,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         public const uint ReservedUInt32 = 0;
         public static readonly BigInteger Reserved = new(ReservedUInt32);
 
-        public const uint AsmActivationUInt32 = 1;
+        public const uint AsmActivationUInt32 = 1 << 1;
         public static readonly BigInteger AsmActivation = new(AsmActivationUInt32);
 
         public const uint AsmIpBlockingUInt32 = 1 << 2;

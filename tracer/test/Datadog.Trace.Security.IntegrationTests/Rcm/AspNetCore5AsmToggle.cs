@@ -47,7 +47,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var url = "/Health/?[$slice]=value";
             var agent = await RunOnSelfHosted(enableSecurity);
             var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, expectedState, expectedCapabilities);
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*");
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
 
             var spans1 = await SendRequestsAsync(agent, url);
 
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             CheckCapabilities(request1, expectedCapabilities, "First RCM call");
             if (enableSecurity == true)
             {
-                await logEntryWatcher.WaitForLogEntry(AppSecDisabledMessage(), logEntryWatcherTimeout);
+                await logEntryWatcher.WaitForLogEntry(AppSecDisabledMessage(), LogEntryWatcherTimeout);
             }
 
             CheckAckState(request1, expectedState, null, "First RCM call");
@@ -71,7 +71,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             CheckCapabilities(request2, expectedCapabilities, "Second RCM call");
             if (enableSecurity != false)
             {
-                await logEntryWatcher.WaitForLogEntry(AppSecEnabledMessage(), logEntryWatcherTimeout);
+                await logEntryWatcher.WaitForLogEntry(AppSecEnabledMessage(), LogEntryWatcherTimeout);
             }
 
             CheckAckState(request2, expectedState, null, "Second RCM call");
