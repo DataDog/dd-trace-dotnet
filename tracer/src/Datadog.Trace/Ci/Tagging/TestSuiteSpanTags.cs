@@ -17,12 +17,10 @@ internal partial class TestSuiteSpanTags : TestModuleSpanTags
     public TestSuiteSpanTags(TestModuleSpanTags moduleTags, string suiteName)
     {
         Suite = suiteName;
-        Environment = moduleTags.Environment;
         Framework = moduleTags.Framework;
         Module = moduleTags.Module;
         Status = moduleTags.Status;
         Type = moduleTags.Type;
-        Version = moduleTags.Version;
         FrameworkVersion = moduleTags.FrameworkVersion;
         GitBranch = moduleTags.GitBranch;
         GitCommit = moduleTags.GitCommit;
