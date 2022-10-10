@@ -442,7 +442,7 @@ namespace Datadog.Trace.ClrProfiler
                new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHashAsync",  new[] { "System.Threading.Tasks.Task", "System.IO.Stream", "System.Threading.CancellationToken" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationTer"),
 
                 // SymmetricAlgorithm
-               new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.SymmetricAlgorithm", ".ctor",  new[] { "System.Void" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.SymmetricAlgorithmIntegration"),
+               new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.SymmetricAlgorithm", ".ctor",  new[] { "System.Void" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm.SymmetricAlgorithmIntegration"),
                     }
                 };
                 Instrumentations.Add(InstrumentationCategory.Iast, payload);
