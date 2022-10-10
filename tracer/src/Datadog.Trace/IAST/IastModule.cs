@@ -29,12 +29,11 @@ namespace Datadog.Trace.Iast
                 return null;
             }
 
-            return GetScope(algorithm, integrationId);
+            return GetScope(Tracer.Instance, algorithm, integrationId);
         }
 
-        private static Scope? GetScope(string evidenceValue, IntegrationId integrationId)
+        private static Scope? GetScope(Tracer tracer, string evidenceValue, IntegrationId integrationId)
         {
-            var tracer = Tracer.Instance;
             var frameInfo = StackWalker.GetFrame();
 
             if (!frameInfo.IsValid)
