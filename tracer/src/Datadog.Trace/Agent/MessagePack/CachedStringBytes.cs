@@ -15,9 +15,17 @@ internal readonly struct CachedStringBytes
 
     public readonly byte[]? ServiceVersion;
 
-    public CachedStringBytes(Encoding encoding, string? environment, string? serviceVersion)
+    public readonly byte[]? Origin;
+
+    public CachedStringBytes(Encoding encoding, string? environment, string? serviceVersion, string? origin)
     {
-        Environment = !string.IsNullOrEmpty(environment) ? encoding.GetBytes(environment) : null;
-        ServiceVersion = !string.IsNullOrEmpty(serviceVersion) ? encoding.GetBytes(serviceVersion) : null;
+        Environment = GetBytes(encoding, environment);
+        ServiceVersion = GetBytes(encoding, serviceVersion);
+        Origin = GetBytes(encoding, origin);
+    }
+
+    private static byte[]? GetBytes(Encoding encoding, string? value)
+    {
+        return string.IsNullOrEmpty(value) ? null : encoding.GetBytes(value);
     }
 }

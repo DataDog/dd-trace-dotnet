@@ -92,7 +92,8 @@ namespace Datadog.Trace.Agent.MessagePack
             var cachedStringBytes = new CachedStringBytes(
                 StringEncoding.UTF8,
                 environment: TraceUtil.NormalizeTag(traceChunk.Environment),
-                serviceVersion: traceChunk.ServiceVersion);
+                serviceVersion: traceChunk.ServiceVersion,
+                origin: traceChunk.Origin);
 
             // start writing span[]
             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, traceChunk.SpanCount);
@@ -253,13 +254,11 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             // add "_dd.origin" tag to all spans
-            string origin = model.TraceChunk.Origin;
-
-            if (!string.IsNullOrEmpty(origin))
+            if (cachedStringBytes.Origin is not null)
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originNameBytes);
-                offset += MessagePackBinary.WriteString(ref bytes, offset, origin);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, cachedStringBytes.Origin);
             }
 
             if (count > 0)
