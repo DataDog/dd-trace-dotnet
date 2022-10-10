@@ -25,7 +25,7 @@ namespace Datadog.Trace.Agent.MessagePack
         // assembly is loaded in the shared domain. We only create a single instance of
         // this class so that's fine.
 
-        // names of top-level span fields
+        // top-level span fields
         private readonly byte[] _traceIdBytes = StringEncoding.UTF8.GetBytes("trace_id");
         private readonly byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
         private readonly byte[] _nameBytes = StringEncoding.UTF8.GetBytes("name");
@@ -39,14 +39,18 @@ namespace Datadog.Trace.Agent.MessagePack
 
         // string tags
         private readonly byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
+
         private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Language);
         private readonly byte[] _languageValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
+
         private readonly byte[] _runtimeIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
         private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
+
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
 
         // numeric tags
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
+
         private readonly byte[] _samplingPriorityNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingPriority);
         private readonly byte[][] _samplingPriorityValueBytes;
 
