@@ -165,6 +165,12 @@ namespace Datadog.Trace
             // some tags have special meaning
             switch (key)
             {
+                case Trace.Tags.Env:
+                    Context.TraceContext.Environment = value;
+                    break;
+                case Trace.Tags.Version:
+                    Context.TraceContext.ServiceVersion = value;
+                    break;
                 case Trace.Tags.Origin:
                     Context.TraceContext.Origin = value;
                     break;
@@ -322,7 +328,11 @@ namespace Datadog.Trace
             switch (key)
             {
                 case Trace.Tags.SamplingPriority:
-                    return Context.TraceContext?.SamplingPriority?.ToString();
+                    return Context.TraceContext.SamplingPriority?.ToString();
+                case Trace.Tags.Env:
+                    return Context.TraceContext.Environment;
+                case Trace.Tags.Version:
+                    return Context.TraceContext.ServiceVersion;
                 case Trace.Tags.Origin:
                     return Context.TraceContext?.Origin;
                 default:
