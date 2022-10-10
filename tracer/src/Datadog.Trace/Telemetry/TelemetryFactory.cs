@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 using System;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Transports;
@@ -25,13 +26,20 @@ namespace Datadog.Trace.Telemetry
             {
                 try
                 {
-                    var factory = TelemetryTransportFactory.Create(settings, tracerSettings.Exporter);
+                    var telemetryTransports = TelemetryTransportFactory.Create(settings, tracerSettings.Exporter);
+
+                    if (telemetryTransports.Length == 0)
+                    {
+                        return NullTelemetryController.Instance;
+                    }
+
+                    var transportManager = new TelemetryTransportManager(telemetryTransports);
 
                     return new TelemetryController(
                         Configuration,
                         Dependencies,
                         Integrations,
-                        factory,
+                        transportManager,
                         TelemetryConstants.DefaultFlushInterval,
                         settings.HeartbeatInterval);
                 }
