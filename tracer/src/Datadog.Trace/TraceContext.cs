@@ -32,8 +32,16 @@ namespace Datadog.Trace
 
         public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
         {
+            var settings = tracer?.Settings;
+
+            if (settings is not null)
+            {
+                Environment = settings.Environment;
+                ServiceVersion = settings.ServiceVersion;
+            }
+
             Tracer = tracer;
-            Tags = tags ?? new TraceTagCollection(tracer?.Settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
+            Tags = tags ?? new TraceTagCollection(settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
         }
 
         public Span RootSpan { get; private set; }
@@ -54,6 +62,10 @@ namespace Datadog.Trace
         {
             get => _samplingPriority;
         }
+
+        public string Environment { get; set; }
+
+        public string ServiceVersion { get; set; }
 
         public string Origin { get; set; }
 
