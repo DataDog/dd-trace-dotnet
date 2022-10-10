@@ -20,7 +20,8 @@ namespace Datadog.Trace.Iast.Settings
             WeakCipherAlgorithmsArray = WeakCipherAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
             WeakHashAlgorithms = source?.GetString(ConfigurationKeys.Iast.WeakHashAlgorithms) ?? WeakHashAlgorithmsDefault;
             WeakHashAlgorithmsArray = WeakHashAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
-            Enabled = (source?.GetBool(ConfigurationKeys.Iast.Enabled) ?? false) && WeakHashAlgorithmsArray.Length > 0;
+            Enabled = (source?.GetBool(ConfigurationKeys.Iast.Enabled) ?? false) &&
+                (WeakHashAlgorithmsArray.Length > 0 || WeakCipherAlgorithmsArray.Length > 0);
         }
 
         public bool Enabled { get; set; }

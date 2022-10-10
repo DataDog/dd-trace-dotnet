@@ -31,7 +31,7 @@ namespace Datadog.Trace.Iast
                 return null;
             }
 
-            return GetScope(algorithm, integrationId, VulnerabilityType.WeakCipher, OperationNameWeakCipher);
+            return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakCipher, OperationNameWeakCipher);
         }
 
         public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, Iast iast)
@@ -41,10 +41,10 @@ namespace Datadog.Trace.Iast
                 return null;
             }
 
-            return GetScope(Tracer.Instance, algorithm, integrationId);
+            return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakHash, OperationNameWeakHash);
         }
 
-        private static Scope? GetScope(Tracer tracer, string evidenceValue, IntegrationId integrationId)
+        private static Scope? GetScope(Tracer tracer, string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName)
         {
             var frameInfo = StackWalker.GetFrame();
 
