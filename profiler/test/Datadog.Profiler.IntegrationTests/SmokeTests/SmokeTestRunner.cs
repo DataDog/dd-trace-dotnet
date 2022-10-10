@@ -14,7 +14,6 @@ using Xunit.Abstractions;
 
 namespace Datadog.Profiler.SmokeTests
 {
-
     public class SmokeTestRunner
     {
         private readonly ITestOutputHelper _output;
