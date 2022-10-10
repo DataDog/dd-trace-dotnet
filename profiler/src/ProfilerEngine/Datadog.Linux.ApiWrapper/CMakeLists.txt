@@ -2,7 +2,7 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.Linux.ApiWrapper" VERSION 1.0.0)
+project("Datadog.Linux.ApiWrapper" VERSION 2.16.0)
 
 # ******************************************************
 # Compiler options
