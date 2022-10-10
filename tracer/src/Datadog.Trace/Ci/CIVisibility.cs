@@ -111,6 +111,14 @@ namespace Datadog.Trace.Ci
                     LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
                 }
             }
+            else if (_settings.IntelligentTestRunnerEnabled)
+            {
+                Log.Warning("ITR: Intelligent test runner cannot be activated. Agent doesn't support the event platform proxy endpoint.");
+            }
+            else if (_settings.GitUploadEnabled)
+            {
+                Log.Warning("ITR: Upload git metadata cannot be activated. Agent doesn't support the event platform proxy endpoint.");
+            }
         }
 
         internal static void FlushSpans()
