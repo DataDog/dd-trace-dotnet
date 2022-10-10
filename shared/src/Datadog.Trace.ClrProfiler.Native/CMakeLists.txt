@@ -97,30 +97,14 @@ include(ExternalProject)
 set(EXTERNAL_INSTALL_LOCATION ${OUTPUT_DEPS_DIR}/fmt/)
 set(fmt_GIT_REPO https://github.com/DataDog/fmt.git)
 set(fmt_GIT_TAG 5.3.0)
-if (ISARM64)
-    ExternalProject_Add(fmt
-        GIT_REPOSITORY "${fmt_GIT_REPO}"
-        GIT_TAG "${fmt_GIT_TAG}"
-        GIT_CONFIG advice.detachedHead=false
-        TIMEOUT 5
-        CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0
-        PREFIX "${EXTERNAL_INSTALL_LOCATION}"
-        INSTALL_COMMAND ""
-        )
-else ()
-    # This doesn't seem to work on arm64, but I'm not sure why :shrug:
-    execute_process(
-            COMMAND git clone --quiet --depth 1 --branch "${fmt_GIT_TAG}" --config advice.detachedHead=false "${fmt_GIT_REPO}"
-            WORKING_DIRECTORY "${OUTPUT_DEPS_DIR}"
-            TIMEOUT 5
-            )
-    ExternalProject_Add(fmt
-            CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0
-            SOURCE_DIR "${EXTERNAL_INSTALL_LOCATION}"
-            PREFIX "${EXTERNAL_INSTALL_LOCATION}"
-            INSTALL_COMMAND ""
-            )
-endif()
+ExternalProject_Add(fmt
+    DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch "${fmt_GIT_TAG}" --config advice.detachedHead=false "${fmt_GIT_REPO}"
+    TIMEOUT 5
+    CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0 .
+    SOURCE_DIR "${EXTERNAL_INSTALL_LOCATION}"
+    PREFIX "${EXTERNAL_INSTALL_LOCATION}"
+    INSTALL_COMMAND ""
+)
 ExternalProject_Get_Property(fmt source_dir)
 set(fmt_INCLUDE_DIR ${source_dir}/include)
 
