@@ -46,6 +46,10 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _runtimeIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
         private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
 
+        private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Env);
+
+        private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Version);
+
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
 
         // numeric tags
@@ -83,6 +87,13 @@ namespace Datadog.Trace.Agent.MessagePack
         {
             int originalOffset = offset;
 
+            // some strings are used multiple times in the same a trace,
+            // but they are not constant across traces, so cache those per trace here
+            var cachedStringBytes = new CachedStringBytes(
+                StringEncoding.UTF8,
+                environment: TraceUtil.NormalizeTag(traceChunk.Environment),
+                serviceVersion: traceChunk.ServiceVersion);
+
             // start writing span[]
             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, traceChunk.SpanCount);
 
@@ -94,13 +105,13 @@ namespace Datadog.Trace.Agent.MessagePack
                 // or if its parent can also be found in the same chunk, so we use SpanModel
                 // to pass that information to the serializer
                 var spanModel = traceChunk.GetSpanModel(i);
-                offset += Serialize(ref bytes, offset, in spanModel);
+                offset += Serialize(ref bytes, offset, in spanModel, cachedStringBytes);
             }
 
             return offset - originalOffset;
         }
 
-        private int Serialize(ref byte[] bytes, int offset, in SpanModel spanModel)
+        private int Serialize(ref byte[] bytes, int offset, in SpanModel spanModel, CachedStringBytes cachedStringBytes)
         {
             var span = spanModel.Span;
 
@@ -166,7 +177,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 tagProcessors = tracer.TracerManager?.TagProcessors;
             }
 
-            offset += WriteTags(ref bytes, offset, in spanModel, tagProcessors);
+            offset += WriteTags(ref bytes, offset, in spanModel, cachedStringBytes, tagProcessors);
             offset += WriteMetrics(ref bytes, offset, in spanModel, tagProcessors);
 
             return offset - originalOffset;
@@ -174,7 +185,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
         // TAGS
 
-        private int WriteTags(ref byte[] bytes, int offset, in SpanModel model, ITagProcessor[] tagProcessors)
+        private int WriteTags(ref byte[] bytes, int offset, in SpanModel model, CachedStringBytes cachedStringBytes, ITagProcessor[] tagProcessors)
         {
             var span = model.Span;
             int originalOffset = offset;
@@ -203,6 +214,22 @@ namespace Datadog.Trace.Agent.MessagePack
             bytes = tagWriter.Bytes;
             offset = tagWriter.Offset;
             count += tagWriter.Count;
+
+            // and "env" to all spans
+            if (cachedStringBytes.Environment is not null)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentNameBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, cachedStringBytes.Environment);
+            }
+
+            // and "version" to all spans
+            if (cachedStringBytes.ServiceVersion is not null)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, cachedStringBytes.ServiceVersion);
+            }
 
             // TODO: for each trace tag, determine if it should be added to the local root,
             // to the first span in the chunk, or to all orphan spans.
