@@ -21,10 +21,12 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
     {
         private const string DefaultIntake = "https://http-intake.logs.datadoghq.com:443";
         private const int NumberOfLogs = 1;
+
         private static readonly ArraySegment<byte> Logs = new(
             Encoding.UTF8.GetBytes("{\"Level\":\"Debug\",\"Message\":\"Well done, you sent a message\"}"));
 
-        private static readonly Func<Uri, TestApiRequest> SingleFaultyRequest = x => new FaultyApiRequest(x);
+        private static readonly Func<Uri, TestApiRequest> SingleFaultyRequest
+            = x => new FaultyApiRequest(x);
 
         [Theory]
         [InlineData("http://http-intake.logs.datadoghq.com", "http://http-intake.logs.datadoghq.com/api/v2/logs")]
