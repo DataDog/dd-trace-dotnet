@@ -12,6 +12,7 @@ using System.Threading;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Ci;
@@ -28,6 +29,9 @@ public sealed class TestModule
 
     private TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
     {
+        // First we make sure if CI Visibility is initialized.
+        CIVisibility.Initialize();
+
         var environment = CIEnvironmentValues.Instance;
         var frameworkDescription = FrameworkDescription.Instance;
         _suites = new Dictionary<string, TestSuite>();
@@ -89,8 +93,8 @@ public sealed class TestModule
 
         span.Type = SpanTypes.TestModule;
         span.ResourceName = name;
+        span.Context.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep, SamplingMechanism.Manual);
         span.SetTag(Trace.Tags.Origin, TestTags.CIAppTestOriginName);
-        span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
 
         tags.ModuleId = span.SpanId;
 

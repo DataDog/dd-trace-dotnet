@@ -10,8 +10,8 @@ using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Pdb;
+using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Ci;
 
@@ -37,7 +37,7 @@ public sealed class Test
 
         scope.Span.Type = SpanTypes.Test;
         scope.Span.ResourceName = $"{suite.Name}.{name}";
-        scope.Span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
+        scope.Span.Context.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep, SamplingMechanism.Manual);
         scope.Span.SetTag(Trace.Tags.Origin, TestTags.CIAppTestOriginName);
 
         _scope = scope;
