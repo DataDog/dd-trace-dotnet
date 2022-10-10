@@ -12,20 +12,20 @@ namespace Datadog.Trace.Iast.Settings
 {
     internal class IastSettings
     {
-        public static readonly string InsecureHashingAlgorithmsDefault = "HMACMD5,MD5,HMACSHA1,SHA1";
+        public static readonly string WeakHashAlgorithmsDefault = "HMACMD5,MD5,HMACSHA1,SHA1";
 
         public IastSettings(IConfigurationSource source)
         {
-            InsecureHashingAlgorithms = source?.GetString(ConfigurationKeys.Iast.WeakHashAlgorithms) ?? InsecureHashingAlgorithmsDefault;
-            InsecureHashingAlgorithmsArray = InsecureHashingAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
-            Enabled = (source?.GetBool(ConfigurationKeys.Iast.Enabled) ?? false) && InsecureHashingAlgorithmsArray.Length > 0;
+            WeakHashAlgorithms = source?.GetString(ConfigurationKeys.Iast.WeakHashAlgorithms) ?? WeakHashAlgorithmsDefault;
+            WeakHashAlgorithmsArray = WeakHashAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
+            Enabled = (source?.GetBool(ConfigurationKeys.Iast.Enabled) ?? false) && WeakHashAlgorithmsArray.Length > 0;
         }
 
         public bool Enabled { get; set; }
 
-        public string[] InsecureHashingAlgorithmsArray { get; }
+        public string[] WeakHashAlgorithmsArray { get; }
 
-        public string InsecureHashingAlgorithms { get; }
+        public string WeakHashAlgorithms { get; }
 
         public static IastSettings FromDefaultSources()
         {

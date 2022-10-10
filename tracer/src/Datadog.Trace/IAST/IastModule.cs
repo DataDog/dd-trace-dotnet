@@ -79,9 +79,9 @@ namespace Datadog.Trace.Iast
 
         private static bool InvalidHashAlgorithm(string algorithm, Iast iast)
         {
-            foreach (var insecureAlgorithm in iast.Settings.InsecureHashingAlgorithmsArray)
+            foreach (var weakHashAlgorithm in iast.Settings.WeakHashAlgorithmsArray)
             {
-                if (string.Equals(algorithm, insecureAlgorithm, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(algorithm, weakHashAlgorithm, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
