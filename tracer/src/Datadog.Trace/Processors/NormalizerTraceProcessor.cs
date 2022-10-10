@@ -57,6 +57,14 @@ namespace Datadog.Trace.Processors
                 trace.Array![i] = Process(trace.Array[i]);
             }
 
+            // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L133-L135
+            var traceContext = trace.Array![trace.Offset].Context.TraceContext;
+
+            if (!string.IsNullOrEmpty(traceContext.Environment))
+            {
+                traceContext.Environment = TraceUtil.NormalizeTag(traceContext.Environment);
+            }
+
             return trace;
         }
 
@@ -117,18 +125,7 @@ namespace Datadog.Trace.Processors
             }
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L133-L135
-            if (span.Tags is CommonTags commonTags)
-            {
-                commonTags.Environment = TraceUtil.NormalizeTag(commonTags.Environment);
-            }
-            else
-            {
-                string env = span.GetTag("env");
-                if (!string.IsNullOrEmpty(env))
-                {
-                    span.Tags.SetTag("env", TraceUtil.NormalizeTag(env));
-                }
-            }
+            // NOTE: moved to Process(ArraySegment<Span>)
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L136-L142
             if (span.Tags is IHasStatusCode statusCodeTags)
