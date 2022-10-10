@@ -100,7 +100,7 @@ set(fmt_GIT_TAG 5.3.0)
 ExternalProject_Add(fmt
     DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch "${fmt_GIT_TAG}" --config advice.detachedHead=false "${fmt_GIT_REPO}"
     TIMEOUT 5
-    CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0 .
+    CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0
     PREFIX "${EXTERNAL_INSTALL_LOCATION}"
     INSTALL_COMMAND ""
 )
