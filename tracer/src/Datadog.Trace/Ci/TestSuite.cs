@@ -9,6 +9,7 @@ using System.Threading;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Ci;
 
@@ -34,7 +35,7 @@ public sealed class TestSuite
 
         span.Type = SpanTypes.TestSuite;
         span.ResourceName = name;
-        span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
+        span.Context.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep, SamplingMechanism.Manual);
         span.SetTag(Trace.Tags.Origin, TestTags.CIAppTestOriginName);
 
         tags.SuiteId = span.SpanId;
