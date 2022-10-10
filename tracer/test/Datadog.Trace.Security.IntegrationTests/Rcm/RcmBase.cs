@@ -15,19 +15,16 @@ public class RcmBase : AspNetBase
 {
     protected const string LogFileNamePrefix = "dotnet-tracer-managed-";
 
-#pragma warning disable SA1401
-    protected readonly string logDirectory;
-    protected readonly TimeSpan logEntryWatcherTimeout = TimeSpan.FromSeconds(20);
-#pragma warning restore SA1401
-
     public RcmBase(ITestOutputHelper outputHelper, string testName)
         : base("AspNetCore5", outputHelper, "/shutdown", testName: testName)
     {
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "500");
-        var logPath = DatadogLogging.GetLogDirectory();
-        logDirectory = Path.Combine(logPath, $"{testName}Logs");
-        SetEnvironmentVariable(ConfigurationKeys.LogDirectory, logDirectory);
+        SetEnvironmentVariable(ConfigurationKeys.LogDirectory, LogDirectory);
     }
+
+    protected TimeSpan LogEntryWatcherTimeout => TimeSpan.FromSeconds(20);
+
+    protected string LogDirectory => Path.Combine(DatadogLogging.GetLogDirectory(), $"{GetTestName()}Logs");
 
     protected string AppSecDisabledMessage() => $"AppSec is now Disabled, _settings.Enabled is false, coming from remote config: true  {{ MachineName: \".\", Process: \"[{SampleProcessId}";
 

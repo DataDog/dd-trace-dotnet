@@ -42,7 +42,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         public async Task TestBlockedRequestIp(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
         {
             var agent = await RunOnSelfHosted(enableSecurity);
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", logDirectory);
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             // we want to see the ip here
             var scrubbers = VerifyHelper.SpanScrubbers.Where(s => s.RegexPattern.ToString() != @"http.client_ip: (.)*(?=,)");
@@ -63,7 +63,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var request1 = await agent.WaitRcmRequestAndReturnLast();
             if (enableSecurity)
             {
-                await logEntryWatcher.WaitForLogEntry($"1 {RulesUpdatedMessage()}", logEntryWatcherTimeout);
+                await logEntryWatcher.WaitForLogEntry($"1 {RulesUpdatedMessage()}", LogEntryWatcherTimeout);
             }
             else
             {
@@ -87,7 +87,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             // we want to see the ip here
             var scrubbers = VerifyHelper.SpanScrubbers.Where(s => s.RegexPattern.ToString() != @"http.client_ip: (.)*(?=,)");
             var settings = VerifyHelper.GetSpanVerifierSettings(scrubbers: scrubbers, parameters: new object[] { test, enableSecurity, (int)expectedStatusCode, sanitisedUrl });
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", logDirectory);
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
             var spanBeforeAsmData = await SendRequestsAsync(agent, url);
 
             var product = new AsmDataProduct();
@@ -103,19 +103,19 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             var request1 = await agent.WaitRcmRequestAndReturnLast();
             var rulesUpdatedMessage = RulesUpdatedMessage();
-            await logEntryWatcher.WaitForLogEntry($"1 {rulesUpdatedMessage}", logEntryWatcherTimeout);
+            await logEntryWatcher.WaitForLogEntry($"1 {rulesUpdatedMessage}", LogEntryWatcherTimeout);
 
             var spanAfterAsmData = await SendRequestsAsync(agent, url);
             spanAfterAsmData.First().GetTag(Tags.AppSecEvent).Should().NotBeNull();
             agent.SetupRcm(Output, new[] { ((object)new AsmFeatures { Asm = new Asm { Enabled = false } }, "1") }, "ASM_FEATURES");
             var requestAfterDeactivation = await agent.WaitRcmRequestAndReturnLast();
-            await logEntryWatcher.WaitForLogEntry(AppSecDisabledMessage(), logEntryWatcherTimeout);
+            await logEntryWatcher.WaitForLogEntry(AppSecDisabledMessage(), LogEntryWatcherTimeout);
 
             var spanAfterAsmDeactivated = await SendRequestsAsync(agent, url);
 
             agent.SetupRcm(Output, new[] { ((object)new AsmFeatures { Asm = new Asm { Enabled = true } }, "1") }, "ASM_FEATURES");
             var requestAfterReactivation = await agent.WaitRcmRequestAndReturnLast();
-            await logEntryWatcher.WaitForLogEntries(new[] { $"1 {rulesUpdatedMessage}", AppSecEnabledMessage() }, logEntryWatcherTimeout);
+            await logEntryWatcher.WaitForLogEntries(new[] { $"1 {rulesUpdatedMessage}", AppSecEnabledMessage() }, LogEntryWatcherTimeout);
 
             var spanAfterAsmDataReactivated = await SendRequestsAsync(agent, url);
 
