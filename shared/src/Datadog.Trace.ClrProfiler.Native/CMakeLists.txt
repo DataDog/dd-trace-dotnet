@@ -98,10 +98,9 @@ set(EXTERNAL_INSTALL_LOCATION ${OUTPUT_DEPS_DIR}/fmt/)
 set(fmt_GIT_REPO https://github.com/DataDog/fmt.git)
 set(fmt_GIT_TAG 5.3.0)
 ExternalProject_Add(fmt
-    DOWNLOAD_COMMAND git clone --depth 1 --branch "${fmt_GIT_TAG}" --config advice.detachedHead=false "${fmt_GIT_REPO}"
+    DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch "${fmt_GIT_TAG}" --config advice.detachedHead=false "${fmt_GIT_REPO}"
     TIMEOUT 5
     CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0 .
-    SOURCE_DIR "${EXTERNAL_INSTALL_LOCATION}"
     PREFIX "${EXTERNAL_INSTALL_LOCATION}"
     INSTALL_COMMAND ""
 )
