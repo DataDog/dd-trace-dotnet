@@ -17,7 +17,11 @@ class ExceptionsProvider
     : public CollectorBase<RawExceptionSample>
 {
 public:
+    static std::vector<SampleValueType> SampleTypeDefinitions;
+
+public:
     ExceptionsProvider(
+        uint32_t valueOffset,
         ICorProfilerInfo4* pCorProfilerInfo,
         IManagedThreadList* pManagedThreadList,
         IFrameStore* pFrameStore,

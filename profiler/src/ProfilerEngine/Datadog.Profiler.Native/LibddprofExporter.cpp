@@ -50,11 +50,13 @@ std::string const LibddprofExporter::ProfilePeriodType = "RealTime";
 std::string const LibddprofExporter::ProfilePeriodUnit = "Nanoseconds";
 
 LibddprofExporter::LibddprofExporter(
+    std::vector<SampleValueType>&& sampleTypeDefinitions,
     IConfiguration* configuration,
     IApplicationStore* applicationStore,
     IRuntimeInfo* runtimeInfo,
     IEnabledProfilers* enabledProfilers)
     :
+    _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _locationsAndLinesSize{512},
     _applicationStore{applicationStore}
 {
@@ -102,9 +104,9 @@ ddog_ProfileExporter* LibddprofExporter::CreateExporter(const ddog_Vec_tag* tags
 struct ddog_Profile* LibddprofExporter::CreateProfile()
 {
     std::vector<ddog_ValueType> samplesTypes;
-    samplesTypes.reserve(sizeof(SampleTypeDefinitions) / sizeof(SampleTypeDefinitions[0]));
+    samplesTypes.reserve(_sampleTypeDefinitions.size());
 
-    for (auto const& type : SampleTypeDefinitions)
+    for (auto const& type : _sampleTypeDefinitions)
     {
         samplesTypes.push_back(FfiHelper::CreateValueType(type.Name, type.Unit));
     }

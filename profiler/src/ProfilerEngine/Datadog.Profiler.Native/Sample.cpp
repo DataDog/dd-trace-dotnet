@@ -14,6 +14,12 @@ const std::string Sample::ExceptionTypeLabel = "exception type";
 const std::string Sample::ExceptionMessageLabel = "exception message";
 const std::string Sample::AllocationClassLabel = "allocation class";
 
+
+size_t Sample::ValuesCount = 16;  // should be set BEFORE any sample gets created
+
+
+//s
+
 Sample::Sample(uint64_t timestamp, std::string_view runtimeId, size_t framesCount) :
     Sample(runtimeId)
 {
@@ -25,7 +31,12 @@ Sample::Sample(uint64_t timestamp, std::string_view runtimeId, size_t framesCoun
 Sample::Sample(std::string_view runtimeId)
 {
     _timestamp = 0;
-    _values = {0};
+    _values.reserve(ValuesCount);
+    for (size_t i = 0; i < ValuesCount; i++)
+    {
+        _values.push_back(0);
+    }
+
     _labels = {};
     _callstack = {};
     _runtimeId = runtimeId;
@@ -71,10 +82,9 @@ void Sample::SetValue(std::int64_t value)
     _values[0] = value;
 }
 
-void Sample::AddValue(std::int64_t value, SampleValue index)
+void Sample::AddValue(std::int64_t value, size_t index)
 {
-    size_t pos = static_cast<size_t>(index);
-    if (pos >= array_size)
+    if (index >= ValuesCount)
     {
         // TODO: fix compilation error about std::stringstream
         // std::stringstream builder;
@@ -83,7 +93,7 @@ void Sample::AddValue(std::int64_t value, SampleValue index)
         throw std::invalid_argument("index");
     }
 
-    _values[pos] = value;
+    _values[index] = value;
 }
 
 void Sample::AddFrame(std::string_view moduleName, std::string_view frame)

@@ -9,10 +9,13 @@
 class RawAllocationSample : public RawSample
 {
 public:
-    inline void OnTransform(Sample& sample) const override
+    inline void OnTransform(Sample& sample, uint32_t valueOffset) const override
     {
-        sample.AddValue(1, SampleValue::AllocationCount);
-        sample.AddValue(AllocationSize, SampleValue::AllocationSize);
+        uint32_t allocationCountIndex = valueOffset;
+        uint32_t allocationSizeIndex = valueOffset + 1;
+
+        sample.AddValue(1, allocationCountIndex);
+        sample.AddValue(AllocationSize, allocationSizeIndex);
         sample.AddLabel(Label(Sample::AllocationClassLabel, AllocationClass));
     }
 

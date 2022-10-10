@@ -15,10 +15,15 @@ class IThreadsCpuManager;
 
 
 class WallTimeProvider
-    : public CollectorBase<RawWallTimeSample> // accepts raw walltime samples
+    :
+    public CollectorBase<RawWallTimeSample> // accepts raw walltime samples
 {
 public:
+    static std::vector<SampleValueType> SampleTypeDefinitions;
+
+public:
     WallTimeProvider(
+        uint32_t valueOffset,
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAssemblyStore,
