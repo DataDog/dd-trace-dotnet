@@ -29,7 +29,7 @@ public sealed class TestModule
 
     private TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
     {
-        // First we make sure if CI Visibility is initialized.
+        // First we make sure that CI Visibility is initialized.
         CIVisibility.Initialize();
 
         var environment = CIEnvironmentValues.Instance;
