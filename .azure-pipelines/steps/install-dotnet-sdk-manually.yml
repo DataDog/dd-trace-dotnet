@@ -56,5 +56,5 @@ steps:
 
       rm ./dotnet-install.ps1
       echo "Install complete"
-    displayName: Install dotnet core sdk ${{ parameters.sdkVersion }} (64bit ${{ parameters.sdkVersion }})
+    displayName: Install dotnet core sdk ${{ parameters.sdkVersion }} (64bit:${{ parameters.is64bit }} ${{ parameters.sdkVersion }})
     retryCountOnTaskFailure: 5
