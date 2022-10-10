@@ -57,7 +57,7 @@ Configuration::Configuration()
     _contentionDurationThreshold = GetEnvironmentValue(EnvironmentVariables::ContentionDurationThreshold, 100);
     _cpuWallTimeSamplingRate = ExtractCpuWallTimeSamplingRate();
     _minimumCores = GetEnvironmentValue<double>(EnvironmentVariables::CoreMinimumOverride, 1.0);
-    _namedPipePath = GetEnvironmentValue(EnvironmentVariables::NamedPipe, DefaultEmptyString);
+    _namedPipeName = GetEnvironmentValue(EnvironmentVariables::NamedPipeName, DefaultEmptyString);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -276,9 +276,9 @@ std::chrono::seconds Configuration::GetDefaultUploadInterval()
     return DefaultProdUploadInterval;
 }
 
-const std::string& Configuration::GetNamedPipePath() const
+const std::string& Configuration::GetNamedPipeName() const
 {
-    return _namedPipePath;
+    return _namedPipeName;
 }
 
 //

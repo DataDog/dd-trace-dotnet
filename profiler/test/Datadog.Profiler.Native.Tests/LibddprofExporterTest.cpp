@@ -42,8 +42,8 @@ TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
 
 #if _WINDOWS
-    std::string namedPipePath;
-    EXPECT_CALL(mockConfiguration, GetNamedPipePath()).Times(1).WillOnce(ReturnRef(namedPipePath));
+    std::string namedPipeName;
+    EXPECT_CALL(mockConfiguration, GetNamedPipeName()).Times(1).WillOnce(ReturnRef(namedPipeName));
 #endif
 
     std::string agentHost = "localhost";
@@ -154,8 +154,8 @@ TEST(LibddprofExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
 
 #if _WINDOWS
-    std::string namedPipePath;
-    EXPECT_CALL(mockConfiguration, GetNamedPipePath()).Times(1).WillOnce(ReturnRef(namedPipePath));
+    std::string namedPipeName;
+    EXPECT_CALL(mockConfiguration, GetNamedPipeName()).Times(1).WillOnce(ReturnRef(namedPipeName));
 #endif
 
     std::string agentHost = "localhost";
@@ -258,8 +258,8 @@ TEST(LibddprofExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplication
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
 
 #if _WINDOWS
-    std::string namedPipePath;
-    EXPECT_CALL(mockConfiguration, GetNamedPipePath()).Times(1).WillOnce(ReturnRef(namedPipePath));
+    std::string namedPipeName;
+    EXPECT_CALL(mockConfiguration, GetNamedPipeName()).Times(1).WillOnce(ReturnRef(namedPipeName));
 #endif
 
     std::string agentHost = "localhost";
@@ -388,8 +388,8 @@ TEST(LibddprofExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
 
 #if _WINDOWS
-    std::string namedPipePath;
-    EXPECT_CALL(mockConfiguration, GetNamedPipePath()).Times(1).WillOnce(ReturnRef(namedPipePath));
+    std::string namedPipeName;
+    EXPECT_CALL(mockConfiguration, GetNamedPipeName()).Times(1).WillOnce(ReturnRef(namedPipeName));
 #endif
 
     std::string agentHost = "localhost";
@@ -466,8 +466,8 @@ TEST(LibddprofExporterTest, MakeSureNoCrashForReallyLongCallstack)
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
 
 #if _WINDOWS
-    std::string namedPipePath;
-    EXPECT_CALL(mockConfiguration, GetNamedPipePath()).Times(1).WillOnce(ReturnRef(namedPipePath));
+    std::string namedPipeName;
+    EXPECT_CALL(mockConfiguration, GetNamedPipeName()).Times(1).WillOnce(ReturnRef(namedPipeName));
 #endif
 
     std::string agentHost = "localhost";

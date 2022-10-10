@@ -252,9 +252,10 @@ ddog_Endpoint LibddprofExporter::CreateEndpoint(IConfiguration* configuration)
 
 #if _WINDOWS
         std::string socketPath;
-        if (!configuration->GetNamedPipePath().empty())
+        const std::string& namePipeName = configuration->GetNamedPipeName();
+        if (!namePipeName.empty())
         {
-            socketPath = R"(\\.\pipe\)" + configuration->GetNamedPipePath();
+            socketPath = R"(\\.\pipe\)" + namePipeName;
         }
         std::string agentUrl = "windows:" + socketPath;
 #else

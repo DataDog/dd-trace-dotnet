@@ -48,7 +48,7 @@ public:
     MOCK_METHOD(int32_t, ContentionSampleLimit, (), (const override));
     MOCK_METHOD(int32_t, ContentionDurationThreshold, (), (const override));
     MOCK_METHOD(std::chrono::nanoseconds, CpuWallTimeSamplingRate, (), (const override));
-    MOCK_METHOD(std::string const&, GetNamedPipePath, (), (const override));
+    MOCK_METHOD(std::string const&, GetNamedPipeName, (), (const override));
 };
 
 class MockExporter : public IExporter

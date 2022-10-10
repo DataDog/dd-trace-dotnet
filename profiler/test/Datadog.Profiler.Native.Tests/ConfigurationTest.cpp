@@ -454,13 +454,13 @@ TEST(ConfigurationTest, CheckAllocationSampleLimitIfEnvVarSet)
 TEST(ConfigurationTest, CheckNamedPipeIsDisabledByDefault)
 {
     auto configuration = Configuration{};
-    EXPECT_EQ(configuration.GetNamedPipePath(), std::string());
+    EXPECT_EQ(configuration.GetNamedPipeName(), std::string());
 }
 
 TEST(ConfigurationTest, CheckNamedPipePathWhenProvided)
 {
     std::string expectedPath = R"(\\.\mypipe\comeon)";
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::NamedPipe, shared::ToWSTRING(expectedPath));
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::NamedPipeName, shared::ToWSTRING(expectedPath));
     auto configuration = Configuration{};
-    EXPECT_EQ(configuration.GetNamedPipePath(), expectedPath);
+    EXPECT_EQ(configuration.GetNamedPipeName(), expectedPath);
 }
