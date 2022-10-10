@@ -79,9 +79,6 @@ namespace Datadog.Trace.ClrProfiler
 
             Log.Debug("Initialization started.");
 
-            InitializeNoNativeParts();
-            var tracer = Tracer.Instance;
-
             try
             {
                 Log.Debug("Enabling by ref instrumentation.");
@@ -103,6 +100,21 @@ namespace Datadog.Trace.ClrProfiler
             {
                 Log.Error(ex, "CallTarget state ByRef cannot be enabled: ");
             }
+
+            try
+            {
+                Log.Debug("Initializing TraceAttribute instrumentation.");
+                var payload = InstrumentationDefinitions.GetTraceAttributeDefinitions();
+                NativeMethods.AddTraceAttributeInstrumentation(payload.DefinitionsId, payload.AssemblyName, payload.TypeName);
+                Log.Information("TraceAttribute instrumentation enabled with Assembly={AssemblyName} and Type={TypeName}.", payload.AssemblyName, payload.TypeName);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
+            InitializeNoNativeParts();
+            var tracer = Tracer.Instance;
 
             try
             {
@@ -146,18 +158,6 @@ namespace Datadog.Trace.ClrProfiler
                 NativeMethods.AddInterfaceInstrumentations(payload.DefinitionsId, payload.Definitions);
 
                 Log.Information<int>("The profiler has been initialized with {count} interface definitions.", payload.Definitions.Length);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
-            }
-
-            try
-            {
-                Log.Debug("Initializing TraceAttribute instrumentation.");
-                var payload = InstrumentationDefinitions.GetTraceAttributeDefinitions();
-                NativeMethods.AddTraceAttributeInstrumentation(payload.DefinitionsId, payload.AssemblyName, payload.TypeName);
-                Log.Information("TraceAttribute instrumentation enabled with Assembly={AssemblyName} and Type={TypeName}.", payload.AssemblyName, payload.TypeName);
             }
             catch (Exception ex)
             {
