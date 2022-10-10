@@ -6,10 +6,10 @@ ExternalProject_Add(fmt
     DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch ${FMT_VERSION} --config advice.detachedHead=false https://github.com/DataDog/fmt.git
     TIMEOUT 5
     INSTALL_COMMAND ""
+    BUILD_IN_SOURCE TRUE
     CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0
     BUILD_COMMAND ${CMAKE_COMMAND} -E env CXXFLAGS=-D_GLIBCXX_USE_CXX11_ABI=0 make -j
     BUILD_BYPRODUCTS ${CMAKE_CURRENT_BINARY_DIR}/fmt-prefix/src/fmt/libfmt.a
-    BUILD_IN_SOURCE TRUE
 )
 
 ExternalProject_Get_property(fmt SOURCE_DIR)

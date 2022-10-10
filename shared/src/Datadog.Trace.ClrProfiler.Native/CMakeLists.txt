@@ -161,7 +161,7 @@ set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
 if (ISMACOS)
     target_link_libraries("Datadog.Trace.ClrProfiler.Native"
         ${CMAKE_DL_LIBS}
-        coreclr-lib
+        coreclr
         fmt-lib
         spdlog-headers
         managed-loader-objs
@@ -171,11 +171,11 @@ elseif(ISLINUX)
         -static-libgcc
         -static-libstdc++
         ${CMAKE_DL_LIBS}
-        coreclr-lib
+        coreclr
         fmt-lib
         spdlog-headers
         managed-loader-objs
     )
 endif()
 
-add_dependencies("Datadog.Trace.ClrProfiler.Native" fmt-lib coreclr-lib re2-lib spdlog-headers managed-loader-objs)
+add_dependencies("Datadog.Trace.ClrProfiler.Native" fmt-lib coreclr re2-lib spdlog-headers managed-loader-objs)

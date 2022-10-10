@@ -1,5 +1,7 @@
 SET(LIBUNWIND_VERSION "1.6.2")
 
+SET(LIBUNWIND_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/libunwind-prefix/src/libunwind-build)
+
 ExternalProject_Add(libunwind
     GIT_REPOSITORY https://github.com/DataDog/libunwind.git
     GIT_TAG v1.6.2
@@ -9,9 +11,10 @@ ExternalProject_Add(libunwind
     CONFIGURE_COMMAND ""
     BUILD_COMMAND autoreconf -i <SOURCE_DIR> && <SOURCE_DIR>/configure CXXFLAGS=-fPIC\ -D_GLIBCXX_USE_CXX11_ABI=0\ -O3 CFLAGS=-fPIC\ -O3 --disable-minidebuginfo && make -j
     BUILD_ALWAYS false
+    BUILD_BYPRODUCTS ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind-${CMAKE_SYSTEM_PROCESSOR}.a
+                     ${LIBUNWIND_BINARY_DIR}/src/.libs/libunwind.a
 )
 
-SET(LIBUNWIND_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/libunwind-prefix/src/libunwind-build)
 
 add_library(libunwind-lib INTERFACE)
 
