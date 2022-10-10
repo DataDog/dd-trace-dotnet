@@ -103,6 +103,9 @@ namespace CallTargetNativeTest
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsGenericParentType<>.WithOutArguments).FullName, "VoidMethod", new[] { "_", "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(StringAndIntOutVoidIntegration).FullName));
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsGenericParentType<>.WithOutArguments).FullName, "VoidMethod", new[] { "_", "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(GenericOutModificationVoidIntegration).FullName));
 
+            // Add extra integrations
+            definitionsList.Add(new(TargetAssembly, typeof(Extras).FullName, nameof(CallTargetNativeTest.Extras.NonVoidWithBranchToLastReturn), new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, typeof(Noop0ArgumentsIntegration).FullName));
+            
             definitionsId = Guid.NewGuid().ToString("N");
             definitions = definitionsList.ToArray();
             EnableDefinitions();
@@ -265,6 +268,11 @@ namespace CallTargetNativeTest
                         WithOutArguments();
                         break;
                     }
+                case "extras":
+                    {
+                        Extras();
+                        break;
+                    }
                 case "all":
                     {
                         Argument0();
@@ -340,6 +348,7 @@ namespace CallTargetNativeTest
                         // ParentAbstractMethod();
                         // StructParentAbstractMethod();
                         // GenericParentAbstractMethod();
+                        Extras();
                         break;
                     }
                 default:
