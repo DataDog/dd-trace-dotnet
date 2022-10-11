@@ -103,11 +103,7 @@ namespace Datadog.Trace
             // Determine whether we will sample a dropped span with single span sampling rules
             if (_samplingPriority <= 0)
             {
-                var rule = Tracer.SpanSampler?.MakeSamplingDecision(span);
-                if (rule is not null)
-                {
-                    Tracer.SpanSampler.AddTags(span, rule);
-                }
+                Tracer.SpanSampler?.MakeSamplingDecision(span);
             }
 
             lock (this)

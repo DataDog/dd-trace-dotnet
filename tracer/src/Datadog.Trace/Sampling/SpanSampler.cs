@@ -30,7 +30,7 @@ internal class SpanSampler : ISpanSampler
     }
 
     /// <inheritdoc/>
-    public ISpanSamplingRule? MakeSamplingDecision(Span span)
+    public bool MakeSamplingDecision(Span span)
     {
         if (_rules.Count > 0)
         {
@@ -40,17 +40,22 @@ internal class SpanSampler : ISpanSampler
                 {
                     if (rule.ShouldSample(span))
                     {
-                        return rule;
+                        AddTags(span, rule);
+                        return true;
                     }
                 }
             }
         }
 
-        return null;
+        return false;
     }
 
-    /// <inheritdoc/>
-    public void AddTags(Span span, ISpanSamplingRule rule)
+    /// <summary>
+    ///     Tags the <paramref name="span"/> with the necessary tags for single span ingestion.
+    /// </summary>
+    /// <param name="span">The <see cref="Span"/> to tag.</param>
+    /// <param name="rule">The <see cref="ISpanSamplingRule"/> that contains the tag information.</param>
+    private static void AddTags(Span span, ISpanSamplingRule rule)
     {
         span.SetTag(Tags.SingleSpanSampling.RuleRate, rule.SamplingRateString);
 
