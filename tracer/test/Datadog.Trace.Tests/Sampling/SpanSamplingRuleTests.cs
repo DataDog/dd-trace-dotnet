@@ -203,15 +203,6 @@ namespace Datadog.Trace.Tests.Sampling
             rule.MaxPerSecondString.Should().BeNull();
         }
 
-        [Fact]
-        public void SamplingMechanismString_ShouldBe_SpanSamplingMechanism()
-        {
-            var config = "[{\"service\":\"*\", \"name\":\"*\"}]";
-            var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
-
-            rule.SamplingMechanismString.Should().Be("8");
-        }
-
         private void VerifySingleRule(string config, Span span, bool isMatch)
         {
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
