@@ -145,6 +145,7 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.StatsComputationEnabled, value: settings.StatsComputationEnabled),
                 new(ConfigTelemetryData.WcfObfuscationEnabled, value: settings.WcfObfuscationEnabled),
                 new(ConfigTelemetryData.DataStreamsMonitoringEnabled, value: settings.IsDataStreamsMonitoringEnabled),
+                new(ConfigTelemetryData.SpanSamplingRules, value: settings.SpanSamplingRules),
             };
 
             if (_azureApServicesMetadata.IsRelevant)
