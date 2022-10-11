@@ -24,6 +24,12 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for controlling which weak cipher algorithms are reported.
             /// </summary>
             public const string WeakCipherAlgorithms = "DD_IAST_WEAK_CIPHER_ALGORITHMS";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling the vulnerability duplication detection.
+            /// Default is value is true (enabled).
+            /// </summary>
+            public const string IsIastDeduplicationEnabled = "DD_IAST_DEDUPLICATION_ENABLED";
         }
     }
 }
