@@ -533,8 +533,6 @@ namespace Datadog.Trace.AppSec
 
         private void RunWafAndReact(object sender, InstrumentationGatewaySecurityEventArgs e)
         {
-            // System.Diagnostics.Debugger.Launch();
-
             try
             {
                 if (e.Transport.Blocked)

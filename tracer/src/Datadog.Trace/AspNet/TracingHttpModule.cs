@@ -97,6 +97,7 @@ namespace Datadog.Trace.AspNet
         private void OnBeginRequest(object sender, EventArgs eventArgs)
         {
             Scope scope = null;
+            bool shouldDisposeScope = true;
             try
             {
                 var tracer = Tracer.Instance;
@@ -164,6 +165,7 @@ namespace Datadog.Trace.AspNet
                 }
 
                 httpContext.Items[_httpContextScopeKey] = scope;
+                shouldDisposeScope = false;
 
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
@@ -191,8 +193,12 @@ namespace Datadog.Trace.AspNet
             }
             catch (Exception ex)
             {
-                // Dispose here, as the scope won't be in context items and won't get disposed on request end in that case...
-                scope?.Dispose();
+                if (shouldDisposeScope)
+                {
+                    // Dispose here, as the scope won't be in context items and won't get disposed on request end in that case...
+                    scope?.Dispose();
+                }
+
                 if (ex is not BlockException)
                 {
                     Log.Error(ex, "Datadog ASP.NET HttpModule instrumentation error");
@@ -233,12 +239,13 @@ namespace Datadog.Trace.AspNet
 
                         if (!rootSpan.HasHttpStatusCode())
                         {
-                            rootSpan.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                            var status = app.Context.Response.StatusCode;
+                            rootSpan.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
                             AddHeaderTagsFromHttpResponse(app.Context, rootScope);
 
                             if (scope.Span != rootSpan)
                             {
-                                scope.Span.SetHttpStatusCode(app.Context.Response.StatusCode, isServer: true, Tracer.Instance.Settings);
+                                scope.Span.SetHttpStatusCode(status, isServer: true, Tracer.Instance.Settings);
                                 AddHeaderTagsFromHttpResponse(app.Context, scope);
                             }
                         }
