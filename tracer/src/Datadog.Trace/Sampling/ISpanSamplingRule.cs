@@ -39,11 +39,6 @@ namespace Datadog.Trace.Sampling
         string MaxPerSecondString { get; }
 
         /// <summary>
-        ///     Gets the cached <see cref="SamplingMechanism"/> string for tagging.
-        /// </summary>
-        string SamplingMechanismString { get; }
-
-        /// <summary>
         ///     Checks whether or not the <paramref name="span"/> matches the glob patterns defined by this rule.
         /// </summary>
         /// <param name="span">The <see cref="Span"/> to check.</param>

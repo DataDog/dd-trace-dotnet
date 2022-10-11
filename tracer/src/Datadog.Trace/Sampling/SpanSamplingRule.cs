@@ -62,7 +62,6 @@ namespace Datadog.Trace.Sampling
             // cache strings for tagging to reduce allocations
             SamplingRateString = SamplingRate.ToString();
             MaxPerSecondString = MaxPerSecond?.ToString();
-            SamplingMechanismString = SamplingMechanism.SpanSamplingRule.ToString();
         }
 
         /// <inheritdoc/>
@@ -76,9 +75,6 @@ namespace Datadog.Trace.Sampling
 
         /// <inheritdoc/>
         public string MaxPerSecondString { get; }
-
-        /// <inheritdoc/>
-        public string SamplingMechanismString { get; }
 
         /// <summary>
         ///     Creates <see cref="SpanSamplingRule"/>s from the supplied JSON <paramref name="configuration"/>.

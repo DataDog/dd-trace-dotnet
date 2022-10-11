@@ -16,6 +16,8 @@ namespace Datadog.Trace.Sampling;
 /// </summary>
 internal class SpanSampler : ISpanSampler
 {
+    private static readonly string SamplingMechanismString = SamplingMechanism.SpanSamplingRule.ToString();
+
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanSampler>();
 
     private readonly List<ISpanSamplingRule> _rules = new List<ISpanSamplingRule>();
@@ -63,6 +65,6 @@ internal class SpanSampler : ISpanSampler
         }
 
         // TODO is this where we set this tag or should it be somewhere else?
-        span.SetTag(Tags.SingleSpanSampling.SamplingMechanism, rule.SamplingMechanismString);
+        span.SetTag(Tags.SingleSpanSampling.SamplingMechanism, SamplingMechanismString);
     }
 }
