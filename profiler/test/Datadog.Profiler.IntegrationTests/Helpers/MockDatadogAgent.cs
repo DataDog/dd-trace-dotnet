@@ -276,10 +276,10 @@ namespace Datadog.Profiler.IntegrationTests
                 for (var i = 0; i < ConcurrentInstanceCount; i++)
                 {
                     _log("Starting PipeServer " + _pipeName);
-                    using var mutex = new ManualResetEventSlim();
-                    var startPipe = StartNamedPipeServer(mutex);
+                    using var stopEvent = new ManualResetEventSlim();
+                    var startPipe = StartNamedPipeServer(stopEvent);
                     _tasks.Add(startPipe);
-                    mutex.Wait(5_000);
+                    stopEvent.Wait(5_000);
                 }
 
                 return Task.CompletedTask;
@@ -291,7 +291,7 @@ namespace Datadog.Profiler.IntegrationTests
                 Task.WaitAll(_tasks.ToArray(), TimeSpan.FromSeconds(10));
             }
 
-            private async Task StartNamedPipeServer(ManualResetEventSlim mutex)
+            private async Task StartNamedPipeServer(ManualResetEventSlim stopEvent)
             {
                 var instance = $" ({_pipeName}:{Interlocked.Increment(ref _instanceCount)})";
                 try
@@ -306,7 +306,7 @@ namespace Datadog.Profiler.IntegrationTests
 
                     _log("Starting wait for connection " + instance);
                     var connectTask = serverStream.WaitForConnectionAsync(_cancellationTokenSource.Token).ConfigureAwait(false);
-                    mutex.Set();
+                    stopEvent.Set();
 
                     _log("Awaiting connection " + instance);
                     await connectTask;
