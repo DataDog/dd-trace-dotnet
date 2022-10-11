@@ -74,7 +74,10 @@ namespace Datadog.Trace.AppSec
             if (LastChanceToWriteTags != null)
             {
                 var transport = new HttpTransport(context);
-                LastChanceToWriteTags.Invoke(this, new InstrumentationGatewayEventArgs(transport, relatedSpan));
+                if (!transport.Blocked)
+                {
+                    LastChanceToWriteTags?.Invoke(this, new InstrumentationGatewayEventArgs(transport, relatedSpan));
+                }
             }
         }
 
@@ -100,8 +103,11 @@ namespace Datadog.Trace.AppSec
             {
                 var eventData = getEventData();
                 var transport = new HttpTransport(context);
-                LogAddressIfDebugEnabled(eventData);
-                eventHandler.Invoke(this, new InstrumentationGatewaySecurityEventArgs(eventData, transport, relatedSpan, eraseExistingAddress));
+                if (!transport.Blocked)
+                {
+                    LogAddressIfDebugEnabled(eventData);
+                    eventHandler?.Invoke(this, new InstrumentationGatewaySecurityEventArgs(eventData, transport, relatedSpan, eraseExistingAddress));
+                }
             }
             catch (Exception ex) when (ex is not BlockException)
             {
@@ -111,7 +117,8 @@ namespace Datadog.Trace.AppSec
 
         internal void RaiseBlockingOpportunity(HttpContext context, Scope scope, ImmutableTracerSettings tracerSettings, Action<InstrumentationGatewayBlockingEventArgs> doBeforeActualBlocking = null)
         {
-            BlockingOpportunity?.Invoke(this, new InstrumentationGatewayBlockingEventArgs(context, scope, tracerSettings, doBeforeActualBlocking));
+            var ea = new InstrumentationGatewayBlockingEventArgs(context, scope, tracerSettings, doBeforeActualBlocking);
+            BlockingOpportunity?.Invoke(this, ea);
         }
     }
 }

@@ -73,6 +73,27 @@ namespace Datadog.Trace.AspNet
         {
         }
 
+        internal static void AddHeaderTagsFromHttpResponse(System.Web.HttpContext httpContext, Scope scope)
+        {
+            if (httpContext != null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders && !Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty())
+            {
+                try
+                {
+                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
+                }
+                catch (PlatformNotSupportedException ex)
+                {
+                    // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
+                    Log.Error(ex, "Unable to access response headers when creating header tags. Disabling for the rest of the application lifetime.");
+                    _canReadHttpResponseHeaders = false;
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error extracting HTTP headers to create header tags.");
+                }
+            }
+        }
+
         private void OnBeginRequest(object sender, EventArgs eventArgs)
         {
             Scope scope = null;
@@ -162,7 +183,10 @@ namespace Datadog.Trace.AspNet
                         security.InstrumentationGateway.RaiseBodyAvailable(httpContext, scope.Span, formData);
                     }
 
-                    security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, (_) => { });
+                    security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, args =>
+                    {
+                        AddHeaderTagsFromHttpResponse(args.Context, args.Scope);
+                    });
                 }
             }
             catch (Exception ex)
@@ -244,7 +268,10 @@ namespace Datadog.Trace.AspNet
                             security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, scope.Span, httpContext.Request.RequestContext.RouteData.Values, eraseExistingAddress: false);
                             security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, scope.Span);
                             security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, scope.Span);
-                            security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, (_) => { });
+                            security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, args =>
+                            {
+                                AddHeaderTagsFromHttpResponse(args.Context, args.Scope);
+                            });
                         }
 
                         scope.Dispose();
@@ -315,27 +342,6 @@ namespace Datadog.Trace.AspNet
             catch (Exception ex)
             {
                 Log.Error(ex, "Error while clearing the HttpContext");
-            }
-        }
-
-        private void AddHeaderTagsFromHttpResponse(System.Web.HttpContext httpContext, Scope scope)
-        {
-            if (httpContext != null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders && !Tracer.Instance.Settings.HeaderTags.IsNullOrEmpty())
-            {
-                try
-                {
-                    scope.Span.SetHeaderTags(httpContext.Response.Headers.Wrap(), Tracer.Instance.Settings.HeaderTags, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);
-                }
-                catch (PlatformNotSupportedException ex)
-                {
-                    // Despite the HttpRuntime.UsingIntegratedPipeline check, we can still fail to access response headers, for example when using Sitefinity: "This operation requires IIS integrated pipeline mode"
-                    Log.Error(ex, "Unable to access response headers when creating header tags. Disabling for the rest of the application lifetime.");
-                    _canReadHttpResponseHeaders = false;
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error extracting HTTP headers to create header tags.");
-                }
             }
         }
     }
