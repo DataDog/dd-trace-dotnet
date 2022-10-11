@@ -26,7 +26,7 @@ namespace Datadog.Trace.Iast
         public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId, Iast iast)
         {
             var algorithm = type.BaseType?.Name;
-            if (algorithm == null || InvalidCipherAlgorithm(type, algorithm, iast))
+            if (algorithm == null || !InvalidCipherAlgorithm(type, algorithm, iast))
             {
                 return null;
             }
@@ -105,7 +105,18 @@ namespace Datadog.Trace.Iast
         private static bool InvalidCipherAlgorithm(Type type, string algorithm, Iast iast)
         {
             // TripleDESCryptoServiceProvider internally creates a DES algorithm instance.
-            return type.Name == "TripleDESCryptoServiceProvider" || !iast.Settings.WeakCipherAlgorithmsArray.Contains(algorithm);
+            if (type.Name != "TripleDESCryptoServiceProvider")
+            {
+                foreach (var weakCipherAlgorithm in iast.Settings.WeakCipherAlgorithmsArray)
+                {
+                    if (string.Equals(algorithm, weakCipherAlgorithm, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
     }
 }
