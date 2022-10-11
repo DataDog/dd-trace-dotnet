@@ -16,7 +16,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm;
     /// <summary>
     /// System.Security.Cryptography.HashAlgorithm instrumentation
     /// </summary>
-    /// /// RC2CryptoServiceProvider
     [InstrumentMethod(
        AssemblyNames = new[] { "System.Security.Cryptography.Primitives" },
        TypeNames = new[] { "System.Security.Cryptography.SymmetricAlgorithm" },
@@ -43,6 +42,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm;
             }
 
             return CallTargetState.GetDefault();
+            */
+            return new CallTargetState(scope: SymmetricAlgorithmIntegrationCommon.CreateScope(instance));
         }
 
         /// <summary>
