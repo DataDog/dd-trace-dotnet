@@ -10,6 +10,7 @@ target_include_directories(coreclr PUBLIC
 )
 
 target_compile_options(coreclr PUBLIC
+    -std=c++17
     -DPAL_STDCPP_COMPAT
     -DPLATFORM_UNIX
     -DUNICODE
