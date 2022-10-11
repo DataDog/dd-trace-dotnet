@@ -117,7 +117,6 @@ namespace Datadog.Trace.Security.IntegrationTests
                 _process.Dispose();
             }
 
-            _httpClient?.Dispose();
             _agent?.Dispose();
         }
 
