@@ -100,18 +100,18 @@ namespace Datadog.Trace
                 Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
             }
 
+            // Determine whether we will sample a dropped span with single span sampling rules
+            if (_samplingPriority <= 0)
+            {
+                var rule = Tracer.SpanSampler?.MakeSamplingDecision(span);
+                if (rule is not null)
+                {
+                    Tracer.SpanSampler.AddTags(span, rule);
+                }
+            }
+
             lock (this)
             {
-                // TODO is this the best spot to sample for single span?
-                if (_samplingPriority <= 0)
-                {
-                    var rule = Tracer.SpanSampler?.MakeSamplingDecision(span);
-                    if (rule is not null)
-                    {
-                        Tracer.SpanSampler.AddTags(span, rule);
-                    }
-                }
-
                 _spans.Add(span);
                 if (!_rootSpanSent)
                 {
