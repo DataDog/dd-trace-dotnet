@@ -7,7 +7,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Sampling;
 
@@ -17,8 +16,6 @@ namespace Datadog.Trace.Sampling;
 internal class SpanSampler : ISpanSampler
 {
     private static readonly string SamplingMechanismString = SamplingMechanism.SpanSamplingRule.ToString();
-
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanSampler>();
 
     private readonly List<ISpanSamplingRule> _rules = new List<ISpanSamplingRule>();
 
