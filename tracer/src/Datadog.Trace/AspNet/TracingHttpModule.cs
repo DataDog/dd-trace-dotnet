@@ -264,14 +264,17 @@ namespace Datadog.Trace.AspNet
                                 return;
                             }
 
-                            // raise path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
-                            security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, scope.Span, httpContext.Request.RequestContext.RouteData.Values, eraseExistingAddress: false);
-                            security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, scope.Span);
-                            security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, scope.Span);
-                            security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, args =>
+                            if (!(httpContext.Items["block"] is bool blocked && blocked))
                             {
-                                AddHeaderTagsFromHttpResponse(args.Context, args.Scope);
-                            });
+                                // raise path params here for webforms cause there's no other hookpoint for path params, but for mvc/webapi, there's better hookpoint which only gives route params (and not {controller} and {actions} ones) so don't take precedence
+                                security.InstrumentationGateway.RaisePathParamsAvailable(httpContext, scope.Span, httpContext.Request.RequestContext.RouteData.Values, eraseExistingAddress: false);
+                                security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, scope.Span);
+                                security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, scope.Span);
+                                security.InstrumentationGateway.RaiseBlockingOpportunity(httpContext, scope, tracer.Settings, args =>
+                                {
+                                    AddHeaderTagsFromHttpResponse(args.Context, args.Scope);
+                                });
+                            }
                         }
 
                         scope.Dispose();

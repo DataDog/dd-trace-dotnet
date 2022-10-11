@@ -155,6 +155,7 @@ namespace Datadog.Trace
         {
             if (IsFinished)
             {
+                // System.Diagnostics.Debugger.Launch();
                 Log.Warning("SetTag should not be called after the span was closed");
                 return this;
             }
