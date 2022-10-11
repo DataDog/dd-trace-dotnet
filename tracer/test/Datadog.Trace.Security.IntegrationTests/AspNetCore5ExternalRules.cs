@@ -32,7 +32,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             var enableSecurity = true;
 
-            var agent = await RunOnSelfHosted(enableSecurity, DefaultRuleFile);
+            var agent = RunOnSelfHosted(enableSecurity, DefaultRuleFile);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 

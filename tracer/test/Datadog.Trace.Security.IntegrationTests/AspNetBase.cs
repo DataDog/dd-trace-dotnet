@@ -73,7 +73,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             get { return _process?.Id; }
         }
 
-        public Task<MockTracerAgent> RunOnSelfHosted(bool? enableSecurity, string externalRulesFile = null, int? traceRateLimit = null)
+        public MockTracerAgent RunOnSelfHosted(bool? enableSecurity, string externalRulesFile = null, int? traceRateLimit = null)
         {
             if (_agent == null)
             {
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 externalRulesFile: externalRulesFile,
                 traceRateLimit: traceRateLimit);
 
-            return Task.FromResult(_agent);
+            return _agent;
         }
 
         public override void Dispose()

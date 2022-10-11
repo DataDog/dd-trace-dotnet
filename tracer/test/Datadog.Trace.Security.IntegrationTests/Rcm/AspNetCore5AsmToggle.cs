@@ -45,7 +45,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         public async Task TestSecurityToggling(bool? enableSecurity, uint expectedState, uint expectedCapabilities)
         {
             var url = "/Health/?[$slice]=value";
-            var agent = await RunOnSelfHosted(enableSecurity);
+            var agent = RunOnSelfHosted(enableSecurity);
             var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, expectedState, expectedCapabilities);
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
 
@@ -94,7 +94,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         {
             var enableSecurity = true;
             var url = "/Health/?[$slice]=value";
-            var agent = await RunOnSelfHosted(enableSecurity);
+            var agent = RunOnSelfHosted(enableSecurity);
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
             var spans1 = await SendRequestsAsync(agent, url);
