@@ -10,6 +10,41 @@
 
 
 
+
+## [Release 2.17.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.17.0)
+
+## Summary
+
+- Fixes an error in instrumentation when certain code patterns are found in instrumented classes (first identified in `EFCache`)
+- Fixes ASM one-click activation
+
+## Changes
+
+### Tracer
+* Enable agent-based telemetry by default (#2800)
+* [Tracer] refactor trace serialization part 1 (#3135)
+* Add fix for method rewriter in non-void method with branch to last return (#3331)
+* Add Data Streams Monitoring support when using manual instrumentation with Kafka (#3319)
+
+### CI Visibility
+* [CIVisibility] Public Api fixes (#3330)
+
+### ASM
+* Simplify blocking by updating the test rules (#3318)
+* Use a different log file for tests using the log entry watcher (#3320)
+* Correct index used by activation capability (#3333)
+
+### Continuous Profiler
+* [Profiler] Bump libdatadog version to 0.9.0 (#3313)
+
+### Miscellaneous
+* [Tracer] Use `Datadog.Trace.Bundle` in `NugetDeployment` samples (#3273)
+
+### Build / Test
+* Fix documentation URL (#3327)
+
+[Changes since 2.16.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.16.0...v2.17.0)
+
 ## [Release 2.16.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.16.0)
 
 ## Summary
