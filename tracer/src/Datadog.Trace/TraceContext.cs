@@ -105,7 +105,7 @@ namespace Datadog.Trace
                 // TODO is this the best spot to sample for single span?
                 if (_samplingPriority <= 0)
                 {
-                    var rule = Tracer.SpanSampler.MakeSamplingDecision(span);
+                    var rule = Tracer.SpanSampler?.MakeSamplingDecision(span);
                     if (rule is not null)
                     {
                         Tracer.SpanSampler.AddTags(span, rule);
