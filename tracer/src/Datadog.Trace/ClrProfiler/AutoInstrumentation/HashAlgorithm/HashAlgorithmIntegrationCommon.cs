@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
             if (instance is System.Security.Cryptography.HashAlgorithm algorithm)
             {
                 var iast = Iast.Iast.Instance;
-                if (!iast.Settings.Enabled || algorithm == null)
+                if (!iast.Settings.Enabled)
                 {
                 return null;
             }

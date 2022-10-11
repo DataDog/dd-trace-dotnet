@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using System.Security.Cryptography;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
@@ -18,23 +17,28 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.SymmetricAlgorithm;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymmetricAlgorithmIntegrationCommon));
 
-        internal static Scope? CreateScope(SymmetricAlgorithm instance)
+        internal static Scope? CreateScope<TTarget>(TTarget instance)
         {
-            var iast = Iast.Iast.Instance;
-            if (!iast.Settings.Enabled || instance == null)
+            if (instance is System.Security.Cryptography.SymmetricAlgorithm algorithm)
             {
-                return null;
+                var iast = Iast.Iast.Instance;
+                if (!iast.Settings.Enabled)
+                {
+                    return null;
+                }
+
+                try
+                {
+                    return IastModule.OnCipherAlgorithm(instance.GetType(), IntegrationId, iast);
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error creating or populating SymmetricAlgorithm scope.");
+                    return null;
+                }
             }
 
-            try
-            {
-                return IastModule.OnCipherAlgorithm(instance.GetType(), IntegrationId, iast);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating SymmetricAlgorithm scope.");
-                return null;
-            }
+            return null;
         }
     }
 }
