@@ -308,7 +308,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null, string userAgent = null)
         {
-            for (int x = 0; x < numberOfAttacks; x++)
+            for (var x = 0; x < numberOfAttacks; x++)
             {
                 await SubmitRequest(url, body, contentType, userAgent);
             }
@@ -316,7 +316,6 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         private IImmutableList<MockSpan> WaitForSpans(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime, string url)
         {
-            url = url.Contains("?") ? url.Substring(0, url.IndexOf('?')) : url;
             agent.SpanFilters.Clear();
             agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > -1);
 

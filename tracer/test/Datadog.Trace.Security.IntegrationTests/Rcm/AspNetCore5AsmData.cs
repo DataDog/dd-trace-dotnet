@@ -39,7 +39,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         [InlineData("blocking-ips", true, HttpStatusCode.Forbidden, "/")]
         [InlineData("blocking-ips", false, HttpStatusCode.OK, "/")]
         [Trait("RunOnWindows", "True")]
-        public async Task TestBlockedRequestIp(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
+        public async Task TestBlockedRequestIp(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url)
         {
             var agent = await RunOnSelfHosted(enableSecurity);
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         [SkippableTheory]
         [InlineData("blocking-ips-oneclick", true, HttpStatusCode.Forbidden, "/")]
         [Trait("RunOnWindows", "True")]
-        public async Task TestBlockedRequestIpWithOneClickActivation(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
+        public async Task TestBlockedRequestIpWithOneClickActivation(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url)
         {
             var agent = await RunOnSelfHosted(enableSecurity);
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);

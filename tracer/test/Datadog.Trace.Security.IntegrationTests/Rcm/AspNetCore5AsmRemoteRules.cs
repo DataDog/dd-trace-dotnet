@@ -13,16 +13,17 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Security.IntegrationTests.Rcm;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.Security.IntegrationTests
+namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
-    public class AspNetCore5AsmRemoteRules : AspNetBase
+    public class AspNetCore5AsmRemoteRules : RcmBase
     {
         public AspNetCore5AsmRemoteRules(ITestOutputHelper outputHelper)
-            : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5AsmRemoteRules))
+            : base(outputHelper, testName: nameof(AspNetCore5AsmRemoteRules))
         {
         }
 
@@ -30,18 +31,19 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestNewRemoteRules()
         {
-            SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "500");
             var url = "/Health/?[$slice]=value";
             var agent = await RunOnSelfHosted(true);
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            var testStart = DateTime.UtcNow;
 
             var spans1 = await SendRequestsAsync(agent, url);
 
             await agent.SetupRcmAndWait(Output, new[] { ((object)GetRules("2.22.222"), "1") }, "ASM_DD");
+            await logEntryWatcher.WaitForLogEntry(WafUpdateRule(), LogEntryWatcherTimeout);
             var spans2 = await SendRequestsAsync(agent, url);
 
             await agent.SetupRcmAndWait(Output, new[] { ((object)GetRules("3.33.333"), "2") }, "ASM_DD");
+            await logEntryWatcher.WaitForLogEntry(WafUpdateRule(), LogEntryWatcherTimeout);
             var spans3 = await SendRequestsAsync(agent, url);
 
             var spans = new List<MockSpan>();

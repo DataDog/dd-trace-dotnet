@@ -26,7 +26,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData(AddressesConstants.RequestPathParams, true, HttpStatusCode.OK, "/params-endpoint/appscan_fingerprint")]
         [InlineData(AddressesConstants.RequestPathParams, false, HttpStatusCode.OK, "/params-endpoint/appscan_fingerprint")]
         [Trait("RunOnWindows", "True")]
-        public async Task TestPathParamsEndpointRouting(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
+        public async Task TestPathParamsEndpointRouting(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url)
         {
             var agent = await RunOnSelfHosted(enableSecurity);
 
