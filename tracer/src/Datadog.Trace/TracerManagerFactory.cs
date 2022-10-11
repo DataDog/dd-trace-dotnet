@@ -188,8 +188,7 @@ namespace Datadog.Trace
                 return null;
             }
 
-            var rules = SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules);
-            return new SpanSampler(rules);
+            return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules));
         }
 
         protected virtual IAgentWriter GetAgentWriter(ImmutableTracerSettings settings, IDogStatsd statsd, ITraceSampler sampler, IDiscoveryService discoveryService)
