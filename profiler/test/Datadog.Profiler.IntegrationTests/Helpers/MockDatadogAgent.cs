@@ -229,13 +229,9 @@ namespace Datadog.Profiler.IntegrationTests
 
                 var buffer = new byte[1 << 32];
 
-                // _nbTime == 1 ==> no data. This can be the native part checking the existence of the pipe
-                if (_nbTime != 1)
-                {
-                    await ss.ReadAsync(buffer, cancellationToken);
-                    await ss.WriteAsync(_responseBytes, cancellationToken);
-                    NbCallsOnProfilingEndpoint++;
-                }
+                await ss.ReadAsync(buffer, cancellationToken);
+                await ss.WriteAsync(_responseBytes, cancellationToken);
+                NbCallsOnProfilingEndpoint++;
             }
         }
 
