@@ -53,6 +53,11 @@ namespace PrepareRelease
             return Regex.Replace(text, VersionPattern(fourPartVersion: true), FourPartVersionString(), RegexOptions.Singleline);
         }
 
+        private string ThreePartSemVerReplace(string text)
+        {
+            return Regex.Replace(text, VersionPattern(), VersionString(), RegexOptions.Singleline);
+        }
+
         private string FullVersionReplace(string text, string split, string prefix = "")
         {
             return Regex.Replace(text, prefix + VersionPattern(split), prefix + VersionString(split), RegexOptions.Singleline);
@@ -283,7 +288,8 @@ namespace PrepareRelease
                 // Four-part AssemblyVersion update
                 SynchronizeVersion(
                     "src/Datadog.Trace/TracerConstants.cs",
-                    FourPartVersionReplace);
+                    // upgrading four part, then three part *seems* safe
+                    text => ThreePartSemVerReplace(FourPartVersionReplace(text)));
 
                 // Top-level CMakeLists.txt
                 SynchronizeVersion(
