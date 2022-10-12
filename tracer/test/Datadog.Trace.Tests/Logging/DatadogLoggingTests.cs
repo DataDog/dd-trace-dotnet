@@ -214,7 +214,7 @@ namespace Datadog.Trace.Tests.Logging
 
             for (int i = 0; i < 3; i++)
             {
-                var logPath = Path.Combine(tempLogsDir, $"test-log-{i}.log");
+                var logPath = Path.Combine(tempLogsDir, $"dotnet-tracer-{i}.log");
                 File.Create(logPath).Dispose();
                 // Updates LastWriteTime for non 0 indexes files
                 File.SetLastWriteTime(logPath, DateTime.Now.AddDays(-31 * i));

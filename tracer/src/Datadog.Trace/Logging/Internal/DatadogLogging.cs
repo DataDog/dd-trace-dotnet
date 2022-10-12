@@ -54,11 +54,19 @@ namespace Datadog.Trace.Logging
                 try
                 {
                     logDirectory = GetLogDirectory();
-                    CleanLogFiles(logDirectory);
                 }
                 catch
                 {
                     // Do nothing when an exception is thrown for attempting to access the filesystem
+                }
+
+                try
+                {
+                    CleanLogFiles(logDirectory);
+                }
+                catch
+                {
+                    // Do nothing when an exception is thrown for attempting to access the filesystem;
                 }
 
                 // ReSharper disable once ConditionIsAlwaysTrueOrFalse
@@ -212,25 +220,20 @@ namespace Datadog.Trace.Logging
 
         internal static void CleanLogFiles(string logsDirectory)
         {
-            DirectoryInfo logsDirInfo = new DirectoryInfo(logsDirectory);
-            FileInfo[] logFiles = logsDirInfo.GetFiles().OrderBy(p => p.LastWriteTime).ToArray();
+            var date = DateTime.Now.AddDays(-31);
 
-            for (int i = 0; i < logFiles.Length; i++)
+            foreach (var logFile in Directory.EnumerateFiles(logsDirectory, "dotnet-tracer-*"))
             {
-                if ((DateTime.Now - logFiles[i].LastWriteTime).TotalDays >= 31)
+                if (File.GetLastWriteTime(logFile) < date)
                 {
                     try
                     {
-                        logFiles[i].Delete();
+                        File.Delete(logFile);
                     }
                     catch
                     {
                         // Do nothing when an exception is thrown for attempting to delete the filesystem
                     }
-                }
-                else
-                {
-                    break;
                 }
             }
         }
