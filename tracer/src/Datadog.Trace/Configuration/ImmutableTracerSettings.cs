@@ -158,7 +158,7 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating the span sampling rules.
         /// </summary>
         /// <seealso cref="ConfigurationKeys.SpanSamplingRules"/>
-        public string SpanSamplingRules { get; }
+        internal string SpanSamplingRules { get; }
 
         /// <summary>
         /// Gets a value indicating a global rate for sampling.
