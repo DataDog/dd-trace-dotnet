@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -19,6 +20,8 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
     internal class RemoteConfigurationApi : IRemoteConfigurationApi
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemoteConfigurationApi));
+        private static readonly FileStream Stream = File.OpenWrite(@"c:\code\rcm.log");
+        private static readonly StreamWriter LogWriter = new StreamWriter(Stream);
 
         private readonly IApiRequestFactory _apiRequestFactory;
         private string _configEndpoint = null;
@@ -51,6 +54,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
             var apiRequest = _apiRequestFactory.Create(uri);
 
             var requestContent = JsonConvert.SerializeObject(request);
+            LogWriter.WriteLine(requestContent);
             var bytes = Encoding.UTF8.GetBytes(requestContent);
             var payload = new ArraySegment<byte>(bytes);
 
@@ -62,15 +66,18 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
                 return null;
             }
 
+            var content = await apiResponse.ReadAsStringAsync().ConfigureAwait(false);
+            LogWriter.WriteLine(content);
+            LogWriter.Flush();
+            Stream.Flush();
+
             if (apiResponse.StatusCode is not (>= 200 and <= 299))
             {
-                var content = await apiResponse.ReadAsStringAsync().ConfigureAwait(false);
                 Log.Warning<int, string>("Failed to receive remote configurations {StatusCode} and message: {ResponseContent}", apiResponse.StatusCode, content);
-
                 return null;
             }
 
-            return await apiResponse.ReadAsTypeAsync<GetRcmResponse>().ConfigureAwait(false);
+            return JsonConvert.DeserializeObject<GetRcmResponse>(content);
         }
     }
 }
