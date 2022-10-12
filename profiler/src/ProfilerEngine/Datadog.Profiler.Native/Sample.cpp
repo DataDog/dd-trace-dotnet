@@ -15,10 +15,9 @@ const std::string Sample::ExceptionMessageLabel = "exception message";
 const std::string Sample::AllocationClassLabel = "allocation class";
 
 
+// TODO: update the values vector size if more than 16 slots are needed
 size_t Sample::ValuesCount = 16;  // should be set BEFORE any sample gets created
 
-
-//s
 
 Sample::Sample(uint64_t timestamp, std::string_view runtimeId, size_t framesCount) :
     Sample(runtimeId)
@@ -29,14 +28,10 @@ Sample::Sample(uint64_t timestamp, std::string_view runtimeId, size_t framesCoun
 }
 
 Sample::Sample(std::string_view runtimeId)
+    :
+    _values(ValuesCount)
 {
     _timestamp = 0;
-    _values.reserve(ValuesCount);
-    for (size_t i = 0; i < ValuesCount; i++)
-    {
-        _values.push_back(0);
-    }
-
     _labels = {};
     _callstack = {};
     _runtimeId = runtimeId;
