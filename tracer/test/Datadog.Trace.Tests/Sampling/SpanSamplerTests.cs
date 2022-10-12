@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
 using FluentAssertions;
@@ -82,7 +83,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void NoRules_ShouldNot_TagSpan()
         {
-            var sampler = new SpanSampler(new List<SpanSamplingRule>());
+            var sampler = new SpanSampler(Enumerable.Empty<ISpanSamplingRule>());
             var span = new Span(new SpanContext(5, 6, null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
             sampler.MakeSamplingDecision(span);

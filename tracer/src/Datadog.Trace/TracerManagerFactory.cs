@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Agent;
@@ -184,8 +185,7 @@ namespace Datadog.Trace
         {
             if (string.IsNullOrWhiteSpace(settings.SpanSamplingRules))
             {
-                // TODO should this be null?
-                return null;
+                return new SpanSampler(Enumerable.Empty<ISpanSamplingRule>());
             }
 
             return new SpanSampler(SpanSamplingRule.BuildFromConfigurationString(settings.SpanSamplingRules));
