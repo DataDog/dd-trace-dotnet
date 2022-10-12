@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Sampling
@@ -21,7 +22,7 @@ namespace Datadog.Trace.Tests.Sampling
         public void Constructor_ShouldThrow_WhenNullRulesGiven()
         {
             var exception = Assert.Throws<ArgumentNullException>(() => new SpanSampler(null));
-            Assert.Equal("rules", exception.ParamName);
+            exception.ParamName.Should().Be("rules");
         }
 
         [Fact]
@@ -35,9 +36,9 @@ namespace Datadog.Trace.Tests.Sampling
 
             sampler.MakeSamplingDecision(span);
 
-            Assert.Null(span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate));
-            Assert.Null(span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond));
-            Assert.Null(span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism));
+            span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().BeNull();
+            span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().BeNull();
+            span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism).Should().BeNull();
         }
 
         [Fact]
@@ -54,9 +55,9 @@ namespace Datadog.Trace.Tests.Sampling
 
             sampler.MakeSamplingDecision(span);
 
-            Assert.Equal(expectedRuleRate.ToString(), span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate));
-            Assert.Equal(expectedMaxPerSecond.ToString(), span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond));
-            Assert.Equal(expectedSamplingMechanism.ToString(), span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism));
+            span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().Be(expectedRuleRate.ToString());
+            span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().Be(expectedMaxPerSecond.ToString());
+            span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism).Should().Be(expectedSamplingMechanism.ToString());
         }
 
         [Fact]
@@ -73,9 +74,9 @@ namespace Datadog.Trace.Tests.Sampling
 
             sampler.MakeSamplingDecision(span);
 
-            Assert.Equal(expectedRuleRate.ToString(), span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate));
-            Assert.Equal(expectedMaxPerSecond.ToString(), span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond));
-            Assert.Equal(expectedSamplingMechanism.ToString(), span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism));
+            span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().Be(expectedRuleRate.ToString());
+            span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().Be(expectedMaxPerSecond.ToString());
+            span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism).Should().Be(expectedSamplingMechanism.ToString());
         }
 
         [Fact]
@@ -86,9 +87,9 @@ namespace Datadog.Trace.Tests.Sampling
 
             sampler.MakeSamplingDecision(span);
 
-            Assert.Null(span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate));
-            Assert.Null(span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond));
-            Assert.Null(span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism));
+            span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().BeNull();
+            span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().BeNull();
+            span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism).Should().BeNull();
         }
 
         [Fact]
@@ -103,9 +104,9 @@ namespace Datadog.Trace.Tests.Sampling
 
             sampler.MakeSamplingDecision(span);
 
-            Assert.Equal(expectedRuleRate.ToString(), span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate));
-            Assert.Null(span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond));
-            Assert.Equal(expectedSamplingMechanism.ToString(), span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism));
+            span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().Be(expectedRuleRate.ToString());
+            span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().BeNull();
+            span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism).Should().Be(expectedSamplingMechanism.ToString());
         }
 
         [Fact]
@@ -121,9 +122,9 @@ namespace Datadog.Trace.Tests.Sampling
 
             sampler.MakeSamplingDecision(span);
 
-            Assert.Equal(expectedRuleRate.ToString(), span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate));
-            Assert.Equal(expectedMaxPerSecond.ToString(), span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond));
-            Assert.Equal(expectedSamplingMechanism.ToString(), span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism));
+            span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().Be(expectedRuleRate.ToString());
+            span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().Be(expectedMaxPerSecond.ToString());
+            span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism).Should().Be(expectedSamplingMechanism.ToString());
         }
 
         [Fact]
@@ -187,18 +188,16 @@ namespace Datadog.Trace.Tests.Sampling
             var autoKeepRateLowerLimit = expectedAutoKeepRate * (1 - acceptableVariancePercent);
             var autoKeepRateUpperLimit = expectedAutoKeepRate * (1 + acceptableVariancePercent);
 
-            Assert.True(
-                autoKeepRate >= autoKeepRateLowerLimit && autoKeepRate <= autoKeepRateUpperLimit,
-                $"Sampling AUTO_KEEP rate expected between {autoKeepRateLowerLimit} and {autoKeepRateUpperLimit}, actual rate is {autoKeepRate}.");
+            var autoKeepRateWithinLimits = autoKeepRate >= autoKeepRateLowerLimit && autoKeepRate <= autoKeepRateUpperLimit;
+            autoKeepRateWithinLimits.Should().BeTrue($"Sampling AUTO_KEEP rate expected between {autoKeepRateLowerLimit} and {autoKeepRateUpperLimit}, actual rate is {autoKeepRate}.");
 
             // USER_KEEP (aka MANUAL_KEEP)
             var userKeepRate = numberOfUserKeep / (float)iterations;
             var userKeepRateLowerLimit = expectedUserKeepRate * (1 - acceptableVariancePercent);
             var userKeepRateUpperLimit = expectedUserKeepRate * (1 + acceptableVariancePercent);
 
-            Assert.True(
-                userKeepRate >= userKeepRateLowerLimit && userKeepRate <= userKeepRateUpperLimit,
-                $"Sampling USER_KEEP rate expected between {userKeepRateLowerLimit} and {userKeepRateUpperLimit}, actual rate is {userKeepRate}.");
+            var userKeepRateWithinLimits = userKeepRate >= userKeepRateLowerLimit && userKeepRate <= userKeepRateUpperLimit;
+            userKeepRateWithinLimits.Should().BeTrue($"Sampling USER_KEEP rate expected between {userKeepRateLowerLimit} and {userKeepRateUpperLimit}, actual rate is {userKeepRate}.");
         }
 
         private Span GetSpan(ulong traceId)

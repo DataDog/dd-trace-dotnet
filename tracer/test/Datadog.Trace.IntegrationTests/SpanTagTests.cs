@@ -6,6 +6,7 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.IntegrationTests
@@ -39,13 +40,13 @@ namespace Datadog.Trace.IntegrationTests
             traceContext.CloseSpan(span);
             traceContext.CloseSpan(span2);
 
-            Assert.Equal(expectedRuleRate, span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate));
-            Assert.Equal(expectedMaxPerSecond, span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond));
-            Assert.Equal(expectedSamplingMechanism, span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism));
+            span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().Be(expectedRuleRate);
+            span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().Be(expectedMaxPerSecond);
+            span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism).Should().Be(expectedSamplingMechanism);
 
-            Assert.Equal(expectedRuleRate, span2.Tags.GetTag(Tags.SingleSpanSampling.RuleRate));
-            Assert.Equal(expectedMaxPerSecond, span2.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond));
-            Assert.Equal(expectedSamplingMechanism, span2.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism));
+            span2.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().Be(expectedRuleRate);
+            span2.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().Be(expectedMaxPerSecond);
+            span2.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism).Should().Be(expectedSamplingMechanism);
         }
 
         [Fact]
@@ -62,13 +63,13 @@ namespace Datadog.Trace.IntegrationTests
             traceContext.CloseSpan(span);
             traceContext.CloseSpan(span2);
 
-            Assert.Null(span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate));
-            Assert.Null(span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond));
-            Assert.Null(span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism));
+            span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().BeNull();
+            span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().BeNull();
+            span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism).Should().BeNull();
 
-            Assert.Null(span2.Tags.GetTag(Tags.SingleSpanSampling.RuleRate));
-            Assert.Null(span2.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond));
-            Assert.Null(span2.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism));
+            span2.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().BeNull();
+            span2.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().BeNull();
+            span2.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism).Should().BeNull();
         }
     }
 }
