@@ -168,7 +168,9 @@ bool CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore);
+                pRuntimeIdStore,
+                _pConfiguration.get()
+                );
             valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
 
@@ -183,7 +185,9 @@ bool CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore);
+                pRuntimeIdStore,
+                _pConfiguration.get()
+                );
             valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
 
