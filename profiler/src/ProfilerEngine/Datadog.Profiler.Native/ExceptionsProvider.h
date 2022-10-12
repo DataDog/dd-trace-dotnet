@@ -9,7 +9,7 @@
 #include "RawExceptionSample.h"
 #include "cor.h"
 #include "corprof.h"
-#include "ExceptionSampler.h"
+#include "GroupSampler.h"
 #include "OsSpecificApi.h"
 #include "StackSnapshotResultReusableBuffer.h"
 
@@ -45,5 +45,5 @@ private:
     bool _loggedMscorlibError;
     std::unordered_map<ClassID, std::string> _exceptionTypes;
     std::mutex _exceptionTypesLock;
-    ExceptionSampler _sampler;
+    GroupSampler<std::string> _sampler;
 };

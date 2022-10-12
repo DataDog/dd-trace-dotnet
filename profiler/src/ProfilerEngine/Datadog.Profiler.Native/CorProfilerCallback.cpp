@@ -147,7 +147,9 @@ bool CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore);
+                pRuntimeIdStore,
+                _pConfiguration.get()
+                );
         }
 
         if (_pConfiguration->IsContentionProfilingEnabled())
@@ -158,7 +160,9 @@ bool CorProfilerCallback::InitializeServices()
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
-                pRuntimeIdStore);
+                pRuntimeIdStore,
+                _pConfiguration.get()
+                );
         }
 
         // TODO: add new CLR events-based providers to the event parser
