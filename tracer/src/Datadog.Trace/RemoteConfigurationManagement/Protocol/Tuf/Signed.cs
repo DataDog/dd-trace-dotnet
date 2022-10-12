@@ -16,6 +16,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf
         [JsonProperty("version")]
         public int Version { get; set; }
 
+        [JsonProperty("custom")]
         public TargetsCustom Custom { get; set; }
     }
 }
