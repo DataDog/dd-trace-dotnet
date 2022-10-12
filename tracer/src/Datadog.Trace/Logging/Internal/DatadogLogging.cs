@@ -6,6 +6,7 @@
 using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
@@ -53,6 +54,7 @@ namespace Datadog.Trace.Logging
                 try
                 {
                     logDirectory = GetLogDirectory();
+                    CleanLogFiles(logDirectory);
                 }
                 catch
                 {
@@ -206,6 +208,31 @@ namespace Datadog.Trace.Logging
             }
 
             return logDirectory;
+        }
+
+        internal static void CleanLogFiles(string logsDirectory)
+        {
+            DirectoryInfo logsDirInfo = new DirectoryInfo(logsDirectory);
+            FileInfo[] logFiles = logsDirInfo.GetFiles().OrderBy(p => p.LastWriteTime).ToArray();
+
+            for (int i = 0; i < logFiles.Length; i++)
+            {
+                if ((DateTime.Now - logFiles[i].LastWriteTime).TotalDays >= 31)
+                {
+                    try
+                    {
+                        logFiles[i].Delete();
+                    }
+                    catch
+                    {
+                        // Do nothing when an exception is thrown for attempting to delete the filesystem
+                    }
+                }
+                else
+                {
+                    break;
+                }
+            }
         }
     }
 }
