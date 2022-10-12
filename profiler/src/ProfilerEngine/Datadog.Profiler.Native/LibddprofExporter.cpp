@@ -41,6 +41,10 @@ std::string const LibddprofExporter::ProcessId = std::to_string(OpSysTools::GetP
 
 int32_t const LibddprofExporter::RequestTimeOutMs = 10000;
 
+std::string const LibddprofExporter::LibraryName = "dd-profiling-dotnet";
+
+std::string const LibddprofExporter::LibraryVersion = PROFILER_VERSION;
+
 std::string const LibddprofExporter::LanguageFamily = "dotnet";
 
 std::string const LibddprofExporter::RequestFileName = "auto.pprof";
@@ -50,11 +54,13 @@ std::string const LibddprofExporter::ProfilePeriodType = "RealTime";
 std::string const LibddprofExporter::ProfilePeriodUnit = "Nanoseconds";
 
 LibddprofExporter::LibddprofExporter(
+    std::vector<SampleValueType>&& sampleTypeDefinitions,
     IConfiguration* configuration,
     IApplicationStore* applicationStore,
     IRuntimeInfo* runtimeInfo,
     IEnabledProfilers* enabledProfilers)
     :
+    _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _locationsAndLinesSize{512},
     _applicationStore{applicationStore}
 {
@@ -87,7 +93,13 @@ LibddprofExporter::~LibddprofExporter()
 
 ddog_ProfileExporter* LibddprofExporter::CreateExporter(const ddog_Vec_tag* tags, ddog_Endpoint endpoint)
 {
-    auto result = ddog_ProfileExporter_new(FfiHelper::StringToCharSlice(LanguageFamily), tags, endpoint);
+    auto result = ddog_ProfileExporter_new(
+        FfiHelper::StringToCharSlice(LibraryName),
+        FfiHelper::StringToCharSlice(LibraryVersion),
+        FfiHelper::StringToCharSlice(LanguageFamily),
+        tags,
+        endpoint);
+
     if (result.tag == DDOG_NEW_PROFILE_EXPORTER_RESULT_OK)
     {
         return result.ok;
@@ -102,9 +114,9 @@ ddog_ProfileExporter* LibddprofExporter::CreateExporter(const ddog_Vec_tag* tags
 struct ddog_Profile* LibddprofExporter::CreateProfile()
 {
     std::vector<ddog_ValueType> samplesTypes;
-    samplesTypes.reserve(sizeof(SampleTypeDefinitions) / sizeof(SampleTypeDefinitions[0]));
+    samplesTypes.reserve(_sampleTypeDefinitions.size());
 
-    for (auto const& type : SampleTypeDefinitions)
+    for (auto const& type : _sampleTypeDefinitions)
     {
         samplesTypes.push_back(FfiHelper::CreateValueType(type.Name, type.Unit));
     }

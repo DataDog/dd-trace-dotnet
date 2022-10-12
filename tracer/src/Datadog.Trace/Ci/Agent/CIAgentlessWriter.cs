@@ -181,14 +181,7 @@ namespace Datadog.Trace.Ci.Agent
             {
                 if (trace.Array is { } array)
                 {
-                    if (array[i].Type == SpanTypes.Test)
-                    {
-                        WriteEvent(new TestEvent(array[i]));
-                    }
-                    else
-                    {
-                        WriteEvent(new SpanEvent(array[i]));
-                    }
+                    WriteEvent(CIVisibilityEventsFactory.FromSpan(array[i]));
                 }
             }
         }

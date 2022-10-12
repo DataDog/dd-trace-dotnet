@@ -2,7 +2,7 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.Profiler.Native.Linux" VERSION 2.16.0)
+project("Datadog.Profiler.Native.Linux" VERSION 2.18.0)
 
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
@@ -18,6 +18,10 @@ message(STATUS "Run Clang Undefined-Behavior Sanitizer: " ${RUN_UBSAN})
 add_compile_options(-std=c++17 -fPIC -fms-extensions)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
+
+if (IS_ALPINE)
+    add_compile_options(-DDD_ALPINE)
+endif()
 
 if (RUN_ASAN)
     add_compile_options(-g -fsanitize=address -fno-omit-frame-pointer)

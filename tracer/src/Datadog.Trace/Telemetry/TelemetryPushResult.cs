@@ -12,6 +12,6 @@ namespace Datadog.Trace.Telemetry
     {
         Success,
         TransientFailure,
-        FatalError
+        FatalError,
     }
 }

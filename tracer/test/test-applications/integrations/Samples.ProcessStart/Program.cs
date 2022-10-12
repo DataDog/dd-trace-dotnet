@@ -25,6 +25,9 @@ namespace Samples.ProcessStart
 
             try
             {
+#if NET5_0_OR_GREATER
+                Debug.Assert(OperatingSystem.IsWindows()); // this overload is only supported on Windows
+#endif
                 Process.Start("nonexisting3.exe", "arg1", "user", new SecureString(), "domain");
             }
             catch (Win32Exception) { }
@@ -32,6 +35,9 @@ namespace Samples.ProcessStart
 
             try
             {
+#if NET5_0_OR_GREATER
+                Debug.Assert(OperatingSystem.IsWindows()); // this overload is only supported on Windows
+#endif
                 Process.Start("nonexisting4.exe", "user", new SecureString(), "domain");
             }
             catch (Win32Exception) { }

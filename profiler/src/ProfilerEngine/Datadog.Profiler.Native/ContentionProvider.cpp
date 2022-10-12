@@ -11,22 +11,48 @@
 #include "OsSpecificApi.h"
 #include "Sample.h"
 
+
+std::vector<SampleValueType> ContentionProvider::SampleTypeDefinitions(
+    {
+        {"lock-count", "count"},
+        {"lock-time", "nanoseconds"}
+    });
+
+
 ContentionProvider::ContentionProvider(
+    uint32_t valueOffset,
     ICorProfilerInfo4* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore)
+    IRuntimeIdStore* pRuntimeIdStore,
+    IConfiguration* pConfiguration)
     :
-    CollectorBase<RawContentionSample>("ContentionProvider", pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
+    CollectorBase<RawContentionSample>("ContentionProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo{pCorProfilerInfo},
-    _pManagedThreadList{pManagedThreadList}
+    _pManagedThreadList{pManagedThreadList},
+    _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval()),
+    _contentionDurationThreshold{pConfiguration->ContentionDurationThreshold()},
+    _sampleLimit{pConfiguration->ContentionSampleLimit()}
 {
 }
 
 void ContentionProvider::OnContention(double contentionDuration)
 {
+    // sample contentions with a duration greater then a threshold (100ms by default)
+    if ((_sampleLimit > 0) && (contentionDuration < _contentionDurationThreshold))
+    {
+        if (!_sampler.Sample())
+        {
+            return;
+        }
+    }
+    else
+    {
+    // TODO: should we call _sampler.Keep() to avoid swamping the profile with contention samples?
+    }
+
     ManagedThreadInfo* threadInfo;
     CALL(_pManagedThreadList->TryGetCurrentThreadInfo(&threadInfo))
 

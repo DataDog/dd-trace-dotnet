@@ -28,7 +28,7 @@ namespace Datadog.Trace.Processors
         {
             for (var i = trace.Offset; i < trace.Count + trace.Offset; i++)
             {
-                trace.Array[i] = Process(trace.Array[i]);
+                trace.Array![i] = Process(trace.Array[i]);
             }
 
             return trace;

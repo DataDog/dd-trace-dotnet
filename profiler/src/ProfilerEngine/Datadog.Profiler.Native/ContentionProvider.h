@@ -6,6 +6,7 @@
 
 #include "IContentionListener.h"
 #include "RawContentionSample.h"
+#include "GenericSampler.h"
 
 class IManagedThreadList;
 class IFrameStore;
@@ -17,17 +18,25 @@ class IRuntimeIdStore;
 class ContentionProvider : public CollectorBase<RawContentionSample>, public IContentionListener
 {
 public:
+    static std::vector<SampleValueType> SampleTypeDefinitions;
+
+public:
     ContentionProvider(
+        uint32_t valueOffset,
         ICorProfilerInfo4* pCorProfilerInfo,
         IManagedThreadList* pManagedThreadList,
         IFrameStore* pFrameStore,
         IThreadsCpuManager* pThreadsCpuManager,
         IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore);
+        IRuntimeIdStore* pRuntimeIdStore,
+        IConfiguration* pConfiguration);
 
     void OnContention(double contentionDuration) override;
 
 private:
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
+    GenericSampler _sampler;
+    int32_t _contentionDurationThreshold;
+    int32_t _sampleLimit;
 };

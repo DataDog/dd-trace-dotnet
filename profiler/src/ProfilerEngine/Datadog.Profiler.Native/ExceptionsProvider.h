@@ -9,7 +9,7 @@
 #include "RawExceptionSample.h"
 #include "cor.h"
 #include "corprof.h"
-#include "ExceptionSampler.h"
+#include "GroupSampler.h"
 #include "OsSpecificApi.h"
 #include "StackSnapshotResultReusableBuffer.h"
 
@@ -17,7 +17,11 @@ class ExceptionsProvider
     : public CollectorBase<RawExceptionSample>
 {
 public:
+    static std::vector<SampleValueType> SampleTypeDefinitions;
+
+public:
     ExceptionsProvider(
+        uint32_t valueOffset,
         ICorProfilerInfo4* pCorProfilerInfo,
         IManagedThreadList* pManagedThreadList,
         IFrameStore* pFrameStore,
@@ -45,5 +49,5 @@ private:
     bool _loggedMscorlibError;
     std::unordered_map<ClassID, std::string> _exceptionTypes;
     std::mutex _exceptionTypesLock;
-    ExceptionSampler _sampler;
+    GroupSampler<std::string> _sampler;
 };

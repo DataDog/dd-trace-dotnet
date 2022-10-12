@@ -509,10 +509,17 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Configuration key for sending telemetry direct to telemetry intake. If enabled, and
-            /// <see cref="ConfigurationKeys.ApiKey"/> is set, sends telemetry direct to intake. Otherwise, sends
-            /// telemetry to Agent. Enabled by default if <see cref="ConfigurationKeys.ApiKey"/> is available.
+            /// <see cref="ConfigurationKeys.ApiKey"/> is set, sends telemetry direct to intake if agent is not
+            /// available. Enabled by default if <see cref="ConfigurationKeys.ApiKey"/> is available.
             /// </summary>
             public const string AgentlessEnabled = "DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED";
+
+            /// <summary>
+            /// Configuration key for sending telemetry via agent proxy. If enabled, sends telemetry
+            /// via agent proxy. Enabled by default. If disabled, or agent is not available, telemetry
+            /// is sent to agentless endpoint, based on <see cref="AgentlessEnabled"/> setting.
+            /// </summary>
+            public const string AgentProxyEnabled = "DD_INSTRUMENTATION_TELEMETRY_AGENT_PROXY_ENABLED";
 
             /// <summary>
             /// Configuration key for the telemetry URL where the Tracer sends telemetry. Only applies when agentless

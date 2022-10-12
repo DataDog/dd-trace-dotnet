@@ -15,8 +15,6 @@ namespace Datadog.Trace.DataStreamsMonitoring;
 /// </summary>
 internal class DataStreamsContextPropagator
 {
-    private const string PropagationKey = "dd-pathway-ctx";
-
     public static DataStreamsContextPropagator Instance { get; } = new();
 
     /// <summary>
@@ -31,7 +29,7 @@ internal class DataStreamsContextPropagator
     {
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
-        headers.Add(PropagationKey, PathwayContextEncoder.Encode(context));
+        headers.Add(DataStreamsPropagationHeaders.PropagationKey, PathwayContextEncoder.Encode(context));
     }
 
     /// <summary>
@@ -45,7 +43,7 @@ internal class DataStreamsContextPropagator
     {
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
-        var bytes = headers.TryGetBytes(PropagationKey);
+        var bytes = headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKey);
 
         return bytes is { } ? PathwayContextEncoder.Decode(bytes) : null;
     }

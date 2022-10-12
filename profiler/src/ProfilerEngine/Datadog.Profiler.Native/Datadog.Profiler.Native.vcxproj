@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props')" />
+  <Import Project="..\..\..\..\packages\libdatadog.0.9.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.0.9.0\build\native\libdatadog.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -238,6 +238,8 @@
     <ClInclude Include="EnumHelpers.h" />
     <ClInclude Include="COMHelpers.h" />
     <ClInclude Include="ContentionProvider.h" />
+    <ClInclude Include="GenericSampler.h" />
+    <ClInclude Include="GroupSampler.h" />
     <ClInclude Include="IAllocationsListener.h" />
     <ClInclude Include="AllocationsProvider.h" />
     <ClInclude Include="AppDomainStore.h" />
@@ -254,7 +256,6 @@
     <ClInclude Include="DogFood.hpp" />
     <ClInclude Include="DogstatsdService.h" />
     <ClInclude Include="EnvironmentVariables.h" />
-    <ClInclude Include="ExceptionSampler.h" />
     <ClInclude Include="ExceptionsProvider.h" />
     <ClInclude Include="FfiHelper.h" />
     <ClInclude Include="FrameStore.h" />
@@ -327,10 +328,10 @@
     <ClCompile Include="CpuTimeProvider.cpp" />
     <ClCompile Include="DogstatsdService.cpp" />
     <ClCompile Include="EnabledProfilers.cpp" />
-    <ClCompile Include="ExceptionSampler.cpp" />
     <ClCompile Include="ExceptionsProvider.cpp" />
     <ClCompile Include="FfiHelper.cpp" />
     <ClCompile Include="FrameStore.cpp" />
+    <ClCompile Include="GenericSampler.cpp" />
     <ClCompile Include="HResultConverter.cpp" />
     <ClCompile Include="IMetricsSenderFactory.cpp" />
     <ClCompile Include="ManagedThreadInfo.cpp" />
@@ -367,6 +368,6 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.0.8.0\build\native\libdatadog.props'))" />
+    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.0.9.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.0.9.0\build\native\libdatadog.props'))" />
   </Target>
 </Project>

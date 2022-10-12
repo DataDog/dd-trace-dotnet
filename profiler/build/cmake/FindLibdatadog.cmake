@@ -1,6 +1,6 @@
 include(ExternalProject)
 
-set(LIBDATADOG_VERSION "v0.8.0" CACHE STRING "libdatadog version")
+set(LIBDATADOG_VERSION "v0.9.0" CACHE STRING "libdatadog version")
 
 if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
    set(LIBDATADOG_BASE_DIR ${CMAKE_CURRENT_BINARY_DIR}/libdatadog-${LIBATADOG_VERSION}/src/libdatadog-build/libdatadog/libdatadog-${CMAKE_SYSTEM_PROCESSOR}-alpine-linux-musl)
@@ -10,15 +10,15 @@ endif()
 
 if (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64)
   if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
-    set(SHA256_LIBDATADOG "68919ddf9bc6491927bf16fb819b18fd052209d77774097b57f7879ebafc9bdf" CACHE STRING "libdatadog sha256")
+    set(SHA256_LIBDATADOG "a094bae08153b521d467435e3ef5364d3099e4b8aac1291a16c70c51ccc2f171" CACHE STRING "libdatadog sha256")
   else()
-    set(SHA256_LIBDATADOG "9c6dd7058c7d0c9af8ffe18b4565fcda08462debc81f60ce0eb87aa5f7b74a0b" CACHE STRING "libdatadog sha256")
+    set(SHA256_LIBDATADOG "9e55e8917521edf57c28bc2dad363bcc0a68570380480244f898714e31f356fb" CACHE STRING "libdatadog sha256")
   endif()
 else()
   if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
-    set(SHA256_LIBDATADOG "e410300255d93f016562e7e072dcb09f94d0550ff3e289f97fff4cd155a4d3a4" CACHE STRING "libdatadog sha256")
+    set(SHA256_LIBDATADOG "15e6d94208b94ff5f0e757310c8de372da67099e982d6ebd5cc88fdf8d9c2756" CACHE STRING "libdatadog sha256")
   else()
-    set(SHA256_LIBDATADOG "94f52edaed31f8c2a25cd569b0b065f8bb221120706d57ef2ca592b0512333f2" CACHE STRING "libdatadog sha256")
+    set(SHA256_LIBDATADOG "277d638d7e1cd9c6724ba3094fab5ce0e3a87a2c26b1cf0a89a86ae2a7f1ddc8" CACHE STRING "libdatadog sha256")
   endif()
 endif()
 

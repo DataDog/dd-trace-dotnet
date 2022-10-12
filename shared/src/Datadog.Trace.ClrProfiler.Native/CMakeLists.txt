@@ -5,7 +5,7 @@ cmake_policy(SET CMP0015 NEW)
 # Project definition
 # ******************************************************
 
-project("Datadog.Trace.ClrProfiler.Native" VERSION 2.16.0)
+project("Datadog.Trace.ClrProfiler.Native" VERSION 2.18.0)
 
 # ******************************************************
 # Environment detection
@@ -95,15 +95,15 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 
 include(ExternalProject)
 set(EXTERNAL_INSTALL_LOCATION ${OUTPUT_DEPS_DIR}/fmt/)
+set(fmt_GIT_REPO https://github.com/DataDog/fmt.git)
+set(fmt_GIT_TAG 5.3.0)
 ExternalProject_Add(fmt
-        GIT_REPOSITORY https://github.com/DataDog/fmt.git
-        GIT_TAG 5.3.0
-        GIT_CONFIG advice.detachedHead=false
-        TIMEOUT 5
-        CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0
-        PREFIX "${EXTERNAL_INSTALL_LOCATION}"
-        INSTALL_COMMAND ""
-        )
+    DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch "${fmt_GIT_TAG}" --config advice.detachedHead=false "${fmt_GIT_REPO}"
+    TIMEOUT 5
+    CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0
+    PREFIX "${EXTERNAL_INSTALL_LOCATION}"
+    INSTALL_COMMAND ""
+)
 ExternalProject_Get_Property(fmt source_dir)
 set(fmt_INCLUDE_DIR ${source_dir}/include)
 

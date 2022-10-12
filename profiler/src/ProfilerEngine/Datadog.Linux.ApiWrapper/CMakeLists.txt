@@ -12,6 +12,10 @@ project("Datadog.Linux.ApiWrapper" VERSION 1.0.0)
 add_compile_options(-std=c11 -fPIC) 
 
 
+if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
+    add_compile_options(-DDD_ALPINE)
+endif()
+
 # ******************************************************
 # Environment detection
 # ******************************************************

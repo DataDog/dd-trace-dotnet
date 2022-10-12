@@ -5,6 +5,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Processors;
@@ -53,6 +54,8 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
         public int Serialize(ref byte[] bytes, int offset, Span value, IFormatterResolver formatterResolver)
         {
             var context = value.Context;
+            var testModuleTags = value.Tags as TestModuleSpanTags;
+            var testSuiteTags = value.Tags as TestSuiteSpanTags;
 
             // First, pack array length (or map length).
             // It should be the number of members of the object to be serialized.
@@ -63,17 +66,39 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
                 len++;
             }
 
-            len += 2; // Tags and metrics
+            if (testModuleTags is not null)
+            {
+                // we need to add ModuleId value to the root
+                len++;
+            }
 
-            int originalOffset = offset;
+            if (testSuiteTags is not null)
+            {
+                // we need to add SuiteId value to the root
+                len++;
+            }
+
+            var isSpan = false;
+            if (value.Type is not (SpanTypes.TestSuite or SpanTypes.TestModule or SpanTypes.TestSession))
+            {
+                // we need to add TraceId and SpanId
+                len++;
+                len++;
+                isSpan = true;
+            }
+
+            var originalOffset = offset;
 
             offset += MessagePackBinary.WriteMapHeader(ref bytes, offset, len);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdBytes);
-            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.TraceId);
+            if (isSpan)
+            {
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _traceIdBytes);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.TraceId);
 
-            offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
-            offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _spanIdBytes);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.SpanId);
+            }
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _nameBytes);
             offset += MessagePackBinary.WriteString(ref bytes, offset, value.OperationName);
@@ -97,6 +122,18 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             {
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _parentIdBytes);
                 offset += MessagePackBinary.WriteUInt64(ref bytes, offset, context.ParentId.Value);
+            }
+
+            if (testSuiteTags is not null)
+            {
+                offset += MessagePackBinary.WriteString(ref bytes, offset, TestSuiteVisibilityTags.TestSuiteId);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, testSuiteTags.SuiteId);
+            }
+
+            if (testModuleTags is not null)
+            {
+                offset += MessagePackBinary.WriteString(ref bytes, offset, TestSuiteVisibilityTags.TestModuleId);
+                offset += MessagePackBinary.WriteUInt64(ref bytes, offset, testModuleTags.ModuleId);
             }
 
             offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _errorBytes);

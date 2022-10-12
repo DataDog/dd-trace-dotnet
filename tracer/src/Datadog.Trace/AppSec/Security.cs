@@ -520,6 +520,7 @@ namespace Datadog.Trace.AppSec
                 var transport = args.Transport;
                 var additiveContext = GetOrCreateContext(transport);
                 additiveContext.Dispose();
+
                 throw new BlockException();
             }
         }
@@ -548,7 +549,7 @@ namespace Datadog.Trace.AppSec
                 using var wafResult = additiveContext.Run(e.EventData, _settings.WafTimeoutMicroSeconds);
                 if (wafResult.ReturnCode is ReturnCode.Match or ReturnCode.Block)
                 {
-                    var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock") || wafResult.Actions.Contains("block");
+                    var block = wafResult.Actions.Contains("block");
                     if (block)
                     {
                         e.Transport.WriteBlockedResponse(_settings.BlockedJsonTemplate, _settings.BlockedHtmlTemplate, CanAccessHeaders());

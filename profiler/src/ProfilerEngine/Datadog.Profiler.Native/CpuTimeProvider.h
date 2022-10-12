@@ -18,7 +18,11 @@ class CpuTimeProvider
     public CollectorBase<RawCpuSample> // accepts cputime samples
 {
 public:
+    static std::vector<SampleValueType> SampleTypeDefinitions;
+
+public:
     CpuTimeProvider(
+        uint32_t valueOffset,
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAssemblyStore,

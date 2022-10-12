@@ -12,7 +12,7 @@ public class TestHeadersCollection : IBinaryHeadersCollection
 {
     public Dictionary<string, byte[]> Values { get; } = new();
 
-    public byte[] TryGetBytes(string name)
+    public byte[] TryGetLastBytes(string name)
         => Values.TryGetValue(name, out var value) ? value : null;
 
     public void Add(string name, byte[] value)

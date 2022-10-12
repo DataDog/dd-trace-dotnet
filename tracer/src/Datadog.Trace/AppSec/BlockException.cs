@@ -27,5 +27,8 @@ namespace Datadog.Trace.AppSec
             : base(info, context)
         {
         }
+
+        // can give a significant performance boost, this exception is currently caught and logged by the host web server
+        public override string ToString() => "BlockException";
     }
 }
