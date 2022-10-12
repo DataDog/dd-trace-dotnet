@@ -185,8 +185,6 @@ namespace Datadog.Trace.Tests.Sampling
             RunSamplerTest(sampler, 500, expectedAutoKeepRate: 0.5f, expectedUserKeepRate: 0.5f, acceptableVariancePercent: 0.1f);
         }
 
-        // TODO rate limiter test? didn't seem to be reliable though
-
         /// <summary>
         /// Copied from <see cref="TraceSamplerTests.RunSamplerTest(ITraceSampler, int, float, float, float)"/>
         /// </summary>
