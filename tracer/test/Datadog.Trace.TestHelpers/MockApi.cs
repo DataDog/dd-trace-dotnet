@@ -1,4 +1,4 @@
-// <copyright file="TestApi.cs" company="Datadog">
+// <copyright file="MockApi.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,12 +9,13 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
-using Datadog.Trace.TestHelpers;
-using MessagePack; // use nuget MessagePack to deserialize
+using MessagePack;
 
-namespace Datadog.Trace.IntegrationTests
+// use nuget MessagePack to deserialize
+
+namespace Datadog.Trace.TestHelpers
 {
-    internal class TestApi : IApi
+    internal class MockApi : IApi
     {
         private readonly ManualResetEventSlim _resetEvent = new();
         private List<List<MockSpan>> _objects = null;

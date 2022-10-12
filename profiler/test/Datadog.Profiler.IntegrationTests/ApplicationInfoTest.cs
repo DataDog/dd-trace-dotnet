@@ -11,7 +11,6 @@ using System.Text.RegularExpressions;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.SmokeTests;
 using FluentAssertions;
-using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests
@@ -63,17 +62,31 @@ namespace Datadog.Profiler.IntegrationTests
                 text = reader.ReadToEnd();
             }
 
+            /*
+             we want to extract the "tags_profiler" attribute from the http body. The format is as followed:
+             {
+                 "start":"<START DATE>",
+                 "end":"<END DATE>",
+                 "attachments":["<ATTACHMENT1>", "<ATTACHMENT2>"],
+                 "tags_profiler":"<PROFILER TAGS>",
+                 "family":"<FAMILY>",
+                 "version":"4"
+             }
+             <PROFILER TAGS> is a list of tag (2 strings separated by ':') separated by ','
+             */
+            var match_tags = Regex.Match(text, "\"tags_profiler\":\"(?<tags>[^\"]*)\"", RegexOptions.Compiled);
+
+            if (!match_tags.Success || string.IsNullOrWhiteSpace(match_tags.Groups["tags"].Value))
+            {
+                return (ServiceName: null, Environment: null, Version: null);
+            }
+
+            var tags = match_tags.Groups["tags"].Value.Split(',').Select(s => s.Split(':')).ToDictionary(s => s[0], s => s[1]);
+
             return (
-                ServiceName: ExtractTag("service", text),
-                Environment: ExtractTag("env", text),
-                Version: ExtractTag("version", text));
-        }
-
-        private static string ExtractTag(string tagName, string input)
-        {
-            var match = Regex.Match(input, $"^{tagName}:(?<tag>[A-Z0-9-]+)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
-
-            return match.Success ? match.Groups["tag"].Value : null;
+                ServiceName: tags.GetValueOrDefault("service"),
+                Environment: tags.GetValueOrDefault("env"),
+                Version: tags.GetValueOrDefault("version"));
         }
     }
 }

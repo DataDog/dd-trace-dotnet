@@ -116,7 +116,7 @@ namespace Samples.AWS.SQS
                 { "x-datadog-7", new MessageAttributeValue(){ DataType = "String", StringValue = "value7" } },
                 { "x-datadog-8", new MessageAttributeValue(){ DataType = "String", StringValue = "value8" } },
                 { "x-datadog-9", new MessageAttributeValue(){ DataType = "String", StringValue = "value9" } },
-                { "x-datadog-10", new MessageAttributeValue(){ DataType = "String", StringValue = "value10" } },
+                { "dd-pathway-ctx", new MessageAttributeValue(){ DataType = "String", StringValue = "value10" } },
             };
 
             // Send one message, receive it, and parse it for its headers

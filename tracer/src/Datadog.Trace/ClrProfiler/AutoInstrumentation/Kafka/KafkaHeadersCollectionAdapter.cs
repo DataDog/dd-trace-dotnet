@@ -56,7 +56,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             _headers.Remove(name);
         }
 
-        public byte[] TryGetBytes(string name)
+        public byte[] TryGetLastBytes(string name)
         {
             return _headers.TryGetLastBytes(name, out var bytes) ? bytes : null;
         }

@@ -30,7 +30,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData("discovery.scans", true, HttpStatusCode.NotFound, "/Health/login.php")]
         [InlineData("discovery.scans", false, HttpStatusCode.OK, "/Health/login.php")]
         [Trait("RunOnWindows", "True")]
-        public async Task TestRequest(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
+        public async Task TestRequest(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url)
         {
             var agent = await RunOnSelfHosted(enableSecurity);
 
@@ -43,7 +43,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData("blocking", true, HttpStatusCode.Forbidden, "/")]
         [InlineData("blocking", false, HttpStatusCode.OK, "/")]
         [Trait("RunOnWindows", "True")]
-        public async Task TestBlockedRequest(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url = DefaultAttackUrl)
+        public async Task TestBlockedRequest(string test, bool enableSecurity, HttpStatusCode expectedStatusCode, string url)
         {
             var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: DefaultRuleFile);
 
