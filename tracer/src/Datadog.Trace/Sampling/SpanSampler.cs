@@ -17,7 +17,7 @@ internal class SpanSampler : ISpanSampler
 {
     private static readonly string SamplingMechanismString = SamplingMechanism.SpanSamplingRule.ToString();
 
-    private readonly List<ISpanSamplingRule> _rules = new List<ISpanSamplingRule>();
+    private readonly List<ISpanSamplingRule> _rules;
 
     public SpanSampler(IEnumerable<ISpanSamplingRule> rules)
     {
