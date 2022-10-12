@@ -6,6 +6,7 @@
 using System;
 using System.Linq;
 using Datadog.Trace.Sampling;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.Sampling
@@ -27,8 +28,8 @@ namespace Datadog.Trace.Tests.Sampling
         [InlineData(" ")] // whitespace
         public void Constructor_ShouldThrow_ArgumentException_WhenServiceNameGlob_EmptyOrNull(string serviceNameGlob)
         {
-            var exception = Assert.Throws<ArgumentException>(() => new SpanSamplingRule(serviceNameGlob, "*", 1.0f, null));
-            Assert.Equal("serviceNameGlob", exception.ParamName);
+            var ctor = () => new SpanSamplingRule(serviceNameGlob, "*", 1.0f, null);
+            ctor.Should().Throw<ArgumentException>().WithParameterName("serviceNameGlob");
         }
 
         [Theory]
@@ -37,8 +38,8 @@ namespace Datadog.Trace.Tests.Sampling
         [InlineData(" ")] // whitespace
         public void Constructor_ShouldThrow_ArgumentException_WhenOperationNameGlob_EmptyOrNull(string operationNameGlob)
         {
-            var exception = Assert.Throws<ArgumentException>(() => new SpanSamplingRule("*", operationNameGlob, 1.0f, null));
-            Assert.Equal("operationNameGlob", exception.ParamName);
+            var ctor = () => new SpanSamplingRule("*", operationNameGlob, 1.0f, null);
+            ctor.Should().Throw<ArgumentException>().WithParameterName("operationNameGlob");
         }
 
         [Theory]
@@ -47,8 +48,7 @@ namespace Datadog.Trace.Tests.Sampling
         [InlineData(" ")]
         public void BuildFromConfigurationString_ShouldReturnEmpty_WhenNoConfigGiven(string config)
         {
-            var result = SpanSamplingRule.BuildFromConfigurationString(config);
-            Assert.Empty(result);
+            SpanSamplingRule.BuildFromConfigurationString(config).Should().BeEmpty();
         }
 
         [Theory]
@@ -56,17 +56,14 @@ namespace Datadog.Trace.Tests.Sampling
         [InlineData("[{\"service\":\"shopping-cart*\", \"name\":\"checkou?\", \"max_per_second\":1000.5}]")]
         public void BuildFromConfigurationString_ShouldHandle_MissingOptionals(string config)
         {
-            var result = SpanSamplingRule.BuildFromConfigurationString(config);
-
-            Assert.Single(result);
+            SpanSamplingRule.BuildFromConfigurationString(config).Should().ContainSingle();
         }
 
         [Theory]
         [InlineData("test")]
         public void BuildFromConfigurationString_ShouldHandle_MalformedData(string config)
         {
-            var result = SpanSamplingRule.BuildFromConfigurationString(config);
-            Assert.Empty(result);
+            SpanSamplingRule.BuildFromConfigurationString(config).Should().BeEmpty();
         }
 
         [Fact]
@@ -110,11 +107,11 @@ namespace Datadog.Trace.Tests.Sampling
         public void MatchAll_ShouldMatchAll(string serviceGlob, string operationGlob, bool shouldMatch)
         {
             var rule = new SpanSamplingRule(serviceGlob, operationGlob);
-            Assert.Equal(rule.IsMatch(CartCheckoutSpan), shouldMatch);
-            Assert.Equal(rule.IsMatch(AddToCartSpan), shouldMatch);
-            Assert.Equal(rule.IsMatch(ShippingAuthSpan), shouldMatch);
-            Assert.Equal(rule.IsMatch(ShippingRevertSpan), shouldMatch);
-            Assert.Equal(rule.IsMatch(RequestShippingSpan), shouldMatch);
+            rule.IsMatch(CartCheckoutSpan).Should().Be(shouldMatch);
+            rule.IsMatch(AddToCartSpan).Should().Be(shouldMatch);
+            rule.IsMatch(ShippingAuthSpan).Should().Be(shouldMatch);
+            rule.IsMatch(ShippingRevertSpan).Should().Be(shouldMatch);
+            rule.IsMatch(RequestShippingSpan).Should().Be(shouldMatch);
         }
 
         [Fact]
@@ -122,7 +119,7 @@ namespace Datadog.Trace.Tests.Sampling
         {
             var rule = new SpanSamplingRule("*", "*");
 
-            Assert.False(rule.IsMatch(null));
+            rule.IsMatch(null).Should().BeFalse();
         }
 
         [Fact]
@@ -130,7 +127,7 @@ namespace Datadog.Trace.Tests.Sampling
         {
             var rule = new SpanSamplingRule("*", "*");
 
-            Assert.False(rule.ShouldSample(null));
+            rule.ShouldSample(null).Should().BeFalse();
         }
 
         [Fact]
@@ -139,7 +136,7 @@ namespace Datadog.Trace.Tests.Sampling
             var config = "[{\"service\":\"test\", \"name\":\"test\"}]";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
-            Assert.False(rule.IsMatch(CartCheckoutSpan));
+            rule.IsMatch(CartCheckoutSpan).Should().BeFalse();
         }
 
         [Fact]
@@ -148,7 +145,7 @@ namespace Datadog.Trace.Tests.Sampling
             var config = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":0.0}]";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
-            Assert.False(rule.ShouldSample(CartCheckoutSpan));
+            rule.ShouldSample(CartCheckoutSpan).Should().BeFalse();
         }
 
         [Fact]
@@ -157,8 +154,8 @@ namespace Datadog.Trace.Tests.Sampling
             var config = "[{\"service\":\"*\", \"name\":\"*\"}]";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
-            Assert.True(rule.IsMatch(CartCheckoutSpan));
-            Assert.True(rule.ShouldSample(CartCheckoutSpan));
+            rule.IsMatch(CartCheckoutSpan).Should().BeTrue();
+            rule.ShouldSample(CartCheckoutSpan).Should().BeTrue();
         }
 
         [Fact]
@@ -167,7 +164,7 @@ namespace Datadog.Trace.Tests.Sampling
             var config = "[{\"service\":\"*\", \"name\":\"*\"}]";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
-            Assert.Null(rule.MaxPerSecond);
+            rule.MaxPerSecond.Should().BeNull();
         }
 
         [Fact]
@@ -176,7 +173,7 @@ namespace Datadog.Trace.Tests.Sampling
             var config = "[{\"service\":\"*\", \"name\":\"*\"}]";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
-            Assert.Equal(1.0f, rule.SamplingRate);
+            rule.SamplingRate.Should().Be(1.0f);
         }
 
         [Fact]
@@ -185,7 +182,7 @@ namespace Datadog.Trace.Tests.Sampling
             var config = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":0.5}]";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
-            Assert.Equal("0.5", rule.SamplingRateString);
+            rule.SamplingRateString.Should().Be("0.5");
         }
 
         [Fact]
@@ -194,7 +191,7 @@ namespace Datadog.Trace.Tests.Sampling
             var config = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":0.5, \"max_per_second\":1000.5}]";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
-            Assert.Equal("1000.5", rule.MaxPerSecondString);
+            rule.MaxPerSecondString.Should().Be("1000.5");
         }
 
         [Fact]
@@ -203,7 +200,7 @@ namespace Datadog.Trace.Tests.Sampling
             var config = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":0.5}]";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
-            Assert.Null(rule.MaxPerSecondString);
+            rule.MaxPerSecondString.Should().BeNull();
         }
 
         [Fact]
@@ -212,7 +209,7 @@ namespace Datadog.Trace.Tests.Sampling
             var config = "[{\"service\":\"*\", \"name\":\"*\"}]";
             var rule = SpanSamplingRule.BuildFromConfigurationString(config).Single();
 
-            Assert.Equal("8", rule.SamplingMechanismString);
+            rule.SamplingMechanismString.Should().Be("8");
         }
 
         private void VerifySingleRule(string config, Span span, bool isMatch)
@@ -223,9 +220,7 @@ namespace Datadog.Trace.Tests.Sampling
 
         private void VerifySingleRule(SpanSamplingRule rule, Span span, bool isMatch)
         {
-            Assert.Equal(rule.IsMatch(span), isMatch);
+            rule.IsMatch(span).Should().Be(isMatch);
         }
-
-        // TODO no tests yet for rate limit / sampling priority
     }
 }
