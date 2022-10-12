@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.IO;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -63,15 +62,15 @@ namespace Datadog.Trace.RemoteConfigurationManagement.Transport
                 return null;
             }
 
-            var content = await apiResponse.ReadAsStringAsync().ConfigureAwait(false);
-
             if (apiResponse.StatusCode is not (>= 200 and <= 299))
             {
+                var content = await apiResponse.ReadAsStringAsync().ConfigureAwait(false);
                 Log.Warning<int, string>("Failed to receive remote configurations {StatusCode} and message: {ResponseContent}", apiResponse.StatusCode, content);
+
                 return null;
             }
 
-            return JsonConvert.DeserializeObject<GetRcmResponse>(content);
+            return await apiResponse.ReadAsTypeAsync<GetRcmResponse>().ConfigureAwait(false);
         }
     }
 }
