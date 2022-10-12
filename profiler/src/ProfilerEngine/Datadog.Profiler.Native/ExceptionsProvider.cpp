@@ -12,7 +12,13 @@
 #include "shared/src/native-src/string.h"
 
 
+std::vector<SampleValueType> ExceptionsProvider::SampleTypeDefinitions(
+    {
+        {"exception", "count"}
+    });
+
 ExceptionsProvider::ExceptionsProvider(
+    uint32_t valueOffset,
     ICorProfilerInfo4* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
@@ -21,7 +27,7 @@ ExceptionsProvider::ExceptionsProvider(
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore)
     :
-    CollectorBase<RawExceptionSample>("ExceptionsProvider", pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
+    CollectorBase<RawExceptionSample>("ExceptionsProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),

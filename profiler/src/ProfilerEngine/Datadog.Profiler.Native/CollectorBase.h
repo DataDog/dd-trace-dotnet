@@ -49,12 +49,14 @@ class CollectorBase
 public:
     CollectorBase<TRawSample>(
         const char* name,
+        uint32_t valueOffset,
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore
         ) :
         ProviderBase(name),
+        _valueOffset{valueOffset},
         _pFrameStore{pFrameStore},
         _pAppDomainStore{pAppDomainStore},
         _pRuntimeIdStore{pRuntimeIdStore},
@@ -94,7 +96,6 @@ public:
     }
 
 private:
-
     std::list<TRawSample> FetchRawSamples()
     {
         std::lock_guard<std::mutex> lock(_rawSamplesLock);
@@ -134,7 +135,7 @@ private:
         SetStack(rawSample, sample);
 
         // allow inherited classes to add values and specific labels
-        rawSample.OnTransform(sample);
+        rawSample.OnTransform(sample, _valueOffset);
 
         return sample;
     }
@@ -188,6 +189,7 @@ private:
     }
 
 private:
+    uint32_t _valueOffset = 0;
     IFrameStore* _pFrameStore = nullptr;
     IAppDomainStore* _pAppDomainStore = nullptr;
     IRuntimeIdStore* _pRuntimeIdStore = nullptr;

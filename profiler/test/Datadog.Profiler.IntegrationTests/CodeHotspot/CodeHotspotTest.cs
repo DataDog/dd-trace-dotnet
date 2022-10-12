@@ -1,4 +1,4 @@
-// <copyright file="BuggyBitsTest.cs" company="Datadog">
+// <copyright file="CodeHotspotTest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
@@ -7,7 +7,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Text;
 using System.Text.RegularExpressions;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.SmokeTests;
@@ -21,12 +20,13 @@ using Xunit.Abstractions;
 
 namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 {
-    public class BuggyBitsTest
+    public class CodeHotspotTest
     {
+        private const string ScenarioCodeHotspot = "--scenario 2";
         private static readonly Regex RuntimeIdPattern = new("runtime-id:(?<runtimeId>[A-Z0-9-]+)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
         private readonly ITestOutputHelper _output;
 
-        public BuggyBitsTest(ITestOutputHelper output)
+        public CodeHotspotTest(ITestOutputHelper output)
         {
             _output = output;
         }
@@ -34,7 +34,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         [TestAppFact("Samples.BuggyBits")]
         public void CheckSpanContextAreAttached(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 1");
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
             // By default, the codehotspot feature is activated
 
             using var agent = new MockDatadogAgent(_output);
@@ -78,7 +78,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         [TestAppFact("Samples.BuggyBits")]
         public void NoTraceContextAttachedIfFeatureDeactivated(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 1");
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
             runner.Environment.SetVariable(EnvironmentVariables.CodeHotSpotsEnable, "0");
 
             using var agent = new MockDatadogAgent(_output);
@@ -94,7 +94,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
         [TestAppFact("Samples.BuggyBits")]
         public void CheckEndpointsAreAttached(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 1");
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
             runner.TestDurationInSeconds = 20;
 
             // By default, the endpoint profiling feature is activated
@@ -107,13 +107,13 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             var endpoints = GetEndpointsFromPprofFiles(runner.Environment.PprofDir);
 
-            endpoints.Distinct().Should().BeEquivalentTo("GET /products/index");
+            endpoints.Distinct().Should().BeEquivalentTo("GET /products/builder");
         }
 
         [TestAppFact("Samples.BuggyBits")]
         public void NoEndpointsAttachedIfFeatureDeactivated(string appName, string framework, string appAssembly)
         {
-            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: "--scenario 1");
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
             runner.TestDurationInSeconds = 20;
             runner.Environment.SetVariable(EnvironmentVariables.EndpointProfilerEnabled, "0");
 
