@@ -155,7 +155,7 @@ namespace Datadog.Trace
         {
             if (IsFinished)
             {
-                Log.Warning("SetTag should not be called after the span was closed");
+                Log.Error("SetTag should not be called after the span was closed");
                 return this;
             }
 
@@ -367,6 +367,12 @@ namespace Datadog.Trace
 
         internal Span SetMetric(string key, double? value)
         {
+            if (IsFinished)
+            {
+                Log.Error("SetMetric should not be called after the span was closed");
+                return this;
+            }
+
             Tags.SetMetric(key, value);
 
             return this;
