@@ -93,6 +93,34 @@ namespace Datadog.Trace.Tests.Sampling
         }
 
         [Fact]
+        public void SingleCharacterReplacement_ShouldTagSpan_WhenMatches()
+        {
+            var rule = new SpanSamplingRule("se?v?ce", "o?erat?o?", maxPerSecond: 1000.0f);
+            var sampler = new SpanSampler(new List<SpanSamplingRule>() { rule });
+            var span = new Span(new SpanContext(5, 6, null, serviceName: "service"), DateTimeOffset.Now) { OperationName = "operation" };
+
+            sampler.MakeSamplingDecision(span);
+
+            span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().NotBeNull();
+            span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().NotBeNull();
+            span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism).Should().NotBeNull();
+        }
+
+        [Fact]
+        public void SingleCharacterReplacement_ShouldNotTagSpan_WhenNotMatches()
+        {
+            var rule = new SpanSamplingRule("se?v?ce", "o?erat?o?", maxPerSecond: 1000.0f);
+            var sampler = new SpanSampler(new List<SpanSamplingRule>() { rule });
+            var span = new Span(new SpanContext(5, 6, null, serviceName: "serrvice"), DateTimeOffset.Now) { OperationName = "opperation" };
+
+            sampler.MakeSamplingDecision(span);
+
+            span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().BeNull();
+            span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().BeNull();
+            span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism).Should().BeNull();
+        }
+
+        [Fact]
         public void MaxPerSecond_ShouldNotBeTagged_WhenNotExists()
         {
             var expectedRuleRate = 0.99f;
@@ -150,7 +178,7 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void Allow_Half_SamplingRate()
         {
-            var allowHalfRule = new SpanSamplingRule("*", "*", 0.5f);
+            var allowHalfRule = new SpanSamplingRule("service*", "operation?name", 0.5f);
             var rules = new List<SpanSamplingRule>() { allowHalfRule };
             var sampler = new SpanSampler(rules);
 
