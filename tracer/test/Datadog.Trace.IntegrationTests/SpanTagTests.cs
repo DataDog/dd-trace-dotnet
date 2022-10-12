@@ -33,11 +33,11 @@ namespace Datadog.Trace.IntegrationTests
             var span2 = new Span(new SpanContext(5, 7, null, serviceName: "service"), DateTimeOffset.Now) { OperationName = "operation" };
             // mechanism not important, but we've decided to drop the trace
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
-            traceContext.AddSpan(span2);
-            traceContext.CloseSpan(span2);
-
             traceContext.AddSpan(span);
+            traceContext.AddSpan(span2);
+
             traceContext.CloseSpan(span);
+            traceContext.CloseSpan(span2);
 
             Assert.Equal(expectedRuleRate, span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate));
             Assert.Equal(expectedMaxPerSecond, span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond));
@@ -56,11 +56,11 @@ namespace Datadog.Trace.IntegrationTests
             var span2 = new Span(new SpanContext(5, 7, null, serviceName: "service"), DateTimeOffset.Now) { OperationName = "operation" };
             // mechanism not important, but we've decided to keep the trace
             traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, SamplingMechanism.Manual);
-            traceContext.AddSpan(span2);
-            traceContext.CloseSpan(span2);
-
             traceContext.AddSpan(span);
+            traceContext.AddSpan(span2);
+
             traceContext.CloseSpan(span);
+            traceContext.CloseSpan(span2);
 
             Assert.Null(span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate));
             Assert.Null(span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond));
