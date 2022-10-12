@@ -216,15 +216,22 @@ namespace Datadog.Trace.Tests.Logging
             {
                 var logPath = Path.Combine(tempLogsDir, $"dotnet-tracer-{i}.log");
                 File.Create(logPath).Dispose();
-                // Updates LastWriteTime for non 0 indexes files
+                File.SetLastWriteTime(logPath, DateTime.Now.AddDays(-31 * i));
+
+                // Adding random files that don't match the pattern
+                logPath = Path.Combine(tempLogsDir, $"random-file-{i}.txt");
+                File.Create(logPath).Dispose();
                 File.SetLastWriteTime(logPath, DateTime.Now.AddDays(-31 * i));
             }
 
             DatadogLogging.CleanLogFiles(tempLogsDir);
-            var remainingLogFiles = Directory.GetFiles(tempLogsDir).Length;
+
+            var totalTracerFiles = Directory.EnumerateFiles(tempLogsDir, "dotnet-tracer-*").Count();
+            var totalNonTracerFiles = Directory.EnumerateFiles(tempLogsDir, "random-file-*").Count();
+
             Directory.Delete(tempLogsDir, true);
 
-            Assert.True(remainingLogFiles == 1);
+            Assert.True(totalNonTracerFiles - totalTracerFiles == 2);
         }
 
         private void WriteRateLimitedLogMessage(IDatadogLogger logger, string message)
