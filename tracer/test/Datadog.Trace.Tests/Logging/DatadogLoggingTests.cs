@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
@@ -203,6 +204,27 @@ namespace Datadog.Trace.Tests.Logging
 
             Assert.Empty(_logEventSink.Events);
             mockLogger.Verify();
+        }
+
+        [Fact]
+        public void DuringStartup_OldLogFilesGetDeleted()
+        {
+            var tempLogsDir = Path.Combine(Path.GetTempPath(), "Datadog .NET Tracer\\logs");
+            Directory.CreateDirectory(tempLogsDir);
+
+            for (int i = 0; i < 3; i++)
+            {
+                var logPath = Path.Combine(tempLogsDir, $"test-log-{i}.log");
+                File.Create(logPath).Dispose();
+                // Updates LastWriteTime for non 0 indexes files
+                File.SetLastWriteTime(logPath, DateTime.Now.AddDays(-31 * i));
+            }
+
+            DatadogLogging.CleanLogFiles(tempLogsDir);
+            var remainingLogFiles = Directory.GetFiles(tempLogsDir).Length;
+            Directory.Delete(tempLogsDir, true);
+
+            Assert.True(remainingLogFiles == 1);
         }
 
         private void WriteRateLimitedLogMessage(IDatadogLogger logger, string message)
