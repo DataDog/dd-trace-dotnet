@@ -450,3 +450,17 @@ TEST(ConfigurationTest, CheckAllocationSampleLimitIfEnvVarSet)
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.AllocationSampleLimit(), 123);
 }
+
+TEST(ConfigurationTest, CheckNamedPipeIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    EXPECT_EQ(configuration.GetNamedPipeName(), std::string());
+}
+
+TEST(ConfigurationTest, CheckNamedPipePathWhenProvided)
+{
+    std::string expectedPath = R"(\\.\mypipe\comeon)";
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::NamedPipeName, shared::ToWSTRING(expectedPath));
+    auto configuration = Configuration{};
+    EXPECT_EQ(configuration.GetNamedPipeName(), expectedPath);
+}

@@ -26,7 +26,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
@@ -40,7 +40,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: CmdLine);
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
@@ -55,7 +55,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
@@ -70,7 +70,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "1");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
@@ -85,7 +85,7 @@ namespace Datadog.Profiler.IntegrationTests.CpuProfiler
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
