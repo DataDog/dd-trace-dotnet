@@ -50,5 +50,6 @@ namespace Datadog.Trace.ClrProfiler
         public const string Type = "System.Type";
 
         public const string Activity = "System.Diagnostics.Activity";
+        public const string ByteArray = "System.Byte[]";
     }
 }
