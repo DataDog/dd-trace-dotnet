@@ -66,7 +66,8 @@ namespace Datadog.Trace.Ci
             var eventPlatformProxyEnabled = false;
             if (!_settings.Agentless)
             {
-                eventPlatformProxyEnabled = IsEventPlatformProxySupportedByAgent(ref discoveryService);
+                discoveryService = DiscoveryService.Create(new ImmutableExporterSettings(_settings.TracerSettings.Exporter));
+                eventPlatformProxyEnabled = IsEventPlatformProxySupportedByAgent(discoveryService);
             }
 
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
@@ -441,22 +442,20 @@ namespace Datadog.Trace.Ci
             }
         }
 
-        private static bool IsEventPlatformProxySupportedByAgent(ref IDiscoveryService discoveryService)
+        private static bool IsEventPlatformProxySupportedByAgent(IDiscoveryService discoveryService)
         {
             var eventPlatformProxyEnabled = false;
-            discoveryService = DiscoveryService.Create(new ImmutableExporterSettings(_settings.TracerSettings.Exporter));
             AgentConfiguration? agentConfiguration = null;
             ManualResetEventSlim manualResetEventSlim = new(false);
             LifetimeManager.Instance.AddShutdownTask(() => manualResetEventSlim.Set());
 
             Log.Debug("Waiting for agent configuration...");
-            var discoveryServiceCopy = discoveryService;
-            discoveryServiceCopy.SubscribeToChanges(CallBack);
+            discoveryService.SubscribeToChanges(CallBack);
             void CallBack(AgentConfiguration aConfiguration)
             {
                 agentConfiguration = aConfiguration;
                 manualResetEventSlim.Set();
-                discoveryServiceCopy.RemoveSubscription(CallBack);
+                discoveryService.RemoveSubscription(CallBack);
                 Log.Debug("Agent configuration received.");
             }
 

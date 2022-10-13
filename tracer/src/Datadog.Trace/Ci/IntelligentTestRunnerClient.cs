@@ -124,10 +124,10 @@ internal class IntelligentTestRunnerClient
             // Use Agent EVP Proxy
             _useEvpProxy = true;
             var agentUrl = _settings.TracerSettings.Exporter.AgentUri;
-            _settingsUrl = new UriBuilder(agentUrl) { Path = $"/evp_proxy/v1/{settingsUrlPath}" }.Uri;
-            _searchCommitsUrl = new UriBuilder(agentUrl) { Path = $"/evp_proxy/v1/{searchCommitsUrlPath}" }.Uri;
-            _packFileUrl = new UriBuilder(agentUrl) { Path = $"/evp_proxy/v1/{packFileUrlPath}" }.Uri;
-            _skippableTestsUrl = new UriBuilder(agentUrl) { Path = $"/evp_proxy/v1/{skippableTestsUrlPath}" }.Uri;
+            _settingsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v1/{settingsUrlPath}");
+            _searchCommitsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v1/{searchCommitsUrlPath}");
+            _packFileUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v1/{packFileUrlPath}");
+            _skippableTestsUrl = UriHelpers.Combine(agentUrl, $"evp_proxy/v1/{skippableTestsUrlPath}");
         }
     }
 
