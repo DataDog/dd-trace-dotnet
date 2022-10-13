@@ -57,24 +57,29 @@ internal class IastModule
             return null;
         }
 
-        // Sometimes we do not have the file/line but we have the method/class.
-        var filename = frameInfo.StackFrame?.GetFileName();
-        var vulnerability = new Vulnerability(vulnerabilityType, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null), new Evidence(evidenceValue));
-        // The VulnerabilityBatch class is not very useful right now, but we will need it when handling requests
-        var batch = new VulnerabilityBatch();
-        batch.Add(vulnerability);
-
-        // Right now, we always set the IastEnabled tag to "1", but in the future, it might be zero to indicate that a request has not been analyzed
-        var tags = new IastTags()
+        if (!iast.Settings.DeduplicationEnabled || HashBasedDeduplication.Add(vulnerability))
         {
-            IastJson = batch.ToString(),
-            IastEnabled = "1"
-        };
+            // Sometimes we do not have the file/line but we have the method/class.
+            var filename = frameInfo.StackFrame?.GetFileName();
+            var vulnerability = new Vulnerability(vulnerabilityType, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null), new Evidence(evidenceValue));
+            // The VulnerabilityBatch class is not very useful right now, but we will need it when handling requests
+            var batch = new VulnerabilityBatch();
+            batch.Add(vulnerability);
 
-        var scope = tracer.StartActiveInternal(operationName, tags: tags);
-        tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+            // Right now, we always set the IastEnabled tag to "1", but in the future, it might be zero to indicate that a request has not been analyzed
+            var tags = new IastTags()
+            {
+                IastJson = batch.ToString(),
+                IastEnabled = "1"
+            };
 
-        return scope;
+            var scope = tracer.StartActiveInternal(operationName, tags: tags);
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+
+            return scope;
+        }
+
+        return null;
     }
 
     private static string? GetMethodName(StackFrame? frame)

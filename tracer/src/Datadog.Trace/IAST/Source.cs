@@ -21,4 +21,9 @@ internal readonly struct Source
     public string Name { get; }
 
     public string Value { get; }
+
+    public override int GetHashCode()
+    {
+        return IastUtils.GetHashCode(Origin, Name, Value);
+    }
 }

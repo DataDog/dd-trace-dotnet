@@ -18,4 +18,27 @@ internal readonly struct Evidence
     public string Value { get; }
 
     public Range[]? Ranges { get; }
+
+    public bool Equals(Evidence other)
+    {
+        if (Ranges?.Length != other.Ranges?.Length)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < Ranges?.Length; i++)
+        {
+            if (!Ranges[i].Equals(other.Ranges?[i]))
+            {
+                return false;
+            }
+        }
+
+        return Value.Equals(other.Value);
+    }
+
+    public override int GetHashCode()
+    {
+        return IastUtils.GetHashCode(Value, Ranges);
+    }
 }

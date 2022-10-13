@@ -21,4 +21,9 @@ internal readonly struct Range
     public int Length { get; }
 
     public Source Source { get; }
+
+    public override int GetHashCode()
+    {
+        return IastUtils.GetHashCode(Start, Length, Source);
+    }
 }
