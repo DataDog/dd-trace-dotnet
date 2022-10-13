@@ -48,7 +48,8 @@ internal readonly struct TraceChunkModel
         // and these values can come directly from the trace context.
     }
 
-    public TraceChunkModel(in ArraySegment<Span> spans, TraceContext? traceContext)
+    // used only to chain constructors
+    private TraceChunkModel(in ArraySegment<Span> spans, TraceContext? traceContext)
         : this(spans, traceContext?.RootSpan)
     {
         if (traceContext is not null)
