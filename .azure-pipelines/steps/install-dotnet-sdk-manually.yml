@@ -34,13 +34,14 @@ steps:
       Invoke-WebRequest -Uri "https://dot.net/v1/dotnet-install.ps1" -OutFile dotnet-install.ps1
 
       if( "${{ parameters.is64bit }}" -eq "true") {
-        $path = "<auto>"
+        $path = "$HOME\AppData\Local\Microsoft\dotnet"
         $arch = "x64"
-        $noPath = $False
+
+        echo "Manually prepending to path"
+        echo "##vso[task.prependpath]$path"
       } else {
-        $path = "C:\Users\VssAdministrator\AppData\Local\Microsoft\dotnet_32"
+        $path = "$HOME\AppData\Local\Microsoft\dotnet_32"
         $arch = "x86"
-        $noPath = $True
 
         echo "Manually exporting path to DOTNET_EXE_32"
         echo "##vso[task.setvariable variable=DOTNET_EXE_32]$path\dotnet.exe"
@@ -49,9 +50,9 @@ steps:
       echo "Installing dotnet ($arch) to $path"
 
       if("${{ parameters.sdkVersion }}") {
-        ./dotnet-install.ps1 -Version ${{ parameters.sdkVersion }} -Architecture $arch -NoPath:$noPath -InstallDir $path
+        ./dotnet-install.ps1 -Version ${{ parameters.sdkVersion }} -Architecture $arch -NoPath:$True -InstallDir $path
       } else {
-        ./dotnet-install.ps1 -Channel ${{ parameters.channel }} -Architecture $arch -NoPath:$noPath -InstallDir $path
+        ./dotnet-install.ps1 -Channel ${{ parameters.channel }} -Architecture $arch -NoPath:$True -InstallDir $path
       }
 
       rm ./dotnet-install.ps1
