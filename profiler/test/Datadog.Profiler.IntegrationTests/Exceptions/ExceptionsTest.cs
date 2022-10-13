@@ -58,7 +58,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "10000");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
@@ -105,7 +105,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "100");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
             runner.Run(agent);
 
             agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
@@ -145,7 +145,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
@@ -169,7 +169,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
@@ -235,7 +235,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Run"),
                 new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:Program |fn:Main"));
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 

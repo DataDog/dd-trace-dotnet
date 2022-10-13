@@ -32,7 +32,7 @@ namespace Datadog.Profiler.IntegrationTests
             // Set no service name through environment variables to force the tracer to use the value from the datadog.json file
             runner.ServiceName = null;
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             var infos = new List<(string ServiceName, string Environment, string Version)>();
 

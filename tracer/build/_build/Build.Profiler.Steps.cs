@@ -285,6 +285,7 @@ partial class Build
                                     .SetTargetPlatform(MSBuildTargetPlatform.x64)
                                     .EnableNoRestore()
                                     .EnableNoBuild()
+                                    .SetFilter("(Category!=WindowsOnly)")
                                     .SetProcessEnvironmentVariable("DD_TESTING_OUPUT_DIR", ProfilerBuildDataDirectory)
                                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                                     .CombineWith(integrationTestProjects, (s, project) => s
