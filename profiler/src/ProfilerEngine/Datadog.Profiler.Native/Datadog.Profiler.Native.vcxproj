@@ -238,6 +238,8 @@
     <ClInclude Include="EnumHelpers.h" />
     <ClInclude Include="COMHelpers.h" />
     <ClInclude Include="ContentionProvider.h" />
+    <ClInclude Include="GenericSampler.h" />
+    <ClInclude Include="GroupSampler.h" />
     <ClInclude Include="IAllocationsListener.h" />
     <ClInclude Include="AllocationsProvider.h" />
     <ClInclude Include="AppDomainStore.h" />
@@ -254,7 +256,6 @@
     <ClInclude Include="DogFood.hpp" />
     <ClInclude Include="DogstatsdService.h" />
     <ClInclude Include="EnvironmentVariables.h" />
-    <ClInclude Include="ExceptionSampler.h" />
     <ClInclude Include="ExceptionsProvider.h" />
     <ClInclude Include="FfiHelper.h" />
     <ClInclude Include="FrameStore.h" />
@@ -327,10 +328,10 @@
     <ClCompile Include="CpuTimeProvider.cpp" />
     <ClCompile Include="DogstatsdService.cpp" />
     <ClCompile Include="EnabledProfilers.cpp" />
-    <ClCompile Include="ExceptionSampler.cpp" />
     <ClCompile Include="ExceptionsProvider.cpp" />
     <ClCompile Include="FfiHelper.cpp" />
     <ClCompile Include="FrameStore.cpp" />
+    <ClCompile Include="GenericSampler.cpp" />
     <ClCompile Include="HResultConverter.cpp" />
     <ClCompile Include="IMetricsSenderFactory.cpp" />
     <ClCompile Include="ManagedThreadInfo.cpp" />

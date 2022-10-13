@@ -520,6 +520,7 @@ namespace Datadog.Trace.AppSec
                 var transport = args.Transport;
                 var additiveContext = GetOrCreateContext(transport);
                 additiveContext.Dispose();
+
                 throw new BlockException();
             }
         }

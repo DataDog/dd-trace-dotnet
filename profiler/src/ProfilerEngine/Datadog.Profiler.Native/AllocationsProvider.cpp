@@ -15,18 +15,29 @@
 #include "shared/src/native-src/string.h"
 
 
+std::vector<SampleValueType> AllocationsProvider::SampleTypeDefinitions(
+    {
+        {"alloc-samples", "count"},
+        {"alloc-size", "bytes"}
+    });
+
+
 AllocationsProvider::AllocationsProvider(
+    uint32_t valueOffset,
     ICorProfilerInfo4* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore)
+    IRuntimeIdStore* pRuntimeIdStore,
+    IConfiguration* pConfiguration)
     :
-    CollectorBase<RawAllocationSample>("AllocationsProvider", pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
+    CollectorBase<RawAllocationSample>("AllocationsProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
-    _pFrameStore(pFrameStore)
+    _pFrameStore(pFrameStore),
+    _sampleLimit(pConfiguration->AllocationSampleLimit()),
+    _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval())
 {
 }
 
@@ -37,6 +48,11 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
                                        uintptr_t address,
                                        uint64_t objectSize)
 {
+    if ((_sampleLimit > 0) && (!_sampler.Sample(classId)))
+    {
+        return;
+    }
+
     // create a sample from the allocation
 
     ManagedThreadInfo* threadInfo;
