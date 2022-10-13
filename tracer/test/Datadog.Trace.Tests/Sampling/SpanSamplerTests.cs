@@ -22,8 +22,8 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void Constructor_ShouldThrow_WhenNullRulesGiven()
         {
-            var exception = Assert.Throws<ArgumentNullException>(() => new SpanSampler(null));
-            exception.ParamName.Should().Be("rules");
+            var ctor = () => new SpanSampler(null);
+            ctor.Should().Throw<ArgumentNullException>().WithParameterName("rules");
         }
 
         [Fact]
@@ -35,7 +35,22 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new SpanSampler(rules);
             var span = new Span(new SpanContext(5, 6, null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
-            sampler.MakeSamplingDecision(span);
+            sampler.MakeSamplingDecision(span).Should().BeFalse();
+
+            span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().BeNull();
+            span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().BeNull();
+            span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism).Should().BeNull();
+        }
+
+        [Fact]
+        public void MatchingRule_ButNoSample_ShouldReturnFalse()
+        {
+            var rule = new SpanSamplingRule("serviceName", "operationName", 0.0f);
+            var rules = new List<SpanSamplingRule>() { rule };
+            var sampler = new SpanSampler(rules);
+            var span = new Span(new SpanContext(5, 6, null, serviceName: "test"), DateTimeOffset.Now) { OperationName = "test" };
+
+            sampler.MakeSamplingDecision(span).Should().BeFalse();
 
             span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().BeNull();
             span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().BeNull();
@@ -54,7 +69,7 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new SpanSampler(rules);
             var span = new Span(new SpanContext(5, 6, null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
-            sampler.MakeSamplingDecision(span);
+            sampler.MakeSamplingDecision(span).Should().BeTrue();
 
             span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().Be(expectedRuleRate.ToString());
             span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().Be(expectedMaxPerSecond.ToString());
@@ -73,11 +88,27 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new SpanSampler(rules);
             var span = new Span(new SpanContext(5, 6, null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
-            sampler.MakeSamplingDecision(span);
+            sampler.MakeSamplingDecision(span).Should().BeTrue();
 
             span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().Be(expectedRuleRate.ToString());
             span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().Be(expectedMaxPerSecond.ToString());
             span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism).Should().Be(expectedSamplingMechanism.ToString());
+        }
+
+        [Fact]
+        public void FirstMatchingRule_ShouldTakePriority_AndNotTag()
+        {
+            var rule1 = new SpanSamplingRule("*", "*", 0.0f); // sample_rate is set to drop all
+            var rule2 = new SpanSamplingRule("*", "*", 1.0f);
+            var rules = new List<SpanSamplingRule>() { rule1, rule2 };
+            var sampler = new SpanSampler(rules);
+            var span = new Span(new SpanContext(5, 6, null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
+
+            sampler.MakeSamplingDecision(span).Should().BeFalse();
+
+            span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().BeNull();
+            span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().BeNull();
+            span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism).Should().BeNull();
         }
 
         [Fact]
@@ -86,7 +117,7 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new SpanSampler(Enumerable.Empty<ISpanSamplingRule>());
             var span = new Span(new SpanContext(5, 6, null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
-            sampler.MakeSamplingDecision(span);
+            sampler.MakeSamplingDecision(span).Should().BeFalse();
 
             span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().BeNull();
             span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().BeNull();
@@ -100,7 +131,7 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new SpanSampler(new List<SpanSamplingRule>() { rule });
             var span = new Span(new SpanContext(5, 6, null, serviceName: "service"), DateTimeOffset.Now) { OperationName = "operation" };
 
-            sampler.MakeSamplingDecision(span);
+            sampler.MakeSamplingDecision(span).Should().BeTrue();
 
             span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().NotBeNull();
             span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().NotBeNull();
@@ -114,7 +145,7 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new SpanSampler(new List<SpanSamplingRule>() { rule });
             var span = new Span(new SpanContext(5, 6, null, serviceName: "serrvice"), DateTimeOffset.Now) { OperationName = "opperation" };
 
-            sampler.MakeSamplingDecision(span);
+            sampler.MakeSamplingDecision(span).Should().BeFalse();
 
             span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().BeNull();
             span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().BeNull();
@@ -131,7 +162,7 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new SpanSampler(rules);
             var span = new Span(new SpanContext(5, 6, null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
-            sampler.MakeSamplingDecision(span);
+            sampler.MakeSamplingDecision(span).Should().BeTrue();
 
             span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().Be(expectedRuleRate.ToString());
             span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().BeNull();
@@ -149,11 +180,22 @@ namespace Datadog.Trace.Tests.Sampling
             var sampler = new SpanSampler(rules);
             var span = new Span(new SpanContext(5, 6, null, serviceName: "service-name"), DateTimeOffset.Now) { OperationName = "operation-name" };
 
-            sampler.MakeSamplingDecision(span);
+            sampler.MakeSamplingDecision(span).Should().BeTrue();
 
             span.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().Be(expectedRuleRate.ToString());
             span.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().Be(expectedMaxPerSecond.ToString());
             span.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism).Should().Be(expectedSamplingMechanism.ToString());
+        }
+
+        [Fact]
+        public void MultipleRule_AllowNone()
+        {
+            var allowNoneRule = new SpanSamplingRule("*", "*", 0.0f); // this rule comes before allow all, so it has priority
+            var allowAllRule = new SpanSamplingRule("*", "*");
+            var rules = new List<SpanSamplingRule>() { allowNoneRule, allowAllRule };
+            var sampler = new SpanSampler(rules);
+
+            RunSamplerTest(sampler, 500, expectedAutoKeepRate: 1, expectedUserKeepRate: 0, acceptableVariancePercent: 0);
         }
 
         [Fact]
