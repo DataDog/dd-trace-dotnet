@@ -9,7 +9,7 @@ endif()
 # Project definition
 # ******************************************************
 
-project("Datadog.APM.Native" VERSION 2.16.0)
+project("Datadog.APM.Native" VERSION 2.18.0)
 
 # ******************************************************
 # Environment detection
