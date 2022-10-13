@@ -19,11 +19,6 @@ internal readonly struct Location
 
     public int? Line { get; }
 
-    public bool Equals(Location? other)
-    {
-        return (Path == other?.Path && Line == other?.Line);
-    }
-
     public override int GetHashCode()
     {
         return IastUtils.GetHashCode(Path, Line);
