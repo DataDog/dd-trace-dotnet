@@ -33,8 +33,12 @@ internal class HashBasedDeduplication
             newVulnerability = vulnerabilityHashes.Add(hashCode);
             if (newVulnerability && vulnerabilityHashes.Count > MaximumSize)
             {
-                vulnerabilityHashes.Clear();
-                vulnerabilityHashes.Add(hashCode);
+                newVulnerability = vulnerabilityHashes.Add(hashCode);
+                if (newVulnerability && vulnerabilityHashes.Count > MaximumSize)
+                {
+                    vulnerabilityHashes.Clear();
+                    vulnerabilityHashes.Add(hashCode);
+                }
             }
         }
 
