@@ -24,15 +24,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
                 var iast = Iast.Iast.Instance;
                 if (!iast.Settings.Enabled)
                 {
-                return null;
-            }
+                    return null;
+                }
 
-            try
-            {
+                try
+                {
                     return IastModule.OnHashingAlgorithm(GetAlgorithmName(algorithm.GetType()), IntegrationId, iast);
-            }
-            catch (Exception ex)
-            {
+                }
+                catch (Exception ex)
+                {
                     Log.Error(ex, "Error creating or populating hash algorithm scope.");
                     return null;
                 }
