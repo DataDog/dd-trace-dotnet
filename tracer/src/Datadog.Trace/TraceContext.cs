@@ -23,8 +23,6 @@ namespace Datadog.Trace
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
         private readonly long _timestamp = Stopwatch.GetTimestamp();
         private ArrayBuilder<Span> _spans;
-        private bool _rootSpanSent;
-        private bool _rootSpanInNextBatch;
 
         private int _openSpans;
         private int? _samplingPriority;
@@ -92,7 +90,6 @@ namespace Datadog.Trace
             bool ShouldTriggerPartialFlush() => Tracer.Settings.Exporter.PartialFlushEnabled && _spans.Count >= Tracer.Settings.Exporter.PartialFlushMinSpans;
 
             ArraySegment<Span> spansToWrite = default;
-            var rootSpanInNextBatch = false;
 
             // Propagate the resource name to the profiler for root web spans
             if (span.IsRootSpan && span.Type == SpanTypes.Web)
@@ -103,12 +100,6 @@ namespace Datadog.Trace
             lock (this)
             {
                 _spans.Add(span);
-                if (!_rootSpanSent)
-                {
-                    _rootSpanInNextBatch |= (span == RootSpan);
-                    rootSpanInNextBatch = _rootSpanInNextBatch;
-                }
-
                 _openSpans--;
 
                 if (_openSpans == 0)
@@ -138,7 +129,6 @@ namespace Datadog.Trace
                 // When receiving chunks of spans, the backend checks whether the aas.resource.id tag is present on any of the
                 // span to decide which metric to emit (datadog.apm.host.instance or datadog.apm.azure_resource_instance one).
                 AddAASMetadata(spansToWrite.Array![spansToWrite.Offset]);
-                PropagateSamplingPriority(span, spansToWrite, rootSpanInNextBatch);
 
                 Tracer.Write(spansToWrite);
             }
@@ -202,40 +192,6 @@ namespace Datadog.Trace
                 span.Tags.SetTag(Datadog.Trace.Tags.AzureAppServicesOperatingSystem, AzureAppServices.Metadata.OperatingSystem);
                 span.Tags.SetTag(Datadog.Trace.Tags.AzureAppServicesRuntime, AzureAppServices.Metadata.Runtime);
                 span.Tags.SetTag(Datadog.Trace.Tags.AzureAppServicesExtensionVersion, AzureAppServices.Metadata.SiteExtensionVersion);
-            }
-        }
-
-        private void PropagateSamplingPriority(Span closedSpan, ArraySegment<Span> spansToWrite, bool containsRootSpan)
-        {
-            if (_samplingPriority == null)
-            {
-                return;
-            }
-
-            // This should be the most common case as usually we close the root span last
-            if (closedSpan == RootSpan)
-            {
-                _rootSpanSent = true;
-                return;
-            }
-
-            // Normally this use case never happens as the last span closed is the rootspan usually.
-            // So we should have fallen in the previous case.
-            // we check for _rootSpanSent as well as there's a slight possibility it is true as we set it out of the lock
-            if (!_rootSpanSent && containsRootSpan)
-            {
-                // Using a for loop to avoid the boxing allocation on ArraySegment.GetEnumerator
-                for (var i = 0; i < spansToWrite.Count; i++)
-                {
-                    var span = spansToWrite.Array![i + spansToWrite.Offset];
-                    if (span == RootSpan)
-                    {
-                        _rootSpanSent = true;
-                        return;
-                    }
-                }
-
-                Log.Warning("Root span wasn't found even though expected here.");
             }
         }
     }
