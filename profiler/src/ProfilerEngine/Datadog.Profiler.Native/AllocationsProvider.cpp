@@ -69,6 +69,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
         return;
     }
 
+    result->SetUnixTimeUtc(GetCurrentTimestamp());
     result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
 
     RawAllocationSample rawSample;
