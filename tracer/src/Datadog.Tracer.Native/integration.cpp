@@ -81,7 +81,7 @@ std::vector<IntegrationDefinition> GetIntegrationsFromTraceMethodsConfiguration(
             integrationDefinitions.push_back(IntegrationDefinition(
                 MethodReference(tracemethodintegration_assemblyname, type_name, method_definition, Version(0, 0, 0, 0),
                                 Version(USHRT_MAX, USHRT_MAX, USHRT_MAX, USHRT_MAX), signatureTypes),
-                integration_type, false, false));
+                integration_type, false, false, false));
 
             if (Logger::IsDebugEnabled())
             {

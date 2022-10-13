@@ -29,7 +29,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 { ConfigurationKeys.ApiKey, "some_key" },
             });
 
-            var settings = TelemetrySettings.FromSource(source);
+            var settings = TelemetrySettings.FromSource(source, isAgentAvailable: () => true);
             settings.Agentless.Should().NotBeNull();
             settings.Agentless.AgentlessUri.Should().Be(expected);
             settings.ConfigurationError.Should().BeNullOrEmpty();
@@ -43,7 +43,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 { ConfigurationKeys.Telemetry.Enabled, "1" }
             });
 
-            var settings = TelemetrySettings.FromSource(source);
+            var settings = TelemetrySettings.FromSource(source, isAgentAvailable: () => true);
             settings.Agentless.Should().BeNull();
             settings.ConfigurationError.Should().BeNullOrEmpty();
         }
@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 { ConfigurationKeys.ApiKey, "some_key" },
             });
 
-            var settings = TelemetrySettings.FromSource(source);
+            var settings = TelemetrySettings.FromSource(source, isAgentAvailable: () => true);
             settings.Agentless.Should().NotBeNull();
             settings.Agentless.AgentlessUri.Should().Be(DefaultIntakeUrl);
             settings.ConfigurationError.Should().BeNullOrEmpty();
@@ -74,7 +74,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 { ConfigurationKeys.Site, domain },
             });
 
-            var settings = TelemetrySettings.FromSource(source);
+            var settings = TelemetrySettings.FromSource(source, isAgentAvailable: () => true);
 
             settings.Agentless.Should().NotBeNull();
             settings.Agentless.AgentlessUri.Should().Be($"https://instrumentation-telemetry-intake.{domain}/");
@@ -91,7 +91,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 { ConfigurationKeys.Telemetry.Uri, url },
             });
 
-            var settings = TelemetrySettings.FromSource(source);
+            var settings = TelemetrySettings.FromSource(source, isAgentAvailable: () => true);
 
             settings.Agentless.Should().BeNull();
             settings.ConfigurationError.Should().BeNullOrEmpty();
@@ -111,7 +111,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 { ConfigurationKeys.ApiKey, "some_key" },
             });
 
-            var settings = TelemetrySettings.FromSource(source);
+            var settings = TelemetrySettings.FromSource(source, isAgentAvailable: () => true);
 
             settings.Agentless.Should().NotBeNull();
             settings.Agentless.AgentlessUri.Should().Be(DefaultIntakeUrl);
@@ -119,7 +119,7 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
         [Theory]
-        [InlineData(null, null, false)]
+        [InlineData(null, null, true)]
         [InlineData("SOMEKEY", null, true)]
         [InlineData(null, "0", false)]
         [InlineData("SOMEKEY", "0", false)]
@@ -133,7 +133,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 { ConfigurationKeys.ApiKey, apiKey },
             });
 
-            var settings = TelemetrySettings.FromSource(source);
+            var settings = TelemetrySettings.FromSource(source, isAgentAvailable: () => true);
             var expectAgentless = enabled && !string.IsNullOrEmpty(apiKey);
 
             if (expectAgentless)
@@ -164,42 +164,28 @@ namespace Datadog.Trace.Tests.Telemetry
             });
             var hasApiKey = !string.IsNullOrEmpty(apiKey);
 
-            var settings = TelemetrySettings.FromSource(source);
+            var settings = TelemetrySettings.FromSource(source, isAgentAvailable: () => true);
             using var s = new AssertionScope();
 
-            if (agentless == true)
+            settings.TelemetryEnabled.Should().Be(true);
+
+            if (agentless == true && !hasApiKey)
             {
-                settings.TelemetryEnabled.Should().Be(hasApiKey);
-                if (hasApiKey)
-                {
-                    settings.Agentless.Should().NotBeNull();
-                    settings.ConfigurationError.Should().BeNullOrEmpty();
-                }
-                else
-                {
-                    settings.Agentless.Should().BeNull();
-                    settings.ConfigurationError.Should().NotBeNullOrEmpty();
-                }
-            }
-            else if (agentless == false)
-            {
-                settings.Agentless.Should().BeNull();
-                settings.TelemetryEnabled.Should().Be(false);
-                settings.ConfigurationError.Should().BeNullOrEmpty();
+                settings.ConfigurationError.Should().NotBeNullOrEmpty();
             }
             else
             {
-                if (hasApiKey)
-                {
-                    settings.Agentless.Should().NotBeNull();
-                }
-                else
-                {
-                    settings.Agentless.Should().BeNull();
-                }
-
-                settings.TelemetryEnabled.Should().Be(hasApiKey);
                 settings.ConfigurationError.Should().BeNullOrEmpty();
+            }
+
+            if (agentless != false && hasApiKey)
+            {
+                settings.Agentless.Should().NotBeNull();
+                settings.Agentless.AgentlessUri.Should().Be(DefaultIntakeUrl);
+            }
+            else
+            {
+                settings.Agentless.Should().BeNull();
             }
         }
 
@@ -222,13 +208,64 @@ namespace Datadog.Trace.Tests.Telemetry
                 { ConfigurationKeys.ApiKey, agentlessEnabled == true ? "SOME_KEY" : null },
             });
 
-            var settings = TelemetrySettings.FromSource(source);
+            var settings = TelemetrySettings.FromSource(source, isAgentAvailable: () => true);
 
-            var expectEnabled = enabled == true || (enabled is null && agentlessEnabled == true);
+            var expectEnabled = enabled != false;
             var expectAgentless = expectEnabled && agentlessEnabled == true;
 
             settings.TelemetryEnabled.Should().Be(expectEnabled);
             if (expectAgentless)
+            {
+                settings.Agentless.Should().NotBeNull();
+            }
+            else
+            {
+                settings.Agentless.Should().BeNull();
+            }
+        }
+
+        [Theory]
+        [InlineData(null, null, true)]
+        [InlineData(null, true, true)]
+        [InlineData(null, false, false)]
+        [InlineData(true, null, true)]
+        [InlineData(true, true, true)]
+        [InlineData(true, false, true)]
+        [InlineData(false, null, false)]
+        [InlineData(false, true, false)]
+        [InlineData(false, false, false)]
+        public void SetsAgentProxyEnabledBasedOnConfigAndDelegate(bool? agentProxyEnabled, bool? agentAvailable, bool expected)
+        {
+            var source = new NameValueConfigurationSource(new NameValueCollection
+            {
+                { ConfigurationKeys.Telemetry.AgentProxyEnabled, agentProxyEnabled?.ToString() }
+            });
+
+            var settings = TelemetrySettings.FromSource(source, isAgentAvailable: () => agentAvailable);
+
+            settings.AgentProxyEnabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData(true, true, true)]
+        [InlineData(true, false, true)]
+        [InlineData(false, true, true)]
+        [InlineData(false, false, false)]
+        public void SetsTelemetryEnabledBasedOnAgentlessEnabledAndAgentProxyEnabled(bool agentProxyEnabled, bool agentlessEnabled, bool expected)
+        {
+            var source = new NameValueConfigurationSource(new NameValueCollection
+            {
+                { ConfigurationKeys.Telemetry.AgentlessEnabled, agentlessEnabled.ToString() },
+                { ConfigurationKeys.Telemetry.AgentProxyEnabled, agentProxyEnabled.ToString() },
+                { ConfigurationKeys.ApiKey, "SOME_KEY" },
+            });
+
+            var settings = TelemetrySettings.FromSource(source, isAgentAvailable: () => true);
+
+            using var s = new AssertionScope();
+            settings.TelemetryEnabled.Should().Be(expected);
+            settings.AgentProxyEnabled.Should().Be(agentProxyEnabled);
+            if (agentlessEnabled)
             {
                 settings.Agentless.Should().NotBeNull();
             }

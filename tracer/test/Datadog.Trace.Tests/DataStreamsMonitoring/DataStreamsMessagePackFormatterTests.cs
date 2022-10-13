@@ -29,7 +29,6 @@ public class DataStreamsMessagePackFormatterTests
         var edgeTags = new[] { "edge-1" };
         var formatter = new DataStreamsMessagePackFormatter(env, service);
 
-        var bytes = new byte[100];
         var timeNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
         var bucketStartTimeNs1 = timeNs - (timeNs % bucketDuration);
@@ -73,9 +72,10 @@ public class DataStreamsMessagePackFormatterTests
                 }),
         };
 
-        var bytesWritten = formatter.Serialize(ref bytes, offset: 0, bucketDurationNs: bucketDuration, statsBuckets: buckets);
+        using var ms = new MemoryStream();
+        formatter.Serialize(ms, bucketDurationNs: bucketDuration, statsBuckets: buckets);
 
-        var data = new ArraySegment<byte>(bytes, offset: 0, count: bytesWritten);
+        var data = new ArraySegment<byte>(ms.GetBuffer());
 
         var result = MessagePackSerializer.Deserialize<MockDataStreamsPayload>(data);
 

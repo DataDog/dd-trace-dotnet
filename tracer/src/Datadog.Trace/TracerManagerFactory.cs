@@ -124,7 +124,7 @@ namespace Datadog.Trace
 
             SpanContextPropagator.Instance = ContextPropagators.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract);
 
-            dataStreamsManager ??= DataStreamsManager.Create(settings, defaultServiceName);
+            dataStreamsManager ??= DataStreamsManager.Create(settings, discoveryService, defaultServiceName);
 
             var tracerManager = CreateTracerManagerFrom(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName);
             return tracerManager;

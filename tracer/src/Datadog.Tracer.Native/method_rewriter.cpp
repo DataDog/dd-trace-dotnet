@@ -564,13 +564,21 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
             {
                 if (pInstr != methodReturnInstr)
                 {
-                    if (!isVoid)
+                    if (isVoid)
                     {
-                        reWriterWrapper.SetILPosition(pInstr);
-                        reWriterWrapper.StLocal(returnValueIndex);
+                        pInstr->m_opcode = CEE_LEAVE_S;
+                        pInstr->m_pTarget = endFinallyInstr->m_pNext;
                     }
-                    pInstr->m_opcode = CEE_LEAVE_S;
-                    pInstr->m_pTarget = endFinallyInstr->m_pNext;
+                    else
+                    {
+                        pInstr->m_opcode = CEE_STLOC;
+                        pInstr->m_Arg16 = returnValueIndex;
+
+                        ILInstr* leaveInstr = rewriter.NewILInstr();
+                        leaveInstr->m_opcode = CEE_LEAVE_S;
+                        leaveInstr->m_pTarget = endFinallyInstr->m_pNext;
+                        rewriter.InsertAfter(pInstr, leaveInstr);
+                    }
                 }
                 break;
             }

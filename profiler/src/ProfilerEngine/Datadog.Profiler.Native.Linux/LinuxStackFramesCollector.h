@@ -18,11 +18,13 @@
 #include <unordered_map>
 
 class IManagedThreadList;
+class ProfilerSignalManager;
+class ProfilerSignalManager;
 
 class LinuxStackFramesCollector : public StackFramesCollectorBase
 {
 public:
-    explicit LinuxStackFramesCollector();
+    explicit LinuxStackFramesCollector(ProfilerSignalManager* signalManager);
     ~LinuxStackFramesCollector() override;
     LinuxStackFramesCollector(LinuxStackFramesCollector const&) = delete;
     LinuxStackFramesCollector& operator=(LinuxStackFramesCollector const&) = delete;
@@ -51,13 +53,10 @@ private:
     };
 
 private:
-    bool SetupSignalHandler();
     void NotifyStackWalkCompleted(std::int32_t resultErrorCode);
     void UpdateErrorStats(std::int32_t errorCode);
     bool ShouldLogStats();
     bool CanCollect(int32_t threadId, pid_t processId) const;
-    std::int64_t SendSignal(pid_t threadId) const;
-    bool CheckSignalHandler();
 
     std::int32_t _lastStackWalkErrorCode;
     std::condition_variable _stackWalkInProgressWaiter;
@@ -67,18 +66,14 @@ private:
     // This flag is used to prevent blocking on successfull (but long) stackwalking
     std::atomic<bool> _stackWalkFinished;
     pid_t _processId;
-    bool _canReplaceSignalHandler;
-    bool _isHandlerInPlace;
+    ProfilerSignalManager* _signalManager;
+
 
 private:
-    static void CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext);
-    static bool IsProfilerSignalHandlerInstalled();
-    static void CallOrignalHandler(int32_t signal, siginfo_t* info, void* context);
+    static bool CollectStackSampleSignalHandler(int sig, siginfo_t* info, void* ucontext);
 
     static char const* ErrorCodeToString(int32_t errorCode);
     static std::mutex s_stackWalkInProgressMutex;
-    static int32_t s_signalToSend;
-    static struct sigaction s_previousAction;
 
     static LinuxStackFramesCollector* s_pInstanceCurrentlyStackWalking;
 

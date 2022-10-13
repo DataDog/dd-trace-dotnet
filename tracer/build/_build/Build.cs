@@ -55,7 +55,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "2.16.0";
+    readonly string Version = "2.18.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -113,7 +113,7 @@ partial class Build : NukeBuild
             }
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
-            DistributionHomeDirectory.GlobFiles("**").Where(x => !x.ToString().Contains("readme.txt")).ForEach(x => DeleteFile(x));
+            BundleHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
             EnsureCleanDirectory(MonitoringHomeDirectory);
             EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
@@ -276,24 +276,24 @@ partial class Build : NukeBuild
                 degreeOfParallelism: 2);
         });
 
-    Target BuildDistributionNuget => _ => _
+    Target BuildBundleNuget => _ => _
         .Unlisted()
-        .After(CreateDistributionHome, ExtractDebugInfoLinux)
+        .After(CreateBundleHome, ExtractDebugInfoLinux)
         .Executes(() =>
         {
             DotNetBuild(x => x
-                .SetProjectFile(Solution.GetProject(Projects.DatadogMonitoringDistribution))
+                .SetProjectFile(Solution.GetProject(Projects.DatadogTraceBundle))
                 .EnableNoRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
-                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "distribution")
+                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "bundle")
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool"));
         });
 
     Target BuildRunnerTool => _ => _
         .Unlisted()
-        .After(CreateDistributionHome, ExtractDebugInfoLinux)
+        .After(CreateBundleHome, ExtractDebugInfoLinux)
         .Executes(() =>
         {
             DotNetBuild(x => x
@@ -310,7 +310,7 @@ partial class Build : NukeBuild
     Target BuildStandaloneTool => _ => _
         // Currently requires manual copying of files into expected locations
         .Unlisted()
-        .After(CreateDistributionHome, ExtractDebugInfoLinux)
+        .After(CreateBundleHome, ExtractDebugInfoLinux)
         .Executes(() =>
         {
             var runtimes = new[] 
@@ -320,7 +320,7 @@ partial class Build : NukeBuild
                 (rid: "linux-x64", archiveFormat: ".tar.gz"),  
                 (rid: "linux-musl-x64", archiveFormat: ".tar.gz"),  
                 (rid: "osx-x64", archiveFormat: ".tar.gz"),  
-                (rid: "linux-arm64", archiveFormat: ".tar.gz") 
+                (rid: "linux-arm64", archiveFormat: ".tar.gz"),
             }.Select(x => (x.rid, archive: ArtifactsDirectory / $"dd-trace-{x.rid}{x.archiveFormat}", output: ArtifactsDirectory / "tool" / x.rid))
              .ToArray();
 

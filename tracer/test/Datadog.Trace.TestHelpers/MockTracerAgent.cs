@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.IO;
+using System.IO.Compression;
 using System.IO.Pipes;
 using System.Linq;
 using System.Net;
@@ -20,6 +21,7 @@ using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -70,6 +72,8 @@ namespace Datadog.Trace.TestHelpers
 
         public IImmutableList<MockClientStatsPayload> Stats { get; private set; } = ImmutableList<MockClientStatsPayload>.Empty;
 
+        public IImmutableList<MockDataStreamsPayload> DataStreams { get; private set; } = ImmutableList<MockDataStreamsPayload>.Empty;
+
         public IImmutableList<NameValueCollection> TraceRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
         public List<string> Snapshots { get; private set; } = new();
@@ -88,6 +92,8 @@ namespace Datadog.Trace.TestHelpers
         public AgentConfiguration Configuration { get; set; }
 
         public IImmutableList<NameValueCollection> TelemetryRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
+
+        public IImmutableList<NameValueCollection> DataStreamsRequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
         public ConcurrentQueue<string> RemoteConfigRequests { get; } = new();
 
@@ -225,6 +231,29 @@ namespace Datadog.Trace.TestHelpers
             while (DateTime.UtcNow < deadline)
             {
                 stats = Stats;
+
+                if (stats.Count >= count)
+                {
+                    break;
+                }
+
+                Thread.Sleep(500);
+            }
+
+            return stats;
+        }
+
+        public IImmutableList<MockDataStreamsPayload> WaitForDataStreams(
+            int count,
+            int timeoutInMilliseconds = 20000)
+        {
+            var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
+
+            IImmutableList<MockDataStreamsPayload> stats = ImmutableList<MockDataStreamsPayload>.Empty;
+
+            while (DateTime.UtcNow < deadline)
+            {
+                stats = DataStreams;
 
                 if (stats.Count >= count)
                 {
@@ -390,6 +419,11 @@ namespace Datadog.Trace.TestHelpers
             {
                 HandlePotentialRemoteConfig(request);
                 response = RcmResponse ?? "{}";
+            }
+            else if (request.PathAndQuery.StartsWith("/v0.1/pipeline_stats"))
+            {
+                HandlePotentialDataStreams(request);
+                response = "{}";
             }
             else
             {
@@ -572,6 +606,52 @@ namespace Datadog.Trace.TestHelpers
                     var body = ReadStreamBody(request);
                     var rc = Encoding.UTF8.GetString(body);
                     RemoteConfigRequests.Enqueue(rc);
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message.ToLowerInvariant();
+
+                    if (message.Contains("beyond the end of the stream"))
+                    {
+                        // Accept call is likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                        return;
+                    }
+
+                    throw;
+                }
+            }
+        }
+
+        private void HandlePotentialDataStreams(MockHttpParser.MockHttpRequest request)
+        {
+            if (ShouldDeserializeTraces && request.ContentLength >= 1)
+            {
+                try
+                {
+                    var body = ReadStreamBody(request);
+                    if (request.Headers.GetValue("Content-Encoding") == "gzip")
+                    {
+                        using var compressed = new MemoryStream(body);
+                        using var gzip = new GZipStream(compressed, CompressionMode.Decompress);
+                        using var decompressed = new MemoryStream();
+                        gzip.CopyTo(decompressed);
+                        gzip.Flush();
+                        body = decompressed.GetBuffer();
+                    }
+
+                    var dataStreamsPayload = MessagePackSerializer.Deserialize<MockDataStreamsPayload>(body);
+                    var headerCollection = new NameValueCollection();
+                    foreach (var header in request.Headers)
+                    {
+                        headerCollection.Add(header.Name, header.Value);
+                    }
+
+                    lock (this)
+                    {
+                        DataStreams = DataStreams.Add(dataStreamsPayload);
+                        DataStreamsRequestHeaders = DataStreamsRequestHeaders.Add(headerCollection);
+                    }
                 }
                 catch (Exception ex)
                 {

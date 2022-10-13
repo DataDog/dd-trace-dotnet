@@ -373,6 +373,20 @@ TEST(ConfigurationTest, CheckContentionProfilingIsDisabledIfEnvVarSetToFalse)
     ASSERT_THAT(configuration.IsContentionProfilingEnabled(), false);
 }
 
+TEST(ConfigurationTest, CheckContentionSampleLimitIfEnvVarSet)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ContentionSampleLimit, WStr("123"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.ContentionSampleLimit(), 123);
+}
+
+TEST(ConfigurationTest, CheckContentionDurationThresholdIfEnvVarSet)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ContentionDurationThreshold, WStr("123"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.ContentionDurationThreshold(), 123);
+}
+
 TEST(ConfigurationTest, CheckCpuProfilingIsEnabledByDefault)
 {
     auto configuration = Configuration{};
@@ -391,4 +405,48 @@ TEST(ConfigurationTest, CheckCpuProfilingIsDisabledIfEnvVarSetToFalse)
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuProfilingEnabled, WStr("0"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.IsCpuProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckCpuWallTimeSamplingRateIfEnvVarSet)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuWallTimeSamplingRate, WStr("123"));
+    auto configuration = Configuration{};
+    auto rate = configuration.CpuWallTimeSamplingRate();
+    ASSERT_THAT(rate, std::chrono::nanoseconds(123000000));
+}
+
+TEST(ConfigurationTest, CheckCpuWallTimeSamplingRateIfTooSmallValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuWallTimeSamplingRate, WStr("5"));
+    auto configuration = Configuration{};
+    auto rate = configuration.CpuWallTimeSamplingRate();
+    auto count = rate.count();
+    ASSERT_THAT(rate, std::chrono::nanoseconds(9000000));
+}
+
+TEST(ConfigurationTest, CheckAllocationProfilingIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsAllocationProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckAllocationProfilingIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::AllocationProfilingEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsAllocationProfilingEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckAllocationProfilingIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::AllocationProfilingEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsAllocationProfilingEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckAllocationSampleLimitIfEnvVarSet)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::AllocationSampleLimit, WStr("123"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.AllocationSampleLimit(), 123);
 }

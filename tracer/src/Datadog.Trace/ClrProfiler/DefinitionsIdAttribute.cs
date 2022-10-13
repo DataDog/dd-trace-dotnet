@@ -10,14 +10,17 @@ namespace Datadog.Trace.ClrProfiler
     [AttributeUsage(AttributeTargets.Field)]
     internal class DefinitionsIdAttribute : Attribute
     {
-        public DefinitionsIdAttribute(string definitionsId, string derivedDefinitionsId)
+        public DefinitionsIdAttribute(string definitionsId, string derivedDefinitionsId, string interfaceDefinitionsId)
         {
             DefinitionsId = definitionsId;
             DerivedDefinitionsId = derivedDefinitionsId;
+            InterfaceDefinitionsId = interfaceDefinitionsId;
         }
 
         internal string DefinitionsId { get; }
 
         internal string DerivedDefinitionsId { get; }
+
+        internal string InterfaceDefinitionsId { get; }
     }
 }

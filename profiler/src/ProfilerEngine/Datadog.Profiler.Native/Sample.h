@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
+
 #include <array>
 #include <iostream>
 #include <list>
@@ -12,53 +13,12 @@
 
 struct SampleValueType
 {
-    const std::string& Name;
-    const std::string& Unit;
+    std::string Name;
+    std::string Unit;
 };
 
-//---------------------------------------------------------------
-// This array define the list of ALL values set by all profilers
-SampleValueType const SampleTypeDefinitions[] =
-{
-    {"wall", "nanoseconds"},    // WallTimeDuration
-    {"cpu", "nanoseconds"},     // CPUTimeDuration
-    {"exception", "count"},     // ExceptionCount
-    {"alloc-samples", "count"}, // AllocationCount
-    {"alloc-size", "bytes"},    // AllocationSize
-    {"lock-count", "count"},
-    {"lock-duration", "nanoseconds"}
 
-    // the new ones should be added here at the same time
-    // new identifiers are added to SampleValue
-};
-
-// Each profiler defines its own values index in the array
-// It will be used in the AddValue() method
-//
-enum class SampleValue : size_t
-{
-    // Wall time profiler
-    WallTimeDuration = 0,
-
-    // CPU time profiler
-    CpuTimeDuration = 1,
-
-    // Exception profiler
-    ExceptionCount = 2,
-
-    // Allocation profiler
-    AllocationCount = 3,
-    AllocationSize = 4,
-
-    // Thread contention profiler
-    ContentionCount = 5,
-    ContentionDuration = 6,
-};
-//
-static constexpr size_t array_size = sizeof(SampleTypeDefinitions) / sizeof(SampleTypeDefinitions[0]);
-//---------------------------------------------------------------
-
-typedef std::array<int64_t, array_size> Values;
+typedef std::vector<int64_t> Values;
 typedef std::pair<std::string_view, std::string> Label;
 typedef std::list<Label> Labels;
 typedef std::vector<std::pair<std::string_view, std::string_view>> CallStack;
@@ -68,6 +28,9 @@ typedef std::vector<std::pair<std::string_view, std::string_view>> CallStack;
 /// </summary>
 class Sample
 {
+public:
+    static size_t ValuesCount;
+
 public:
     Sample(std::string_view runtimeId); // only for tests
     Sample(uint64_t timestamp, std::string_view runtimeId, size_t framesCount);
@@ -92,7 +55,7 @@ public:
     // should be protected if we want to derive classes from Sample such as WallTimeSample
     // but it seems better for encapsulation to do the transformation between collected raw data
     // and a Sample in each Provider (this is behind CollectorBase template class)
-    void AddValue(std::int64_t value, SampleValue index);
+    void AddValue(std::int64_t value, size_t index);
     void AddFrame(std::string_view moduleName, std::string_view frame);
 
     template<typename T>

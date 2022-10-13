@@ -5,17 +5,16 @@
 
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
+
+/// <summary>
+/// TestMethodRunner ducktype interface
+/// </summary>
+internal interface ITestMethodRunner
 {
     /// <summary>
-    /// TestMethodRunner ducktype interface
+    /// Gets the TestMethodInfo instance
     /// </summary>
-    internal interface ITestMethodRunner
-    {
-        /// <summary>
-        /// Gets the TestMethodInfo instance
-        /// </summary>
-        [DuckField(Name = "testMethodInfo")]
-        ITestMethod TestMethodInfo { get; }
-    }
+    [DuckField(Name = "testMethodInfo")]
+    ITestMethod TestMethodInfo { get; }
 }

@@ -7,6 +7,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
 
 namespace Datadog.Trace.DataStreamsMonitoring.Aggregation;
@@ -53,24 +54,22 @@ internal class DataStreamsAggregator
     /// <summary>
     /// Serialize the aggregated results using message pack
     /// </summary>
-    /// <param name="buffer">The buffer to write the stats into. This may be replaced with a larger buffer
-    /// if it needs to grow</param>
-    /// <param name="offset">The offset into the buffer which to start writing</param>
+    /// <param name="stream">The buffer to write the stats into</param>
     /// <param name="maxBucketFlushTimeNs">Don't flush buckets that start (or include) this time (in Ns)</param>
-    /// <returns>The number of bytes written into the buffer</returns>
-    public int Serialize(ref byte[] buffer, int offset, long maxBucketFlushTimeNs)
+    /// <returns>True if data was serialized to the stream</returns>
+    public bool Serialize(Stream stream, long maxBucketFlushTimeNs)
     {
         var statsToAdd = Export(maxBucketFlushTimeNs);
         if (statsToAdd?.Count > 0)
         {
-            var bytesWritten = _formatter.Serialize(ref buffer, offset, _bucketDurationInNs, statsToAdd);
+            _formatter.Serialize(stream, _bucketDurationInNs, statsToAdd);
 
             Clear(statsToAdd);
 
-            return bytesWritten;
+            return true;
         }
 
-        return 0;
+        return false;
     }
 
     /// <summary>

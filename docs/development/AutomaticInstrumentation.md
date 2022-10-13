@@ -217,6 +217,8 @@ The above attribute shows how to select which signatures to implement, via the  
 
 #### Inheritance
 
+> ⚠️ Warning: This requires much more overhead because all of the types in a module must be inspected to determine if a module requires instrumentation. Carefully consider when to introduce this type of instrumentation.
+
 Virtual or normal methods in abstract classes can be instrumented, as long as they are not overridden. But if a class inherits and overrides those methods, then the original instrumentation won't be called. To make sure the child classes methods are instrumented, another property needs to be added specifying `Datadog.Trace.ClrProfiler.IntegrationType` as `IntegrationType.Derived`, but the same integration can be used since the methods will have the same signature. Example:
 
 ```csharp
@@ -234,4 +236,17 @@ Properties can be instrumented the same way as methods, but because of the way t
 ```csharp
 string get_Name();
 void set_Name(string value);
+```
+
+### Interfaces
+
+> ⚠️ Warning: This requires much more overhead because all of the types in a module must be inspected to determine if a module requires instrumentation. Carefully consider when to introduce this type of instrumentation.
+
+Interface methods can be instrumented by setting the `TypeName` to the name of the interface and setting `Datadog.Trace.ClrProfiler.IntegrationType` to `IntegrationType.Interface`. Instrumentation will occur on types that directly implement the specified interface. But if a class inherits and overrides those methods, then the original instrumentation won't be called. To make sure the child classes methods are instrumented, another property needs to be added that sets the `TypeName` to the base class and sets the `Datadog.Trace.ClrProfiler.IntegrationType` to `IntegrationType.Derived`. Example:
+
+```csharp
+    [InstrumentMethod(AssemblyName = "AssemblyName", TypeName = "InterfaceA", MethodName = "MethodName", CallTargetIntegrationType = IntegrationType.Interface ...)]
+    [InstrumentMethod(AssemblyName = "AssemblyName", TypeName = "TypeThatImplementsInterfaceA", MethodName = "MethodName", CallTargetIntegrationType = IntegrationType.Derived  ...)]
+    public class My_Integration
+    {
 ```

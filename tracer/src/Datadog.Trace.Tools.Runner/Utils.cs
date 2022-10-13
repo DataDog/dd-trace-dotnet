@@ -385,6 +385,10 @@ namespace Datadog.Trace.Tools.Runner
                 {
                     tracerProfiler64 = FileExists(Path.Combine(tracerHome, "osx-x64", "Datadog.Trace.ClrProfiler.Native.dylib"));
                 }
+                else if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
+                {
+                    tracerProfiler64 = FileExists(Path.Combine(tracerHome, "osx-arm64", "Datadog.Trace.ClrProfiler.Native.dylib"));
+                }
                 else
                 {
                     WriteError($"Error: macOS {RuntimeInformation.OSArchitecture} architecture is not supported.");

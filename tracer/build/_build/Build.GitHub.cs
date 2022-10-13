@@ -424,7 +424,7 @@ partial class Build
                 "tracer/samples/ConsoleApp/Alpine3.9.dockerfile",
                 "tracer/samples/ConsoleApp/Debian.dockerfile",
                 "tracer/samples/WindowsContainer/Dockerfile",
-                "tracer/src/Datadog.Monitoring.Distribution/Datadog.Monitoring.Distribution.csproj",
+                "tracer/src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
                 "tracer/src/Datadog.Trace.AspNet/Datadog.Trace.AspNet.csproj",
                 "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Datadog.Trace.ClrProfiler.Managed.Loader.csproj",
                 "tracer/src/Datadog.Trace.ClrProfiler.Managed.Loader/Startup.cs",

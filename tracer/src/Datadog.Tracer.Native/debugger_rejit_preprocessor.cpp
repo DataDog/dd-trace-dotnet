@@ -224,6 +224,11 @@ const bool DebuggerRejitPreprocessor::GetIsDerived(const MethodProbeDefinition& 
     return false; // TODO
 }
 
+const bool DebuggerRejitPreprocessor::GetIsInterface(const MethodProbeDefinition& methodProbe)
+{
+    return false; // TODO
+}
+
 const bool DebuggerRejitPreprocessor::GetIsExactSignatureMatch(const MethodProbeDefinition& methodProbe)
 {
     return methodProbe.is_exact_signature_match;

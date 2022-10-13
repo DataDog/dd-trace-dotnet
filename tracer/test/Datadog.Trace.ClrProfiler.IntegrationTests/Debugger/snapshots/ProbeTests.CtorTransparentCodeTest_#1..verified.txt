@@ -8,17 +8,26 @@
       "snapshot": {
         "captures": {
           "entry": {
-            "fields": null
+            "arguments": {
+              "this": {
+                "type": "CtorTransparentCodeTest",
+                "value": "CtorTransparentCodeTest"
+              }
+            }
           },
           "return": {
-            "fields": null,
+            "arguments": {
+              "this": {
+                "type": "CtorTransparentCodeTest",
+                "value": "CtorTransparentCodeTest"
+              }
+            },
             "locals": {
               "instance": {
                 "fields": {
                   "_home": {
                     "fields": {
                       "Name": {
-                        "fields": null,
                         "type": "String",
                         "value": "Harry House"
                       }
@@ -69,7 +78,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "CtorTransparentCodeTest.Run()\r\ninstance=SecurityTransparentTest",
+    "message": "CtorTransparentCodeTest.Run(this=CtorTransparentCodeTest)\r\ninstance=SecurityTransparentTest",
     "service": "Probes"
   }
 ]

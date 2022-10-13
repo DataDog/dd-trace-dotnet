@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -175,6 +176,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableFact]
+        public void MethodInterface()
+        {
+            int agentPort = TcpPortProvider.GetOpenPort();
+
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var processResult = RunSampleAndWaitForExit(agent, arguments: "interface"))
+            {
+                int begin1MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({1}\\)").Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+
+                string[] typeNames = new string[]
+                {
+                    ".VoidMethod",
+                };
+
+                Assert.Equal(2, begin1MethodCount);
+                Assert.Equal(2, endMethodCount);
+
+                foreach (var typeName in typeNames)
+                {
+                    Assert.Contains(typeName, processResult.StandardOutput);
+                }
+            }
+        }
+
+        [SkippableFact]
         [Trait("SupportsInstrumentationVerification", "True")]
         public void RemoveIntegrations()
         {
@@ -194,6 +221,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.Contains(".VoidMethod", processResult.StandardOutput);
 
                 VerifyInstrumentation(processResult.Process);
+            }
+        }
+
+        [SkippableFact]
+        [Trait("SupportsInstrumentationVerification", "True")]
+        public void ExtraIntegrations()
+        {
+            SetInstrumentationVerification();
+            using (var agent = EnvironmentHelper.GetMockAgent())
+            using (var processResult = RunSampleAndWaitForExit(agent, arguments: "extras"))
+            {
+                int begin1MethodCount = Regex.Matches(processResult.StandardOutput, $"ProfilerOK: BeginMethod\\({0}\\)").Count;
+                int endMethodCount = Regex.Matches(processResult.StandardOutput, "ProfilerOK: EndMethod\\(").Count;
+
+                string[] typeNames = { ".NonVoidWithBranchToLastReturn" };
+
+                begin1MethodCount.Should().Be(1);
+                endMethodCount.Should().Be(1);
+
+                processResult.StandardOutput.Should().ContainAll(typeNames);
             }
         }
     }

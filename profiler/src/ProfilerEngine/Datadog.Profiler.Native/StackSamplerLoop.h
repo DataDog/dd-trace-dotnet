@@ -83,6 +83,7 @@ private:
     uint64_t _totalStacksCollectedCount{0};
     uint64_t _lastStackSnapshotResultsStats_LogTimestampNS{0};
     std::unordered_map<shared::WSTRING, uint64_t> _encounteredStackCountsForDebug;
+    std::chrono::nanoseconds _samplingPeriod;
 
 private:
     void MainLoop(void);

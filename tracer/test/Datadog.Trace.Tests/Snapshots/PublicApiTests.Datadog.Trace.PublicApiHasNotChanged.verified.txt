@@ -192,6 +192,68 @@ namespace Datadog.Trace.Ci.Coverage.Metadata
         protected ModuleCoverageMetadata() { }
     }
 }
+namespace Datadog.Trace.Ci
+{
+    public sealed class Test
+    {
+        public string? Name { get; }
+        public System.DateTimeOffset StartTime { get; }
+        public Datadog.Trace.Ci.TestSuite Suite { get; }
+        public void Close(Datadog.Trace.Ci.TestStatus status) { }
+        public void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration) { }
+        public void Close(Datadog.Trace.Ci.TestStatus status, System.TimeSpan? duration, string? skipReason) { }
+        public void SetErrorInfo(System.Exception exception) { }
+        public void SetErrorInfo(string type, string message, string? callStack) { }
+        public void SetParameters(Datadog.Trace.Ci.TestParameters parameters) { }
+        public void SetTag(string key, double? value) { }
+        public void SetTag(string key, string? value) { }
+        public void SetTestMethodInfo(System.Reflection.MethodInfo methodInfo) { }
+        public void SetTraits(System.Collections.Generic.Dictionary<string, System.Collections.Generic.List<string>> traits) { }
+    }
+    public sealed class TestModule
+    {
+        public string? Framework { get; }
+        public string Name { get; }
+        public System.DateTimeOffset StartTime { get; }
+        public void Close() { }
+        public void Close(System.TimeSpan? duration) { }
+        public Datadog.Trace.Ci.TestSuite GetOrCreateSuite(string name) { }
+        public Datadog.Trace.Ci.TestSuite GetOrCreateSuite(string name, System.DateTimeOffset? startDate) { }
+        public void SetErrorInfo(System.Exception exception) { }
+        public void SetErrorInfo(string type, string message, string? callStack) { }
+        public void SetTag(string key, double? value) { }
+        public void SetTag(string key, string? value) { }
+        public static Datadog.Trace.Ci.TestModule Create(string name) { }
+        public static Datadog.Trace.Ci.TestModule Create(string name, string framework, string frameworkVersion) { }
+        public static Datadog.Trace.Ci.TestModule Create(string name, string framework, string frameworkVersion, System.DateTimeOffset startDate) { }
+    }
+    public class TestParameters
+    {
+        public TestParameters() { }
+        public System.Collections.Generic.Dictionary<string, object>? Arguments { get; set; }
+        public System.Collections.Generic.Dictionary<string, object>? Metadata { get; set; }
+    }
+    public enum TestStatus
+    {
+        Pass = 0,
+        Fail = 1,
+        Skip = 2,
+    }
+    public sealed class TestSuite
+    {
+        public Datadog.Trace.Ci.TestModule Module { get; }
+        public string Name { get; }
+        public System.DateTimeOffset StartTime { get; }
+        public void Close() { }
+        public void Close(System.TimeSpan? duration) { }
+        public Datadog.Trace.Ci.Test CreateTest(string name) { }
+        public Datadog.Trace.Ci.Test CreateTest(string name, System.DateTimeOffset startDate) { }
+        public void SetErrorInfo(System.Exception exception) { }
+        public void SetErrorInfo(string type, string message, string? callStack) { }
+        public void SetTag(string key, double? value) { }
+        public void SetTag(string key, string? value) { }
+    }
+}
 namespace Datadog.Trace.ClrProfiler
 {
     public sealed class InstrumentationLoader

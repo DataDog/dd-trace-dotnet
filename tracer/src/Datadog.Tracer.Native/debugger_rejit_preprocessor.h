@@ -32,6 +32,7 @@ protected:
                                       const MethodReference& targetMethod) final;
     virtual const MethodReference& GetTargetMethod(const MethodProbeDefinition& methodProbe) final;
     virtual const bool GetIsDerived(const MethodProbeDefinition& definition) final;
+    virtual const bool GetIsInterface(const MethodProbeDefinition& definition) final;
     virtual const bool GetIsExactSignatureMatch(const MethodProbeDefinition& definition) final;
     virtual const std::unique_ptr<RejitHandlerModuleMethod>
     CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo,

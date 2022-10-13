@@ -10,6 +10,7 @@ EXPORTS
     EnableByRefInstrumentation
     EnableCallTargetStateByRef
     AddDerivedInstrumentations
+    AddInterfaceInstrumentations
     AddTraceAttributeInstrumentation
     InitializeTraceMethods
     InstrumentProbes

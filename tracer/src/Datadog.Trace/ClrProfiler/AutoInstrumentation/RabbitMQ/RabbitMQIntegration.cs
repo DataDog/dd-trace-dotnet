@@ -5,9 +5,11 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
@@ -66,53 +68,48 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             return scope;
         }
 
-        /********************
-         * Duck Typing Types
-         */
-#pragma warning disable CS1591 // Missing XML comment for publicly visible type or member
-#pragma warning disable SA1201 // Elements must appear in the correct order
-#pragma warning disable SA1600 // Elements must be documented
-        [DuckCopy]
-        internal struct BasicGetResultStruct
+        internal static CallTargetState BasicDeliver_OnMethodBegin<TTarget, TBasicProperties, TBody>(TTarget instance, string consumerTag, ulong deliveryTag, bool redelivered, string exchange, string routingKey, TBasicProperties basicProperties, TBody body)
+            where TBasicProperties : IBasicProperties
+            where TBody : IBody // ReadOnlyMemory<byte> body in 6.0.0
         {
-            /// <summary>
-            /// Gets the message body of the result
-            /// </summary>
-            public BodyStruct Body;
+            if (IsActiveScopeRabbitMQ(Tracer.Instance))
+            {
+                // we are already instrumenting this,
+                // don't instrument nested methods that belong to the same stacktrace
+                // e.g. DerivedType.HandleBasicDeliver -> BaseType.RabbitMQ.Client.IAsyncBasicConsumer.HandleBasicDeliver
+                return CallTargetState.GetDefault();
+            }
 
-            /// <summary>
-            /// Gets the message properties
-            /// </summary>
-            public IBasicProperties BasicProperties;
+            SpanContext propagatedContext = null;
+
+            // try to extract propagated context values from headers
+            if (basicProperties?.Headers != null)
+            {
+                try
+                {
+                    propagatedContext = SpanContextPropagator.Instance.Extract(basicProperties.Headers, default(ContextPropagation));
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error extracting propagated headers.");
+                }
+            }
+
+            var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out RabbitMQTags tags, "basic.deliver", parentContext: propagatedContext, spanKind: SpanKinds.Consumer, exchange: exchange, routingKey: routingKey);
+            if (tags != null)
+            {
+                tags.MessageSize = body?.Length.ToString() ?? "0";
+            }
+
+            return new CallTargetState(scope);
         }
 
-        internal interface IBasicProperties
+        internal static bool IsActiveScopeRabbitMQ(Tracer tracer)
         {
-            /// <summary>
-            /// Gets or sets the headers of the message
-            /// </summary>
-            /// <returns>Message headers</returns>
-            IDictionary<string, object> Headers { get; set; }
+            var scope = tracer.InternalActiveScope;
+            var parent = scope?.Span;
 
-            /// <summary>
-            /// Gets the delivery mode of the message
-            /// </summary>
-            byte DeliveryMode { get; }
-
-            /// <summary>
-            /// Returns true if the DeliveryMode property is present
-            /// </summary>
-            /// <returns>true if the DeliveryMode property is present</returns>
-            bool IsDeliveryModePresent();
-        }
-
-        [DuckCopy]
-        internal struct BodyStruct
-        {
-            /// <summary>
-            /// Gets the length of the message body
-            /// </summary>
-            public int Length;
+            return parent != null && parent.OperationName == OperationName;
         }
     }
 }

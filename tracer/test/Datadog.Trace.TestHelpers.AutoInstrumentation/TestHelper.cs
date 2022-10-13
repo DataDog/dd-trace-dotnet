@@ -178,12 +178,17 @@ namespace Datadog.Trace.TestHelpers
         public ProcessResult RunSampleAndWaitForExit(MockTracerAgent agent, string arguments = null, string packageVersion = "", string framework = "", int aspNetCorePort = 5000)
         {
             var process = StartSample(agent, arguments, packageVersion, aspNetCorePort: aspNetCorePort, framework: framework);
-
             using var helper = new ProcessHelper(process);
 
+            return WaitForProcessResult(helper);
+        }
+
+        public ProcessResult WaitForProcessResult(ProcessHelper helper)
+        {
             // this is _way_ too long, but we want to be v. safe
             // the goal is just to make sure we kill the test before
             // the whole CI run times out
+            var process = helper.Process;
             var timeoutMs = (int)TimeSpan.FromMinutes(10).TotalMilliseconds;
             var ranToCompletion = process.WaitForExit(timeoutMs) && helper.Drain(timeoutMs / 2);
 
@@ -454,19 +459,6 @@ namespace Datadog.Trace.TestHelpers
             SetEnvironmentVariable(ConfigurationKeys.DirectLogSubmission.Url, $"http://127.0.0.1:{intakePort}");
             SetEnvironmentVariable(ConfigurationKeys.DirectLogSubmission.EnabledIntegrations, integrationName);
             SetEnvironmentVariable(ConfigurationKeys.ApiKey, "DUMMY_KEY_REQUIRED_FOR_DIRECT_SUBMISSION");
-        }
-
-        protected void EnableTelemetry(bool enabled = true, int? standaloneAgentPort = null)
-        {
-            SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", enabled.ToString());
-            SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED", standaloneAgentPort.HasValue.ToString());
-
-            if (standaloneAgentPort.HasValue)
-            {
-                SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_URL", $"http://localhost:{standaloneAgentPort}");
-                // API key is required for agentless
-                SetEnvironmentVariable("DD_API_KEY", "INVALID_KEY_FOR_TESTS");
-            }
         }
 
         protected async Task<IImmutableList<MockSpan>> GetWebServerSpans(

@@ -539,7 +539,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleLoadFinished(ModuleID module_id, HR
             for (const auto& methodReference : methodReferences)
             {
                 integration_definitions_.push_back(
-                    IntegrationDefinition(methodReference, *trace_annotation_integration_type.get(), false, false));
+                    IntegrationDefinition(methodReference, *trace_annotation_integration_type.get(), false, false, false));
             }
 
             rejit_module_method_pairs.pop_front();
@@ -1039,7 +1039,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id)
                     for (const auto& methodReference : methodReferences)
                     {
                         integration_definitions_.push_back(IntegrationDefinition(
-                            methodReference, *trace_annotation_integration_type.get(), false, false));
+                            methodReference, *trace_annotation_integration_type.get(), false, false, false));
                     }
                 }
             }
@@ -1411,7 +1411,7 @@ void CorProfiler::InitializeProfiler(WCHAR* id, CallTargetDefinition* items, int
 
     if (size > 0)
     {
-        InternalAddInstrumentation(id, items, size, false, true);
+        InternalAddInstrumentation(id, items, size, false, false, true);
     }
 }
 
@@ -1423,7 +1423,7 @@ void CorProfiler::RemoveCallTargetDefinitions(WCHAR* id, CallTargetDefinition* i
 
     if (size > 0)
     {
-        InternalAddInstrumentation(id, items, size, false, false);
+        InternalAddInstrumentation(id, items, size, false, false, false);
     }
 }
 
@@ -1458,11 +1458,24 @@ void CorProfiler::AddDerivedInstrumentations(WCHAR* id, CallTargetDefinition* it
 
     if (size > 0)
     {
-        InternalAddInstrumentation(id, items, size, true);
+        InternalAddInstrumentation(id, items, size, true, false);
     }
 }
 
-void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived, bool enable)
+void CorProfiler::AddInterfaceInstrumentations(WCHAR* id, CallTargetDefinition* items, int size)
+{
+    auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+    shared::WSTRING definitionsId = shared::WSTRING(id);
+    Logger::Info("AddInterfaceInstrumentations: received id: ", definitionsId, " from managed side with ", size,
+                 " integrations.");
+
+    if (size > 0)
+    {
+        InternalAddInstrumentation(id, items, size, false, true);
+    }
+}
+
+void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* items, int size, bool isDerived, bool isInterface, bool enable)
 {
     shared::WSTRING definitionsId = shared::WSTRING(id);
     std::scoped_lock<std::mutex> definitionsLock(definitions_ids_lock_);
@@ -1513,6 +1526,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
                 MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
                 TypeReference(integrationAssembly, integrationType, {}, {}),
                 isDerived,
+                isInterface,
                 true);
 
             if (Logger::IsDebugEnabled())

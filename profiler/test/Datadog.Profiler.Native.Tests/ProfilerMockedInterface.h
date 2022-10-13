@@ -44,6 +44,10 @@ public:
     MOCK_METHOD(bool, IsAllocationProfilingEnabled, (), (const override));
     MOCK_METHOD(bool, IsContentionProfilingEnabled, (), (const override));
     MOCK_METHOD(double, MinimumCores, (), (const override));
+    MOCK_METHOD(int32_t, AllocationSampleLimit, (), (const override));
+    MOCK_METHOD(int32_t, ContentionSampleLimit, (), (const override));
+    MOCK_METHOD(int32_t, ContentionDurationThreshold, (), (const override));
+    MOCK_METHOD(std::chrono::nanoseconds, CpuWallTimeSamplingRate, (), (const override));
 };
 
 class MockExporter : public IExporter
@@ -64,6 +68,7 @@ class MockSampleProvider : public ISamplesProvider
 {
 public:
     MOCK_METHOD(std::list<Sample>, GetSamples, (), (override));
+    MOCK_METHOD(const char*, GetName, (), (override));
 };
 
 class MockMetricsSender : public IMetricsSender

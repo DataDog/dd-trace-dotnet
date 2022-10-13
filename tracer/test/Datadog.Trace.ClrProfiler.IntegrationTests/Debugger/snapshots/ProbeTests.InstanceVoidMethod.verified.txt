@@ -8,20 +8,26 @@
       "snapshot": {
         "captures": {
           "entry": {
-            "fields": {
-              "Number": {
-                "fields": null,
-                "type": "Int32",
-                "value": "0"
+            "arguments": {
+              "this": {
+                "Number": {
+                  "type": "Int32",
+                  "value": "0"
+                },
+                "type": "InstanceVoidMethod",
+                "value": "InstanceVoidMethod"
               }
             }
           },
           "return": {
-            "fields": {
-              "Number": {
-                "fields": null,
-                "type": "Int32",
-                "value": "7"
+            "arguments": {
+              "this": {
+                "Number": {
+                  "type": "Int32",
+                  "value": "7"
+                },
+                "type": "InstanceVoidMethod",
+                "value": "InstanceVoidMethod"
               }
             }
           }
@@ -67,7 +73,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "InstanceVoidMethod.Method()",
+    "message": "InstanceVoidMethod.Method(this=InstanceVoidMethod)",
     "service": "Probes"
   }
 ]

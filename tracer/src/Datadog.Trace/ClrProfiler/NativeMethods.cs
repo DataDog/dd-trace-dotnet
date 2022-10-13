@@ -110,6 +110,23 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        public static void AddInterfaceInstrumentations(string id, NativeCallTargetDefinition[] methodArrays)
+        {
+            if (methodArrays is null || methodArrays.Length == 0)
+            {
+                return;
+            }
+
+            if (IsWindows)
+            {
+                Windows.AddInterfaceInstrumentations(id, methodArrays, methodArrays.Length);
+            }
+            else
+            {
+                NonWindows.AddInterfaceInstrumentations(id, methodArrays, methodArrays.Length);
+            }
+        }
+
         public static void AddTraceAttributeInstrumentation(string id, string assemblyName, string typeName)
         {
             if (string.IsNullOrWhiteSpace(assemblyName)
@@ -171,6 +188,9 @@ namespace Datadog.Trace.ClrProfiler
             public static extern void AddDerivedInstrumentations([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
             [DllImport("Datadog.Tracer.Native.dll")]
+            public static extern void AddInterfaceInstrumentations([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
+
+            [DllImport("Datadog.Tracer.Native.dll")]
             public static extern void AddTraceAttributeInstrumentation([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName);
 
             [DllImport("Datadog.Tracer.Native.dll")]
@@ -201,6 +221,9 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern void AddDerivedInstrumentations([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
+
+            [DllImport("Datadog.Tracer.Native")]
+            public static extern void AddInterfaceInstrumentations([MarshalAs(UnmanagedType.LPWStr)] string id, [In] NativeCallTargetDefinition[] methodArrays, int size);
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern void AddTraceAttributeInstrumentation([MarshalAs(UnmanagedType.LPWStr)] string id, [MarshalAs(UnmanagedType.LPWStr)] string assemblyName, [MarshalAs(UnmanagedType.LPWStr)] string typeName);

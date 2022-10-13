@@ -10,37 +10,38 @@
           "entry": {
             "arguments": {
               "callerName": {
-                "fields": null,
                 "type": "String",
                 "value": "Run"
+              },
+              "this": {
+                "type": "NestedType",
+                "value": "NestedType"
               }
-            },
-            "fields": null
+            }
           },
           "return": {
             "arguments": {
               "callerName": {
-                "fields": null,
                 "type": "String",
                 "value": "Run"
+              },
+              "this": {
+                "type": "NestedType",
+                "value": "NestedType"
               }
             },
-            "fields": null,
             "locals": {
               "arr": {
-                "Collection": [
+                "elements": [
                   {
-                    "fields": null,
                     "type": "String",
                     "value": "Run"
                   },
                   {
-                    "fields": null,
                     "type": "String",
                     "value": "MethodToInstrument"
                   },
                   {
-                    "fields": null,
                     "type": "String",
                     "value": "SimpleTypeNameTest"
                   }
@@ -106,7 +107,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "SimpleNestedTypeNameTest+NestedType.MethodToInstrument(callerName=Run)\r\narr=count: 3",
+    "message": "SimpleNestedTypeNameTest+NestedType.MethodToInstrument(callerName=Run, this=NestedType)\r\narr=count: 3",
     "service": "Probes"
   }
 ]

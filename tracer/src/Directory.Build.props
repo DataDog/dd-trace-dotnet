@@ -12,7 +12,7 @@
     <IsPackable>true</IsPackable>
     <PackageIconUrl>https://github.com/DataDog/dd-trace-dotnet/raw/master/datadog-logo-64x64.png</PackageIconUrl>
     <PackageIcon>packageIcon.png</PackageIcon>
-    <PackageProjectUrl>https://docs.datadoghq.com/tracing/setup/dotnet/</PackageProjectUrl>
+    <PackageProjectUrl>https://docs.datadoghq.com/tracing/trace_collection/dd_libraries</PackageProjectUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageReleaseNotes>See release notes at https://github.com/DataDog/dd-trace-dotnet/releases</PackageReleaseNotes>

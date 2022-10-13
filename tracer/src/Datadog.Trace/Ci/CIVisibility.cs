@@ -72,6 +72,17 @@ namespace Datadog.Trace.Ci
                 tracerSettings.ServiceName = GetServiceNameFromRepository(CIEnvironmentValues.Instance.Repository);
             }
 
+            // Initialize Tracer
+            Log.Information("Initialize Test Tracer instance");
+            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings));
+            _ = Tracer.Instance;
+
+            // Initialize FrameworkDescription
+            _ = FrameworkDescription.Instance;
+
+            // Initialize CIEnvironment
+            _ = CIEnvironmentValues.Instance;
+
             // Intelligent Test Runner
             if (_settings.IntelligentTestRunnerEnabled)
             {
@@ -86,17 +97,6 @@ namespace Datadog.Trace.Ci
                 var tskItrUpdate = UploadGitMetadataAsync();
                 LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
             }
-
-            // Initialize Tracer
-            Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings));
-            _ = Tracer.Instance;
-
-            // Initialize FrameworkDescription
-            _ = FrameworkDescription.Instance;
-
-            // Initialize CIEnvironment
-            _ = CIEnvironmentValues.Instance;
         }
 
         internal static void FlushSpans()
@@ -113,6 +113,23 @@ namespace Datadog.Trace.Ci
             finally
             {
                 SynchronizationContext.SetSynchronizationContext(sContext);
+            }
+        }
+
+        internal static void WaitForSkippableTaskToFinish()
+        {
+            if (_skippableTestsTask is { IsCompleted: false })
+            {
+                var sContext = SynchronizationContext.Current;
+                try
+                {
+                    SynchronizationContext.SetSynchronizationContext(null);
+                    _skippableTestsTask.GetAwaiter().GetResult();
+                }
+                finally
+                {
+                    SynchronizationContext.SetSynchronizationContext(sContext);
+                }
             }
         }
 

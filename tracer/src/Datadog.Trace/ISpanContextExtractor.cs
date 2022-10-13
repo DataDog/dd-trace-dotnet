@@ -14,11 +14,15 @@ namespace Datadog.Trace
     /// The ISpanContextExtractor is responsible for extracting SpanContext in the rare cases where the Tracer couldn't propagate it itself.
     /// This can happen for instance when libraries add an extra layer above the instrumented ones
     /// (eg consuming Kafka messages and enqueuing them prior to generate a span).
+    /// When enabled (and present in the headers) also used to set data streams monitoring checkpoints.
     /// </summary>
     public interface ISpanContextExtractor
     {
         /// <summary>
         /// Given a SpanContext carrier and a function to access the values, this method will extract SpanContext if any
+        /// When enabled (and present in the headers) a data streams monitoring checkpoint is set.
+        /// You should only call <see cref="Extract{TCarrier}"/> once on the message <paramref name="carrier"/>. Calling
+        /// multiple times may lead to incorrect stats when using Data Streams Monitoring.
         /// </summary>
         /// <param name="carrier">The carrier of the SpanContext. Often a header (http, kafka message header...)</param>
         /// <param name="getter">Given a key name, returns values from the carrier</param>

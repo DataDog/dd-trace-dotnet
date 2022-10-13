@@ -5,7 +5,7 @@ cmake_policy(SET CMP0015 NEW)
 # Project definition
 # ******************************************************
 
-project("Datadog.Trace.ClrProfiler.Native" VERSION 2.16.0)
+project("Datadog.Trace.ClrProfiler.Native" VERSION 2.18.0)
 
 # ******************************************************
 # Environment detection
@@ -38,7 +38,7 @@ if (CMAKE_SYSTEM_PROCESSOR STREQUAL x86_64 OR CMAKE_SYSTEM_PROCESSOR STREQUAL am
 elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL x86 OR CMAKE_SYSTEM_PROCESSOR STREQUAL i686)
     message(STATUS "Architecture is x86")
     SET(ISX86 true)
-elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64)
+elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL aarch64 OR CMAKE_SYSTEM_PROCESSOR STREQUAL arm64)
     message(STATUS "Architecture is ARM64")
     SET(ISARM64 true)
 elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL armv7l OR CMAKE_SYSTEM_PROCESSOR STREQUAL arm)
@@ -95,15 +95,15 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 
 include(ExternalProject)
 set(EXTERNAL_INSTALL_LOCATION ${OUTPUT_DEPS_DIR}/fmt/)
+set(fmt_GIT_REPO https://github.com/DataDog/fmt.git)
+set(fmt_GIT_TAG 5.3.0)
 ExternalProject_Add(fmt
-        GIT_REPOSITORY https://github.com/DataDog/fmt.git
-        GIT_TAG 5.3.0
-        GIT_CONFIG advice.detachedHead=false
-        TIMEOUT 5
-        CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0
-        PREFIX "${EXTERNAL_INSTALL_LOCATION}"
-        INSTALL_COMMAND ""
-        )
+    DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch "${fmt_GIT_TAG}" --config advice.detachedHead=false "${fmt_GIT_REPO}"
+    TIMEOUT 5
+    CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0
+    PREFIX "${EXTERNAL_INSTALL_LOCATION}"
+    INSTALL_COMMAND ""
+)
 ExternalProject_Get_Property(fmt source_dir)
 set(fmt_INCLUDE_DIR ${source_dir}/include)
 
@@ -116,7 +116,7 @@ add_compile_options(-std=c++17 -fPIC -fms-extensions)
 add_compile_options(-DPAL_STDCPP_COMPAT -DPLATFORM_UNIX -DUNICODE)
 add_compile_options(-Wno-invalid-noreturn -Wno-macro-redefined)
 if (ISMACOS)
-    add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack)
+    add_compile_options(-stdlib=libc++ -DMACOS -Wno-pragma-pack -Wno-deprecated-declarations)
 elseif(ISLINUX)
     add_compile_options(-stdlib=libstdc++ -DLINUX -Wno-pragmas)
 endif()

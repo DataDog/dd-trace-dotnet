@@ -18,7 +18,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [SkippableFact]
         public void ShouldNotInitialize()
         {
-            using var waf = Waf.Create(string.Empty, string.Empty, string.Empty, "1.4.0");
+            using var waf = Waf.Create(string.Empty, string.Empty, string.Empty, string.Empty, "1.4.0");
             waf.InitializedSuccessfully.Should().BeFalse();
             waf.InitializationResult.ExportErrors.Should().BeTrue();
         }

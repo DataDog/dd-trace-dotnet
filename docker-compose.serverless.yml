@@ -17,6 +17,11 @@ services:
     - serverless-lambda-no-param-void
     - serverless-lambda-one-param-void
     - serverless-lambda-two-params-void
+    - serverless-lambda-base-no-param-sync
+    - serverless-lambda-base-two-params-sync
+    - serverless-lambda-base-one-param-sync-with-context
+    - serverless-lambda-base-one-param-async
+    - serverless-lambda-base-two-params-void
     environment:
     - AWS_LAMBDA_ENDPOINT_NO_PARAM_SYNC=http://serverless-lambda-no-param-sync:8080
     - AWS_LAMBDA_ENDPOINT_ONE_PARAM_SYNC=http://serverless-lambda-one-param-sync:8080
@@ -30,6 +35,11 @@ services:
     - AWS_LAMBDA_ENDPOINT_NO_PARAM_VOID=http://serverless-lambda-no-param-void:8080
     - AWS_LAMBDA_ENDPOINT_ONE_PARAM_VOID=http://serverless-lambda-one-param-void:8080
     - AWS_LAMBDA_ENDPOINT_TWO_PARAMS_VOID=http://serverless-lambda-two-params-void:8080
+    - AWS_LAMBDA_ENDPOINT_BASE_NO_PARAM_SYNC=http://serverless-lambda-base-no-param-sync:8080
+    - AWS_LAMBDA_ENDPOINT_BASE_TWO_PARAMS_SYNC=http://serverless-lambda-base-two-params-sync:8080
+    - AWS_LAMBDA_ENDPOINT_BASE_ONE_PARAM_SYNC_WITH_CONTEXT=http://serverless-lambda-base-one-param-sync-with-context:8080
+    - AWS_LAMBDA_ENDPOINT_BASE_ONE_PARAM_ASYNC=http://serverless-lambda-base-one-param-async:8080
+    - AWS_LAMBDA_ENDPOINT_BASE_TWO_PARAMS_VOID=http://serverless-lambda-base-two-params-void:8080
 
   StartDependencies.Serverless:
     image: andrewlock/wait-for-dependencies
@@ -48,9 +58,14 @@ services:
     - serverless-lambda-no-param-void
     - serverless-lambda-one-param-void
     - serverless-lambda-two-params-void
+    - serverless-lambda-base-no-param-sync
+    - serverless-lambda-base-two-params-sync
+    - serverless-lambda-base-one-param-sync-with-context
+    - serverless-lambda-base-one-param-async
+    - serverless-lambda-base-two-params-void
     environment:
       - TIMEOUT_LENGTH=120
-    command: serverless-lambda-no-param-sync:8080 serverless-lambda-one-param-sync:8080 serverless-lambda-two-params-sync:8080 serverless-lambda-no-param-sync-with-context:8080 serverless-lambda-one-param-sync-with-context:8080 serverless-lambda-two-params-sync-with-context:8080 serverless-lambda-no-param-async:8080 serverless-lambda-one-param-async:8080 serverless-lambda-two-params-async:8080 serverless-integration-extension-mock:9003 serverless-integration-extension-mock-with-context:9004 serverless-lambda-no-param-void:8080 serverless-lambda-one-param-void:8080 serverless-lambda-two-params-void:8080
+    command: serverless-lambda-no-param-sync:8080 serverless-lambda-one-param-sync:8080 serverless-lambda-two-params-sync:8080 serverless-lambda-no-param-sync-with-context:8080 serverless-lambda-one-param-sync-with-context:8080 serverless-lambda-two-params-sync-with-context:8080 serverless-lambda-no-param-async:8080 serverless-lambda-one-param-async:8080 serverless-lambda-two-params-async:8080 serverless-integration-extension-mock:9003 serverless-integration-extension-mock-with-context:9004 serverless-lambda-no-param-void:8080 serverless-lambda-one-param-void:8080 serverless-lambda-two-params-void:8080 serverless-lambda-base-no-param-sync:8080 serverless-lambda-base-two-params-sync:8080 serverless-lambda-base-one-param-sync-with-context:8080 serverless-lambda-base-one-param-async:8080 serverless-lambda-base-two-params-void:8080
   
   serverless-lambda-no-param-sync:
     build:
@@ -255,7 +270,92 @@ services:
     volumes:
     - ./:/project
     - ./tracer/build_data/logs:/var/log/datadog/dotnet
+  
+  serverless-lambda-base-no-param-sync:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-integration-extension-mock
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerNoParamSync"
+    image: dd-trace-dotnet/serverless-lambda-base-no-param-sync
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9003
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs:/var/log/datadog/dotnet
 
+  serverless-lambda-base-two-params-sync:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-integration-extension-mock
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerTwoParamsSync"
+    image: dd-trace-dotnet/serverless-lambda-base-two-params-sync
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9003
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+
+  serverless-lambda-base-one-param-sync-with-context:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-integration-extension-mock-with-context
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerOneParamSyncWithContext"
+    image: dd-trace-dotnet/serverless-lambda-base-one-param-sync-with-context
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock-with-context:9004
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+
+  serverless-lambda-base-one-param-async:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-integration-extension-mock
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerOneParamAsync"
+    image: dd-trace-dotnet/serverless-lambda-base-one-param-async
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9003
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+
+  serverless-lambda-base-two-params-void:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-integration-extension-mock
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerTwoParamsVoid"
+    image: dd-trace-dotnet/serverless-lambda-base-two-params-void
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9003
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+  
   serverless-integration-extension-mock:
     build:
       context: ./tracer/build/_build/docker

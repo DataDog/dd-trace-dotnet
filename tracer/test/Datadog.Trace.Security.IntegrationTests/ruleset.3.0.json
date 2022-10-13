@@ -20,14 +20,22 @@
                 "key_path": [
                   "user-agent"
                 ]
+              },
+              {
+                "address": "server.request.uri.raw"
               }
             ],
-            "regex": "Hello\\/v"
+            "regex": "hello"
           },
           "operator": "match_regex"
         }
       ],
-      "transformers": []
+      "transformers": [
+        "lowercase"
+      ],
+      "on_match": [
+        "block"
+      ]
     },
     {
       "id": "crs-913-110",

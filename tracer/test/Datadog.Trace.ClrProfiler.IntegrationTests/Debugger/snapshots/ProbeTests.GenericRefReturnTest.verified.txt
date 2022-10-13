@@ -8,22 +8,30 @@
       "snapshot": {
         "captures": {
           "entry": {
-            "fields": null
+            "arguments": {
+              "this": {
+                "type": "GenericRefReturnTest",
+                "value": "GenericRefReturnTest"
+              }
+            }
           },
           "return": {
-            "fields": null,
+            "arguments": {
+              "this": {
+                "type": "GenericRefReturnTest",
+                "value": "GenericRefReturnTest"
+              }
+            },
             "locals": {
               "whatever": {
                 "fields": {
                   "City": {
                     "fields": {
                       "Name": {
-                        "fields": null,
-                        "type": "String",
-                        "value": "null"
+                        "isNull": "true",
+                        "type": "String"
                       },
                       "Type": {
-                        "fields": null,
                         "type": "PlaceType",
                         "value": "City"
                       }
@@ -32,19 +40,16 @@
                     "value": "Place"
                   },
                   "HomeType": {
-                    "fields": null,
                     "type": "BuildingType",
                     "value": "Cottage"
                   },
                   "Number": {
-                    "fields": null,
                     "type": "Int32",
                     "value": "0"
                   },
                   "Street": {
-                    "fields": null,
-                    "type": "String",
-                    "value": "null"
+                    "isNull": "true",
+                    "type": "String"
                   }
                 },
                 "type": "Address",
@@ -94,7 +99,7 @@
       "thread_name": "ScrubbedValue",
       "version": "2"
     },
-    "message": "GenericRefReturnTest.CallMe()\r\nwhatever=Address",
+    "message": "GenericRefReturnTest.CallMe(this=GenericRefReturnTest)\r\nwhatever=Address",
     "service": "Probes"
   }
 ]

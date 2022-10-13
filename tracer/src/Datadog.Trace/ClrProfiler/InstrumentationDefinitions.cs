@@ -23,6 +23,11 @@ namespace Datadog.Trace.ClrProfiler
             return GetDerivedDefinitionsArray(instrumentationFilter);
         }
 
+        internal static Payload GetInterfaceDefinitions(InstrumentationCategory instrumentationFilter = InstrumentationCategory.Tracing)
+        {
+            return GetInterfaceDefinitionsArray(instrumentationFilter);
+        }
+
         internal static NativeCallTargetDefinition[] GetAllDefinitionsNative()
         {
             return InstrumentationsNatives.ToArray();
@@ -31,6 +36,11 @@ namespace Datadog.Trace.ClrProfiler
         internal static NativeCallTargetDefinition[] GetAllDerivedDefinitionsNative()
         {
             return DerivedInstrumentationsNatives.ToArray();
+        }
+
+        internal static NativeCallTargetDefinition[] GetAllInterfaceDefinitionsNative()
+        {
+            return InterfaceInstrumentationsNatives.ToArray();
         }
 
         internal static TraceMethodPayload GetTraceAttributeDefinitions()
@@ -63,6 +73,11 @@ namespace Datadog.Trace.ClrProfiler
             }
 
             foreach (var def in DerivedInstrumentationsNatives)
+            {
+                def.Dispose();
+            }
+
+            foreach (var def in InterfaceInstrumentationsNatives)
             {
                 def.Dispose();
             }

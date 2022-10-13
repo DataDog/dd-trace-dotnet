@@ -66,7 +66,7 @@ partial class Build
     AbsolutePath SourceDirectory => TracerDirectory / "src";
     AbsolutePath BuildDirectory => TracerDirectory / "build";
     AbsolutePath TestsDirectory => TracerDirectory / "test";
-    AbsolutePath DistributionHomeDirectory => Solution.GetProject(Projects.DatadogMonitoringDistribution).Directory / "home";
+    AbsolutePath BundleHomeDirectory => Solution.GetProject(Projects.DatadogTraceBundle).Directory / "home";
 
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
@@ -91,7 +91,7 @@ partial class Build
             : new[] { MSBuildTargetPlatform.x86 };
 
     bool IsArm64 => RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
-    string LinuxArchitectureIdentifier => IsArm64 ? "arm64" : TargetPlatform.ToString();
+    string UnixArchitectureIdentifier => IsArm64 ? "arm64" : TargetPlatform.ToString();
 
     IEnumerable<string> LinuxPackageTypes => IsAlpine ? new[] { "tar" } : new[] { "deb", "rpm", "tar" };
 
@@ -482,22 +482,22 @@ partial class Build
                 degreeOfParallelism: 2);
         });
 
-    Target CreateDistributionHome => _ => _
+    Target CreateBundleHome => _ => _
         .Unlisted()
         .After(BuildTracerHome)
         .Executes(() =>
         {
             // clean directory of everything except the text files
-            DistributionHomeDirectory
+            BundleHomeDirectory
                .GlobFiles("*.*")
                .Where(filepath => Path.GetExtension(filepath) != ".txt")
                .ForEach(DeleteFile);
 
-            // Copy existing files from tracer home to the Distribution location
-            CopyDirectoryRecursively(MonitoringHomeDirectory, DistributionHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            // Copy existing files from tracer home to the Bundle location
+            CopyDirectoryRecursively(MonitoringHomeDirectory, BundleHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
             // Add the create log path script
-            CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, DistributionHomeDirectory);
+            CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, BundleHomeDirectory);
         });
 
     Target ExtractDebugInfoLinux => _ => _
@@ -642,7 +642,7 @@ partial class Build
             CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, assetsDirectory);
             chmod.Invoke($"+x {assetsDirectory / FileNames.CreateLogPathScript}");
 
-            var workingDirectory = ArtifactsDirectory / $"linux-{LinuxArchitectureIdentifier}";
+            var workingDirectory = ArtifactsDirectory / $"linux-{UnixArchitectureIdentifier}";
             EnsureCleanDirectory(workingDirectory);
 
             const string packageName = "datadog-dotnet-apm";
@@ -1699,6 +1699,7 @@ partial class Build
                     if (currentLine is not null)
                     {
                         allLogs.Add(currentLine);
+                        currentLine = null;
                     }
 
                     try
@@ -1726,6 +1727,11 @@ partial class Build
                     }
                 }
             }
+            
+            if (currentLine is not null)
+            {
+                allLogs.Add(currentLine);
+            }
 
             return allLogs;
         }
@@ -1746,6 +1752,7 @@ partial class Build
         {
             var allLines = File.ReadAllLines(logFile);
             var allLogs = new List<ParsedLogLine>(allLines.Length);
+            ParsedLogLine currentLine = null;
 
             foreach (var line in allLines)
             {
@@ -1757,14 +1764,19 @@ partial class Build
                 var match = regex.Match(line);
                 if (match.Success)
                 {
+                    if (currentLine is not null)
+                    {
+                        allLogs.Add(currentLine);
+                        currentLine = null;
+                    }
+
                     try
                     {
                         // native logs are on one line
                         var timestamp = DateTimeOffset.ParseExact(match.Groups[1].Value, dateFormat, null);
                         var level = ParseNativeLogLevel(match.Groups[2].Value);
                         var message = match.Groups[3].Value;
-                        var currentLine = new ParsedLogLine(timestamp, level, message, logFile);
-                        allLogs.Add(currentLine);
+                        currentLine = new ParsedLogLine(timestamp, level, message, logFile);
                     }
                     catch (Exception ex)
                     {
@@ -1773,8 +1785,20 @@ partial class Build
                 }
                 else
                 {
-                    Logger.Warn("Incomplete log line: " + line);
+                    if (currentLine is null)
+                    {
+                        Logger.Warn("Incomplete log line: " + line);
+                    }
+                    else
+                    {
+                        currentLine = currentLine with { Message = $"{currentLine.Message}{Environment.NewLine}{line}" };
+                    }
                 }
+            }
+
+            if (currentLine is not null)
+            {
+                allLogs.Add(currentLine);
             }
 
             return allLogs;
@@ -1845,16 +1869,17 @@ partial class Build
     private (string Arch, string Ext) GetLibDdWafUnixArchitectureAndExtension() =>
         (IsOsx) switch
         {
-            (true) => ("osx-x64", "dylib"),
-            (false) => ($"linux-{LinuxArchitectureIdentifier}", "so"), // LibDdWaf doesn't
+            // (true) => ($"osx-{UnixArchitectureIdentifier}", "dylib"), //LibDdWaf doesn't support osx-arm64 yet.
+            (true) => ($"osx-x64", "dylib"),
+            (false) => ($"linux-{UnixArchitectureIdentifier}", "so"), // LibDdWaf doesn't
         };
 
     private (string Arch, string Ext) GetUnixArchitectureAndExtension() =>
         (IsOsx, IsAlpine) switch
         {
-            (true, _) => ("osx-x64", "dylib"),
-            (false, false) => ($"linux-{LinuxArchitectureIdentifier}", "so"),
-            (false, true) => ($"linux-musl-{LinuxArchitectureIdentifier}", "so"),
+            (true, _) => ($"osx-{UnixArchitectureIdentifier}", "dylib"),
+            (false, false) => ($"linux-{UnixArchitectureIdentifier}", "so"),
+            (false, true) => ($"linux-musl-{UnixArchitectureIdentifier}", "so"),
         };
 
     // the integration tests need their own copy of the profiler, this achieved through build.props on Windows, but doesn't seem to work under Linux

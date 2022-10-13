@@ -178,6 +178,16 @@ static Enumerator<mdAssemblyRef> EnumAssemblyRefs(const ComPtr<IMetaDataAssembly
         [assembly_import](HCORENUM ptr) -> void { assembly_import->CloseEnum(ptr); });
 }
 
+static Enumerator<mdInterfaceImpl> EnumInterfaceImpls(const ComPtr<IMetaDataImport2>& metadata_import, const mdTypeDef typeDef)
+{
+    return Enumerator<mdInterfaceImpl>(
+        [metadata_import, typeDef](HCORENUM* ptr, mdInterfaceImpl arr[], ULONG max, ULONG* cnt)
+            -> HRESULT {
+            return metadata_import->EnumInterfaceImpls(ptr, typeDef, arr, max, cnt);
+        },
+        [metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
+}
+
 struct RuntimeInformation
 {
     COR_PRF_RUNTIME_TYPE runtime_type;

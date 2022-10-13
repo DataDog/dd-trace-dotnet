@@ -47,6 +47,7 @@ namespace Datadog.Trace.AppSec
         private AppSecRateLimiter _rateLimiter;
         private bool _enabled = false;
         private IDictionary<string, Payload> _asmDataConfigs;
+        private string _remoteRulesJson = null;
 
         private bool? _usingIntegratedPipeline = null;
 
@@ -101,6 +102,7 @@ namespace Datadog.Trace.AppSec
                 {
                     UpdateStatus();
                     AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged += FeaturesProductConfigChanged;
+                    AsmRemoteConfigurationProducts.AsmDDProduct.ConfigChanged += AsmDDProductConfigChanged;
                 }
                 else
                 {
@@ -272,10 +274,21 @@ namespace Datadog.Trace.AppSec
                 rcm =>
                 {
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeEnabled);
-                    // TODO set to '_settings.Rules == null' when https://github.com/DataDog/dd-trace-dotnet/pull/3120 is merged
-                    rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, false);
+                    rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, _settings.Rules == null);
                     rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, true);
                 });
+        }
+
+        private void AsmDDProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
+        {
+            var asmDD = e.GetDeserializedConfigurations<string>().FirstOrDefault();
+            if (!string.IsNullOrEmpty(asmDD.TypedFile))
+            {
+                _remoteRulesJson = asmDD.TypedFile;
+                UpdateStatus(true);
+            }
+
+            e.Acknowledge(asmDD.Name);
         }
 
         private void FeaturesProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
@@ -305,7 +318,7 @@ namespace Datadog.Trace.AppSec
                 e.Acknowledge(asmDataConfig.Name);
             }
 
-            var updated = _waf.UpdateRules(_asmDataConfigs.SelectMany(p => p.Value.RulesData));
+            var updated = UpdateRulesData();
             foreach (var asmDataConfig in asmDataConfigs)
             {
                 if (!updated)
@@ -319,19 +332,23 @@ namespace Datadog.Trace.AppSec
             }
         }
 
+        private bool UpdateRulesData()
+        {
+            return _waf?.UpdateRules(_asmDataConfigs?.SelectMany(p => p.Value.RulesData)) ?? false;
+        }
+
         private void UpdateStatus(bool fromRemoteConfig = false)
         {
-            if (_enabled == _settings.Enabled) { return; }
-
             lock (_settings)
             {
                 if (_settings.Enabled)
                 {
                     _waf?.Dispose();
 
-                    _waf = Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules);
+                    _waf = Waf.Waf.Create(_settings.ObfuscationParameterKeyRegex, _settings.ObfuscationParameterValueRegex, _settings.Rules, _remoteRulesJson);
                     if (_waf?.InitializedSuccessfully ?? false)
                     {
+                        UpdateRulesData();
                         EnableWaf(fromRemoteConfig);
                     }
                     else
@@ -352,8 +369,6 @@ namespace Datadog.Trace.AppSec
             if (!_enabled)
             {
                 AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged += AsmDataProductConfigChanged;
-                // reapply rules if existing ones in memory
-                _waf.UpdateRules(_asmDataConfigs?.SelectMany(p => p.Value.RulesData));
                 _instrumentationGateway.StartRequest += RunWafAndReact;
                 _instrumentationGateway.EndRequest += RunWafAndReactAndCleanup;
                 _instrumentationGateway.PathParamsAvailable += RunWafAndReact;
@@ -505,6 +520,7 @@ namespace Datadog.Trace.AppSec
                 var transport = args.Transport;
                 var additiveContext = GetOrCreateContext(transport);
                 additiveContext.Dispose();
+
                 throw new BlockException();
             }
         }
@@ -533,7 +549,7 @@ namespace Datadog.Trace.AppSec
                 using var wafResult = additiveContext.Run(e.EventData, _settings.WafTimeoutMicroSeconds);
                 if (wafResult.ReturnCode is ReturnCode.Match or ReturnCode.Block)
                 {
-                    var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock") || wafResult.Actions.Contains("block");
+                    var block = wafResult.Actions.Contains("block");
                     if (block)
                     {
                         e.Transport.WriteBlockedResponse(_settings.BlockedJsonTemplate, _settings.BlockedHtmlTemplate, CanAccessHeaders());
@@ -577,6 +593,7 @@ namespace Datadog.Trace.AppSec
 
             AsmRemoteConfigurationProducts.AsmDataProduct.ConfigChanged -= AsmDataProductConfigChanged;
             AsmRemoteConfigurationProducts.AsmFeaturesProduct.ConfigChanged -= FeaturesProductConfigChanged;
+            AsmRemoteConfigurationProducts.AsmDDProduct.ConfigChanged -= AsmDDProductConfigChanged;
             Dispose();
         }
 

@@ -50,7 +50,9 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
                                           const mdTypeDef typeDef, std::vector<MethodIdentifier>& rejitRequests)
 {
     auto target_method = GetTargetMethod(definition);
+    auto is_interface = GetIsInterface(definition);
     const bool wildcard_enabled = target_method.method_name == tracemethodintegration_wildcardmethodname;
+    const bool iterate_explicit_interface_methods = is_interface && !wildcard_enabled;
 
     Logger::Debug("  Looking for '", target_method.type.name, ".", target_method.method_name,
                   "(", (target_method.signature_types.size() - 1), " params)' method implementation.");
@@ -69,6 +71,13 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             }
         },
         [&metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
+    auto enumExplicitInterfaceMethods = Enumerator<mdMethodDef>(
+        [&metadataImport, target_method, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT {
+            auto method_name = target_method.type.name + WStr(".") + target_method.method_name;
+            return metadataImport->EnumMethodsWithName(ptr, typeDef, method_name.c_str(), arr,
+                                                        max, cnt);
+        },
+        [&metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
 
     auto corProfilerInfo = m_rejit_handler->GetCorProfilerInfo();
     auto pCorAssemblyProperty = m_rejit_handler->GetCorAssemblyProperty();
@@ -76,8 +85,22 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
     auto enable_calltarget_state_by_ref = m_rejit_handler->GetEnableCallTargetStateByRef();
 
     auto enumIterator = enumMethods.begin();
-    for (; enumIterator != enumMethods.end(); enumIterator = ++enumIterator)
+    auto combinedEnd = iterate_explicit_interface_methods ? enumExplicitInterfaceMethods.end() : enumMethods.end();
+    for (; enumIterator != combinedEnd; enumIterator = ++enumIterator)
     {
+        // When interface methods are being iterated and we reach the end of the regular method search,
+        // switch over to the explicit interface method search
+        if (iterate_explicit_interface_methods && !(enumIterator != enumMethods.end()))
+        {
+            enumIterator = enumExplicitInterfaceMethods.begin();
+
+            // Immediately exit if the second enumerator has 0 entries
+            if (!(enumIterator != combinedEnd))
+            {
+                break;
+            }
+        }
+
         auto methodDef = *enumIterator;
 
         // Extract the function info from the mdMethodDef
@@ -456,8 +479,9 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
         {
             const auto target_method = GetTargetMethod(definition);
             const auto is_derived = GetIsDerived(definition);
+            const auto is_interface = GetIsInterface(definition);
 
-            if (is_derived)
+            if (is_derived || is_interface)
             {
                 // Abstract methods handling.
                 if (assemblyMetadata == nullptr)
@@ -517,65 +541,149 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
                     auto typeDef = *typeDefIterator;
                     const auto typeInfo = GetTypeInfo(metadataImport, typeDef);
                     bool rewriteType = false;
-                    auto ancestorTypeInfo = typeInfo.extend_from.get();
 
-                    // Check if the type has ancestors
-                    int maxDepth = 1;
-                    while (ancestorTypeInfo != nullptr && maxDepth > 0)
+                    // Iterate through interfaces that this type directly implements and
+                    // mark the type for instrumentation if the interface type matches and
+                    // the assembly version constraints are met
+                    //
+                    // Note: If this type implements an interface indirectly through a base class,
+                    // then the instrumentation would occur when that base class is processed.
+                    //
+                    // Note: This leaves a gap in instrumentation when the following scenario occurs:
+                    // - ClassA implements InterfaceA (with method Method1)
+                    // - ClassB derives from ClassA
+                    // - ClassB overrides Method1
+                    if (is_interface)
                     {
-                        // Validate the type name we already have
-                        if (ancestorTypeInfo->name == target_method.type.name)
+                        auto interfaceImplEnum = EnumInterfaceImpls(metadataImport, typeDef);
+                        auto interfaceImplIterator = interfaceImplEnum.begin();
+                        for (; interfaceImplIterator != interfaceImplEnum.end();
+                            interfaceImplIterator = ++interfaceImplIterator)
                         {
-                            // Validate assembly data (scopeToken has the assemblyRef of the ancestor type)
-                            if (ancestorTypeInfo->scopeToken != mdTokenNil)
+                            // Get the interface token
+                            auto interfaceImpl = *interfaceImplIterator;
+                            mdToken classToken, interfaceToken;
+                            if (metadataImport->GetInterfaceImplProps(interfaceImpl, &classToken, &interfaceToken) == S_OK)
                             {
-                                const auto tokenType = TypeFromToken(ancestorTypeInfo->scopeToken);
-
-                                if (tokenType == mdtAssemblyRef)
+                                if (classToken == typeDef)
                                 {
-                                    const auto& ancestorAssemblyMetadata =
-                                        GetReferencedAssemblyMetadata(assemblyImport, ancestorTypeInfo->scopeToken);
+                                    // Get the interface type props
+                                    WCHAR type_name[kNameMaxSize]{};
+                                    DWORD type_name_len = 0;
 
-                                    // We check the assembly name and version
-                                    if (ancestorAssemblyMetadata.name == target_method.type.assembly.name &&
-                                        target_method.type.min_version <= ancestorAssemblyMetadata.version &&
-                                        target_method.type.max_version >= ancestorAssemblyMetadata.version)
+                                    const auto interfaceTokenType = TypeFromToken(interfaceToken);
+                                    if (interfaceTokenType == mdtTypeRef)
+                                    {
+                                        mdAssembly assemblyToken;
+                                        if (metadataImport->GetTypeRefProps(interfaceToken, &assemblyToken, type_name, kNameMaxSize, &type_name_len) == S_OK
+                                            && type_name == target_method.type.name)
+                                        {
+                                            // Now we have to validate the assembly version
+                                            const auto tokenType = TypeFromToken(assemblyToken);
+                                            if (tokenType == mdtAssemblyRef)
+                                            {
+                                                const auto& ancestorAssemblyMetadata =
+                                                    GetReferencedAssemblyMetadata(assemblyImport, assemblyToken);
+
+                                                // We check the assembly name and version
+                                                if (ancestorAssemblyMetadata.name == target_method.type.assembly.name &&
+                                                    target_method.type.min_version <=
+                                                        ancestorAssemblyMetadata.version &&
+                                                    target_method.type.max_version >= ancestorAssemblyMetadata.version)
+                                                {
+                                                    rewriteType = true;
+                                                    break;
+                                                }
+                                            }
+                                            else
+                                            {
+                                                Logger::Warn("Unknown token type (Not supported)");
+                                            }
+                                        }
+                                    }
+                                    else if (interfaceTokenType == mdtTypeDef)
+                                    {
+                                        DWORD type_flags;
+                                        mdToken type_extends = mdTokenNil;
+                                        if (metadataImport->GetTypeDefProps(interfaceToken, type_name, kNameMaxSize, &type_name_len, &type_flags, &type_extends) == S_OK
+                                            && type_name == target_method.type.name)
+                                        {
+                                            // We check the assembly name and version
+                                            if (assemblyMetadata->name == target_method.type.assembly.name &&
+                                                target_method.type.min_version <= assemblyMetadata->version &&
+                                                target_method.type.max_version >= assemblyMetadata->version)
+                                            {
+                                                rewriteType = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (is_derived)
+                    {
+                        // Check if the type has ancestors
+                        auto ancestorTypeInfo = typeInfo.extend_from.get();
+                        int maxDepth = 1;
+                        while (!rewriteType && ancestorTypeInfo != nullptr && maxDepth > 0)
+                        {
+                            // Validate the type name we already have
+                            if (ancestorTypeInfo->name == target_method.type.name)
+                            {
+                                // Validate assembly data (scopeToken has the assemblyRef of the ancestor type)
+                                if (ancestorTypeInfo->scopeToken != mdTokenNil)
+                                {
+                                    const auto tokenType = TypeFromToken(ancestorTypeInfo->scopeToken);
+
+                                    if (tokenType == mdtAssemblyRef)
+                                    {
+                                        const auto& ancestorAssemblyMetadata =
+                                            GetReferencedAssemblyMetadata(assemblyImport, ancestorTypeInfo->scopeToken);
+
+                                        // We check the assembly name and version
+                                        if (ancestorAssemblyMetadata.name == target_method.type.assembly.name &&
+                                            target_method.type.min_version <= ancestorAssemblyMetadata.version &&
+                                            target_method.type.max_version >= ancestorAssemblyMetadata.version)
+                                        {
+                                            rewriteType = true;
+                                            break;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        Logger::Warn("Unknown token type (Not supported)");
+                                    }
+                                }
+                                else
+                                {
+                                    // Check module name and version
+                                    if (moduleInfo.assembly.name == target_method.type.assembly.name &&
+                                        target_method.type.min_version <= assemblyMetadata->version &&
+                                        target_method.type.max_version >= assemblyMetadata->version)
                                     {
                                         rewriteType = true;
                                         break;
                                     }
                                 }
-                                else
+                            }
+
+                            // Go up
+                            ancestorTypeInfo = ancestorTypeInfo->extend_from.get();
+                            if (ancestorTypeInfo != nullptr)
+                            {
+                                if (ancestorTypeInfo->name == WStr("System.ValueType") ||
+                                    ancestorTypeInfo->name == WStr("System.Object") ||
+                                    ancestorTypeInfo->name == WStr("System.Enum"))
                                 {
-                                    Logger::Warn("Unknown token type (Not supported)");
+                                    ancestorTypeInfo = nullptr;
                                 }
                             }
-                            else
-                            {
-                                // Check module name and version
-                                if (moduleInfo.assembly.name == target_method.type.assembly.name &&
-                                    target_method.type.min_version <= assemblyMetadata->version &&
-                                    target_method.type.max_version >= assemblyMetadata->version)
-                                {
-                                    rewriteType = true;
-                                    break;
-                                }
-                            }
-                        }
 
-                        // Go up
-                        ancestorTypeInfo = ancestorTypeInfo->extend_from.get();
-                        if (ancestorTypeInfo != nullptr)
-                        {
-                            if (ancestorTypeInfo->name == WStr("System.ValueType") ||
-                                ancestorTypeInfo->name == WStr("System.Object") ||
-                                ancestorTypeInfo->name == WStr("System.Enum"))
-                            {
-                                ancestorTypeInfo = nullptr;
-                            }
+                            maxDepth--;
                         }
-
-                        maxDepth--;
                     }
 
                     if (rewriteType)
@@ -695,6 +803,11 @@ const MethodReference& TracerRejitPreprocessor::GetTargetMethod(const Integratio
 const bool TracerRejitPreprocessor::GetIsDerived(const IntegrationDefinition& integrationDefinition)
 {
     return integrationDefinition.is_derived;
+}
+
+const bool TracerRejitPreprocessor::GetIsInterface(const IntegrationDefinition& integrationDefinition)
+{
+    return integrationDefinition.is_interface;
 }
 
 const bool TracerRejitPreprocessor::GetIsExactSignatureMatch(const IntegrationDefinition& integrationDefinition)

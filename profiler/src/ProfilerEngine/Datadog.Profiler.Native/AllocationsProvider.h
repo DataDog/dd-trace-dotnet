@@ -4,6 +4,7 @@
 #pragma once
 
 #include "CollectorBase.h"
+#include "GroupSampler.h"
 #include "IAllocationsListener.h"
 #include "RawAllocationSample.h"
 
@@ -20,12 +21,19 @@ class AllocationsProvider
     public IAllocationsListener
 {
 public:
-    AllocationsProvider(ICorProfilerInfo4* pCorProfilerInfo,
-                        IManagedThreadList* pManagedThreadList,
-                        IFrameStore* pFrameStore,
-                        IThreadsCpuManager* pThreadsCpuManager,
-                        IAppDomainStore* pAppDomainStore,
-                        IRuntimeIdStore* pRuntimeIdStore);
+    static std::vector<SampleValueType> SampleTypeDefinitions;
+
+public:
+    AllocationsProvider(
+        uint32_t valueOffset,
+        ICorProfilerInfo4* pCorProfilerInfo,
+        IManagedThreadList* pManagedThreadList,
+        IFrameStore* pFrameStore,
+        IThreadsCpuManager* pThreadsCpuManager,
+        IAppDomainStore* pAppDomainStore,
+        IRuntimeIdStore* pRuntimeIdStore,
+        IConfiguration* pConfiguration);
+
     void OnAllocation(uint32_t allocationKind,
                       ClassID classId,
                       const WCHAR* TypeName,
@@ -36,4 +44,6 @@ private:
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
     IFrameStore* _pFrameStore;
+    GroupSampler<ClassID> _sampler;
+    int32_t _sampleLimit;
 };

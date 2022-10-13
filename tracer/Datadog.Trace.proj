@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <CsharpProject Include="src\**\*.csproj" Exclude="src/Datadog.Monitoring.Distribution/Datadog.Monitoring.Distribution.csproj;src/Datadog.Trace.Tools.Runner/*.csproj;src\**\Datadog.InstrumentedAssembly*.csproj" />
+    <CsharpProject Include="src\**\*.csproj" Exclude="src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj;src/Datadog.Trace.Tools.Runner/*.csproj;src\**\Datadog.InstrumentedAssembly*.csproj" />
     <CsharpUnitTestProject Include="test\**\*.Tests.csproj"/>
     <CsharpInstrumentationVerificationLibrary Include="src\**\Datadog.InstrumentedAssembly*.csproj"/>
     <CsharpIntegrationTestProject Include="test\*.IntegrationTests\*.IntegrationTests.csproj" />

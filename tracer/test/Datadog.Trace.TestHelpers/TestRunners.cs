@@ -20,7 +20,9 @@ namespace Datadog.Trace.TestHelpers
                                                                     "xunit.console.x64",
                                                                     "ReSharperTestRunner",
                                                                     "ReSharperTestRunner64",
-                                                                    "ReSharperTestRunner64c"
+                                                                    "ReSharperTestRunner64c",
+                                                                    "nCrunch.TaskRunner.DotNetCore.20.x64",
+                                                                    "nCrunch.TestHost461.x86"
                                                                 };
     }
 }

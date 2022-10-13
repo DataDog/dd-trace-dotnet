@@ -240,7 +240,7 @@ namespace PrepareRelease
 
                 // Managed project / NuGet package updates
                 SynchronizeVersion(
-                    "src/Datadog.Monitoring.Distribution/Datadog.Monitoring.Distribution.csproj",
+                    "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
                     NugetVersionReplace);
 
                 SynchronizeVersion(
