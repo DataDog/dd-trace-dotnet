@@ -17,7 +17,9 @@
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
     <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" />
-    <PackageReference Include="DatadogTestLogger" Version="0.0.5" />
+    <PackageReference Include="DatadogTestLogger" Version="0.0.6">
+      <CopyToOutputDirectory>lib\$(TargetFramework)\*.*</CopyToOutputDirectory>
+    </PackageReference>
   </ItemGroup>
 
   <!-- StyleCop -->
@@ -25,4 +27,16 @@
     <Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" Link="GlobalSuppressions.test.cs" />
   </ItemGroup>
 
+
+  <Target Name="CopyToOutput" AfterTargets="Build">
+    <ItemGroup>
+      <PackageReferenceFiles Condition="%(PackageReference.CopyToOutputDirectory) != ''"
+        Include="$(NugetPackageRoot)%(PackageReference.FileName)\%(PackageReference.Version)\%(PackageReference.CopyToOutputDirectory)" />
+    </ItemGroup>
+    <Message Condition="%(PackageReference.CopyToOutputDirectory) != '' AND '@(PackageReferenceFiles->'%(Identity)')' != ''"
+             Text="Copy @(PackageReferenceFiles->'%(Identity)') to $(MSBuildProjectDirectory)\$(OutDir)"
+             Importance="high"/>
+    <Copy SourceFiles="@(PackageReferenceFiles)" DestinationFolder="$(MSBuildProjectDirectory)\$(OutDir)" />
+  </Target>
+  
 </Project>
