@@ -119,8 +119,8 @@ variables:
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
   DefaultTimeout: 60
   DD_INSTRUMENTATION_TELEMETRY_ENABLED: 0
-  DD_SERVICE: dd-trace-dotnet
-  DD_ENV: CI
+  DD_LOGGER_SERVICE: dd-trace-dotnet
+  DD_LOGGER_ENV: CI
   DD_LOGGER_API_KEY: $(DD_API_KEY)
 
 # Declare the datadog agent as a resource to be used as a pipeline service
@@ -615,8 +615,8 @@ stages:
         displayName: Build and Test
         env:
           DD_LOGGER_API_KEY: $(ddApiKey)
-          DD_SERVICE: dd-trace-dotnet
-          DD_ENV: CI
+          DD_LOGGER_SERVICE: dd-trace-dotnet
+          DD_LOGGER_ENV: CI
 
       - publish: tracer/build_data
         artifact: profiler-logs_unit_tests_windows_$(System.JobAttempt)
@@ -643,8 +643,8 @@ stages:
         displayName: Build and Test
         env:
           DD_LOGGER_API_KEY: $(ddApiKey)
-          DD_SERVICE: dd-trace-dotnet
-          DD_ENV: CI
+          DD_LOGGER_SERVICE: dd-trace-dotnet
+          DD_LOGGER_ENV: CI
 
       - task: PublishTestResults@2
         displayName: publish test results
@@ -681,8 +681,8 @@ stages:
         displayName: Build and Test
         env:
           DD_LOGGER_API_KEY: $(ddApiKey)
-          DD_SERVICE: dd-trace-dotnet
-          DD_ENV: CI
+          DD_LOGGER_SERVICE: dd-trace-dotnet
+          DD_LOGGER_ENV: CI
 
       - publish: tracer/build_data
         artifact: profiler-logs_unit_tests_macos_$(System.JobAttempt)
@@ -870,8 +870,8 @@ stages:
       displayName: Run integration tests
       env:
         DD_LOGGER_API_KEY: $(ddApiKey)
-        DD_SERVICE: dd-trace-dotnet
-        DD_ENV: CI
+        DD_LOGGER_SERVICE: dd-trace-dotnet
+        DD_LOGGER_ENV: CI
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -928,8 +928,8 @@ stages:
       displayName: RunWindowsIisTracerIntegrationTests
       env:
         DD_LOGGER_API_KEY: $(ddApiKey)
-        DD_SERVICE: dd-trace-dotnet
-        DD_ENV: CI
+        DD_LOGGER_SERVICE: dd-trace-dotnet
+        DD_LOGGER_ENV: CI
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -975,8 +975,8 @@ stages:
       displayName: RunWindowsIisSecurityIntegrationTests
       env:
         DD_LOGGER_API_KEY: $(ddApiKey)
-        DD_SERVICE: dd-trace-dotnet
-        DD_ENV: CI
+        DD_LOGGER_SERVICE: dd-trace-dotnet
+        DD_LOGGER_ENV: CI
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1049,8 +1049,8 @@ stages:
       displayName: RunWindowsIisIntegrationTests
       env:
         DD_LOGGER_API_KEY: $(ddApiKey)
-        DD_SERVICE: dd-trace-dotnet
-        DD_ENV: CI
+        DD_LOGGER_SERVICE: dd-trace-dotnet
+        DD_LOGGER_ENV: CI
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1681,8 +1681,8 @@ stages:
       displayName: RunExplorationTest
       env:
         DD_LOGGER_API_KEY: $(ddApiKey)
-        DD_SERVICE: dd-trace-dotnet
-        DD_ENV: CI
+        DD_LOGGER_SERVICE: dd-trace-dotnet
+        DD_LOGGER_ENV: CI
 
     - publish: tracer/build_data
       displayName: Uploading exploration_tests_windows tracer logs
@@ -2090,15 +2090,15 @@ stages:
       displayName: Build and Test tool
       env:
         DD_LOGGER_API_KEY: $(ddApiKey)
-        DD_SERVICE: dd-trace-dotnet
-        DD_ENV: CI
+        DD_LOGGER_SERVICE: dd-trace-dotnet
+        DD_LOGGER_ENV: CI
 
     - script: tracer\build.cmd RunToolArtifactTests --ToolDestination $(runnerStandalone)
       displayName: Test standalone
       env:
         DD_LOGGER_API_KEY: $(ddApiKey)
-        DD_SERVICE: dd-trace-dotnet
-        DD_ENV: CI
+        DD_LOGGER_SERVICE: dd-trace-dotnet
+        DD_LOGGER_ENV: CI
 
     - task: PublishTestResults@2
       displayName: publish test results

@@ -42,9 +42,8 @@ steps:
         --env IncludeMinorPackageVersions=$(IncludeMinorPackageVersions) \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
         --env enable_crash_dumps=$(enable_crash_dumps) \
-        --env DD_API_KEY=$(DD_API_KEY) \
-        --env DD_SERVICE=dd-trace-dotnet \
-        --env DD_ENV=CI \
+        --env DD_LOGGER_SERVICE=dd-trace-dotnet \
+        --env DD_LOGGER_ENV=CI \
         --env DD_LOGGER_API_KEY \
         --env TF_BUILD \
         --env BUILD_DEFINITIONNAME \
