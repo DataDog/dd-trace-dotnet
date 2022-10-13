@@ -426,6 +426,12 @@ namespace Datadog.Trace
 
                     WriteAsmInfo(writer);
 
+                    writer.WritePropertyName("iast_enabled");
+                    writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.Enabled);
+
+                    writer.WritePropertyName("iast_weak_hash_algorithms");
+                    writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.WeakHashAlgorithms);
+
                     writer.WritePropertyName("direct_logs_submission_enabled_integrations");
                     writer.WriteStartArray();
 

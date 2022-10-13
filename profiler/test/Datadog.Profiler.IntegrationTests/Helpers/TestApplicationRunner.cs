@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
@@ -61,7 +62,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public void Run(MockDatadogAgent agent)
         {
-            RunTest(agent.Port);
+            RunTest(agent);
             PrintTestInfo();
         }
 
@@ -125,13 +126,13 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return (applicationPath, arguments);
         }
 
-        private void RunTest(int agentPort)
+        private void RunTest(MockDatadogAgent agent)
         {
             (var executor, var arguments) = BuildTestCommandLine();
 
             using var process = new Process();
 
-            SetEnvironmentVariables(process.StartInfo.EnvironmentVariables, agentPort);
+            SetEnvironmentVariables(process.StartInfo.EnvironmentVariables, agent);
 
             process.StartInfo.FileName = executor;
             process.StartInfo.Arguments = arguments;
@@ -190,9 +191,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 $"Exit code of \"{Path.GetFileName(process.StartInfo?.FileName ?? string.Empty)}\" should be 0 instead of {process.ExitCode} (= 0x{process.ExitCode.ToString("X")})");
         }
 
-        private void SetEnvironmentVariables(StringDictionary environmentVariables, int agentPort)
+        private void SetEnvironmentVariables(StringDictionary environmentVariables, MockDatadogAgent agent)
         {
-            Environment.PopulateEnvironmentVariables(environmentVariables, agentPort, _profilingExportsIntervalInSeconds, ServiceName);
+            Environment.PopulateEnvironmentVariables(environmentVariables, agent, _profilingExportsIntervalInSeconds, ServiceName);
         }
     }
 }

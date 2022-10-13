@@ -26,6 +26,7 @@ namespace Datadog.Trace.Telemetry
         public const string TracerInstanceCount = "tracer_instance_count";
         public const string AasConfigurationError = "aas_configuration_error";
         public const string SecurityEnabled = "security_enabled";
+        public const string IastEnabled = "iast_enabled";
         public const string FullTrustAppDomain = "environment_fulltrust_appdomain";
         public const string TraceMethods = "trace_methods";
         public const string StatsComputationEnabled = "stats_computation_enabled";

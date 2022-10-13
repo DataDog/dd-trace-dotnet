@@ -32,7 +32,8 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", string.Empty);
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
             runner.Run(agent);
 
             var logFile = Directory.GetFiles(runner.Environment.LogDir)
@@ -51,7 +52,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", "/mnt/does_not_exist/Datadog.Linux.Wrapper.x64.so");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
             runner.Run(agent);
 
             var logFile = Directory.GetFiles(runner.Environment.LogDir)
@@ -70,7 +71,7 @@ namespace Datadog.Profiler.IntegrationTests.LinuxOnly
             // Overwrite the one set in EnvironmentHelper
             runner.Environment.SetVariable("LD_PRELOAD", string.Empty);
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
             runner.Run(agent);
 
             var logFile = Directory.GetFiles(runner.Environment.LogDir)

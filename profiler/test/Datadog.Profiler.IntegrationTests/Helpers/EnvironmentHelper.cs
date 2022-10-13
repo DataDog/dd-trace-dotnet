@@ -135,7 +135,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return loaderConfigFilePath;
         }
 
-        internal void PopulateEnvironmentVariables(StringDictionary environmentVariables, int agentPort, int profilingExportIntervalInSeconds, string serviceName)
+        internal void PopulateEnvironmentVariables(StringDictionary environmentVariables, MockDatadogAgent agent, int profilingExportIntervalInSeconds, string serviceName)
         {
             var profilerPath = GetNativeLoaderPath();
 
@@ -164,8 +164,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             environmentVariables["DD_PROFILING_ENABLED"] = "1";
             environmentVariables["DD_TRACE_ENABLED"] = "0";
 
-            environmentVariables["DD_TRACE_AGENT_PORT"] = agentPort.ToString();
-
             environmentVariables["DD_PROFILING_UPLOAD_PERIOD"] = profilingExportIntervalInSeconds.ToString();
             environmentVariables["DD_TRACE_DEBUG"] = "1";
 
@@ -183,6 +181,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 }
             }
 
+            ConfigureTransportVariables(environmentVariables, agent);
+
             foreach (var key in CustomEnvironmentVariables.Keys)
             {
                 environmentVariables[key] = CustomEnvironmentVariables[key];
@@ -196,6 +196,28 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             var testOutputPath = Path.Combine(baseTestOutputDir, $"TestApplication_{_appName}{_testId}_{Process.GetCurrentProcess().Id}", _framework);
 
             return testOutputPath;
+        }
+
+        private static void ConfigureTransportVariables(StringDictionary environmentVariables, MockDatadogAgent agent)
+        {
+            var envVars = agent switch
+            {
+                MockDatadogAgent.NamedPipeAgent np => new Dictionary<string, string>
+                {
+                    { "DD_TRACE_PIPE_NAME", np.ProfilesPipeName },
+                },
+                MockDatadogAgent.HttpAgent http => new Dictionary<string, string>
+                {
+                    { "DD_TRACE_AGENT_HOSTNAME", "127.0.0.1" },
+                    { "DD_TRACE_AGENT_PORT", http.Port.ToString() },
+                },
+                _ => throw new InvalidOperationException($"Unknown MockDatadogAgent type {agent?.GetType()}")
+            };
+
+            foreach (var envVar in envVars)
+            {
+                environmentVariables[envVar.Key] = envVar.Value;
+            }
         }
 
         private static string GetNativeLoaderGuid()
