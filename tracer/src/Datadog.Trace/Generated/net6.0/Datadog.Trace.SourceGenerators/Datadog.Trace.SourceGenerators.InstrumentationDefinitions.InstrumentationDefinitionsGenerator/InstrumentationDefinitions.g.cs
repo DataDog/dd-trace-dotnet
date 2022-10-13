@@ -415,6 +415,23 @@ namespace Datadog.Trace.ClrProfiler
                 Instrumentations.Add(InstrumentationCategory.AppSec, payload);
                 InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
                 
+                // root types for InstrumentationCategory Iast
+                payload = new Payload
+                {
+                    DefinitionsId = "18ADCFBDCCF14141B3473C7D3B1E9494",
+                    Definitions = new NativeCallTargetDefinition[]
+                    {
+
+                // HashAlgorithm
+               new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.Byte[]", "System.Int32", "System.Int32" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegration"),
+               new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.IO.Stream" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationBis"),
+               new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.Byte[]" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationBis"),
+               new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHashAsync",  new[] { "System.Threading.Tasks.Task", "System.IO.Stream", "System.Threading.CancellationToken" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationTer"),
+                    }
+                };
+                Instrumentations.Add(InstrumentationCategory.Iast, payload);
+                InstrumentationsNatives = InstrumentationsNatives.Concat(payload.Definitions);
+                
                 // derived types for InstrumentationCategory Tracing
                 payload = new Payload
                 {
@@ -457,6 +474,17 @@ namespace Datadog.Trace.ClrProfiler
                 DerivedInstrumentations.Add(InstrumentationCategory.AppSec, payload);
                 DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
                 
+                // derived types for InstrumentationCategory Iast
+                payload = new Payload
+                {
+                    DefinitionsId = "0C21F56FE62D49D78DF30D714F869815",
+                    Definitions = new NativeCallTargetDefinition[]
+                    {
+                    }
+                };
+                DerivedInstrumentations.Add(InstrumentationCategory.Iast, payload);
+                DerivedInstrumentationsNatives = DerivedInstrumentationsNatives.Concat(payload.Definitions);
+                
                 // interface types for InstrumentationCategory Tracing
                 payload = new Payload
                 {
@@ -480,6 +508,17 @@ namespace Datadog.Trace.ClrProfiler
                     }
                 };
                 InterfaceInstrumentations.Add(InstrumentationCategory.AppSec, payload);
+                InterfaceInstrumentationsNatives = InterfaceInstrumentationsNatives.Concat(payload.Definitions);
+                
+                // interface types for InstrumentationCategory Iast
+                payload = new Payload
+                {
+                    DefinitionsId = "2A8E770131E64FCCB0AAC21AE3857E5E",
+                    Definitions = new NativeCallTargetDefinition[]
+                    {
+                    }
+                };
+                InterfaceInstrumentations.Add(InstrumentationCategory.Iast, payload);
                 InterfaceInstrumentationsNatives = InterfaceInstrumentationsNatives.Concat(payload.Definitions);
                 
         }
@@ -602,6 +641,11 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient.GrpcCallFinishCallPre243Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient.GrpcCallRunCallIntegration"
                     => Datadog.Trace.Configuration.IntegrationId.Grpc,
+                "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegration"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationBis"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationBis"
+                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationTer"
+                    => Datadog.Trace.Configuration.IntegrationId.HashAlgorithm,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegration"

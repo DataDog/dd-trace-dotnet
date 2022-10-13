@@ -2,12 +2,12 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Security;
-using System.Threading.Tasks;
 
 namespace Samples.ProcessStart
 {
     internal static class Program
     {
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Interoperability", "CA1416:Validate platform compatibility")]
         private static void Main()
         {
             Environment.SetEnvironmentVariable("PATH", "testPath");
