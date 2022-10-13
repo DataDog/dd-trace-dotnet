@@ -56,11 +56,6 @@ public class SymmetricAlgorithmIntegration
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-        return new CallTargetState(scope: SymmetricAlgorithmIntegrationCommon.CreateScope(instance));
-            }
-
-            return CallTargetState.GetDefault();
-            */
             return new CallTargetState(scope: SymmetricAlgorithmIntegrationCommon.CreateScope(instance));
         }
 
