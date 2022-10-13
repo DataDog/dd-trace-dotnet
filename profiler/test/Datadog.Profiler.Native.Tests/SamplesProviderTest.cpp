@@ -9,21 +9,32 @@
 #include "ProviderBase.h"
 #include "Sample.h"
 
+
+// Wall time profiler
+const size_t WallTimeDuration = 0;
+
+// CPU time profiler
+const size_t CpuTimeDuration = 1;
+
+// Exception profiler
+const size_t ExceptionCount = 2;
+
+
 Sample GetTestSample(std::string_view runtimeId, const std::string& framePrefix, const std::string& labelId, const std::string& labelValue)
 {
     Sample sample{runtimeId};
     // wall values
-    sample.AddValue(100, SampleValue::WallTimeDuration);
-    sample.AddValue(200, SampleValue::WallTimeDuration);
-    sample.AddValue(300, SampleValue::WallTimeDuration);
+    sample.AddValue(100, WallTimeDuration);
+    sample.AddValue(200, WallTimeDuration);
+    sample.AddValue(300, WallTimeDuration);
     // cpu values
-    sample.AddValue(300, SampleValue::CpuTimeDuration);
-    sample.AddValue(200, SampleValue::CpuTimeDuration);
-    sample.AddValue(100, SampleValue::CpuTimeDuration);
+    sample.AddValue(300, CpuTimeDuration);
+    sample.AddValue(200, CpuTimeDuration);
+    sample.AddValue(100, CpuTimeDuration);
     // exception values
-    sample.AddValue(4, SampleValue::ExceptionCount);
-    sample.AddValue(5, SampleValue::ExceptionCount);
-    sample.AddValue(6, SampleValue::ExceptionCount);
+    sample.AddValue(4, ExceptionCount);
+    sample.AddValue(5, ExceptionCount);
+    sample.AddValue(6, ExceptionCount);
     // --> only the last one should be kept
 
     Label l;
@@ -41,12 +52,10 @@ Sample GetTestSample(std::string_view runtimeId, const std::string& framePrefix,
 void ValidateTestSample(const Sample& sample, const std::string& framePrefix, const std::string& labelId, const std::string& labelValue)
 {
     // Check values
-    // Today, only 3 values in the array
+    // Only 3 value slots in the array
     //    WallTime
     //    CpuTime
     //    ExceptionCount
-    // --> should be increased when a new profiler is added
-    //     this is a good reminder to add dedicated tests  :^)
     auto values = sample.GetValues();
     ASSERT_EQ(3, values.size());
 
@@ -54,15 +63,15 @@ void ValidateTestSample(const Sample& sample, const std::string& framePrefix, co
     {
         // for the same SampleValue, only the last "added" value is kept
         // update GetTestSample() for new profilers
-        if (current == (size_t)SampleValue::WallTimeDuration)
+        if (current == WallTimeDuration)
         {
             ASSERT_EQ(300, values[current]);
         }
-        else if (current == (size_t)SampleValue::CpuTimeDuration)
+        else if (current == CpuTimeDuration)
         {
             ASSERT_EQ(100, values[current]);
         }
-        else if (current == (size_t)SampleValue::ExceptionCount)
+        else if (current == ExceptionCount)
         {
             ASSERT_EQ(6, values[current]);
         }

@@ -638,7 +638,7 @@ stages:
       - task: PublishTestResults@2
         displayName: publish test results
         inputs:
-          testResultsFiles:
+          testResultsFiles: |
             tracer/test/**/test*.xml
             profiler/_build/bin/**/test*.xml
         condition: succeededOrFailed()

@@ -31,4 +31,6 @@ public class RcmBase : AspNetBase
     protected string AppSecEnabledMessage() => $"AppSec is now Enabled, _settings.Enabled is true, coming from remote config: true  {{ MachineName: \".\", Process: \"[{SampleProcessId}";
 
     protected string RulesUpdatedMessage() => $"rules have been updated and waf status is \"DDWAF_OK\"  {{ MachineName: \".\", Process: \"[{SampleProcessId}";
+
+    protected string WafUpdateRule() => $"DDAS-0015-00: AppSec loaded 1 from file RemoteConfig.  {{ MachineName: \".\", Process: \"[{SampleProcessId}";
 }

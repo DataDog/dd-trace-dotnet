@@ -10,13 +10,20 @@
 #include "RawWallTimeSample.h"
 
 
+std::vector<SampleValueType> WallTimeProvider::SampleTypeDefinitions(
+    {
+        {"wall", "nanoseconds"}
+    }
+    );
+
 WallTimeProvider::WallTimeProvider(
+    uint32_t valueOffset,
     IThreadsCpuManager* pThreadsCpuManager,
     IFrameStore* pFrameStore,
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore
     )
     :
-    CollectorBase<RawWallTimeSample>("WallTimeProvider", pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore)
+    CollectorBase<RawWallTimeSample>("WallTimeProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore)
 {
 }

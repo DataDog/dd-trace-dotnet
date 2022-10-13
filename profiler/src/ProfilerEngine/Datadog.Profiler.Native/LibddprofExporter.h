@@ -2,10 +2,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
+
 #include "IConfiguration.h"
 #include "IExporter.h"
+#include "Sample.h"
 #include "TagsHelper.h"
-
 #include <mutex>
 
 extern "C"
@@ -29,6 +30,7 @@ class LibddprofExporter : public IExporter
 {
 public:
     LibddprofExporter(
+        std::vector<SampleValueType>&& sampleTypeDefinitions,
         IConfiguration* configuration,
         IApplicationStore* applicationStore,
         IRuntimeInfo* runtimeInfo,
@@ -85,7 +87,7 @@ private:
     private:
         struct ddog_Profile* _profile;
     };
-        
+
     class ProfileInfo
     {
     public:
@@ -114,7 +116,7 @@ private:
         IEnabledProfilers* enabledProfilers);
 
     static ddog_ProfileExporter* CreateExporter(const ddog_Vec_tag* tags, ddog_Endpoint endpoint);
-    static ddog_Profile* CreateProfile();
+    ddog_Profile* CreateProfile();
 
     ddog_Request* CreateRequest(SerializedProfile const& encodedProfile, ddog_ProfileExporter* exporter,  const Tags& additionalTags) const;
     ddog_Endpoint CreateEndpoint(IConfiguration* configuration);
@@ -139,6 +141,7 @@ private:
     static std::string const ProfilePeriodType;
     static std::string const ProfilePeriodUnit;
 
+    std::vector<SampleValueType> _sampleTypeDefinitions;
     fs::path _pprofOutputPath;
 
     std::vector<ddog_Location> _locations;
