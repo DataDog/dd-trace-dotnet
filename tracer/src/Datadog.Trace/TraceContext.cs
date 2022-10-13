@@ -22,8 +22,9 @@ namespace Datadog.Trace
 
         private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
         private readonly long _timestamp = Stopwatch.GetTimestamp();
-        private ArrayBuilder<Span> _spans;
+        private readonly object _syncRoot = new();
 
+        private ArrayBuilder<Span> _spans;
         private int _openSpans;
         private int? _samplingPriority;
 
@@ -56,7 +57,7 @@ namespace Datadog.Trace
 
         public void AddSpan(Span span)
         {
-            lock (this)
+            lock (_syncRoot)
             {
                 if (RootSpan == null)
                 {
@@ -97,7 +98,7 @@ namespace Datadog.Trace
                 Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
             }
 
-            lock (this)
+            lock (_syncRoot)
             {
                 _spans.Add(span);
                 _openSpans--;
@@ -130,6 +131,24 @@ namespace Datadog.Trace
                 // span to decide which metric to emit (datadog.apm.host.instance or datadog.apm.azure_resource_instance one).
                 AddAASMetadata(spansToWrite.Array![spansToWrite.Offset]);
 
+                Tracer.Write(spansToWrite);
+            }
+        }
+
+        // called from tests to force partial flush
+        internal void WriteClosedSpans()
+        {
+            ArraySegment<Span> spansToWrite;
+
+            lock (_syncRoot)
+            {
+                spansToWrite = _spans.GetArray();
+                _spans = default;
+            }
+
+            if (spansToWrite.Count > 0)
+            {
+                AddAASMetadata(spansToWrite.Array![spansToWrite.Offset]);
                 Tracer.Write(spansToWrite);
             }
         }
