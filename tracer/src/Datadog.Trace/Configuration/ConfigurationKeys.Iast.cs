@@ -16,14 +16,12 @@ namespace Datadog.Trace.Configuration
             public const string Enabled = "DD_IAST_ENABLED";
 
             /// <summary>
-            /// Configuration key for enabling or disabling the Weak hash algorithms detection.
-            /// Default is value is true (enabled).
+            /// Configuration key for establishing the weak hashing algorithms.
             /// </summary>
             public const string WeakHashAlgorithms = "DD_IAST_WEAK_HASH_ALGORITHMS";
 
             /// <summary>
-            /// Configuration key for enabling or disabling the Weak cipher algorithms detection.
-            /// Default is value is true (enabled).
+            /// Configuration key for establishing the weak cipher algorithms.
             /// </summary>
             public const string WeakCipherAlgorithms = "DD_IAST_WEAK_CIPHER_ALGORITHMS";
         }

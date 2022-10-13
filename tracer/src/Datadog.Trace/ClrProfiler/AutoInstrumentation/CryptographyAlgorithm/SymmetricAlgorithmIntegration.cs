@@ -36,14 +36,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-            /*
-            if (instance is System.Security.Cryptography.SymmetricAlgorithm algorithm)
-            {
-                return new CallTargetState(scope: SymmetricAlgorithmIntegrationCommon.CreateScope(algorithm));
-            }
-
-            return CallTargetState.GetDefault();
-            */
             return new CallTargetState(scope: SymmetricAlgorithmIntegrationCommon.CreateScope(instance));
         }
 
