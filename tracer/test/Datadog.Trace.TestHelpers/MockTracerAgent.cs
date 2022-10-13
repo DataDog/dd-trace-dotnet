@@ -683,17 +683,7 @@ namespace Datadog.Trace.TestHelpers
                 try
                 {
                     var body = ReadStreamBody(request);
-                    if (request.Headers.GetValue("Content-Encoding") == "gzip")
-                    {
-                        using var compressed = new MemoryStream(body);
-                        using var gzip = new GZipStream(compressed, CompressionMode.Decompress);
-                        using var decompressed = new MemoryStream();
-                        gzip.CopyTo(decompressed);
-                        gzip.Flush();
-                        body = decompressed.GetBuffer();
-                    }
-
-                    var json = MessagePack.MessagePackSerializer.ToJson(body);
+                    var json = MessagePackSerializer.ToJson(body);
                     var headerCollection = new NameValueCollection();
                     foreach (var header in request.Headers)
                     {

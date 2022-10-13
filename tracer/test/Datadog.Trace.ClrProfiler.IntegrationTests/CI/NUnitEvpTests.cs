@@ -65,7 +65,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                 using (var agent = EnvironmentHelper.GetMockAgent())
                 {
-                    agent.Configuration.Endpoints = agent.Configuration.Endpoints.Concat("evp_proxy/v1");
                     agent.EventPlatformProxyPayloadReceived += (sender, e) =>
                     {
                         var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);

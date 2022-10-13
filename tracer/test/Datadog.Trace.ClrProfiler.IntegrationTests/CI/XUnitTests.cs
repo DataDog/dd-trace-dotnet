@@ -50,144 +50,148 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Logs, "1");
 
                 using (var agent = EnvironmentHelper.GetMockAgent())
-                using (ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
                 {
-                    spans = agent.WaitForSpans(ExpectedSpanCount)
-                        .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
-                        .ToList();
-
-                    // Check the span count
-                    Assert.Equal(ExpectedSpanCount, spans.Count);
-
-                    // ***************************************************************************
-
-                    foreach (var targetSpan in spans)
+                    // We remove the evp_proxy endpoint to force the APM protocol compatibility
+                    agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v1")).ToArray();
+                    using (ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
                     {
-                        // Remove decision maker tag (not used by the backend for civisibility)
-                        targetSpan.Tags.Remove(Tags.Propagated.DecisionMaker);
+                        spans = agent.WaitForSpans(ExpectedSpanCount)
+                                     .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
+                                     .ToList();
 
-                        // check the name
-                        Assert.Equal("xunit.test", targetSpan.Name);
+                        // Check the span count
+                        Assert.Equal(ExpectedSpanCount, spans.Count);
 
-                        // check the CIEnvironmentValues decoration.
-                        CheckCIEnvironmentValuesDecoration(targetSpan);
+                        // ***************************************************************************
 
-                        // check the runtime values
-                        CheckRuntimeValues(targetSpan);
-
-                        // check the bundle name
-                        AssertTargetSpanEqual(targetSpan, TestTags.Bundle, TestBundleName);
-                        AssertTargetSpanEqual(targetSpan, TestTags.Module, TestBundleName);
-
-                        // check the suite name
-                        AssertTargetSpanEqual(targetSpan, TestTags.Suite, TestSuiteName);
-
-                        // check the test type
-                        AssertTargetSpanEqual(targetSpan, TestTags.Type, TestTags.TypeTest);
-
-                        // check the test framework
-                        AssertTargetSpanContains(targetSpan, TestTags.Framework, "xUnit");
-                        Assert.True(targetSpan.Tags.Remove(TestTags.FrameworkVersion));
-
-                        // check the version
-                        AssertTargetSpanEqual(targetSpan, "version", "1.0.0");
-
-                        // checks the origin tag
-                        CheckOriginTag(targetSpan);
-
-                        // checks the runtime id tag
-                        AssertTargetSpanExists(targetSpan, Tags.RuntimeId);
-
-                        // checks the source tags
-                        AssertTargetSpanExists(targetSpan, TestTags.SourceFile);
-
-                        // checks code owners
-                        AssertTargetSpanExists(targetSpan, TestTags.CodeOwners);
-
-                        // Check the Environment
-                        AssertTargetSpanEqual(targetSpan, Tags.Env, "integration_tests");
-
-                        // Language
-                        AssertTargetSpanEqual(targetSpan, Tags.Language, TracerConstants.Language);
-
-                        // CI Library Language
-                        AssertTargetSpanEqual(targetSpan, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
-
-                        // check specific test span
-                        switch (targetSpan.Tags[TestTags.Name])
+                        foreach (var targetSpan in spans)
                         {
-                            case "SimplePassTest":
-                                CheckSimpleTestSpan(targetSpan);
-                                break;
+                            // Remove decision maker tag (not used by the backend for civisibility)
+                            targetSpan.Tags.Remove(Tags.Propagated.DecisionMaker);
 
-                            case "SimpleSkipFromAttributeTest":
-                                CheckSimpleSkipFromAttributeTest(targetSpan);
-                                break;
+                            // check the name
+                            Assert.Equal("xunit.test", targetSpan.Name);
 
-                            case "SimpleErrorTest":
-                                CheckSimpleErrorTest(targetSpan);
-                                break;
+                            // check the CIEnvironmentValues decoration.
+                            CheckCIEnvironmentValuesDecoration(targetSpan);
 
-                            case "TraitPassTest":
-                                CheckSimpleTestSpan(targetSpan);
-                                CheckTraitsValues(targetSpan);
-                                break;
+                            // check the runtime values
+                            CheckRuntimeValues(targetSpan);
 
-                            case "TraitSkipFromAttributeTest":
-                                CheckSimpleSkipFromAttributeTest(targetSpan);
-                                CheckTraitsValues(targetSpan);
-                                break;
+                            // check the bundle name
+                            AssertTargetSpanEqual(targetSpan, TestTags.Bundle, TestBundleName);
+                            AssertTargetSpanEqual(targetSpan, TestTags.Module, TestBundleName);
 
-                            case "TraitErrorTest":
-                                CheckSimpleErrorTest(targetSpan);
-                                CheckTraitsValues(targetSpan);
-                                break;
+                            // check the suite name
+                            AssertTargetSpanEqual(targetSpan, TestTags.Suite, TestSuiteName);
 
-                            case "SimpleParameterizedTest":
-                                CheckSimpleTestSpan(targetSpan);
-                                AssertTargetSpanAnyOf(
-                                    targetSpan,
-                                    TestTags.Parameters,
-                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 1, yValue: 1, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"1\",\"expectedResult\":\"2\"}}",
-                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 2, yValue: 2, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"2\",\"expectedResult\":\"4\"}}",
-                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 3, yValue: 3, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"3\",\"expectedResult\":\"6\"}}",
-                                    "{\"metadata\":{\"test_name\":\"SimpleParameterizedTest(xValue: 1, yValue: 1, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"1\",\"expectedResult\":\"2\"}}",
-                                    "{\"metadata\":{\"test_name\":\"SimpleParameterizedTest(xValue: 2, yValue: 2, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"2\",\"expectedResult\":\"4\"}}",
-                                    "{\"metadata\":{\"test_name\":\"SimpleParameterizedTest(xValue: 3, yValue: 3, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"3\",\"expectedResult\":\"6\"}}");
-                                break;
+                            // check the test type
+                            AssertTargetSpanEqual(targetSpan, TestTags.Type, TestTags.TypeTest);
 
-                            case "SimpleSkipParameterizedTest":
-                                CheckSimpleSkipFromAttributeTest(targetSpan);
-                                break;
+                            // check the test framework
+                            AssertTargetSpanContains(targetSpan, TestTags.Framework, "xUnit");
+                            Assert.True(targetSpan.Tags.Remove(TestTags.FrameworkVersion));
 
-                            case "SimpleErrorParameterizedTest":
-                                CheckSimpleErrorTest(targetSpan);
-                                AssertTargetSpanAnyOf(
-                                    targetSpan,
-                                    TestTags.Parameters,
-                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 1, yValue: 0, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"0\",\"expectedResult\":\"2\"}}",
-                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 2, yValue: 0, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"0\",\"expectedResult\":\"4\"}}",
-                                    "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 3, yValue: 0, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"0\",\"expectedResult\":\"6\"}}",
-                                    "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 1, yValue: 0, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"0\",\"expectedResult\":\"2\"}}",
-                                    "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 2, yValue: 0, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"0\",\"expectedResult\":\"4\"}}",
-                                    "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 3, yValue: 0, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"0\",\"expectedResult\":\"6\"}}");
-                                break;
+                            // check the version
+                            AssertTargetSpanEqual(targetSpan, "version", "1.0.0");
+
+                            // checks the origin tag
+                            CheckOriginTag(targetSpan);
+
+                            // checks the runtime id tag
+                            AssertTargetSpanExists(targetSpan, Tags.RuntimeId);
+
+                            // checks the source tags
+                            AssertTargetSpanExists(targetSpan, TestTags.SourceFile);
+
+                            // checks code owners
+                            AssertTargetSpanExists(targetSpan, TestTags.CodeOwners);
+
+                            // Check the Environment
+                            AssertTargetSpanEqual(targetSpan, Tags.Env, "integration_tests");
+
+                            // Language
+                            AssertTargetSpanEqual(targetSpan, Tags.Language, TracerConstants.Language);
+
+                            // CI Library Language
+                            AssertTargetSpanEqual(targetSpan, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
+
+                            // check specific test span
+                            switch (targetSpan.Tags[TestTags.Name])
+                            {
+                                case "SimplePassTest":
+                                    CheckSimpleTestSpan(targetSpan);
+                                    break;
+
+                                case "SimpleSkipFromAttributeTest":
+                                    CheckSimpleSkipFromAttributeTest(targetSpan);
+                                    break;
+
+                                case "SimpleErrorTest":
+                                    CheckSimpleErrorTest(targetSpan);
+                                    break;
+
+                                case "TraitPassTest":
+                                    CheckSimpleTestSpan(targetSpan);
+                                    CheckTraitsValues(targetSpan);
+                                    break;
+
+                                case "TraitSkipFromAttributeTest":
+                                    CheckSimpleSkipFromAttributeTest(targetSpan);
+                                    CheckTraitsValues(targetSpan);
+                                    break;
+
+                                case "TraitErrorTest":
+                                    CheckSimpleErrorTest(targetSpan);
+                                    CheckTraitsValues(targetSpan);
+                                    break;
+
+                                case "SimpleParameterizedTest":
+                                    CheckSimpleTestSpan(targetSpan);
+                                    AssertTargetSpanAnyOf(
+                                        targetSpan,
+                                        TestTags.Parameters,
+                                        "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 1, yValue: 1, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"1\",\"expectedResult\":\"2\"}}",
+                                        "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 2, yValue: 2, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"2\",\"expectedResult\":\"4\"}}",
+                                        "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 3, yValue: 3, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"3\",\"expectedResult\":\"6\"}}",
+                                        "{\"metadata\":{\"test_name\":\"SimpleParameterizedTest(xValue: 1, yValue: 1, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"1\",\"expectedResult\":\"2\"}}",
+                                        "{\"metadata\":{\"test_name\":\"SimpleParameterizedTest(xValue: 2, yValue: 2, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"2\",\"expectedResult\":\"4\"}}",
+                                        "{\"metadata\":{\"test_name\":\"SimpleParameterizedTest(xValue: 3, yValue: 3, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"3\",\"expectedResult\":\"6\"}}");
+                                    break;
+
+                                case "SimpleSkipParameterizedTest":
+                                    CheckSimpleSkipFromAttributeTest(targetSpan);
+                                    break;
+
+                                case "SimpleErrorParameterizedTest":
+                                    CheckSimpleErrorTest(targetSpan);
+                                    AssertTargetSpanAnyOf(
+                                        targetSpan,
+                                        TestTags.Parameters,
+                                        "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 1, yValue: 0, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"0\",\"expectedResult\":\"2\"}}",
+                                        "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 2, yValue: 0, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"0\",\"expectedResult\":\"4\"}}",
+                                        "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 3, yValue: 0, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"0\",\"expectedResult\":\"6\"}}",
+                                        "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 1, yValue: 0, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"0\",\"expectedResult\":\"2\"}}",
+                                        "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 2, yValue: 0, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"0\",\"expectedResult\":\"4\"}}",
+                                        "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 3, yValue: 0, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"0\",\"expectedResult\":\"6\"}}");
+                                    break;
+                            }
+
+                            // check remaining tag (only the name)
+                            Assert.Single(targetSpan.Tags);
                         }
 
-                        // check remaining tag (only the name)
-                        Assert.Single(targetSpan.Tags);
+                        // ***************************************************************************
+                        // Check logs
+                        messages = logsIntake.Logs.Select(i => i.Message).Where(m => m.StartsWith("Test:")).ToArray();
+
+                        Assert.Contains(messages, m => m.StartsWith("Test:SimplePassTest"));
+                        Assert.Contains(messages, m => m.StartsWith("Test:SimpleErrorTest"));
+                        Assert.Contains(messages, m => m.StartsWith("Test:TraitPassTest"));
+                        Assert.Contains(messages, m => m.StartsWith("Test:TraitErrorTest"));
+                        Assert.Contains(messages, m => m.StartsWith("Test:SimpleParameterizedTest"));
+                        Assert.Contains(messages, m => m.StartsWith("Test:SimpleErrorParameterizedTest"));
                     }
-
-                    // ***************************************************************************
-                    // Check logs
-                    messages = logsIntake.Logs.Select(i => i.Message).Where(m => m.StartsWith("Test:")).ToArray();
-
-                    Assert.Contains(messages, m => m.StartsWith("Test:SimplePassTest"));
-                    Assert.Contains(messages, m => m.StartsWith("Test:SimpleErrorTest"));
-                    Assert.Contains(messages, m => m.StartsWith("Test:TraitPassTest"));
-                    Assert.Contains(messages, m => m.StartsWith("Test:TraitErrorTest"));
-                    Assert.Contains(messages, m => m.StartsWith("Test:SimpleParameterizedTest"));
-                    Assert.Contains(messages, m => m.StartsWith("Test:SimpleErrorParameterizedTest"));
                 }
             }
             catch

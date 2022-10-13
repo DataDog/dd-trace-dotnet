@@ -457,11 +457,12 @@ namespace Datadog.Trace.Ci
                 agentConfiguration = aConfiguration;
                 manualResetEventSlim.Set();
                 discoveryServiceCopy.RemoveSubscription(CallBack);
+                Log.Debug("Agent configuration received.");
             }
 
             // We wait up to 5 seconds for the configuration to be retrieved.
             manualResetEventSlim.Wait(5_000);
-            if (!string.IsNullOrEmpty(agentConfiguration?.EventPlatformProxyEndpoint))
+            if (!string.IsNullOrEmpty(Volatile.Read(ref agentConfiguration)?.EventPlatformProxyEndpoint))
             {
                 Log.Information("Event platform proxy supported by agent.");
                 eventPlatformProxyEnabled = true;
@@ -471,7 +472,6 @@ namespace Datadog.Trace.Ci
                 Log.Information("Event platform proxy is not supported by the agent. Falling back to the APM protocol.");
             }
 
-            Log.Debug("Agent configuration received.");
             return eventPlatformProxyEnabled;
         }
     }

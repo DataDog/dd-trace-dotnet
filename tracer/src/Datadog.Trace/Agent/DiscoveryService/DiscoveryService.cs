@@ -69,6 +69,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 SupportedConfigurationEndpoint,
                 SupportedStatsEndpoint,
                 SupportedDataStreamsEndpoint,
+                SupportedEventPlatformProxyEndpoint,
             };
 
         public static DiscoveryService Create(ImmutableExporterSettings exporterSettings)
