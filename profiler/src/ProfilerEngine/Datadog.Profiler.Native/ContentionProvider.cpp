@@ -58,6 +58,7 @@ void ContentionProvider::OnContention(double contentionDuration)
         return;
     }
 
+    result->SetUnixTimeUtc(GetCurrentTimestamp());
     result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
 
     RawContentionSample rawSample;

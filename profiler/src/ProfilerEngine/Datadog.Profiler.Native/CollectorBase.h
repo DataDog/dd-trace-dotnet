@@ -93,6 +93,12 @@ public:
         return TransformRawSamples(input);
     }
 
+protected:
+    uint64_t GetCurrentTimestamp()
+    {
+        return OpSysTools::GetHighPrecisionTimestamp();
+    }
+
 private:
 
     std::list<TRawSample> FetchRawSamples()
