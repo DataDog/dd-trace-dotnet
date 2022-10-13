@@ -1,4 +1,4 @@
-﻿// <copyright file="SamplingPriorityTestsWithUpstreamService.cs" company="Datadog">
+﻿// <copyright file="SamplingPriorityTests_MultipleChunksWithoutUpstreamService.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,7 +13,7 @@ using Xunit;
 
 namespace Datadog.Trace.IntegrationTests.Tagging;
 
-public class SamplingPriorityTestsWithUpstreamService
+public class SamplingPriorityTests_MultipleChunksWithoutUpstreamService
 {
     private const string SamplingPriorityName = "_sampling_priority_v1";
     private const int SamplingPriorityValue = 1;
@@ -21,7 +21,7 @@ public class SamplingPriorityTestsWithUpstreamService
     private readonly MockApi _testApi;
     private readonly Tracer _tracer;
 
-    public SamplingPriorityTestsWithUpstreamService()
+    public SamplingPriorityTests_MultipleChunksWithoutUpstreamService()
     {
         _testApi = new MockApi();
 
@@ -33,12 +33,9 @@ public class SamplingPriorityTestsWithUpstreamService
     [Fact]
     public async Task SingleChunk()
     {
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
-        var settings = new SpanCreationSettings { Parent = propagatedContext };
-
-        using (var scope1 = _tracer.StartActive("1", settings))
+        using (var rootScope = _tracer.StartActive("1"))
         {
-            ((Span)scope1.Span).Context.TraceContext.SetSamplingPriority(SamplingPriorityValue);
+            ((Span)rootScope.Span).Context.TraceContext.SetSamplingPriority(SamplingPriorityValue);
 
             using (_ = _tracer.StartActive("1.1"))
             {
@@ -63,12 +60,12 @@ public class SamplingPriorityTestsWithUpstreamService
 
         // root span should have the sampling priority
         var mockSpan1 = traceChunks[0][3];
-        mockSpan1.ParentId.Should().Be(propagatedContext.SpanId);
+        mockSpan1.ParentId.Should().BeNull();
         mockSpan1.Metrics.Should().Contain(SamplingPriorityName, SamplingPriorityValue);
 
         // other spans should NOT have the sampling priority
         traceChunks[0]
-           .Where(s => s.ParentId != propagatedContext.SpanId)
+           .Where(s => s.ParentId > 0)
            .Should()
            .HaveCount(3)
            .And.OnlyContain(s => s.GetMetric(SamplingPriorityName) == null);
@@ -82,10 +79,7 @@ public class SamplingPriorityTestsWithUpstreamService
         ISpan span12;
         ISpan span121;
 
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
-        var settings = new SpanCreationSettings { Parent = propagatedContext };
-
-        using (var scope1 = _tracer.StartActive("1", settings))
+        using (var scope1 = _tracer.StartActive("1"))
         {
             span1 = scope1.Span;
 
@@ -139,11 +133,11 @@ public class SamplingPriorityTestsWithUpstreamService
            .And.OnlyContain(s => s.ParentId == span12.SpanId)
            .And.OnlyContain(s => s.GetMetric(SamplingPriorityName) == null);
 
-        // chunk 1, orphan span should have the sampling priority
+        // chunk 1, root span should have the sampling priority
         traceChunks[1]
            .Should()
            .HaveCount(1)
-           .And.OnlyContain(s => s.ParentId == propagatedContext.SpanId)
+           .And.OnlyContain(s => s.ParentId == null || s.ParentId == 0)
            .And.OnlyContain(s => s.SpanId == span1.SpanId)
            .And.OnlyContain(s => s.GetMetric(SamplingPriorityName) == SamplingPriorityValue);
     }
@@ -156,10 +150,7 @@ public class SamplingPriorityTestsWithUpstreamService
         ISpan span12;
         ISpan span121;
 
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
-        var settings = new SpanCreationSettings { Parent = propagatedContext };
-
-        using (var scope1 = _tracer.StartActive("1", settings))
+        using (var scope1 = _tracer.StartActive("1"))
         {
             span1 = scope1.Span;
 
@@ -204,12 +195,12 @@ public class SamplingPriorityTestsWithUpstreamService
            .And.OnlyContain(s => s.SpanId == span11.SpanId || s.SpanId == span121.SpanId)
            .And.OnlyContain(s => s.GetMetric(SamplingPriorityName) == SamplingPriorityValue);
 
-        // chunk 1, orphan span should have the sampling priority
+        // chunk 1, root span should have the sampling priority
         traceChunks[1]
            .Where(s => s.SpanId == span1.SpanId)
            .Should()
            .HaveCount(1)
-           .And.OnlyContain(s => s.ParentId == propagatedContext.SpanId)
+           .And.OnlyContain(s => s.ParentId == null || s.ParentId == 0)
            .And.OnlyContain(s => s.GetMetric(SamplingPriorityName) == SamplingPriorityValue);
 
         // chunk 1, the other span should NOT have the sampling priority
@@ -229,10 +220,7 @@ public class SamplingPriorityTestsWithUpstreamService
         ISpan span12;
         ISpan span121;
 
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
-        var settings = new SpanCreationSettings { Parent = propagatedContext };
-
-        using (var scope1 = _tracer.StartActive("1", settings))
+        using (var scope1 = _tracer.StartActive("1"))
         {
             span1 = scope1.Span;
 
@@ -277,12 +265,12 @@ public class SamplingPriorityTestsWithUpstreamService
            .And.OnlyContain(s => s.SpanId == span11.SpanId)
            .And.OnlyContain(s => s.GetMetric(SamplingPriorityName) == SamplingPriorityValue);
 
-        // chunk 1, orphan span should have the sampling priority
+        // chunk 1, root span should have the sampling priority
         traceChunks[1]
            .Where(s => s.SpanId == span1.SpanId)
            .Should()
            .HaveCount(1)
-           .And.OnlyContain(s => s.ParentId == propagatedContext.SpanId)
+           .And.OnlyContain(s => s.ParentId == null || s.ParentId == 0)
            .And.OnlyContain(s => s.GetMetric(SamplingPriorityName) == SamplingPriorityValue);
 
         // chunk 1, other spans should NOT have the sampling priority
@@ -302,10 +290,7 @@ public class SamplingPriorityTestsWithUpstreamService
         ISpan span12;
         ISpan span121;
 
-        var propagatedContext = new SpanContext(traceId: 1, spanId: 10);
-        var settings = new SpanCreationSettings { Parent = propagatedContext };
-
-        using (var scope1 = _tracer.StartActive("1", settings))
+        using (var scope1 = _tracer.StartActive("1"))
         {
             span1 = scope1.Span;
 
@@ -368,10 +353,10 @@ public class SamplingPriorityTestsWithUpstreamService
         mockSpan12.ParentId.Should().Be(span1.SpanId);
         mockSpan12.Metrics.Should().Contain(SamplingPriorityName, SamplingPriorityValue);
 
-        // chunk 3, orphan span should have the sampling priority
+        // chunk 3, root span should have the sampling priority
         var mockSpan1 = traceChunks[3][0];
         mockSpan1.SpanId.Should().Be(span1.SpanId);
-        mockSpan1.ParentId.Should().Be(propagatedContext.SpanId);
+        mockSpan1.ParentId.Should().BeNull();
         mockSpan1.Metrics.Should().Contain(SamplingPriorityName, SamplingPriorityValue);
     }
 }
