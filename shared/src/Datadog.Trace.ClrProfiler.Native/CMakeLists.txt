@@ -164,7 +164,6 @@ if (ISMACOS)
         coreclr
         fmt-lib
         spdlog-headers
-        managed-loader-objs
     )
 elseif(ISLINUX)
     target_link_libraries("Datadog.Trace.ClrProfiler.Native"
@@ -174,8 +173,7 @@ elseif(ISLINUX)
         coreclr
         fmt-lib
         spdlog-headers
-        managed-loader-objs
     )
 endif()
 
-add_dependencies("Datadog.Trace.ClrProfiler.Native" fmt-lib coreclr re2-lib spdlog-headers managed-loader-objs)
+add_dependencies("Datadog.Trace.ClrProfiler.Native" fmt-lib coreclr spdlog-headers)
