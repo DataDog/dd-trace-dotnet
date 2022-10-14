@@ -14,7 +14,7 @@ using Datadog.Trace.Sampling;
 namespace Datadog.Trace.Ci.Agent
 {
     /// <summary>
-    /// APM Agent Writer
+    /// APM Agent Writer for CI Visibility
     /// </summary>
     internal class ApmAgentWriter : IEventWriter
     {
