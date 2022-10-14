@@ -22,7 +22,7 @@ namespace Datadog.Trace.PlatformHelpers
         private const string ContainerRegex = @"[0-9a-f]{64}";
         private const string UuidRegex = @"[0-9a-f]{8}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{4}[-_][0-9a-f]{12}";
         private const string TaskRegex = @"[0-9a-f]{32}-\d+";
-        private const string ContainerIdRegex = @"^(?:\d+):(?:[^:]*):/?(?:.+/)(" + UuidRegex + "|" + ContainerRegex + "|" + TaskRegex + @"(?:\.scope)?)$";
+        private const string ContainerIdRegex = @"(" + UuidRegex + "|" + ContainerRegex + "|" + TaskRegex + @")(?:\.scope)?$";
 
         private static readonly Lazy<string> ContainerId = new Lazy<string>(GetContainerIdInternal, LazyThreadSafetyMode.ExecutionAndPublication);
 
