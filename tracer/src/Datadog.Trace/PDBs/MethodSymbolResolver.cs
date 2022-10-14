@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.Logging;
@@ -169,6 +170,7 @@ namespace Datadog.Trace.Pdb
                     var options = new ModuleCreationOptions(ThreadSafeModuleContext.GetModuleContext());
                     try
                     {
+                        loadModule:
                         var mDef = ModuleDefMD.Load(module, options);
                         // We enable the type search cache
                         mDef.EnableTypeDefFindCache = true;
@@ -177,6 +179,16 @@ namespace Datadog.Trace.Pdb
                         if (mDef.PdbState is not null)
                         {
                             moduleDef = mDef;
+                        }
+                        else if (options.PdbFileOrData is null && !string.IsNullOrEmpty(module.Assembly.Location))
+                        {
+                            // If the PDB cannot be loaded automatically we do a final try to manually find it.
+                            var pdbFile = Path.ChangeExtension(module.Assembly.Location, "pdb");
+                            if (File.Exists(pdbFile))
+                            {
+                                options.PdbFileOrData = pdbFile;
+                                goto loadModule;
+                            }
                         }
                     }
                     catch (Exception ex)

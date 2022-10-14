@@ -51,7 +51,7 @@ public class TraceChunkModelTests
         // ArraySegment doesn't behave the same with "new ArraySegment" vs "default",
         // so we're testing both to be sure
         var spans = new ArraySegment<Span>(Array.Empty<Span>());
-        var traceChunk = new TraceChunkModel(spans, traceContext: null);
+        var traceChunk = new TraceChunkModel(spans);
 
         traceChunk.SpanCount.Should().Be(0);
         traceChunk.HashSetInitialized.Should().BeFalse();
@@ -69,7 +69,7 @@ public class TraceChunkModelTests
         // ArraySegment doesn't behave the same with "new ArraySegment" vs "default",
         // so we're testing both to be sure
         var spans = new ArraySegment<Span>();
-        var traceChunk = new TraceChunkModel(spans, traceContext: null);
+        var traceChunk = new TraceChunkModel(spans);
 
         traceChunk.SpanCount.Should().Be(0);
         traceChunk.HashSetInitialized.Should().BeFalse();
@@ -85,7 +85,7 @@ public class TraceChunkModelTests
     public void DefaultArraySegment()
     {
         ArraySegment<Span> spans = default;
-        var traceChunk = new TraceChunkModel(spans, traceContext: null);
+        var traceChunk = new TraceChunkModel(spans);
 
         traceChunk.SpanCount.Should().Be(0);
         traceChunk.HashSetInitialized.Should().BeFalse();

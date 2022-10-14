@@ -225,8 +225,8 @@ jobs:
 
       - name: Build Native Profiler Engine
         run: |
-          CXX=clang++ CC=clang cmake -S profiler -B __build -DRUN_ASAN=ON
-          cmake --build __build --config Release
+          CXX=clang++ CC=clang cmake -S . -B __build -DRUN_ASAN=ON
+          cmake --build __build --config Release --target all-profiler
 
       - name: Restore sample applications
         run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
@@ -285,8 +285,8 @@ jobs:
 
       - name: Build Native Profiler Engine
         run: |
-          CXX=clang++ CC=clang cmake -S profiler -B __build -DRUN_UBSAN=ON
-          cmake --build __build --config Release
+          CXX=clang++ CC=clang cmake -S . -B __build -DRUN_UBSAN=ON
+          cmake --build __build --config Release --target all-profiler
 
       - name: Restore sample applications
         run: dotnet restore profiler/src/Demos/Datadog.Demos.sln /p:Configuration="Release"
@@ -772,9 +772,8 @@ jobs:
 
       - name: Build profiler
         run: |
-          cmake -DRUN_ANALYSIS=1 -S profiler -B __build
-          cd __build
-          make # run make to `git-clone` dependencies (libunwind, fmt). Once we move to vcpkg, we won't need this line
+          cmake -DRUN_ANALYSIS=1 -S . -B __build
+          cmake --build __build --config Release --target all-profiler
           cd ..
         env:
           CC: clang

@@ -23,7 +23,6 @@ elseif (CMAKE_SYSTEM_NAME MATCHES "Darwin")
     SET(ISMACOS true)
 endif()
 
-SET(DOTNET_TRACER_REPO_ROOT_PATH ${CMAKE_SOURCE_DIR}/../../../)
 
 # Detect bitness of the build
 if (CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -76,36 +75,18 @@ endif()
 # ******************************************************
 
 # Set output folders
-SET(OUTPUT_BIN_DIR ${CMAKE_BINARY_DIR}/bin)
+SET(OUTPUT_BIN_DIR ${CMAKE_CURRENT_SOURCE_DIR}/bin)
 SET(OUTPUT_TMP_DIR ${CMAKE_BINARY_DIR}/tmp.${CMAKE_SYSTEM_NAME}_${CMAKE_SYSTEM_PROCESSOR})
 SET(OUTPUT_DEPS_DIR ${CMAKE_BINARY_DIR}/deps)
 FILE(MAKE_DIRECTORY ${OUTPUT_BIN_DIR})
 FILE(MAKE_DIRECTORY ${OUTPUT_TMP_DIR})
 FILE(MAKE_DIRECTORY ${OUTPUT_DEPS_DIR})
-FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/loader.conf DESTINATION ${CMAKE_BINARY_DIR}/bin)
+FILE(COPY ${CMAKE_CURRENT_SOURCE_DIR}/loader.conf DESTINATION ${OUTPUT_BIN_DIR})
 
 
 SET(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 SET(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
 SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_BIN_DIR})
-
-# ******************************************************
-# Prepare dependecies
-# ******************************************************
-
-include(ExternalProject)
-set(EXTERNAL_INSTALL_LOCATION ${OUTPUT_DEPS_DIR}/fmt/)
-set(fmt_GIT_REPO https://github.com/DataDog/fmt.git)
-set(fmt_GIT_TAG 5.3.0)
-ExternalProject_Add(fmt
-    DOWNLOAD_COMMAND git clone --quiet --depth 1 --branch "${fmt_GIT_TAG}" --config advice.detachedHead=false "${fmt_GIT_REPO}"
-    TIMEOUT 5
-    CMAKE_ARGS -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DFMT_TEST=0 -DFMT_DOC=0
-    PREFIX "${EXTERNAL_INSTALL_LOCATION}"
-    INSTALL_COMMAND ""
-)
-ExternalProject_Get_Property(fmt source_dir)
-set(fmt_INCLUDE_DIR ${source_dir}/include)
 
 # ******************************************************
 # Compiler options
@@ -166,36 +147,33 @@ add_library("Datadog.Trace.ClrProfiler.Native" SHARED
         instrumented_assembly_generator/member_signature.cpp
         instrumented_assembly_generator/method_signature.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
-        ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/idl/corprof_i.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/util.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/dynamic_library_base.cpp
         ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/dynamic_com_library.cpp
-        ${GENERATED_OBJ_FILES}
         )
 
 target_compile_definitions("Datadog.Trace.ClrProfiler.Native" PRIVATE "-D_GLIBCXX_USE_CXX11_ABI=0")
 
-add_dependencies("Datadog.Trace.ClrProfiler.Native" "fmt")
-
 set_target_properties("Datadog.Trace.ClrProfiler.Native" PROPERTIES PREFIX "")
 
-# Define directories includes
-target_include_directories("Datadog.Trace.ClrProfiler.Native"
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc/rt
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/prebuilt/inc
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/pal/inc
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/coreclr/src/inc
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-lib/spdlog/include
-        PUBLIC ${fmt_INCLUDE_DIR}/
-        )
-
 # Define linker libraries
-if(ISLINUX)
+if (ISMACOS)
     target_link_libraries("Datadog.Trace.ClrProfiler.Native"
-            ${OUTPUT_DEPS_DIR}/fmt/src/fmt-build/libfmt.a
-            -static-libgcc
-            -static-libstdc++
-            -ldl
-            )
+        ${CMAKE_DL_LIBS}
+        coreclr
+        fmt-lib
+        spdlog-headers
+    )
+elseif(ISLINUX)
+    target_link_libraries("Datadog.Trace.ClrProfiler.Native"
+        -static-libgcc
+        -static-libstdc++
+        ${CMAKE_DL_LIBS}
+        coreclr
+        fmt-lib
+        spdlog-headers
+    )
 endif()
+
+add_dependencies("Datadog.Trace.ClrProfiler.Native" fmt-lib coreclr spdlog-headers)
