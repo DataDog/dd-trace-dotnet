@@ -4,8 +4,10 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -14,13 +16,15 @@ namespace Datadog.Trace.IntegrationTests
     public class SpanTagTests
     {
         private readonly Tracer _tracer;
+        private readonly MockApi _testApi;
 
         public SpanTagTests()
         {
             var matchAllRule = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":1.0, \"max_per_second\":1000.0}]";
             var settings = new TracerSettings() { SpanSamplingRules = matchAllRule };
+            var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
             // a spanSampler should be generated due to the TracerSettings containing the SpanSamplingRules
-            _tracer = new Tracer(settings, null, sampler: null, spanSampler: null, scopeManager: null, statsd: null);
+            _tracer = new Tracer(settings, agentWriter, sampler: null, spanSampler: null, scopeManager: null, statsd: null);
         }
 
         [Fact]
