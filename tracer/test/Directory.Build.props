@@ -19,6 +19,7 @@
     <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" />
     <PackageReference Include="DatadogTestLogger" Version="0.0.6">
       <CopyToOutputDirectory>lib\$(TargetFramework)\*</CopyToOutputDirectory>
+      <FolderName>datadogtestlogger</FolderName>
     </PackageReference>
   </ItemGroup>
 
@@ -30,15 +31,13 @@
 
   <Target Name="PackageReferenceCopyToOutput" AfterTargets="Build">
     <ItemGroup>
-      <PackageReferenceFiles Condition="%(PackageReference.CopyToOutputDirectory) != ''"
-        Include="$(NugetPackageRoot)\%(PackageReference.FileName)\%(PackageReference.Version)\%(PackageReference.CopyToOutputDirectory)" />
+      <PackageReferenceFiles Condition="%(PackageReference.CopyToOutputDirectory) != '' AND %(PackageReference.FolderName) != ''"
+        Include="$(NugetPackageRoot)\%(PackageReference.FolderName)\%(PackageReference.Version)\%(PackageReference.CopyToOutputDirectory)" />
     </ItemGroup>
-
     <Message Condition="%(PackageReference.CopyToOutputDirectory) != ''" 
-             Text="$(NugetPackageRoot) | %(PackageReference.FileName) | %(PackageReference.Version) | %(PackageReference.CopyToOutputDirectory) [$(NugetPackageRoot)\%(PackageReference.FileName)\%(PackageReference.Version)\%(PackageReference.CopyToOutputDirectory) | $(OutDir)]" Importance="high"/>
-    
+             Text="> $(NugetPackageRoot) | %(PackageReference.FolderName) | %(PackageReference.Version) | %(PackageReference.CopyToOutputDirectory) [$(NugetPackageRoot)\%(PackageReference.FileName)\%(PackageReference.Version)\%(PackageReference.CopyToOutputDirectory) | $(OutDir)]" Importance="high"/>
     <Message Condition="%(PackageReference.CopyToOutputDirectory) != '' AND '@(PackageReferenceFiles->'%(Identity)')' != ''"
-             Text="Copy @(PackageReferenceFiles->'%(Identity)') to $(OutDir)"
+             Text="  Copy @(PackageReferenceFiles->'%(Identity)') to $(OutDir)"
              Importance="high"/>
     <Copy SourceFiles="@(PackageReferenceFiles)" DestinationFolder="$(OutDir)" />
   </Target>
