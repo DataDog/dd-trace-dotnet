@@ -18,9 +18,11 @@ namespace Datadog.Trace.Iast
     {
         private const string OperationNameWeakHash = "weak_hashing";
         private const string OperationNameWeakCipher = "weak_cipher";
+        private static bool isLinux;
 
         public IastModule()
         {
+            isLinux = string.Equals(FrameworkDescription.Instance.OSPlatform, "Linux", StringComparison.OrdinalIgnoreCase);
         }
 
         public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId, Iast iast)
@@ -105,7 +107,7 @@ namespace Datadog.Trace.Iast
         private static bool InvalidCipherAlgorithm(Type type, string algorithm, Iast iast)
         {
             // TripleDESCryptoServiceProvider internally creates a DES algorithm instance.
-            if (type.Name != "TripleDESCryptoServiceProvider")
+            if (ProviderBlock(type.Name))
             {
                 foreach (var weakCipherAlgorithm in iast.Settings.WeakCipherAlgorithmsArray)
                 {
@@ -114,6 +116,16 @@ namespace Datadog.Trace.Iast
                         return true;
                     }
                 }
+            }
+
+            return false;
+        }
+
+        private static bool ProviderBlock(string name)
+        {
+            if (name == "TripleDESCryptoServiceProvider" || (isLinux && name.ToLower().EndsWith("provider")))
+            {
+                return true;
             }
 
             return false;
