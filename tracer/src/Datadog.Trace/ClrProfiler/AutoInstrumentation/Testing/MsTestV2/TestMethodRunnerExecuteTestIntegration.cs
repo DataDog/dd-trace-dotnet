@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class TestMethodRunnerExecuteTestIntegration
 {
-    private static CustomTestMethodAttribute _customTestMethodAttribute;
+    private static SkipTestMethodExecutor _skipTestMethodExecutor;
 
     /// <summary>
     /// OnMethodBegin callback
@@ -47,8 +47,8 @@ public static class TestMethodRunnerExecuteTestIntegration
                 // In order to skip a test we change the Executor to one that returns a valid outcome without calling
                 // the MethodInfo of the test
                 var executor = instance.TestMethodInfo.TestMethodOptions.Executor;
-                _customTestMethodAttribute ??= new CustomTestMethodAttribute(executor.GetType().Assembly);
-                instance.TestMethodInfo.TestMethodOptions.Executor = DuckType.CreateReverse(executor.GetType(), _customTestMethodAttribute);
+                _skipTestMethodExecutor ??= new SkipTestMethodExecutor(executor.GetType().Assembly);
+                instance.TestMethodInfo.TestMethodOptions.Executor = DuckType.CreateReverse(executor.GetType(), _skipTestMethodExecutor);
             }
         }
 
