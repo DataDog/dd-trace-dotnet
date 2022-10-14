@@ -42,24 +42,6 @@ steps:
         --env IncludeMinorPackageVersions=$(IncludeMinorPackageVersions) \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
         --env enable_crash_dumps=$(enable_crash_dumps) \
-        --env DD_LOGGER_SERVICE=dd-trace-dotnet \
-        --env DD_LOGGER_ENV=CI \
-        --env DD_LOGGER_API_KEY \
-        --env TF_BUILD \
-        --env BUILD_DEFINITIONNAME \
-        --env BUILD_BUILDID \
-        --env BUILD_SOURCESDIRECTORY \
-        --env BUILD_REPOSITORY_URI \
-        --env BUILD_SOURCEBRANCH \
-        --env BUILD_SOURCEVERSION \
-        --env SYSTEM_TEAMFOUNDATIONSERVERURI \
-        --env SYSTEM_TEAMPROJECT \
-        --env SYSTEM_TEAMPROJECTID \
-        --env SYSTEM_JOBID \
-        --env SYSTEM_TASKINSTANCEID \
-        --env SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI \
-        --env SYSTEM_PULLREQUEST_SOURCEBRANCH \
-        --env SYSTEM_PULLREQUEST_SOURCECOMMITID \
         ${{ parameters.extraArgs }} \
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
