@@ -82,6 +82,20 @@ namespace Datadog.Trace.Tests.PlatformHelpers
 1:name=systemd:/ecs/34dc0b5e626f2c5c4c5170e34b10e765-1234567890
 ";
 
+        public const string EksNodegroup = @"
+11:blkio:/kubepods.slice/kubepods-pod9508fe66_7675_4003_b7c9_d83e9f8f85e5.slice/cri-containerd-26cfbe35e08b24f053011af4ada23d8fcbf81f27f8331a94f56de5b677c903e4.scope
+10:cpuset:/kubepods.slice/kubepods-pod9508fe66_7675_4003_b7c9_d83e9f8f85e5.slice/cri-containerd-26cfbe35e08b24f053011af4ada23d8fcbf81f27f8331a94f56de5b677c903e4.scope
+9:perf_event:/kubepods.slice/kubepods-pod9508fe66_7675_4003_b7c9_d83e9f8f85e5.slice/cri-containerd-26cfbe35e08b24f053011af4ada23d8fcbf81f27f8331a94f56de5b677c903e4.scope
+8:memory:/kubepods.slice/kubepods-pod9508fe66_7675_4003_b7c9_d83e9f8f85e5.slice/cri-containerd-26cfbe35e08b24f053011af4ada23d8fcbf81f27f8331a94f56de5b677c903e4.scope
+7:pids:/kubepods.slice/kubepods-pod9508fe66_7675_4003_b7c9_d83e9f8f85e5.slice/cri-containerd-26cfbe35e08b24f053011af4ada23d8fcbf81f27f8331a94f56de5b677c903e4.scope
+6:cpu,cpuacct:/kubepods.slice/kubepods-pod9508fe66_7675_4003_b7c9_d83e9f8f85e5.slice/cri-containerd-26cfbe35e08b24f053011af4ada23d8fcbf81f27f8331a94f56de5b677c903e4.scope
+5:net_cls,net_prio:/kubepods.slice/kubepods-pod9508fe66_7675_4003_b7c9_d83e9f8f85e5.slice/cri-containerd-26cfbe35e08b24f053011af4ada23d8fcbf81f27f8331a94f56de5b677c903e4.scope
+4:devices:/kubepods.slice/kubepods-pod9508fe66_7675_4003_b7c9_d83e9f8f85e5.slice/cri-containerd-26cfbe35e08b24f053011af4ada23d8fcbf81f27f8331a94f56de5b677c903e4.scope
+3:freezer:/kubepods.slice/kubepods-pod9508fe66_7675_4003_b7c9_d83e9f8f85e5.slice/cri-containerd-26cfbe35e08b24f053011af4ada23d8fcbf81f27f8331a94f56de5b677c903e4.scope
+2:hugetlb:/kubepods.slice/kubepods-pod9508fe66_7675_4003_b7c9_d83e9f8f85e5.slice/cri-containerd-26cfbe35e08b24f053011af4ada23d8fcbf81f27f8331a94f56de5b677c903e4.scope
+1:name=systemd:/kubepods.slice/kubepods-pod9508fe66_7675_4003_b7c9_d83e9f8f85e5.slice/cri-containerd-26cfbe35e08b24f053011af4ada23d8fcbf81f27f8331a94f56de5b677c903e4.scope
+";
+
         public static IEnumerable<object[]> GetCgroupFiles()
         {
             yield return new object[] { Docker, "3726184226f5d3147c25fdeab5b60097e378e8a720503a5e19ecfdf29f869860" };
@@ -89,6 +103,7 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             yield return new object[] { Ecs, "38fac3e99302b3622be089dd41e7ccf38aff368a86cc339972075136ee2710ce" };
             yield return new object[] { Fargate1Dot3, "432624d2150b349fe35ba397284dea788c2bf66b885d14dfc1569b01890ca7da" };
             yield return new object[] { Fargate1Dot4, "34dc0b5e626f2c5c4c5170e34b10e765-1234567890" };
+            yield return new object[] { EksNodegroup, "26cfbe35e08b24f053011af4ada23d8fcbf81f27f8331a94f56de5b677c903e4" };
         }
 
         /// <summary>
