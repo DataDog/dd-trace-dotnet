@@ -24,12 +24,12 @@ namespace Datadog.Trace.Iast
         public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId, Iast iast)
         {
             var algorithm = type.BaseType?.Name;
-            if (algorithm == null || !InvalidCipherAlgorithm(type, algorithm, iast))
+            var isLinux = string.Equals(FrameworkDescription.Instance.OSPlatform, "Linux", StringComparison.OrdinalIgnoreCase);
+
+            if (algorithm == null || !InvalidCipherAlgorithm(type, algorithm, iast, isLinux))
             {
                 return null;
             }
-
-            var isLinux = string.Equals(FrameworkDescription.Instance.OSPlatform, "Linux", StringComparison.OrdinalIgnoreCase);
 
             var evidenceValue = algorithm + " linux: " + isLinux + " typename: " + type.Name + " cond: " + type.Name.ToLower().EndsWith("provider");
 
@@ -104,9 +104,9 @@ namespace Datadog.Trace.Iast
             return false;
         }
 
-        private static bool InvalidCipherAlgorithm(Type type, string algorithm, Iast iast)
+        private static bool InvalidCipherAlgorithm(Type type, string algorithm, Iast iast, bool isLinux)
         {
-            if (ProviderValid(type.Name))
+            if (ProviderValid(type.Name, isLinux))
             {
                 return false;
             }
@@ -122,7 +122,7 @@ namespace Datadog.Trace.Iast
             return false;
         }
 
-        private static bool ProviderValid(string name)
+        private static bool ProviderValid(string name, bool isLinux)
         {
             // TripleDESCryptoServiceProvider internally creates a DES algorithm instance.
             if (name == "TripleDESCryptoServiceProvider" || (isLinux && name.ToLower().EndsWith("provider")))
