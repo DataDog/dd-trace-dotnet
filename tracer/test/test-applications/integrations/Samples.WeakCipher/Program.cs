@@ -6,27 +6,53 @@ namespace Samples.WeakHashing;
 
     internal static class Program
     {
-        private static void Main()
+        private static void Main(string[] args)
         {
-#pragma warning disable SYSLIB0021 // Type or member is obsolete
-            // Vulnerable section
-            //https://rules.sonarsource.com/csharp/type/Vulnerability/RSPEC-5547
-            testSymmetricAlgorithm(DES.Create());
-            testSymmetricAlgorithm(new DESCryptoServiceProvider());
-            testSymmetricAlgorithm(RC2.Create());
-            testSymmetricAlgorithm(new RC2CryptoServiceProvider());
-            // https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5350
-            testSymmetricAlgorithm(TripleDES.Create());
-            testSymmetricAlgorithm(new TripleDESCryptoServiceProvider());
+            int times = GetExecutionTimes(args);
 
-            // Not vulnerable section
+            for (int i = 0; i < times; i++)
+            {
+#pragma warning disable SYSLIB0021 // Type or member is obsolete
+                // Vulnerable section
+                //https://rules.sonarsource.com/csharp/type/Vulnerability/RSPEC-5547
+                testSymmetricAlgorithm(DES.Create());
+                testSymmetricAlgorithm(new DESCryptoServiceProvider());
+                testSymmetricAlgorithm(RC2.Create());
+                testSymmetricAlgorithm(new RC2CryptoServiceProvider());
+                // https://learn.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca5350
+                testSymmetricAlgorithm(TripleDES.Create());
+                testSymmetricAlgorithm(new TripleDESCryptoServiceProvider());
+
+                // Not vulnerable section
 #pragma warning disable SYSLIB0022 // Type or member is obsolete
-            testSymmetricAlgorithm(Rijndael.Create());
-            testSymmetricAlgorithm(new RijndaelManaged());
+                testSymmetricAlgorithm(Rijndael.Create());
+                testSymmetricAlgorithm(new RijndaelManaged());
 #pragma warning restore SYSLIB0022 // Type or member is obsolete
-            testSymmetricAlgorithm(Aes.Create());
-            testSymmetricAlgorithm(new AesCryptoServiceProvider());
+                testSymmetricAlgorithm(Aes.Create());
+                testSymmetricAlgorithm(new AesCryptoServiceProvider());
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
+            }
+        }
+
+        private static int GetExecutionTimes(string[] args)
+        {
+            if (args == null || args.Length != 1 || args[0] == null)
+            {
+                return 1;
+            }
+
+            int times;
+
+            try
+            {
+                times = Convert.ToInt32(args[0]);
+            }
+            catch
+            {
+                times = 1;
+            }
+
+            return times;
         }
 
         private static void testSymmetricAlgorithm(SymmetricAlgorithm algorithm)
