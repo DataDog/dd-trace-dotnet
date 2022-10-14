@@ -20,6 +20,7 @@ namespace Datadog.Trace.IntegrationTests
 
         public SpanTagTests()
         {
+            _testApi = new MockApi();
             var matchAllRule = "[{\"service\":\"*\", \"name\":\"*\", \"sample_rate\":1.0, \"max_per_second\":1000.0}]";
             var settings = new TracerSettings() { SpanSamplingRules = matchAllRule };
             var agentWriter = new AgentWriter(_testApi, statsAggregator: null, statsd: null);
