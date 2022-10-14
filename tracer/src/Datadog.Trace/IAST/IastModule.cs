@@ -33,6 +33,8 @@ namespace Datadog.Trace.Iast
                 return null;
             }
 
+            var evidenceValue = algorithm + " linux: " + isLinux + " typename: " + type.Name + " cond: " + type.Name.ToLower().EndsWith("provider");
+
             return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakCipher, OperationNameWeakCipher);
         }
 
@@ -55,12 +57,9 @@ namespace Datadog.Trace.Iast
                 return null;
             }
 
-            var traces = new StackTrace(0, true).ToString();
-            var vulnerability = new Vulnerability(vulnerabilityType, new Location(string.Empty, 0), new Evidence(traces));
-
             // Sometimes we do not have the file/line but we have the method/class.
-            // var filename = frameInfo.StackFrame?.GetFileName();
-            // var vulnerability = new Vulnerability(vulnerabilityType, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null), new Evidence(evidenceValue));
+            var filename = frameInfo.StackFrame?.GetFileName();
+            var vulnerability = new Vulnerability(vulnerabilityType, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null), new Evidence(evidenceValue));
             // The VulnerabilityBatch class is not very useful right now, but we will need it when handling requests
             var batch = new VulnerabilityBatch();
             batch.Add(vulnerability);
@@ -127,7 +126,7 @@ namespace Datadog.Trace.Iast
 
         private static bool ProviderValid(string name)
         {
-            // All these internally creates an algorithm instance.
+            // TripleDESCryptoServiceProvider internally creates a DES algorithm instance.
             if (name == "TripleDESCryptoServiceProvider" || (isLinux && name.ToLower().EndsWith("provider")))
             {
                 return true;
