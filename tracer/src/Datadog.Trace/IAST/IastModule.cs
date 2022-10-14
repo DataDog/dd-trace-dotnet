@@ -35,7 +35,7 @@ namespace Datadog.Trace.Iast
 
             var evidenceValue = algorithm + " linux: " + isLinux + " typename: " + type.Name + " cond: " + type.Name.ToLower().EndsWith("provider");
 
-            return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakCipher, OperationNameWeakCipher);
+            return GetScope(Tracer.Instance, evidenceValue, integrationId, VulnerabilityType.WeakCipher, OperationNameWeakCipher);
         }
 
         public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, Iast iast)
