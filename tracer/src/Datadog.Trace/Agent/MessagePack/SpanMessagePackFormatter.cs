@@ -106,13 +106,13 @@ namespace Datadog.Trace.Agent.MessagePack
                 // or if its parent can also be found in the same chunk, so we use SpanModel
                 // to pass that information to the serializer
                 var spanModel = traceChunk.GetSpanModel(i);
-                offset += Serialize(ref bytes, offset, in spanModel, cachedStringBytes);
+                offset += Serialize(ref bytes, offset, in spanModel, in cachedStringBytes);
             }
 
             return offset - originalOffset;
         }
 
-        private int Serialize(ref byte[] bytes, int offset, in SpanModel spanModel, CachedStringBytes cachedStringBytes)
+        private int Serialize(ref byte[] bytes, int offset, in SpanModel spanModel, in CachedStringBytes cachedStringBytes)
         {
             var span = spanModel.Span;
 
@@ -178,7 +178,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 tagProcessors = tracer.TracerManager?.TagProcessors;
             }
 
-            offset += WriteTags(ref bytes, offset, in spanModel, cachedStringBytes, tagProcessors);
+            offset += WriteTags(ref bytes, offset, in spanModel, in cachedStringBytes, tagProcessors);
             offset += WriteMetrics(ref bytes, offset, in spanModel, tagProcessors);
 
             return offset - originalOffset;
@@ -186,7 +186,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
         // TAGS
 
-        private int WriteTags(ref byte[] bytes, int offset, in SpanModel model, CachedStringBytes cachedStringBytes, ITagProcessor[] tagProcessors)
+        private int WriteTags(ref byte[] bytes, int offset, in SpanModel model, in CachedStringBytes cachedStringBytes, ITagProcessor[] tagProcessors)
         {
             var span = model.Span;
             int originalOffset = offset;
