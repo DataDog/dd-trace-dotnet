@@ -106,7 +106,6 @@ namespace Datadog.Trace.Iast
 
         private static bool InvalidCipherAlgorithm(Type type, string algorithm, Iast iast)
         {
-            // TripleDESCryptoServiceProvider internally creates a DES algorithm instance.
             if (ProviderBlock(type.Name))
             {
                 foreach (var weakCipherAlgorithm in iast.Settings.WeakCipherAlgorithmsArray)
@@ -123,6 +122,7 @@ namespace Datadog.Trace.Iast
 
         private static bool ProviderBlock(string name)
         {
+            // TripleDESCryptoServiceProvider internally creates a DES algorithm instance.
             if (name == "TripleDESCryptoServiceProvider" || (isLinux && name.ToLower().EndsWith("provider")))
             {
                 return true;
