@@ -42,6 +42,9 @@ steps:
         --env IncludeMinorPackageVersions=$(IncludeMinorPackageVersions) \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
         --env enable_crash_dumps=$(enable_crash_dumps) \
+        --env DD_LOGGER_API_KEY=$(DD_LOGGER_API_KEY) \
+        --env DD_LOGGER_SERVICE=$(DD_LOGGER_SERVICE) \
+        --env DD_LOGGER_ENV=$(DD_LOGGER_ENV) \
         ${{ parameters.extraArgs }} \
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
