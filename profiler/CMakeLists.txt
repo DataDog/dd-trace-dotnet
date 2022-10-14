@@ -39,9 +39,7 @@ elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL armv7l OR CMAKE_SYSTEM_PROCESSOR STREQUA
 endif()
 
 # Out of source build directory
-SET(OUTPUT_BUILD_DIR ${CMAKE_SOURCE_DIR}/_build)
-
-SET(DOTNET_TRACER_REPO_ROOT_PATH ${CMAKE_SOURCE_DIR}/..)
+SET(OUTPUT_BUILD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/_build)
 
 if (DEFINED RUN_ANALYSIS AND NOT RUN_ANALYSIS EQUAL 0)
     SET(CMAKE_EXPORT_COMPILE_COMMANDS 1)
@@ -114,18 +112,10 @@ SET(OUTPUT_DEPS_DIR ${CMAKE_BINARY_DIR}/deps)
 FILE(MAKE_DIRECTORY ${OUTPUT_DEPS_DIR})
 FILE(MAKE_DIRECTORY ${OUTPUT_TMP_DIR})
 
-LIST(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/build/cmake")
-
-find_package(Fmt REQUIRED)
-message(STATUS "FMT library " ${FMT_VERSION})
-
-find_package(Libunwind REQUIRED)
-message(STATUS "Libunwind library " ${LIBUNWIND_VERSION})
-
-find_package(Libdatadog REQUIRED)
-message(STATUS "Libdatadog library " ${LIBDATADOG_VERSION})
-
 add_subdirectory(src/ProfilerEngine/Datadog.Profiler.Native.Linux)
 add_subdirectory(src/ProfilerEngine/Datadog.Linux.ApiWrapper)
 enable_testing()
 add_subdirectory(test)
+
+add_custom_target(all-profiler)
+add_dependencies(all-profiler Datadog.Profiler.Native Datadog.Linux.ApiWrapper.x64 Datadog.Profiler.Native.Tests)
