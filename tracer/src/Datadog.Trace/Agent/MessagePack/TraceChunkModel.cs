@@ -24,12 +24,10 @@ internal readonly struct TraceChunkModel
 
     // for large trace chunks, use a HashSet<ulong> instead of iterating the array.
     // there are 3 possible states:
-    //   _hashSet == null, if we know in advance that we won't use it (small traces)
-    //   _hashSet.IsValueCreated == false, if we may need it (large traces), but we haven't used it yet (it may never be used)
+    //   _hashSet == null, we know in advance that we won't use it (small traces)
+    //   _hashSet.IsValueCreated == false, we may need it (large traces), but we haven't used it yet (and it may never be used)
     //   _hashSet.IsValueCreated == true, we needed the HashSet so we initialized it
     private readonly Lazy<HashSet<ulong>>? _hashSet;
-
-    public readonly int SpanCount;
 
     public readonly int? SamplingPriority = null;
 
@@ -41,7 +39,17 @@ internal readonly struct TraceChunkModel
 
     public readonly bool HasUpstreamService = false;
 
-    public TraceChunkModel(in ArraySegment<Span> spans, TraceContext? traceContext)
+    public TraceChunkModel(in ArraySegment<Span> spans)
+        : this(spans, GetTraceContext(spans))
+    {
+        // since all we have is an array of spans, use the trace context from the first span
+        // to get the other values we need (sampling priority, origin, trace tags, etc) for now.
+        // the idea is that as we refactor further, we can pass more than just the spans,
+        // and these values can come directly from the trace context.
+    }
+
+    // used only to chain constructors
+    private TraceChunkModel(in ArraySegment<Span> spans, TraceContext? traceContext)
         : this(spans, traceContext?.RootSpan)
     {
         if (traceContext is not null)
@@ -51,6 +59,7 @@ internal readonly struct TraceChunkModel
         }
     }
 
+    // used in tests
     internal TraceChunkModel(in ArraySegment<Span> spans, Span? localRootSpan)
     {
         _spans = spans;
@@ -58,37 +67,47 @@ internal readonly struct TraceChunkModel
         // don't create the Lazy<T> instance if we know we won't use it (small traces)
         _hashSet = spans.Count > 50 ? new Lazy<HashSet<ulong>>(LazyThreadSafetyMode.None) : null;
 
-        SpanCount = spans.Count;
-
         if (localRootSpan is not null)
         {
-            LocalRootSpanId = localRootSpan.SpanId;
+            var localRootSpanId = localRootSpan.SpanId;
+            LocalRootSpanId = localRootSpanId;
 
             // the local root span is almost always at the end of the chunk, so start searching at the last index.
             // skip the HashSet to avoid initializing it yet, always iterate the array of spans.
-            ContainsLocalRootSpan = LocalRootSpanId is not null &&
-                                    Contains((ulong)LocalRootSpanId, spans.Count - 1, ignoreHashSet: true);
+            ContainsLocalRootSpan = IndexOf(localRootSpanId, spans.Count - 1) >= 0;
 
             HasUpstreamService = localRootSpan.Context.ParentId is not (null or 0);
         }
     }
 
+    public int SpanCount => _spans.Count;
+
     // used in tests
     internal bool HashSetInitialized => _hashSet?.IsValueCreated == true && _hashSet.Value.Count > 0;
 
+    private static TraceContext? GetTraceContext(in ArraySegment<Span> spans)
+    {
+        if (spans.Count > 0)
+        {
+            return spans.Array![spans.Offset].Context.TraceContext;
+        }
+
+        return null;
+    }
+
     public SpanModel GetSpanModel(int spanIndex)
     {
-        if (spanIndex >= SpanCount)
+        if (spanIndex >= _spans.Count)
         {
             ThrowHelper.ThrowArgumentOutOfRangeException(nameof(spanIndex));
         }
 
         var span = _spans.Array![_spans.Offset + spanIndex];
-
-        bool isLocalRoot = span.Context.ParentId is null or 0 || span.SpanId == LocalRootSpanId;
+        var parentId = span.Context.ParentId ?? 0;
+        bool isLocalRoot = parentId is 0 || span.SpanId == LocalRootSpanId;
         bool isFirstSpan = spanIndex == 0;
 
-        // calling ParentExistsForSpanAtIndex() can be expensive, so try to short-circuit if possible
+        // calling Contains() can be expensive, so try to short-circuit if possible
         bool isChunkOrphan;
 
         if (isLocalRoot)
@@ -97,26 +116,33 @@ internal readonly struct TraceChunkModel
             // (we won't find a parent in this trace chunk, by definition)
             isChunkOrphan = true;
         }
-        else if (ContainsLocalRootSpan && (!HasUpstreamService || LocalRootSpanId == span.Context.ParentId))
-        {
-            // if this trace chunk contains the _distributed_ root span (parentId == 0), don't bother
-            // marking any other spans as orphans because the trace agent will always pick parentId == 0 first
-            // (common case if partial flushing is disabled and there is no upstream service)
-            // ...OR...
-            // if the span's parent is the local root span, and we already know is it present in this trace chunk
-            // (common case because most local traces only have 2 tiers and
-            // spans are direct descendents of the local root, no grandchildren)
-            isChunkOrphan = false;
-        }
-        else if (!ContainsLocalRootSpan && LocalRootSpanId == span.Context.ParentId)
-        {
-            // if the span's parent is the local root span, and we already know is it _not_ present in this trace chunk
-            isChunkOrphan = true;
-        }
         else
         {
-            // call Contains() as last resort. we already checked ParentId for null or 0 above.
-            isChunkOrphan = !Contains(span.Context.ParentId!.Value, spanIndex, ignoreHashSet: false);
+            // if this span's parent is the local root span, we will already know if its parent
+            // is present or not because we already looked for the local root span
+            var parentIsLocalRoot = LocalRootSpanId == parentId;
+
+            if (ContainsLocalRootSpan && (!HasUpstreamService || parentIsLocalRoot))
+            {
+                // if this trace chunk contains the _distributed_ root span (parentId == 0), don't bother
+                // marking any other spans as orphans (even if they are!) because the trace agent will always pick parentId == 0 first
+                // (common case if partial flushing is disabled and there is no upstream service)
+                // ...OR...
+                // if the span's parent is the local root span, and we already know it is present in this trace chunk
+                // (common case because most local traces only have 2 tiers of spans and
+                // child spans are direct descendents of the local root, i.e. no grandchildren)
+                isChunkOrphan = false;
+            }
+            else if (!ContainsLocalRootSpan && parentIsLocalRoot)
+            {
+                // if the span's parent is the local root span, and we already know it is _not_ present in this trace chunk
+                isChunkOrphan = true;
+            }
+            else
+            {
+                // call Contains() as last resort. note we already checked span.Context.ParentId for null above.
+                isChunkOrphan = !Contains(parentId, spanIndex);
+            }
         }
 
         return new SpanModel(
@@ -127,17 +153,20 @@ internal readonly struct TraceChunkModel
             isFirstSpanInChunk: isFirstSpan);
     }
 
-    private bool Contains(ulong spanId, int startIndex, bool ignoreHashSet)
+    /// <summary>
+    /// Searches for the specified spanId.
+    /// </summary>
+    private bool Contains(ulong spanId, int startIndex)
     {
-        // for larger trace chunks, use a HashSet instead of iterating the array, but only
-        // initialize it on first use. in many cases we can get away without ever using the HashSet.
-        if (_hashSet is not null && !ignoreHashSet)
+        // for larger trace chunks, use a HashSet instead of iterating the array, but only initialize it on first use.
+        // even for large traces, sometimes we can get away without ever using the HashSet.
+        if (_hashSet is not null)
         {
             var hashSet = _hashSet.Value;
 
             if (hashSet.Count == 0)
             {
-                for (var i = 0; i < SpanCount; i++)
+                for (var i = 0; i < _spans.Count; i++)
                 {
                     hashSet.Add(_spans.Array![_spans.Offset + i].SpanId);
                 }
@@ -146,18 +175,26 @@ internal readonly struct TraceChunkModel
             return hashSet.Contains(spanId);
         }
 
+        return IndexOf(spanId, startIndex) >= 0;
+    }
+
+    /// <summary>
+    /// Searches for the specified spanId by iteration the array of spans.
+    /// </summary>
+    private int IndexOf(ulong spanId, int startIndex)
+    {
         // wrap around the end of the array
-        if (startIndex >= SpanCount)
+        if (startIndex >= _spans.Count)
         {
             startIndex = 0;
         }
 
         // iterate over the span array starting at the specified index + 1
-        for (var i = startIndex; i < SpanCount; i++)
+        for (var i = startIndex; i < _spans.Count; i++)
         {
             if (spanId == _spans.Array![_spans.Offset + i].SpanId)
             {
-                return true;
+                return i;
             }
         }
 
@@ -166,10 +203,10 @@ internal readonly struct TraceChunkModel
         {
             if (spanId == _spans.Array![_spans.Offset + i].SpanId)
             {
-                return true;
+                return i;
             }
         }
 
-        return false;
+        return -1;
     }
 }

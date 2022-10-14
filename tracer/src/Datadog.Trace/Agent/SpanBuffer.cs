@@ -84,8 +84,7 @@ namespace Datadog.Trace.Agent
                 // to get the other values we need (sampling priority, origin, trace tags, etc) for now.
                 // the idea is that as we refactor further, we can pass more than just the spans,
                 // and these values can come directly from the trace context.
-                var traceContext = spans.Array![spans.Offset].Context.TraceContext;
-                var traceChunk = new TraceChunkModel(spans, traceContext);
+                var traceChunk = new TraceChunkModel(spans);
 
                 // We don't know what the serialized size of the payload will be,
                 // so we need to write to a temporary buffer first
