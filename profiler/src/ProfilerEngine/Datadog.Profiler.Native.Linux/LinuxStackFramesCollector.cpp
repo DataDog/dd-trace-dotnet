@@ -17,7 +17,7 @@
 #include "OpSysTools.h"
 #include "ProfilerSignalManager.h"
 #include "ScopeFinalizer.h"
-#include "StackSnapshotResultReusableBuffer.h"
+#include "StackSnapshotResultBuffer.h"
 
 using namespace std::chrono_literals;
 
@@ -172,63 +172,22 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
 
     try
     {
-        std::int32_t resultErrorCode;
         // Collect data for TraceContext tracking:
         bool traceContextDataCollected = TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
 
-        // if we are in the signal handler, ctx won't be null, so we will use the context
-        // This will allow us to skip the syscall frame and start from the frame before the syscall.
-        auto flag = UNW_INIT_SIGNAL_FRAME;
-        unw_context_t context;
-        if (ctx != nullptr)
-        {
-            context = *reinterpret_cast<unw_context_t*>(ctx);
-        }
-        else
-        {
-            // not in signal handler. Get the context and initialize the cursor form here
-            resultErrorCode = unw_getcontext(&context);
-            if (resultErrorCode != 0)
-            {
-                return E_ABORT; // unw_getcontext does not return a specific error code. Only -1
-            }
+        auto* context = reinterpret_cast<unw_context_t*>(ctx);
 
-            flag = static_cast<unw_init_local2_flags_t>(0);
+        // Now walk the stack:
+        auto [data, size] = Data();
+        auto count = unw_backtrace2((void**)data, size, context);
+
+        if (count == 0)
+        {
+            return S_FALSE;
         }
 
-        unw_cursor_t cursor;
-        resultErrorCode = unw_init_local2(&cursor, &context, flag);
-
-        if (resultErrorCode < 0)
-        {
-            return resultErrorCode;
-        }
-
-        do
-        {
-            // After every lib call that touches non-local state, check if the StackSamplerLoopManager requested this walk to abort:
-            if (IsCurrentCollectionAbortRequested())
-            {
-                AddFakeFrame();
-                return E_ABORT;
-            }
-
-            unw_word_t ip;
-            resultErrorCode = unw_get_reg(&cursor, UNW_REG_IP, &ip);
-            if (resultErrorCode != 0)
-            {
-                return resultErrorCode;
-            }
-
-            if (!AddFrame(ip))
-            {
-                return S_FALSE;
-            }
-
-            resultErrorCode = unw_step(&cursor);
-        } while (resultErrorCode > 0);
-
-        return resultErrorCode;
+        SetFrameCount(count);
+        return S_OK;
     }
     catch (...)
     {

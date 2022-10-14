@@ -7,7 +7,7 @@
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/ProfilerSignalManager.h"
 #include "ManagedThreadInfo.h"
 #include "OpSysTools.h"
-#include "StackSnapshotResultReusableBuffer.h"
+#include "StackSnapshotResultBuffer.h"
 
 #include "gtest/gtest-death-test.h"
 #include "gtest/gtest.h"

@@ -5,10 +5,11 @@
 
 #include <chrono>
 #include <condition_variable>
+#include <memory>
 #include <mutex>
 
 #include "ManagedThreadInfo.h"
-#include "StackSnapshotResultReusableBuffer.h"
+#include "StackSnapshotResultBuffer.h"
 
 class StackFramesCollectorBase
 {
@@ -18,6 +19,9 @@ protected:
     bool TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot(void);
     bool AddFrame(std::uintptr_t ip);
     void AddFakeFrame();
+    void SetFrameCount(std::uint16_t count);
+
+    std::pair<uintptr_t*, std::uint16_t> Data();
 
     StackSnapshotResultBuffer* GetStackSnapshotResult(void);
     bool IsCurrentCollectionAbortRequested();
@@ -32,7 +36,7 @@ protected:
     virtual StackSnapshotResultBuffer* CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo, uint32_t* pHR, bool selfCollect);
 
 public:
-    virtual ~StackFramesCollectorBase();
+    virtual ~StackFramesCollectorBase() = default;
     StackFramesCollectorBase(StackFramesCollectorBase const&) = delete;
     StackFramesCollectorBase& operator=(StackFramesCollectorBase const&) = delete;
 
@@ -48,7 +52,7 @@ protected:
     ManagedThreadInfo* _pCurrentCollectionThreadInfo;
 
 private:
-    StackSnapshotResultReusableBuffer* _pReusableStackSnapshotResult;
+    std::unique_ptr<StackSnapshotResultBuffer> _pStackSnapshotResult;
     std::atomic<bool> _isCurrentCollectionAbortRequested;
     std::condition_variable _collectionAbortPerformedSignal;
     std::mutex _collectionAbortNotificationLock;

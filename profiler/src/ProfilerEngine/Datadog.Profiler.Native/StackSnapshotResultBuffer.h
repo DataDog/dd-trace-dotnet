@@ -8,6 +8,7 @@
 #include "corprof.h"
 // end
 
+#include <array>
 #include <vector>
 #include <cstdint>
 
@@ -20,7 +21,7 @@
 class StackSnapshotResultBuffer
 {
 public:
-    StackSnapshotResultBuffer() = delete;
+    static constexpr std::uint16_t MaxSnapshotStackDepth_Limit = 2049;
 
     inline std::uint64_t GetUnixTimeUtc(void) const;
     inline std::uint64_t SetUnixTimeUtc(std::uint64_t value);
@@ -38,22 +39,27 @@ public:
     inline std::uint64_t SetSpanId(std::uint64_t value);
 
     inline std::size_t GetFramesCount(void) const;
+    inline void SetFramesCount(std::uint16_t count);
     inline void CopyInstructionPointers(std::vector<std::uintptr_t>& ips) const;
 
     inline void DetermineAppDomain(ThreadID threadId, ICorProfilerInfo4* pCorProfilerInfo);
 
-protected:
-    explicit StackSnapshotResultBuffer(std::uint16_t initialCapacity);
-    virtual ~StackSnapshotResultBuffer();
+    void Reset(void);
+
+    inline bool AddFrame(std::uintptr_t ip);
+    inline bool AddFakeFrame();
+
+    inline uintptr_t* Data();
+
+    StackSnapshotResultBuffer();
+    ~StackSnapshotResultBuffer();
 
 protected:
 
     std::uint64_t _unixTimeUtc;
     std::uint64_t _representedDurationNanoseconds;
     AppDomainID _appDomainId;
-    std::vector<uintptr_t> _instructionPointers;
-    std::uint16_t _currentCapacity;
-    std::uint16_t _nextResetCapacity;
+    std::array<uintptr_t, MaxSnapshotStackDepth_Limit> _instructionPointers;
     std::uint16_t _currentFramesCount;
 
     std::uint64_t _localRootSpanId;
@@ -62,26 +68,7 @@ protected:
 
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------
 
-class StackSnapshotResultReusableBuffer : public StackSnapshotResultBuffer
-{
-    static constexpr std::uint16_t MaxSnapshotStackDepth_Limit = 2049;
-
-public:
-    StackSnapshotResultReusableBuffer() :
-        StackSnapshotResultBuffer(MaxSnapshotStackDepth_Limit)
-    {
-    }
-    ~StackSnapshotResultReusableBuffer() override = default;
-
-    void Reset(void);
-
-    inline bool AddFrame(std::uintptr_t ip);
-    inline bool AddFakeFrame();
-};
-
-// ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------
-
-inline std::uint64_t StackSnapshotResultBuffer::GetUnixTimeUtc(void) const
+inline std::uint64_t StackSnapshotResultBuffer::GetUnixTimeUtc() const
 {
     return _unixTimeUtc;
 }
@@ -93,7 +80,7 @@ inline std::uint64_t StackSnapshotResultBuffer::SetUnixTimeUtc(std::uint64_t val
     return prevValue;
 }
 
-inline std::uint64_t StackSnapshotResultBuffer::GetRepresentedDurationNanoseconds(void) const
+inline std::uint64_t StackSnapshotResultBuffer::GetRepresentedDurationNanoseconds() const
 {
     return _representedDurationNanoseconds;
 }
@@ -105,7 +92,7 @@ inline std::uint64_t StackSnapshotResultBuffer::SetRepresentedDurationNanosecond
     return prevValue;
 }
 
-inline AppDomainID StackSnapshotResultBuffer::GetAppDomainId(void) const
+inline AppDomainID StackSnapshotResultBuffer::GetAppDomainId() const
 {
     return _appDomainId;
 }
@@ -143,15 +130,20 @@ inline std::uint64_t StackSnapshotResultBuffer::SetSpanId(std::uint64_t value)
 
 inline std::size_t StackSnapshotResultBuffer::GetFramesCount(void) const
 {
-    return _instructionPointers.size();
+    return _currentFramesCount;
+}
+
+inline void StackSnapshotResultBuffer::SetFramesCount(std::uint16_t count)
+{
+    _currentFramesCount = count;
 }
 
 inline void StackSnapshotResultBuffer::CopyInstructionPointers(std::vector<std::uintptr_t>& ips) const
 {
-    ips.reserve(_instructionPointers.size());
+    ips.reserve(_currentFramesCount);
 
     // copy the instruction pointer to the out-parameter
-    ips = _instructionPointers;
+    ips.insert(ips.end(), _instructionPointers.begin(), _instructionPointers.begin() + _currentFramesCount);
 }
 
 inline void StackSnapshotResultBuffer::DetermineAppDomain(ThreadID threadId, ICorProfilerInfo4* pCorProfilerInfo)
@@ -185,27 +177,29 @@ inline void StackSnapshotResultBuffer::DetermineAppDomain(ThreadID threadId, ICo
 
 // ----------- ----------- ----------- ----------- ----------- ----------- ----------- ----------- -----------
 
-inline bool StackSnapshotResultReusableBuffer::AddFrame(std::uintptr_t ip)
+inline bool StackSnapshotResultBuffer::AddFrame(std::uintptr_t ip)
 {
-    const auto nextIdx = _instructionPointers.size();
-
-    if (nextIdx >= MaxSnapshotStackDepth_Limit)
+    if (_currentFramesCount >= MaxSnapshotStackDepth_Limit)
     {
         return false;
     }
 
-    const auto lastIdx = MaxSnapshotStackDepth_Limit - 1;
-    if (nextIdx == lastIdx)
+    if (_currentFramesCount == MaxSnapshotStackDepth_Limit - 1)
     {
-        _instructionPointers.push_back(0);
+        _instructionPointers[_currentFramesCount++] = 0;
         return false;
     }
 
-    _instructionPointers.push_back(ip);
+    _instructionPointers[_currentFramesCount++] = ip;
     return true;
 }
 
-inline bool StackSnapshotResultReusableBuffer::AddFakeFrame()
+inline bool StackSnapshotResultBuffer::AddFakeFrame()
 {
     return AddFrame(0);
+}
+
+inline uintptr_t* StackSnapshotResultBuffer::Data()
+{
+    return _instructionPointers.data();
 }
