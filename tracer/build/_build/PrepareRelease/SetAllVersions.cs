@@ -285,6 +285,11 @@ namespace PrepareRelease
                     "src/Datadog.Trace/TracerConstants.cs",
                     FourPartVersionReplace);
 
+                // Top-level CMakeLists.txt
+                SynchronizeVersion(
+                    "CMakeLists.txt",
+                    text => FullVersionReplace(text, ".", prefix: "VERSION "));
+
                 // Native clr profiler updates
                 SynchronizeVersion(
                     "src/Datadog.Tracer.Native/CMakeLists.txt",
@@ -316,6 +321,10 @@ namespace PrepareRelease
 
                 SynchronizeVersion(
                     "../profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt",
+                    text => FullVersionReplace(text, ".", prefix: "VERSION "));
+
+                SynchronizeVersion(
+                    "../profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/CMakeLists.txt",
                     text => FullVersionReplace(text, ".", prefix: "VERSION "));
 
                 SynchronizeVersion(
