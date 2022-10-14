@@ -55,9 +55,12 @@ namespace Datadog.Trace.Iast
                 return null;
             }
 
+            var traces = new StackTrace(0, true).ToString();
+            var vulnerability = new Vulnerability(vulnerabilityType, new Location(string.Empty, 0), new Evidence(traces));
+
             // Sometimes we do not have the file/line but we have the method/class.
-            var filename = frameInfo.StackFrame?.GetFileName();
-            var vulnerability = new Vulnerability(vulnerabilityType, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null), new Evidence(evidenceValue));
+            // var filename = frameInfo.StackFrame?.GetFileName();
+            // var vulnerability = new Vulnerability(vulnerabilityType, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null), new Evidence(evidenceValue));
             // The VulnerabilityBatch class is not very useful right now, but we will need it when handling requests
             var batch = new VulnerabilityBatch();
             batch.Add(vulnerability);
