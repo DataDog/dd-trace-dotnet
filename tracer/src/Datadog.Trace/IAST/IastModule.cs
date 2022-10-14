@@ -7,10 +7,8 @@
 
 using System;
 using System.Diagnostics;
-using System.Linq;
-using System.Security.Cryptography;
+using System.Runtime.InteropServices;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Iast
 {
@@ -18,11 +16,9 @@ namespace Datadog.Trace.Iast
     {
         private const string OperationNameWeakHash = "weak_hashing";
         private const string OperationNameWeakCipher = "weak_cipher";
-        private static bool isLinux;
 
         public IastModule()
         {
-            isLinux = string.Equals(FrameworkDescription.Instance.OSPlatform, "Linux", StringComparison.OrdinalIgnoreCase);
         }
 
         public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId, Iast iast)
@@ -32,6 +28,8 @@ namespace Datadog.Trace.Iast
             {
                 return null;
             }
+
+            var isLinux = string.Equals(FrameworkDescription.Instance.OSPlatform, "Linux", StringComparison.OrdinalIgnoreCase);
 
             var evidenceValue = algorithm + " linux: " + isLinux + " typename: " + type.Name + " cond: " + type.Name.ToLower().EndsWith("provider");
 
