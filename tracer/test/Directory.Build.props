@@ -34,6 +34,12 @@
         Include="$(NugetPackageRoot)%(PackageReference.FileName)\%(PackageReference.Version)\%(PackageReference.CopyToOutputDirectory)" />
     </ItemGroup>
 <!--    Condition="%(PackageReference.CopyToOutputDirectory) != '' AND '@(PackageReferenceFiles->'%(Identity)')' != ''"-->
+
+    <Message Text="NugetPackageRoot: $(NugetPackageRoot)" Importance="high"/>
+    <Message Text="PackageReference.FileName: %(PackageReference.FileName)" Importance="high"/>
+    <Message Text="PackageReference.Version: %(PackageReference.Version)" Importance="high"/>
+    <Message Text="PackageReference.CopyToOutputDirectory: %(PackageReference.CopyToOutputDirectory)" Importance="high"/>
+    
     <Message 
              Text="Copy @(PackageReferenceFiles->'%(Identity)') to $(OutDir)"
              Importance="high"/>
