@@ -24,16 +24,13 @@ namespace Datadog.Trace.Iast
         public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId, Iast iast)
         {
             var algorithm = type.BaseType?.Name;
-            var isLinux = string.Equals(FrameworkDescription.Instance.OSPlatform, "Linux", StringComparison.OrdinalIgnoreCase);
 
-            if (algorithm == null || !InvalidCipherAlgorithm(type, algorithm, iast, isLinux))
+            if (algorithm == null || !InvalidCipherAlgorithm(type, algorithm, iast))
             {
                 return null;
             }
 
-            var evidenceValue = algorithm + " linux: " + isLinux + " typename: " + type.Name + " cond: " + type.Name.ToLower().EndsWith("provider");
-
-            return GetScope(Tracer.Instance, evidenceValue, integrationId, VulnerabilityType.WeakCipher, OperationNameWeakCipher);
+            return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakCipher, OperationNameWeakCipher);
         }
 
         public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, Iast iast)
@@ -104,9 +101,9 @@ namespace Datadog.Trace.Iast
             return false;
         }
 
-        private static bool InvalidCipherAlgorithm(Type type, string algorithm, Iast iast, bool isLinux)
+        private static bool InvalidCipherAlgorithm(Type type, string algorithm, Iast iast)
         {
-            if (ProviderValid(type.Name, isLinux))
+            if (ProviderValid(type.Name))
             {
                 return false;
             }
@@ -122,10 +119,11 @@ namespace Datadog.Trace.Iast
             return false;
         }
 
-        private static bool ProviderValid(string name, bool isLinux)
+        private static bool ProviderValid(string name)
         {
             // TripleDESCryptoServiceProvider internally creates a DES algorithm instance.
-            if (name == "TripleDESCryptoServiceProvider" || (isLinux && name.ToLower().EndsWith("provider")))
+            if (name == "TripleDESCryptoServiceProvider" ||
+                (string.Equals(FrameworkDescription.Instance.OSPlatform, "Linux", StringComparison.OrdinalIgnoreCase) && name.ToLower().EndsWith("provider")))
             {
                 return true;
             }
