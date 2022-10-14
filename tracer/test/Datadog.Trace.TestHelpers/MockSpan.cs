@@ -73,5 +73,20 @@ namespace Datadog.Trace.TestHelpers
         {
             return $"{nameof(TraceId)}: {TraceId}, {nameof(SpanId)}: {SpanId}, {nameof(Name)}: {Name}, {nameof(Resource)}: {Resource}, {nameof(Service)}: {Service}";
         }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is MockSpan span)
+            {
+                return SpanId == span.SpanId;
+            }
+
+            return base.Equals(obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return SpanId.GetHashCode();
+        }
     }
 }

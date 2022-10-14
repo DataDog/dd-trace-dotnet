@@ -47,7 +47,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         private readonly JsonSerializerSettings _jsonSerializerSettingsOrderProperty;
         private int _httpPort;
         private Process _process;
-        private MockTracerAgent _agent;
 
         public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null)
             : base(Prefix + sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
@@ -75,20 +74,18 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         public Task<MockTracerAgent> RunOnSelfHosted(bool? enableSecurity, string externalRulesFile = null, int? traceRateLimit = null)
         {
-            if (_agent == null)
-            {
-                var agentPort = TcpPortProvider.GetOpenPort();
-                _agent = MockTracerAgent.Create(Output, agentPort);
-            }
+            var agentPort = TcpPortProvider.GetOpenPort();
+            var agent = MockTracerAgent.Create(Output, agentPort);
+            agent.Warmup();
 
             StartSample(
-                _agent,
+                agent,
                 arguments: null,
                 enableSecurity: enableSecurity,
                 externalRulesFile: externalRulesFile,
                 traceRateLimit: traceRateLimit);
 
-            return Task.FromResult(_agent);
+            return Task.FromResult((MockTracerAgent)agent);
         }
 
         public override void Dispose()
@@ -118,7 +115,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
 
             _httpClient?.Dispose();
-            _agent?.Dispose();
         }
 
         public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null)

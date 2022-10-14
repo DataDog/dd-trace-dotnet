@@ -13,6 +13,7 @@ using System.IO.Compression;
 using System.IO.Pipes;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -926,6 +927,18 @@ namespace Datadog.Trace.TestHelpers
                 base.Dispose();
                 _listener?.Close();
                 _udpClient?.Close();
+            }
+
+            public void Warmup()
+            {
+                HttpClient httpClient = new HttpClient();
+                httpClient.DefaultRequestHeaders.Add("user-agent", "Warmup");
+                var url = $"http://localhost:{Port}/info";
+                for (int x = 0; x < 5; x++)
+                {
+                    var response = httpClient.GetStringAsync(url).Result;
+                    System.Threading.Thread.Sleep(100);
+                }
             }
 
             private void HandleHttpRequests()
