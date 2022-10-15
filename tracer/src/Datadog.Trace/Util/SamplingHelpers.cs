@@ -7,7 +7,7 @@ using System;
 
 namespace Datadog.Trace.Util
 {
-    internal class SamplingHelpers
+    internal static class SamplingHelpers
     {
         private const ulong KnuthFactor = 1_111_111_111_111_111_111;
 
@@ -15,6 +15,6 @@ namespace Datadog.Trace.Util
             ((id * KnuthFactor) % TracerConstants.MaxTraceId) <= (rate * TracerConstants.MaxTraceId);
 
         internal static bool IsKeptBySamplingPriority(ArraySegment<Span> trace) =>
-            trace.Array[trace.Offset].Context.TraceContext?.SamplingPriority is int p && p > 0;
+            trace.Array![trace.Offset].Context.TraceContext?.SamplingPriority > 0;
     }
 }

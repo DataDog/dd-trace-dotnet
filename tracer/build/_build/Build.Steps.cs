@@ -57,6 +57,8 @@ partial class Build
     AbsolutePath ProfilerBuildDataDirectory => ProfilerDirectory / "build_data";
     AbsolutePath ProfilerTestLogsDirectory => ProfilerBuildDataDirectory / "logs";
 
+    AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
+
     const string LibDdwafVersion = "1.5.1";
 
     const string OlderLibDdwafVersion = "1.4.0";
@@ -189,13 +191,12 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            var buildDirectory = NativeTracerProject.Directory / "build";
-            EnsureExistingDirectory(buildDirectory);
+            EnsureExistingDirectory(NativeBuildDirectory);
 
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {buildDirectory} -S {NativeTracerProject.Directory} -DCMAKE_BUILD_TYPE=Release");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE=Release");
             CMake.Value(
-                arguments: $"--build {buildDirectory} --parallel");
+                arguments: $"--build {NativeBuildDirectory} --parallel --target {FileNames.NativeTracer}");
         });
 
     Target CompileNativeSrcMacOs => _ => _
@@ -204,12 +205,11 @@ partial class Build
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {
-            var sourceDirectory = NativeTracerProject.Directory;
-            var buildDirectory = sourceDirectory / "build";
-            EnsureExistingDirectory(buildDirectory);
+            EnsureExistingDirectory(NativeBuildDirectory);
 
-            CMake.Value(arguments: $"-B {buildDirectory} -S {sourceDirectory}");
-            Make.Value(workingDirectory: buildDirectory);
+            CMake.Value(arguments: $"-B {NativeBuildDirectory} -S {RootDirectory}");
+            CMake.Value(
+                arguments: $"--build {NativeBuildDirectory} --parallel --target {FileNames.NativeTracer}");
         });
 
     Target CompileNativeSrc => _ => _

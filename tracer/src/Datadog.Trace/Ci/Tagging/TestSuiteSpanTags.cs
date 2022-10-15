@@ -33,7 +33,6 @@ internal partial class TestSuiteSpanTags : TestModuleSpanTags
         RuntimeArchitecture = moduleTags.RuntimeArchitecture;
         RuntimeName = moduleTags.RuntimeName;
         RuntimeVersion = moduleTags.RuntimeVersion;
-        SamplingPriority = moduleTags.SamplingPriority;
         StageName = moduleTags.StageName;
         TestsSkipped = moduleTags.TestsSkipped;
         BuildSourceRoot = moduleTags.BuildSourceRoot;

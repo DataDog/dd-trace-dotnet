@@ -18,6 +18,14 @@ namespace Datadog.Trace.Agent.MessagePack
     {
         public static readonly SpanMessagePackFormatter Instance = new();
 
+        // Cache the UTF-8 bytes for string constants (like tag names)
+        // and values that are constant within the lifetime of a service (like process id).
+        //
+        // Don't make these static to avoid the additional redirection when this
+        // assembly is loaded in the shared domain. We only create a single instance of
+        // this class so that's fine.
+
+        // top-level span fields
         private readonly byte[] _traceIdBytes = StringEncoding.UTF8.GetBytes("trace_id");
         private readonly byte[] _spanIdBytes = StringEncoding.UTF8.GetBytes("span_id");
         private readonly byte[] _nameBytes = StringEncoding.UTF8.GetBytes("name");
@@ -29,25 +37,40 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _parentIdBytes = StringEncoding.UTF8.GetBytes("parent_id");
         private readonly byte[] _errorBytes = StringEncoding.UTF8.GetBytes("error");
 
-        // name of string tag dictionary
+        // string tags
         private readonly byte[] _metaBytes = StringEncoding.UTF8.GetBytes("meta");
 
         private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Language);
         private readonly byte[] _languageValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
+
         private readonly byte[] _runtimeIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.RuntimeId);
         private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
+
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
 
-        // name of numeric tag dictionary
+        // numeric tags
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
 
-        private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Trace.Metrics.ProcessId);
+        private readonly byte[] _samplingPriorityNameBytes = StringEncoding.UTF8.GetBytes(Metrics.SamplingPriority);
+        private readonly byte[][] _samplingPriorityValueBytes;
+
+        private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Metrics.ProcessId);
         private readonly byte[] _processIdValueBytes;
 
         private SpanMessagePackFormatter()
         {
             double processId = DomainMetadata.Instance.ProcessId;
             _processIdValueBytes = processId > 0 ? MessagePackSerializer.Serialize(processId) : null;
+
+            // values begin at -1, so they are shifted by 1 from their array index: [-1, 0, 1, 2]
+            // these must serialized as msgpack float64 (Double in .NET).
+            _samplingPriorityValueBytes = new[]
+                                          {
+                                              MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserReject),
+                                              MessagePackSerializer.Serialize((double)SamplingPriorityValues.AutoReject),
+                                              MessagePackSerializer.Serialize((double)SamplingPriorityValues.AutoKeep),
+                                              MessagePackSerializer.Serialize((double)SamplingPriorityValues.UserKeep),
+                                          };
         }
 
         int IMessagePackFormatter<TraceChunkModel>.Serialize(ref byte[] bytes, int offset, TraceChunkModel traceChunk, IFormatterResolver formatterResolver)
@@ -275,14 +298,30 @@ namespace Datadog.Trace.Agent.MessagePack
             offset = tagWriter.Offset;
             count += tagWriter.Count;
 
-            if (model.IsLocalRoot)
+            // add "process_id" tag to local root span (if present)
+            if (model.IsLocalRoot && _processIdValueBytes != null)
             {
-                // add "process_id" tag
-                if (_processIdValueBytes != null)
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processIdNameBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, _processIdValueBytes);
+            }
+
+            // add "_sampling_priority_v1" tag to all "chunk orphans"
+            // (spans whose parents are not found in the same chunk)
+            if (model.IsChunkOrphan && model.TraceChunk.SamplingPriority is { } samplingPriority)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _samplingPriorityNameBytes);
+
+                if (samplingPriority is >= -1 and <= 2)
                 {
-                    count++;
-                    offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processIdNameBytes);
-                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, _processIdValueBytes);
+                    // values begin at -1, so they are shifted by 1 from their array index: [-1, 0, 1, 2]
+                    offset += MessagePackBinary.WriteRaw(ref bytes, offset, _samplingPriorityValueBytes[samplingPriority + 1]);
+                }
+                else
+                {
+                    // fallback to support unknown future values that are not cached
+                    offset += MessagePackBinary.WriteDouble(ref bytes, offset, samplingPriority);
                 }
             }
 

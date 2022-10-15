@@ -5,6 +5,7 @@
 
 using System;
 using System.Reflection;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
 

@@ -146,4 +146,17 @@ internal static class MsTestIntegration
 
         return testProperties;
     }
+
+    internal static bool ShouldSkip<TTestMethod>(TTestMethod testMethodInfo)
+        where TTestMethod : ITestMethod
+    {
+        if (CIVisibility.Settings.IntelligentTestRunnerEnabled != true)
+        {
+            return false;
+        }
+
+        var testClass = testMethodInfo.TestClassName;
+        var testMethod = testMethodInfo.MethodInfo;
+        return Common.ShouldSkip(testClass ?? string.Empty, testMethod?.Name ?? string.Empty, testMethodInfo.Arguments, testMethod?.GetParameters());
+    }
 }

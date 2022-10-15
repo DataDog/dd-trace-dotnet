@@ -35,7 +35,6 @@ internal partial class TestSpanTags : TestSuiteSpanTags
         RuntimeArchitecture = suiteTags.RuntimeArchitecture;
         RuntimeName = suiteTags.RuntimeName;
         RuntimeVersion = suiteTags.RuntimeVersion;
-        SamplingPriority = suiteTags.SamplingPriority;
         StageName = suiteTags.StageName;
         TestsSkipped = suiteTags.TestsSkipped;
         BuildSourceRoot = suiteTags.BuildSourceRoot;
