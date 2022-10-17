@@ -122,7 +122,6 @@ variables:
   # Logger variables
   DD_LOGGER_DD_SERVICE: dd-trace-dotnet
   DD_LOGGER_DD_ENV: CI
-  DD_LOGGER_DD_API_KEY: $(DD_API_KEY)
   DD_LOGGER_BUILD_SOURCESDIRECTORY: $(Build.SourcesDirectory)
   DD_LOGGER_BUILD_BUILDID: $(Build.BuildId)
   DD_LOGGER_BUILD_DEFINITIONNAME: $(Build.DefinitionName)
@@ -131,7 +130,7 @@ variables:
   DD_LOGGER_SYSTEM_STAGEDISPLAYNAME: $(System.StageDisplayName)
   DD_LOGGER_SYSTEM_JOBDISPLAYNAME: $(System.JobDisplayName)
   DD_LOGGER_SYSTEM_JOBID: $(System.JobId)
-  DD_LOGGER_SYSTEM_TASKINSTANCEID: $(System.TaskInstanceId)
+#  DD_LOGGER_SYSTEM_TASKINSTANCEID: $(System.TaskInstanceId)
   DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI: $(System.PullRequest.SourceRepositoryURI)
   DD_LOGGER_BUILD_REPOSITORY_URI: $(Build.Repository.Uri)
   DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID: $(System.PullRequest.SourceCommitId)
@@ -615,6 +614,7 @@ stages:
   dependsOn: [build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
+    DD_LOGGER_DD_API_KEY: $(DD_API_KEY)
   pool:
     vmImage: windows-2019
   jobs:
