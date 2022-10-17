@@ -285,9 +285,9 @@ services:
     - "8080:80"
     environment:
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
-      - DD_LOGGER_API_KEY
-      - DD_LOGGER_SERVICE
-      - DD_LOGGER_ENV
+      - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_SERVICE
+      - DD_LOGGER_DD_ENV
 
   ProfilerIntegrationTests:
     build:
@@ -309,9 +309,9 @@ services:
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
       - enable_crash_dumps=${enable_crash_dumps:-true}
-      - DD_LOGGER_API_KEY
-      - DD_LOGGER_SERVICE
-      - DD_LOGGER_ENV
+      - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_SERVICE
+      - DD_LOGGER_DD_ENV
     hostname: integrationtests
 
   IntegrationTests:
@@ -356,9 +356,9 @@ services:
       - COUCHBASE_HOST=couchbase
       - COUCHBASE_PORT=8091
       - CONTAINER_HOSTNAME=http://integrationtests
-      - DD_LOGGER_API_KEY
-      - DD_LOGGER_SERVICE
-      - DD_LOGGER_ENV
+      - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_SERVICE
+      - DD_LOGGER_DD_ENV
     hostname: integrationtests
     depends_on:
       - aerospike
@@ -402,9 +402,9 @@ services:
       - Verify_DisableClipboard=true
       - DiffEngine_Disabled=true
       - CONTAINER_HOSTNAME=http://integrationtests
-      - DD_LOGGER_API_KEY
-      - DD_LOGGER_SERVICE
-      - DD_LOGGER_ENV
+      - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_SERVICE
+      - DD_LOGGER_DD_ENV
     hostname: integrationtests
 
   ExplorationTests:
@@ -427,9 +427,9 @@ services:
       - explorationTestName=${explorationTestName:-eshoponweb}
       - baseImage=${baseImage:-default}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
-      - DD_LOGGER_API_KEY
-      - DD_LOGGER_SERVICE
-      - DD_LOGGER_ENV
+      - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_SERVICE
+      - DD_LOGGER_DD_ENV
 
   StartDependencies:
     image: andrewlock/wait-for-dependencies
@@ -489,9 +489,9 @@ services:
       - MYSQL_PORT=3306
       - RABBITMQ_HOST=rabbitmq_arm64
       - AWS_SQS_HOST=aws_sqs_arm64:9324
-      - DD_LOGGER_API_KEY
-      - DD_LOGGER_SERVICE
-      - DD_LOGGER_ENV
+      - DD_LOGGER_DD_API_KEY
+      - DD_LOGGER_DD_SERVICE
+      - DD_LOGGER_DD_ENV
     depends_on:
       - servicestackredis_arm64
       - stackexchangeredis_arm64
