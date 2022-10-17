@@ -91,7 +91,7 @@ namespace Datadog.Trace.Agent.MessagePack
             // but they are not constant across traces, so cache those per trace here
             var cachedStringBytes = new CachedStringBytes(
                 StringEncoding.UTF8,
-                environment: TraceUtil.NormalizeTag(traceChunk.Environment),
+                environment: traceChunk.Environment, // TODO: normalize with TraceUtil.NormalizeTag()?
                 serviceVersion: traceChunk.ServiceVersion,
                 origin: traceChunk.Origin);
 
