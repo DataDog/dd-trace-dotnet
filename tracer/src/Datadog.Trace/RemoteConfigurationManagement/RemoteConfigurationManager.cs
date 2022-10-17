@@ -188,7 +188,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 {
                     ProcessResponse(response, products);
                     _targetsVersion = response.Targets.Signed.Version;
-                    _backendClientState = response.Targets.Signed.Custom.OpaqueBackendState;
+                    _backendClientState = response.Targets.Signed.Custom?.OpaqueBackendState;
                 }
             }
             catch (Exception e)

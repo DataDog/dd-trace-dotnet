@@ -23,7 +23,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         {
             Id = Guid.NewGuid().ToString();
             RuntimeId = Util.RuntimeId.Get();
-            TracerVersion = TracerConstants.AssemblySemVer;
+            TracerVersion = TracerConstants.ThreePartVersion;
 
             var pollInterval = configurationSource?.GetInt32(ConfigurationKeys.Rcm.PollInterval);
 
