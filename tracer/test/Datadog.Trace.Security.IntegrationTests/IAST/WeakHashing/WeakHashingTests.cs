@@ -66,9 +66,10 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         [Trait("RunOnWindows", "True")]
         [InlineData("DD_IAST_ENABLED", "false")]
         [InlineData("DD_IAST_WEAK_HASH_ALGORITHMS", "")]
-        [InlineData($"D_TRACE_{nameof(IntegrationId.HashAlgorithm)}_ENABLED", "false")]
+        [InlineData($"DD_TRACE_{nameof(IntegrationId.HashAlgorithm)}_ENABLED", "false")]
         public void IntegrationDisabled(string variableName, string variableValue)
         {
+            SetEnvironmentVariable("DD_IAST_ENABLED", "true");
             SetEnvironmentVariable(variableName, variableValue);
             // Avoid tests parallel log collision
             SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "WeakHashingLogs"));

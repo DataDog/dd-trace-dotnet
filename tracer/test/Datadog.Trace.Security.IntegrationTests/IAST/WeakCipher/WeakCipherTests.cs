@@ -56,6 +56,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         [Trait("RunOnWindows", "True")]
         [InlineData("DD_IAST_ENABLED", "false")]
         [InlineData("DD_IAST_WEAK_CIPHER_ALGORITHMS", "")]
+        [InlineData($"DD_TRACE_{nameof(IntegrationId.SymmetricAlgorithm)}_ENABLED", "false")]
         public void IntegrationDisabled(string variableName, string variableValue)
         {
             SetEnvironmentVariable("DD_IAST_ENABLED", "true");

@@ -45,6 +45,12 @@ namespace Datadog.Trace.Iast
 
         private static Scope? GetScope(Tracer tracer, string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName)
         {
+            if (!tracer.Settings.IsIntegrationEnabled(integrationId))
+            {
+                // integration disabled, don't create a scope, skip this span
+                return null;
+            }
+
             var frameInfo = StackWalker.GetFrame();
 
             if (!frameInfo.IsValid)
