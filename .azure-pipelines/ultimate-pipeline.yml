@@ -120,6 +120,7 @@ variables:
   DefaultTimeout: 60
   DD_INSTRUMENTATION_TELEMETRY_ENABLED: 0
   # Logger variables
+  DD_LOGGER_DD_API_KEY: $(DD_API_KEY)
   DD_LOGGER_DD_SERVICE: dd-trace-dotnet
   DD_LOGGER_DD_ENV: CI
   DD_LOGGER_BUILD_SOURCESDIRECTORY: $(Build.SourcesDirectory)
@@ -614,7 +615,6 @@ stages:
   dependsOn: [build_windows_tracer, master_commit_id]
   variables:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
-    DD_LOGGER_DD_API_KEY: $(DD_API_KEY)
   pool:
     vmImage: windows-2019
   jobs:
@@ -636,10 +636,8 @@ stages:
 
       - script: tracer\build.cmd BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
-#        env:
-#          DD_LOGGER_DD_API_KEY: $(ddApiKey)
-#          DD_LOGGER_DD_SERVICE: dd-trace-dotnet
-#          DD_LOGGER_DD_ENV: CI
+        env:
+          DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
       - publish: tracer/build_data
         artifact: profiler-logs_unit_tests_windows_$(System.JobAttempt)
@@ -664,10 +662,8 @@ stages:
 
       - script: tracer\build.cmd BuildAndRunNativeUnitTests
         displayName: Build and Test
-#        env:
-#          DD_LOGGER_DD_API_KEY: $(ddApiKey)
-#          DD_LOGGER_DD_SERVICE: dd-trace-dotnet
-#          DD_LOGGER_DD_ENV: CI
+        env:
+          DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
       - task: PublishTestResults@2
         displayName: publish test results
@@ -702,10 +698,8 @@ stages:
 
       - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
-#        env:
-#          DD_LOGGER_DD_API_KEY: $(ddApiKey)
-#          DD_LOGGER_DD_SERVICE: dd-trace-dotnet
-#          DD_LOGGER_DD_ENV: CI
+        env:
+          DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
       - publish: tracer/build_data
         artifact: profiler-logs_unit_tests_macos_$(System.JobAttempt)
