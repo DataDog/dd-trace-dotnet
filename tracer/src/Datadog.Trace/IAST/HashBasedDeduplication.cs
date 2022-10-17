@@ -19,7 +19,10 @@ namespace Datadog.Trace.Iast
 
         public static void Clear()
         {
-            vulnerabilityHashes.Clear();
+            lock (vulnerabilityHashes)
+            {
+                vulnerabilityHashes.Clear();
+            }
         }
 
         public static bool Add(Vulnerability vulnerability)
