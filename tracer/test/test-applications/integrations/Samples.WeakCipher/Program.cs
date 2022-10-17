@@ -36,15 +36,15 @@ namespace Samples.WeakHashing
         private static void testSymmetricAlgorithm(SymmetricAlgorithm algorithm)
         {
             var original = "Here is some data to encrypt!";
-            var encrypted = EncryptStringToBytes_Aes(original, algorithm);
-            var roundtrip = DecryptStringFromBytes_Aes(encrypted , algorithm);
+            var encrypted = EncryptStringToBytes(original, algorithm);
+            var roundtrip = DecryptStringFromBytes(encrypted , algorithm);
 
             //Display the original data and the decrypted data.
             Console.WriteLine("Original:   {0}", original);
             Console.WriteLine("Round Trip: {0}", roundtrip);
         }
 
-        static byte[] EncryptStringToBytes_Aes(string plainText, SymmetricAlgorithm algorithm)
+        static byte[] EncryptStringToBytes(string plainText, SymmetricAlgorithm algorithm)
         {
             // Check arguments.
             if (plainText == null || plainText.Length <= 0)
@@ -73,7 +73,7 @@ namespace Samples.WeakHashing
             return encrypted;
         }
 
-        static string DecryptStringFromBytes_Aes(byte[] cipherText, SymmetricAlgorithm algorithm)
+        static string DecryptStringFromBytes(byte[] cipherText, SymmetricAlgorithm algorithm)
         {
             // Check arguments.
             if (cipherText == null || cipherText.Length <= 0)
