@@ -119,9 +119,29 @@ variables:
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
   DefaultTimeout: 60
   DD_INSTRUMENTATION_TELEMETRY_ENABLED: 0
+  # Logger variables  
   DD_LOGGER_DD_SERVICE: dd-trace-dotnet
   DD_LOGGER_DD_ENV: CI
   DD_LOGGER_DD_API_KEY: $(DD_API_KEY)
+  DD_LOGGER_BUILD_SOURCESDIRECTORY: $(BUILD_SOURCESDIRECTORY)
+  DD_LOGGER_BUILD_BUILDID: $(BUILD_BUILDID)
+  DD_LOGGER_BUILD_DEFINITIONNAME: $(BUILD_DEFINITIONNAME)
+  DD_LOGGER_SYSTEM_TEAMFOUNDATIONSERVERURI: $(SYSTEM_TEAMFOUNDATIONSERVERURI)
+  DD_LOGGER_SYSTEM_TEAMPROJECTID: $(SYSTEM_TEAMPROJECTID)
+  DD_LOGGER_SYSTEM_STAGEDISPLAYNAME: $(SYSTEM_STAGEDISPLAYNAME)
+  DD_LOGGER_SYSTEM_JOBDISPLAYNAME: $(SYSTEM_JOBDISPLAYNAME)
+  DD_LOGGER_SYSTEM_JOBID: $(SYSTEM_JOBID)
+  DD_LOGGER_SYSTEM_TASKINSTANCEID: $(SYSTEM_TASKINSTANCEID)
+  DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI: $(SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI)
+  DD_LOGGER_BUILD_REPOSITORY_URI: $(BUILD_REPOSITORY_URI)
+  DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID: $(SYSTEM_PULLREQUEST_SOURCECOMMITID)
+  DD_LOGGER_BUILD_SOURCEVERSION: $(BUILD_SOURCEVERSION)
+  DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH: $(SYSTEM_PULLREQUEST_SOURCEBRANCH)
+  DD_LOGGER_BUILD_SOURCEBRANCH: $(BUILD_SOURCEBRANCH)
+  DD_LOGGER_BUILD_SOURCEBRANCHNAME: $(BUILD_SOURCEBRANCHNAME)
+  DD_LOGGER_BUILD_SOURCEVERSIONMESSAGE: $(BUILD_SOURCEVERSIONMESSAGE)
+  DD_LOGGER_BUILD_REQUESTEDFORID: $(BUILD_REQUESTEDFORID)
+  DD_LOGGER_BUILD_REQUESTEDFOREMAIL: $(BUILD_REQUESTEDFOREMAIL)
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -613,10 +633,10 @@ stages:
 
       - script: tracer\build.cmd BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
-        env:
-          DD_LOGGER_DD_API_KEY: $(ddApiKey)
-          DD_LOGGER_DD_SERVICE: dd-trace-dotnet
-          DD_LOGGER_DD_ENV: CI
+#        env:
+#          DD_LOGGER_DD_API_KEY: $(ddApiKey)
+#          DD_LOGGER_DD_SERVICE: dd-trace-dotnet
+#          DD_LOGGER_DD_ENV: CI
 
       - publish: tracer/build_data
         artifact: profiler-logs_unit_tests_windows_$(System.JobAttempt)
@@ -641,10 +661,10 @@ stages:
 
       - script: tracer\build.cmd BuildAndRunNativeUnitTests
         displayName: Build and Test
-        env:
-          DD_LOGGER_DD_API_KEY: $(ddApiKey)
-          DD_LOGGER_DD_SERVICE: dd-trace-dotnet
-          DD_LOGGER_DD_ENV: CI
+#        env:
+#          DD_LOGGER_DD_API_KEY: $(ddApiKey)
+#          DD_LOGGER_DD_SERVICE: dd-trace-dotnet
+#          DD_LOGGER_DD_ENV: CI
 
       - task: PublishTestResults@2
         displayName: publish test results
@@ -679,10 +699,10 @@ stages:
 
       - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
-        env:
-          DD_LOGGER_DD_API_KEY: $(ddApiKey)
-          DD_LOGGER_DD_SERVICE: dd-trace-dotnet
-          DD_LOGGER_DD_ENV: CI
+#        env:
+#          DD_LOGGER_DD_API_KEY: $(ddApiKey)
+#          DD_LOGGER_DD_SERVICE: dd-trace-dotnet
+#          DD_LOGGER_DD_ENV: CI
 
       - publish: tracer/build_data
         artifact: profiler-logs_unit_tests_macos_$(System.JobAttempt)
