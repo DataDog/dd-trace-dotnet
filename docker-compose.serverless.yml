@@ -136,6 +136,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -154,6 +155,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -172,6 +174,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -190,6 +193,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -208,6 +212,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -226,6 +231,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -244,6 +250,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -262,6 +269,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -280,6 +288,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -298,6 +307,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -316,6 +326,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -334,6 +345,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -352,6 +364,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -370,6 +383,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -388,6 +402,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -406,6 +421,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -424,6 +440,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -442,6 +459,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -460,6 +478,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -478,6 +497,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -496,6 +516,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -514,6 +535,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -532,6 +554,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -550,6 +573,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -568,6 +592,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -586,6 +611,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
@@ -604,6 +630,7 @@ services:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     ports:
     - "8080"
     volumes:
