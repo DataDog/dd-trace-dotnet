@@ -72,6 +72,7 @@ namespace Datadog.Trace.Configuration
             TraceMethods = settings.TraceMethods;
             IsActivityListenerEnabled = settings.IsActivityListenerEnabled;
             IsDataStreamsMonitoringEnabled = settings.IsDataStreamsMonitoringEnabled;
+            IsRareSamplerEnabled = settings.IsRareSamplerEnabled;
 
             LogSubmissionSettings = ImmutableDirectLogSubmissionSettings.Create(settings.LogSubmissionSettings);
             // Logs injection is enabled by default if direct log submission is enabled, otherwise disabled by default
@@ -338,6 +339,11 @@ namespace Datadog.Trace.Configuration
         /// This value is not used when extracting an incoming propagation header from an upstream service.
         /// </remarks>
         internal int OutgoingTagPropagationHeaderMaxLength { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the rare sampler is enabled
+        /// </summary>
+        public bool IsRareSamplerEnabled { get; }
 
         /// <summary>
         /// Create a <see cref="ImmutableTracerSettings"/> populated from the default sources

@@ -5,19 +5,25 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Agent.TraceSamplers
 {
     internal class RareSampler : ITraceChunkSampler
     {
-        private const string RareKey = "_dd.rare";
         private const int CacheLimit = 200; // Uses default value of 200 as found in the trace agent
 
         private readonly HashSet<StatsAggregationKey> _keys = new();
         private readonly Queue<StatsAggregationKey> _cache = new();
 
-        public bool IsEnabled => true; // TODO: Add ability to disable the RareSampler, which the trace agent has
+        public RareSampler(ImmutableTracerSettings settings)
+        {
+            IsEnabled = settings.IsRareSamplerEnabled;
+        }
+
+        public bool IsEnabled { get; }
 
         /// <summary>
         /// Samples the trace chunk with the following rules:
@@ -30,7 +36,16 @@ namespace Datadog.Trace.Agent.TraceSamplers
         /// <returns>true when a rare span is found, false otherwise</returns>
         public bool Sample(ArraySegment<Span> trace)
         {
-            if (SamplingHelpers.IsKeptBySamplingPriority(trace))
+            if (!IsEnabled)
+            {
+                return false;
+            }
+
+            var traceContext = trace.Array[trace.Offset].Context.TraceContext;
+
+            var decisionMaker = traceContext.Tags.GetTag(Tags.Propagated.DecisionMaker);
+
+            if (decisionMaker != null && int.TryParse(decisionMaker, out var value) && value == SamplingMechanism.Manual)
             {
                 UpdateSeenSpans(trace);
                 return false;
@@ -85,7 +100,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
             if (isNewKey)
             {
-                span.Tags.SetMetric(RareKey, 1);
+                span.Tags.SetMetric(Metrics.RareSpan, 1);
                 UpdateCache(key);
             }
 

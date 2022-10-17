@@ -58,7 +58,7 @@ namespace Datadog.Trace.Agent
 
             _prioritySampler = new PrioritySampler();
             _errorSampler = new ErrorSampler();
-            _rareSampler = new RareSampler();
+            _rareSampler = new RareSampler(settings);
             _analyticsEventSampler = new AnalyticsEventsSampler();
 
             var header = new ClientStatsPayload
@@ -126,12 +126,12 @@ namespace Datadog.Trace.Agent
             // Note: The RareSampler must be run before all other samplers so that
             // the first rare span in the trace chunk (if any) is marked with "_dd.rare".
             // The sampling decision is only used if no other samplers choose to keep the trace chunk.
-            bool rareSpanFound = _rareSampler.IsEnabled && _rareSampler.Sample(trace);
+            bool rareSpanFound = _rareSampler.Sample(trace);
 
-            return _prioritySampler.Sample(trace)
+            return rareSpanFound
+                || _prioritySampler.Sample(trace)
                 || _errorSampler.Sample(trace)
-                || _analyticsEventSampler.Sample(trace)
-                || rareSpanFound;
+                || _analyticsEventSampler.Sample(trace);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
