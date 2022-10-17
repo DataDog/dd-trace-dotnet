@@ -1,0 +1,11 @@
+{
+  "dsl": "count(#CollectionLocal) \u003e 2",
+  "json": {
+    "gt": [
+      {
+        "count": "#CollectionLocal"
+      },
+      2
+    ]
+  }
+}

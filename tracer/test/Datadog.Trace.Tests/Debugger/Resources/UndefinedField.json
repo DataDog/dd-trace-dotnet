@@ -1,0 +1,9 @@
+{
+  "dsl": ".UndefinedField \u003e 2",
+  "json": {
+    "gt": [
+      ".UndefinedField",
+      2
+    ]
+  }
+}

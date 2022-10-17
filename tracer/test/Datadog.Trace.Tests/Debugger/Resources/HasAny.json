@@ -1,0 +1,15 @@
+{
+  "dsl": "hasAny(#CollectionLocal, { @it == 'hello' })",
+  "json": {
+    "hasAny": [
+      "#CollectionLocal",
+      {
+        "eq": [
+          "@it",
+          "hello"
+        ]
+      }
+    ]
+  },
+  "ignored": true
+}

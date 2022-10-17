@@ -1,0 +1,47 @@
+{
+  "dsl": "len(.String) > 2 || count(#CollectionLocal) > 2",
+  "json": {
+    "and": [
+      {
+        "gt": [
+          { "len": ".String" },
+          2
+        ]
+      },
+      {
+        "or": [
+          {
+            "gt": [
+              { "count": "#CollectionLocal" },
+              2
+            ]
+          },
+          {
+            "hasAny": [
+              {
+                "filter": [
+                  "#CollectionLocal",
+                  {
+                    "gt": [
+                      { "len": "@it" },
+                      4
+                    ]
+                  }
+                ]
+              },
+              {
+                "eq": [
+                  "@it",
+                  "hello"
+                ]
+              }
+            ]
+          }
+
+        ]
+
+      }
+    ]
+  },
+  "ignored": true
+}

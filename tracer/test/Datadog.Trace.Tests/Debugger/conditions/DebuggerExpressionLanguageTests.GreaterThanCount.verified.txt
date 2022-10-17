@@ -1,0 +1,18 @@
+﻿DSL: count(#CollectionLocal) > 2
+Expression: (scopeMember, scopeMemberReadOnlyCollection) =>
+{
+    var this = (DebuggerExpressionLanguageTests.TestStruct)scopeMember.Value;
+    var members = scopeMemberReadOnlyCollection.ToArray();
+    var IntLocal = (int)members[0].Value;
+    var DoubleLocal = (double)members[1].Value;
+    var StringLocal = (string)members[2].Value;
+    var CollectionLocal = (List<string>)members[3].Value;
+    var NestedObjectLocal = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)members[4].Value;
+    var IntArg = (int)members[5].Value;
+    var DoubleArg = (double)members[6].Value;
+    var StringArg = (string)members[7].Value;
+    var CollectionArg = (List<string>)members[8].Value;
+    var NestedObjectArg = (DebuggerExpressionLanguageTests.TestStruct.NestedObject)members[9].Value;
+    CollectionLocal.Count > 2;
+}
+Result: True

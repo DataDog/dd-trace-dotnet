@@ -6,8 +6,9 @@
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Reflection;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.Debugger.Conditions;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 
@@ -46,14 +47,25 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return CreateInvalidatedDebuggerState();
             }
 
-            var state = new MethodDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, instance);
-            state.SnapshotCreator.StartDebugger();
+            var state = new MethodDebuggerState(probeId, scope: default, DateTimeOffset.UtcNow, methodMetadataIndex, instance, new ProbeCondition(" ", MethodPhase.Entry, " "));
 
+            if (state.Condition != null)
+            {
+                state.Condition.SetShouldEvaluate(MethodPhase.Entry);
+                return state;
+            }
+
+            BeginMethodStartMarkerCapture(state);
+            return state;
+        }
+
+        private static void BeginMethodStartMarkerCapture(MethodDebuggerState state)
+        {
+            state.SnapshotCreator.StartDebugger();
             state.SnapshotCreator.StartSnapshot();
             state.SnapshotCreator.StartCaptures();
             state.SnapshotCreator.StartEntry();
             state.SnapshotCreator.CaptureStaticFields(state.MethodMetadataInfo.DeclaringType);
-            return state;
         }
 
         private static MethodDebuggerState CreateInvalidatedDebuggerState()
@@ -70,9 +82,47 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void BeginMethod_EndMarker(ref MethodDebuggerState state)
         {
-            if (!state.IsActive)
+            if (!state.IsActive || state.Condition?.IsEndMethodCondition == true)
             {
                 return;
+            }
+
+            if (state.Condition?.ShouldEvaluate == true)
+            {
+                state.Condition.SetInvocationTarget("this", state.MethodMetadataInfo.DeclaringType, state.InvocationTarget);
+                var result = state.Condition.Evaluate();
+                if (!result)
+                {
+                    state.IsActive = false;
+                    return;
+                }
+
+                BeginMethodStartMarkerCapture(state);
+
+                foreach (var member in state.Condition.ScopeMembers)
+                {
+                    switch (member.ElementType)
+                    {
+                        case ScopeMember.MemberType.Argument:
+                        {
+                            state.SnapshotCreator.CaptureArgument(member.Value, member.Name, member.Type);
+                            break;
+                        }
+
+                        case ScopeMember.MemberType.Local:
+                        case ScopeMember.MemberType.Return:
+                        {
+                            state.SnapshotCreator.CaptureLocal(member.Value, member.Name, member.Type);
+                            break;
+                        }
+
+                        case ScopeMember.MemberType.Exception:
+                        {
+                            state.SnapshotCreator.CaptureException((Exception)member.Value);
+                            break;
+                        }
+                    }
+                }
             }
 
             state.SnapshotCreator.CaptureInstance(state.InvocationTarget, state.MethodMetadataInfo.DeclaringType);
@@ -100,6 +150,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             var paramName = state.MethodMetadataInfo.ParameterNames[index];
+            if (state.Condition?.ShouldEvaluate == true)
+            {
+                state.Condition.AddArgument(paramName, typeof(TArg), arg);
+                return;
+            }
+
             state.SnapshotCreator.CaptureArgument(arg, paramName);
             state.HasLocalsOrReturnValue = false;
         }
@@ -122,6 +178,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
             var localVariableNames = state.MethodMetadataInfo.LocalVariableNames;
             if (!TryGetLocalName(index, localVariableNames, out var localName))
             {
+                return;
+            }
+
+            if (state.Condition?.ShouldEvaluate == true)
+            {
+                state.Condition.AddLocal(localName, typeof(TLocal), local);
                 return;
             }
 
@@ -169,12 +231,15 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return DebuggerReturn.GetDefault();
             }
 
-            state.SnapshotCreator.StartReturn();
-            state.SnapshotCreator.CaptureStaticFields(state.MethodMetadataInfo.DeclaringType);
-            if (exception != null)
+            state.Condition?.SetShouldEvaluate(MethodPhase.End);
+
+            if (state.Condition?.ShouldEvaluate == true)
             {
-                state.SnapshotCreator.CaptureException(exception);
+                state.Condition.AddException("exception", exception.GetType(), exception);
+                return DebuggerReturn.GetDefault();
             }
+
+            EndMethodStartMarkerCapture<object>(null, exception, ref state);
 
             return DebuggerReturn.GetDefault();
         }
@@ -197,6 +262,29 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 return new DebuggerReturn<TReturn>(returnValue);
             }
 
+            state.Condition?.SetShouldEvaluate(MethodPhase.End);
+
+            if (state.Condition?.ShouldEvaluate == true)
+            {
+                if (exception != null)
+                {
+                    state.Condition.AddException("exception", exception.GetType(), exception);
+                }
+                else
+                {
+                    state.Condition.AddReturn("return", typeof(TReturn), returnValue);
+                }
+
+                return new DebuggerReturn<TReturn>(returnValue);
+            }
+
+            EndMethodStartMarkerCapture(returnValue, exception, ref state);
+
+            return new DebuggerReturn<TReturn>(returnValue);
+        }
+
+        private static void EndMethodStartMarkerCapture<TReturn>(TReturn returnValue, Exception exception, ref MethodDebuggerState state)
+        {
             state.SnapshotCreator.StartReturn();
             state.SnapshotCreator.CaptureStaticFields(state.MethodMetadataInfo.DeclaringType);
             if (exception != null)
@@ -208,8 +296,6 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 state.SnapshotCreator.CaptureLocal(returnValue, "@return");
                 state.HasLocalsOrReturnValue = true;
             }
-
-            return new DebuggerReturn<TReturn>(returnValue);
         }
 
         /// <summary>
@@ -222,6 +308,22 @@ namespace Datadog.Trace.Debugger.Instrumentation
             if (!state.IsActive)
             {
                 return;
+            }
+
+            if (state.Condition?.ShouldEvaluate == true)
+            {
+                state.Condition.SetInvocationTarget("this", state.MethodMetadataInfo.DeclaringType, state.InvocationTarget);
+                var result = state.Condition.Evaluate();
+                if (!result)
+                {
+                    state.IsActive = false;
+                    return;
+                }
+
+                EndMethodStartMarkerCapture(
+                    state.Condition?.ScopeMembers.SingleOrDefault(m => m.ElementType == ScopeMember.MemberType.Return).Value,
+                    (Exception)state.Condition?.ScopeMembers.SingleOrDefault(m => m.ElementType == ScopeMember.MemberType.Exception).Value,
+                    ref state);
             }
 
             state.SnapshotCreator.CaptureInstance(state.InvocationTarget, state.MethodMetadataInfo.DeclaringType);

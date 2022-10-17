@@ -1,0 +1,9 @@
+{
+  "dsl": "#IntLocal \u003e 2",
+  "json": {
+    "gt": [
+      "#IntLocal",
+      2
+    ]
+  }
+}

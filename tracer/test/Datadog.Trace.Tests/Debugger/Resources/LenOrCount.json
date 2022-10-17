@@ -1,0 +1,20 @@
+{
+  "dsl": "len(.String) > 2 || count(#CollectionLocal) > 2",
+  "json": {
+    "or": [
+      {
+        "gt": [
+          { "len": ".String" },
+          2
+        ]
+      },
+      {
+        "gt": [
+          { "count": "#CollectionLocal" },
+          2
+        ]
+      }
+    ]
+  },
+  "ignored": true
+}
