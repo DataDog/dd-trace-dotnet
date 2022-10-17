@@ -9,9 +9,6 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
-using MessagePack;
-
-// use nuget MessagePack to deserialize
 
 namespace Datadog.Trace.TestHelpers
 {
@@ -30,7 +27,8 @@ namespace Datadog.Trace.TestHelpers
 
         public Task<bool> SendTracesAsync(ArraySegment<byte> traces, int numberOfTraces, bool statsComputationEnabled, long numberOfDroppedP0Traces, long numberOfDroppedP0Spans)
         {
-            var spans = MessagePackSerializer.Deserialize<List<List<MockSpan>>>(traces);
+            // use nuget MessagePack to deserialize
+            var spans = global::MessagePack.MessagePackSerializer.Deserialize<List<List<MockSpan>>>(traces);
 
             if (spans.Count > 0)
             {
