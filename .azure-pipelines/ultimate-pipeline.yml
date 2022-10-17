@@ -926,10 +926,10 @@ stages:
 
     - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisTracerIntegrationTests
-#      env:
-#        DD_LOGGER_DD_API_KEY: $(ddApiKey)
-#        DD_LOGGER_DD_SERVICE: dd-trace-dotnet
-#        DD_LOGGER_DD_ENV: CI
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DD_LOGGER_DD_SERVICE: dd-trace-dotnet
+        DD_LOGGER_DD_ENV: CI
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -973,10 +973,10 @@ stages:
 
     - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsSecurityIisIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisSecurityIntegrationTests
-#      env:
-#        DD_LOGGER_DD_API_KEY: $(ddApiKey)
-#        DD_LOGGER_DD_SERVICE: dd-trace-dotnet
-#        DD_LOGGER_DD_ENV: CI
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DD_LOGGER_DD_SERVICE: dd-trace-dotnet
+        DD_LOGGER_DD_ENV: CI
 
     - task: PublishTestResults@2
       displayName: publish test results
