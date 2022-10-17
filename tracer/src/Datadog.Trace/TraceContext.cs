@@ -92,7 +92,7 @@ namespace Datadog.Trace
 
         public void AddSpan(Span span)
         {
-            lock (_syncRoot)
+            lock (this)
             {
                 if (RootSpan == null)
                 {
@@ -143,6 +143,12 @@ namespace Datadog.Trace
                 }
             }
 
+            // Determine whether we will sample a dropped span with single span sampling rules
+            if (_samplingPriority <= 0)
+            {
+                Tracer.SpanSampler?.MakeSamplingDecision(span);
+            }
+
             lock (_syncRoot)
             {
                 _spans.Add(span);
@@ -185,7 +191,7 @@ namespace Datadog.Trace
         {
             ArraySegment<Span> spansToWrite;
 
-            lock (_syncRoot)
+            lock (this)
             {
                 spansToWrite = _spans.GetArray();
                 _spans = default;
