@@ -56,9 +56,9 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         [Trait("RunOnWindows", "True")]
         [InlineData("DD_IAST_ENABLED", "false")]
         [InlineData("DD_IAST_WEAK_CIPHER_ALGORITHMS", "")]
-        [InlineData($"D_TRACE_{nameof(IntegrationId.SymmetricAlgorithm)}_ENABLED", "false")]
         public void IntegrationDisabled(string variableName, string variableValue)
         {
+            SetEnvironmentVariable("DD_IAST_ENABLED", "true");
             SetEnvironmentVariable(variableName, variableValue);
             const int expectedSpanCount = 6;
             using var agent = EnvironmentHelper.GetMockAgent();
