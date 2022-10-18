@@ -5,21 +5,20 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Iast
+namespace Datadog.Trace.Iast;
+
+internal readonly struct Source
 {
-    internal readonly struct Source
+    public Source(byte origin, string name, string value)
     {
-        public Source(byte origin, string name, string value)
-        {
-            this.Origin = origin;
-            this.Name = name;
-            this.Value = value;
-        }
-
-        public byte Origin { get; }
-
-        public string Name { get; }
-
-        public string Value { get; }
+        this.Origin = origin;
+        this.Name = name;
+        this.Value = value;
     }
+
+    public byte Origin { get; }
+
+    public string Name { get; }
+
+    public string Value { get; }
 }

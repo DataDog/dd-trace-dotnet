@@ -10,40 +10,39 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
+
+internal class HashAlgorithmIntegrationCommon
 {
-    internal class HashAlgorithmIntegrationCommon
+    internal const IntegrationId IntegrationId = Configuration.IntegrationId.HashAlgorithm;
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HashAlgorithmIntegrationCommon));
+
+    internal static Scope? CreateScope<TTarget>(TTarget instance)
     {
-        internal const IntegrationId IntegrationId = Configuration.IntegrationId.HashAlgorithm;
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HashAlgorithmIntegrationCommon));
-
-        internal static Scope? CreateScope<TTarget>(TTarget instance)
+        if (instance is System.Security.Cryptography.HashAlgorithm algorithm)
         {
-            if (instance is System.Security.Cryptography.HashAlgorithm algorithm)
+            var iast = Iast.Iast.Instance;
+            if (!iast.Settings.Enabled)
             {
-                var iast = Iast.Iast.Instance;
-                if (!iast.Settings.Enabled)
-                {
-                    return null;
-                }
-
-                try
-                {
-                    return IastModule.OnHashingAlgorithm(GetAlgorithmName(algorithm.GetType()), IntegrationId, iast);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error creating or populating hash algorithm scope.");
-                    return null;
-                }
+                return null;
             }
 
-            return null;
+            try
+            {
+                return IastModule.OnHashingAlgorithm(GetAlgorithmName(algorithm.GetType()), IntegrationId, iast);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error creating or populating hash algorithm scope.");
+                return null;
+            }
         }
 
-        private static string? GetAlgorithmName(Type type)
-        {
-            return type.BaseType?.BaseType == typeof(System.Security.Cryptography.HashAlgorithm) ? type.BaseType?.Name : type.Name;
-        }
+        return null;
+    }
+
+    private static string? GetAlgorithmName(Type type)
+    {
+        return type.BaseType?.BaseType == typeof(System.Security.Cryptography.HashAlgorithm) ? type.BaseType?.Name : type.Name;
     }
 }

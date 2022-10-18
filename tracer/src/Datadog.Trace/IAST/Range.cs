@@ -5,21 +5,20 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Iast
+namespace Datadog.Trace.Iast;
+
+internal readonly struct Range
 {
-    internal readonly struct Range
+    public Range(int start, int length, Source source)
     {
-        public Range(int start, int length, Source source)
-        {
-            this.Start = start;
-            this.Length = length;
-            this.Source = source;
-        }
-
-        public int Start { get; }
-
-        public int Length { get; }
-
-        public Source Source { get; }
+        this.Start = start;
+        this.Length = length;
+        this.Source = source;
     }
+
+    public int Start { get; }
+
+    public int Length { get; }
+
+    public Source Source { get; }
 }

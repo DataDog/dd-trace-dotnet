@@ -8,18 +8,17 @@
 using System.Diagnostics;
 using Datadog.Trace.Vendors.MessagePack.Decoders;
 
-namespace Datadog.Trace.Iast
+namespace Datadog.Trace.Iast;
+
+internal readonly struct StackFrameInfo
 {
-    internal readonly struct StackFrameInfo
+    public StackFrameInfo(StackFrame? stackFrame, bool isValid)
     {
-        public StackFrameInfo(StackFrame? stackFrame, bool isValid)
-        {
-            StackFrame = stackFrame;
-            IsValid = isValid;
-        }
-
-        public StackFrame? StackFrame { get; }
-
-        public bool IsValid { get; }
+        StackFrame = stackFrame;
+        IsValid = isValid;
     }
+
+    public StackFrame? StackFrame { get; }
+
+    public bool IsValid { get; }
 }

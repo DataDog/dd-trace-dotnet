@@ -10,34 +10,28 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm;
+
+internal class SymmetricAlgorithmIntegrationCommon
 {
-    internal class SymmetricAlgorithmIntegrationCommon
+    internal const IntegrationId IntegrationId = Configuration.IntegrationId.SymmetricAlgorithm;
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymmetricAlgorithmIntegrationCommon));
+
+    internal static Scope? CreateScope<TTarget>(TTarget instance)
     {
-        internal const IntegrationId IntegrationId = Configuration.IntegrationId.SymmetricAlgorithm;
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymmetricAlgorithmIntegrationCommon));
-
-        internal static Scope? CreateScope<TTarget>(TTarget instance)
+        var iast = Iast.Iast.Instance;
+        if (!iast.Settings.Enabled)
         {
-            if (instance is System.Security.Cryptography.SymmetricAlgorithm algorithm)
-            {
-                var iast = Iast.Iast.Instance;
-                if (!iast.Settings.Enabled)
-                {
-                    return null;
-                }
+            return null;
+        }
 
-                try
-                {
-                    return IastModule.OnCipherAlgorithm(instance.GetType(), IntegrationId, iast);
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error creating or populating SymmetricAlgorithm scope.");
-                    return null;
-                }
-            }
-
+        try
+        {
+            return ((instance is null) ? null : IastModule.OnCipherAlgorithm(instance.GetType(), IntegrationId, iast));
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error creating or populating SymmetricAlgorithm scope.");
             return null;
         }
     }
