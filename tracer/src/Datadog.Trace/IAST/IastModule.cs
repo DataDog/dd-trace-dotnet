@@ -126,15 +126,12 @@ namespace Datadog.Trace.Iast
         }
 
         private static bool ProviderValid(string name)
-        {
-            // TripleDESCryptoServiceProvider internally creates a DES algorithm instance.
-            if (name == "TripleDESCryptoServiceProvider" ||
-                (string.Equals(FrameworkDescription.Instance.OSPlatform, "Linux", StringComparison.OrdinalIgnoreCase) && name.ToLower().EndsWith("provider")))
+            => name switch
             {
-                return true;
-            }
-
-            return false;
-        }
+                // TripleDESCryptoServiceProvider internally creates a DES algorithm instance.
+                "TripleDESCryptoServiceProvider" => true,
+                string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.Linux, StringComparison.Ordinal) && name.EndsWith("provider", StringComparison.OrdinalIgnoreCase)) => true,
+                _ => false
+            };
     }
 }
