@@ -28,9 +28,9 @@ public:
     /// This function will return non-high-precision values or work slowly if a high precision timer
     /// is not available on the system or if <i>InitHighPrecisionTimer()</i> was not called.
     /// </summary>
-    static inline std::int64_t GetHighPrecisionNanoseconds(void);
+    static inline std::int64_t GetHighPrecisionNanoseconds();
 
-    static bool InitHighPrecisionTimer(void);
+    static bool InitHighPrecisionTimer();
 
     static inline bool QueryThreadCycleTime(HANDLE handle, PULONG64 cycleTime);
     static inline HANDLE GetCurrentProcess();
@@ -43,7 +43,7 @@ public:
 
     static void* AlignedMAlloc(size_t alignment, size_t size);
 
-    static void MemoryBarrierProcessWide(void);
+    static void MemoryBarrierProcessWide();
 
     static std::string GetHostname();
     static std::string GetProcessName();
@@ -70,6 +70,7 @@ public:
     }
 
     static bool IsSafeToStartProfiler(double coresThreshold);
+    static std::int64_t GetHighPrecisionTimestamp();
 
 private:
     static constexpr std::int64_t NanosecondsPerSecond = 1000000000;
@@ -77,7 +78,7 @@ private:
     static std::int64_t s_nanosecondsPerHighPrecisionTimerTick;
     static std::int64_t s_highPrecisionTimerTicksPerNanosecond;
 
-    static std::int64_t GetHighPrecisionNanosecondsFallback(void);
+    static std::int64_t GetHighPrecisionNanosecondsFallback();
 
 #ifdef _WINDOWS
     typedef HRESULT(__stdcall* SetThreadDescriptionDelegate_t)(HANDLE threadHandle, PCWSTR pThreadDescription);
@@ -87,13 +88,21 @@ private:
     static SetThreadDescriptionDelegate_t s_setThreadDescriptionDelegate;
     static GetThreadDescriptionDelegate_t s_getThreadDescriptionDelegate;
 
-    static void InitDelegates_GetSetThreadDescription(void);
-    static SetThreadDescriptionDelegate_t GetDelegate_SetThreadDescription(void);
-    static GetThreadDescriptionDelegate_t GetDelegate_GetThreadDescription(void);
+    static void InitDelegates_GetSetThreadDescription();
+    static SetThreadDescriptionDelegate_t GetDelegate_SetThreadDescription();
+    static GetThreadDescriptionDelegate_t GetDelegate_GetThreadDescription();
 #endif
 };
 
-inline std::int64_t OpSysTools::GetHighPrecisionNanoseconds(void)
+inline std::int64_t OpSysTools::GetHighPrecisionTimestamp()
+{
+    auto now = std::chrono::system_clock::now();
+
+    int64_t totalNanosecs = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch()).count();
+    return static_cast<std::int64_t>(totalNanosecs);
+}
+
+inline std::int64_t OpSysTools::GetHighPrecisionNanoseconds()
 {
 #ifdef _WINDOWS
     if (0 != s_nanosecondsPerHighPrecisionTimerTick || 0 != s_highPrecisionTimerTicksPerNanosecond)

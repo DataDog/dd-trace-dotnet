@@ -143,6 +143,7 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         return false;
     }
 
+    result->SetUnixTimeUtc(GetCurrentTimestamp());
     result->DetermineAppDomain(threadInfo->GetClrThreadId(), _pCorProfilerInfo);
 
     RawExceptionSample rawSample;
