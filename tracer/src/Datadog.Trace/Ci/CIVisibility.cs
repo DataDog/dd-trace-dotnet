@@ -285,7 +285,16 @@ namespace Datadog.Trace.Ci
 
         private static bool InternalEnabled()
         {
-            var processName = ProcessHelpers.GetCurrentProcessName() ?? string.Empty;
+            var processName = string.Empty;
+
+            try
+            {
+                processName = ProcessHelpers.GetCurrentProcessName() ?? string.Empty;
+            }
+            catch (Exception exception)
+            {
+                Log.Warning(exception, exception.Message);
+            }
 
             // By configuration
             if (_settings.Enabled)
