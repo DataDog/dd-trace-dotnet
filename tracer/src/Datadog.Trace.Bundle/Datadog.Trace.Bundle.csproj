@@ -30,7 +30,7 @@
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </Content>
 
-    <Content Update="home\**\*.xml">
+    <Content Update="home\**\*.xml" Pack="false">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </Content>
