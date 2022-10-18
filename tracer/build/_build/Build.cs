@@ -304,7 +304,10 @@ partial class Build : NukeBuild
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
                 .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "dd-trace")
-                .SetProperty("BuildStandalone", "false"));
+                .SetProperty("BuildStandalone", "false")
+                .SetProperty("DebugSymbols", "False")
+                .SetProperty("DebugType", "None")
+                .SetProperty("GenerateDocumentationFile", "False"));
         });
 
     Target BuildStandaloneTool => _ => _
@@ -339,6 +342,7 @@ partial class Build : NukeBuild
                 .SetProperty("BuildStandalone", "true")
                 .SetProperty("DebugSymbols", "False")
                 .SetProperty("DebugType", "None")
+                .SetProperty("GenerateDocumentationFile", "False")
                 .CombineWith(runtimes, (c, runtime) => c
                                 .SetProperty("PublishDir", runtime.output)
                                 .SetRuntime(runtime.rid)));
