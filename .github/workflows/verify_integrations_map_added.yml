@@ -23,6 +23,7 @@ jobs:
         run: .\tracer\build.ps1 GeneratePackageVersions
 
       - name: Report error
+        if: failure()
         run: |
           echo "## :warning: Error generating package versions" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
