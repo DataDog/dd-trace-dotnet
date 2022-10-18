@@ -2313,26 +2313,6 @@ internal static class KafkaConstants
     internal const string ServiceName = ""kafka"";
 }";
 
-            public const string HashAlgorithmConstants = @"
-using System;
-
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
-
-internal static class AspNetCoreConstants
-{
-    internal const string IntegrationName = ""AspNetCore"";
-}";
-
-            public const string CipherAlgorithmConstants = @"
-using System;
-
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm;
-
-internal static class AspNetCoreConstants
-{
-    internal const string IntegrationName = ""AspNetCore"";
-}";
-
             public const string AspNetCoreConstants = @"
 using System;
 
