@@ -16,5 +16,5 @@ internal interface ITestMethodRunner
     /// Gets the TestMethodInfo instance
     /// </summary>
     [DuckField(Name = "testMethodInfo")]
-    ITestMethod TestMethodInfo { get; }
+    ITestMethodInfo TestMethodInfo { get; }
 }

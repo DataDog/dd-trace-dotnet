@@ -17,8 +17,6 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
 {
     public class AllocationsProfilerTest
     {
-        private const int AllocationCountSlot = 3;  // defined in enum class SampleValue (Sample.h)
-        private const int AllocationSizeSlot = 4;
         private const string ScenarioGenerics = "--scenario 9";
 
         private readonly ITestOutputHelper _output;
@@ -32,11 +30,12 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
         public void ShouldGetAllocationSamples(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
-            runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "1");
 
-            CheckExceptionProfiles(runner);
+            // only allocation profiler enabled so should only see the 2 related values per sample
+            CheckAllocationProfiles(runner);
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
@@ -46,7 +45,7 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
@@ -57,7 +56,8 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
                 Assert.True(agent.NbCallsOnProfilingEndpoint == 0);
             }
 
-            ExtractAllocationSamples(runner.Environment.PprofDir).Should().BeEmpty();
+            // no profiler enabled so should not see any sample
+            Assert.Equal(0, SamplesHelper.GetSamplesCount(runner.Environment.PprofDir));
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
@@ -65,13 +65,16 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
 
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.AllocationProfilerEnabled, "0");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
-            ExtractAllocationSamples(runner.Environment.PprofDir).Should().BeEmpty();
+            // only walltime profiler enabled so should see 1 value per sample
+            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 1);
         }
 
         private static IEnumerable<(string Type, long Count, long Size, StackTrace Stacktrace)> ExtractAllocationSamples(string directory)
@@ -85,13 +88,13 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
 
                     foreach (var sample in profile.Sample)
                     {
-                        var count = sample.Value[AllocationCountSlot];
+                        var count = sample.Value[0];
                         if (count == 0)
                         {
                             continue;
                         }
 
-                        var size = sample.Value[AllocationSizeSlot];
+                        var size = sample.Value[1];
 
                         var labels = sample.Labels(profile).ToArray();
 
@@ -108,9 +111,9 @@ namespace Datadog.Profiler.IntegrationTests.Allocations
                 .Select(s => (s.Type, s.Count, s.Size, s.Stacktrace));
         }
 
-        private void CheckExceptionProfiles(TestApplicationRunner runner)
+        private void CheckAllocationProfiles(TestApplicationRunner runner)
         {
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 

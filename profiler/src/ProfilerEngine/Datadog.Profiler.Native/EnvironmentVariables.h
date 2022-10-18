@@ -21,6 +21,7 @@ public:
     inline static const shared::WSTRING AgentUrl                    = WStr("DD_TRACE_AGENT_URL");
     inline static const shared::WSTRING AgentHost                   = WStr("DD_AGENT_HOST");
     inline static const shared::WSTRING AgentPort                   = WStr("DD_TRACE_AGENT_PORT");
+    inline static const shared::WSTRING NamedPipeName               = WStr("DD_TRACE_PIPE_NAME");
     inline static const shared::WSTRING ApiKey                      = WStr("DD_API_KEY");
     inline static const shared::WSTRING Hostname                    = WStr("DD_HOSTNAME");
     inline static const shared::WSTRING Tags                        = WStr("DD_TAGS");

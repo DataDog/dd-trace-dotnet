@@ -15,7 +15,15 @@
 #include "shared/src/native-src/string.h"
 
 
+std::vector<SampleValueType> AllocationsProvider::SampleTypeDefinitions(
+    {
+        {"alloc-samples", "count"},
+        {"alloc-size", "bytes"}
+    });
+
+
 AllocationsProvider::AllocationsProvider(
+    uint32_t valueOffset,
     ICorProfilerInfo4* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
@@ -24,7 +32,7 @@ AllocationsProvider::AllocationsProvider(
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration)
     :
-    CollectorBase<RawAllocationSample>("AllocationsProvider", pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
+    CollectorBase<RawAllocationSample>("AllocationsProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),

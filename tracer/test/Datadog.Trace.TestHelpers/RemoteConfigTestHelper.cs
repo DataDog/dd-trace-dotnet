@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
@@ -18,12 +19,22 @@ namespace Datadog.Trace.TestHelpers
     {
         public static void SetupRcm(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string Id)> configurations, string productName)
         {
-            var response = BuildRcmResponse(configurations, productName);
+            var response = BuildRcmResponse(configurations.Select(c => (JsonConvert.SerializeObject(c.Config), c.Id)), productName);
             agent.RcmResponse = response;
             output.WriteLine("Using RCM response: " + response);
         }
 
         internal static async Task<GetRcmRequest> SetupRcmAndWait(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(object Config, string Id)> configurations, string productName)
+        {
+            var response = BuildRcmResponse(configurations.Select(c => (JsonConvert.SerializeObject(c.Config), c.Id)), productName);
+            agent.RcmResponse = response;
+            output.WriteLine("Using RCM response: " + response);
+            var res = await agent.WaitRcmRequestAndReturnLast();
+            await Task.Delay(1000);
+            return res;
+        }
+
+        internal static async Task<GetRcmRequest> SetupRcmAndWait(this MockTracerAgent agent, ITestOutputHelper output, IEnumerable<(string Config, string Id)> configurations, string productName)
         {
             var response = BuildRcmResponse(configurations, productName);
             agent.RcmResponse = response;
@@ -67,7 +78,7 @@ namespace Datadog.Trace.TestHelpers
             return request;
         }
 
-        private static string BuildRcmResponse(IEnumerable<(object Config, string Id)> configurations, string productName)
+        private static string BuildRcmResponse(IEnumerable<(string Config, string Id)> configurations, string productName)
         {
             var targetFiles = new List<RcmFile>();
             var targets = new Dictionary<string, Target>();
@@ -76,14 +87,13 @@ namespace Datadog.Trace.TestHelpers
             foreach (var configuration in configurations)
             {
                 var path = $"datadog/2/{productName}/{configuration.Id}/config";
-                var content = JsonConvert.SerializeObject(configuration.Config);
 
                 clientConfigs.Add(path);
 
                 targetFiles.Add(new RcmFile()
                 {
                     Path = path,
-                    Raw = Encoding.UTF8.GetBytes(content)
+                    Raw = Encoding.UTF8.GetBytes(configuration.Config)
                 });
 
                 targets.Add(path, new Target()

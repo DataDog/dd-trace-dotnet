@@ -11,7 +11,16 @@
 #include "OsSpecificApi.h"
 #include "Sample.h"
 
+
+std::vector<SampleValueType> ContentionProvider::SampleTypeDefinitions(
+    {
+        {"lock-count", "count"},
+        {"lock-time", "nanoseconds"}
+    });
+
+
 ContentionProvider::ContentionProvider(
+    uint32_t valueOffset,
     ICorProfilerInfo4* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
@@ -20,7 +29,7 @@ ContentionProvider::ContentionProvider(
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration)
     :
-    CollectorBase<RawContentionSample>("ContentionProvider", pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
+    CollectorBase<RawContentionSample>("ContentionProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
     _pCorProfilerInfo{pCorProfilerInfo},
     _pManagedThreadList{pManagedThreadList},
     _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval()),

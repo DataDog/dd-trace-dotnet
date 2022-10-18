@@ -3,13 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.SmokeTests;
-using FluentAssertions;
-using Perftools.Profiles;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -17,8 +12,6 @@ namespace Datadog.Profiler.IntegrationTests.Contention
 {
     public class ContentionProfilerTest
     {
-        private const int ContentionCountSlot = 5;  // defined in enum class SampleValue (Sample.h)
-        private const int ContentionDurationSlot = 6;
         private const string ScenarioContention = "--scenario 10 --threads 20";
 
         private readonly ITestOutputHelper _output;
@@ -32,11 +25,16 @@ namespace Datadog.Profiler.IntegrationTests.Contention
         public void ShouldGetContentionSamples(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioContention);
-            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "1");
 
-            CheckContentionProfiles(runner);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+
+            runner.Run(agent);
+
+            // only contention profiler enabled so should only see the 2 related values per sample
+            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 2);
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
@@ -46,11 +44,12 @@ namespace Datadog.Profiler.IntegrationTests.Contention
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
-            ExtractContentionSamples(runner.Environment.PprofDir).Should().BeEmpty();
+            // no profiler enabled so should not see any sample
+            Assert.Equal(0, SamplesHelper.GetSamplesCount(runner.Environment.PprofDir));
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0" })]
@@ -58,58 +57,16 @@ namespace Datadog.Profiler.IntegrationTests.Contention
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioContention);
 
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ContentionProfilerEnabled, "0");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
-            ExtractContentionSamples(runner.Environment.PprofDir).Should().BeEmpty();
-        }
-
-        private static IEnumerable<(long Count, long Duration, StackTrace Stacktrace)> ExtractContentionSamples(string directory)
-        {
-            static IEnumerable<(long Count, long Duration, StackTrace Stacktrace, long Time)> GetContentionSamples(string directory)
-            {
-                foreach (var file in Directory.EnumerateFiles(directory, "*.pprof", SearchOption.AllDirectories))
-                {
-                    using var stream = File.OpenRead(file);
-                    var profile = Profile.Parser.ParseFrom(stream);
-
-                    foreach (var sample in profile.Sample)
-                    {
-                        var count = sample.Value[ContentionCountSlot];
-                        if (count == 0)
-                        {
-                            continue;
-                        }
-
-                        var duration = sample.Value[ContentionDurationSlot];
-
-                        var labels = sample.Labels(profile).ToArray();
-
-                        yield return (count, duration, sample.StackTrace(profile), profile.TimeNanos);
-                    }
-                }
-            }
-
-            return GetContentionSamples(directory)
-                .OrderBy(s => s.Time)
-                .Select(s => (s.Count, s.Duration, s.Stacktrace));
-        }
-
-        private void CheckContentionProfiles(TestApplicationRunner runner)
-        {
-            using var agent = new MockDatadogAgent(_output);
-
-            runner.Run(agent);
-
-            Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
-
-            var contentionSamples = ExtractContentionSamples(runner.Environment.PprofDir).ToArray();
-            contentionSamples.Should().NotBeEmpty();
-
-            Assert.All(contentionSamples,  s => Assert.True(s.Duration > 0));
+            // only walltime profiler enabled so should see 1 value per sample
+            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 1);
         }
     }
 }

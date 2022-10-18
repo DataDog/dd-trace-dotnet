@@ -60,19 +60,19 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            EnsureExistingDirectory(ProfilerLinuxBuildDirectory);
+            EnsureExistingDirectory(NativeBuildDirectory);
 
             CMake.Value(
-                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {ProfilerLinuxBuildDirectory} -S {ProfilerDirectory} -DCMAKE_BUILD_TYPE=Release");
+                arguments: $"-DCMAKE_CXX_COMPILER=clang++ -DCMAKE_C_COMPILER=clang -B {NativeBuildDirectory} -S {RootDirectory} -DCMAKE_BUILD_TYPE=Release");
 
             CMake.Value(
-                arguments: $"--build {ProfilerLinuxBuildDirectory} --parallel");
+                arguments: $"--build {NativeBuildDirectory} --parallel --target all-profiler");
 
             if (IsAlpine)
             {
                 // On Alpine, we do not have permission to access the file libunwind-prefix/src/libunwind/config/config.guess
                 // Make the whole folder and its content accessible by everyone to make sure the upload process does not fail
-                Chmod.Value.Invoke(" -R 777 " + ProfilerLinuxBuildDirectory);
+                Chmod.Value.Invoke(" -R 777 " + NativeBuildDirectory);
             }
         });
 
@@ -285,6 +285,7 @@ partial class Build
                                     .SetTargetPlatform(MSBuildTargetPlatform.x64)
                                     .EnableNoRestore()
                                     .EnableNoBuild()
+                                    .SetFilter("(Category!=WindowsOnly)")
                                     .SetProcessEnvironmentVariable("DD_TESTING_OUPUT_DIR", ProfilerBuildDataDirectory)
                                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                                     .CombineWith(integrationTestProjects, (s, project) => s

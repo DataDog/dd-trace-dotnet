@@ -90,7 +90,8 @@ TEST(WallTimeProviderTest, CheckNoMissingSample)
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    WallTimeProvider provider(0, threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    Sample::ValuesCount = 1;
     provider.Start();
 
     // check the number of samples: 3 here
@@ -120,7 +121,8 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
     std::string secondExpectedRuntimeId = "OtherRid";
     EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(2))).WillRepeatedly(::testing::Return(secondExpectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    WallTimeProvider provider(0, threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    Sample::ValuesCount = 1;
     provider.Start();
 
     std::vector<size_t> expectedAppDomainId { 1, 2, 2, 1};
@@ -199,7 +201,8 @@ TEST(WallTimeProviderTest, CheckFrames)
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(1))).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    WallTimeProvider provider(0, threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    Sample::ValuesCount = 1;
     provider.Start();
 
     //                                                                 V-- check the frames are correct
@@ -256,7 +259,8 @@ TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    WallTimeProvider provider(0, threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    Sample::ValuesCount = 1;
     provider.Start();
 
     //                                V-----V-- check these values are correct
@@ -277,16 +281,10 @@ TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
         ASSERT_EQ(currentSample * 1000, sample.GetTimeStamp());
 
         auto values = sample.GetValues();
+        ASSERT_EQ(values.size(), 1);
         for (size_t current = 0; current < values.size(); current++)
         {
-            if (current == (size_t)SampleValue::WallTimeDuration)
-            {
-                ASSERT_EQ(currentSample * 10, values[current]);
-            }
-            else // all other values must be 0
-            {
-                ASSERT_EQ(0, values[current]);
-            }
+            ASSERT_EQ(currentSample * 10, values[current]);
         }
 
         currentSample++;
@@ -301,7 +299,8 @@ TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
     auto threadscpuManager = new ThreadsCpuManagerHelper();
     RuntimeIdStoreHelper runtimeIdStore;
 
-    CpuTimeProvider provider(threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    CpuTimeProvider provider(0, threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    Sample::ValuesCount = 1;
     provider.Start();
 
     //                           V-----V-- check these values are correct
@@ -322,17 +321,11 @@ TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
         ASSERT_EQ(currentSample * 1000, sample.GetTimeStamp());
 
         auto values = sample.GetValues();
+        ASSERT_EQ(values.size(), 1);
         for (size_t current = 0; current < values.size(); current++)
         {
-            if (current == (size_t)SampleValue::CpuTimeDuration)
-            {
-                //                             V-- in nanoseconds
-                ASSERT_EQ(currentSample * 10 * 1000000, values[current]);
-            }
-            else // all other values must be 0
-            {
-                ASSERT_EQ(0, values[current]);
-            }
+            //                             V-- in nanoseconds
+            ASSERT_EQ(currentSample * 10 * 1000000, values[current]);
         }
 
         currentSample++;

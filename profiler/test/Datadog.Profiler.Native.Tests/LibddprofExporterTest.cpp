@@ -41,6 +41,11 @@ TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
     std::string agentUrl;
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
 
+#if _WINDOWS
+    std::string namedPipeName;
+    EXPECT_CALL(mockConfiguration, GetNamedPipeName()).Times(1).WillOnce(ReturnRef(namedPipeName));
+#endif
+
     std::string agentHost = "localhost";
     EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
     int agentPort = 8126;
@@ -67,8 +72,9 @@ TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
     RuntimeInfoHelper helper(6, 0, false);
     IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
     EnabledProfilers enabledProfilers(configuration.get(), false);
+    std::vector<SampleValueType> sampleTypeDefinitions({{"exception", "count"}});
 
-    auto exporter = LibddprofExporter(&mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers);
+    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), & mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers);
 
     // Add samples to only one application
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
@@ -147,6 +153,11 @@ TEST(LibddprofExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     std::string agentUrl;
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
 
+#if _WINDOWS
+    std::string namedPipeName;
+    EXPECT_CALL(mockConfiguration, GetNamedPipeName()).Times(1).WillOnce(ReturnRef(namedPipeName));
+#endif
+
     std::string agentHost = "localhost";
     EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
     int agentPort = 8126;
@@ -172,8 +183,9 @@ TEST(LibddprofExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     RuntimeInfoHelper helper(6, 0, false);
     IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
     EnabledProfilers enabledProfilers(configuration.get(), false);
+    std::vector<SampleValueType> sampleTypeDefinitions({{"exception", "count"}});
 
-    auto exporter = LibddprofExporter(&mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers);
+    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers);
 
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
@@ -245,6 +257,11 @@ TEST(LibddprofExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplication
     std::string agentUrl;
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
 
+#if _WINDOWS
+    std::string namedPipeName;
+    EXPECT_CALL(mockConfiguration, GetNamedPipeName()).Times(1).WillOnce(ReturnRef(namedPipeName));
+#endif
+
     std::string agentHost = "localhost";
     EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
     int agentPort = 8126;
@@ -270,8 +287,9 @@ TEST(LibddprofExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplication
     RuntimeInfoHelper helper(6, 0, false);
     IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
     EnabledProfilers enabledProfilers(configuration.get(), false);
+    std::vector<SampleValueType> sampleTypeDefinitions({{"exception", "count"}});
 
-    auto exporter = LibddprofExporter(&mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers);
+    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers);
 
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
     auto labels1 = std::vector<std::pair<std::string, std::string>>{{"label1", "value1"}, {"label2", "value2"}};
@@ -357,8 +375,9 @@ TEST(LibddprofExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsSet)
     RuntimeInfoHelper helper(6, 0, false);
     IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
     EnabledProfilers enabledProfilers(configuration.get(), false);
+    std::vector<SampleValueType> sampleTypeDefinitions({{"exception", "count"}});
 
-    auto exporter = LibddprofExporter(&mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers);
+    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), & mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers);
 }
 
 TEST(LibddprofExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
@@ -367,6 +386,12 @@ TEST(LibddprofExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
 
     std::string agentUrl = "";
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
+
+#if _WINDOWS
+    std::string namedPipeName;
+    EXPECT_CALL(mockConfiguration, GetNamedPipeName()).Times(1).WillOnce(ReturnRef(namedPipeName));
+#endif
+
     std::string agentHost = "localhost";
     EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
     int agentPort = 8126;
@@ -391,8 +416,9 @@ TEST(LibddprofExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
     RuntimeInfoHelper helper(6, 0, false);
     IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
     EnabledProfilers enabledProfilers(configuration.get(), false);
+    std::vector<SampleValueType> sampleTypeDefinitions({{"exception", "count"}});
 
-    auto exporter = LibddprofExporter(&mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers);
+    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers);
 }
 
 TEST(LibddprofExporterTest, MustCreateAgentLessExporterIfAgentless)
@@ -424,8 +450,9 @@ TEST(LibddprofExporterTest, MustCreateAgentLessExporterIfAgentless)
     RuntimeInfoHelper helper(6, 0, false);
     IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
     EnabledProfilers enabledProfilers(configuration.get(), false);
+    std::vector<SampleValueType> sampleTypeDefinitions({{"exception", "count"}});
 
-    auto exporter = LibddprofExporter(&mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers);
+    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers);
 }
 
 TEST(LibddprofExporterTest, MakeSureNoCrashForReallyLongCallstack)
@@ -437,6 +464,11 @@ TEST(LibddprofExporterTest, MakeSureNoCrashForReallyLongCallstack)
 
     std::string agentUrl;
     EXPECT_CALL(mockConfiguration, GetAgentUrl()).Times(1).WillOnce(ReturnRef(agentUrl));
+
+#if _WINDOWS
+    std::string namedPipeName;
+    EXPECT_CALL(mockConfiguration, GetNamedPipeName()).Times(1).WillOnce(ReturnRef(namedPipeName));
+#endif
 
     std::string agentHost = "localhost";
     EXPECT_CALL(mockConfiguration, GetAgentHost()).Times(1).WillOnce(ReturnRef(agentHost));
@@ -453,8 +485,9 @@ TEST(LibddprofExporterTest, MakeSureNoCrashForReallyLongCallstack)
     RuntimeInfoHelper helper(6, 0, false);
     IRuntimeInfo* runtimeInfo = helper.GetRuntimeInfo();
     EnabledProfilers enabledProfilers(configuration.get(), false);
+    std::vector<SampleValueType> sampleTypeDefinitions({{"exception", "count"}});
 
-    auto exporter = LibddprofExporter(&mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers);
+    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers);
 
     std::string runtimeId = "MyRid";
     auto callstack = CreateCallstack(2048);

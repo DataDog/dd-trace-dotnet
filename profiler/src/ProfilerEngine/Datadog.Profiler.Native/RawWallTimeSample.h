@@ -10,9 +10,9 @@
 class RawWallTimeSample : public RawSample
 {
 public:
-    inline void OnTransform(Sample& sample) const override
+    inline void OnTransform(Sample& sample, uint32_t valueOffset) const override
     {
-        sample.AddValue(Duration, SampleValue::WallTimeDuration);
+        sample.AddValue(Duration, valueOffset);
     }
 
     std::uint64_t  Duration;  // in nanoseconds
