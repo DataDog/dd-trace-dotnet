@@ -47,6 +47,11 @@
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
 
+        <Content Update="..\Datadog.Trace.Bundle\home\**\*.xml">
+          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+          <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+        </Content>
+
         <!-- Remove the assets for other platforms than the one we're targetting (as they'll never be used anyway) -->
         <!-- Need to include the win-x86 and win-x64 assets in both versions -->
         <Content Condition="'$(RuntimeIdentifier)' != 'win-x86' AND '$(RuntimeIdentifier)' != 'win-x64'" Update="..\Datadog.Trace.Bundle\home\win-x86\*.*">
@@ -97,6 +102,10 @@
         </Content>
 
         <Content Update="..\Datadog.Trace.Bundle\home\**\readme.txt" Pack="false">
+          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </Content>
+
+        <Content Update="..\Datadog.Trace.Bundle\home\**\*.xml" Pack="false">
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
         </Content>
       </ItemGroup>
