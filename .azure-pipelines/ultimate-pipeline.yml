@@ -123,9 +123,16 @@ variables:
   DD_LOGGER_DD_API_KEY: $(DD_API_KEY)
   DD_LOGGER_DD_SERVICE: dd-trace-dotnet
   DD_LOGGER_DD_ENV: CI
-  DD_LOGGER_BUILD_SOURCESDIRECTORY: $(Build.SourcesDirectory)
   DD_LOGGER_BUILD_BUILDID: $(Build.BuildId)
   DD_LOGGER_BUILD_DEFINITIONNAME: $(Build.DefinitionName)
+  DD_LOGGER_BUILD_SOURCESDIRECTORY: $(Build.SourcesDirectory)
+  DD_LOGGER_BUILD_REPOSITORY_URI: $(Build.Repository.Uri)
+  DD_LOGGER_BUILD_SOURCEVERSION: $(Build.SourceVersion)
+  DD_LOGGER_BUILD_SOURCEBRANCH: $(Build.SourceBranch)
+  DD_LOGGER_BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
+  DD_LOGGER_BUILD_SOURCEVERSIONMESSAGE: $(Build.SourceVersionMessage)
+  DD_LOGGER_BUILD_REQUESTEDFORID: $(Build.RequestedForId)
+  DD_LOGGER_BUILD_REQUESTEDFOREMAIL: $(Build.RequestedForEmail)
   DD_LOGGER_SYSTEM_TEAMFOUNDATIONSERVERURI: $(System.TeamFoundationServerUri)
   DD_LOGGER_SYSTEM_TEAMPROJECTID: $(System.TeamProjectId)
   DD_LOGGER_SYSTEM_STAGEDISPLAYNAME: $(System.StageDisplayName)
@@ -133,15 +140,8 @@ variables:
   DD_LOGGER_SYSTEM_JOBID: $(System.JobId)
 #  DD_LOGGER_SYSTEM_TASKINSTANCEID: $(System.TaskInstanceId)
   DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI: $(System.PullRequest.SourceRepositoryURI)
-  DD_LOGGER_BUILD_REPOSITORY_URI: $(Build.Repository.Uri)
   DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID: $(System.PullRequest.SourceCommitId)
-  DD_LOGGER_BUILD_SOURCEVERSION: $(Build.SourceVersion)
   DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH: $(System.PullRequest.SourceBranch)
-  DD_LOGGER_BUILD_SOURCEBRANCH: $(Build.SourceBranch)
-  DD_LOGGER_BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
-  DD_LOGGER_BUILD_SOURCEVERSIONMESSAGE: $(Build.SourceVersionMessage)
-  DD_LOGGER_BUILD_REQUESTEDFORID: $(Build.RequestedForId)
-  DD_LOGGER_BUILD_REQUESTEDFOREMAIL: $(Build.RequestedForEmail)
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -890,8 +890,6 @@ stages:
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-        DD_LOGGER_DD_SERVICE: dd-trace-dotnet
-        DD_LOGGER_DD_ENV: CI
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -948,8 +946,6 @@ stages:
       displayName: RunWindowsIisTracerIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-        DD_LOGGER_DD_SERVICE: dd-trace-dotnet
-        DD_LOGGER_DD_ENV: CI
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -995,8 +991,6 @@ stages:
       displayName: RunWindowsIisSecurityIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-        DD_LOGGER_DD_SERVICE: dd-trace-dotnet
-        DD_LOGGER_DD_ENV: CI
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1069,8 +1063,6 @@ stages:
       displayName: RunWindowsIisIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-        DD_LOGGER_DD_SERVICE: dd-trace-dotnet
-        DD_LOGGER_DD_ENV: CI
 
     - task: PublishTestResults@2
       displayName: publish test results
