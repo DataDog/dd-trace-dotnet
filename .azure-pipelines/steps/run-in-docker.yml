@@ -17,6 +17,10 @@ parameters:
   - name: extraArgs
     type: string
     default: ''
+    
+  - name: 'apiKey'
+    type: string
+    default: ''
 
 steps:
 - ${{ if eq(parameters.build, true) }}:
@@ -68,3 +72,5 @@ steps:
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
   displayName: Run '${{ parameters.command }}' in Docker
+  env:
+    DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
