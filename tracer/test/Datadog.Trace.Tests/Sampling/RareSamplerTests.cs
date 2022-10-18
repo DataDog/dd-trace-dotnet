@@ -3,14 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Datadog.Trace.Agent.TraceSamplers;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -21,11 +18,12 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void SampleUniqueSpans()
         {
+            var tracer = TracerHelper.Create();
             var sampler = new RareSampler(new ImmutableTracerSettings(new TracerSettings { IsRareSamplerEnabled = true }));
 
-            var trace1 = new[] { Tracer.Instance.StartSpan("1"), Tracer.Instance.StartSpan("1") };
-            var trace2 = new[] { Tracer.Instance.StartSpan("2"), Tracer.Instance.StartSpan("1") };
-            var trace3 = new[] { Tracer.Instance.StartSpan("1"), Tracer.Instance.StartSpan("1") };
+            var trace1 = new[] { tracer.StartSpan("1"), tracer.StartSpan("1") };
+            var trace2 = new[] { tracer.StartSpan("2"), tracer.StartSpan("1") };
+            var trace3 = new[] { tracer.StartSpan("1"), tracer.StartSpan("1") };
 
             sampler.Sample(new(trace1)).Should().BeTrue();
             sampler.Sample(new(trace2)).Should().BeTrue();
@@ -68,11 +66,12 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void DoNotSampleManualPriority()
         {
+            var tracer = TracerHelper.Create();
             var sampler = new RareSampler(new ImmutableTracerSettings(new TracerSettings { IsRareSamplerEnabled = true }));
 
-            var trace1 = new[] { Tracer.Instance.StartSpan("1") };
+            var trace1 = new[] { tracer.StartSpan("1") };
 
-            trace1[0].Context.TraceContext.Tags.SetTag(Tags.Propagated.DecisionMaker, SamplingMechanism.Manual.ToString());
+            trace1[0].Context.TraceContext.Tags.SetTag(Tags.Propagated.DecisionMaker, $"-{SamplingMechanism.Manual}");
 
             sampler.Sample(new(trace1)).Should().BeFalse();
         }
@@ -80,15 +79,16 @@ namespace Datadog.Trace.Tests.Sampling
         [Fact]
         public void OnlySampleTopLevelSpans()
         {
+            var tracer = TracerHelper.Create();
             var sampler = new RareSampler(new ImmutableTracerSettings(new TracerSettings { IsRareSamplerEnabled = true }));
 
-            var knownTrace = new[] { Tracer.Instance.StartSpan("1") };
+            var knownTrace = new[] { tracer.StartSpan("1") };
 
             // Show span "1" to the RareSampler
             sampler.Sample(new(knownTrace)).Should().BeTrue();
 
-            using var scope1 = Tracer.Instance.StartActiveInternal("1");
-            using var scope2 = Tracer.Instance.StartActiveInternal("2");
+            using var scope1 = tracer.StartActiveInternal("1");
+            using var scope2 = tracer.StartActiveInternal("2");
 
             // Create a trace with the interesting span ("2") as a child
             var trace = new[] { scope1.Span, scope2.Span };
@@ -101,15 +101,16 @@ namespace Datadog.Trace.Tests.Sampling
         [InlineData(Tags.PartialSnapshot)]
         public void SampleSpecialMetrics(string metricName)
         {
+            var tracer = TracerHelper.Create();
             var sampler = new RareSampler(new ImmutableTracerSettings(new TracerSettings { IsRareSamplerEnabled = true }));
 
-            var knownTrace = new[] { Tracer.Instance.StartSpan("1") };
+            var knownTrace = new[] { tracer.StartSpan("1") };
 
             // Show span "1" to the RareSampler
             sampler.Sample(new(knownTrace)).Should().BeTrue();
 
-            using var scope1 = Tracer.Instance.StartActiveInternal("1");
-            using var scope2 = Tracer.Instance.StartActiveInternal("2");
+            using var scope1 = tracer.StartActiveInternal("1");
+            using var scope2 = tracer.StartActiveInternal("2");
             scope2.Span.SetMetric(metricName, 1.0);
 
             // Create a trace with the interesting span ("2") as a child

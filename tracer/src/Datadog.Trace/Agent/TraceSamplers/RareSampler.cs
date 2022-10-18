@@ -32,26 +32,24 @@ namespace Datadog.Trace.Agent.TraceSamplers
         /// 3) If a span was kept, update the seen spans.
         /// 4) Return whether a span was sampled.
         /// </summary>
-        /// <param name="trace">The input trace chunk</param>
+        /// <param name="traceChunk">The input trace chunk</param>
         /// <returns>true when a rare span is found, false otherwise</returns>
-        public bool Sample(ArraySegment<Span> trace)
+        public bool Sample(ArraySegment<Span> traceChunk)
         {
             if (!IsEnabled)
             {
                 return false;
             }
 
-            var traceContext = trace.Array[trace.Offset].Context.TraceContext;
+            var decisionMaker = SamplingHelpers.GetDecisionMaker(traceChunk.Array[traceChunk.Offset].Context.TraceContext);
 
-            var decisionMaker = traceContext.Tags.GetTag(Tags.Propagated.DecisionMaker);
-
-            if (decisionMaker != null && int.TryParse(decisionMaker, out var value) && value == SamplingMechanism.Manual)
+            if (decisionMaker == SamplingMechanism.Manual)
             {
-                UpdateSeenSpans(trace);
+                UpdateSeenSpans(traceChunk);
                 return false;
             }
 
-            return SampleSpansAndUpdateSeenSpansIfKept(trace);
+            return SampleSpansAndUpdateSeenSpansIfKept(traceChunk);
         }
 
         private void UpdateSeenSpans(ArraySegment<Span> trace)
