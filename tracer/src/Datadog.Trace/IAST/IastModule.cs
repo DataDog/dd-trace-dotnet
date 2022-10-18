@@ -25,7 +25,7 @@ namespace Datadog.Trace.Iast
         {
             var algorithm = type.BaseType?.Name;
 
-            if (algorithm == null || !InvalidCipherAlgorithm(type, algorithm, iast))
+            if (algorithm is null || !InvalidCipherAlgorithm(type, algorithm, iast))
             {
                 return null;
             }
