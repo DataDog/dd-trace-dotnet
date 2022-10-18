@@ -90,8 +90,7 @@ namespace Datadog.Trace.Agent.MessagePack
             // some strings are used multiple times in the same a trace,
             // but they are not constant across traces, so cache those per trace here
             var cachedStringBytes = new CachedStringBytes(
-                StringEncoding.UTF8,
-                environment: traceChunk.Environment, // TODO: normalize with TraceUtil.NormalizeTag()?
+                environment: traceChunk.Environment,
                 serviceVersion: traceChunk.ServiceVersion,
                 origin: traceChunk.Origin);
 
@@ -221,7 +220,7 @@ namespace Datadog.Trace.Agent.MessagePack
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentNameBytes);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, cachedStringBytes.Environment);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, cachedStringBytes.Environment);
             }
 
             // and "version" to all spans
@@ -229,7 +228,7 @@ namespace Datadog.Trace.Agent.MessagePack
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, cachedStringBytes.ServiceVersion);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, cachedStringBytes.ServiceVersion);
             }
 
             // TODO: for each trace tag, determine if it should be added to the local root,
@@ -258,7 +257,7 @@ namespace Datadog.Trace.Agent.MessagePack
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originNameBytes);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, cachedStringBytes.Origin);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, cachedStringBytes.Origin);
             }
 
             if (count > 0)

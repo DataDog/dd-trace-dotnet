@@ -5,10 +5,15 @@
 
 #nullable enable
 
-using System.Text;
+using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Agent.MessagePack;
 
+/// <summary>
+/// Caches string values encoded as MessagePack bytes. These are not plain UTF-8 strings,
+/// they include the MessagePack header for each string as well.
+/// Use these byte arrays with MessagePackBinary.WriteRaw().
+/// </summary>
 internal readonly struct CachedStringBytes
 {
     public readonly byte[]? Environment;
@@ -17,15 +22,18 @@ internal readonly struct CachedStringBytes
 
     public readonly byte[]? Origin;
 
-    public CachedStringBytes(Encoding encoding, string? environment, string? serviceVersion, string? origin)
+    public CachedStringBytes(
+        string? environment,
+        string? serviceVersion,
+        string? origin)
     {
-        Environment = GetBytes(encoding, environment);
-        ServiceVersion = GetBytes(encoding, serviceVersion);
-        Origin = GetBytes(encoding, origin);
+        Environment = GetBytes(environment);
+        ServiceVersion = GetBytes(serviceVersion);
+        Origin = GetBytes(origin);
     }
 
-    private static byte[]? GetBytes(Encoding encoding, string? value)
+    private static byte[]? GetBytes(string? value)
     {
-        return string.IsNullOrEmpty(value) ? null : encoding.GetBytes(value);
+        return string.IsNullOrWhiteSpace(value) ? null : MessagePackSerializer.Serialize(value);
     }
 }
