@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Linq;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
@@ -75,6 +76,73 @@ namespace Datadog.Trace.IntegrationTests
             span2.Tags.GetTag(Tags.SingleSpanSampling.RuleRate).Should().BeNull();
             span2.Tags.GetTag(Tags.SingleSpanSampling.MaxPerSecond).Should().BeNull();
             span2.Tags.GetTag(Tags.SingleSpanSampling.SamplingMechanism).Should().BeNull();
+        }
+
+        [Fact]
+        public void SpanSampler_ShouldTag_OnSpanFinish()
+        {
+            var expectedRuleRate = "1";
+            var expectedMaxPerSecond = "1000";
+            var expectedSamplingMechanism = "8";
+
+            using (var scope = _tracer.StartActive("root"))
+            {
+                // drop it
+                ((SpanContext)scope.Span.Context).TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
+            }
+
+            var trace = _testApi.Wait();
+            trace.Should().HaveCount(1);
+            trace[0].Should().HaveCount(1);
+
+            var span = trace[0].Single();
+            span.Tags.Should().Contain(Tags.SingleSpanSampling.RuleRate, expectedRuleRate);
+            span.Tags.Should().Contain(Tags.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
+            span.Tags.Should().Contain(Tags.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
+        }
+
+        [Fact]
+        public void SpanSampler_ShouldTagMultiple_OnSpanFinish()
+        {
+            var expectedRuleRate = "1";
+            var expectedMaxPerSecond = "1000";
+            var expectedSamplingMechanism = "8";
+
+            using (var rootScope = _tracer.StartActive("root"))
+            {
+                // drop it
+                ((SpanContext)rootScope.Span.Context).TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
+
+                using (var childScope = _tracer.StartActive("child1"))
+                {
+                }
+
+                using (var childScope = _tracer.StartActive("child2"))
+                {
+                }
+            }
+
+            var traces = _testApi.Wait();
+            traces.Should().HaveCount(1); // 1 trace...
+            traces[0].Should().HaveCount(3); // ...with 3 spans
+
+            var rootSpan = traces[0].SingleOrDefault(s => s.ParentId is null or 0)!;
+            rootSpan.Should().NotBeNull();
+
+            // assert that root span has the span sampling tags
+            rootSpan.Tags.Should().Contain(Tags.SingleSpanSampling.RuleRate, expectedRuleRate);
+            rootSpan.Tags.Should().Contain(Tags.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
+            rootSpan.Tags.Should().Contain(Tags.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
+
+            // assert child spans have span sampling tags
+            var childSpans = traces[0].Where(s => s.ParentId is not null and not 0);
+
+            foreach (var span in childSpans)
+            {
+                span.Tags.Should().Contain(Tags.SingleSpanSampling.RuleRate, expectedRuleRate);
+                span.Tags.Should().Contain(Tags.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
+                span.Tags.Should().Contain(Tags.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
+            }
         }
     }
 }
