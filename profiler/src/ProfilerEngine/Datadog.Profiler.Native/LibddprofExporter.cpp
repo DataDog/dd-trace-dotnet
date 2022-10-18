@@ -354,6 +354,8 @@ void LibddprofExporter::Add(Sample const& sample)
     auto const& values = sample.GetValues();
     ffiSample.values = {values.data(), values.size()};
 
+    // TODO: add timestamps when available
+
     ddog_Profile_add(profile, ffiSample);
     profileInfoScope.profileInfo.samplesCount++;
 }

@@ -45,6 +45,7 @@ namespace Datadog.Trace.Configuration
 #pragma warning restore 618
             MaxTracesSubmittedPerSecond = settings.MaxTracesSubmittedPerSecond;
             CustomSamplingRules = settings.CustomSamplingRules;
+            SpanSamplingRules = settings.SpanSamplingRules;
             GlobalSamplingRate = settings.GlobalSamplingRate;
             Integrations = new ImmutableIntegrationSettingsCollection(settings.Integrations, settings.DisabledIntegrationNames);
             GlobalTags = new ReadOnlyDictionary<string, string>(settings.GlobalTags);
@@ -152,6 +153,12 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.CustomSamplingRules"/>
         public string CustomSamplingRules { get; }
+
+        /// <summary>
+        /// Gets a value indicating the span sampling rules.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.SpanSamplingRules"/>
+        internal string SpanSamplingRules { get; }
 
         /// <summary>
         /// Gets a value indicating a global rate for sampling.

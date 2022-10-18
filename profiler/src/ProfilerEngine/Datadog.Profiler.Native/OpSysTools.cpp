@@ -61,7 +61,7 @@ int32_t OpSysTools::GetThreadId()
 #endif
 }
 
-bool OpSysTools::InitHighPrecisionTimer(void)
+bool OpSysTools::InitHighPrecisionTimer()
 {
 #ifdef _WINDOWS
     LARGE_INTEGER ticksPerSecond;
@@ -94,7 +94,7 @@ bool OpSysTools::InitHighPrecisionTimer(void)
 #endif
 }
 
-std::int64_t OpSysTools::GetHighPrecisionNanosecondsFallback(void)
+std::int64_t OpSysTools::GetHighPrecisionNanosecondsFallback()
 {
     std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
 
@@ -103,7 +103,7 @@ std::int64_t OpSysTools::GetHighPrecisionNanosecondsFallback(void)
 }
 
 #ifdef _WINDOWS
-void OpSysTools::InitDelegates_GetSetThreadDescription(void)
+void OpSysTools::InitDelegates_GetSetThreadDescription()
 {
     if (s_isRunTimeLinkingThreadDescriptionDone)
     {
@@ -135,7 +135,7 @@ void OpSysTools::InitDelegates_GetSetThreadDescription(void)
     s_isRunTimeLinkingThreadDescriptionDone = true;
 }
 
-OpSysTools::SetThreadDescriptionDelegate_t OpSysTools::GetDelegate_SetThreadDescription(void)
+OpSysTools::SetThreadDescriptionDelegate_t OpSysTools::GetDelegate_SetThreadDescription()
 {
     SetThreadDescriptionDelegate_t setThreadDescriptionDelegate = s_setThreadDescriptionDelegate;
     if (nullptr == setThreadDescriptionDelegate)
@@ -147,7 +147,7 @@ OpSysTools::SetThreadDescriptionDelegate_t OpSysTools::GetDelegate_SetThreadDesc
     return setThreadDescriptionDelegate;
 }
 
-OpSysTools::GetThreadDescriptionDelegate_t OpSysTools::GetDelegate_GetThreadDescription(void)
+OpSysTools::GetThreadDescriptionDelegate_t OpSysTools::GetDelegate_GetThreadDescription()
 {
     GetThreadDescriptionDelegate_t getThreadDescriptionDelegate = s_getThreadDescriptionDelegate;
     if (nullptr == getThreadDescriptionDelegate)
@@ -284,7 +284,7 @@ void* OpSysTools::AlignedMAlloc(size_t alignment, size_t size)
 #endif
 }
 
-void OpSysTools::MemoryBarrierProcessWide(void)
+void OpSysTools::MemoryBarrierProcessWide()
 {
 #ifdef _WINDOWS
     FlushProcessWriteBuffers();

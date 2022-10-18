@@ -434,12 +434,6 @@ namespace Datadog.Trace.ClrProfiler
                     DefinitionsId = "18ADCFBDCCF14141B3473C7D3B1E9494",
                     Definitions = new NativeCallTargetDefinition[]
                     {
-
-                // HashAlgorithm
-               new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.Byte[]", "System.Int32", "System.Int32" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegration"),
-               new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.IO.Stream" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationBis"),
-               new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHash",  new[] { "System.Byte[]", "System.Byte[]" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationBis"),
-               new ("System.Security.Cryptography.Primitives", "System.Security.Cryptography.HashAlgorithm", "ComputeHashAsync",  new[] { "System.Threading.Tasks.Task", "System.IO.Stream", "System.Threading.CancellationToken" }, 1, 0, 0, 7, 65535, 65535, assemblyFullName, "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationTer"),
                     }
                 };
                 Instrumentations.Add(InstrumentationCategory.Iast, payload);
@@ -651,11 +645,6 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server.ServerCallHandlerInstrumentation"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server.ServerCallHandlerInstrumentation"
                     => Datadog.Trace.Configuration.IntegrationId.Grpc,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegration"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationBis"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationBis"
-                    or "Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm.HashAlgorithmIntegrationTer"
-                    => Datadog.Trace.Configuration.IntegrationId.HashAlgorithm,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegrationExtra"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ExecuteAsyncIntegration"

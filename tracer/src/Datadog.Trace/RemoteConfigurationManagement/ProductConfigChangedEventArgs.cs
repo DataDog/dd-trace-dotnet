@@ -32,6 +32,17 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             }
         }
 
+        public IEnumerable<NamedTypedFile<string>> GetConfigurationAsString()
+        {
+            foreach (var configContent in _configContents)
+            {
+                using var stream = new MemoryStream(configContent.RawFile);
+                using var streamReader = new StreamReader(stream);
+                var contents = streamReader.ReadToEnd();
+                yield return new NamedTypedFile<string>(configContent.Name, contents);
+            }
+        }
+
         public void Acknowledge(string filename)
         {
             GetOrCreateApplyDetails(filename, applyDetails =>

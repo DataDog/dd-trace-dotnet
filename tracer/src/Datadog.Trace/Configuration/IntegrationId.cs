@@ -50,5 +50,6 @@ namespace Datadog.Trace.Configuration
         Grpc,
         Process,
         HashAlgorithm,
+        SymmetricAlgorithm,
     }
 }
