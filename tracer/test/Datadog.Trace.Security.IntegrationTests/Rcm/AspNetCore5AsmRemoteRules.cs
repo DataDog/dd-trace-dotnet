@@ -38,11 +38,11 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             var spans1 = await SendRequestsAsync(agent, url);
 
-            await agent.SetupRcmAndWait(Output, new[] { ((object)GetRules("2.22.222"), "1") }, "ASM_DD");
+            await agent.SetupRcmAndWait(Output, new[] { (GetRules("2.22.222"), "1") }, "ASM_DD");
             await logEntryWatcher.WaitForLogEntry(WafUpdateRule(), LogEntryWatcherTimeout);
             var spans2 = await SendRequestsAsync(agent, url);
 
-            await agent.SetupRcmAndWait(Output, new[] { ((object)GetRules("3.33.333"), "2") }, "ASM_DD");
+            await agent.SetupRcmAndWait(Output, new[] { (GetRules("3.33.333"), "2") }, "ASM_DD");
             await logEntryWatcher.WaitForLogEntry(WafUpdateRule(), LogEntryWatcherTimeout);
             var spans3 = await SendRequestsAsync(agent, url);
 
