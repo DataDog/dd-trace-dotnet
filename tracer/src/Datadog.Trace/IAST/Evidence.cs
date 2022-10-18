@@ -5,18 +5,17 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Iast
+namespace Datadog.Trace.Iast;
+
+internal readonly struct Evidence
 {
-    internal readonly struct Evidence
+    public Evidence(string value, Range[]? ranges = null)
     {
-        public Evidence(string value, Range[]? ranges = null)
-        {
-            this.Value = value;
-            this.Ranges = ranges;
-        }
-
-        public string Value { get; }
-
-        public Range[]? Ranges { get; }
+        this.Value = value;
+        this.Ranges = ranges;
     }
+
+    public string Value { get; }
+
+    public Range[]? Ranges { get; }
 }

@@ -5,18 +5,17 @@
 
 #nullable enable
 
-namespace Datadog.Trace.Iast
+namespace Datadog.Trace.Iast;
+
+internal readonly struct Location
 {
-    internal readonly struct Location
+    public Location(string? path, int? line)
     {
-        public Location(string? path, int? line)
-        {
-            this.Path = path;
-            this.Line = line;
-        }
-
-        public string? Path { get; }
-
-        public int? Line { get; }
+        this.Path = path;
+        this.Line = line;
     }
+
+    public string? Path { get; }
+
+    public int? Line { get; }
 }

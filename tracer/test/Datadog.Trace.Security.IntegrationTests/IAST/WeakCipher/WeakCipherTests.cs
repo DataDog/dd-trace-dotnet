@@ -1,11 +1,9 @@
-// <copyright file="WeakHashingTests.cs" company="Datadog">
+// <copyright file="WeakCipherTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #if NETCOREAPP
-using System;
-using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
@@ -20,13 +18,13 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.Security.IntegrationTests.Iast;
 
 [UsesVerify]
-public class WeakHashingTests : TestHelper
+public class WeakCipherTests : TestHelper
 {
-    private const string ExpectedOperationName = "weak_hashing";
+    private const string ExpectedOperationName = "weak_cipher";
     private static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
 
-    public WeakHashingTests(ITestOutputHelper output)
-        : base("WeakHashing", output)
+    public WeakCipherTests(ITestOutputHelper output)
+        : base("WeakCipher", output)
     {
         SetServiceVersion("1.0.0");
     }
@@ -37,17 +35,9 @@ public class WeakHashingTests : TestHelper
     public async Task SubmitsTraces()
     {
         SetEnvironmentVariable("DD_IAST_ENABLED", "true");
-        // Avoid tests parallel log collision
-        SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "WeakHashingLogs"));
 
-#if NET6_0 || NET5_0
-        const int expectedSpanCount = 28;
-        var filename = "WeakHashingTests.SubmitsTraces.Net50.60";
-#else
-        const int expectedSpanCount = 21;
-        var filename = "WeakHashingTests.SubmitsTraces";
-#endif
-
+        const int expectedSpanCount = 6;
+        var filename = "WeakCipherTests.SubmitsTraces";
         using var agent = EnvironmentHelper.GetMockAgent();
         using var process = RunSampleAndWaitForExit(agent);
         var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
@@ -65,16 +55,13 @@ public class WeakHashingTests : TestHelper
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [InlineData("DD_IAST_ENABLED", "false")]
-    [InlineData("DD_IAST_WEAK_HASH_ALGORITHMS", "")]
-    [InlineData($"DD_TRACE_{nameof(IntegrationId.HashAlgorithm)}_ENABLED", "false")]
+    [InlineData("DD_IAST_WEAK_CIPHER_ALGORITHMS", "")]
+    [InlineData($"DD_TRACE_{nameof(IntegrationId.SymmetricAlgorithm)}_ENABLED", "false")]
     public void IntegrationDisabled(string variableName, string variableValue)
     {
         SetEnvironmentVariable("DD_IAST_ENABLED", "true");
         SetEnvironmentVariable(variableName, variableValue);
-        // Avoid tests parallel log collision
-        SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "WeakHashingLogs"));
-
-        const int expectedSpanCount = 21;
+        const int expectedSpanCount = 6;
         using var agent = EnvironmentHelper.GetMockAgent();
         using var process = RunSampleAndWaitForExit(agent);
         var spans = agent.WaitForSpans(expectedSpanCount, returnAllOperations: true);
