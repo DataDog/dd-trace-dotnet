@@ -127,7 +127,8 @@ internal class IastModule
     private static bool ProviderValid(string name)
         => name switch
         {
-            // TripleDESCryptoServiceProvider internally creates a TripleDES algorithm instance.
+            // TripleDESCryptoServiceProvider is a SymetricAlgorithm that internally creates a TripleDES instance, which is also a weak SymmetricAlgorithm. In order to avoid launching two spans for a single vulnerability,
+            // we skip the one that would be launched when instantiating the TripleDESCryptoServiceProvider class.
             "TripleDESCryptoServiceProvider" => true,
             _ => string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.Linux, StringComparison.Ordinal) && name.EndsWith("provider", StringComparison.OrdinalIgnoreCase)
         };
