@@ -41,11 +41,6 @@
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
-        
-        <Content Update="..\Datadog.Trace.Bundle\home\**\*.pdb">
-          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-          <CopyToPublishDirectory>Never</CopyToPublishDirectory>
-        </Content>
 
         <Content Update="..\Datadog.Trace.Bundle\home\**\*.xml">
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
