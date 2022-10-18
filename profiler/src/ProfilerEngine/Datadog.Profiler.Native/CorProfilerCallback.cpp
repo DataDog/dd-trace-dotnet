@@ -26,6 +26,7 @@
 #include "ClrLifetime.h"
 #include "Configuration.h"
 #include "CpuTimeProvider.h"
+#include "EnabledProfilers.h"
 #include "EnvironmentVariables.h"
 #include "ExceptionsProvider.h"
 #include "FrameStore.h"
@@ -38,11 +39,11 @@
 #include "OsSpecificApi.h"
 #include "ProfilerEngineStatus.h"
 #include "RuntimeIdStore.h"
+#include "RuntimeInfo.h"
+#include "Sample.h"
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
-#include "RuntimeInfo.h"
-#include "EnabledProfilers.h"
 
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/pal.h"
@@ -114,19 +115,35 @@ bool CorProfilerCallback::InitializeServices()
 
     auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
 
+    // Each sample contains a vector of values.
+    // The list of a provider value definitions is available statically.
+    // Based on previous providers list, an offset in the values vector is computed and passed to the provider constructor.
+    // So a provider knows which value slot can be used to store its value(s).
+    uint32_t valuesOffset = 0;
+    std::vector<SampleValueType> sampleTypeDefinitions;
+
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
-        _pWallTimeProvider = RegisterService<WallTimeProvider>(_pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+        auto valueTypes = WallTimeProvider::SampleTypeDefinitions;
+        sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
+        _pWallTimeProvider = RegisterService<WallTimeProvider>(valuesOffset, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+        valuesOffset += static_cast<uint32_t>(valueTypes.size());
     }
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(_pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+        auto valueTypes = CpuTimeProvider::SampleTypeDefinitions;
+        sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
+        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(valuesOffset, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+        valuesOffset += static_cast<uint32_t>(valueTypes.size());
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
+        auto valueTypes = ExceptionsProvider::SampleTypeDefinitions;
+        sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
         _pExceptionsProvider = RegisterService<ExceptionsProvider>(
+            valuesOffset,
             _pCorProfilerInfo,
             _pManagedThreadList,
             _pFrameStore.get(),
@@ -134,6 +151,7 @@ bool CorProfilerCallback::InitializeServices()
             _pThreadsCpuManager,
             _pAppDomainStore.get(),
             pRuntimeIdStore);
+        valuesOffset += static_cast<uint32_t>(valueTypes.size());
     }
 
     // _pCorProfilerInfoEvents must have been set for any CLR events-based profiler to work
@@ -141,7 +159,10 @@ bool CorProfilerCallback::InitializeServices()
     {
         if (_pConfiguration->IsAllocationProfilingEnabled())
         {
+            auto valueTypes = AllocationsProvider::SampleTypeDefinitions;
+            sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
             _pAllocationsProvider = RegisterService<AllocationsProvider>(
+                valuesOffset,
                 _pCorProfilerInfo,
                 _pManagedThreadList,
                 _pFrameStore.get(),
@@ -150,11 +171,15 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore,
                 _pConfiguration.get()
                 );
+            valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
 
         if (_pConfiguration->IsContentionProfilingEnabled())
         {
+            auto valueTypes = ContentionProvider::SampleTypeDefinitions;
+            sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
             _pContentionProvider = RegisterService<ContentionProvider>(
+                valuesOffset,
                 _pCorProfilerInfo,
                 _pManagedThreadList,
                 _pFrameStore.get(),
@@ -163,11 +188,16 @@ bool CorProfilerCallback::InitializeServices()
                 pRuntimeIdStore,
                 _pConfiguration.get()
                 );
+            valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
 
         // TODO: add new CLR events-based providers to the event parser
         _pClrEventsParser = std::make_unique<ClrEventsParser>(_pCorProfilerInfoEvents, _pAllocationsProvider, _pContentionProvider);
     }
+
+    // Avoid iterating twice on all providers in order to inject this value in each constructor
+    // and store it in CollectorBase so it can be used in TransformRawSample (where the sample is created)
+    Sample::ValuesCount = sampleTypeDefinitions.size();
 
     // compute enabled profilers based on configuration and receivable CLR events
     _pEnabledProfilers = std::make_unique<EnabledProfilers>(_pConfiguration.get(), _pCorProfilerInfoEvents != nullptr);
@@ -187,6 +217,7 @@ bool CorProfilerCallback::InitializeServices()
     // The different elements of the libddprof pipeline are created and linked together
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
     _pExporter = std::make_unique<LibddprofExporter>(
+        std::move(sampleTypeDefinitions),
         _pConfiguration.get(),
         _pApplicationStore,
         _pRuntimeInfo.get(),

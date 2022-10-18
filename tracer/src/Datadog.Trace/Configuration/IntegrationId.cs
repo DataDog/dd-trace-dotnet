@@ -48,6 +48,7 @@ namespace Datadog.Trace.Configuration
         NLog,
         TraceAnnotations,
         Grpc,
-        Process
+        Process,
+        HashAlgorithm,
     }
 }

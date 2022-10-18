@@ -20,7 +20,6 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         private const string Scenario1 = "--scenario 1";
         private const string Scenario2 = "--scenario 2";
         private const string Scenario3 = "--scenario 3";
-        private const int ExceptionsSlot = 2;  // defined in enum class SampleValue (Sample.h)
 
         private readonly ITestOutputHelper _output;
 
@@ -54,10 +53,12 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
             }
 
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario2);
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "10000");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
@@ -99,12 +100,12 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         public void Sampling(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario3);
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionSampleLimit, "100");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
             runner.Run(agent);
 
             agent.NbCallsOnProfilingEndpoint.Should().BeGreaterThan(0);
@@ -128,9 +129,9 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         public void GetExceptionSamples(string appName, string framework, string appAssembly)
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
-            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
             runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "1");
 
             CheckExceptionProfiles(runner);
         }
@@ -140,9 +141,11 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
 
-            // Test that the exception profiler is disabled by default.
+            // Test that the exception profiler is disabled by default
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
@@ -153,7 +156,8 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
             }
 
-            ExtractExceptionSamples(runner.Environment.PprofDir).Should().BeEmpty();
+            // only walltime profiler enabled so should see 1 value per sample
+            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 1);
         }
 
         [TestAppFact("Samples.ExceptionGenerator")]
@@ -161,9 +165,11 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
         {
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: Scenario1);
 
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "1");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
             runner.Environment.SetVariable(EnvironmentVariables.ExceptionProfilerEnabled, "0");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
@@ -174,7 +180,8 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
             }
 
-            ExtractExceptionSamples(runner.Environment.PprofDir).Should().BeEmpty();
+            // only walltime profiler enabled so should see 1 value per sample
+            SamplesHelper.CheckSamplesValueCount(runner.Environment.PprofDir, 1);
         }
 
         private static IEnumerable<(string Type, string Message, long Count, StackTrace Stacktrace)> ExtractExceptionSamples(string directory)
@@ -189,7 +196,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
 
                     foreach (var sample in profile.Sample)
                     {
-                        var count = sample.Value[ExceptionsSlot];
+                        var count = sample.Value[0];
 
                         if (count == 0)
                         {
@@ -228,7 +235,7 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ExceptionsProfilerTestScenario |fn:Run"),
                 new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:Program |fn:Main"));
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 

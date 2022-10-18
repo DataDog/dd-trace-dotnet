@@ -18,7 +18,11 @@ class IRuntimeIdStore;
 class ContentionProvider : public CollectorBase<RawContentionSample>, public IContentionListener
 {
 public:
+    static std::vector<SampleValueType> SampleTypeDefinitions;
+
+public:
     ContentionProvider(
+        uint32_t valueOffset,
         ICorProfilerInfo4* pCorProfilerInfo,
         IManagedThreadList* pManagedThreadList,
         IFrameStore* pFrameStore,

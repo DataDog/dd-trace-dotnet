@@ -15,9 +15,6 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.Version)]
         public string Version { get; set; }
 
-        [Metric(Trace.Metrics.SamplingPriority)]
-        public double? SamplingPriority { get; set; }
-
         [Metric(Trace.Metrics.SamplingLimitDecision)]
         public double? SamplingLimitDecision { get; set; }
 
