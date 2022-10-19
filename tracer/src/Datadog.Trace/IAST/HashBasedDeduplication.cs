@@ -29,7 +29,7 @@ internal static class HashBasedDeduplication
     {
         var hashCode = vulnerability.GetHashCode();
 
-        bool newVulnerability = false;
+        bool newVulnerability;
         lock (vulnerabilityHashes)
         {
             newVulnerability = vulnerabilityHashes.Add(hashCode);
