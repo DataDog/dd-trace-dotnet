@@ -43,7 +43,7 @@ namespace Datadog.Trace.Agent.TraceSamplers
 
             var decisionMaker = SamplingHelpers.GetDecisionMaker(traceChunk.Array[traceChunk.Offset].Context.TraceContext);
 
-            if (decisionMaker == SamplingMechanism.Manual)
+            if (decisionMaker == SamplingMechanism.Manual || SamplingHelpers.IsKeptBySamplingPriority(traceChunk))
             {
                 UpdateSeenSpans(traceChunk);
                 return false;
