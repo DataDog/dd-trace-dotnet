@@ -4,12 +4,23 @@
 // </copyright>
 
 using Datadog.Trace.Ci.Tags;
-using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Ci.Tagging;
 
-internal partial class TestModuleSpanTags : Trace.Tagging.CommonTags
+internal partial class TestModuleSpanTags : TestSessionSpanTags
 {
+    public TestModuleSpanTags()
+    {
+    }
+
+    public TestModuleSpanTags(TestSessionSpanTags sessionTags)
+    {
+        SessionId = sessionTags.SessionId;
+        Command = sessionTags.Command;
+        Environment = sessionTags.Environment;
+        Version = sessionTags.Version;
+    }
+    
     public ulong ModuleId { get; set; }
 
     [Tag(TestTags.Type)]
@@ -116,7 +127,4 @@ internal partial class TestModuleSpanTags : Trace.Tagging.CommonTags
 
     [Tag(CommonTags.TestsSkipped)]
     public string TestsSkipped { get; set; }
-
-    [Tag(TestTags.Status)]
-    public string Status { get; set; }
 }

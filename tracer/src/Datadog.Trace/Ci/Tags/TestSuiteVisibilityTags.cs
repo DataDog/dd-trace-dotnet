@@ -22,4 +22,9 @@ internal static class TestSuiteVisibilityTags
     /// Test suite id
     /// </summary>
     public const string TestSuiteId = "test_suite_id";
+
+    /// <summary>
+    /// Test session command environment variable
+    /// </summary>
+    public const string TestSessionCommandEnvironmentVariable = "DD_TESTSESSION_COMMAND";
 }

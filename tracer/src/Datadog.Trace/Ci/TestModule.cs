@@ -12,6 +12,7 @@ using System.Threading;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Vendors.Serilog;
 
@@ -86,6 +87,20 @@ public sealed class TestModule
             tags.TestsSkipped = "true";
         }
 
+        // Extract session variables
+        var environmentVariables = Environment.GetEnvironmentVariables();
+        var sessionContext = SpanContextPropagator.Instance.Extract(
+            environmentVariables,
+                         new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
+        if (sessionContext is not null)
+        {
+            tags.SessionId = sessionContext.SpanId;
+            if (environmentVariables.TryGetValue<string>(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, out var testSessionCommand))
+            {
+                tags.Command = testSessionCommand;
+            }
+        }
+        
         var span = Tracer.Instance.StartSpan(
             string.IsNullOrEmpty(framework) ? "test_module" : $"{framework!.ToLowerInvariant()}.test_module",
             tags: tags,
@@ -139,7 +154,7 @@ public sealed class TestModule
     /// Create a new Test Module
     /// </summary>
     /// <param name="name">Test module name</param>
-    /// <returns>New test session instance</returns>
+    /// <returns>New test module instance</returns>
     public static TestModule Create(string name)
     {
         return new TestModule(name, null, null, null);
@@ -151,7 +166,7 @@ public sealed class TestModule
     /// <param name="name">Test module name</param>
     /// <param name="framework">Testing framework name</param>
     /// <param name="frameworkVersion">Testing framework version</param>
-    /// <returns>New test session instance</returns>
+    /// <returns>New test module instance</returns>
     public static TestModule Create(string name, string framework, string frameworkVersion)
     {
         return new TestModule(name, framework, frameworkVersion, null);
@@ -164,7 +179,7 @@ public sealed class TestModule
     /// <param name="framework">Testing framework name</param>
     /// <param name="frameworkVersion">Testing framework version</param>
     /// <param name="startDate">Test session start date</param>
-    /// <returns>New test session instance</returns>
+    /// <returns>New test module instance</returns>
     public static TestModule Create(string name, string framework, string frameworkVersion, DateTimeOffset startDate)
     {
         return new TestModule(name, framework, frameworkVersion, startDate);

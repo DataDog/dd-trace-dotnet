@@ -32,6 +32,7 @@ internal partial class TestSpanTags : TestSuiteSpanTags
         GitTag = suiteTags.GitTag;
         LibraryVersion = suiteTags.LibraryVersion;
         ModuleId = suiteTags.ModuleId;
+        SessionId = suiteTags.SessionId;
         RuntimeArchitecture = suiteTags.RuntimeArchitecture;
         RuntimeName = suiteTags.RuntimeName;
         RuntimeVersion = suiteTags.RuntimeVersion;
