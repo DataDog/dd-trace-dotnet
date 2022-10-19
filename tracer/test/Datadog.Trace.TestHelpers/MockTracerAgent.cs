@@ -929,18 +929,6 @@ namespace Datadog.Trace.TestHelpers
                 _udpClient?.Close();
             }
 
-            public void Warmup()
-            {
-                HttpClient httpClient = new HttpClient();
-                httpClient.DefaultRequestHeaders.Add("user-agent", "Warmup");
-                var url = $"http://localhost:{Port}/info";
-                for (int x = 0; x < 5; x++)
-                {
-                    var response = httpClient.GetStringAsync(url).Result;
-                    System.Threading.Thread.Sleep(100);
-                }
-            }
-
             private void HandleHttpRequests()
             {
                 while (_listener.IsListening)

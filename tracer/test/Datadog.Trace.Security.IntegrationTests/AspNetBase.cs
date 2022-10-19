@@ -76,7 +76,6 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             var agentPort = TcpPortProvider.GetOpenPort();
             var agent = MockTracerAgent.Create(Output, agentPort);
-            agent.Warmup();
 
             StartSample(
                 agent,
