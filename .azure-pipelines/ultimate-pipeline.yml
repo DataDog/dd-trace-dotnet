@@ -1150,7 +1150,7 @@ stages:
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
           DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=false -e DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY) IntegrationTests
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=false IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1237,7 +1237,7 @@ stages:
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
           DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=true -e DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY) IntegrationTests
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=true IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1342,10 +1342,13 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
+          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
         dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests.Serverless
         additionalDockerComposeFiles: |
           docker-compose.serverless.yml
         projectName: ddtrace_$(Build.BuildNumber)
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - script: |
         mkdir -p tracer/build_data/docker
