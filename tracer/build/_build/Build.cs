@@ -298,8 +298,6 @@ partial class Build : NukeBuild
         {
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.Tool))
-                .EnableNoRestore()
-                .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
@@ -334,7 +332,7 @@ partial class Build : NukeBuild
                 .SetProject(Solution.GetProject(Projects.Tool))
                 // Have to do a restore currently as we're specifying specific runtime
                 // .EnableNoRestore()
-                .EnableNoDependencies()
+                // .EnableNoDependencies()
                 .SetFramework(TargetFramework.NETCOREAPP3_1)
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
