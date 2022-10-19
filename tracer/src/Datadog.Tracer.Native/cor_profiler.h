@@ -28,6 +28,11 @@ namespace debugger
 class DebuggerMethodRewriter;
 }
 
+namespace iast
+{
+class Dataflow;
+}
+
 namespace trace
 {
 
@@ -81,6 +86,12 @@ private:
     //
     std::mutex module_ids_lock_;
     std::vector<ModuleID> module_ids_;
+    ModuleID managedProfilerModuleId_;
+
+    //
+    // Dataflow members
+    //
+    iast::Dataflow* _dataflow = nullptr;
 
     //
     // Helper methods
@@ -183,7 +194,12 @@ public:
     // Disable profiler
     //
     void DisableTracerCLRProfiler();
-    
+
+    //
+    // Register Aspects into Dataflow
+    //
+    void RegisterIastAspects(WCHAR** aspects, int aspectsLength);
+
     friend class debugger::DebuggerProbesInstrumentationRequester;
     friend class debugger::DebuggerMethodRewriter;
     friend class TracerMethodRewriter;

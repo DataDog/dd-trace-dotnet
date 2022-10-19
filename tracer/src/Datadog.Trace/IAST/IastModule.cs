@@ -29,7 +29,7 @@ internal class IastModule
             return null;
         }
 
-        return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakCipher, OperationNameWeakCipher, iast);
+        return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityTypeName.WeakCipher, OperationNameWeakCipher, iast);
     }
 
     public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, Iast iast)
@@ -39,7 +39,7 @@ internal class IastModule
             return null;
         }
 
-        return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakHash, OperationNameWeakHash, iast);
+        return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityTypeName.WeakHash, OperationNameWeakHash, iast);
     }
 
     private static Scope? GetScope(Tracer tracer, string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Iast iast)

@@ -63,4 +63,9 @@ bool IsVersionCompatibilityEnabled()
     ToBooleanWithDefault(shared::GetEnvironmentValue(environment::internal_version_compatibility), true);
 }
 
+bool IsIastEnabled()
+{
+    ToBooleanWithDefault(shared::GetEnvironmentValue(environment::iast_enabled), false);
+}
+
 } // namespace trace

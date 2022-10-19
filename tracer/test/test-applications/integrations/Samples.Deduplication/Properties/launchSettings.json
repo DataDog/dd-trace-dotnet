@@ -12,7 +12,9 @@
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home",
         "DD_VERSION": "1.0.0",
         "DD_TRACE_DEBUG": "1",
-        "DD_IAST_ENABLED": "1"
+        "DD_IAST_ENABLED": "1",
+        "DD_IAST_CALLSITE_ENABLED" : "0",
+        "DD_DUMP_ILREWRITE_ENABLED": "1",
       },
       "nativeDebugging": true
     }
