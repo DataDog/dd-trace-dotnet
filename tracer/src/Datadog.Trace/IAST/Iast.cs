@@ -11,9 +11,9 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Iast;
 
-    /// <summary>
+/// <summary>
 /// The class responsible for coordinating IAST
-    /// </summary>
+/// </summary>
 internal class Iast
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Iast>();
@@ -26,11 +26,11 @@ internal class Iast
     {
     }
 
-        /// <summary>
+    /// <summary>
     /// Initializes a new instance of the <see cref="Iast"/> class with default settings.
-        /// </summary>
+    /// </summary>
     public Iast()
-            : this(null)
+        : this(null)
     {
     }
 
@@ -84,7 +84,7 @@ internal class Iast
         catch (Exception ex)
         {
             Log.Error(ex, ex.Message);
-            }
+        }
 
         try
         {
