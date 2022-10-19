@@ -17,11 +17,17 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.Iast;
 
-    [UsesVerify]
-    public class WeakCipherTests : TestHelper
+[UsesVerify]
+public class WeakCipherTests : TestHelper
+{
+    private const string ExpectedOperationName = "weak_cipher";
+    private static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
+
+    public WeakCipherTests(ITestOutputHelper output)
+        : base("WeakCipher", output)
     {
-        private const string ExpectedOperationName = "weak_cipher";
-        private static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
+        SetServiceVersion("1.0.0");
+    }
 
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
@@ -62,14 +68,38 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast;
         public void IntegrationDisabled(string variableName, string variableValue)
         {
         SetEnvironmentVariable("DD_IAST_ENABLED", "true");
-            SetEnvironmentVariable(variableName, variableValue);
-            const int expectedSpanCount = 6;
-            using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent);
-            var spans = agent.WaitForSpans(expectedSpanCount, returnAllOperations: true);
 
-            Assert.Empty(spans.Where(s => s.Name.Equals(ExpectedOperationName)));
-        }
+        const int expectedSpanCount = 6;
+        var filename = "WeakCipherTests.SubmitsTraces";
+        using var agent = EnvironmentHelper.GetMockAgent();
+        using var process = RunSampleAndWaitForExit(agent);
+        var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
+        await VerifyHelper.VerifySpans(spans, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+
+        VerifyInstrumentation(process.Process);
+    }
+
+    [SkippableTheory]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [InlineData("DD_IAST_ENABLED", "false")]
+    [InlineData("DD_IAST_WEAK_CIPHER_ALGORITHMS", "")]
+    [InlineData($"DD_TRACE_{nameof(IntegrationId.SymmetricAlgorithm)}_ENABLED", "false")]
+    public void IntegrationDisabled(string variableName, string variableValue)
+    {
+        SetEnvironmentVariable("DD_IAST_ENABLED", "true");
+        SetEnvironmentVariable(variableName, variableValue);
+        const int expectedSpanCount = 6;
+        using var agent = EnvironmentHelper.GetMockAgent();
+        using var process = RunSampleAndWaitForExit(agent);
+        var spans = agent.WaitForSpans(expectedSpanCount, returnAllOperations: true);
+
+        Assert.Empty(spans.Where(s => s.Name.Equals(ExpectedOperationName)));
     }
 }
 #endif
