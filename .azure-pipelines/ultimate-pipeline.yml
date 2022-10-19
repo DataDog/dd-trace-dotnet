@@ -947,7 +947,6 @@ stages:
       displayName: RunWindowsIisTracerIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-        DD_LOGGER_ENABLED: false
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1060,6 +1059,8 @@ stages:
         docker-compose up -d IntegrationTests.IIS
       displayName: docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - script: tracer\build.cmd RunWindowsMsiIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisIntegrationTests
@@ -1079,6 +1080,8 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeCommand: down
         projectName: ddtrace_$(Build.BuildNumber)
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
 
     - publish: tracer/build_data
@@ -1226,6 +1229,7 @@ stages:
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
       displayName: docker-compose build IntegrationTests and run StartDependencies
       retryCountOnTaskFailure: 5
 
@@ -1250,6 +1254,8 @@ stages:
         projectName: ddtrace_$(Build.BuildNumber)
         additionalDockerComposeFiles: |
           docker-compose.serverless.yml
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
 
     - script: |      
@@ -1626,6 +1632,7 @@ stages:
           env:
             baseImage: $(baseImage)
             framework: $(publishTargetFramework)
+            DD_LOGGER_DD_API_KEY: $(ddApiKey)
           displayName: docker-compose build IntegrationTests and run StartDependencies
           retryCountOnTaskFailure: 5
 
@@ -1648,6 +1655,8 @@ stages:
             containerregistrytype: Container Registry
             dockerComposeCommand: down
             projectName: ddtrace_$(Build.BuildNumber)
+          env:
+            DD_LOGGER_DD_API_KEY: $(ddApiKey)
           condition: succeededOrFailed()
 
         - publish: tracer/build_data
@@ -2887,6 +2896,7 @@ stages:
           smoke-tests
       env:
         dockerTag: $(dockerTag)
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
       displayName: docker-compose build smoke-tests
       retryCountOnTaskFailure: 3
 
@@ -2905,6 +2915,7 @@ stages:
         build: true
         baseImage: alpine
         command: "CheckSmokeTestsForErrors"
+        apikey: $(DD_LOGGER_DD_API_KEY)
 
 - stage: nuget_installer_smoke_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
