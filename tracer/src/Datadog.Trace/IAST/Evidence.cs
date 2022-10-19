@@ -19,7 +19,6 @@ internal readonly struct Evidence
 
     public Range[]? Ranges { get; }
 
-
     public override int GetHashCode()
     {
         return IastUtils.GetHashCode(Value, Ranges);

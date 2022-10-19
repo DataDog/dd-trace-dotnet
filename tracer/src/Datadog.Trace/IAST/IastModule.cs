@@ -29,7 +29,7 @@ internal class IastModule
             return null;
         }
 
-        return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakCipher, OperationNameWeakCipher);
+        return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakCipher, OperationNameWeakCipher, iast);
     }
 
     public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, Iast iast)
@@ -39,10 +39,10 @@ internal class IastModule
             return null;
         }
 
-        return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakHash, OperationNameWeakHash);
+        return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakHash, OperationNameWeakHash, iast);
     }
 
-    private static Scope? GetScope(Tracer tracer, string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName)
+    private static Scope? GetScope(Tracer tracer, string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Iast iast)
     {
         if (!tracer.Settings.IsIntegrationEnabled(integrationId))
         {
@@ -57,11 +57,12 @@ internal class IastModule
             return null;
         }
 
+        // Sometimes we do not have the file/line but we have the method/class.
+        var filename = frameInfo.StackFrame?.GetFileName();
+        var vulnerability = new Vulnerability(vulnerabilityType, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null), new Evidence(evidenceValue));
+
         if (!iast.Settings.DeduplicationEnabled || HashBasedDeduplication.Add(vulnerability))
         {
-            // Sometimes we do not have the file/line but we have the method/class.
-            var filename = frameInfo.StackFrame?.GetFileName();
-            var vulnerability = new Vulnerability(vulnerabilityType, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null), new Evidence(evidenceValue));
             // The VulnerabilityBatch class is not very useful right now, but we will need it when handling requests
             var batch = new VulnerabilityBatch();
             batch.Add(vulnerability);
