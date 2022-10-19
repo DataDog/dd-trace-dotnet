@@ -78,8 +78,8 @@ public class WeakCipherTests : TestHelper
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
         await VerifyHelper.VerifySpans(spans, settings)
-                            .UseFileName(filename)
-                            .DisableRequireUniquePrefix();
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
 
         VerifyInstrumentation(process.Process);
     }
