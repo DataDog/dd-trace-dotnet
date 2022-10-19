@@ -212,26 +212,30 @@ namespace Datadog.Trace.Tests.Logging
             var tempLogsDir = Path.Combine(Path.GetTempPath(), "Datadog .NET Tracer\\logs");
             Directory.CreateDirectory(tempLogsDir);
 
+            // Creating log files that match expected formats
+            var logPath = Path.Combine(tempLogsDir, "DD-DotNet-Profiler-Native-1.log");
+            File.Create(logPath).Dispose();
+            File.SetLastWriteTime(logPath, DateTime.Now.AddDays(-31 * 2));
+
+            File.Create(Path.Combine(tempLogsDir, "dotnet-tracer-managed-2.log")).Dispose();
+            File.Create(Path.Combine(tempLogsDir, "dotnet-tracer-native-3.log")).Dispose();
+
             for (int i = 0; i < 3; i++)
             {
-                var logPath = Path.Combine(tempLogsDir, $"dotnet-tracer-{i}.log");
-                File.Create(logPath).Dispose();
-                File.SetLastWriteTime(logPath, DateTime.Now.AddDays(-31 * i));
-
                 // Adding random files that don't match the pattern
-                logPath = Path.Combine(tempLogsDir, $"random-file-{i}.txt");
-                File.Create(logPath).Dispose();
-                File.SetLastWriteTime(logPath, DateTime.Now.AddDays(-31 * i));
+                var mockFilePath = Path.Combine(tempLogsDir, $"random-file-{i}.txt");
+                File.Create(mockFilePath).Dispose();
+                File.SetLastWriteTime(mockFilePath, DateTime.Now.AddDays(-31 * i));
             }
 
             DatadogLogging.CleanLogFiles(tempLogsDir);
 
-            var totalTracerFiles = Directory.EnumerateFiles(tempLogsDir, "dotnet-tracer-*").Count();
-            var totalNonTracerFiles = Directory.EnumerateFiles(tempLogsDir, "random-file-*").Count();
+            var allFiles = Directory.EnumerateFiles(tempLogsDir).Count();
+            var nonTraceFiles = Directory.EnumerateFiles(tempLogsDir, "random-file-*").Count();
 
             Directory.Delete(tempLogsDir, true);
 
-            Assert.True(totalNonTracerFiles - totalTracerFiles == 2);
+            Assert.True(allFiles - nonTraceFiles == 2);
         }
 
         private void WriteRateLimitedLogMessage(IDatadogLogger logger, string message)
