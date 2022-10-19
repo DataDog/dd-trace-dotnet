@@ -123,7 +123,7 @@ namespace Datadog.Trace.Security.Unit.Tests.Iast
         }
 
         [Fact]
-        public void GivenTwoDifferentVulnerabilitiesByEvidenceRangeSize_WhenAddedToDeduplication_BothAreStored()
+        public void GivenTwoDifferentVulnerabilitiesByEvidenceRangeSizeTwoElements_WhenAddedToDeduplication_BothAreStored()
         {
             var instance = new HashBasedDeduplication();
             var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue")) };
