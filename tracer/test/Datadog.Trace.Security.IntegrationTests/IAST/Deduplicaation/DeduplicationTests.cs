@@ -16,11 +16,11 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast;
 [UsesVerify]
 public class DeduplicationTests : TestHelper
 {
-    private const string ExpectedOperationName = "weak_cipher";
+    private const string ExpectedOperationName = "weak_hashing";
     private static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
 
     public DeduplicationTests(ITestOutputHelper output)
-        : base("WeakCipher", output)
+        : base("Deduplication", output)
     {
         SetServiceVersion("1.0.0");
     }
@@ -35,10 +35,11 @@ public class DeduplicationTests : TestHelper
         SetEnvironmentVariable("DD_IAST_ENABLED", "true");
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", deduplicationEnabled.ToString());
 
-        int expectedSpanCount = deduplicationEnabled ? 6 : 12;
-        var filename = deduplicationEnabled ? "WeakCipherTests.SubmitsTraces" : "WeakCipherTests.SubmitsTraces.duplicated";
+        int expectedSpanCount = deduplicationEnabled ? 1 : 5;
+        var filename = deduplicationEnabled ? "deduplication.deduplicated" : "deduplication.duplicated";
+
         using var agent = EnvironmentHelper.GetMockAgent();
-        using var process = RunSampleAndWaitForExit(agent, "2");
+        using var process = RunSampleAndWaitForExit(agent, "5");
         var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
