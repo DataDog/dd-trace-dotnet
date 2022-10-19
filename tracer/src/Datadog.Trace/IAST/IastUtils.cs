@@ -12,13 +12,13 @@ namespace Datadog.Trace.Iast;
 
 internal static class IastUtils
 {
-    private static int GetHashCodeArray(Array objects)
+    public static int GetHashCode(Array objects)
     {
         int hash = 17;
 
         foreach (var element in objects)
         {
-            var hashCode = (element is Array array) ? GetHashCodeArray(array) : element?.GetHashCode();
+            var hashCode = (element is Array array) ? GetHashCode(array) : element?.GetHashCode();
             unchecked
             {
                 hash = (hash * 23) + (hashCode ?? 0);
@@ -26,10 +26,5 @@ internal static class IastUtils
         }
 
         return hash;
-    }
-
-    public static int GetHashCode(params object?[] objects)
-    {
-        return GetHashCodeArray(objects);
     }
 }

@@ -113,21 +113,21 @@ namespace Datadog.Trace.Security.Unit.Tests.Iast
         }
 
         [Fact]
-        public void GivenTwoDifferentVulnerabilitiesByEvidenceRangeSize_WhenAddedToDeduplication_BothAreStored()
+        public void GivenTwoDifferentVulnerabilitiesByEvidenceRangeSizeTwoElements_WhenAddedToDeduplication_BothAreStored()
         {
             HashBasedDeduplication.Clear();
-            var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue")) };
-            var ranges2 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue2")), new Range(1, 1, new Source(0, "sourceName", "sourceValue2")) };
+            var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue1")), new Range(1, 1, new Source(0, "sourceName", "sourceValue1")) };
+            var ranges2 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue1")), new Range(1, 1, new Source(0, "sourceName", "sourceValue2")) };
             Assert.True(HashBasedDeduplication.Add(new Vulnerability(VulnerabilityType.WeakHash, new Location("path.cs", 23), new Evidence("MD5", ranges2))));
             Assert.True(HashBasedDeduplication.Add(new Vulnerability(VulnerabilityType.WeakHash, new Location("path.cs", 23), new Evidence("MD5", ranges1))));
         }
 
         [Fact]
-        public void GivenTwoDifferentVulnerabilitiesByEvidenceRangeSize_WhenAddedToDeduplication_BothAreStored2()
+        public void GivenTwoDifferentVulnerabilitiesByEvidenceRangeSize_WhenAddedToDeduplication_BothAreStored()
         {
             HashBasedDeduplication.Clear();
-            var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue2")), new Range(1, 1, new Source(0, "sourceName", "sourceValue2")) };
-            var ranges2 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue")) };
+            var ranges1 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue")) };
+            var ranges2 = new Range[] { new Range(1, 1, new Source(0, "sourceName", "sourceValue2")), new Range(1, 1, new Source(0, "sourceName", "sourceValue2")) };
             Assert.True(HashBasedDeduplication.Add(new Vulnerability(VulnerabilityType.WeakHash, new Location("path.cs", 23), new Evidence("MD5", ranges2))));
             Assert.True(HashBasedDeduplication.Add(new Vulnerability(VulnerabilityType.WeakHash, new Location("path.cs", 23), new Evidence("MD5", ranges1))));
         }
