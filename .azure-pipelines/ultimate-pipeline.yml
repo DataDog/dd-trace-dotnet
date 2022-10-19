@@ -1194,8 +1194,6 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeCommand: down
         projectName: ddtrace_$(Build.BuildNumber)
-        additionalDockerComposeFiles: |
-          docker-compose.serverless.yml
       condition: succeededOrFailed()
 
     - script: |      
@@ -1272,6 +1270,11 @@ stages:
         docker-compose -p ddtrace_$(Build.BuildNumber) \
           -f $(System.DefaultWorkingDirectory)/docker-compose.yml \
           -f docker-compose.serverless.yml \
+          pull --include-deps StartDependencies.Serverless
+
+        docker-compose -p ddtrace_$(Build.BuildNumber) \
+          -f $(System.DefaultWorkingDirectory)/docker-compose.yml \
+          -f docker-compose.serverless.yml \
           run --rm StartDependencies.Serverless
       env:
         baseImage: $(baseImage)
@@ -1298,8 +1301,6 @@ stages:
           -f $(System.DefaultWorkingDirectory)/docker-compose.yml \
           -f docker-compose.serverless.yml \
           logs \
-          serverless-integration-extension-mock \
-          serverless-integration-extension-mock-with-context \
           serverless-lambda-no-param-sync \
           serverless-lambda-one-param-sync \
           serverless-lambda-two-params-sync \
@@ -1311,12 +1312,23 @@ stages:
           serverless-lambda-two-params-async \
           serverless-lambda-no-param-void \
           serverless-lambda-one-param-void \
-          serverless-lambda-two-params-void
+          serverless-lambda-two-params-void \
+          serverless-lambda-struct-param \
+          serverless-lambda-nested-class-param \
+          serverless-lambda-nested-struct-param \
+          serverless-lambda-generic-dict-param \
+          serverless-lambda-throwing \
+          serverless-lambda-throwing-async \
+          serverless-lambda-throwing-async-task \
+          serverless-lambda-throwing-with-context \
+          serverless-lambda-throwing-async-with-context \
+          serverless-lambda-throwing-async-task-with-context
 
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
       displayName: docker-compose logs for serverless services
+      condition: succeededOrFailed()
       retryCountOnTaskFailure: 5
 
     - task: DockerCompose@0
