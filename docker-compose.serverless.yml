@@ -136,6 +136,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamSync"
@@ -156,6 +159,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamSync"
@@ -176,6 +182,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsSync"
@@ -196,6 +205,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamSyncWithContext"
@@ -216,6 +228,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamSyncWithContext"
@@ -236,6 +251,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsSyncWithContext"
@@ -256,6 +274,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamAsync"
@@ -276,6 +297,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamAsync"
@@ -296,6 +320,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsAsync"
@@ -316,6 +343,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamVoid"
@@ -336,6 +366,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamVoid"
@@ -356,6 +389,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsVoid"
@@ -376,6 +412,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerNoParamSync"
@@ -396,6 +435,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerTwoParamsSync"
@@ -416,6 +458,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerOneParamSyncWithContext"
@@ -436,6 +481,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerOneParamAsync"
@@ -456,6 +504,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerTwoParamsVoid"
@@ -476,6 +527,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerStructParam"
@@ -496,6 +550,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNestedClassParam"
@@ -516,6 +573,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNestedStructParam"
@@ -536,6 +596,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerGenericDictionaryParam"
@@ -556,6 +619,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNestedGenericDictionaryParam"
@@ -576,6 +642,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerDoublyNestedGenericDictionaryParam"
@@ -596,6 +665,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::ThrowingHandler"
@@ -616,6 +688,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::ThrowingHandlerAsync"
@@ -636,6 +711,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::ThrowingHandlerAsyncTask"
@@ -656,6 +734,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::ThrowingHandler"
@@ -676,6 +757,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::ThrowingHandlerAsync"
@@ -696,6 +780,9 @@ services:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
+      args:
+        - lambdaBaseImage=${lambdaBaseImage:-public.ecr.aws/lambda/dotnet:core3.1}
+        - framework=${framework:-netcoreapp3.1}
     depends_on:
     - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::ThrowingHandlerAsyncTask"
