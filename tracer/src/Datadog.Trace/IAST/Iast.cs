@@ -15,59 +15,59 @@ namespace Datadog.Trace.Iast;
 /// The class responsible for coordinating IAST
     /// </summary>
 internal class Iast
-    {
+{
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<Iast>();
     private static Iast _instance;
-        private static bool _globalInstanceInitialized;
-        private static object _globalInstanceLock = new();
+    private static bool _globalInstanceInitialized;
+    private static object _globalInstanceLock = new();
     private readonly IastSettings _settings;
 
     static Iast()
-        {
-        }
+    {
+    }
 
         /// <summary>
     /// Initializes a new instance of the <see cref="Iast"/> class with default settings.
         /// </summary>
     public Iast()
             : this(null)
-        {
-        }
+    {
+    }
 
     private Iast(IastSettings settings = null)
+    {
+        try
         {
-            try
-            {
             _settings = settings ?? IastSettings.FromDefaultSources();
 
-                if (_settings.Enabled)
-                {
-                AddIastSpecificInstrumentations();
-                }
-            }
-            catch (Exception ex)
+            if (_settings.Enabled)
             {
-                _settings = new(source: null) { Enabled = false };
-                Log.Error(ex, "DDIAST-0001-01: IAST could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
+                AddIastSpecificInstrumentations();
             }
         }
+        catch (Exception ex)
+        {
+            _settings = new(source: null) { Enabled = false };
+            Log.Error(ex, "DDIAST-0001-01: IAST could not start because of an unexpected error. No security activities will be collected. Please contact support at https://docs.datadoghq.com/help/ for help.");
+        }
+    }
 
     internal IastSettings Settings => _settings;
 
-        /// <summary>
+    /// <summary>
     /// Gets or sets the global <see cref="Iast"/> instance.
-        /// </summary>
+    /// </summary>
     public static Iast Instance
-        {
-            get => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock);
+    {
+        get => LazyInitializer.EnsureInitialized(ref _instance, ref _globalInstanceInitialized, ref _globalInstanceLock);
 
-            set
+        set
+        {
+            lock (_globalInstanceLock)
             {
-                lock (_globalInstanceLock)
-                {
-                    _instance = value;
-                    _globalInstanceInitialized = true;
-                }
+                _instance = value;
+                _globalInstanceInitialized = true;
+            }
         }
     }
 

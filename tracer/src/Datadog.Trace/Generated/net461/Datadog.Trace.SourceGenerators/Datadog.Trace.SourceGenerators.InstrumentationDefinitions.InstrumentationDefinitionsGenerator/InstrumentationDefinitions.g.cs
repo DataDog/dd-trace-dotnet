@@ -757,8 +757,6 @@ namespace Datadog.Trace.ClrProfiler
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange.RedisExecuteAsyncIntegration_2_6_48"
                     => Datadog.Trace.Configuration.IntegrationId.StackExchangeRedis,
-                "Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm.SymmetricAlgorithmIntegration"
-                    => Datadog.Trace.Configuration.IntegrationId.SymmetricAlgorithm,
                 "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.AsyncMethodInvoker_InvokeBegin_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.AsyncMethodInvoker_InvokeEnd_Integration"
                     or "Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf.ChannelHandlerIntegration"

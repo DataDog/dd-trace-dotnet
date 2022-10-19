@@ -12,10 +12,10 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm;
 
-    internal class SymmetricAlgorithmIntegrationCommon
-    {
-        internal const IntegrationId IntegrationId = Configuration.IntegrationId.SymmetricAlgorithm;
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymmetricAlgorithmIntegrationCommon));
+internal class SymmetricAlgorithmIntegrationCommon
+{
+    internal const IntegrationId IntegrationId = Configuration.IntegrationId.SymmetricAlgorithm;
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymmetricAlgorithmIntegrationCommon));
 
     internal static Scope? CreateScope<TTarget>(TTarget instance)
     {
@@ -29,15 +29,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm;
                 return null;
             }
 
-            try
-            {
+        if (!iast.Settings.Enabled)
+        {
+            return null;
+        }
+
+        try
+        {
             return ((instance is null) ? null : IastModule.OnCipherAlgorithm(instance.GetType(), IntegrationId, iast));
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, "Error creating or populating SymmetricAlgorithm scope.");
-                return null;
-            }
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error creating or populating SymmetricAlgorithm scope.");
+            return null;
         }
     }
 }
