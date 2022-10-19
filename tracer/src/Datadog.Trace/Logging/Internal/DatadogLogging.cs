@@ -6,8 +6,8 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Logging
 
                 try
                 {
-                    CleanLogFiles(logDirectory);
+                    Task.Run(() => CleanLogFiles(logDirectory));
                 }
                 catch
                 {
