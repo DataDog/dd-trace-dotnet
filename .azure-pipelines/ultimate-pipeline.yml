@@ -1236,8 +1236,11 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=true IntegrationTests
+          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=true -e DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY) IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -1549,8 +1552,11 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
+              DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
+            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=false -e DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY) IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
+          env:
+            DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
         - publish: tracer/build_data
           artifact: integration_tests_linux_tracer_logs_arm64_$(publishTargetFramework)_$(System.JobAttempt)
@@ -1627,8 +1633,11 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
-            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
+              DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
+            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=true -e DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY) IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
+          env:
+            DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
         - task: DockerCompose@0
           displayName: docker-compose stop services
