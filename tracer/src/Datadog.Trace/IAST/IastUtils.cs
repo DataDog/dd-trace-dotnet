@@ -8,29 +8,28 @@
 using System;
 using System.Collections;
 
-namespace Datadog.Trace.Iast
+namespace Datadog.Trace.Iast;
+
+internal static class IastUtils
 {
-    internal static class IastUtils
+    private static int GetHashCodeArray(Array objects)
     {
-        private static int GetHashCodeArray(Array objects)
-        {
-            int hash = 17;
+        int hash = 17;
 
-            foreach (var element in objects)
+        foreach (var element in objects)
+        {
+            var hashCode = (element is Array array) ? GetHashCodeArray(array) : element?.GetHashCode();
+            unchecked
             {
-                var hashCode = (element is Array array) ? GetHashCodeArray(array) : element?.GetHashCode();
-                unchecked
-                {
-                    hash = (hash * 23) + (hashCode ?? 0);
-                }
+                hash = (hash * 23) + (hashCode ?? 0);
             }
-
-            return hash;
         }
 
-        public static int GetHashCode(params object?[] objects)
-        {
-            return GetHashCodeArray(objects);
-        }
+        return hash;
+    }
+
+    public static int GetHashCode(params object?[] objects)
+    {
+        return GetHashCodeArray(objects);
     }
 }

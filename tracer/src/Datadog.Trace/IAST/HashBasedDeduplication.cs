@@ -5,42 +5,41 @@
 
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Iast
+namespace Datadog.Trace.Iast;
+
+internal static class HashBasedDeduplication
 {
-    internal static class HashBasedDeduplication
+    public const int MaximumSize = 1000;
+    private static HashSet<int> vulnerabilityHashes;
+
+    static HashBasedDeduplication()
     {
-        public const int MaximumSize = 1000;
-        private static HashSet<int> vulnerabilityHashes;
+        vulnerabilityHashes = new HashSet<int>();
+    }
 
-        static HashBasedDeduplication()
+    public static void Clear()
+    {
+        lock (vulnerabilityHashes)
         {
-            vulnerabilityHashes = new HashSet<int>();
+            vulnerabilityHashes.Clear();
         }
+    }
 
-        public static void Clear()
+    public static bool Add(Vulnerability vulnerability)
+    {
+        var hashCode = vulnerability.GetHashCode();
+
+        bool newVulnerability = false;
+        lock (vulnerabilityHashes)
         {
-            lock (vulnerabilityHashes)
+            newVulnerability = vulnerabilityHashes.Add(hashCode);
+            if (newVulnerability && vulnerabilityHashes.Count > MaximumSize)
             {
                 vulnerabilityHashes.Clear();
+                vulnerabilityHashes.Add(hashCode);
             }
         }
 
-        public static bool Add(Vulnerability vulnerability)
-        {
-            var hashCode = vulnerability.GetHashCode();
-
-            bool newVulnerability = false;
-            lock (vulnerabilityHashes)
-            {
-                newVulnerability = vulnerabilityHashes.Add(hashCode);
-                if (newVulnerability && vulnerabilityHashes.Count > MaximumSize)
-                {
-                    vulnerabilityHashes.Clear();
-                    vulnerabilityHashes.Add(hashCode);
-                }
-            }
-
-            return newVulnerability;
-        }
+        return newVulnerability;
     }
 }
