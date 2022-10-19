@@ -53,14 +53,16 @@ public:
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore
+        IRuntimeIdStore* pRuntimeIdStore,
+        IConfiguration* pConfiguration
         ) :
         ProviderBase(name),
         _valueOffset{valueOffset},
         _pFrameStore{pFrameStore},
         _pAppDomainStore{pAppDomainStore},
         _pRuntimeIdStore{pRuntimeIdStore},
-        _pThreadsCpuManager{pThreadsCpuManager}
+        _pThreadsCpuManager{pThreadsCpuManager},
+        _isTimestampsAsLabelEnabled{pConfiguration->IsTimestampsAsLabelEnabled()}
     {
     }
 
@@ -140,6 +142,12 @@ private:
         // compute symbols for frames
         SetStack(rawSample, sample);
 
+        // add timestamp
+        if (_isTimestampsAsLabelEnabled)
+        {
+            sample.AddLabel(Label{"timestamp_ns", std::to_string(sample.GetTimeStamp())});
+        }
+
         // allow inherited classes to add values and specific labels
         rawSample.OnTransform(sample, _valueOffset);
 
@@ -201,6 +209,7 @@ private:
     IRuntimeIdStore* _pRuntimeIdStore = nullptr;
     IThreadsCpuManager* _pThreadsCpuManager = nullptr;
     bool _isNativeFramesEnabled = false;
+    bool _isTimestampsAsLabelEnabled = false;
 
     // A thread is responsible for asynchronously fetching raw samples from the input queue
     // and feeding the output sample list with symbolized frames and thread/appdomain names

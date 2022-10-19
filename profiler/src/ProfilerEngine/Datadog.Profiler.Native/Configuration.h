@@ -49,6 +49,8 @@ public:
     int32_t ContentionDurationThreshold() const override;
     std::chrono::nanoseconds CpuWallTimeSamplingRate() const override;
     const std::string& GetNamedPipeName() const override;
+    bool IsTimestampsAsLabelEnabled() const override;
+
 
 private:
     static tags ExtractUserTags();
@@ -107,4 +109,5 @@ private:
 
     double _minimumCores;
     std::string _namedPipeName;
+    bool _isTimestampsAsLabelEnabled;
 };

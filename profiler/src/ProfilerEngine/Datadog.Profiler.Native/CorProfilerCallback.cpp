@@ -126,7 +126,7 @@ bool CorProfilerCallback::InitializeServices()
     {
         auto valueTypes = WallTimeProvider::SampleTypeDefinitions;
         sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
-        _pWallTimeProvider = RegisterService<WallTimeProvider>(valuesOffset, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+        _pWallTimeProvider = RegisterService<WallTimeProvider>(valuesOffset, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get());
         valuesOffset += static_cast<uint32_t>(valueTypes.size());
     }
 
@@ -134,7 +134,7 @@ bool CorProfilerCallback::InitializeServices()
     {
         auto valueTypes = CpuTimeProvider::SampleTypeDefinitions;
         sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
-        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(valuesOffset, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore);
+        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(valuesOffset, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get());
         valuesOffset += static_cast<uint32_t>(valueTypes.size());
     }
 
