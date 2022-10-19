@@ -40,6 +40,31 @@ namespace Datadog.Trace.Tests.Sampling
             trace3.Select(s => s.GetMetric(Metrics.RareSpan)).Should().Equal((double?)null, null);
         }
 
+        [Theory]
+        [InlineData(SamplingPriorityValues.UserReject, true)]
+        [InlineData(SamplingPriorityValues.AutoReject, true)]
+        [InlineData(SamplingPriorityValues.UserKeep, false)]
+        [InlineData(SamplingPriorityValues.AutoKeep, false)]
+        public void OnlySampleRejectPriorities(int priority, bool expected)
+        {
+            var tracer = TracerHelper.Create();
+            var sampler = new RareSampler(new ImmutableTracerSettings(new TracerSettings { IsRareSamplerEnabled = true }));
+
+            var trace = new[] { tracer.StartSpan("1") };
+            trace[0].Context.TraceContext.SetSamplingPriority(priority);
+
+            sampler.Sample(new(trace)).Should().Be(expected);
+
+            if (expected)
+            {
+                trace[0].GetMetric(Metrics.RareSpan).Should().Be(1.0);
+            }
+            else
+            {
+                trace[0].GetMetric(Metrics.RareSpan).Should().BeNull();
+            }
+        }
+
         [Fact]
         public void DisabledByDefault()
         {
