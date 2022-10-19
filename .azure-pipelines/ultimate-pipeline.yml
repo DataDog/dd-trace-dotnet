@@ -1317,6 +1317,8 @@ stages:
           serverless-lambda-nested-class-param \
           serverless-lambda-nested-struct-param \
           serverless-lambda-generic-dict-param \
+          serverless-lambda-nested-generic-dict-param \
+          serverless-lambda-doubly-nested-generic-dict-param \
           serverless-lambda-throwing \
           serverless-lambda-throwing-async \
           serverless-lambda-throwing-async-task \

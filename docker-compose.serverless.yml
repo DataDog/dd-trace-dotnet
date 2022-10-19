@@ -24,6 +24,8 @@ services:
     - serverless-lambda-nested-class-param
     - serverless-lambda-nested-struct-param
     - serverless-lambda-generic-dict-param
+    - serverless-lambda-nested-generic-dict-param
+    - serverless-lambda-doubly-nested-generic-dict-param
     - serverless-lambda-throwing
     - serverless-lambda-throwing-async
     - serverless-lambda-throwing-async-task
@@ -53,6 +55,8 @@ services:
     - AWS_LAMBDA_ENDPOINT_NESTED_CLASS_PARAM=http://serverless-lambda-nested-class-param:8080
     - AWS_LAMBDA_ENDPOINT_NESTED_STRUCT_PARAM=http://serverless-lambda-nested-struct-param:8080
     - AWS_LAMBDA_ENDPOINT_GENERIC_DICT_PARAM=http://serverless-lambda-generic-dict-param:8080
+    - AWS_LAMBDA_ENDPOINT_NESTED_GENERIC_DICT_PARAM=http://serverless-lambda-nested-generic-dict-param:8080
+    - AWS_LAMBDA_ENDPOINT_DOUBLY_NESTED_GENERIC_DICT_PARAM=http://serverless-lambda-doubly-nested-generic-dict-param:8080
     - AWS_LAMBDA_ENDPOINT_THROWING=http://serverless-lambda-throwing:8080
     - AWS_LAMBDA_ENDPOINT_THROWING_ASYNC=http://serverless-lambda-throwing-async:8080
     - AWS_LAMBDA_ENDPOINT_THROWING_ASYNC_TASK=http://serverless-lambda-throwing-async-task:8080
@@ -85,6 +89,8 @@ services:
     - serverless-lambda-nested-class-param
     - serverless-lambda-nested-struct-param
     - serverless-lambda-generic-dict-param
+    - serverless-lambda-nested-generic-dict-param
+    - serverless-lambda-doubly-nested-generic-dict-param
     - serverless-lambda-throwing
     - serverless-lambda-throwing-async
     - serverless-lambda-throwing-async-task
@@ -116,6 +122,8 @@ services:
       serverless-lambda-nested-class-param:8080
       serverless-lambda-nested-struct-param:8080
       serverless-lambda-generic-dict-param:8080
+      serverless-lambda-nested-generic-dict-param:8080
+      serverless-lambda-doubly-nested-generic-dict-param:8080
       serverless-lambda-throwing:8080
       serverless-lambda-throwing-async:8080
       serverless-lambda-throwing-async-task:8080
@@ -543,6 +551,46 @@ services:
     volumes:
     - ./:/project
     - ./tracer/build_data/logs/serverless-lambda-generic-dict-param:/var/log/datadog/dotnet
+
+  serverless-lambda-nested-generic-dict-param:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNestedGenericDictionaryParam"
+    image: dd-trace-dotnet/serverless-lambda-nested-generic-dict-param
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs/serverless-lambda-nested-generic-dict-param:/var/log/datadog/dotnet
+
+  serverless-lambda-doubly-nested-generic-dict-param:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerDoublyNestedGenericDictionaryParam"
+    image: dd-trace-dotnet/serverless-lambda-doubly-nested-generic-dict-param
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs/serverless-lambda-doubly-nested-generic-dict-param:/var/log/datadog/dotnet
 
   serverless-lambda-throwing:
     build:
