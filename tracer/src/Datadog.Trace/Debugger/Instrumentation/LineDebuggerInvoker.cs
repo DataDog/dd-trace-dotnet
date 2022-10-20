@@ -7,6 +7,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 
@@ -20,6 +21,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
     public static class LineDebuggerInvoker
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LineDebuggerInvoker));
+
+        /// <summary>
+        /// The next snapshot to be uploaded as part of the "Span Origin" feature.
+        /// </summary>
+        public static readonly AsyncLocal<string> NextSnapshot = new();
 
         private static LineDebuggerState CreateInvalidatedLineDebuggerState()
         {
@@ -172,7 +178,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                           state.ProbeFilePath);
 
                 var snapshot = state.SnapshotCreator.GetSnapshotJson();
-                LiveDebugger.Instance.AddSnapshot(snapshot);
+                NextSnapshot.Value = snapshot;
             }
         }
     }
