@@ -9,14 +9,13 @@ using Datadog;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 
-namespace Datadog.Trace.Iast
-{
-    internal partial class IastTags : CommonTags
-    {
-        [Tag(Tags.IastJson)]
-        public string? IastJson { get; set; }
+namespace Datadog.Trace.Iast;
 
-        [Tag(Tags.IastEnabled)]
-        public string? IastEnabled { get; set; }
-    }
+internal partial class IastTags : CommonTags
+{
+    [Tag(Tags.IastJson)]
+    public string? IastJson { get; set; }
+
+    [Tag(Tags.IastEnabled)]
+    public string? IastEnabled { get; set; }
 }

@@ -1016,7 +1016,7 @@ namespace Datadog.Trace.TestHelpers
                         }
                         catch (Exception ex)
                         {
-                            Output?.WriteLine("[HandleHttpRequests]Error processing web request" + ex);
+                            Output?.WriteLine($"[HandleHttpRequests]Error processing web request to {ctx.Request.Url}: {ex}");
                             ctx.Response.Close();
                         }
                     }

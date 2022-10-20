@@ -32,6 +32,7 @@ namespace Datadog.Trace.Telemetry
         public const string StatsComputationEnabled = "stats_computation_enabled";
         public const string WcfObfuscationEnabled = "wcf_obfuscation_enabled";
         public const string DataStreamsMonitoringEnabled = "data_streams_enabled";
+        public const string SpanSamplingRules = "span_sampling_rules";
 
         public const string CloudHosting = "cloud_hosting";
         public const string AasSiteExtensionVersion = "aas_siteextensions_version";

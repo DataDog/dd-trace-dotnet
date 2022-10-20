@@ -185,7 +185,7 @@ void StackSamplerLoop::WalltimeProfilingIteration(void)
         _targetThread = _pManagedThreadList->LoopNext(_iteratorWallTime);
         if (_targetThread != nullptr)
         {
-            int64_t thisSampleTimestampNanosecs = OpSysTools::GetHighPrecisionNanoseconds();
+            int64_t thisSampleTimestampNanosecs = OpSysTools::GetHighPrecisionTimestamp();
             int64_t prevSampleTimestampNanosecs = _targetThread->SetLastSampleHighPrecisionTimestampNanoseconds(thisSampleTimestampNanosecs);
             int64_t duration = ComputeWallTime(thisSampleTimestampNanosecs, prevSampleTimestampNanosecs);
 
@@ -240,7 +240,7 @@ void StackSamplerLoop::CpuProfilingIteration(void)
                 // we don't collect a sample for this thread is no CPU was consumed since the last check
                 if (cpuForSample > 0)
                 {
-                    int64_t thisSampleTimestampNanosecs = OpSysTools::GetHighPrecisionNanoseconds();
+                    int64_t thisSampleTimestampNanosecs = OpSysTools::GetHighPrecisionTimestamp();
                     CollectOneThreadStackSample(_targetThread, thisSampleTimestampNanosecs, cpuForSample, PROFILING_TYPE::CpuTime);
                 }
             }
@@ -351,7 +351,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
 
             if (isStackSnapshotSuccessful)
             {
-                UpdateSnapshotInfos(pStackSnapshotResult, duration, currentUnixTimestamp);
+                UpdateSnapshotInfos(pStackSnapshotResult, duration, thisSampleTimestampNanosecs);
                 pStackSnapshotResult->DetermineAppDomain(pThreadInfo->GetClrThreadId(), _pCorProfilerInfo);
             }
 

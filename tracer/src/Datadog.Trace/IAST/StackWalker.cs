@@ -8,35 +8,34 @@
 using System.Diagnostics;
 using System.Linq;
 
-namespace Datadog.Trace.Iast
+namespace Datadog.Trace.Iast;
+
+internal static class StackWalker
 {
-    internal static class StackWalker
+    public static readonly string[] ExcludeSpanGenerationTypes = { "Datadog.Trace.Debugger.Helpers.StringExtensions" };
+    public static readonly string[] AssemblyNamesToSkip = { "Datadog.Trace", "System.Security.Cryptography.Primitives", "System.Security.Cryptography.Algorithms", "System.Security.Cryptography.Csp" };
+
+    private const int DefaultSkipFrames = 2;
+
+    public static StackFrameInfo GetFrame()
     {
-        public static readonly string[] AssemblyNamesToSkip = { "Datadog.Trace", "System.Security.Cryptography.Primitives" };
-        public static readonly string[] ExcludeSpanGenerationTypes = { "Datadog.Trace.Debugger.Helpers.StringExtensions" };
+        var stackTrace = new StackTrace(DefaultSkipFrames, true);
 
-        private const int DefaultSkipFrames = 2;
-
-        public static StackFrameInfo GetFrame()
+        foreach (var frame in stackTrace.GetFrames())
         {
-            var stackTrace = new StackTrace(DefaultSkipFrames, true);
-
-            foreach (var frame in stackTrace.GetFrames())
+            var declaringType = frame?.GetMethod()?.DeclaringType;
+            if (ExcludeSpanGenerationTypes.Contains(declaringType?.FullName))
             {
-                var declaringType = frame?.GetMethod()?.DeclaringType;
-                if (ExcludeSpanGenerationTypes.Contains(declaringType?.FullName))
-                {
-                    return new StackFrameInfo(null, false);
-                }
-
-                var assembly = declaringType?.Assembly.GetName().Name;
-                if (assembly != null && !AssemblyNamesToSkip.Contains(assembly))
-                {
-                    return new StackFrameInfo(frame, true);
-                }
+                return new StackFrameInfo(null, false);
             }
 
-            return new StackFrameInfo(null, true);
+            var assembly = declaringType?.Assembly.GetName().Name;
+            if (assembly != null && !AssemblyNamesToSkip.Contains(assembly))
+            {
+                return new StackFrameInfo(frame, true);
+            }
         }
+
+        return new StackFrameInfo(null, true);
     }
 }

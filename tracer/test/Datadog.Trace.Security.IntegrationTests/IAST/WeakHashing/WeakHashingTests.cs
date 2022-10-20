@@ -17,69 +17,69 @@ using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.Security.IntegrationTests.Iast
+namespace Datadog.Trace.Security.IntegrationTests.Iast;
+
+[UsesVerify]
+public class WeakHashingTests : TestHelper
 {
-    [UsesVerify]
-    public class WeakHashingTests : TestHelper
+    private const string ExpectedOperationName = "weak_hashing";
+    private static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
+
+    public WeakHashingTests(ITestOutputHelper output)
+        : base("WeakHashing", output)
     {
-        private const string ExpectedOperationName = "weak_hashing";
-        private static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
+        SetServiceVersion("1.0.0");
+    }
 
-        public WeakHashingTests(ITestOutputHelper output)
-            : base("WeakHashing", output)
-        {
-            SetServiceVersion("1.0.0");
-        }
-
-        [SkippableFact]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTraces()
-        {
-            SetEnvironmentVariable("DD_IAST_ENABLED", "true");
-            // Avoid tests parallel log collision
-            SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "WeakHashingLogs"));
+    [SkippableFact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task SubmitsTraces()
+    {
+        SetEnvironmentVariable("DD_IAST_ENABLED", "true");
+        // Avoid tests parallel log collision
+        SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "WeakHashingLogs"));
 
 #if NET6_0 || NET5_0
-            const int expectedSpanCount = 28;
-            var filename = "WeakHashingTests.SubmitsTraces.Net50.60";
+        const int expectedSpanCount = 28;
+        var filename = "WeakHashingTests.SubmitsTraces.Net50.60";
 #else
-            const int expectedSpanCount = 21;
-            var filename = "WeakHashingTests.SubmitsTraces";
+        const int expectedSpanCount = 21;
+        var filename = "WeakHashingTests.SubmitsTraces";
 #endif
 
-            using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent);
-            var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
+        using var agent = EnvironmentHelper.GetMockAgent();
+        using var process = RunSampleAndWaitForExit(agent);
+        var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
 
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
-            await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName(filename)
-                              .DisableRequireUniquePrefix();
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
 
-            VerifyInstrumentation(process.Process);
-        }
+        VerifyInstrumentation(process.Process);
+    }
 
-        [SkippableTheory]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [InlineData("DD_IAST_ENABLED", "false")]
-        [InlineData("DD_IAST_WEAK_HASH_ALGORITHMS", "")]
-        [InlineData($"D_TRACE_{nameof(IntegrationId.HashAlgorithm)}_ENABLED", "false")]
-        public void IntegrationDisabled(string variableName, string variableValue)
-        {
-            SetEnvironmentVariable(variableName, variableValue);
-            // Avoid tests parallel log collision
-            SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "WeakHashingLogs"));
+    [SkippableTheory]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [InlineData("DD_IAST_ENABLED", "false")]
+    [InlineData("DD_IAST_WEAK_HASH_ALGORITHMS", "")]
+    [InlineData($"DD_TRACE_{nameof(IntegrationId.HashAlgorithm)}_ENABLED", "false")]
+    public void IntegrationDisabled(string variableName, string variableValue)
+    {
+        SetEnvironmentVariable("DD_IAST_ENABLED", "true");
+        SetEnvironmentVariable(variableName, variableValue);
+        // Avoid tests parallel log collision
+        SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "WeakHashingLogs"));
 
-            const int expectedSpanCount = 21;
-            using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent);
-            var spans = agent.WaitForSpans(expectedSpanCount, returnAllOperations: true);
+        const int expectedSpanCount = 21;
+        using var agent = EnvironmentHelper.GetMockAgent();
+        using var process = RunSampleAndWaitForExit(agent);
+        var spans = agent.WaitForSpans(expectedSpanCount, returnAllOperations: true);
 
-            Assert.Empty(spans.Where(s => s.Name.Equals(ExpectedOperationName)));
-        }
+        Assert.Empty(spans.Where(s => s.Name.Equals(ExpectedOperationName)));
     }
 }
 #endif
