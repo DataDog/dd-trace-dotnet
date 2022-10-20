@@ -7,20 +7,48 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.Iast;
 
-internal static class HashBasedDeduplication
+internal class HashBasedDeduplication
 {
     public const int MaximumSize = 1000;
-    private static HashSet<int> vulnerabilityHashes = new();
+    private static readonly object GlobalInstanceLock = new();
+    private static HashBasedDeduplication _instance;
+    private static volatile bool _globalInstanceInitialized;
+    private HashSet<int> vulnerabilityHashes = new();
 
-    public static void Clear()
+    /// <summary>
+    /// Initializes a new instance of the <see cref="HashBasedDeduplication"/> class.
+    /// For testing only.
+    /// Note that this API does NOT replace the global HashBasedDeduplication instance.
+    /// </summary>
+    internal HashBasedDeduplication()
     {
-        lock (vulnerabilityHashes)
+    }
+
+    public static HashBasedDeduplication Instance
+    {
+        get
         {
-            vulnerabilityHashes.Clear();
+            if (_globalInstanceInitialized)
+            {
+                return _instance;
+            }
+
+            lock (GlobalInstanceLock)
+            {
+                if (_globalInstanceInitialized)
+                {
+                    return _instance;
+                }
+
+                _instance = new HashBasedDeduplication();
+                _globalInstanceInitialized = true;
+            }
+
+            return _instance;
         }
     }
 
-    public static bool Add(Vulnerability vulnerability)
+    public bool Add(Vulnerability vulnerability)
     {
         var hashCode = vulnerability.GetHashCode();
 
