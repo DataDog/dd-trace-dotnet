@@ -36,6 +36,7 @@ namespace Datadog.Trace.Ci
             ImmutableTracerSettings settings,
             IAgentWriter agentWriter,
             ITraceSampler sampler,
+            ISpanSampler spanSampler,
             IScopeManager scopeManager,
             IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetrics,
@@ -45,7 +46,7 @@ namespace Datadog.Trace.Ci
             DataStreamsManager dataStreamsManager,
             string defaultServiceName)
         {
-            return new CITracerManager(settings, agentWriter, sampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName);
+            return new CITracerManager(settings, agentWriter, sampler, spanSampler, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName);
         }
 
         protected override ITraceSampler GetSampler(ImmutableTracerSettings settings)

@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
+using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 
@@ -82,6 +83,9 @@ namespace Datadog.Trace.Telemetry
 
         public void RecordSecuritySettings(SecuritySettings settings)
             => _configuration.RecordSecuritySettings(settings);
+
+        public void RecordIastSettings(IastSettings settings)
+            => _configuration.RecordIastSettings(settings);
 
         public void RecordProfilerSettings(Profiler profiler)
             => _configuration.RecordProfilerSettings(profiler);

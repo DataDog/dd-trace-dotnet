@@ -8,8 +8,6 @@ namespace Datadog.Trace.Tagging
 {
     partial class CommonTags
     {
-        // SamplingPriorityBytes = System.Text.Encoding.UTF8.GetBytes("_sampling_priority_v1");
-        private static readonly byte[] SamplingPriorityBytes = new byte[] { 95, 115, 97, 109, 112, 108, 105, 110, 103, 95, 112, 114, 105, 111, 114, 105, 116, 121, 95, 118, 49 };
         // SamplingLimitDecisionBytes = System.Text.Encoding.UTF8.GetBytes("_dd.limit_psr");
         private static readonly byte[] SamplingLimitDecisionBytes = new byte[] { 95, 100, 100, 46, 108, 105, 109, 105, 116, 95, 112, 115, 114 };
         // TracesKeepRateBytes = System.Text.Encoding.UTF8.GetBytes("_dd.tracer_kr");
@@ -82,7 +80,6 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
-                "_sampling_priority_v1" => SamplingPriority,
                 "_dd.limit_psr" => SamplingLimitDecision,
                 "_dd.tracer_kr" => TracesKeepRate,
                 _ => base.GetMetric(key),
@@ -93,9 +90,6 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "_sampling_priority_v1": 
-                    SamplingPriority = value;
-                    break;
                 case "_dd.limit_psr": 
                     SamplingLimitDecision = value;
                     break;
@@ -110,11 +104,6 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateMetrics<TProcessor>(ref TProcessor processor)
         {
-            if (SamplingPriority is not null)
-            {
-                processor.Process(new TagItem<double>("_sampling_priority_v1", SamplingPriority.Value, SamplingPriorityBytes));
-            }
-
             if (SamplingLimitDecision is not null)
             {
                 processor.Process(new TagItem<double>("_dd.limit_psr", SamplingLimitDecision.Value, SamplingLimitDecisionBytes));
@@ -130,13 +119,6 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
         {
-            if (SamplingPriority is not null)
-            {
-                sb.Append("_sampling_priority_v1 (metric):")
-                  .Append(SamplingPriority.Value)
-                  .Append(',');
-            }
-
             if (SamplingLimitDecision is not null)
             {
                 sb.Append("_dd.limit_psr (metric):")

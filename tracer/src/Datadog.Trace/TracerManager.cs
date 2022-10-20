@@ -53,6 +53,7 @@ namespace Datadog.Trace
             ImmutableTracerSettings settings,
             IAgentWriter agentWriter,
             ITraceSampler sampler,
+            ISpanSampler spanSampler,
             IScopeManager scopeManager,
             IDogStatsd statsd,
             RuntimeMetricsWriter runtimeMetricsWriter,
@@ -66,6 +67,7 @@ namespace Datadog.Trace
             Settings = settings;
             AgentWriter = agentWriter;
             Sampler = sampler;
+            SpanSampler = spanSampler;
             ScopeManager = scopeManager;
             Statsd = statsd;
             RuntimeMetrics = runtimeMetricsWriter;
@@ -124,6 +126,11 @@ namespace Datadog.Trace
         /// Gets the <see cref="ITraceSampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
         /// </summary>
         public ITraceSampler Sampler { get; }
+
+        /// <summary>
+        /// Gets the <see cref="ISpanSampler"/> instance used by this <see cref="IDatadogTracer"/> instance.
+        /// </summary>
+        public ISpanSampler SpanSampler { get; }
 
         public DirectLogSubmissionManager DirectLogSubmission { get; }
 
@@ -419,6 +426,15 @@ namespace Datadog.Trace
 
                     WriteAsmInfo(writer);
 
+                    writer.WritePropertyName("iast_enabled");
+                    writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.Enabled);
+
+                    writer.WritePropertyName("iast_weak_hash_algorithms");
+                    writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.WeakHashAlgorithms);
+
+                    writer.WritePropertyName("iast_weak_cipher_algorithms");
+                    writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.WeakCipherAlgorithms);
+
                     writer.WritePropertyName("direct_logs_submission_enabled_integrations");
                     writer.WriteStartArray();
 
@@ -462,6 +478,9 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("data_streams_enabled");
                     writer.WriteValue(instanceSettings.IsDataStreamsMonitoringEnabled);
+
+                    writer.WritePropertyName("span_sampling_rules");
+                    writer.WriteValue(instanceSettings.SpanSamplingRules);
 
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload

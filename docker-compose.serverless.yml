@@ -3,8 +3,6 @@ services:
   # This extends the version in docker-compose.yml, by adding the extra depends_on for the serverless images
   IntegrationTests.Serverless:
     depends_on:
-    - serverless-integration-extension-mock
-    - serverless-integration-extension-mock-with-context
     - serverless-lambda-no-param-sync
     - serverless-lambda-one-param-sync
     - serverless-lambda-two-params-sync    
@@ -22,6 +20,19 @@ services:
     - serverless-lambda-base-one-param-sync-with-context
     - serverless-lambda-base-one-param-async
     - serverless-lambda-base-two-params-void
+    - serverless-lambda-struct-param
+    - serverless-lambda-nested-class-param
+    - serverless-lambda-nested-struct-param
+    - serverless-lambda-generic-dict-param
+    - serverless-lambda-nested-generic-dict-param
+    - serverless-lambda-doubly-nested-generic-dict-param
+    - serverless-lambda-throwing
+    - serverless-lambda-throwing-async
+    - serverless-lambda-throwing-async-task
+    - serverless-lambda-throwing-with-context
+    - serverless-lambda-throwing-async-with-context
+    - serverless-lambda-throwing-async-task-with-context
+    - serverless-dummy-api
     environment:
     - AWS_LAMBDA_ENDPOINT_NO_PARAM_SYNC=http://serverless-lambda-no-param-sync:8080
     - AWS_LAMBDA_ENDPOINT_ONE_PARAM_SYNC=http://serverless-lambda-one-param-sync:8080
@@ -40,12 +51,23 @@ services:
     - AWS_LAMBDA_ENDPOINT_BASE_ONE_PARAM_SYNC_WITH_CONTEXT=http://serverless-lambda-base-one-param-sync-with-context:8080
     - AWS_LAMBDA_ENDPOINT_BASE_ONE_PARAM_ASYNC=http://serverless-lambda-base-one-param-async:8080
     - AWS_LAMBDA_ENDPOINT_BASE_TWO_PARAMS_VOID=http://serverless-lambda-base-two-params-void:8080
+    - AWS_LAMBDA_ENDPOINT_STRUCT_PARAM=http://serverless-lambda-struct-param:8080
+    - AWS_LAMBDA_ENDPOINT_NESTED_CLASS_PARAM=http://serverless-lambda-nested-class-param:8080
+    - AWS_LAMBDA_ENDPOINT_NESTED_STRUCT_PARAM=http://serverless-lambda-nested-struct-param:8080
+    - AWS_LAMBDA_ENDPOINT_GENERIC_DICT_PARAM=http://serverless-lambda-generic-dict-param:8080
+    - AWS_LAMBDA_ENDPOINT_NESTED_GENERIC_DICT_PARAM=http://serverless-lambda-nested-generic-dict-param:8080
+    - AWS_LAMBDA_ENDPOINT_DOUBLY_NESTED_GENERIC_DICT_PARAM=http://serverless-lambda-doubly-nested-generic-dict-param:8080
+    - AWS_LAMBDA_ENDPOINT_THROWING=http://serverless-lambda-throwing:8080
+    - AWS_LAMBDA_ENDPOINT_THROWING_ASYNC=http://serverless-lambda-throwing-async:8080
+    - AWS_LAMBDA_ENDPOINT_THROWING_ASYNC_TASK=http://serverless-lambda-throwing-async-task:8080
+    - AWS_LAMBDA_ENDPOINT_THROWING_WITH_CONTEXT=http://serverless-lambda-throwing-with-context:8080
+    - AWS_LAMBDA_ENDPOINT_THROWING_ASYNC_WITH_CONTEXT=http://serverless-lambda-throwing-async-with-context:8080
+    - AWS_LAMBDA_ENDPOINT_THROWING_ASYNC_TASK_WITH_CONTEXT=http://serverless-lambda-throwing-async-task-with-context:8080
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
 
   StartDependencies.Serverless:
     image: andrewlock/wait-for-dependencies
     depends_on:
-    - serverless-integration-extension-mock
-    - serverless-integration-extension-mock-with-context
     - serverless-lambda-no-param-sync
     - serverless-lambda-one-param-sync
     - serverless-lambda-two-params-sync
@@ -63,311 +85,637 @@ services:
     - serverless-lambda-base-one-param-sync-with-context
     - serverless-lambda-base-one-param-async
     - serverless-lambda-base-two-params-void
+    - serverless-lambda-struct-param
+    - serverless-lambda-nested-class-param
+    - serverless-lambda-nested-struct-param
+    - serverless-lambda-generic-dict-param
+    - serverless-lambda-nested-generic-dict-param
+    - serverless-lambda-doubly-nested-generic-dict-param
+    - serverless-lambda-throwing
+    - serverless-lambda-throwing-async
+    - serverless-lambda-throwing-async-task
+    - serverless-lambda-throwing-with-context
+    - serverless-lambda-throwing-async-with-context
+    - serverless-lambda-throwing-async-task-with-context
+    - serverless-dummy-api
     environment:
       - TIMEOUT_LENGTH=120
-    command: serverless-lambda-no-param-sync:8080 serverless-lambda-one-param-sync:8080 serverless-lambda-two-params-sync:8080 serverless-lambda-no-param-sync-with-context:8080 serverless-lambda-one-param-sync-with-context:8080 serverless-lambda-two-params-sync-with-context:8080 serverless-lambda-no-param-async:8080 serverless-lambda-one-param-async:8080 serverless-lambda-two-params-async:8080 serverless-integration-extension-mock:9003 serverless-integration-extension-mock-with-context:9004 serverless-lambda-no-param-void:8080 serverless-lambda-one-param-void:8080 serverless-lambda-two-params-void:8080 serverless-lambda-base-no-param-sync:8080 serverless-lambda-base-two-params-sync:8080 serverless-lambda-base-one-param-sync-with-context:8080 serverless-lambda-base-one-param-async:8080 serverless-lambda-base-two-params-void:8080
-  
+    command: |
+      serverless-lambda-no-param-sync:8080
+      serverless-lambda-one-param-sync:8080
+      serverless-lambda-two-params-sync:8080
+      serverless-lambda-no-param-sync-with-context:8080
+      serverless-lambda-one-param-sync-with-context:8080
+      serverless-lambda-two-params-sync-with-context:8080
+      serverless-lambda-no-param-async:8080
+      serverless-lambda-one-param-async:8080
+      serverless-lambda-two-params-async:8080
+      serverless-lambda-no-param-void:8080
+      serverless-lambda-one-param-void:8080
+      serverless-lambda-two-params-void:8080
+      serverless-lambda-base-no-param-sync:8080
+      serverless-lambda-base-two-params-sync:8080
+      serverless-lambda-base-one-param-sync-with-context:8080
+      serverless-lambda-base-one-param-async:8080
+      serverless-lambda-base-two-params-void:8080
+      serverless-lambda-struct-param:8080
+      serverless-lambda-nested-class-param:8080
+      serverless-lambda-nested-struct-param:8080
+      serverless-lambda-generic-dict-param:8080
+      serverless-lambda-nested-generic-dict-param:8080
+      serverless-lambda-doubly-nested-generic-dict-param:8080
+      serverless-lambda-throwing:8080
+      serverless-lambda-throwing-async:8080
+      serverless-lambda-throwing-async-task:8080
+      serverless-lambda-throwing-with-context:8080
+      serverless-lambda-throwing-async-with-context:8080
+      serverless-lambda-throwing-async-task-with-context:8080
+      serverless-dummy-api:9005
+
   serverless-lambda-no-param-sync:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
     depends_on:
-    - serverless-integration-extension-mock
+    - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamSync"
     image: dd-trace-dotnet/serverless-lambda-no-param-sync
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
-    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9003
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-no-param-sync:/var/log/datadog/dotnet
 
   serverless-lambda-one-param-sync:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
     depends_on:
-    - serverless-integration-extension-mock
+    - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamSync"
     image: dd-trace-dotnet/serverless-lambda-one-param-sync
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
-    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9003
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-one-param-sync:/var/log/datadog/dotnet
 
   serverless-lambda-two-params-sync:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
     depends_on:
-    - serverless-integration-extension-mock
+    - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsSync"
     image: dd-trace-dotnet/serverless-lambda-two-params-sync
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
-    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9003
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-two-params-sync:/var/log/datadog/dotnet
 
   serverless-lambda-no-param-sync-with-context:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
     depends_on:
-    - serverless-integration-extension-mock-with-context
+    - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamSyncWithContext"
     image: dd-trace-dotnet/serverless-lambda-no-param-sync-with-context
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
-    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock-with-context:9004
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-no-param-sync-with-context:/var/log/datadog/dotnet
 
   serverless-lambda-one-param-sync-with-context:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
     depends_on:
-    - serverless-integration-extension-mock-with-context
+    - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamSyncWithContext"
     image: dd-trace-dotnet/serverless-lambda-one-param-sync-with-context
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
-    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock-with-context:9004
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-one-param-sync-with-context:/var/log/datadog/dotnet
 
   serverless-lambda-two-params-sync-with-context:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
     depends_on:
-    - serverless-integration-extension-mock-with-context
+    - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsSyncWithContext"
     image: dd-trace-dotnet/serverless-lambda-two-params-sync-with-context
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
-    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock-with-context:9004
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-two-params-sync-with-context:/var/log/datadog/dotnet
 
   serverless-lambda-no-param-async:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
     depends_on:
-    - serverless-integration-extension-mock
+    - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamAsync"
     image: dd-trace-dotnet/serverless-lambda-two-params-sync-with-context
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
-    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9003
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-no-param-async:/var/log/datadog/dotnet
 
   serverless-lambda-one-param-async:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
     depends_on:
-    - serverless-integration-extension-mock
+    - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamAsync"
     image: dd-trace-dotnet/serverless-lambda-one-param-async
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
-    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9003
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-one-param-async:/var/log/datadog/dotnet
 
   serverless-lambda-two-params-async:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
     depends_on:
-    - serverless-integration-extension-mock
+    - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsAsync"
     image: dd-trace-dotnet/serverless-lambda-two-params-async
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
-    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9003
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-two-params-async:/var/log/datadog/dotnet
 
   serverless-lambda-no-param-void:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
     depends_on:
-    - serverless-integration-extension-mock
+    - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNoParamVoid"
     image: dd-trace-dotnet/serverless-lambda-no-param-void
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
-    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9003
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-no-param-void:/var/log/datadog/dotnet
 
   serverless-lambda-one-param-void:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
     depends_on:
-    - serverless-integration-extension-mock
+    - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerOneParamVoid"
     image: dd-trace-dotnet/serverless-lambda-one-param-void
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
-    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9003
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-one-param-void:/var/log/datadog/dotnet
 
   serverless-lambda-two-params-void:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
     depends_on:
-    - serverless-integration-extension-mock
+    - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerTwoParamsVoid"
     image: dd-trace-dotnet/serverless-lambda-two-params-void
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
-    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9003
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-two-params-void:/var/log/datadog/dotnet
   
   serverless-lambda-base-no-param-sync:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
     depends_on:
-    - serverless-integration-extension-mock
+    - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerNoParamSync"
     image: dd-trace-dotnet/serverless-lambda-base-no-param-sync
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
-    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9003
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-base-no-param-sync:/var/log/datadog/dotnet
 
   serverless-lambda-base-two-params-sync:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
     depends_on:
-    - serverless-integration-extension-mock
+    - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerTwoParamsSync"
     image: dd-trace-dotnet/serverless-lambda-base-two-params-sync
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
-    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9003
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-base-two-params-sync:/var/log/datadog/dotnet
 
   serverless-lambda-base-one-param-sync-with-context:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
     depends_on:
-    - serverless-integration-extension-mock-with-context
+    - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerOneParamSyncWithContext"
     image: dd-trace-dotnet/serverless-lambda-base-one-param-sync-with-context
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
-    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock-with-context:9004
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-base-one-param-sync-with-context:/var/log/datadog/dotnet
 
   serverless-lambda-base-one-param-async:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
     depends_on:
-    - serverless-integration-extension-mock
+    - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerOneParamAsync"
     image: dd-trace-dotnet/serverless-lambda-base-one-param-async
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
-    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9003
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-base-one-param-async:/var/log/datadog/dotnet
 
   serverless-lambda-base-two-params-void:
     build:
       context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
       dockerfile: serverless.lambda.dockerfile
     depends_on:
-    - serverless-integration-extension-mock
+    - serverless-dummy-api
     command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::BaseHandlerTwoParamsVoid"
     image: dd-trace-dotnet/serverless-lambda-base-two-params-void
     environment:
     - DD_TRACE_AGENT_URL=http://integrationtests:5002
-    - _DD_EXTENSION_ENDPOINT=http://serverless-integration-extension-mock:9003
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
-  
-  serverless-integration-extension-mock:
-    build:
-      context: ./tracer/build/_build/docker
-      dockerfile: ./serverless.extensionmock.dockerfile
-    image: dd-trace-dotnet/serverless-extension-mock
-    ports:
-    - "9003:9003"
+    - ./tracer/build_data/logs/serverless-lambda-base-two-params-void:/var/log/datadog/dotnet
 
-  serverless-integration-extension-mock-with-context:
+  serverless-lambda-struct-param:
     build:
-      context: ./tracer/build/_build/docker
-      dockerfile: serverless.extensionmock.with.context.dockerfile
-    image: dd-trace-dotnet/serverless-extension-mock-with-context
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerStructParam"
+    image: dd-trace-dotnet/serverless-lambda-struct-param
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
-    - "9004:9004"
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs/serverless-lambda-struct-param:/var/log/datadog/dotnet
+
+  serverless-lambda-nested-class-param:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNestedClassParam"
+    image: dd-trace-dotnet/serverless-lambda-nested-class-param
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs/serverless-lambda-nested-class-param:/var/log/datadog/dotnet
+
+  serverless-lambda-nested-struct-param:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNestedStructParam"
+    image: dd-trace-dotnet/serverless-lambda-nested-struct-param
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs/serverless-lambda-nested-struct-param:/var/log/datadog/dotnet
+
+  serverless-lambda-generic-dict-param:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerGenericDictionaryParam"
+    image: dd-trace-dotnet/serverless-lambda-generic-dict-param
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs/serverless-lambda-generic-dict-param:/var/log/datadog/dotnet
+
+  serverless-lambda-nested-generic-dict-param:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNestedGenericDictionaryParam"
+    image: dd-trace-dotnet/serverless-lambda-nested-generic-dict-param
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs/serverless-lambda-nested-generic-dict-param:/var/log/datadog/dotnet
+
+  serverless-lambda-doubly-nested-generic-dict-param:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerDoublyNestedGenericDictionaryParam"
+    image: dd-trace-dotnet/serverless-lambda-doubly-nested-generic-dict-param
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs/serverless-lambda-doubly-nested-generic-dict-param:/var/log/datadog/dotnet
+
+  serverless-lambda-throwing:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::ThrowingHandler"
+    image: dd-trace-dotnet/serverless-lambda-throwing
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs/serverless-lambda-throwing:/var/log/datadog/dotnet
+
+  serverless-lambda-throwing-async:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::ThrowingHandlerAsync"
+    image: dd-trace-dotnet/serverless-lambda-throwing-async
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs/serverless-lambda-throwing-async:/var/log/datadog/dotnet
+
+  serverless-lambda-throwing-async-task:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::ThrowingHandlerAsyncTask"
+    image: dd-trace-dotnet/serverless-lambda-throwing-async-task
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs/serverless-lambda-throwing-async-task:/var/log/datadog/dotnet
+
+  serverless-lambda-throwing-with-context:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::ThrowingHandler"
+    image: dd-trace-dotnet/serverless-lambda-throwing-with-context
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs/serverless-lambda-throwing-with-context:/var/log/datadog/dotnet
+
+  serverless-lambda-throwing-async-with-context:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::ThrowingHandlerAsync"
+    image: dd-trace-dotnet/serverless-lambda-throwing-async-with-context
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs/serverless-lambda-throwing-async-with-context:/var/log/datadog/dotnet
+
+  serverless-lambda-throwing-async-task-with-context:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::ThrowingHandlerAsyncTask"
+    image: dd-trace-dotnet/serverless-lambda-throwing-async-task-with-context
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs/serverless-lambda-throwing-async-task-with-context:/var/log/datadog/dotnet
+
+  # The serverless function calls this API, which always returns 200 OK
+  serverless-dummy-api:
+    image: andrewlock/ok-api:latest
+    ports:
+    - "9005:9005"
+    environment:
+      DOTNET_URLS: "http://+:9005"

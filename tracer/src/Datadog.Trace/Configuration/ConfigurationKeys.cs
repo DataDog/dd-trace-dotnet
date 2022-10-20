@@ -166,6 +166,37 @@ namespace Datadog.Trace.Configuration
         public const string CustomSamplingRules = "DD_TRACE_SAMPLING_RULES";
 
         /// <summary>
+        /// Configuration key for setting custom <em>span</em> sampling rules based on regular expressions.
+        /// Comma separated list of span sampling rules.
+        /// The rule is matched in order of specification. The first match in a list is used.
+        /// The supported glob pattern characters are '*' and '?'.
+        /// A '*' mactches any contiguous substring.
+        /// A '?' matches exactly one character.
+        ///
+        /// Per entry:
+        ///     The item "service" is a glob pattern string, to match on the service name.
+        ///         Optional and defaults to '*'.
+        ///     The item "name" is a glob pattern string, to match on the operation name.
+        ///         Optional and defaults to '*'.
+        ///     The item "sample_rate" is a float and is the probability of keeping a matched span.
+        ///         Optional and defaults to 1.0 (keep all).
+        ///     The item "max_per_second" is a float and is the maximum number of spans that can be kept per second for the rule.
+        ///         Optional and defaults to unlimited.
+        ///
+        /// Examples:
+        /// Match all spans that have a service name of "cart" and an operation name of "checkout" with a kept limit of 1000 per second.
+        ///     "[{"service": "cart", "name": "checkout", "max_per_second": 1000}]"
+        ///
+        /// Match 50% of spans that have a service name of "cart" and an operation name of "checkout" with a kept limit of 1000 per second.
+        ///     "[{"service": "cart", "name": "checkout", "sample_rate": 0.5, "max_per_second": 1000}]"
+        ///
+        /// Match all spans that start with "cart" without any limits and any operation name.
+        ///     "[{"service": "cart*"}]"
+        /// </summary>
+        /// <seealso cref="TracerSettings.SpanSamplingRules"/>
+        public const string SpanSamplingRules = "DD_SPAN_SAMPLING_RULES";
+
+        /// <summary>
         /// Configuration key for setting the global rate for the sampler.
         /// </summary>
         public const string GlobalSamplingRate = "DD_TRACE_SAMPLE_RATE";

@@ -53,6 +53,11 @@ namespace PrepareRelease
             return Regex.Replace(text, VersionPattern(fourPartVersion: true), FourPartVersionString(), RegexOptions.Singleline);
         }
 
+        private string ThreePartVersionReplace(string text)
+        {
+            return Regex.Replace(text, VersionPattern(), VersionString(), RegexOptions.Singleline);
+        }
+
         private string FullVersionReplace(string text, string split, string prefix = "")
         {
             return Regex.Replace(text, prefix + VersionPattern(split), prefix + VersionString(split), RegexOptions.Singleline);
@@ -283,7 +288,13 @@ namespace PrepareRelease
                 // Four-part AssemblyVersion update
                 SynchronizeVersion(
                     "src/Datadog.Trace/TracerConstants.cs",
-                    FourPartVersionReplace);
+                    // upgrading four part, then three part *seems* safe
+                    text => ThreePartVersionReplace(FourPartVersionReplace(text)));
+
+                // Top-level CMakeLists.txt
+                SynchronizeVersion(
+                    "CMakeLists.txt",
+                    text => FullVersionReplace(text, ".", prefix: "VERSION "));
 
                 // Native clr profiler updates
                 SynchronizeVersion(
@@ -316,6 +327,10 @@ namespace PrepareRelease
 
                 SynchronizeVersion(
                     "../profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt",
+                    text => FullVersionReplace(text, ".", prefix: "VERSION "));
+
+                SynchronizeVersion(
+                    "../profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/CMakeLists.txt",
                     text => FullVersionReplace(text, ".", prefix: "VERSION "));
 
                 SynchronizeVersion(

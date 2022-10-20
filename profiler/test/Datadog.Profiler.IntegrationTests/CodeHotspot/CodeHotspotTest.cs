@@ -37,7 +37,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
             // By default, the codehotspot feature is activated
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             var profilerRuntimeIds = new List<string>();
             agent.ProfilerRequestReceived += (object sender, EventArgs<HttpListenerContext> ctx) =>
@@ -81,7 +81,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, enableTracer: true, commandLine: ScenarioCodeHotspot);
             runner.Environment.SetVariable(EnvironmentVariables.CodeHotSpotsEnable, "0");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
@@ -99,7 +99,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
 
             // By default, the endpoint profiling feature is activated
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
@@ -117,7 +117,7 @@ namespace Datadog.Profiler.IntegrationTests.CodeHotspot
             runner.TestDurationInSeconds = 20;
             runner.Environment.SetVariable(EnvironmentVariables.EndpointProfilerEnabled, "0");
 
-            using var agent = new MockDatadogAgent(_output);
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
 
             runner.Run(agent);
 
