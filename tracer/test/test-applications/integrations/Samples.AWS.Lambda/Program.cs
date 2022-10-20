@@ -16,101 +16,7 @@ namespace Samples.AWS.Lambda
 {
     public class Function : BaseFunction
     {
-        private static async Task Main(string[] args)
-        {
-            Console.WriteLine($"Is Tracer Attached: {SampleHelpers.IsProfilerAttached()}");
-            Console.WriteLine($"Tracer location: {SampleHelpers.GetTracerAssemblyLocation()}");
-
-            // See documentation at docs/development/Serverless.md
-            // These methods are run by the sample app, from the Integration test container
-            // Each invocations retrieves the location of a specific lambda instance from the env var
-            // And makes a POST request (this request is not traced) to the lambda instance running
-            // in the corresponding container. Each of the lambda instances are configured to use
-            // ONE of the handler methods described in the #handler region below.
-
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_NO_PARAM_SYNC"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_ONE_PARAM_SYNC"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_TWO_PARAMS_SYNC"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_NO_PARAM_ASYNC"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_ONE_PARAM_ASYNC"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_TWO_PARAMS_ASYNC"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_NO_PARAM_VOID"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_ONE_PARAM_VOID"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_TWO_PARAMS_VOID"));
-
-            // with context
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_NO_PARAM_SYNC_WITH_CONTEXT"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_ONE_PARAM_SYNC_WITH_CONTEXT"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_TWO_PARAMS_SYNC_WITH_CONTEXT"));
-
-            // base functions
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_BASE_NO_PARAM_SYNC"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_BASE_TWO_PARAMS_SYNC"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_BASE_ONE_PARAM_SYNC_WITH_CONTEXT"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_BASE_ONE_PARAM_ASYNC"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_BASE_TWO_PARAMS_VOID"));
-
-            // parameter types
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_STRUCT_PARAM"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_NESTED_CLASS_PARAM"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_NESTED_STRUCT_PARAM"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_GENERIC_DICT_PARAM"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_NESTED_GENERIC_DICT_PARAM"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_DOUBLY_NESTED_GENERIC_DICT_PARAM"));
-
-            // Throwing handlers
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_THROWING"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_THROWING_ASYNC"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_THROWING_ASYNC_TASK"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_THROWING_WITH_CONTEXT"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_THROWING_ASYNC_WITH_CONTEXT"));
-            Thread.Sleep(1000);
-            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_THROWING_ASYNC_TASK_WITH_CONTEXT"));
-
-            static async Task Post(string url)
-            {
-                HttpClient client = new HttpClient();
-                client.BaseAddress = new Uri(url);
-                client.DefaultRequestHeaders
-                      .Accept
-                      .Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                client.DefaultRequestHeaders.Add("x-datadog-tracing-enabled", "false");
-
-                HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Post, "/2015-03-31/functions/function/invocations");
-                request.Content = new StringContent("{}", Encoding.UTF8, "application/json");
-
-                HttpResponseMessage response = await client.SendAsync(request);
-                await response.Content.ReadAsStringAsync();
-            }
-        }
-
+        // See documentation at docs/development/Serverless.md.
         // These are the handler methods which run in the lambda containers
         // and are invoked by the lambda runtime in response to a request.
         // Each handler creates a manual scope, makes a request to a "dummy"
@@ -118,7 +24,6 @@ namespace Samples.AWS.Lambda
         // If the handler is created "with context" then the spans created inside
         // the HandleRequest method are children of a parent (distributed) context,
         // otherwise they will be root spans
-#region Handler Methods
         public object HandlerNoParamSync()
         {
             HandleRequest();
@@ -157,28 +62,34 @@ namespace Samples.AWS.Lambda
 
         public async Task<int> HandlerNoParamAsync()
         {
-            await Task.Run(() => {
-                HandleRequest();
-                Thread.Sleep(100);
-            });
+            await Task.Run(
+                () =>
+                {
+                    HandleRequest();
+                    Thread.Sleep(100);
+                });
             return 10;
         }
 
         public async Task<int> HandlerOneParamAsync(CustomInput request)
         {
-            await Task.Run(() => {
-                HandleRequest();
-                Thread.Sleep(100);
-            });
+            await Task.Run(
+                () =>
+                {
+                    HandleRequest();
+                    Thread.Sleep(100);
+                });
             return 10;
         }
 
         public async Task<int> HandlerTwoParamsAsync(CustomInput request, ILambdaContext context)
         {
-            await Task.Run(() => {
-                HandleRequest();
-                Thread.Sleep(100);
-            });
+            await Task.Run(
+                () =>
+                {
+                    HandleRequest();
+                    Thread.Sleep(100);
+                });
             return 10;
         }
 
@@ -221,18 +132,17 @@ namespace Samples.AWS.Lambda
         {
             HandleRequest();
         }
-        
-        public void HandlerDoublyNestedGenericDictionaryParam(NestedClass.InnerGeneric<string, NestedClass.InnerGeneric<string, Dictionary<string,string>>> request)
+
+        public void HandlerDoublyNestedGenericDictionaryParam(NestedClass.InnerGeneric<string, NestedClass.InnerGeneric<string, Dictionary<string, string>>> request)
         {
             HandleRequest();
         }
-        #endregion
 
         public class NestedClass
         {
             public string Field1 { get; set; }
             public int Field2 { get; set; }
-            
+
             public class InnerGeneric<TKey, TValue> : Dictionary<TKey, TValue>
             {
             }
