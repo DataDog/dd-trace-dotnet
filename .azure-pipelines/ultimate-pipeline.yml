@@ -2698,7 +2698,7 @@ stages:
       timeoutInMinutes: 30
 
       pool:
-        vmImage: windows-2019
+        vmImage: azure-windows-scale-set
 
       steps:
       - template: steps/clone-repo.yml
