@@ -12,7 +12,9 @@ using System.Threading;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Ci;
@@ -74,6 +76,43 @@ public sealed class TestModule
             OSPlatform = frameworkDescription.OSPlatform,
             OSVersion = Environment.OSVersion.VersionString,
         };
+
+        if (tags.OSPlatform == OSPlatformName.Linux)
+        {
+            var hostMetadata = HostMetadata.Instance;
+            if (!string.IsNullOrEmpty(hostMetadata.KernelRelease))
+            {
+                tags.OSVersion = hostMetadata.KernelRelease + hostMetadata.KernelVersion;
+            }
+        }
+        else if (tags.OSPlatform == OSPlatformName.MacOS)
+        {
+            var context = SynchronizationContext.Current;
+            try
+            {
+                if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
+                {
+                    SynchronizationContext.SetSynchronizationContext(null);
+                }
+
+                var osxVersion = ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("uname", "-r")).GetAwaiter().GetResult();
+                if (!string.IsNullOrEmpty(osxVersion))
+                {
+                    tags.OSVersion = osxVersion;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, ex.Message);
+            }
+            finally
+            {
+                if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
+                {
+                    SynchronizationContext.SetSynchronizationContext(null);
+                }
+            }
+        }
 
         if (environment.VariablesToBypass is { } variablesToBypass)
         {

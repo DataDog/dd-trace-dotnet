@@ -1138,7 +1138,7 @@ partial class Build
                                 .SetLogsDirectory(TestLogsDirectory)
                                 .When(CodeCoverage, ConfigureCodeCoverage)
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
-                                .WithDatadogLogger()
+                                // .WithDatadogLogger() // There's still a problem when activating this on these tests due the Datadog.Trace.dll requirements
                                 .SetProjectFile(project));
         }
         finally
