@@ -947,6 +947,7 @@ stages:
       displayName: RunWindowsIisTracerIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DD_LOGGER_ENABLED: false
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1406,6 +1407,8 @@ stages:
         projectName: ddtrace_$(Build.BuildNumber)
         additionalDockerComposeFiles: |
           docker-compose.serverless.yml
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
 
     - script: |      
@@ -1484,18 +1487,21 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildProfilerLinuxIntegrationTests"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
         command: "RunProfilerCpuLimitTests"
         extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
         command: "RunProfilerCpuLimitTests"
         extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - task: DockerCompose@0
       displayName: docker-compose run --no-deps ProfilerIntegrationTests
@@ -1503,8 +1509,11 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
+          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
         dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e IncludeTestsRequiringDocker=false ProfilerIntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - publish: profiler/build_data
       artifact: continuous-profiler-logs_integration_tests_linux_$(baseImage)_$(System.JobAttempt)
