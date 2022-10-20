@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var requests = 9 // param tests
                                   + 3 // param with context
                                   + 5 // base instrumentation
-                                  + 4 // other parameter types
+                                  + 6 // other parameter types
                                   + 3 // throwing (manual only)
                                   + 3; // throwing with context
 
