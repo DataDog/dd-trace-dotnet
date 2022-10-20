@@ -39,8 +39,9 @@
         "DD_VERSION": "1.0.0",
         "DD_TRACE_HEADER_TAGS": "sample.correlation.identifier, Server",
         "DD_TRACE_DEBUG": "1",
-        "DD_ENV": "asm-samples"
-
+        "DD_ENV": "asm-samples",
+        "DD_IAST_ENABLED": "true",
+        "DD_IAST_DEDUPLICATION_ENABLED": "false"
       },
       "Logging": {
         "LogLevel": {
