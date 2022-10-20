@@ -225,7 +225,7 @@ namespace Datadog.Trace.Tests.Sampling
             var rules = new List<SpanSamplingRule>() { allowHalfRule };
             var sampler = new SpanSampler(rules);
 
-            RunSamplerTest(sampler, 500, expectedAutoKeepRate: 0.5f, expectedUserKeepRate: 0.5f, acceptableVariancePercent: 0.1f);
+            RunSamplerTest(sampler, 500, expectedAutoKeepRate: 0.5f, expectedUserKeepRate: 0.5f, acceptableVariancePercent: 0.2f);
         }
 
         /// <summary>
@@ -252,21 +252,15 @@ namespace Datadog.Trace.Tests.Sampling
                 }
             }
 
-            // AUTO_KEEP
+                        // AUTO_KEEP
             var autoKeepRate = numberOfAutoKeep / (float)iterations;
-            var autoKeepRateLowerLimit = expectedAutoKeepRate * (1 - acceptableVariancePercent);
-            var autoKeepRateUpperLimit = expectedAutoKeepRate * (1 + acceptableVariancePercent);
-
-            var autoKeepRateWithinLimits = autoKeepRate >= autoKeepRateLowerLimit && autoKeepRate <= autoKeepRateUpperLimit;
-            autoKeepRateWithinLimits.Should().BeTrue($"Sampling AUTO_KEEP rate expected between {autoKeepRateLowerLimit} and {autoKeepRateUpperLimit}, actual rate is {autoKeepRate}.");
+            var autoKeepPrecision = expectedAutoKeepRate * acceptableVariancePercent;
+            autoKeepRate.Should().BeApproximately(expectedAutoKeepRate, autoKeepPrecision, $"Sampling AUTO_KEEP rate should be approximately expected value.");
 
             // USER_KEEP (aka MANUAL_KEEP)
             var userKeepRate = numberOfUserKeep / (float)iterations;
-            var userKeepRateLowerLimit = expectedUserKeepRate * (1 - acceptableVariancePercent);
-            var userKeepRateUpperLimit = expectedUserKeepRate * (1 + acceptableVariancePercent);
-
-            var userKeepRateWithinLimits = userKeepRate >= userKeepRateLowerLimit && userKeepRate <= userKeepRateUpperLimit;
-            userKeepRateWithinLimits.Should().BeTrue($"Sampling USER_KEEP rate expected between {userKeepRateLowerLimit} and {userKeepRateUpperLimit}, actual rate is {userKeepRate}.");
+            var userKeepPrecision = expectedUserKeepRate * acceptableVariancePercent;
+            userKeepRate.Should().BeApproximately(expectedUserKeepRate, userKeepPrecision, $"Sampling USER_KEEP rate should be approximately expected value.");
         }
 
         private Span GetSpan(ulong traceId)

@@ -44,6 +44,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private string? _lastPollError;
         private bool _isPollingStarted;
         private bool _isRcmEnabled;
+        private string? _backendClientState;
 
         private RemoteConfigurationManager(
             IDiscoveryService discoveryService,
@@ -187,6 +188,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 {
                     ProcessResponse(response, products);
                     _targetsVersion = response.Targets.Signed.Version;
+                    _backendClientState = response.Targets.Signed.Custom?.OpaqueBackendState;
                 }
             }
             catch (Exception e)
@@ -217,7 +219,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             Array.Reverse(capabilitiesArray);
 #endif
 
-            var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, _lastPollError != null, _lastPollError);
+            var rcmState = new RcmClientState(_rootVersion, _targetsVersion, configStates, _lastPollError != null, _lastPollError, _backendClientState);
             var rcmClient = new RcmClient(_id, products.Keys, _rcmTracer, rcmState, capabilitiesArray);
             var rcmRequest = new GetRcmRequest(rcmClient, cachedTargetFiles);
 

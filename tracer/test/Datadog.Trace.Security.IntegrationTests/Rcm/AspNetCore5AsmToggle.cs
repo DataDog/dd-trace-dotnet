@@ -51,10 +51,11 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             var spans1 = await SendRequestsAsync(agent, url);
 
-            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures() { Asm = new Asm() { Enabled = false } }, "1") }, "ASM_FEATURES");
+            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures() { Asm = new Asm() { Enabled = false } }, "1") }, "ASM_FEATURES", "first");
 
             CheckAckState(request1, expectedState, null, "First RCM call");
             CheckCapabilities(request1, expectedCapabilities, "First RCM call");
+            request1.Client.State.BackendClientState.Should().Be("first");
             if (enableSecurity == true)
             {
                 await logEntryWatcher.WaitForLogEntry(AppSecDisabledMessage(), LogEntryWatcherTimeout);
@@ -65,7 +66,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
 
             var spans2 = await SendRequestsAsync(agent, url);
 
-            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures() { Asm = new Asm() { Enabled = true } }, "2") }, "ASM_FEATURES");
+            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures() { Asm = new Asm() { Enabled = true } }, "2") }, "ASM_FEATURES", "second");
 
             CheckAckState(request2, expectedState, null, "Second RCM call");
             CheckCapabilities(request2, expectedCapabilities, "Second RCM call");
@@ -74,10 +75,10 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
                 await logEntryWatcher.WaitForLogEntry(AppSecEnabledMessage(), LogEntryWatcherTimeout);
             }
 
-            CheckAckState(request2, expectedState, null, "Second RCM call");
-            CheckCapabilities(request2, expectedCapabilities, "Second RCM call");
-
             var spans3 = await SendRequestsAsync(agent, url);
+
+            var request3 = await agent.WaitRcmRequestAndReturnLast();
+            request3.Client.State.BackendClientState.Should().Be("second");
 
             var spans = new List<MockSpan>();
             spans.AddRange(spans1);
