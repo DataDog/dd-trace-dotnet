@@ -10,6 +10,7 @@
 #include <libunwind.h>
 #include <mutex>
 #include <unordered_map>
+#include <errno.h>
 
 #include "Log.h"
 #include "ManagedThreadInfo.h"
@@ -245,6 +246,11 @@ bool LinuxStackFramesCollector::CanCollect(int32_t threadId, pid_t processId) co
 
 bool LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal, siginfo_t* info, void* context)
 {
+    // Libunwind can overwrite the value of errno - save it beforehand and restore it at the end
+    auto oldErrno = errno;
+
+    bool success = false;
+
     LinuxStackFramesCollector* pCollectorInstance = s_pInstanceCurrentlyStackWalking;
 
     if (pCollectorInstance != nullptr)
@@ -267,14 +273,14 @@ bool LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal, sigi
                 // release the lock
                 stackWalkInProgressLock.unlock();
                 pCollectorInstance->NotifyStackWalkCompleted(resultErrorCode);
-                return true;
+                success = true;
             }
         }
         // no need to release the lock and notify. The sampling thread must wait until its signal is handled correctly
     }
 
-    // if we were in a race, we just call the other handler
-    return false;
+    errno = oldErrno;
+    return success;
 }
 
 void LinuxStackFramesCollector::ErrorStatistics::Add(std::int32_t errorCode)
