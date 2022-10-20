@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -247,6 +248,58 @@ namespace Datadog.Trace.Ci
             }
 
             return factory;
+        }
+
+        internal static string GetOperatingSystemVersion()
+        {
+            switch (FrameworkDescription.Instance.OSPlatform)
+            {
+                case OSPlatformName.Linux:
+                    try
+                    {
+                        if (File.Exists(@"/proc/version"))
+                        {
+                            // e.g. Linux version 5.10.60.1-microsoft-standard-WSL2 (oe-user@oe-host) (x86_64-msft-linux-gcc (GCC) 9.3.0, GNU ld (GNU Binutils) 2.34.0.20200220) #1 SMP Wed Aug 25 23:20:18 UTC 2021
+                            return File.ReadAllText("/proc/version");
+                        }
+                    }
+                    catch
+                    {
+                        // May be permissions issues etc
+                    }
+
+                    break;
+                case OSPlatformName.MacOS:
+                    var context = SynchronizationContext.Current;
+                    try
+                    {
+                        if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
+                        {
+                            SynchronizationContext.SetSynchronizationContext(null);
+                        }
+
+                        var osxVersion = ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("uname", "-r")).GetAwaiter().GetResult();
+                        if (!string.IsNullOrEmpty(osxVersion))
+                        {
+                            return osxVersion!;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, ex.Message);
+                    }
+                    finally
+                    {
+                        if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
+                        {
+                            SynchronizationContext.SetSynchronizationContext(null);
+                        }
+                    }
+
+                    break;
+            }
+
+            return Environment.OSVersion.VersionString;
         }
 
         private static async Task InternalFlushAsync()

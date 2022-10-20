@@ -74,45 +74,8 @@ public sealed class TestModule
             RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
             OSArchitecture = frameworkDescription.OSArchitecture,
             OSPlatform = frameworkDescription.OSPlatform,
-            OSVersion = Environment.OSVersion.VersionString,
+            OSVersion = CIVisibility.GetOperatingSystemVersion(),
         };
-
-        if (tags.OSPlatform == OSPlatformName.Linux)
-        {
-            var hostMetadata = HostMetadata.Instance;
-            if (!string.IsNullOrEmpty(hostMetadata.KernelRelease))
-            {
-                tags.OSVersion = hostMetadata.KernelRelease + hostMetadata.KernelVersion;
-            }
-        }
-        else if (tags.OSPlatform == OSPlatformName.MacOS)
-        {
-            var context = SynchronizationContext.Current;
-            try
-            {
-                if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
-                {
-                    SynchronizationContext.SetSynchronizationContext(null);
-                }
-
-                var osxVersion = ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("uname", "-r")).GetAwaiter().GetResult();
-                if (!string.IsNullOrEmpty(osxVersion))
-                {
-                    tags.OSVersion = osxVersion;
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, ex.Message);
-            }
-            finally
-            {
-                if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
-                {
-                    SynchronizationContext.SetSynchronizationContext(null);
-                }
-            }
-        }
 
         if (environment.VariablesToBypass is { } variablesToBypass)
         {
