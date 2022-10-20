@@ -568,7 +568,7 @@ namespace Datadog.Trace.IntegrationTests
                 // occurrence would be considered "rare". However, the RareSampler
                 // only runs after the PrioritySampler, so assert the metric "_dd.rare"
                 // based on the SamplingPriority
-                bool expectRareMetric = expectStats && payload[0].GetMetric(Metrics.SamplingPriority) <=0;
+                bool expectRareMetric = expectStats && payload[0].GetMetric(Metrics.SamplingPriority) <= 0;
                 if (expectRareMetric)
                 {
                     payload[0].GetMetric("_dd.rare").Should().Be(1);
