@@ -1337,7 +1337,8 @@ stages:
           serverless-lambda-throwing-async-task \
           serverless-lambda-throwing-with-context \
           serverless-lambda-throwing-async-with-context \
-          serverless-lambda-throwing-async-task-with-context
+          serverless-lambda-throwing-async-task-with-context \
+          serverless-lambda-top-level-program-with-context \
 
       env:
         baseImage: $(baseImage)

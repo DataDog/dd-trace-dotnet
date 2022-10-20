@@ -69,6 +69,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             "AWS_LAMBDA_ENDPOINT_THROWING_WITH_CONTEXT",
             "AWS_LAMBDA_ENDPOINT_THROWING_ASYNC_WITH_CONTEXT",
             "AWS_LAMBDA_ENDPOINT_THROWING_ASYNC_TASK_WITH_CONTEXT",
+            // top level functions
+            "AWS_LAMBDA_ENDPOINT_TOP_LEVEL_PROGRAM_WITH_CONTEXT",
         };
 
         [SkippableFact]
