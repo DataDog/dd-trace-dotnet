@@ -61,7 +61,7 @@ internal class IastModule
         var filename = frameInfo.StackFrame?.GetFileName();
         var vulnerability = new Vulnerability(vulnerabilityType, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null), new Evidence(evidenceValue));
 
-        if (!iast.Settings.DeduplicationEnabled || HashBasedDeduplication.Add(vulnerability))
+        if (!iast.Settings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
             // The VulnerabilityBatch class is not very useful right now, but we will need it when handling requests
             var batch = new VulnerabilityBatch();
