@@ -10,9 +10,6 @@ namespace Datadog.Trace.Iast;
 internal class HashBasedDeduplication
 {
     public const int MaximumSize = 1000;
-    private static readonly object GlobalInstanceLock = new();
-    private static HashBasedDeduplication _instance;
-    private static volatile bool _globalInstanceInitialized;
     private HashSet<int> vulnerabilityHashes = new();
 
     /// <summary>
@@ -24,29 +21,7 @@ internal class HashBasedDeduplication
     {
     }
 
-    public static HashBasedDeduplication Instance
-    {
-        get
-        {
-            if (_globalInstanceInitialized)
-            {
-                return _instance;
-            }
-
-            lock (GlobalInstanceLock)
-            {
-                if (_globalInstanceInitialized)
-                {
-                    return _instance;
-                }
-
-                _instance = new HashBasedDeduplication();
-                _globalInstanceInitialized = true;
-            }
-
-            return _instance;
-        }
-    }
+    public static HashBasedDeduplication Instance { get; } = new();
 
     public bool Add(Vulnerability vulnerability)
     {
