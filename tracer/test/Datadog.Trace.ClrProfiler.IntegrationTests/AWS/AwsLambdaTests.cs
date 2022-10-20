@@ -89,11 +89,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
             using var extensionNoContext = new MockLambdaExtension(shouldSendContext: false, port: 9003, Output);
             using var agent = EnvironmentHelper.GetMockAgent(fixedPort: 5002);
             agent.Output = Output;
-            
+
             // See documentation at docs/development/Serverless.md for structure
             // Each variable points to a different lambda handler instance
             await SendRequests(HandlerVariables);
-            var expectedSpans = HandlerVariables.Count * 3; // Each handler generates 2 spans + the extension span 
+            var expectedSpans = HandlerVariables.Count * 3; // Each handler generates 2 spans + the extension span
 
             var spans = agent.WaitForSpans(expectedSpans, 15_000).ToArray();
 
