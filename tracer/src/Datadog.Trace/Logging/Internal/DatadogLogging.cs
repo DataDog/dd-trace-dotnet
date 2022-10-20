@@ -11,6 +11,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
+using Datadog.Trace.Vendors.Serilog.Core.Pipeline;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.Serilog.Sinks.File;
 
@@ -27,14 +28,6 @@ namespace Datadog.Trace.Logging
 
         static DatadogLogging()
         {
-            // No-op for if we fail to construct the file logger
-            var nullRateLimiter = new NullLogRateLimiter();
-            ILogger internalLogger = new LoggerConfiguration()
-                                    .WriteTo.Sink<NullSink>()
-                                    .CreateLogger();
-
-            SharedLogger = new DatadogSerilogLogger(internalLogger, nullRateLimiter);
-
             try
             {
                 if (GlobalSettings.Instance.DebugEnabled)
@@ -97,19 +90,31 @@ namespace Datadog.Trace.Logging
                     // At all costs, make sure the logger works when possible.
                 }
 
-                internalLogger = loggerConfiguration.CreateLogger();
-                SharedLogger = new DatadogSerilogLogger(internalLogger, nullRateLimiter);
+                var internalLogger = loggerConfiguration.CreateLogger();
 
-                var rate = GetRateLimit();
-                ILogRateLimiter rateLimiter = rate == 0
-                    ? nullRateLimiter
-                    : new LogRateLimiter(rate);
+                ILogRateLimiter rateLimiter;
+
+                try
+                {
+                    var rate = GetRateLimit();
+
+                    rateLimiter = rate == 0
+                        ? new NullLogRateLimiter()
+                        : new LogRateLimiter(rate);
+                }
+                catch
+                {
+                    rateLimiter = new NullLogRateLimiter();
+                }
 
                 SharedLogger = new DatadogSerilogLogger(internalLogger, rateLimiter);
             }
             catch
             {
                 // Don't let this exception bubble up as this logger is for debugging and is non-critical
+
+                // Use a fallback logger
+                SharedLogger = new DatadogSerilogLogger(SilentLogger.Instance, new NullLogRateLimiter());
             }
         }
 
@@ -127,7 +132,7 @@ namespace Datadog.Trace.Logging
 
         internal static void CloseAndFlush()
         {
-            Log.CloseAndFlush();
+            SharedLogger.CloseAndFlush();
         }
 
         internal static void Reset()
