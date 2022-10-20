@@ -8,6 +8,7 @@ using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests.Iast
 {
+    [CollectionDefinition(nameof(HashBasedDeduplicationTests), DisableParallelization = true)]
     public class HashBasedDeduplicationTests
     {
         [Fact]
