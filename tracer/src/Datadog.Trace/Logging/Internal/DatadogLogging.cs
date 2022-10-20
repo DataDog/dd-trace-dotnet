@@ -125,6 +125,11 @@ namespace Datadog.Trace.Logging
             return GetLoggerFor(typeof(T));
         }
 
+        internal static void CloseAndFlush()
+        {
+            Log.CloseAndFlush();
+        }
+
         internal static void Reset()
         {
             LoggingLevelSwitch.MinimumLevel = DefaultLogLevel;
