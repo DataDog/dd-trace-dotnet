@@ -149,6 +149,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -172,6 +173,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -195,6 +197,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -218,6 +221,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -241,6 +245,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -264,6 +269,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -287,6 +293,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -310,6 +317,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -333,6 +341,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -356,6 +365,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -379,6 +389,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -402,6 +413,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -425,6 +437,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -448,6 +461,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -471,6 +485,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -494,6 +509,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -517,6 +533,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -540,6 +557,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -563,6 +581,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -586,6 +605,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -609,6 +629,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -632,6 +653,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -655,6 +677,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -678,6 +701,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -701,6 +725,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -724,6 +749,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -747,6 +773,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -770,6 +797,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
@@ -793,6 +821,7 @@ services:
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
     - DD_TRACE_DEBUG=1
+    - DD_SERVICE=Samples.Aws.Lambda
     ports:
     - "8080"
     volumes:
