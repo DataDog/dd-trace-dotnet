@@ -36,7 +36,7 @@ public class DeduplicationTests : TestHelper
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", deduplicationEnabled.ToString());
 
         int expectedSpanCount = deduplicationEnabled ? 1 : 5;
-        var filename = deduplicationEnabled ? "deduplication.deduplicated" : "deduplication.duplicated";
+        var filename = deduplicationEnabled ? "iast.deduplication.deduplicated" : "iast.deduplication.duplicated";
 
         using var agent = EnvironmentHelper.GetMockAgent();
         using var process = RunSampleAndWaitForExit(agent, "5");
