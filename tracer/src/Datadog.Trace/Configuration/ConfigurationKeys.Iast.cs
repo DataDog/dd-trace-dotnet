@@ -27,7 +27,8 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Configuration key for enabling or disabling the vulnerability duplication detection.
-            /// Default is value is true (enabled).
+            /// When enabled, a vulnerability will only be reported once in the lifetime of an app,
+            /// instead of on every usage. Default is value is true (enabled).
             /// </summary>
             public const string IsIastDeduplicationEnabled = "DD_IAST_DEDUPLICATION_ENABLED";
         }
