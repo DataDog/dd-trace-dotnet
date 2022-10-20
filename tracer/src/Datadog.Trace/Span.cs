@@ -39,10 +39,8 @@ namespace Datadog.Trace
             StartTime = start ?? Context.TraceContext.UtcNow;
 
             Log.Debug(
-                "Span started: [s_id: {SpanID}, p_id: {ParentId}, t_id: {TraceId}]",
-                SpanId,
-                Context.ParentId,
-                TraceId);
+                "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] for (Service: {ServiceName}, Resource: {ResourceName}, Operation: {OperationName}, Tags: [{Tags}])",
+                new object[] { SpanId, Context.ParentId, TraceId, ServiceName, ResourceName, OperationName, Tags });
         }
 
         /// <summary>
