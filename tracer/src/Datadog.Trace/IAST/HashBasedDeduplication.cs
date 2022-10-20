@@ -10,12 +10,7 @@ namespace Datadog.Trace.Iast;
 internal static class HashBasedDeduplication
 {
     public const int MaximumSize = 1000;
-    private static HashSet<int> vulnerabilityHashes;
-
-    static HashBasedDeduplication()
-    {
-        vulnerabilityHashes = new HashSet<int>();
-    }
+    private static HashSet<int> vulnerabilityHashes = new();
 
     public static void Clear()
     {
