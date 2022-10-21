@@ -298,6 +298,23 @@ partial class Build : NukeBuild
         {
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.Tool))
+                .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetConfiguration(BuildConfiguration)
+                .SetNoWarnDotNetCore3()
+                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
+                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "dd-trace")
+                .SetProperty("BuildStandalone", "false"));
+        });
+
+    Target PackRunnerToolNuget => _ => _
+        .Unlisted()
+        .After(CreateBundleHome, ExtractDebugInfoLinux, BuildRunnerTool)
+        .Executes(() =>
+        {
+            DotNetPack(x => x
+                // we have to restore and build dependencies to make sure we remove the pdb and xml files
+                .SetProject(Solution.GetProject(Projects.Tool))
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
@@ -309,9 +326,8 @@ partial class Build : NukeBuild
         });
 
     Target BuildStandaloneTool => _ => _
-        // Currently requires manual copying of files into expected locations
         .Unlisted()
-        .After(CreateBundleHome, ExtractDebugInfoLinux)
+        .After(CreateBundleHome, ExtractDebugInfoLinux, PackRunnerToolNuget)
         .Executes(() =>
         {
             var runtimes = new[] 

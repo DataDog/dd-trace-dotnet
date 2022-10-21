@@ -90,7 +90,7 @@
         <ToolCommandName>dd-trace</ToolCommandName>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
         <PackageId>dd-trace</PackageId>
         <OutputPath>bin\$(Configuration)\Tool</OutputPath>
       </PropertyGroup>
