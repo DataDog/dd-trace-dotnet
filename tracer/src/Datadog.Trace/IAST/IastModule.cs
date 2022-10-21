@@ -15,6 +15,7 @@ internal class IastModule
 {
     private const string OperationNameWeakHash = "weak_hashing";
     private const string OperationNameWeakCipher = "weak_cipher";
+    private const string IastOrigin = "iast";
 
     public IastModule()
     {
@@ -74,6 +75,7 @@ internal class IastModule
                 IastEnabled = "1"
             };
 
+            tags.SetTag(Tags.Origin, IastOrigin);
             var scope = tracer.StartActiveInternal(operationName, tags: tags);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
 
