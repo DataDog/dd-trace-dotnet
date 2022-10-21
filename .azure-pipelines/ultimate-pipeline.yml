@@ -2717,7 +2717,6 @@ stages:
         parameters:
           masterCommitId: $(masterCommitId)
       - template: steps/install-latest-dotnet-sdk.yml
-      - template: steps/restore-working-directory.yml
 
       - task: DownloadPipelineArtifact@2
         inputs:
