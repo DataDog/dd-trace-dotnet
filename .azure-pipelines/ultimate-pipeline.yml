@@ -2710,17 +2710,16 @@ stages:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
     - job: Windows
-      timeoutInMinutes: 30
+      timeoutInMinutes: 40
 
       pool:
-        name: azure-windows-scale-set
+        vmImage: windows-2019
 
       steps:
       - template: steps/clone-repo.yml
         parameters:
           masterCommitId: $(masterCommitId)
       - template: steps/install-latest-dotnet-sdk.yml
-      - template: steps/restore-working-directory.yml
 
       - task: DownloadPipelineArtifact@2
         inputs:
