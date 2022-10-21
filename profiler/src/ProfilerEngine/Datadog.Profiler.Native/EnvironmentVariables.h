@@ -39,6 +39,8 @@ public:
     inline static const shared::WSTRING ContentionSampleLimit       = WStr("DD_INTERNAL_PROFILING_CONTENTION_SAMPLE_LIMIT");
     inline static const shared::WSTRING ContentionDurationThreshold = WStr("DD_INTERNAL_PROFILING_CONTENTION_DURATION_THRESHOLD");
     inline static const shared::WSTRING CpuWallTimeSamplingRate     = WStr("DD_INTERNAL_PROFILING_SAMPLING_RATE");
+    inline static const shared::WSTRING WalltimeThreadsThreshold    = WStr("DD_INTERNAL_PROFILING_WALLTIME_THREADS_THRESHOLD");
+    inline static const shared::WSTRING CpuTimeThreadsThreshold     = WStr("DD_INTERNAL_PROFILING_CPUTIME_THREADS_THRESHOLD");
     inline static const shared::WSTRING ProfilesOutputDir           = WStr("DD_INTERNAL_PROFILING_OUTPUT_DIR");
     inline static const shared::WSTRING DevelopmentConfiguration    = WStr("DD_INTERNAL_USE_DEVELOPMENT_CONFIGURATION");
     inline static const shared::WSTRING Agentless                   = WStr("DD_PROFILING_AGENTLESS");
