@@ -112,9 +112,11 @@ namespace Datadog.Trace.Logging
             catch
             {
                 // Don't let this exception bubble up as this logger is for debugging and is non-critical
-
-                // Use a fallback logger
-                SharedLogger = new DatadogSerilogLogger(SilentLogger.Instance, new NullLogRateLimiter());
+            }
+            finally
+            {
+                // Use a fallback logger if the logger initialization failed
+                SharedLogger ??= new DatadogSerilogLogger(SilentLogger.Instance, new NullLogRateLimiter());
             }
         }
 
