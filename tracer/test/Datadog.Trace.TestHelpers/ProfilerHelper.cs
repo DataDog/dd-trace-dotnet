@@ -38,7 +38,8 @@ namespace Datadog.Trace.TestHelpers
                 startInfo.Environment,
                 processToProfile,
                 enableSecurity,
-                externalRulesFile);
+                externalRulesFile,
+                enableIast);
 
             startInfo.UseShellExecute = false;
             startInfo.CreateNoWindow = true;

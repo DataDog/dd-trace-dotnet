@@ -88,7 +88,8 @@ namespace Datadog.Trace.Security.IntegrationTests
                 arguments: null,
                 enableSecurity: enableSecurity,
                 externalRulesFile: externalRulesFile,
-                traceRateLimit: traceRateLimit);
+                traceRateLimit: traceRateLimit,
+                enableIast: enableIast);
 
             return Task.FromResult(_agent);
         }
@@ -341,7 +342,8 @@ namespace Datadog.Trace.Security.IntegrationTests
             string framework = "",
             bool? enableSecurity = true,
             string externalRulesFile = null,
-            int? traceRateLimit = null)
+            int? traceRateLimit = null,
+            bool? enableIast = false)
         {
             var sampleAppPath = EnvironmentHelper.GetSampleApplicationPath(packageVersion, framework);
             // get path to sample app that the profiler will attach to
@@ -367,7 +369,8 @@ namespace Datadog.Trace.Security.IntegrationTests
                 args,
                 aspNetCorePort: 0,
                 enableSecurity: enableSecurity,
-                externalRulesFile: externalRulesFile);
+                externalRulesFile: externalRulesFile,
+                enableIast: enableIast);
 
             // then wait server ready
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
