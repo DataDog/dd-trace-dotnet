@@ -49,6 +49,7 @@ public:
     int32_t ContentionDurationThreshold() const override;
     std::chrono::nanoseconds CpuWallTimeSamplingRate() const override;
     const std::string& GetNamedPipeName() const override;
+    bool IsTimestampsAsLabelEnabled() const override;
     int32_t WalltimeThreadsThreshold() const override;
     int32_t CpuThreadsThreshold() const override;
 
@@ -113,4 +114,5 @@ private:
 
     double _minimumCores;
     std::string _namedPipeName;
+    bool _isTimestampsAsLabelEnabled;
 };
