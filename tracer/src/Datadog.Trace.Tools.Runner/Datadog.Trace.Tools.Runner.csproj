@@ -45,6 +45,13 @@
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
 
+        <!-- We actually WANT to include these, but single-file spits them out-->
+        <!-- next to the exe, instead of bundling them inside, so we can't -->
+        <Content Update="..\Datadog.Trace.Bundle\home\**\*.pdb">
+          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+          <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+        </Content>
+
         <Content Update="..\Datadog.Trace.Bundle\home\**\*.xml">
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
