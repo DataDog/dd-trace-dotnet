@@ -28,6 +28,10 @@ namespace Datadog.Trace.Logging
 
         static DatadogLogging()
         {
+            // Initialize the fallback logger right away
+            // because some part of the code might produce logs while we initialize the actual logger
+            SharedLogger = new DatadogSerilogLogger(SilentLogger.Instance, new NullLogRateLimiter());
+
             try
             {
                 if (GlobalSettings.Instance.DebugEnabled)
@@ -112,11 +116,6 @@ namespace Datadog.Trace.Logging
             catch
             {
                 // Don't let this exception bubble up as this logger is for debugging and is non-critical
-            }
-            finally
-            {
-                // Use a fallback logger if the logger initialization failed
-                SharedLogger ??= new DatadogSerilogLogger(SilentLogger.Instance, new NullLogRateLimiter());
             }
         }
 
