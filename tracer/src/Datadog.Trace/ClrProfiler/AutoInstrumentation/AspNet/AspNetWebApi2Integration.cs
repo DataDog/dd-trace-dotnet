@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -68,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                     }
 
                     const string httpContextKey = "MS_HttpContext";
-                    if (!tracer.Settings.IpHeaderDisabled)
+                    if (Security.Instance.Settings.Enabled)
                     {
                         if (request.Properties.TryGetValue("MS_OwinContext", out var owinContextObj))
                         {
