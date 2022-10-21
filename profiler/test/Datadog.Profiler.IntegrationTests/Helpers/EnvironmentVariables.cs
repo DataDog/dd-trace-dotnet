@@ -19,5 +19,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         public const string ContentionProfilerEnabled = "DD_PROFILING_CONTENTION_ENABLED";
         public const string EndpointProfilerEnabled = "DD_PROFILING_ENDPOINT_COLLECTION_ENABLED";
         public const string NamedPipeName = "DD_TRACE_PIPE_NAME";
+        public const string TimestampsAsLabelEnabled = "DD_INTERNAL_PROFILING_TIMESTAMPS_AS_LABEL_ENABLED";
     }
 }

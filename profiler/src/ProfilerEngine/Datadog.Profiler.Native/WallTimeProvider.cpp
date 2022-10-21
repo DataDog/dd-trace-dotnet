@@ -21,9 +21,10 @@ WallTimeProvider::WallTimeProvider(
     IThreadsCpuManager* pThreadsCpuManager,
     IFrameStore* pFrameStore,
     IAppDomainStore* pAppDomainStore,
-    IRuntimeIdStore* pRuntimeIdStore
+    IRuntimeIdStore* pRuntimeIdStore,
+    IConfiguration* pConfiguration
     )
     :
-    CollectorBase<RawWallTimeSample>("WallTimeProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore)
+    CollectorBase<RawWallTimeSample>("WallTimeProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
 {
 }

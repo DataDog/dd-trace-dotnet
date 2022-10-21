@@ -58,6 +58,7 @@ Configuration::Configuration()
     _cpuWallTimeSamplingRate = ExtractCpuWallTimeSamplingRate();
     _minimumCores = GetEnvironmentValue<double>(EnvironmentVariables::CoreMinimumOverride, 1.0);
     _namedPipeName = GetEnvironmentValue(EnvironmentVariables::NamedPipeName, DefaultEmptyString);
+    _isTimestampsAsLabelEnabled = GetEnvironmentValue(EnvironmentVariables::TimestampsAsLabelEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -280,6 +281,12 @@ const std::string& Configuration::GetNamedPipeName() const
 {
     return _namedPipeName;
 }
+
+bool Configuration::IsTimestampsAsLabelEnabled() const
+{
+    return _isTimestampsAsLabelEnabled;
+}
+
 
 //
 // shared::TryParse does not work on Linux

@@ -26,6 +26,7 @@ public:
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAssemblyStore,
-        IRuntimeIdStore* pRuntimeIdStore
+        IRuntimeIdStore* pRuntimeIdStore,
+        IConfiguration* pConfiguration
         );
 };
