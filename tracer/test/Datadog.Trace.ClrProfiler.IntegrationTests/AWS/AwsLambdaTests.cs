@@ -3,16 +3,16 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP3_1
+#if NETCOREAPP3_1_OR_GREATER
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using FluentAssertions.Execution;
-using Newtonsoft.Json;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -21,8 +21,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 {
     [UsesVerify]
     [Trait("RequiresDockerDependency", "true")]
-    public class AwsLambdaTests : TestHelper, IDisposable
+    public class AwsLambdaTests : TestHelper
     {
+        private static readonly Regex StackRegex = new(@"(      error.stack:)(?:\n|\r){1,2}(?:[^,]*(?:\n|\r){1,2})+.*(,(?:\r|\n){1,2})");
+        private static readonly Regex ErrorMsgRegex = new(@"(      error.msg:).*(,(\r|\n){1,2})");
+
         public AwsLambdaTests(ITestOutputHelper output)
             : base("AWS.Lambda", output)
         {
@@ -79,6 +82,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                               .ToList();
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
+
+                // We get different stack traces from the exception in each framework, so scrub them to all look the same
+                settings.AddRegexScrubber(StackRegex, "$1 Cannot assign requested address (SocketException)$2");
+                settings.AddRegexScrubber(ErrorMsgRegex, "$1 Cannot assign requested address$2");
+
                 await VerifyHelper.VerifySpans(allSpans, settings)
                                   .UseFileName(nameof(AwsLambdaTests));
             }

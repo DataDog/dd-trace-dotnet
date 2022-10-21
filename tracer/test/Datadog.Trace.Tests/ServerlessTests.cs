@@ -22,9 +22,9 @@ namespace Datadog.Trace.Tests
             var originalValue = Environment.GetEnvironmentVariable(FunctionNameEnvVar);
             Environment.SetEnvironmentVariable(FunctionNameEnvVar, string.Empty);
             string path = Directory.GetCurrentDirectory() + "/invalid";
-            var res = Serverless.IsRunningInLambda(path);
+            var res = Serverless.LambdaMetadata.Create(path);
             Environment.SetEnvironmentVariable(FunctionNameEnvVar, originalValue);
-            res.Should().Be(false);
+            res.IsRunningInLambda.Should().BeFalse();
         }
 
         [Fact]
@@ -33,9 +33,9 @@ namespace Datadog.Trace.Tests
             var originalValue = Environment.GetEnvironmentVariable(FunctionNameEnvVar);
             Environment.SetEnvironmentVariable(FunctionNameEnvVar, "my-test-function");
             string path = Directory.GetCurrentDirectory() + "/invalid";
-            var res = Serverless.IsRunningInLambda(path);
+            var res = Serverless.LambdaMetadata.Create(path);
             Environment.SetEnvironmentVariable(FunctionNameEnvVar, originalValue);
-            res.Should().Be(false);
+            res.IsRunningInLambda.Should().BeFalse();
         }
 
         [Fact]
@@ -45,9 +45,9 @@ namespace Datadog.Trace.Tests
             Environment.SetEnvironmentVariable(FunctionNameEnvVar, string.Empty);
             string currentDirectory = Directory.GetCurrentDirectory();
             string existingFile = Directory.GetFiles(currentDirectory)[0];
-            var res = Serverless.IsRunningInLambda(existingFile);
+            var res = Serverless.LambdaMetadata.Create(existingFile);
             Environment.SetEnvironmentVariable(FunctionNameEnvVar, originalValue);
-            res.Should().Be(false);
+            res.IsRunningInLambda.Should().BeFalse();
         }
 
         [Fact]
@@ -57,9 +57,10 @@ namespace Datadog.Trace.Tests
             Environment.SetEnvironmentVariable(FunctionNameEnvVar, "my-test-function");
             string currentDirectory = Directory.GetCurrentDirectory();
             string existingFile = Directory.GetFiles(currentDirectory)[0];
-            var res = Serverless.IsRunningInLambda(existingFile);
+            var res = Serverless.LambdaMetadata.Create(existingFile);
             Environment.SetEnvironmentVariable(FunctionNameEnvVar, originalValue);
-            res.Should().Be(true);
+            res.IsRunningInLambda.Should().BeTrue();
+            res.FunctionName.Should().Be("my-test-function");
         }
 
         [Fact]
