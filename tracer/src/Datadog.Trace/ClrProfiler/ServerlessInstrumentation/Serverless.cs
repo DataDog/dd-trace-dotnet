@@ -6,7 +6,6 @@
 using System;
 using System.IO;
 
-using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
@@ -14,19 +13,16 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
     internal static class Serverless
     {
         private const string DefinitionsId = "68224F20D001430F9400668DD25245BA";
-        private const string ExtensionEnvName = "_DD_EXTENSION_PATH";
-        private const string ExtensionFullPath = "/opt/extensions/datadog-agent";
-        private const string FunctionEnvame = "AWS_LAMBDA_FUNCTION_NAME";
         private const string HandlerEnvName = "_HANDLER";
         private const string LogLevelEnvName = "DD_LOG_LEVEL";
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Serverless));
-
         private static NativeCallTargetDefinition[] callTargetDefinitions = null;
+
+        internal static LambdaMetadata Metadata { get; } = LambdaMetadata.Create();
 
         internal static void InitIfNeeded()
         {
-            if (IsRunningInLambda(ExtensionFullPath))
+            if (Metadata.IsRunningInLambda)
             {
                 Debug("Sending CallTarget serverless integration definitions to native library.");
                 var serverlessDefinitions = GetServerlessDefinitions();
@@ -34,12 +30,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
                 Debug("The profiler has been initialized with serverless definitions, count = " + serverlessDefinitions.Length);
             }
-        }
-
-        internal static bool IsRunningInLambda(string extensionPath)
-        {
-            string path = EnvironmentHelpers.GetEnvironmentVariable(ExtensionEnvName) ?? extensionPath;
-            return File.Exists(path) && !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(FunctionEnvame));
         }
 
         internal static NativeCallTargetDefinition[] GetServerlessDefinitions()
@@ -152,6 +142,39 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             }
 
             callTargetDefinitions = null;
+        }
+
+        internal class LambdaMetadata
+        {
+            private const string ExtensionEnvName = "_DD_EXTENSION_PATH";
+            private const string ExtensionFullPath = "/opt/extensions/datadog-agent";
+            private const string FunctionEnvame = "AWS_LAMBDA_FUNCTION_NAME";
+
+            public LambdaMetadata(bool isRunningInLambda, string functionName)
+            {
+                IsRunningInLambda = isRunningInLambda;
+                FunctionName = functionName;
+            }
+
+            public bool IsRunningInLambda { get; }
+
+            public string FunctionName { get; }
+
+            /// <summary>
+            /// Gets the paths we don't want to trace when running in Lambda
+            /// </summary>
+            internal string DefaultHttpClientExclusions { get; } = "/2018-06-01/runtime/invocation/".ToUpperInvariant();
+
+            public static LambdaMetadata Create(string extensionPath = ExtensionFullPath)
+            {
+                var functionName = EnvironmentHelpers.GetEnvironmentVariable(FunctionEnvame);
+
+                var isRunningInLambda = !string.IsNullOrEmpty(functionName)
+                                     && File.Exists(
+                                            EnvironmentHelpers.GetEnvironmentVariable(ExtensionEnvName)
+                                         ?? extensionPath);
+                return new LambdaMetadata(isRunningInLambda, functionName);
+            }
         }
     }
 }

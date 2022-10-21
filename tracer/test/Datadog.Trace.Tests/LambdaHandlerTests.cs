@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
@@ -135,6 +136,26 @@ namespace Datadog.Trace.Tests
             handler.ParamTypeArray[0].Should().Be(ClrNames.String);
             handler.ParamTypeArray[1].Should().Be(ClrNames.String);
         }
+
+        [Theory]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TrickyParamHandler::GenericArguments", "GenericArguments", "System.Collections.Generic.Dictionary`2[System.String,System.String]")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TrickyParamHandler::NestedClassArgument", "NestedClassArgument", "NestedClass")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TrickyParamHandler::DoublyNestedClassArgument", "DoublyNestedClassArgument", "Inner")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TrickyParamHandler::NestedStructArgument", "NestedStructArgument", "NestedStruct")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TrickyParamHandler::NestedGenericArguments", "NestedGenericArguments", "NestedGeneric`2[System.String,System.String]")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TrickyParamHandler::DoublyNestedGenericArguments", "DoublyNestedGenericArguments", "InnerGeneric`2[System.String,System.String]")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TrickyParamHandler::RecursiveGenericArguments", "RecursiveGenericArguments", "System.Collections.Generic.Dictionary`2[System.String,System.Collections.Generic.Dictionary`2[System.String,System.String]]")]
+        [InlineData("Datadog.Trace.Tests::Datadog.Trace.Tests.TrickyParamHandler::NestedRecursiveGenericArguments", "NestedRecursiveGenericArguments", "NestedGeneric`2[System.String,NestedGeneric`2[System.String,System.Collections.Generic.Dictionary`2[System.String,System.String]]]")]
+        public void LambdaHandlerCanHandleTrickyArguments(string handlerVariable, string expectedMethod, string expectedArg)
+        {
+            LambdaHandler handler = new LambdaHandler(handlerVariable);
+            handler.Assembly.Should().Be("Datadog.Trace.Tests");
+            handler.FullType.Should().Be("Datadog.Trace.Tests.TrickyParamHandler");
+            handler.MethodName.Should().Be(expectedMethod);
+            handler.ParamTypeArray.Length.Should().Be(2);
+            handler.ParamTypeArray[0].Should().Be(ClrNames.Int32);
+            handler.ParamTypeArray[1].Should().Be(expectedArg);
+        }
     }
 
 #pragma warning disable SA1402 // File may only contain a single type
@@ -232,6 +253,44 @@ namespace Datadog.Trace.Tests
         public T GenericBaseMethod2() => default;
 
         public T2 GenericBaseMethod3<T2>() => default;
+    }
+
+    public class TrickyParamHandler
+    {
+        public int GenericArguments(Dictionary<string, string> arg1) => 0;
+
+        public int NestedGenericArguments(NestedGeneric<string, string> arg1) => 0;
+
+        public int RecursiveGenericArguments(Dictionary<string, Dictionary<string, string>> arg1) => 0;
+
+        public int DoublyNestedGenericArguments(NestedClass.InnerGeneric<string, string> arg1) => 0;
+
+        public int NestedRecursiveGenericArguments(NestedGeneric<string, NestedGeneric<string, Dictionary<string, string>>> arg1) => 0;
+
+        public int NestedClassArgument(NestedClass arg1) => 0;
+
+        public int DoublyNestedClassArgument(NestedClass.Inner arg1) => 0;
+
+        public int NestedStructArgument(NestedStruct arg1) => 0;
+
+        public struct NestedStruct
+        {
+        }
+
+        public class NestedClass
+        {
+            public class Inner
+            {
+            }
+
+            public class InnerGeneric<TKey, TValue> : Dictionary<TKey, TValue>
+            {
+            }
+        }
+
+        public class NestedGeneric<TKey, TValue> : Dictionary<TKey, TValue>
+        {
+        }
     }
 
     public class TestMockSpan : MockSpan
