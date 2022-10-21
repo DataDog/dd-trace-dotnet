@@ -43,7 +43,7 @@ namespace Datadog.Trace
                 var tagsType = Tags.GetType();
 
                 Log.Debug(
-                    "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type:[{tagsType}])",
+                    "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{tagsType}])",
                     new object[] { SpanId, Context.ParentId, TraceId, Tags, tagsType });
             }
          }
