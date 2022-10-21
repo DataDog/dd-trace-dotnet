@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -1310,12 +1310,8 @@
     Error: 1,
     Tags: {
       component: WebRequest,
-      error.msg: Cannot assign requested address Cannot assign requested address,
-      error.stack:
-System.Net.WebException: Cannot assign requested address Cannot assign requested address
----> System.Net.Http.HttpRequestException: Cannot assign requested address
----> System.Net.Sockets.SocketException (99): Cannot assign requested address
-at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
+      error.msg: Cannot assign requested address,
+      error.stack: Cannot assign requested address (SocketException),
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/ThrowingHandler,
@@ -1337,12 +1333,8 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     Error: 1,
     Tags: {
       component: WebRequest,
-      error.msg: Cannot assign requested address Cannot assign requested address,
-      error.stack:
-System.Net.WebException: Cannot assign requested address Cannot assign requested address
----> System.Net.Http.HttpRequestException: Cannot assign requested address
----> System.Net.Sockets.SocketException (99): Cannot assign requested address
-at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
+      error.msg: Cannot assign requested address,
+      error.stack: Cannot assign requested address (SocketException),
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/ThrowingHandlerAsync,
@@ -1364,12 +1356,8 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     Error: 1,
     Tags: {
       component: WebRequest,
-      error.msg: Cannot assign requested address Cannot assign requested address,
-      error.stack:
-System.Net.WebException: Cannot assign requested address Cannot assign requested address
----> System.Net.Http.HttpRequestException: Cannot assign requested address
----> System.Net.Sockets.SocketException (99): Cannot assign requested address
-at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
+      error.msg: Cannot assign requested address,
+      error.stack: Cannot assign requested address (SocketException),
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/ThrowingHandlerAsyncTask,
@@ -1391,12 +1379,8 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     Error: 1,
     Tags: {
       component: WebRequest,
-      error.msg: Cannot assign requested address Cannot assign requested address,
-      error.stack:
-System.Net.WebException: Cannot assign requested address Cannot assign requested address
----> System.Net.Http.HttpRequestException: Cannot assign requested address
----> System.Net.Sockets.SocketException (99): Cannot assign requested address
-at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
+      error.msg: Cannot assign requested address,
+      error.stack: Cannot assign requested address (SocketException),
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/ThrowingHandler,
@@ -1418,12 +1402,8 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     Error: 1,
     Tags: {
       component: WebRequest,
-      error.msg: Cannot assign requested address Cannot assign requested address,
-      error.stack:
-System.Net.WebException: Cannot assign requested address Cannot assign requested address
----> System.Net.Http.HttpRequestException: Cannot assign requested address
----> System.Net.Sockets.SocketException (99): Cannot assign requested address
-at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
+      error.msg: Cannot assign requested address,
+      error.stack: Cannot assign requested address (SocketException),
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/ThrowingHandlerAsync,
@@ -1445,12 +1425,8 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     Error: 1,
     Tags: {
       component: WebRequest,
-      error.msg: Cannot assign requested address Cannot assign requested address,
-      error.stack:
-System.Net.WebException: Cannot assign requested address Cannot assign requested address
----> System.Net.Http.HttpRequestException: Cannot assign requested address
----> System.Net.Sockets.SocketException (99): Cannot assign requested address
-at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
+      error.msg: Cannot assign requested address,
+      error.stack: Cannot assign requested address (SocketException),
       error.type: System.Net.WebException,
       http.method: GET,
       http.url: http://localhost/function/ThrowingHandlerAsyncTask,
