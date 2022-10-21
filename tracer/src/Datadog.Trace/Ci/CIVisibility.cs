@@ -6,7 +6,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Net;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -18,6 +17,7 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci
@@ -255,17 +255,9 @@ namespace Datadog.Trace.Ci
             switch (FrameworkDescription.Instance.OSPlatform)
             {
                 case OSPlatformName.Linux:
-                    try
+                    if (!string.IsNullOrEmpty(HostMetadata.Instance.KernelRelease))
                     {
-                        if (File.Exists(@"/proc/version"))
-                        {
-                            // e.g. Linux version 5.10.60.1-microsoft-standard-WSL2 (oe-user@oe-host) (x86_64-msft-linux-gcc (GCC) 9.3.0, GNU ld (GNU Binutils) 2.34.0.20200220) #1 SMP Wed Aug 25 23:20:18 UTC 2021
-                            return File.ReadAllText("/proc/version");
-                        }
-                    }
-                    catch
-                    {
-                        // May be permissions issues etc
+                        return HostMetadata.Instance.KernelRelease;
                     }
 
                     break;
