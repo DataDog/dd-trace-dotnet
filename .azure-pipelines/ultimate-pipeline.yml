@@ -632,9 +632,6 @@ stages:
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
 
-      - script: set
-        displayName: Show environment variables
-
       - script: tracer\build.cmd BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
         env:
@@ -2720,6 +2717,7 @@ stages:
         parameters:
           masterCommitId: $(masterCommitId)
       - template: steps/install-latest-dotnet-sdk.yml
+      - template: steps/restore-working-directory.yml
 
       - task: DownloadPipelineArtifact@2
         inputs:
