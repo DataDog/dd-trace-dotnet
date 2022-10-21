@@ -1,4 +1,5 @@
-FROM public.ecr.aws/lambda/dotnet:core3.1
+ARG lambdaBaseImage
+FROM $lambdaBaseImage
 
 # Create log path
 RUN mkdir -p /var/log/datadog/dotnet && \
@@ -7,10 +8,12 @@ RUN mkdir -p /var/log/datadog/dotnet && \
 # Add Tracer
 COPY ./bin/artifacts/monitoring-home /opt/datadog
 
+ARG framework
+
 # Add Tests
-COPY ./bin/Release/netcoreapp3.1/*.dll /var/task/
-COPY ./bin/Release/netcoreapp3.1/*.deps.json /var/task/
-COPY ./bin/Release/netcoreapp3.1/*.runtimeconfig.json /var/task/
+COPY ./bin/Release/$framework/*.dll /var/task/
+COPY ./bin/Release/$framework/*.deps.json /var/task/
+COPY ./bin/Release/$framework/*.runtimeconfig.json /var/task/
 
 ENV DD_LOG_LEVEL="DEBUG"
 ENV DD_TRACE_ENABLED=true

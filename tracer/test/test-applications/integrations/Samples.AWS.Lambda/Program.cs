@@ -75,6 +75,10 @@ namespace Samples.AWS.Lambda
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_NESTED_STRUCT_PARAM"));
             Thread.Sleep(1000);
             await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_GENERIC_DICT_PARAM"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_NESTED_GENERIC_DICT_PARAM"));
+            Thread.Sleep(1000);
+            await Post(Environment.GetEnvironmentVariable("AWS_LAMBDA_ENDPOINT_DOUBLY_NESTED_GENERIC_DICT_PARAM"));
 
             // Throwing handlers
             Thread.Sleep(1000);
@@ -212,18 +216,36 @@ namespace Samples.AWS.Lambda
         {
             HandleRequest();
         }
+
+        public void HandlerNestedGenericDictionaryParam(NestedGeneric<string, string> request, ILambdaContext context)
+        {
+            HandleRequest();
+        }
+        
+        public void HandlerDoublyNestedGenericDictionaryParam(NestedClass.InnerGeneric<string, NestedClass.InnerGeneric<string, Dictionary<string,string>>> request)
+        {
+            HandleRequest();
+        }
         #endregion
 
         public class NestedClass
         {
             public string Field1 { get; set; }
             public int Field2 { get; set; }
+            
+            public class InnerGeneric<TKey, TValue> : Dictionary<TKey, TValue>
+            {
+            }
         }
 
         public struct NestedStruct
         {
             public string Field1 { get; set; }
             public int Field2 { get; set; }
+        }
+
+        public class NestedGeneric<TKey, TValue> : Dictionary<TKey, TValue>
+        {
         }
     }
 
