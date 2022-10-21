@@ -345,6 +345,8 @@ namespace Datadog.Trace
                         Duration = TimeSpan.Zero;
                     }
 
+                    Context.IastRequestContext?.AddIastTagsIfNeeded(this);
+
                     IsFinished = true;
                     shouldCloseSpan = true;
                 }

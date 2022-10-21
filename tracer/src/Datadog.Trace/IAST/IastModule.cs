@@ -64,11 +64,28 @@ internal class IastModule
 
         if (!iast.Settings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
-            // The VulnerabilityBatch class is not very useful right now, but we will need it when handling requests
+            return AddVulnerability(tracer, integrationId, operationName, vulnerability);
+        }
+
+        return null;
+    }
+
+    private static Scope? AddVulnerability(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
+    {
+        var rootSpan = ((Scope)tracer.ActiveScope).Root.Span;
+        bool isRequest = rootSpan.Type == SpanTypes.Web;
+
+        if (isRequest)
+        {
+            var iastRequestContext = rootSpan.Context.IastRequestContext;
+            iastRequestContext?.AddVulnerability(vulnerability);
+            return null;
+        }
+        else
+        {
             var batch = new VulnerabilityBatch();
             batch.Add(vulnerability);
 
-            // Right now, we always set the IastEnabled tag to "1", but in the future, it might be zero to indicate that a request has not been analyzed
             var tags = new IastTags()
             {
                 IastJson = batch.ToString(),
@@ -78,11 +95,8 @@ internal class IastModule
             tags.SetTag(Tags.Origin, IastOrigin);
             var scope = tracer.StartActiveInternal(operationName, tags: tags);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
-
             return scope;
         }
-
-        return null;
     }
 
     private static string? GetMethodName(StackFrame? frame)

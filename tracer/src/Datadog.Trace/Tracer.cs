@@ -11,6 +11,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
@@ -350,6 +351,7 @@ namespace Datadog.Trace
             parent ??= DistributedTracer.Instance.GetSpanContext() ?? TracerManager.ScopeManager.Active?.Span?.Context;
 
             TraceContext traceContext;
+            IastRequestContext iastRequestContext;
 
             // try to get the trace context (from local spans),
             // otherwise start a new trace context and get sampling priority (from propagated spans)
@@ -358,6 +360,7 @@ namespace Datadog.Trace
                 // if traceContext is not null, parent is from a local (non-propagated) span
                 // and this child span belongs in the same TraceContext
                 traceContext = parentSpanContext.TraceContext;
+                iastRequestContext = parentSpanContext.IastRequestContext;
 
                 if (traceContext == null)
                 {
@@ -375,6 +378,7 @@ namespace Datadog.Trace
                 // parent is not a SpanContext, start a new trace
                 var samplingPriority = DistributedTracer.Instance.GetSamplingPriority();
 
+                iastRequestContext = Iast.Iast.Instance.Settings.Enabled ? new IastRequestContext() : null;
                 traceContext = new TraceContext(this, tags: null);
                 traceContext.SetSamplingPriority(samplingPriority);
 
@@ -391,7 +395,7 @@ namespace Datadog.Trace
             }
 
             var finalServiceName = serviceName ?? DefaultServiceName;
-            return new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
+            return new SpanContext(parent, traceContext, iastRequestContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
         }
 
         internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null)
