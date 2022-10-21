@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Ci;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
@@ -103,16 +104,18 @@ namespace Datadog.Trace
         /// </summary>
         /// <param name="parent">The parent context.</param>
         /// <param name="traceContext">The trace context.</param>
+        /// <param name="iastRequestContext">The iast context.</param>
         /// <param name="serviceName">The service name to propagate to child spans.</param>
         /// <param name="traceId">Override the trace id if there's no parent.</param>
         /// <param name="spanId">The propagated span id.</param>
         /// <param name="rawTraceId">Raw trace id value</param>
         /// <param name="rawSpanId">Raw span id value</param>
-        internal SpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null)
+        internal SpanContext(ISpanContext parent, TraceContext traceContext, IastRequestContext iastRequestContext, string serviceName, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null)
             : this(parent?.TraceId ?? traceId, serviceName)
         {
             SpanId = spanId ?? SpanIdGenerator.CreateNew();
             Parent = parent;
+            IastRequestContext = iastRequestContext;
             TraceContext = traceContext;
             if (parent is SpanContext spanContext)
             {
@@ -187,6 +190,11 @@ namespace Datadog.Trace
         /// Returns null for contexts created from incoming propagated context.
         /// </summary>
         internal TraceContext TraceContext { get; }
+
+        /// <summary>
+        /// Gets the iast context.
+        /// </summary>
+        internal IastRequestContext IastRequestContext { get; }
 
         /// <summary>
         /// Gets the sampling priority for contexts created from incoming propagated context.

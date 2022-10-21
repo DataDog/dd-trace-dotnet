@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using System;
+
 namespace Datadog.Trace.Iast;
 
 internal class IastRequestContext
@@ -17,6 +19,7 @@ internal class IastRequestContext
         span.Tags.SetTag(Trace.Tags.IastEnabled, "1");
 
         iastRequestContext?.AddIastVulnerabilitiesToSpan(span);
+        }
     }
 
     internal void AddIastVulnerabilitiesToSpan(Span span)
