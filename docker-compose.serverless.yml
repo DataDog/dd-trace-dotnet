@@ -24,6 +24,8 @@ services:
     - serverless-lambda-nested-class-param
     - serverless-lambda-nested-struct-param
     - serverless-lambda-generic-dict-param
+    - serverless-lambda-nested-generic-dict-param
+    - serverless-lambda-doubly-nested-generic-dict-param
     - serverless-lambda-throwing
     - serverless-lambda-throwing-async
     - serverless-lambda-throwing-async-task
@@ -53,6 +55,8 @@ services:
     - AWS_LAMBDA_ENDPOINT_NESTED_CLASS_PARAM=http://serverless-lambda-nested-class-param:8080
     - AWS_LAMBDA_ENDPOINT_NESTED_STRUCT_PARAM=http://serverless-lambda-nested-struct-param:8080
     - AWS_LAMBDA_ENDPOINT_GENERIC_DICT_PARAM=http://serverless-lambda-generic-dict-param:8080
+    - AWS_LAMBDA_ENDPOINT_NESTED_GENERIC_DICT_PARAM=http://serverless-lambda-nested-generic-dict-param:8080
+    - AWS_LAMBDA_ENDPOINT_DOUBLY_NESTED_GENERIC_DICT_PARAM=http://serverless-lambda-doubly-nested-generic-dict-param:8080
     - AWS_LAMBDA_ENDPOINT_THROWING=http://serverless-lambda-throwing:8080
     - AWS_LAMBDA_ENDPOINT_THROWING_ASYNC=http://serverless-lambda-throwing-async:8080
     - AWS_LAMBDA_ENDPOINT_THROWING_ASYNC_TASK=http://serverless-lambda-throwing-async-task:8080
@@ -85,6 +89,8 @@ services:
     - serverless-lambda-nested-class-param
     - serverless-lambda-nested-struct-param
     - serverless-lambda-generic-dict-param
+    - serverless-lambda-nested-generic-dict-param
+    - serverless-lambda-doubly-nested-generic-dict-param
     - serverless-lambda-throwing
     - serverless-lambda-throwing-async
     - serverless-lambda-throwing-async-task
@@ -116,6 +122,8 @@ services:
       serverless-lambda-nested-class-param:8080
       serverless-lambda-nested-struct-param:8080
       serverless-lambda-generic-dict-param:8080
+      serverless-lambda-nested-generic-dict-param:8080
+      serverless-lambda-doubly-nested-generic-dict-param:8080
       serverless-lambda-throwing:8080
       serverless-lambda-throwing-async:8080
       serverless-lambda-throwing-async-task:8080
@@ -137,11 +145,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-no-param-sync:/var/log/datadog/dotnet
 
   serverless-lambda-one-param-sync:
     build:
@@ -156,11 +165,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-one-param-sync:/var/log/datadog/dotnet
 
   serverless-lambda-two-params-sync:
     build:
@@ -175,11 +185,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-two-params-sync:/var/log/datadog/dotnet
 
   serverless-lambda-no-param-sync-with-context:
     build:
@@ -194,11 +205,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-no-param-sync-with-context:/var/log/datadog/dotnet
 
   serverless-lambda-one-param-sync-with-context:
     build:
@@ -213,11 +225,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-one-param-sync-with-context:/var/log/datadog/dotnet
 
   serverless-lambda-two-params-sync-with-context:
     build:
@@ -232,11 +245,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-two-params-sync-with-context:/var/log/datadog/dotnet
 
   serverless-lambda-no-param-async:
     build:
@@ -251,11 +265,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-no-param-async:/var/log/datadog/dotnet
 
   serverless-lambda-one-param-async:
     build:
@@ -270,11 +285,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-one-param-async:/var/log/datadog/dotnet
 
   serverless-lambda-two-params-async:
     build:
@@ -289,11 +305,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-two-params-async:/var/log/datadog/dotnet
 
   serverless-lambda-no-param-void:
     build:
@@ -308,11 +325,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-no-param-void:/var/log/datadog/dotnet
 
   serverless-lambda-one-param-void:
     build:
@@ -327,11 +345,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-one-param-void:/var/log/datadog/dotnet
 
   serverless-lambda-two-params-void:
     build:
@@ -346,11 +365,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-two-params-void:/var/log/datadog/dotnet
   
   serverless-lambda-base-no-param-sync:
     build:
@@ -365,11 +385,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-base-no-param-sync:/var/log/datadog/dotnet
 
   serverless-lambda-base-two-params-sync:
     build:
@@ -384,11 +405,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-base-two-params-sync:/var/log/datadog/dotnet
 
   serverless-lambda-base-one-param-sync-with-context:
     build:
@@ -403,11 +425,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-base-one-param-sync-with-context:/var/log/datadog/dotnet
 
   serverless-lambda-base-one-param-async:
     build:
@@ -422,11 +445,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-base-one-param-async:/var/log/datadog/dotnet
 
   serverless-lambda-base-two-params-void:
     build:
@@ -441,11 +465,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-base-two-params-void:/var/log/datadog/dotnet
 
   serverless-lambda-struct-param:
     build:
@@ -460,11 +485,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-struct-param:/var/log/datadog/dotnet
 
   serverless-lambda-nested-class-param:
     build:
@@ -479,11 +505,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-nested-class-param:/var/log/datadog/dotnet
 
   serverless-lambda-nested-struct-param:
     build:
@@ -498,11 +525,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-nested-struct-param:/var/log/datadog/dotnet
 
   serverless-lambda-generic-dict-param:
     build:
@@ -517,11 +545,52 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-generic-dict-param:/var/log/datadog/dotnet
+
+  serverless-lambda-nested-generic-dict-param:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerNestedGenericDictionaryParam"
+    image: dd-trace-dotnet/serverless-lambda-nested-generic-dict-param
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs/serverless-lambda-nested-generic-dict-param:/var/log/datadog/dotnet
+
+  serverless-lambda-doubly-nested-generic-dict-param:
+    build:
+      context: ./tracer/test/test-applications/integrations/Samples.AWS.Lambda
+      dockerfile: serverless.lambda.dockerfile
+    depends_on:
+    - serverless-dummy-api
+    command: "Samples.AWS.Lambda::Samples.AWS.Lambda.Function::HandlerDoublyNestedGenericDictionaryParam"
+    image: dd-trace-dotnet/serverless-lambda-doubly-nested-generic-dict-param
+    environment:
+    - DD_TRACE_AGENT_URL=http://integrationtests:5002
+    - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
+    - DUMMY_API_HOST=http://serverless-dummy-api:9005
+    - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
+    ports:
+    - "8080"
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs/serverless-lambda-doubly-nested-generic-dict-param:/var/log/datadog/dotnet
 
   serverless-lambda-throwing:
     build:
@@ -536,11 +605,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-throwing:/var/log/datadog/dotnet
 
   serverless-lambda-throwing-async:
     build:
@@ -555,11 +625,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-throwing-async:/var/log/datadog/dotnet
 
   serverless-lambda-throwing-async-task:
     build:
@@ -574,11 +645,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9003
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-throwing-async-task:/var/log/datadog/dotnet
 
   serverless-lambda-throwing-with-context:
     build:
@@ -593,11 +665,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-throwing-with-context:/var/log/datadog/dotnet
 
   serverless-lambda-throwing-async-with-context:
     build:
@@ -612,11 +685,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-throwing-async-with-context:/var/log/datadog/dotnet
 
   serverless-lambda-throwing-async-task-with-context:
     build:
@@ -631,11 +705,12 @@ services:
     - _DD_EXTENSION_ENDPOINT=http://integrationtests:9004
     - DUMMY_API_HOST=http://serverless-dummy-api:9005
     - DD_INSTRUMENTATION_TELEMETRY_ENABLED=0
+    - DD_TRACE_DEBUG=1
     ports:
     - "8080"
     volumes:
     - ./:/project
-    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    - ./tracer/build_data/logs/serverless-lambda-throwing-async-task-with-context:/var/log/datadog/dotnet
 
   # The serverless function calls this API, which always returns 200 OK
   serverless-dummy-api:
