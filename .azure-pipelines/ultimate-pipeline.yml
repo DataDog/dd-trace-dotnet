@@ -1293,8 +1293,18 @@ stages:
       TestAllPackageVersions: false
       IncludeMinorPackageVersions:  false
       baseImage: "centos7"
-      publishTargetFramework: "netcoreapp3.1"
 
+    strategy:
+      matrix:
+        netcoreapp3_1:
+          publishTargetFramework: "netcoreapp3.1"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:core3.1"
+        net5:
+          publishTargetFramework: "net5.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:5.0"
+        net6:
+          publishTargetFramework: "net6.0"
+          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:6"
     pool:
       name: azure-linux-scale-set
 
@@ -1333,6 +1343,7 @@ stages:
         docker-compose -p ddtrace_$(Build.BuildNumber) \
           -f $(System.DefaultWorkingDirectory)/docker-compose.yml \
           -f docker-compose.serverless.yml \
+          --build-arg framework=$(publishTargetFramework) \
           pull --include-deps StartDependencies.Serverless
 
         docker-compose -p ddtrace_$(Build.BuildNumber) \
@@ -1342,6 +1353,7 @@ stages:
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
+        lambdaBaseImage: $(lambdaBaseImage)
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
       displayName: docker-compose build IntegrationTests.Serverless and run StartDependencies.Serverless
       retryCountOnTaskFailure: 5
@@ -1353,6 +1365,7 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
+          lambdaBaseImage=$(lambdaBaseImage)
           DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
         dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests.Serverless
         additionalDockerComposeFiles: |
