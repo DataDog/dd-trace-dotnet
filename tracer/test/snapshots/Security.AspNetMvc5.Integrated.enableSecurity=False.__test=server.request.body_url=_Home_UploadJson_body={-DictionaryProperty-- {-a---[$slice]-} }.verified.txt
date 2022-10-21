@@ -30,7 +30,6 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: {controller}/{action}/{id},
@@ -38,7 +37,6 @@
       http.url: http://localhost/Home/UploadJson,
       http.useragent: Mistake Not...,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -82,7 +80,6 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: {controller}/{action}/{id},
@@ -90,7 +87,6 @@
       http.url: http://localhost/Home/UploadJson,
       http.useragent: Mistake Not...,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -134,7 +130,6 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: {controller}/{action}/{id},
@@ -142,7 +137,6 @@
       http.url: http://localhost/Home/UploadJson,
       http.useragent: Mistake Not...,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -186,7 +180,6 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: {controller}/{action}/{id},
@@ -194,7 +187,6 @@
       http.url: http://localhost/Home/UploadJson,
       http.useragent: Mistake Not...,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -238,7 +230,6 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: {controller}/{action}/{id},
@@ -246,7 +237,6 @@
       http.url: http://localhost/Home/UploadJson,
       http.useragent: Mistake Not...,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0

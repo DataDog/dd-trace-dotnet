@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -82,7 +82,6 @@
       aspnet_core.route: /greet.tester.greeter/streamingbothways,
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/streamingbothways,
@@ -90,7 +89,6 @@
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingBothWays,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -210,7 +208,6 @@
       aspnet_core.route: /greet.tester.greeter/streamingfromclient,
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/streamingfromclient,
@@ -218,7 +215,6 @@
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingFromClient,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -340,7 +336,6 @@
       aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/erroringmethod,
@@ -348,7 +343,6 @@
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -472,7 +466,6 @@
       aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/erroringmethod,
@@ -480,7 +473,6 @@
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -604,7 +596,6 @@
       aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/erroringmethod,
@@ -612,7 +603,6 @@
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -736,7 +726,6 @@
       aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/erroringmethod,
@@ -744,7 +733,6 @@
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -872,7 +860,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/erroringmethod,
@@ -880,7 +867,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -1004,7 +990,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/erroringmethod,
@@ -1012,7 +997,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -1136,7 +1120,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/erroringmethod,
@@ -1144,7 +1127,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -1268,7 +1250,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       aspnet_core.route: /greet.tester.greeter/erroringmethod,
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/erroringmethod,
@@ -1276,7 +1257,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -1402,7 +1382,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       aspnet_core.route: /greet.tester.greeter/streamingfromserver,
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/streamingfromserver,
@@ -1410,7 +1389,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingFromServer,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -1530,7 +1508,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       aspnet_core.route: /greet.tester.greeter/unary,
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/unary,
@@ -1538,7 +1515,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/Unary,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -1658,7 +1634,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       aspnet_core.route: /greet.tester.greeter/unary,
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/unary,
@@ -1666,7 +1641,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/Unary,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -1786,7 +1760,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       aspnet_core.route: /greet.tester.greeter/veryslow,
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/veryslow,
@@ -1794,7 +1767,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/VerySlow,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -1916,7 +1888,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       aspnet_core.route: /greet.tester.greeter/veryslow,
       component: aspnet_core,
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /greet.tester.greeter/veryslow,
@@ -1924,7 +1895,6 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.url: http://localhost:00000/greet.tester.Greeter/VerySlow,
       http.useragent: grpc-dotnet/123,
       language: dotnet,
-      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
