@@ -2079,7 +2079,7 @@ stages:
           **/loader.conf
         path: $(monitoringHome)
 
-    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool BuildStandaloneTool
+    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool
       displayName: Build Bundle NuGet and runner tools
 
     - publish: $(artifacts)/nuget/bundle
