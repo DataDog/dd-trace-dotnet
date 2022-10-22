@@ -199,10 +199,10 @@ internal static partial class DotNetSettingsExtensions
 
     public static DotNetTestSettings WithDatadogLogger(this DotNetTestSettings settings)
     {
-        var pArgConf = settings.ProcessArgumentConfigurator;
+        var pArgConf = settings.ProcessArgumentConfigurator ?? (args => args);
         return settings.SetProcessArgumentConfigurator(
             args =>
-                (pArgConf?.Invoke(args) ?? args).Add("--logger:{value}", "datadog")
+                pArgConf(args.Add("--logger:{value}", "datadog"))
         );
     }
 }

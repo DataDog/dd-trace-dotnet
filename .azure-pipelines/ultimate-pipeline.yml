@@ -2707,7 +2707,7 @@ stages:
     masterCommitId: $[ stageDependencies.master_commit_id.fetch.outputs['set_sha.master']]
   jobs:
     - job: Windows
-      timeoutInMinutes: 40
+      timeoutInMinutes: 30
 
       pool:
         vmImage: windows-2019
