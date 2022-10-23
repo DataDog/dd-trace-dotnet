@@ -46,4 +46,5 @@ public:
     virtual int32_t ContentionDurationThreshold() const = 0;
     virtual std::chrono::nanoseconds CpuWallTimeSamplingRate() const = 0;
     virtual const std::string& GetNamedPipeName() const = 0;
+    virtual bool IsTimestampsAsLabelEnabled() const = 0;
 };

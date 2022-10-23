@@ -12,6 +12,7 @@ class IFrameStore;
 class IAppDomainStore;
 class IRuntimeIdStore;
 class IThreadsCpuManager;
+class IConfiguration;
 
 
 class WallTimeProvider
@@ -27,6 +28,7 @@ public:
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAssemblyStore,
-        IRuntimeIdStore* pRuntimeIdStore
+        IRuntimeIdStore* pRuntimeIdStore,
+        IConfiguration* pConfiguration
         );
 };
