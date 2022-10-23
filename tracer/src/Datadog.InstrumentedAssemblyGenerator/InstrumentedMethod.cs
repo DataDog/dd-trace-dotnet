@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.IO;
 using System.Linq;
 using static Datadog.InstrumentedAssemblyGenerator.InstrumentedAssemblyGeneratorConsts;
@@ -6,7 +6,10 @@ using static Datadog.InstrumentedAssemblyGenerator.InstrumentedAssemblyGenerator
 
 namespace Datadog.InstrumentedAssemblyGenerator
 {
-    internal class InstrumentedMethod
+    /// <summary>
+    /// 
+    /// </summary>
+    public class InstrumentedMethod
     {
         internal InstrumentedMethod(
             Guid mvid,
@@ -101,6 +104,10 @@ namespace Datadog.InstrumentedAssemblyGenerator
                 filePath.Replace(TextFilePrefix, BinaryFilePrefix));
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
         public override string ToString()
         {
             return $"{TypeName}.{MethodName}";

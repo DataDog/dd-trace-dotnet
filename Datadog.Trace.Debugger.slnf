@@ -10,6 +10,7 @@
       "tracer\\src\\Datadog.Trace.AspNet\\Datadog.Trace.AspNet.csproj",
       "tracer\\src\\Datadog.Trace.SourceGenerators\\Datadog.Trace.SourceGenerators.csproj",
       "tracer\\src\\Datadog.Trace.Tools.Analyzers\\Datadog.Trace.Tools.Analyzers.csproj",
+      "tracer\\src\\Datadog.Trace.Tools.Runner\\Datadog.Trace.Tools.Runner.csproj",
       "tracer\\src\\Datadog.Trace\\Datadog.Trace.csproj",
       "tracer\\src\\Datadog.Tracer.Native\\Datadog.Tracer.Native.DLL.vcxproj",
       "tracer\\src\\Datadog.Tracer.Native\\Datadog.Tracer.Native.vcxproj",
