@@ -1,7 +1,6 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Reflection;
 using Datadog.InstrumentedAssemblyGenerator;
@@ -17,16 +16,14 @@ namespace Datadog.InstrumentedAssemblyVerification.Standalone
                 PrintWelcome();
 
                 var (output, modulesToVerify) = Parse(args);
-                var generatorArgs = new AssemblyGeneratorArgs(output, modulesToVerify);
+                var generatorArgs = new AssemblyGeneratorArgs(output, modulesToVerify: modulesToVerify);
 
                 var exportedModulesPathsAndMethods = InstrumentedAssemblyGeneration.Generate(generatorArgs);
 
                 var results = new List<VerificationOutcome>();
-                foreach (var (modulePath, methods) in exportedModulesPathsAndMethods)
+                foreach (var ((instrumentedModulePath, originalModulePath), methods) in exportedModulesPathsAndMethods)
                 {
-                    string moduleName = Path.GetFileName(modulePath);
-                    string originalModulePath = Path.Combine(generatorArgs.OriginalModulesFolder, moduleName);
-                    var result = new VerificationsRunner(modulePath, originalModulePath, methods).Run();
+                    var result = new VerificationsRunner(instrumentedModulePath, originalModulePath, methods.Select(m => (m.TypeName, m.MethodName)).ToList()).Run();
                     results.Add(result);
                 }
 
