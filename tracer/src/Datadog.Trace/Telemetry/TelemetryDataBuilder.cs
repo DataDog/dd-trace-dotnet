@@ -95,6 +95,26 @@ namespace Datadog.Trace.Telemetry
             return GetRequest(application, host, TelemetryRequestTypes.AppClosing, payload: null);
         }
 
+        public TelemetryData BuildLogsTelemetryData(ApplicationTelemetryData? application, HostTelemetryData? host, LogsPayload? logs)
+        {
+            if (application is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(application));
+            }
+
+            if (host is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(host));
+            }
+
+            if (logs is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(logs));
+            }
+
+            return GetRequest(application, host, TelemetryRequestTypes.Logs, logs);
+        }
+
         public TelemetryData BuildHeartbeatData(ApplicationTelemetryData application, HostTelemetryData host)
             => GetRequest(application, host, TelemetryRequestTypes.AppHeartbeat, payload: null);
 
