@@ -32,7 +32,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
         /// </summary>
         /// <param name="assemblyGeneratorArgs">The arguments for the generation process</param>
         /// <returns>The list of instrumented assemblies that were generated, and the list of methods that were instrumented in each.</returns>
-        public static List<(string modulePath, List<string> methods)> Generate(AssemblyGeneratorArgs assemblyGeneratorArgs)
+        public static List<((string instrumentedModulePath, string originalModulePath), List<ModifiedMethod> methods)> Generate(AssemblyGeneratorArgs assemblyGeneratorArgs)
         {
             ValidateInputFolders(assemblyGeneratorArgs);
             CreateOutputFolders(assemblyGeneratorArgs);

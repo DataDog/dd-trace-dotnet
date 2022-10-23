@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using dnlib.DotNet;
 
@@ -10,8 +9,11 @@ namespace Datadog.InstrumentedAssemblyGenerator
     /// This class is a sink for all available modules and their members
     /// We use it when we want dummy resolve TypeRef to TypeDef
     /// </summary>
-    internal class InstrumentedAssemblyGeneratorContext
+    public class InstrumentedAssemblyGeneratorContext
     {
+        /// <summary>
+        /// 
+        /// </summary>
         public readonly List<ModuleDefMD> AllLoadedModules;
         private readonly Dictionary<Token, TypeDef> _exportedTypesDefinitions;
 
@@ -19,14 +21,31 @@ namespace Datadog.InstrumentedAssemblyGenerator
         internal Dictionary<(string moduleName, Guid?), ModuleTokensMapping> OriginalModulesTypesTokens { get; }
         internal Dictionary<(string moduleName, Guid? mvid), ModuleTokensMapping> InstrumentedModulesTypesTokens { get; }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public ILookup<(string moduleName, Guid? mvid), InstrumentedMethod> InstrumentedMethodsByModule { get; }
         private readonly AssemblyEqualityComparer _assemblyComparer;
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public List<string> OriginalsModulesPaths { get; }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="allLoadedModules"></param>
+        /// <param name="originalModulesOfInstrumentedMembers"></param>
+        /// <param name="originalModulesTypesTokens"></param>
+        /// <param name="instrumentedModulesTypesTokens"></param>
+        /// <param name="instrumentedMethodsByModule"></param>
+        /// <param name="originalsModulesPaths"></param>
         public InstrumentedAssemblyGeneratorContext(List<ModuleDefMD> allLoadedModules,
                                                     ModuleDefMD[] originalModulesOfInstrumentedMembers,
                                                     Dictionary<(string moduleName, Guid? mvid), ModuleTokensMapping> originalModulesTypesTokens,
                                                     Dictionary<(string moduleNAme, Guid? mvid), ModuleTokensMapping> instrumentedModulesTypesTokens,
-                                                    ILookup<(string moduleName, Guid? mvid), InstrumentedMethod> instrumentedMethodsByModule)
+                                                    ILookup<(string moduleName, Guid? mvid), InstrumentedMethod> instrumentedMethodsByModule, List<string> originalsModulesPaths)
         {
             AllLoadedModules = allLoadedModules;
             OriginalsModulesOfInstrumentedMembers = originalModulesOfInstrumentedMembers;
@@ -35,6 +54,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
             InstrumentedModulesTypesTokens = instrumentedModulesTypesTokens;
             InstrumentedMethodsByModule = instrumentedMethodsByModule;
             _assemblyComparer = new AssemblyEqualityComparer();
+            OriginalsModulesPaths = originalsModulesPaths;
         }
 
         internal (ModuleDef scope, TypeDef type) ResolveType(ITypeDefOrRef defOrRef)

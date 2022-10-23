@@ -119,7 +119,9 @@ inline bool IsInstrumentedAssemblyGeneratorEnabled()
     {
         const auto isInstrumentedAssemblyGeneratorEnabled =
             shared::GetEnvironmentValue(cfg_instrumentation_verification_env);
-        if (isInstrumentedAssemblyGeneratorEnabled == WStr("1") ||
+        // default is true
+        if (isInstrumentedAssemblyGeneratorEnabled.empty() ||
+            isInstrumentedAssemblyGeneratorEnabled == WStr("1") ||
             isInstrumentedAssemblyGeneratorEnabled == WStr("true"))
         {
 #if _WIN32
@@ -137,6 +139,13 @@ inline bool IsInstrumentedAssemblyGeneratorEnabled()
     {
     }
     return false;
+}
+
+inline bool IsCopyingOriginalsModulesEnabled()
+{
+    const auto isCopyingOriginalsModulesEnabled =
+        shared::GetEnvironmentValue(cfg_copying_originals_modules_env);
+    return isCopyingOriginalsModulesEnabled == WStr("1") || isCopyingOriginalsModulesEnabled == WStr("true");
 }
 
 inline std::tuple<HRESULT, shared::WSTRING, shared::WSTRING>

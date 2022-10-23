@@ -446,7 +446,11 @@ namespace datadog::shared::nativeloader
 
                     moduleName = moduleName + EndLWStr;
                     instrumented_assembly_generator::WriteTextToFile(instrumented_assembly_generator::ModulesFileName, moduleName);
-                    instrumented_assembly_generator::CopyOriginalModuleForInstrumentationVerification(modulePath);
+                    if (instrumented_assembly_generator::IsCopyingOriginalsModulesEnabled())
+                    {
+                        // by default this is disabled but we keep that option to be able to do the instrumentation verification on a offline environment
+                        instrumented_assembly_generator::CopyOriginalModuleForInstrumentationVerification(modulePath);
+                    }
                 }
             }
         }

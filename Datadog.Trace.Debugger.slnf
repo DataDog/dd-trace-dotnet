@@ -8,6 +8,7 @@
       "tracer\\src\\Datadog.InstrumentedAssemblyVerification\\Datadog.InstrumentedAssemblyVerification.csproj",
       "tracer\\src\\Datadog.Trace.SourceGenerators\\Datadog.Trace.SourceGenerators.csproj",
       "tracer\\src\\Datadog.Trace.Tools.Analyzers\\Datadog.Trace.Tools.Analyzers.csproj",
+      "tracer\\src\\Datadog.Trace.Tools.Runner\\Datadog.Trace.Tools.Runner.csproj",
       "tracer\\src\\Datadog.Trace\\Datadog.Trace.csproj",
       "tracer\\src\\Datadog.Tracer.Native\\Datadog.Tracer.Native.DLL.vcxproj",
       "tracer\\src\\Datadog.Tracer.Native\\Datadog.Tracer.Native.vcxproj",
@@ -17,8 +18,8 @@
       "tracer\\test\\Datadog.Trace.Tests\\Datadog.Trace.Tests.csproj",
       "tracer\\test\\test-applications\\debugger\\Samples.Probes\\Samples.Probes.csproj",
       "tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.External\\Samples.Probes.External.csproj",
-	"tracer\\test\\Datadog.Trace.TestHelpers.AutoInstrumentation\\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj",
-	"tracer\\src\\Datadog.Trace.Annotations\\Datadog.Trace.Annotations.csproj"
+      "tracer\\test\\Datadog.Trace.TestHelpers.AutoInstrumentation\\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj",
+      "tracer\\src\\Datadog.Trace.Annotations\\Datadog.Trace.Annotations.csproj"
     ]
   }
 }
