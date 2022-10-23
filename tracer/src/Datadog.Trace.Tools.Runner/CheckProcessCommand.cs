@@ -5,10 +5,10 @@
 
 using System.IO;
 using System.Threading.Tasks;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Tools.Runner.Checks;
 using Spectre.Console;
 using Spectre.Console.Cli;
-
 using static Datadog.Trace.Tools.Runner.Checks.Resources;
 
 namespace Datadog.Trace.Tools.Runner
@@ -17,41 +17,52 @@ namespace Datadog.Trace.Tools.Runner
     {
         public override async Task<int> ExecuteAsync(CommandContext context, CheckProcessSettings settings)
         {
+            AnsiConsole.Record();
             AnsiConsole.WriteLine("Running checks on process " + settings.Pid);
 
             var process = ProcessInfo.GetProcessInfo(settings.Pid);
-
-            if (process == null)
+            try
             {
-                Utils.WriteError("Could not fetch information about target process. Make sure to run the command from an elevated prompt, and check that the pid is correct.");
-                return 1;
-            }
-
-            var mainModule = process.MainModule != null ? Path.GetFileName(process.MainModule) : null;
-
-            if (mainModule == "w3wp.exe" || mainModule == "iisexpress.exe")
-            {
-                if (process.EnvironmentVariables.ContainsKey("APP_POOL_ID"))
+                if (process == null)
                 {
-                    Utils.WriteWarning(IisProcess);
+                    Utils.WriteError("Could not fetch information about target process. Make sure to run the command from an elevated prompt, and check that the pid is correct.");
+                    return 1;
+                }
+
+                var mainModule = process.MainModule != null ? Path.GetFileName(process.MainModule) : null;
+
+                if (mainModule == "w3wp.exe" || mainModule == "iisexpress.exe")
+                {
+                    if (process.EnvironmentVariables.ContainsKey("APP_POOL_ID"))
+                    {
+                        Utils.WriteWarning(IisProcess);
+                    }
+                }
+
+                var foundIssue = !ProcessBasicCheck.Run(process);
+
+                if (foundIssue)
+                {
+                    return 1;
+                }
+
+                foundIssue = !await AgentConnectivityCheck.RunAsync(process).ConfigureAwait(continueOnCapturedContext: false);
+
+                if (foundIssue)
+                {
+                    return 1;
+                }
+
+                Utils.WriteSuccess("No issue found with the target process.");
+            }
+            finally
+            {
+                if (settings.UploadToDatadog)
+                {
+                    var checkProcessReport = AnsiConsole.ExportText();
+                    await TelemetryReporter.UploadAsLogMessage(checkProcessReport).ConfigureAwait(false);
                 }
             }
-
-            var foundIssue = !ProcessBasicCheck.Run(process);
-
-            if (foundIssue)
-            {
-                return 1;
-            }
-
-            foundIssue = !await AgentConnectivityCheck.RunAsync(process).ConfigureAwait(false);
-
-            if (foundIssue)
-            {
-                return 1;
-            }
-
-            Utils.WriteSuccess("No issue found with the target process.");
 
             return 0;
         }

@@ -17,18 +17,17 @@ internal class TelemetryTransportManager
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryTransportManager>();
 
-    internal const int MaxFatalErrors = 2;
-    internal const int MaxTransientErrors = 5;
     private readonly ITelemetryTransport[] _transports;
 
-    private bool _hasSentSuccessfully = false;
     private int _initialFatalCount = 0;
     private int _failureCount = 0;
     private int _currentTransport = 0;
 
-    public TelemetryTransportManager(ITelemetryTransport[] transports)
+    public TelemetryTransportManager(ITelemetryTransport[] transports, int maxFatalErrors = 2, int maxTransientErrors = 5)
     {
         _transports = transports ?? throw new ArgumentNullException(nameof(transports));
+        MaxFatalErrors = maxFatalErrors;
+        MaxTransientErrors = maxTransientErrors;
         if (transports.Length > 0 && Log.IsEnabled(LogEventLevel.Debug))
         {
             var firstTransport = transports[0];
@@ -45,6 +44,12 @@ internal class TelemetryTransportManager
         TransientError,
         FatalError
     }
+
+    internal int MaxFatalErrors { get; private set; }
+
+    internal int MaxTransientErrors { get; private set; }
+
+    public bool HasSentSuccessfully { get; private set; }
 
     public ICollection<TelemetryValue>? PreviousConfiguration { get; private set; }
 
@@ -103,11 +108,11 @@ internal class TelemetryTransportManager
     {
         if (result == TelemetryPushResult.Success)
         {
-            _hasSentSuccessfully = true;
+            HasSentSuccessfully = true;
             _failureCount = 0;
             return PushEvaluationResult.Success;
         }
-        else if (result == TelemetryPushResult.FatalError && !_hasSentSuccessfully)
+        else if (result == TelemetryPushResult.FatalError && !HasSentSuccessfully)
         {
             _initialFatalCount++;
             if (_initialFatalCount >= MaxFatalErrors)
@@ -145,7 +150,7 @@ internal class TelemetryTransportManager
             // reset the circuit breaker counters
             _failureCount = 0;
             _initialFatalCount = 0;
-            _hasSentSuccessfully = false;
+            HasSentSuccessfully = false;
             // try with the next transport next time
             return PushEvaluationResult.TransientError;
         }

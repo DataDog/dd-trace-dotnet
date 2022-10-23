@@ -11,5 +11,8 @@ namespace Datadog.Trace.Tools.Runner
     {
         [CommandArgument(0, "<pid>")]
         public int Pid { get; set; }
+
+        [CommandOption("-u|--upload-to-datadog")]
+        public bool UploadToDatadog { get; set; }
     }
 }
