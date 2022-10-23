@@ -308,7 +308,7 @@ namespace Datadog.Trace.Ci
             // Merge commits have a different commit hash from the one reported by the CI.
             if (gitInfo.Commit == Commit)
             {
-                if (string.IsNullOrEmpty(AuthorName) || string.IsNullOrEmpty(AuthorEmail))
+                if (string.IsNullOrWhiteSpace(AuthorName) || string.IsNullOrWhiteSpace(AuthorEmail))
                 {
                     if (!string.IsNullOrEmpty(gitInfo.AuthorEmail))
                     {
@@ -323,7 +323,7 @@ namespace Datadog.Trace.Ci
 
                 AuthorDate ??= gitInfo.AuthorDate;
 
-                if (string.IsNullOrEmpty(CommitterName) || string.IsNullOrEmpty(CommitterEmail))
+                if (string.IsNullOrWhiteSpace(CommitterName) || string.IsNullOrWhiteSpace(CommitterEmail))
                 {
                     if (!string.IsNullOrEmpty(gitInfo.CommitterEmail))
                     {
@@ -342,13 +342,17 @@ namespace Datadog.Trace.Ci
                 {
                     // Some CI's (eg Azure) adds the `Merge X into Y` message to the Pull Request
                     // If we have the original commit message we use that.
-                    if (string.IsNullOrEmpty(Message) ||
+                    if (string.IsNullOrWhiteSpace(Message) ||
                         (Message.StartsWith("Merge", StringComparison.Ordinal) &&
                         !gitInfo.Message.StartsWith("Merge", StringComparison.Ordinal)))
                     {
                         Message = gitInfo.Message;
                     }
                 }
+            }
+            else
+            {
+                Log.Warning("Git commit in .git folder is different from the one in the environment variables. [{gitCommit} != {envVarCommit}]", gitInfo.Commit, Commit);
             }
 
             // **********
