@@ -310,12 +310,12 @@ namespace Datadog.Trace.Ci
             {
                 if (string.IsNullOrWhiteSpace(AuthorName) || string.IsNullOrWhiteSpace(AuthorEmail))
                 {
-                    if (!string.IsNullOrEmpty(gitInfo.AuthorEmail))
+                    if (!string.IsNullOrWhiteSpace(gitInfo.AuthorEmail))
                     {
                         AuthorEmail = gitInfo.AuthorEmail;
                     }
 
-                    if (!string.IsNullOrEmpty(gitInfo.AuthorName))
+                    if (!string.IsNullOrWhiteSpace(gitInfo.AuthorName))
                     {
                         AuthorName = gitInfo.AuthorName;
                     }
@@ -325,12 +325,12 @@ namespace Datadog.Trace.Ci
 
                 if (string.IsNullOrWhiteSpace(CommitterName) || string.IsNullOrWhiteSpace(CommitterEmail))
                 {
-                    if (!string.IsNullOrEmpty(gitInfo.CommitterEmail))
+                    if (!string.IsNullOrWhiteSpace(gitInfo.CommitterEmail))
                     {
                         CommitterEmail = gitInfo.CommitterEmail;
                     }
 
-                    if (!string.IsNullOrEmpty(gitInfo.CommitterName))
+                    if (!string.IsNullOrWhiteSpace(gitInfo.CommitterName))
                     {
                         CommitterName = gitInfo.CommitterName;
                     }
@@ -338,7 +338,7 @@ namespace Datadog.Trace.Ci
 
                 CommitterDate ??= gitInfo.CommitterDate;
 
-                if (!string.IsNullOrEmpty(gitInfo.Message))
+                if (!string.IsNullOrWhiteSpace(gitInfo.Message))
                 {
                     // Some CI's (eg Azure) adds the `Merge X into Y` message to the Pull Request
                     // If we have the original commit message we use that.
