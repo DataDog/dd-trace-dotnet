@@ -37,38 +37,6 @@ public class WeakCipherTests : TestHelper
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
         SetEnvironmentVariable("DD_IAST_ENABLED", "true");
 
-        [SkippableFact]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTraces()
-        {
-            SetEnvironmentVariable("DD_IAST_ENABLED", "true");
-
-            const int expectedSpanCount = 6;
-            var filename = "WeakCipherTests.SubmitsTraces";
-            using var agent = EnvironmentHelper.GetMockAgent();
-            using var process = RunSampleAndWaitForExit(agent);
-            var spans = agent.WaitForSpans(expectedSpanCount, operationName: ExpectedOperationName);
-
-            var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
-            await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName(filename)
-                              .DisableRequireUniquePrefix();
-
-            VerifyInstrumentation(process.Process);
-        }
-
-        [SkippableTheory]
-        [Trait("Category", "EndToEnd")]
-        [Trait("RunOnWindows", "True")]
-        [InlineData("DD_IAST_ENABLED", "false")]
-        [InlineData("DD_IAST_WEAK_CIPHER_ALGORITHMS", "")]
-    [InlineData($"DD_TRACE_{nameof(IntegrationId.SymmetricAlgorithm)}_ENABLED", "false")]
-        public void IntegrationDisabled(string variableName, string variableValue)
-        {
-        SetEnvironmentVariable("DD_IAST_ENABLED", "true");
-
         const int expectedSpanCount = 6;
         var filename = "WeakCipherTests.SubmitsTraces";
         using var agent = EnvironmentHelper.GetMockAgent();

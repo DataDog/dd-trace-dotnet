@@ -111,11 +111,27 @@ namespace Datadog.Trace
         /// <param name="rawTraceId">Raw trace id value</param>
         /// <param name="rawSpanId">Raw span id value</param>
         internal SpanContext(ISpanContext parent, TraceContext traceContext, IastRequestContext iastRequestContext, string serviceName, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null)
+            : this(parent, traceContext, serviceName, traceId, spanId, rawTraceId, rawSpanId)
+        {
+            IastRequestContext = iastRequestContext;
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SpanContext"/> class
+        /// that is the child of the specified parent context.
+        /// </summary>
+        /// <param name="parent">The parent context.</param>
+        /// <param name="traceContext">The trace context.</param>
+        /// <param name="serviceName">The service name to propagate to child spans.</param>
+        /// <param name="traceId">Override the trace id if there's no parent.</param>
+        /// <param name="spanId">The propagated span id.</param>
+        /// <param name="rawTraceId">Raw trace id value</param>
+        /// <param name="rawSpanId">Raw span id value</param>
+        internal SpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null)
             : this(parent?.TraceId ?? traceId, serviceName)
         {
             SpanId = spanId ?? SpanIdGenerator.CreateNew();
             Parent = parent;
-            IastRequestContext = iastRequestContext;
             TraceContext = traceContext;
             if (parent is SpanContext spanContext)
             {
