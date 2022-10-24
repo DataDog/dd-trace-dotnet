@@ -17,15 +17,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm;
 /// System.Security.Cryptography.HashAlgorithm instrumentation
 /// </summary>
 [InstrumentMethod(
-   AssemblyNames = new[] { "System.Security.Cryptography.Primitives" },
-   TypeNames = new[] { "System.Security.Cryptography.SymmetricAlgorithm" },
-   ParameterTypeNames = new string[] { },
-   MethodName = ".ctor",
-   ReturnTypeName = ClrNames.Void,
-   MinimumVersion = "1.0.0",
-   MaximumVersion = "7.*.*",
-   InstrumentationCategory = InstrumentationCategory.Iast,
-   IntegrationName = nameof(Configuration.IntegrationId.SymmetricAlgorithm))]
+    AssemblyNames = new[] { "System.Security.Cryptography.Primitives" },
+    TypeNames = new[] { "System.Security.Cryptography.SymmetricAlgorithm" },
+    ParameterTypeNames = new string[] { },
+    MethodName = ".ctor",
+    ReturnTypeName = ClrNames.Void,
+    MinimumVersion = "1.0.0",
+    MaximumVersion = "7.*.*",
+    InstrumentationCategory = InstrumentationCategory.Iast,
+    IntegrationName = nameof(Configuration.IntegrationId.SymmetricAlgorithm))]
 
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

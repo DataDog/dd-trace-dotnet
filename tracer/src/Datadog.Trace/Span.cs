@@ -38,12 +38,15 @@ namespace Datadog.Trace
             Context = context;
             StartTime = start ?? Context.TraceContext.UtcNow;
 
-            Log.Debug(
-                "Span started: [s_id: {SpanID}, p_id: {ParentId}, t_id: {TraceId}]",
-                SpanId,
-                Context.ParentId,
-                TraceId);
-        }
+            if (IsLogLevelDebugEnabled)
+            {
+                var tagsType = Tags.GetType();
+
+                Log.Debug(
+                    "Span started: [s_id: {SpanId}, p_id: {ParentId}, t_id: {TraceId}] with Tags: [{Tags}], Tags Type: [{tagsType}])",
+                    new object[] { SpanId, Context.ParentId, TraceId, Tags, tagsType });
+            }
+         }
 
         /// <summary>
         /// Gets or sets operation name

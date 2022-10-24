@@ -429,6 +429,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("iast_enabled");
                     writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.Enabled);
 
+                    writer.WritePropertyName("iast_deduplication_enabled");
+                    writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.DeduplicationEnabled);
+
                     writer.WritePropertyName("iast_weak_hash_algorithms");
                     writer.WriteValue(Datadog.Trace.Iast.Iast.Instance.Settings.WeakHashAlgorithms);
 

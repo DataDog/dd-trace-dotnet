@@ -128,6 +128,7 @@ private:
     std::string GeneratePprofFilePath(const std::string& applicationName, int idx) const;
     fs::path CreatePprofOutputPath(IConfiguration* configuration) const;
 
+
     static tags CommonTags;
     static std::string const ProcessId;
     static int const RequestTimeOutMs;

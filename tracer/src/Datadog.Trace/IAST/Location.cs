@@ -18,4 +18,9 @@ internal readonly struct Location
     public string? Path { get; }
 
     public int? Line { get; }
+
+    public override int GetHashCode()
+    {
+        return IastUtils.GetHashCode(new object?[] { Path, Line });
+    }
 }

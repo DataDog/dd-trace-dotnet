@@ -36,6 +36,7 @@ public class WeakHashingTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task SubmitsTraces()
     {
+        SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
         SetEnvironmentVariable("DD_IAST_ENABLED", "true");
         // Avoid tests parallel log collision
         SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", Path.Combine(EnvironmentHelper.LogDirectory, "WeakHashingLogs"));

@@ -464,3 +464,23 @@ TEST(ConfigurationTest, CheckNamedPipePathWhenProvided)
     auto configuration = Configuration{};
     EXPECT_EQ(configuration.GetNamedPipeName(), expectedPath);
 }
+
+TEST(ConfigurationTest, CheckTimestampAsLabelIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsTimestampsAsLabelEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckTimestampAsLabelIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::TimestampsAsLabelEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsTimestampsAsLabelEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckTimestampAsLabelIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::TimestampsAsLabelEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsTimestampsAsLabelEnabled(), false);
+}
