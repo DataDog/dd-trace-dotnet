@@ -5,7 +5,9 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using System.Threading;
 using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Vendors.Serilog.Core.Pipeline;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Logging
@@ -13,8 +15,8 @@ namespace Datadog.Trace.Logging
     internal class DatadogSerilogLogger : IDatadogLogger
     {
         private static readonly object[] NoPropertyValues = Array.Empty<object>();
-        private readonly ILogger _logger;
         private readonly ILogRateLimiter _rateLimiter;
+        private ILogger _logger;
 
         public DatadogSerilogLogger(ILogger logger, ILogRateLimiter rateLimiter)
         {
@@ -146,6 +148,13 @@ namespace Datadog.Trace.Logging
 
         public void Error(Exception exception, string messageTemplate, object[] args, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "")
             => Write(LogEventLevel.Error, exception, messageTemplate, args, sourceLine, sourceFile);
+
+        public void CloseAndFlush()
+        {
+            var logger = Interlocked.Exchange(ref _logger, SilentLogger.Instance);
+
+            (logger as IDisposable)?.Dispose();
+        }
 
         private void Write<T>(LogEventLevel level, Exception exception, string messageTemplate, T property, int sourceLine, string sourceFile)
         {

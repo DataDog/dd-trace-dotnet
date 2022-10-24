@@ -1,4 +1,4 @@
-﻿{
+{
   Env: integration_tests,
   Service: Samples.DataStreams.Kafka,
   TracerVersion: 2.x.x.x,

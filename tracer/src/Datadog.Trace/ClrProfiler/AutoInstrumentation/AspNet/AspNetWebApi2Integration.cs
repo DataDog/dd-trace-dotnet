@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.AspNet;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -67,9 +68,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
                         Log.Error(ex, "Error extracting propagated HTTP headers.");
                     }
 
-                    const string httpContextKey = "MS_HttpContext";
-                    if (!tracer.Settings.IpHeaderDisabled)
+                    if (Security.Instance.Settings.Enabled)
                     {
+                        const string httpContextKey = "MS_HttpContext";
                         if (request.Properties.TryGetValue("MS_OwinContext", out var owinContextObj))
                         {
                             if (owinContextObj != null)

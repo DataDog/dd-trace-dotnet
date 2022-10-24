@@ -11,6 +11,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
+using Datadog.Trace.Vendors.Serilog.Core.Pipeline;
 using Datadog.Trace.Vendors.Serilog.Events;
 using Datadog.Trace.Vendors.Serilog.Sinks.File;
 
@@ -27,13 +28,9 @@ namespace Datadog.Trace.Logging
 
         static DatadogLogging()
         {
-            // No-op for if we fail to construct the file logger
-            var nullRateLimiter = new NullLogRateLimiter();
-            ILogger internalLogger = new LoggerConfiguration()
-                                    .WriteTo.Sink<NullSink>()
-                                    .CreateLogger();
-
-            SharedLogger = new DatadogSerilogLogger(internalLogger, nullRateLimiter);
+            // Initialize the fallback logger right away
+            // because some part of the code might produce logs while we initialize the actual logger
+            SharedLogger = new DatadogSerilogLogger(SilentLogger.Instance, new NullLogRateLimiter());
 
             try
             {
@@ -97,13 +94,22 @@ namespace Datadog.Trace.Logging
                     // At all costs, make sure the logger works when possible.
                 }
 
-                internalLogger = loggerConfiguration.CreateLogger();
-                SharedLogger = new DatadogSerilogLogger(internalLogger, nullRateLimiter);
+                var internalLogger = loggerConfiguration.CreateLogger();
 
-                var rate = GetRateLimit();
-                ILogRateLimiter rateLimiter = rate == 0
-                    ? nullRateLimiter
-                    : new LogRateLimiter(rate);
+                ILogRateLimiter rateLimiter;
+
+                try
+                {
+                    var rate = GetRateLimit();
+
+                    rateLimiter = rate == 0
+                        ? new NullLogRateLimiter()
+                        : new LogRateLimiter(rate);
+                }
+                catch
+                {
+                    rateLimiter = new NullLogRateLimiter();
+                }
 
                 SharedLogger = new DatadogSerilogLogger(internalLogger, rateLimiter);
             }
@@ -123,6 +129,11 @@ namespace Datadog.Trace.Logging
         public static IDatadogLogger GetLoggerFor<T>()
         {
             return GetLoggerFor(typeof(T));
+        }
+
+        internal static void CloseAndFlush()
+        {
+            SharedLogger.CloseAndFlush();
         }
 
         internal static void Reset()
