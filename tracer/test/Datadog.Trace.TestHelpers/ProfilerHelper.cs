@@ -20,7 +20,7 @@ namespace Datadog.Trace.TestHelpers
             string processToProfile = null,
             bool? enableSecurity = null,
             string externalRulesFile = null,
-            bool? enableIast = false)
+            bool? enableIast = null)
         {
             if (environmentHelper == null)
             {
