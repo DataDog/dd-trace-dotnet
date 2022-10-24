@@ -268,11 +268,6 @@ namespace Datadog.InstrumentedAssemblyGenerator
                     {
                         try
                         {
-                            if (_args.MethodsToVerify != null && !_args.MethodsToVerify.Contains(instrumentedMethod.MethodName))
-                            {
-                                continue;
-                            }
-
                             var modifiedMethod = ModifyMethod(module, instrumentedMethod, ModuleRewriteContext.InstrumentedModulesTypesTokens[methods.Key], ModuleRewriteContext.OriginalModulesTypesTokens[methods.Key]);
                             if (modifiedMethod == null)
                             {

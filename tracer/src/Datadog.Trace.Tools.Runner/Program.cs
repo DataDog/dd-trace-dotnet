@@ -148,6 +148,10 @@ namespace Datadog.Trace.Tools.Runner
                   .WithDescription("Apply AOT automatic instrumentation on application folder")
                   .WithExample("apply-aot c:\\input\\ c:\\output\\".Split(' '))
                   .IsHidden();
+
+            config.AddCommand<AnalyzeInstrumentationErrorsCommand>("analyze-instrumentation")
+                  .WithDescription("Analyze instrumentation errors")
+                  .WithExample("analyze-instrumentation dotnet".Split(' '));
         }
 
         private static int ExecuteLegacyCommandLine(string[] args, ApplicationContext applicationContext)

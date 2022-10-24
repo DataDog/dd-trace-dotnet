@@ -1,34 +1,29 @@
-// <copyright file="AnalyzeCriticalErrorCommand.cs" company="Datadog">
+// <copyright file="AnalyzeInstrumentationErrorsCommand.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.InstrumentedAssemblyGenerator;
 using Datadog.InstrumentedAssemblyVerification;
-using Datadog.Trace.Tools.Runner.Checks;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
 namespace Datadog.Trace.Tools.Runner;
 
-internal class AnalyzeCriticalErrorCommand : AsyncCommand<AnalyzeCriticalErrorSettings>
+internal class AnalyzeInstrumentationErrorsCommand : AsyncCommand<AnalyzeInstrumentationErrorsSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, AnalyzeCriticalErrorSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, AnalyzeInstrumentationErrorsSettings settings)
     {
         AnsiConsole.Record();
-        AnsiConsole.WriteLine("Running critical error analysis on process " + settings.Pid + ". Error was in method " + "." + settings.Method);
-
-        var module = GetMainModule(settings);
-        if (module == null)
+        AnsiConsole.WriteLine("Running instrumentation error analysis on process " + (settings.Pid != null ? settings.Pid : "NA"));
+        if (!string.IsNullOrEmpty(settings.Method))
         {
-            Utils.WriteError("No module found.");
-            return -1;
+            AnsiConsole.WriteLine("Error was in method " + "." + settings.Method);
         }
 
         var logDirectory = GetLogDirectory(settings.LogDirectory);
@@ -38,15 +33,15 @@ internal class AnalyzeCriticalErrorCommand : AsyncCommand<AnalyzeCriticalErrorSe
             return -1;
         }
 
-        var baseFolder = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? Path.Combine(logDirectory, $"{module}_{settings.Pid}") : Path.Combine(logDirectory, module);
+        var processLogDir = GetProcessLogDirectory(logDirectory, settings);
 
-        if (!Directory.Exists(baseFolder))
+        if (!Directory.Exists(processLogDir))
         {
             Utils.WriteError("Log directory has not found.");
             return -1;
         }
 
-        var generatorArgs = new AssemblyGeneratorArgs(baseFolder, modulesToVerify: new[] { module }, methodsToVerify: settings.Method?.Split(","));
+        var generatorArgs = new AssemblyGeneratorArgs(processLogDir, modulesToVerify: settings.Module == null ? null : new[] { settings.Module });
 
         var exportedModulesPathsAndMethods = InstrumentedAssemblyGeneration.Generate(generatorArgs);
 
@@ -66,9 +61,9 @@ internal class AnalyzeCriticalErrorCommand : AsyncCommand<AnalyzeCriticalErrorSe
                 foreach (var method in export.methods)
                 {
                     AnsiConsole.WriteLine("--------------------------------------------------------");
-                    AnsiConsole.WriteLine($"Method {method.FullName}  has been instrumented.");
-                    AnsiConsole.WriteLine($"Instrumented IL Code: {method.Instructions}");
-                    AnsiConsole.WriteLine($"Instrumented Decompiled Code: {method.DecompiledCode}");
+                    AnsiConsole.WriteLine($"Method {method.FullName} has been instrumented.");
+                    AnsiConsole.WriteLine($"Instrumented IL Code:{Environment.NewLine}{method.Instructions}");
+                    AnsiConsole.WriteLine($"Instrumented Decompiled Code:{Environment.NewLine}{method.DecompiledCode.Value}");
                 }
             }
 
@@ -84,32 +79,36 @@ internal class AnalyzeCriticalErrorCommand : AsyncCommand<AnalyzeCriticalErrorSe
         return allVerificationsPassed ? 0 : -1;
     }
 
-    private string GetLogDirectory(string logDirectory)
+    private string GetProcessLogDirectory(string baseLogDir, AnalyzeInstrumentationErrorsSettings settings)
     {
-        var dir = logDirectory ?? "DefaultLogDirectory";
-        return Directory.Exists(dir) ? dir : null;
+        var dirs = Directory.EnumerateDirectories(baseLogDir).Select(d => new DirectoryInfo(d)).ToList();
+        if (dirs.Count == 0)
+        {
+            return null;
+        }
+
+        if (dirs.Count == 1)
+        {
+            if (string.IsNullOrEmpty(settings.ProcessName) && settings.Pid == null)
+            {
+                return dirs[0].FullName;
+            }
+        }
+
+        if (string.IsNullOrEmpty(settings.ProcessName) && settings.Pid == null)
+        {
+            return null;
+        }
+
+        var processName = string.IsNullOrEmpty(settings.ProcessName) ? "[A-Z0-9]" : $"({settings.ProcessName})";
+        var pid = settings.Pid == null ? "\\d+" : settings.Pid.ToString();
+        var pattern = $"^{processName}(_){pid}(_)[0-9-_]+$";
+        return dirs.SingleOrDefault(d => Regex.IsMatch(d.Name, pattern))?.FullName;
     }
 
-    private string GetMainModule(AnalyzeCriticalErrorSettings settings)
+    private string GetLogDirectory(string logDirectory)
     {
-        if (!string.IsNullOrEmpty(settings.Module))
-        {
-            return null;
-        }
-
-        if (settings.Pid == null)
-        {
-            return null;
-        }
-
-        var process = ProcessInfo.GetProcessInfo(settings.Pid.Value);
-
-        if (process == null)
-        {
-            Utils.WriteError("Could not fetch information about target process. Make sure to run the command from an elevated prompt, and check that the pid is correct.");
-            return null;
-        }
-
-        return process.MainModule != null ? Path.GetFileName(process.MainModule) : null;
+        var dir = logDirectory ?? @"C:\ProgramData\Datadog-APM\logs\DotNet\InstrumentationVerification";
+        return Directory.Exists(dir) ? dir : null;
     }
 }
