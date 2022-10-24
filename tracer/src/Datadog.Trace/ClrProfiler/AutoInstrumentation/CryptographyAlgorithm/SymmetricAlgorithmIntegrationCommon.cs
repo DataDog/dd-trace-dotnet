@@ -23,14 +23,6 @@ internal class SymmetricAlgorithmIntegrationCommon
 
         if (!iast.Settings.Enabled)
         {
-            var iast = Iast.Iast.Instance;
-        if (!iast.Settings.Enabled)
-            {
-                return null;
-            }
-
-        if (!iast.Settings.Enabled)
-        {
             return null;
         }
 
