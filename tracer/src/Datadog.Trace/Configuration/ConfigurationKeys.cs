@@ -312,12 +312,6 @@ namespace Datadog.Trace.Configuration
         public const string IpHeader = "DD_TRACE_CLIENT_IP_HEADER";
 
         /// <summary>
-        /// Configuration key indicating if the header should not be collected. The default for DD_TRACE_CLIENT_IP_HEADER_DISABLED is false.
-        /// </summary>
-        /// <seealso cref="TracerSettings.IpHeaderDisabled"/>
-        public const string IpHeaderDisabled = "DD_TRACE_CLIENT_IP_HEADER_DISABLED";
-
-        /// <summary>
         /// Configuration key to enable or disable the creation of a span context on exiting a successful Kafka
         /// Consumer.Consume() call, and closing the scope on entering Consumer.Consume().
         /// Default value is <c>true</c> (enabled).
