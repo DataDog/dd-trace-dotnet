@@ -19,6 +19,7 @@ internal readonly struct DictionaryGetterAndSetter : ICarrierGetter<IDictionary>
                                                                                         .Replace(".", "_")
                                                                                         .Replace("-", "_")
                                                                                         .ToUpperInvariant();
+
     private readonly Func<string, string>? _keyProcessor;
 
     public DictionaryGetterAndSetter(Func<string, string>? keyProcessor)

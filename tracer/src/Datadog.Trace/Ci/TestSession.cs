@@ -34,7 +34,7 @@ public sealed class TestSession
 
         var tags = new TestSessionSpanTags
         {
-            Command = command,
+            Command = command ?? string.Empty,
         };
 
         var span = Tracer.Instance.StartSpan(
@@ -66,7 +66,7 @@ public sealed class TestSession
         {
             Environment.SetEnvironmentVariable(envVar.Key, envVar.Value);
         }
-        
+
         Current = this;
         CIVisibility.Log.Debug("### Test Session Created: {command}", command);
 
@@ -243,5 +243,40 @@ public sealed class TestSession
         Current = null;
         CIVisibility.Log.Debug("### Test Session Closed: {command}", Command);
         CIVisibility.FlushSpans();
+    }
+
+    /// <summary>
+    /// Create a new Test Module
+    /// </summary>
+    /// <param name="name">Test module name</param>
+    /// <returns>New test module instance</returns>
+    public TestModule CreateModule(string name)
+    {
+        return new TestModule(name, null, null, null, Tags);
+    }
+
+    /// <summary>
+    /// Create a new Test Module
+    /// </summary>
+    /// <param name="name">Test module name</param>
+    /// <param name="framework">Testing framework name</param>
+    /// <param name="frameworkVersion">Testing framework version</param>
+    /// <returns>New test module instance</returns>
+    public TestModule CreateModule(string name, string framework, string frameworkVersion)
+    {
+        return new TestModule(name, framework, frameworkVersion, null, Tags);
+    }
+
+    /// <summary>
+    /// Create a new Test Module
+    /// </summary>
+    /// <param name="name">Test module name</param>
+    /// <param name="framework">Testing framework name</param>
+    /// <param name="frameworkVersion">Testing framework version</param>
+    /// <param name="startDate">Test session start date</param>
+    /// <returns>New test module instance</returns>
+    public TestModule CreateModule(string name, string framework, string frameworkVersion, DateTimeOffset startDate)
+    {
+        return new TestModule(name, framework, frameworkVersion, startDate, Tags);
     }
 }

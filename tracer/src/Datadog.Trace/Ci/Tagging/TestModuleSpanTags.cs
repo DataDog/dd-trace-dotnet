@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Ci.Tagging;
 
@@ -20,7 +21,7 @@ internal partial class TestModuleSpanTags : TestSessionSpanTags
         Environment = sessionTags.Environment;
         Version = sessionTags.Version;
     }
-    
+
     public ulong ModuleId { get; set; }
 
     [Tag(TestTags.Type)]

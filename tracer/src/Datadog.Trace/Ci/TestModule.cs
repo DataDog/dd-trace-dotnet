@@ -29,6 +29,11 @@ public sealed class TestModule
     private int _finished;
 
     private TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate)
+        : this(name, framework, frameworkVersion, startDate, null)
+    {
+    }
+
+    internal TestModule(string name, string? framework, string? frameworkVersion, DateTimeOffset? startDate, TestSessionSpanTags? sessionSpanTags)
     {
         // First we make sure that CI Visibility is initialized.
         CIVisibility.Initialize();
@@ -87,20 +92,28 @@ public sealed class TestModule
             tags.TestsSkipped = "true";
         }
 
-        // Extract session variables
-        var environmentVariables = Environment.GetEnvironmentVariables();
-        var sessionContext = SpanContextPropagator.Instance.Extract(
-            environmentVariables,
-                         new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
-        if (sessionContext is not null)
+        if (sessionSpanTags is not null)
         {
-            tags.SessionId = sessionContext.SpanId;
-            if (environmentVariables.TryGetValue<string>(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, out var testSessionCommand))
+            tags.SessionId = sessionSpanTags.SessionId;
+            tags.Command = sessionSpanTags.Command;
+        }
+        else
+        {
+            // Extract session variables (for out of process sessions)
+            var environmentVariables = Environment.GetEnvironmentVariables();
+            var sessionContext = SpanContextPropagator.Instance.Extract(
+                environmentVariables, new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
+
+            if (sessionContext is not null)
             {
-                tags.Command = testSessionCommand;
+                tags.SessionId = sessionContext.SpanId;
+                if (environmentVariables.TryGetValue<string>(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, out var testSessionCommand))
+                {
+                    tags.Command = testSessionCommand;
+                }
             }
         }
-        
+
         var span = Tracer.Instance.StartSpan(
             string.IsNullOrEmpty(framework) ? "test_module" : $"{framework!.ToLowerInvariant()}.test_module",
             tags: tags,

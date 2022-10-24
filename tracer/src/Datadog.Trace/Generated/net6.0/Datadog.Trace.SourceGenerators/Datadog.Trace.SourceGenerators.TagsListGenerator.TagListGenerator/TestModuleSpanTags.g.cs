@@ -78,8 +78,6 @@ namespace Datadog.Trace.Ci.Tagging
         private static readonly byte[] CiEnvVarsBytes = new byte[] { 95, 100, 100, 46, 99, 105, 46, 101, 110, 118, 95, 118, 97, 114, 115 };
         // TestsSkippedBytes = System.Text.Encoding.UTF8.GetBytes("_dd.ci.itr.tests_skipped");
         private static readonly byte[] TestsSkippedBytes = new byte[] { 95, 100, 100, 46, 99, 105, 46, 105, 116, 114, 46, 116, 101, 115, 116, 115, 95, 115, 107, 105, 112, 112, 101, 100 };
-        // StatusBytes = System.Text.Encoding.UTF8.GetBytes("test.status");
-        private static readonly byte[] StatusBytes = new byte[] { 116, 101, 115, 116, 46, 115, 116, 97, 116, 117, 115 };
 
         public override string? GetTag(string key)
         {
@@ -120,7 +118,6 @@ namespace Datadog.Trace.Ci.Tagging
                 "git.commit.committer.date" => GitCommitCommitterDate,
                 "_dd.ci.env_vars" => CiEnvVars,
                 "_dd.ci.itr.tests_skipped" => TestsSkipped,
-                "test.status" => Status,
                 _ => base.GetTag(key),
             };
         }
@@ -230,9 +227,6 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "_dd.ci.itr.tests_skipped": 
                     TestsSkipped = value;
-                    break;
-                case "test.status": 
-                    Status = value;
                     break;
                 default: 
                     base.SetTag(key, value);
@@ -415,11 +409,6 @@ namespace Datadog.Trace.Ci.Tagging
             if (TestsSkipped is not null)
             {
                 processor.Process(new TagItem<string>("_dd.ci.itr.tests_skipped", TestsSkipped, TestsSkippedBytes));
-            }
-
-            if (Status is not null)
-            {
-                processor.Process(new TagItem<string>("test.status", Status, StatusBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -669,13 +658,6 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("_dd.ci.itr.tests_skipped (tag):")
                   .Append(TestsSkipped)
-                  .Append(',');
-            }
-
-            if (Status is not null)
-            {
-                sb.Append("test.status (tag):")
-                  .Append(Status)
                   .Append(',');
             }
 

@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Ci.Tagging;
 
