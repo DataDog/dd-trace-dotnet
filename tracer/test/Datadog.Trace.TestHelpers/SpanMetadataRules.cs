@@ -36,7 +36,8 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "aspnet.request")
                 .Matches(Type, "web"))
             .Tags(s => s
-                .IsPresent("http.client_ip")
+                .IsOptional("http.client_ip")
+                .IsOptional("network.client.ip")
                 .IsPresent("http.method")
                 .IsPresent("http.request.headers.host")
                 .IsOptional("http.route")
@@ -45,7 +46,6 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.url")
                 // BUG: component tag is not set
                 // .Matches("component", "aspnet")
-                .IsPresent("network.client.ip")
                 .Matches("span.kind", "server"));
 
         public static Result IsAspNetMvc(this MockSpan span) => Result.FromSpan(span)
@@ -75,6 +75,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("aspnet.controller")
                 .IsPresent("aspnet.route")
                 .IsOptional("http.client_ip")
+                .IsOptional("network.client.ip")
                 .IsPresent("http.method")
                 .IsPresent("http.request.headers.host")
                 .IsOptional("http.route")
@@ -90,7 +91,6 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.url")
                 // BUG: component tag is not set
                 // .Matches("component", "aspnet")
-                .IsOptional("network.client.ip")
                 .Matches("span.kind", "server"));
 
         public static Result IsAspNetCore(this MockSpan span, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
@@ -100,14 +100,14 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsOptional("aspnet_core.endpoint")
                 .IsOptional("aspnet_core.route")
-                .IsPresent("http.client_ip")
+                .IsOptional("http.client_ip")
+                .IsOptional("network.client.ip")
                 .IsPresent("http.method")
                 .IsPresent("http.request.headers.host")
                 .IsOptional("http.route")
                 .IsPresent("http.status_code")
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
-                .IsPresent("network.client.ip")
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
 
