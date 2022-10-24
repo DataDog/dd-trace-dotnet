@@ -22,11 +22,14 @@ internal class IastSettings
         WeakHashAlgorithmsArray = WeakHashAlgorithms.Split(new char[] { ',' }, System.StringSplitOptions.RemoveEmptyEntries);
         Enabled = (source?.GetBool(ConfigurationKeys.Iast.Enabled) ?? false) &&
             (WeakHashAlgorithmsArray.Length > 0 || WeakCipherAlgorithmsArray.Length > 0);
+        DeduplicationEnabled = source?.GetBool(ConfigurationKeys.Iast.IsIastDeduplicationEnabled) ?? true;
     }
 
     public bool Enabled { get; set; }
 
     public string[] WeakHashAlgorithmsArray { get; }
+
+    public bool DeduplicationEnabled { get; }
 
     public string WeakHashAlgorithms { get; }
 
