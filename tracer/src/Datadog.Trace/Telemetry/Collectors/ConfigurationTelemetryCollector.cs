@@ -54,8 +54,17 @@ namespace Datadog.Trace.Telemetry
             }
 
             _azureApServicesMetadata = appServicesMetadata;
+
+            _hostData = CreateHostTelemetryData();
+
+            _isTracerInitialized = true;
+            SetHasChanges();
+        }
+
+        internal static HostTelemetryData CreateHostTelemetryData()
+        {
             var host = HostMetadata.Instance;
-            _hostData = new HostTelemetryData
+            return new HostTelemetryData
             {
                 ContainerId = ContainerMetadata.GetContainerId(),
                 Os = FrameworkDescription.Instance.OSPlatform,
@@ -65,9 +74,6 @@ namespace Datadog.Trace.Telemetry
                 KernelRelease = host.KernelRelease,
                 KernelVersion = host.KernelVersion,
             };
-
-            _isTracerInitialized = true;
-            SetHasChanges();
         }
 
         public void RecordSecuritySettings(SecuritySettings securitySettings)

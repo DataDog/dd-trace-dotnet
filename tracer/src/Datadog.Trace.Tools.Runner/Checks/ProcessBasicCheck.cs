@@ -87,7 +87,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             if (isContinuousProfilerEnabled)
             {
-                ok &= CheckContinousProfiler(process, loaderModule);
+                ok &= CheckContinuousProfiler(process, loaderModule);
             }
 
             var tracerModules = FindTracerModules(process).ToArray();
@@ -178,7 +178,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return ok;
         }
 
-        internal static bool CheckContinousProfiler(ProcessInfo process, string? loaderModule)
+        internal static bool CheckContinuousProfiler(ProcessInfo process, string? loaderModule)
         {
             bool ok = true;
 
