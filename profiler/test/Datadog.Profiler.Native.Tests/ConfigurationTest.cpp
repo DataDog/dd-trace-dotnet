@@ -415,13 +415,21 @@ TEST(ConfigurationTest, CheckCpuWallTimeSamplingRateIfEnvVarSet)
     ASSERT_THAT(rate, std::chrono::nanoseconds(123000000));
 }
 
-TEST(ConfigurationTest, CheckCpuWallTimeSamplingRateIfTooSmallValue)
+TEST(ConfigurationTest, CheckCpuWallTimeSamplingRateIfNotSet)
 {
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuWallTimeSamplingRate, WStr("5"));
     auto configuration = Configuration{};
     auto rate = configuration.CpuWallTimeSamplingRate();
     auto count = rate.count();
     ASSERT_THAT(rate, std::chrono::nanoseconds(9000000));
+}
+
+TEST(ConfigurationTest, CheckCpuWallTimeSamplingRateIfTooSmallValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuWallTimeSamplingRate, WStr("1"));
+    auto configuration = Configuration{};
+    auto rate = configuration.CpuWallTimeSamplingRate();
+    auto count = rate.count();
+    ASSERT_THAT(rate, std::chrono::nanoseconds(5000000));
 }
 
 TEST(ConfigurationTest, CheckAllocationProfilingIsDisabledByDefault)
@@ -483,4 +491,66 @@ TEST(ConfigurationTest, CheckTimestampAsLabelIsDisabledIfEnvVarSetToFalse)
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::TimestampsAsLabelEnabled, WStr("0"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.IsTimestampsAsLabelEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckWallTimeThreadsThresholdIfNoValue)
+{
+    auto configuration = Configuration{};
+    auto threshold = configuration.WalltimeThreadsThreshold();
+    ASSERT_THAT(threshold, 5);
+}
+
+TEST(ConfigurationTest, CheckWallTimeThreadsThresholdIfTooSmallValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::WalltimeThreadsThreshold, WStr("1"));
+    auto configuration = Configuration{};
+    auto threshold = configuration.WalltimeThreadsThreshold();
+    ASSERT_THAT(threshold, 5);
+}
+
+TEST(ConfigurationTest, CheckWallTimeThreadsThresholdIfTooLargeValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::WalltimeThreadsThreshold, WStr("5000"));
+    auto configuration = Configuration{};
+    auto threshold = configuration.WalltimeThreadsThreshold();
+    ASSERT_THAT(threshold, 64);
+}
+
+TEST(ConfigurationTest, CheckWallTimeThreadsThresholdIfCorrectValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::WalltimeThreadsThreshold, WStr("16"));
+    auto configuration = Configuration{};
+    auto threshold = configuration.WalltimeThreadsThreshold();
+    ASSERT_THAT(threshold, 16);
+}
+
+TEST(ConfigurationTest, CheckCpuThreadsThresholdIfNoValue)
+{
+    auto configuration = Configuration{};
+    auto threshold = configuration.CpuThreadsThreshold();
+    ASSERT_THAT(threshold, 64);
+}
+
+TEST(ConfigurationTest, CheckCpuThreadsThresholdIfTooSmallValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuTimeThreadsThreshold, WStr("1"));
+    auto configuration = Configuration{};
+    auto threshold = configuration.CpuThreadsThreshold();
+    ASSERT_THAT(threshold, 5);
+}
+
+TEST(ConfigurationTest, CheckCpuThreadsThresholdIfTooLargeValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuTimeThreadsThreshold, WStr("5000"));
+    auto configuration = Configuration{};
+    auto threshold = configuration.CpuThreadsThreshold();
+    ASSERT_THAT(threshold, 128);
+}
+
+TEST(ConfigurationTest, CheckCpuThreadsThresholdIfCorrectValue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CpuTimeThreadsThreshold, WStr("16"));
+    auto configuration = Configuration{};
+    auto threshold = configuration.CpuThreadsThreshold();
+    ASSERT_THAT(threshold, 16);
 }

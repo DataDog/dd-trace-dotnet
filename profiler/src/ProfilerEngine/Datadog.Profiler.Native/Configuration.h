@@ -50,7 +50,8 @@ public:
     std::chrono::nanoseconds CpuWallTimeSamplingRate() const override;
     const std::string& GetNamedPipeName() const override;
     bool IsTimestampsAsLabelEnabled() const override;
-
+    int32_t WalltimeThreadsThreshold() const override;
+    int32_t CpuThreadsThreshold() const override;
 
 private:
     static tags ExtractUserTags();
@@ -66,6 +67,8 @@ private:
     template <typename T>
     static T GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue);
     static std::chrono::nanoseconds ExtractCpuWallTimeSamplingRate();
+    static int32_t ExtractWallTimeThreadsThreshold();
+    static int32_t ExtractCpuThreadsThreshold();
 
 private:
     static std::string const DefaultProdSite;
@@ -106,6 +109,8 @@ private:
     int32_t _contentionSampleLimit;
     int32_t _contentionDurationThreshold;
     std::chrono::nanoseconds _cpuWallTimeSamplingRate;
+    int32_t _walltimeThreadsThreshold;
+    int32_t _cpuThreadsThreshold;
 
     double _minimumCores;
     std::string _namedPipeName;

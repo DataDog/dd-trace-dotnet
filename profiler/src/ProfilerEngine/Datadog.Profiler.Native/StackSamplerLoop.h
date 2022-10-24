@@ -76,6 +76,8 @@ private:
     ManagedThreadInfo* _targetThread;
     uint32_t _iteratorWallTime;
     uint32_t _iteratorCpuTime;
+    int32_t _walltimeThreadsThreshold;
+    int32_t _cpuThreadsThreshold;
 
 private:
     std::unordered_map<HRESULT, uint64_t> _encounteredStackSnapshotHRs;
