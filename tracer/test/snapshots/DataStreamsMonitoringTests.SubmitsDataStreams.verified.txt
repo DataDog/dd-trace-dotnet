@@ -60,6 +60,52 @@
           PathwayLatency: /w==,
           EdgeLatency: /w==,
           TimestampType: current
+        },
+        {
+          EdgeTags: [
+            group:Samples.DataStreams.Kafka.consumer-2,
+            topic:data-streams-2,
+            type:kafka
+          ],
+          Hash: 4701874528067105417,
+          ParentHash: 428893431238664991,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            group:Samples.DataStreams.Kafka.consumer-3,
+            topic:data-streams-3,
+            type:kafka
+          ],
+          Hash: 17029362228578737937,
+          ParentHash: 9288243326407318747,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            type:internal
+          ],
+          Hash: 5603712524956936337,
+          ParentHash: 4701874528067105417,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: current
+        },
+        {
+          EdgeTags: [
+            group:Samples.DataStreams.Kafka.consumer-3,
+            topic:data-streams-3,
+            type:kafka
+          ],
+          Hash: 713412453862704155,
+          ParentHash: 5603712524956936337,
+          PathwayLatency: /w==,
+          EdgeLatency: /w==,
+          TimestampType: current
         }
       ]
     },
