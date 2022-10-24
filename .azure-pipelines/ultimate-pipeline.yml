@@ -2173,15 +2173,11 @@ stages:
       displayName: Build and Test tool
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-        DD_LOGGER_DD_SERVICE: dd-trace-dotnet
-        DD_LOGGER_DD_ENV: CI
 
     - script: tracer\build.cmd RunToolArtifactTests --ToolDestination $(runnerStandalone)
       displayName: Test standalone
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
-        DD_LOGGER_DD_SERVICE: dd-trace-dotnet
-        DD_LOGGER_DD_ENV: CI
 
     - task: PublishTestResults@2
       displayName: publish test results
