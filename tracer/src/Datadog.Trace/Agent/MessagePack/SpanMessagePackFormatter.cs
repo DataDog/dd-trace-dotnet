@@ -89,7 +89,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
             // some strings are used multiple times in the same a trace,
             // but they are not constant across traces, so cache those per trace here
-            var cachedStringBytes = new CachedStringBytes(
+            var cachedBytes = new CachedMessagePackBytes(
                 environment: traceChunk.Environment,
                 serviceVersion: traceChunk.ServiceVersion,
                 origin: traceChunk.Origin);
@@ -105,13 +105,13 @@ namespace Datadog.Trace.Agent.MessagePack
                 // or if its parent can also be found in the same chunk, so we use SpanModel
                 // to pass that information to the serializer
                 var spanModel = traceChunk.GetSpanModel(i);
-                offset += Serialize(ref bytes, offset, in spanModel, in cachedStringBytes);
+                offset += Serialize(ref bytes, offset, in spanModel, in cachedBytes);
             }
 
             return offset - originalOffset;
         }
 
-        private int Serialize(ref byte[] bytes, int offset, in SpanModel spanModel, in CachedStringBytes cachedStringBytes)
+        private int Serialize(ref byte[] bytes, int offset, in SpanModel spanModel, in CachedMessagePackBytes cachedBytes)
         {
             var span = spanModel.Span;
 
@@ -177,7 +177,7 @@ namespace Datadog.Trace.Agent.MessagePack
                 tagProcessors = tracer.TracerManager?.TagProcessors;
             }
 
-            offset += WriteTags(ref bytes, offset, in spanModel, in cachedStringBytes, tagProcessors);
+            offset += WriteTags(ref bytes, offset, in spanModel, in cachedBytes, tagProcessors);
             offset += WriteMetrics(ref bytes, offset, in spanModel, tagProcessors);
 
             return offset - originalOffset;
@@ -185,7 +185,7 @@ namespace Datadog.Trace.Agent.MessagePack
 
         // TAGS
 
-        private int WriteTags(ref byte[] bytes, int offset, in SpanModel model, in CachedStringBytes cachedStringBytes, ITagProcessor[] tagProcessors)
+        private int WriteTags(ref byte[] bytes, int offset, in SpanModel model, in CachedMessagePackBytes cachedBytes, ITagProcessor[] tagProcessors)
         {
             var span = model.Span;
             int originalOffset = offset;
@@ -216,19 +216,19 @@ namespace Datadog.Trace.Agent.MessagePack
             count += tagWriter.Count;
 
             // and "env" to all spans
-            if (cachedStringBytes.Environment is not null)
+            if (cachedBytes.Environment is not null)
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentNameBytes);
-                offset += MessagePackBinary.WriteRaw(ref bytes, offset, cachedStringBytes.Environment);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, cachedBytes.Environment);
             }
 
             // and "version" to all spans
-            if (cachedStringBytes.ServiceVersion is not null)
+            if (cachedBytes.ServiceVersion is not null)
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
-                offset += MessagePackBinary.WriteRaw(ref bytes, offset, cachedStringBytes.ServiceVersion);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, cachedBytes.ServiceVersion);
             }
 
             // TODO: for each trace tag, determine if it should be added to the local root,
@@ -253,11 +253,11 @@ namespace Datadog.Trace.Agent.MessagePack
             }
 
             // add "_dd.origin" tag to all spans
-            if (cachedStringBytes.Origin is not null)
+            if (cachedBytes.Origin is not null)
             {
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _originNameBytes);
-                offset += MessagePackBinary.WriteRaw(ref bytes, offset, cachedStringBytes.Origin);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, cachedBytes.Origin);
             }
 
             if (count > 0)
