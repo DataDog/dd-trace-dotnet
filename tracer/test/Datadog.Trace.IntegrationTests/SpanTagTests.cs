@@ -230,28 +230,6 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [Fact]
-        public void SpanSampler_ShouldTag_WhenDropped_AfterFinished_ButNotWrittenYet()
-        {
-            var expectedRuleRate = "1";
-            var expectedMaxPerSecond = "1000";
-            var expectedSamplingMechanism = "8";
-
-            var scope = _tracer.StartActive("root");
-            scope.Dispose();
-            // drop it after disposing
-            ((SpanContext)scope.Span.Context).TraceContext.SetSamplingPriority(SamplingPriorityValues.UserReject, SamplingMechanism.Manual);
-
-            var trace = _testApi.Wait();
-            trace.Should().HaveCount(1);
-            trace[0].Should().HaveCount(1);
-
-            var span = trace[0].Single();
-            span.Tags.Should().Contain(Tags.SingleSpanSampling.RuleRate, expectedRuleRate);
-            span.Tags.Should().Contain(Tags.SingleSpanSampling.MaxPerSecond, expectedMaxPerSecond);
-            span.Tags.Should().Contain(Tags.SingleSpanSampling.SamplingMechanism, expectedSamplingMechanism);
-        }
-
-        [Fact]
         public void SpanSampler_ShouldNotTag_WhenTraceContext_IsNull()
         {
             var expectedRuleRate = "1";
