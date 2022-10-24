@@ -300,7 +300,7 @@
     SpanId: Id_59,
     Name: manual.HandlerNoParamSync,
     Resource: manual.HandlerNoParamSync,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_2,
     Tags: {
       language: dotnet,
@@ -319,7 +319,7 @@
     SpanId: Id_60,
     Name: manual.HandlerOneParamSync,
     Resource: manual.HandlerOneParamSync,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_4,
     Tags: {
       language: dotnet,
@@ -338,7 +338,7 @@
     SpanId: Id_61,
     Name: manual.HandlerTwoParamsSync,
     Resource: manual.HandlerTwoParamsSync,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_6,
     Tags: {
       language: dotnet,
@@ -357,7 +357,7 @@
     SpanId: Id_62,
     Name: manual.HandlerNoParamAsync,
     Resource: manual.HandlerNoParamAsync,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_8,
     Tags: {
       language: dotnet,
@@ -376,7 +376,7 @@
     SpanId: Id_63,
     Name: manual.HandlerOneParamAsync,
     Resource: manual.HandlerOneParamAsync,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_10,
     Tags: {
       language: dotnet,
@@ -395,7 +395,7 @@
     SpanId: Id_64,
     Name: manual.HandlerTwoParamsAsync,
     Resource: manual.HandlerTwoParamsAsync,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_12,
     Tags: {
       language: dotnet,
@@ -414,7 +414,7 @@
     SpanId: Id_65,
     Name: manual.HandlerNoParamVoid,
     Resource: manual.HandlerNoParamVoid,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_14,
     Tags: {
       language: dotnet,
@@ -433,7 +433,7 @@
     SpanId: Id_66,
     Name: manual.HandlerOneParamVoid,
     Resource: manual.HandlerOneParamVoid,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_16,
     Tags: {
       language: dotnet,
@@ -452,7 +452,7 @@
     SpanId: Id_67,
     Name: manual.HandlerTwoParamsVoid,
     Resource: manual.HandlerTwoParamsVoid,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_18,
     Tags: {
       language: dotnet,
@@ -471,7 +471,7 @@
     SpanId: Id_68,
     Name: manual.HandlerNoParamSyncWithContext,
     Resource: manual.HandlerNoParamSyncWithContext,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_20,
     Tags: {
       language: dotnet,
@@ -489,7 +489,7 @@
     SpanId: Id_69,
     Name: manual.HandlerOneParamSyncWithContext,
     Resource: manual.HandlerOneParamSyncWithContext,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_22,
     Tags: {
       language: dotnet,
@@ -507,7 +507,7 @@
     SpanId: Id_70,
     Name: manual.HandlerTwoParamsSyncWithContext,
     Resource: manual.HandlerTwoParamsSyncWithContext,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_24,
     Tags: {
       language: dotnet,
@@ -525,7 +525,7 @@
     SpanId: Id_71,
     Name: manual.BaseHandlerNoParamSync,
     Resource: manual.BaseHandlerNoParamSync,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_26,
     Tags: {
       language: dotnet,
@@ -544,7 +544,7 @@
     SpanId: Id_72,
     Name: manual.BaseHandlerTwoParamsSync,
     Resource: manual.BaseHandlerTwoParamsSync,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_28,
     Tags: {
       language: dotnet,
@@ -563,7 +563,7 @@
     SpanId: Id_73,
     Name: manual.BaseHandlerOneParamSyncWithContext,
     Resource: manual.BaseHandlerOneParamSyncWithContext,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_30,
     Tags: {
       language: dotnet,
@@ -581,7 +581,7 @@
     SpanId: Id_74,
     Name: manual.BaseHandlerOneParamAsync,
     Resource: manual.BaseHandlerOneParamAsync,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_32,
     Tags: {
       language: dotnet,
@@ -600,7 +600,7 @@
     SpanId: Id_75,
     Name: manual.BaseHandlerTwoParamsVoid,
     Resource: manual.BaseHandlerTwoParamsVoid,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_34,
     Tags: {
       language: dotnet,
@@ -619,7 +619,7 @@
     SpanId: Id_76,
     Name: manual.HandlerStructParam,
     Resource: manual.HandlerStructParam,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_36,
     Tags: {
       language: dotnet,
@@ -638,7 +638,7 @@
     SpanId: Id_77,
     Name: manual.HandlerNestedClassParam,
     Resource: manual.HandlerNestedClassParam,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_38,
     Tags: {
       language: dotnet,
@@ -657,7 +657,7 @@
     SpanId: Id_78,
     Name: manual.HandlerNestedStructParam,
     Resource: manual.HandlerNestedStructParam,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_40,
     Tags: {
       language: dotnet,
@@ -676,7 +676,7 @@
     SpanId: Id_79,
     Name: manual.HandlerGenericDictionaryParam,
     Resource: manual.HandlerGenericDictionaryParam,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_42,
     Tags: {
       language: dotnet,
@@ -695,7 +695,7 @@
     SpanId: Id_80,
     Name: manual.HandlerNestedGenericDictionaryParam,
     Resource: manual.HandlerNestedGenericDictionaryParam,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_44,
     Tags: {
       language: dotnet,
@@ -714,7 +714,7 @@
     SpanId: Id_81,
     Name: manual.HandlerDoublyNestedGenericDictionaryParam,
     Resource: manual.HandlerDoublyNestedGenericDictionaryParam,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_46,
     Tags: {
       language: dotnet,
@@ -733,7 +733,7 @@
     SpanId: Id_82,
     Name: manual.ThrowingHandler,
     Resource: manual.ThrowingHandler,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_48,
     Tags: {
       language: dotnet,
@@ -752,7 +752,7 @@
     SpanId: Id_83,
     Name: manual.ThrowingHandlerAsync,
     Resource: manual.ThrowingHandlerAsync,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_50,
     Tags: {
       language: dotnet,
@@ -771,7 +771,7 @@
     SpanId: Id_84,
     Name: manual.ThrowingHandlerAsyncTask,
     Resource: manual.ThrowingHandlerAsyncTask,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_52,
     Tags: {
       language: dotnet,
@@ -790,7 +790,7 @@
     SpanId: Id_85,
     Name: manual.ThrowingHandler,
     Resource: manual.ThrowingHandler,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_54,
     Tags: {
       language: dotnet,
@@ -808,7 +808,7 @@
     SpanId: Id_86,
     Name: manual.ThrowingHandlerAsync,
     Resource: manual.ThrowingHandlerAsync,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_56,
     Tags: {
       language: dotnet,
@@ -826,7 +826,7 @@
     SpanId: Id_87,
     Name: manual.ThrowingHandlerAsyncTask,
     Resource: manual.ThrowingHandlerAsyncTask,
-    Service: Samples.Aws.Lambda,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_58,
     Tags: {
       language: dotnet,
@@ -844,7 +844,7 @@
     SpanId: Id_88,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerNoParamSync,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_59,
     Tags: {
@@ -864,7 +864,7 @@
     SpanId: Id_89,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerOneParamSync,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_60,
     Tags: {
@@ -884,7 +884,7 @@
     SpanId: Id_90,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerTwoParamsSync,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_61,
     Tags: {
@@ -904,7 +904,7 @@
     SpanId: Id_91,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerNoParamAsync,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_62,
     Tags: {
@@ -924,7 +924,7 @@
     SpanId: Id_92,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerOneParamAsync,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_63,
     Tags: {
@@ -944,7 +944,7 @@
     SpanId: Id_93,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerTwoParamsAsync,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_64,
     Tags: {
@@ -964,7 +964,7 @@
     SpanId: Id_94,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerNoParamVoid,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_65,
     Tags: {
@@ -984,7 +984,7 @@
     SpanId: Id_95,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerOneParamVoid,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_66,
     Tags: {
@@ -1004,7 +1004,7 @@
     SpanId: Id_96,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerTwoParamsVoid,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_67,
     Tags: {
@@ -1024,7 +1024,7 @@
     SpanId: Id_97,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerNoParamSyncWithContext,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_68,
     Tags: {
@@ -1044,7 +1044,7 @@
     SpanId: Id_98,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerOneParamSyncWithContext,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_69,
     Tags: {
@@ -1064,7 +1064,7 @@
     SpanId: Id_99,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerTwoParamsSyncWithContext,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_70,
     Tags: {
@@ -1084,7 +1084,7 @@
     SpanId: Id_100,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/BaseHandlerNoParamSync,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_71,
     Tags: {
@@ -1104,7 +1104,7 @@
     SpanId: Id_101,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/BaseHandlerTwoParamsSync,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_72,
     Tags: {
@@ -1124,7 +1124,7 @@
     SpanId: Id_102,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/BaseHandlerOneParamSyncWithContext,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_73,
     Tags: {
@@ -1144,7 +1144,7 @@
     SpanId: Id_103,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/BaseHandlerOneParamAsync,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_74,
     Tags: {
@@ -1164,7 +1164,7 @@
     SpanId: Id_104,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/BaseHandlerTwoParamsVoid,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_75,
     Tags: {
@@ -1184,7 +1184,7 @@
     SpanId: Id_105,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerStructParam,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_76,
     Tags: {
@@ -1204,7 +1204,7 @@
     SpanId: Id_106,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerNestedClassParam,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_77,
     Tags: {
@@ -1224,7 +1224,7 @@
     SpanId: Id_107,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerNestedStructParam,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_78,
     Tags: {
@@ -1244,7 +1244,7 @@
     SpanId: Id_108,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerGenericDictionaryParam,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_79,
     Tags: {
@@ -1264,7 +1264,7 @@
     SpanId: Id_109,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerNestedGenericDictionaryParam,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_80,
     Tags: {
@@ -1284,7 +1284,7 @@
     SpanId: Id_110,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerDoublyNestedGenericDictionaryParam,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_81,
     Tags: {
@@ -1304,7 +1304,7 @@
     SpanId: Id_111,
     Name: http.request,
     Resource: GET localhost/function/ThrowingHandler,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_82,
     Error: 1,
@@ -1327,7 +1327,7 @@
     SpanId: Id_112,
     Name: http.request,
     Resource: GET localhost/function/ThrowingHandlerAsync,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_83,
     Error: 1,
@@ -1350,7 +1350,7 @@
     SpanId: Id_113,
     Name: http.request,
     Resource: GET localhost/function/ThrowingHandlerAsyncTask,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_84,
     Error: 1,
@@ -1373,7 +1373,7 @@
     SpanId: Id_114,
     Name: http.request,
     Resource: GET localhost/function/ThrowingHandler,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_85,
     Error: 1,
@@ -1396,7 +1396,7 @@
     SpanId: Id_115,
     Name: http.request,
     Resource: GET localhost/function/ThrowingHandlerAsync,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_86,
     Error: 1,
@@ -1419,7 +1419,7 @@
     SpanId: Id_116,
     Name: http.request,
     Resource: GET localhost/function/ThrowingHandlerAsyncTask,
-    Service: Samples.Aws.Lambda-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
     ParentId: Id_87,
     Error: 1,
