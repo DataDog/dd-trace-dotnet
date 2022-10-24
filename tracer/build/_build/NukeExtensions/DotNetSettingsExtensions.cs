@@ -202,7 +202,7 @@ internal static partial class DotNetSettingsExtensions
         var pArgConf = settings.ProcessArgumentConfigurator ?? (args => args);
         return settings.SetProcessArgumentConfigurator(
             args =>
-                pArgConf(args.Add("--logger:{value}", "datadog"))
+                pArgConf(args.Add("--logger:datadog"))
         );
     }
 }
