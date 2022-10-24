@@ -29,7 +29,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
         [Trait("RunOnWindows", "True")]
         public async Task TestIastWeakHashingRequest(bool enableIast)
         {
-            var filename = enableIast ? "weakHashing.AspNetCore2.IastEnabled" : "weakHashing.AspNetCore2.IastDisabled";
+            var filename = enableIast ? "Iast.weakHashing.AspNetCore2.IastEnabled" : "Iast.weakHashing.AspNetCore2.IastDisabled";
             var url = "/Iast/WeakHashing";
             var agent = await RunOnSelfHosted(enableSecurity: false, enableIast: enableIast);
             var spans = await SendRequestsAsync(agent, new string[] { url });

@@ -345,6 +345,7 @@ namespace Datadog.Trace
                         Duration = TimeSpan.Zero;
                     }
 
+                    // IastRequestContext is null if Iast is not enabled.
                     Context.IastRequestContext?.AddIastTagsIfNeeded(this);
 
                     IsFinished = true;

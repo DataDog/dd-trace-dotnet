@@ -15,7 +15,7 @@ internal class IastRequestContext
 
     internal void AddIastTagsIfNeeded(Span span)
     {
-        if (span.IsRootSpan && span.Type == SpanTypes.Web && Iast.Instance.Settings.Enabled)
+        if (Iast.Instance.Settings.Enabled && span.IsRootSpan && span.Type == SpanTypes.Web)
         {
             AddIastInfoToRootSpan(span);
         }

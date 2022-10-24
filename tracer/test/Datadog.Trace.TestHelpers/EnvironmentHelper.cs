@@ -225,7 +225,7 @@ namespace Datadog.Trace.TestHelpers
                 environmentVariables[ConfigurationKeys.AppSec.Enabled] = enableSecurity.Value.ToString();
             }
 
-            if (enableSecurity != null)
+            if (enableIast != null)
             {
                 environmentVariables[ConfigurationKeys.Iast.Enabled] = enableIast.Value.ToString();
             }
