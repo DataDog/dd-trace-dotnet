@@ -34,6 +34,7 @@ public class WeakCipherTests : TestHelper
     [Trait("RunOnWindows", "True")]
     public async Task SubmitsTraces()
     {
+        SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
         SetEnvironmentVariable("DD_IAST_ENABLED", "true");
 
         const int expectedSpanCount = 6;

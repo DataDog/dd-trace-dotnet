@@ -20,6 +20,7 @@ internal class SymmetricAlgorithmIntegrationCommon
     internal static Scope? CreateScope<TTarget>(TTarget instance)
     {
         var iast = Iast.Iast.Instance;
+
         if (!iast.Settings.Enabled)
         {
             return null;
