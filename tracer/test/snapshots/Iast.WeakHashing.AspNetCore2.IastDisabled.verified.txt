@@ -10,6 +10,7 @@
       aspnet_core.route: iast/weakhashing,
       component: aspnet_core,
       env: integration_tests,
+      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: iast/weakhashing,
@@ -17,6 +18,7 @@
       http.url: http://localhost:00000/Iast/WeakHashing,
       http.useragent: Mistake Not...,
       language: dotnet,
+      network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
