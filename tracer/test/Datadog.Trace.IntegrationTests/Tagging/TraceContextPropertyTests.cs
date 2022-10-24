@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
@@ -40,17 +41,17 @@ public class TraceContextPropertyTests
 
         await _tracer.FlushAsync();
         var traceChunks = _testApi.Wait();
+        var spans = traceChunks.SelectMany(s => s).ToArray();
 
-        traceChunks.Should().HaveCount(1); // 1 trace chunk
+        spans.Where(s => s.ParentId > 0)
+             .Should()
+             .HaveCount(3)
+             .And.OnlyContain(s => !s.Metrics.ContainsKey("_sampling_priority_v1"));
 
-        // we expect the root to be last, but that order does not matter in Satisfy()
-        traceChunks[0]
-           .Should()
-           .Satisfy(
-                s => s.ParentId > 0 && !s.Metrics.ContainsKey("_sampling_priority_v1"),
-                s => s.ParentId > 0 && !s.Metrics.ContainsKey("_sampling_priority_v1"),
-                s => s.ParentId > 0 && !s.Metrics.ContainsKey("_sampling_priority_v1"),
-                s => (s.ParentId == null || s.ParentId == 0) && s.Metrics["_sampling_priority_v1"] == samplingPriority);
+        spans.Where(s => s.ParentId is null or 0)
+             .Should()
+             .HaveCount(1)
+             .And.OnlyContain(s => s.Metrics["_sampling_priority_v1"] == samplingPriority);
     }
 
     [Theory]
@@ -72,11 +73,11 @@ public class TraceContextPropertyTests
 
         if (afterEnv is null)
         {
-            traceChunks[0][0].Tags.Should().NotContainKey("env");
+            traceChunks[0].Should().OnlyContain(s => !s.Tags.ContainsKey("env"));
         }
         else
         {
-            traceChunks[0][0].Tags.Should().Contain("env", afterEnv);
+            traceChunks[0].Should().OnlyContain(s => s.Tags["env"] == afterEnv);
         }
     }
 
@@ -102,11 +103,11 @@ public class TraceContextPropertyTests
 
         if (afterVersion is null)
         {
-            traceChunks[0][0].Tags.Should().NotContainKey("version");
+            traceChunks[0].Should().OnlyContain(s => !s.Tags.ContainsKey("env"));
         }
         else
         {
-            traceChunks[0][0].Tags.Should().Contain("version", afterVersion);
+            traceChunks[0].Should().OnlyContain(s => s.Tags["version"] == afterVersion);
         }
     }
 
