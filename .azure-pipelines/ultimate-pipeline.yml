@@ -534,6 +534,9 @@ stages:
     - script: ./tracer/build.sh BuildTracerHome BuildNativeLoader
       displayName: Build tracer home
 
+    - script: [[ $(otool -s binary dll $(monitoringHome)/osx-x64/Datadog.Tracer.Native.dylib | wc -c) -gt 40000 ]] && [[ $(otool -s binary pdb $(monitoringHome)/osx-x64/Datadog.Tracer.Native.dylib | wc -c) -gt 40000 ]] && echo "Managed loader found in the native binary."
+      displayName: Checking managed loader in the native binary
+
     - publish: $(monitoringHome)
       displayName: Uploading macos profiler artifact
       artifact: macos-tracer-home
