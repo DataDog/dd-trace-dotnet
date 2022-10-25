@@ -74,11 +74,9 @@ internal class IastModule
     private static Scope? AddVulnerability(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
     {
         var iActiveScope = DistributedTracer.Instance.GetActiveScope() ?? tracer.TracerManager?.ScopeManager.Active;
-        var activeScope = iActiveScope as Scope;
-        var rootSpan = activeScope?.Root?.Span;
-        bool addToRequestContext = rootSpan?.Type == SpanTypes.Web;
+        var rootSpan = (iActiveScope as Scope)?.Root?.Span;
 
-        if (addToRequestContext)
+        if (rootSpan?.Type == SpanTypes.Web)
         {
             var iastRequestContext = rootSpan?.Context?.TraceContext?.IastRequestContext;
             iastRequestContext?.AddVulnerability(vulnerability);
@@ -86,7 +84,7 @@ internal class IastModule
         }
         else
         {
-            // we either are not in a request or the distributed tracer returned a scope that cannot be casted to Scope. Since we cannot access the root span, we will generate spans for each vulnerability
+            // we either are not in a request or the distributed tracer returned a scope that cannot be casted to Scope adn we cannot access the root span.
             var batch = new VulnerabilityBatch();
             batch.Add(vulnerability);
 
