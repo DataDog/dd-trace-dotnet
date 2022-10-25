@@ -80,7 +80,7 @@ internal class IastModule
 
         if (addToRequestContext)
         {
-            var iastRequestContext = rootSpan?.Context?.IastRequestContext;
+            var iastRequestContext = rootSpan?.Context?.TraceContext?.IastRequestContext;
             iastRequestContext?.AddVulnerability(vulnerability);
             return null;
         }

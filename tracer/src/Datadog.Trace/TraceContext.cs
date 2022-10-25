@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.Globalization;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.ContinuousProfiler;
+using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Sampling;
@@ -31,6 +32,7 @@ namespace Datadog.Trace
         public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
         {
             Tracer = tracer;
+            IastRequestContext = Iast.Iast.Instance.Settings.Enabled ? new IastRequestContext() : null;
             Tags = tags ?? new TraceTagCollection(tracer?.Settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
         }
 
@@ -52,6 +54,11 @@ namespace Datadog.Trace
         {
             get => _samplingPriority;
         }
+
+        /// <summary>
+        /// Gets the iast context.
+        /// </summary>
+        internal IastRequestContext IastRequestContext { get; }
 
         private TimeSpan Elapsed => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp);
 

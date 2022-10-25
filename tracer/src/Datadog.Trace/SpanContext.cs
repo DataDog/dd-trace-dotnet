@@ -109,14 +109,12 @@ namespace Datadog.Trace
         /// <param name="spanId">The propagated span id.</param>
         /// <param name="rawTraceId">Raw trace id value</param>
         /// <param name="rawSpanId">Raw span id value</param>
-        /// <param name="iastRequestContext">The iast context.</param>
-        internal SpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null, IastRequestContext iastRequestContext = null)
+        internal SpanContext(ISpanContext parent, TraceContext traceContext, string serviceName, ulong? traceId = null, ulong? spanId = null, string rawTraceId = null, string rawSpanId = null)
             : this(parent?.TraceId ?? traceId, serviceName)
         {
             SpanId = spanId ?? SpanIdGenerator.CreateNew();
             Parent = parent;
             TraceContext = traceContext;
-            IastRequestContext = iastRequestContext;
             if (parent is SpanContext spanContext)
             {
                 Origin = spanContext.Origin;
@@ -190,11 +188,6 @@ namespace Datadog.Trace
         /// Returns null for contexts created from incoming propagated context.
         /// </summary>
         internal TraceContext TraceContext { get; }
-
-        /// <summary>
-        /// Gets the iast context.
-        /// </summary>
-        internal IastRequestContext IastRequestContext { get; }
 
         /// <summary>
         /// Gets the sampling priority for contexts created from incoming propagated context.
