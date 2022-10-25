@@ -23,7 +23,7 @@ internal class IastRequestContext
 
     private void AddIastInfoToRootSpan(Span span)
     {
-        // Right now, we always set the IastEnabled tag to "1", but in the future, it might be zero to indicate that a request has not been analyzed
+        // Right now, we always set the IastEnabled tag to "1", but in the future, it will not be added if iast is enabled but the request is not analyzed.
         span.SetTag(Tags.IastEnabled, "1");
 
         if (vulnerabilityBatch.HasVulnerabilities())

@@ -17,6 +17,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
     public class AspNetCore5IastTests : AspNetBase, IDisposable
     {
         private static readonly Regex LocationMsgRegex = new(@"(\S)*""location"": {(\r|\n){1,2}(.*(\r|\n){1,2}){0,3}(\s)*},");
+        private static readonly Regex ClientIp = new(@"["" ""]*http.client_ip: .*,(\r|\n){1,2}");
+        private static readonly Regex NetworkClientIp = new(@"["" ""]*network.client.ip: .*,(\r|\n){1,2}");
 
         public AspNetCore5IastTests(ITestOutputHelper outputHelper)
             : base("AspNetCore5", outputHelper, "/shutdown", testName: nameof(AspNetCore5IastTests))
@@ -36,6 +38,8 @@ namespace Datadog.Trace.Security.IntegrationTests.Iast
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
+            settings.AddRegexScrubber(ClientIp, string.Empty);
+            settings.AddRegexScrubber(NetworkClientIp, string.Empty);
             await VerifyHelper.VerifySpans(spans, settings)
                               .UseFileName(filename)
                               .DisableRequireUniquePrefix();
