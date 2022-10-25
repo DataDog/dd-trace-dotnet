@@ -196,4 +196,13 @@ internal static partial class DotNetSettingsExtensions
                     .Add($"--blame-hang-timeout {timeoutInMinutes}m")
         );
     }
+
+    public static DotNetTestSettings WithDatadogLogger(this DotNetTestSettings settings)
+    {
+        var pArgConf = settings.ProcessArgumentConfigurator ?? (args => args);
+        return settings.SetProcessArgumentConfigurator(
+            args =>
+                pArgConf(args.Add("--logger:datadog"))
+        );
+    }
 }

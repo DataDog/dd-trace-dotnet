@@ -17,6 +17,7 @@ using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci
@@ -249,6 +250,50 @@ namespace Datadog.Trace.Ci
             return factory;
         }
 
+        internal static string GetOperatingSystemVersion()
+        {
+            switch (FrameworkDescription.Instance.OSPlatform)
+            {
+                case OSPlatformName.Linux:
+                    if (!string.IsNullOrEmpty(HostMetadata.Instance.KernelRelease))
+                    {
+                        return HostMetadata.Instance.KernelRelease;
+                    }
+
+                    break;
+                case OSPlatformName.MacOS:
+                    var context = SynchronizationContext.Current;
+                    try
+                    {
+                        if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
+                        {
+                            SynchronizationContext.SetSynchronizationContext(null);
+                        }
+
+                        var osxVersion = ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("uname", "-r")).GetAwaiter().GetResult();
+                        if (!string.IsNullOrEmpty(osxVersion))
+                        {
+                            return osxVersion!;
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.Warning(ex, ex.Message);
+                    }
+                    finally
+                    {
+                        if (context is not null && AppDomain.CurrentDomain.IsFullyTrusted)
+                        {
+                            SynchronizationContext.SetSynchronizationContext(null);
+                        }
+                    }
+
+                    break;
+            }
+
+            return Environment.OSVersion.VersionString;
+        }
+
         private static async Task InternalFlushAsync()
         {
             try
@@ -285,7 +330,16 @@ namespace Datadog.Trace.Ci
 
         private static bool InternalEnabled()
         {
-            var processName = ProcessHelpers.GetCurrentProcessName() ?? string.Empty;
+            var processName = string.Empty;
+
+            try
+            {
+                processName = ProcessHelpers.GetCurrentProcessName() ?? string.Empty;
+            }
+            catch (Exception exception)
+            {
+                Log.Warning(exception, exception.Message);
+            }
 
             // By configuration
             if (_settings.Enabled)
