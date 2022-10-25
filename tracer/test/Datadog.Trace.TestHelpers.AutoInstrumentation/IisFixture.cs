@@ -10,13 +10,14 @@ using System.Net;
 
 namespace Datadog.Trace.TestHelpers
 {
-    public sealed class IisFixture : GacFixture, IDisposable
+    public sealed class IisFixture : MockAgentTestFixture, IDisposable
     {
+        public IisFixture(TestHelper test)
+            : base(test)
+        {
+        }
+
         public (Process Process, string ConfigFile) IisExpress { get; private set; }
-
-        public MockTracerAgent Agent { get; private set; }
-
-        public int HttpPort { get; private set; }
 
         public string ShutdownPath { get; set; }
 
@@ -39,7 +40,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        public void Dispose()
+        public override void Dispose()
         {
             if (IisExpress.Process != null && ShutdownPath != null)
             {
@@ -47,7 +48,7 @@ namespace Datadog.Trace.TestHelpers
                 request.GetResponse().Close();
             }
 
-            Agent?.Dispose();
+            base.Dispose();
 
             lock (this)
             {
@@ -85,6 +86,16 @@ namespace Datadog.Trace.TestHelpers
                     RemoveAssembliesFromGac();
                 }
             }
+        }
+
+        public void AddAssembliesToGac()
+        {
+            GacFixture.AddAssembliesToGac();
+        }
+
+        public void RemoveAssembliesFromGac()
+        {
+            GacFixture.RemoveAssembliesFromGac();
         }
     }
 }

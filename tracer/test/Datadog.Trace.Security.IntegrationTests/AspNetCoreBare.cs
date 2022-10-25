@@ -28,12 +28,12 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public async Task TestSecurity(HttpStatusCode expectedStatusCode, string url)
         {
-            using var agent = await RunOnSelfHosted(enableSecurity: true, externalRulesFile: DefaultRuleFile);
+            using var fixture = RunOnSelfHosted(enableSecurity: true, externalRulesFile: DefaultRuleFile);
 
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings((int)expectedStatusCode, sanitisedUrl);
 
-            await TestAppSecRequestWithVerifyAsync(agent, url, null, 5, 1, settings);
+            await TestAppSecRequestWithVerifyAsync(fixture, url, null, 5, 1, settings);
         }
     }
 }

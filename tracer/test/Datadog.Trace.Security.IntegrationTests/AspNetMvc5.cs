@@ -68,7 +68,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             _testName = "Security." + nameof(AspNetMvc5)
                      + (classicMode ? ".Classic" : ".Integrated")
                      + ".enableSecurity=" + enableSecurity;
-            SetHttpPort(iisFixture.HttpPort);
         }
 
         [Trait("Category", "EndToEnd")]
@@ -88,7 +87,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             // NOTE: by integrating the latest version of the WAF, blocking was disabled, as it does not support blocking yet
             var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
             var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
-            return TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, body, 5, 2, settings, "application/json");
+            return TestAppSecRequestWithVerifyAsync(_iisFixture, url, body, 5, 2, settings, "application/json");
         }
 
         [Trait("Category", "EndToEnd")]
@@ -101,7 +100,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             var url = "/Health";
 
             var settings = VerifyHelper.GetSpanVerifierSettings(test);
-            await TestAppSecRequestWithVerifyAsync(_iisFixture.Agent, url, null, 5, SecurityEnabled ? 1 : 2, settings, userAgent: "Hello/V");
+            await TestAppSecRequestWithVerifyAsync(_iisFixture, url, null, 5, SecurityEnabled ? 1 : 2, settings, userAgent: "Hello/V");
         }
 
         protected override string GetTestName() => _testName;

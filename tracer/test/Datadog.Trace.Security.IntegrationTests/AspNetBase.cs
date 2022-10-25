@@ -42,83 +42,39 @@ namespace Datadog.Trace.Security.IntegrationTests
         private static readonly Regex AppSecEventRulesLoaded = new(@"\s*_dd.appsec.event_rules.loaded: \d+\.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private static readonly Regex AppSecErrorCount = new(@"\s*_dd.appsec.event_rules.error_count: 0.0,?", RegexOptions.IgnoreCase | RegexOptions.Compiled);
         private readonly string _testName;
-        private readonly HttpClient _httpClient;
         private readonly string _shutdownPath;
         private readonly JsonSerializerSettings _jsonSerializerSettingsOrderProperty;
-        private int _httpPort;
-        private Process _process;
 
         public AspNetBase(string sampleName, ITestOutputHelper outputHelper, string shutdownPath, string samplesDir = null, string testName = null)
             : base(Prefix + sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
             _testName = Prefix + (testName ?? sampleName);
-            _httpClient = new HttpClient();
             _shutdownPath = shutdownPath;
-
-            // adding these header so we can later assert it was collect properly
-            _httpClient.DefaultRequestHeaders.Add("X-FORWARDED", MainIp);
-            _httpClient.DefaultRequestHeaders.Add("user-agent", "Mistake Not...");
             _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_WAF_TIMEOUT", 10_000_000.ToString());
         }
 
-        public string SampleProcessName
-        {
-            get { return _process?.ProcessName; }
-        }
-
-        public int? SampleProcessId
-        {
-            get { return _process?.Id; }
-        }
-
-        public Task<MockTracerAgent> RunOnSelfHosted(bool? enableSecurity, string externalRulesFile = null, int? traceRateLimit = null)
+        public AspNetFixture RunOnSelfHosted(bool? enableSecurity, string externalRulesFile = null, int? traceRateLimit = null)
         {
             var agentPort = TcpPortProvider.GetOpenPort();
             var agent = MockTracerAgent.Create(Output, agentPort);
 
-            StartSample(
+            return StartSample(
                 agent,
                 arguments: null,
                 enableSecurity: enableSecurity,
                 externalRulesFile: externalRulesFile,
                 traceRateLimit: traceRateLimit);
-
-            return Task.FromResult((MockTracerAgent)agent);
         }
 
         public override void Dispose()
         {
             base.Dispose();
-
-            var request = WebRequest.CreateHttp($"http://localhost:{_httpPort}{_shutdownPath}");
-            request.GetResponse().Close();
-
-            if (_process is not null)
-            {
-                try
-                {
-                    if (!_process.HasExited)
-                    {
-                        if (!_process.WaitForExit(5000))
-                        {
-                            _process.Kill();
-                        }
-                    }
-                }
-                catch
-                {
-                }
-
-                _process.Dispose();
-            }
-
-            _httpClient?.Dispose();
         }
 
-        public async Task TestAppSecRequestWithVerifyAsync(MockTracerAgent agent, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null)
+        public async Task TestAppSecRequestWithVerifyAsync(MockAgentTestFixture test, string url, string body, int expectedSpans, int spansPerRequest, VerifySettings settings, string contentType = null, bool testInit = false, string userAgent = null)
         {
-            var spans = await SendRequestsAsync(agent, url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType, userAgent);
+            var spans = await test.SendRequestsAsync(url, body, expectedSpans, expectedSpans * spansPerRequest, string.Empty, contentType, userAgent);
             await VerifySpans(spans, settings, testInit);
         }
 
@@ -163,11 +119,11 @@ namespace Datadog.Trace.Security.IntegrationTests
                           .UseTypeName(GetTestName());
         }
 
-        protected async Task TestRateLimiter(bool enableSecurity, string url, MockTracerAgent agent, int appsecTraceRateLimit, int totalRequests, int spansPerRequest)
+        protected async Task TestRateLimiter(MockAgentTestFixture fixture, bool enableSecurity, string url, int appsecTraceRateLimit, int totalRequests, int spansPerRequest)
         {
             var errorMargin = 0.15;
             int warmupRequests = 29;
-            await SendRequestsAsync(agent, url, null, warmupRequests, warmupRequests * spansPerRequest, string.Empty, "Warmup");
+            await fixture.SendRequestsAsync(url, null, warmupRequests, warmupRequests * spansPerRequest, string.Empty, "Warmup");
 
             var iterations = 20;
 
@@ -177,7 +133,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 var start = DateTime.Now;
                 var nextBatch = start.AddSeconds(1);
 
-                await SendRequestsAsyncNoWaitForSpans(url, null, totalRequests, string.Empty);
+                await fixture.SendRequestsAsyncNoWaitForSpans(url, null, totalRequests, string.Empty);
 
                 var now = DateTime.Now;
 
@@ -193,7 +149,7 @@ namespace Datadog.Trace.Security.IntegrationTests
                 }
             }
 
-            var allSpansReceived = WaitForSpans(agent, iterations * totalRequests * spansPerRequest, "Overall wait", testStart, url);
+            var allSpansReceived = fixture.WaitForSpans(iterations * totalRequests * spansPerRequest, "Overall wait", testStart, url);
 
             var groupedSpans = allSpansReceived.GroupBy(
                 s =>
@@ -257,73 +213,9 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
         }
 
-        protected void SetHttpPort(int httpPort) => _httpPort = httpPort;
-
-        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent)
-        {
-            if (!string.IsNullOrEmpty(userAgent) && _httpClient.DefaultRequestHeaders.GetValues("user-agent").All(c => c != userAgent))
-            {
-                _httpClient.DefaultRequestHeaders.Add("user-agent", userAgent);
-            }
-
-            try
-            {
-                var url = $"http://localhost:{_httpPort}{path}";
-                var response =
-                    body == null ? await _httpClient.GetAsync(url) : await _httpClient.PostAsync(url, new StringContent(body, Encoding.UTF8, contentType ?? "application/json"));
-                var responseText = await response.Content.ReadAsStringAsync();
-                return (response.StatusCode, responseText);
-            }
-            catch (HttpRequestException ex)
-            {
-                return (HttpStatusCode.BadRequest, ex.ToString());
-            }
-        }
-
         protected virtual string GetTestName() => _testName;
 
-        protected async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, string url, string body, int numberOfAttacks, int expectedSpans, string phase, string contentType = null, string userAgent = null)
-        {
-            var minDateTime = DateTime.UtcNow; // when ran sequentially, we get the spans from the previous tests!
-            await SendRequestsAsyncNoWaitForSpans(url, body, numberOfAttacks, contentType, userAgent);
-
-            return WaitForSpans(agent, expectedSpans, phase, minDateTime, url);
-        }
-
-        protected async Task<IImmutableList<MockSpan>> SendRequestsAsync(MockTracerAgent agent, params string[] urls)
-        {
-            var spans = new List<MockSpan>();
-            foreach (var url in urls)
-            {
-                spans.AddRange(await SendRequestsAsync(agent, url, null, 1, 1, string.Empty, null));
-            }
-
-            return spans.ToImmutableList();
-        }
-
-        private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null, string userAgent = null)
-        {
-            for (var x = 0; x < numberOfAttacks; x++)
-            {
-                await SubmitRequest(url, body, contentType, userAgent);
-            }
-        }
-
-        private IImmutableList<MockSpan> WaitForSpans(MockTracerAgent agent, int expectedSpans, string phase, DateTime minDateTime, string url)
-        {
-            agent.SpanFilters.Clear();
-            agent.SpanFilters.Add(s => s.Tags.ContainsKey("http.url") && s.Tags["http.url"].IndexOf(url, StringComparison.InvariantCultureIgnoreCase) > -1);
-
-            var spans = agent.WaitForSpans(expectedSpans, minDateTime: minDateTime);
-            if (spans.Count != expectedSpans)
-            {
-                Output?.WriteLine($"spans.Count: {spans.Count} != expectedSpans: {expectedSpans}, this is phase: {phase}");
-            }
-
-            return spans;
-        }
-
-        private void StartSample(
+        private AspNetFixture StartSample(
             MockTracerAgent agent,
             string arguments,
             string packageVersion = "",
@@ -349,7 +241,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_TRACE_RATE_LIMIT", traceRateLimit?.ToString());
 
             int? aspNetCorePort = default;
-            _process = ProfilerHelper.StartProcessWithProfiler(
+            var process = ProfilerHelper.StartProcessWithProfiler(
                 executable,
                 EnvironmentHelper,
                 agent,
@@ -360,7 +252,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             // then wait server ready
             var wh = new EventWaitHandle(false, EventResetMode.AutoReset);
-            _process.OutputDataReceived += (sender, args) =>
+            process.OutputDataReceived += (sender, args) =>
             {
                 if (args.Data != null)
                 {
@@ -374,9 +266,9 @@ namespace Datadog.Trace.Security.IntegrationTests
                     Output.WriteLine($"[webserver][stdout] {args.Data}");
                 }
             };
-            _process.BeginOutputReadLine();
+            process.BeginOutputReadLine();
 
-            _process.ErrorDataReceived += (sender, args) =>
+            process.ErrorDataReceived += (sender, args) =>
             {
                 if (args.Data != null)
                 {
@@ -384,16 +276,21 @@ namespace Datadog.Trace.Security.IntegrationTests
                 }
             };
 
-            _process.BeginErrorReadLine();
+            process.BeginErrorReadLine();
 
             wh.WaitOne(mstimeout);
             if (!aspNetCorePort.HasValue)
             {
-                _process.Kill();
+                process.Kill();
                 throw new Exception("Unable to determine port application is listening on");
             }
 
-            _httpPort = aspNetCorePort.Value;
+            var res = new AspNetFixture(this, agent, aspNetCorePort.Value, process, _shutdownPath);
+
+            // adding these header so we can later assert it was collect properly
+            res.HttpClient.DefaultRequestHeaders.Add("X-FORWARDED", MainIp);
+            res.HttpClient.DefaultRequestHeaders.Add("user-agent", "Mistake Not...");
+            return res;
         }
 
         internal class AppSecJson

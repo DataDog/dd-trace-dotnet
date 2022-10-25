@@ -8,9 +8,9 @@ using System.IO;
 
 namespace Datadog.Trace.TestHelpers
 {
-    public class GacFixture
+    public static class GacFixture
     {
-        public void AddAssembliesToGac()
+        public static void AddAssembliesToGac()
         {
 #if NETFRAMEWORK
             var publish = new System.EnterpriseServices.Internal.Publish();
@@ -24,7 +24,7 @@ namespace Datadog.Trace.TestHelpers
 #endif
         }
 
-        public void RemoveAssembliesFromGac()
+        public static void RemoveAssembliesFromGac()
         {
 #if NETFRAMEWORK
             var publish = new System.EnterpriseServices.Internal.Publish();

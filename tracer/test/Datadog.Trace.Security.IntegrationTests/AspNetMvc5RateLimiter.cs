@@ -110,7 +110,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
 
             _iisFixture.TryStartIis(this, classicMode ? IisAppType.AspNetClassic : IisAppType.AspNetIntegrated);
-            SetHttpPort(iisFixture.HttpPort);
         }
 
         [Trait("Category", "EndToEnd")]
@@ -122,7 +121,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TestRateLimiterSecurity(int totalRequests, string url = DefaultAttackUrl)
         {
             // tracing module and mvc actions
-            await TestRateLimiter(_enableSecurity, url, _iisFixture.Agent, _traceRateLimit.GetValueOrDefault(100), totalRequests, 2);
+            await TestRateLimiter(_iisFixture, _enableSecurity, url, _traceRateLimit.GetValueOrDefault(100), totalRequests, 2);
             // have to wait a second for the rate limiter to reset (or restart iis express completely)
             Thread.Sleep(1000);
         }

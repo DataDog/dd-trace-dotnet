@@ -190,7 +190,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
         private async Task<IisFixture> StartIis(IisAppType appType)
         {
-            var fixture = new IisFixture { ShutdownPath = "/shutdown" };
+            var fixture = new IisFixture(this) { ShutdownPath = "/shutdown" };
 
             try
             {

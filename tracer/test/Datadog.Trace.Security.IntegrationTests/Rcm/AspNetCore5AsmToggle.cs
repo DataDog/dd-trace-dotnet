@@ -45,39 +45,39 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         public async Task TestSecurityToggling(bool? enableSecurity, uint expectedState, uint expectedCapabilities)
         {
             var url = "/Health/?[$slice]=value";
-            using var agent = await RunOnSelfHosted(enableSecurity);
+            using var fixture = RunOnSelfHosted(enableSecurity);
             var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, expectedState, expectedCapabilities);
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{fixture.SampleProcessName}*", LogDirectory);
 
-            var spans1 = await SendRequestsAsync(agent, url);
+            var spans1 = await fixture.SendRequestsAsync(url);
 
-            var request1 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures() { Asm = new Asm() { Enabled = false } }, "1") }, "ASM_FEATURES", "first");
+            var request1 = await fixture.Agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures() { Asm = new Asm() { Enabled = false } }, "1") }, "ASM_FEATURES", "first");
 
             CheckAckState(request1, expectedState, null, "First RCM call");
             CheckCapabilities(request1, expectedCapabilities, "First RCM call");
             request1.Client.State.BackendClientState.Should().Be("first");
             if (enableSecurity == true)
             {
-                await logEntryWatcher.WaitForLogEntry(AppSecDisabledMessage(), LogEntryWatcherTimeout);
+                await logEntryWatcher.WaitForLogEntry(AppSecDisabledMessage(fixture), LogEntryWatcherTimeout);
             }
 
             CheckAckState(request1, expectedState, null, "First RCM call");
             CheckCapabilities(request1, expectedCapabilities, "First RCM call");
 
-            var spans2 = await SendRequestsAsync(agent, url);
+            var spans2 = await fixture.SendRequestsAsync(url);
 
-            var request2 = await agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures() { Asm = new Asm() { Enabled = true } }, "2") }, "ASM_FEATURES", "second");
+            var request2 = await fixture.Agent.SetupRcmAndWait(Output, new[] { ((object)new AsmFeatures() { Asm = new Asm() { Enabled = true } }, "2") }, "ASM_FEATURES", "second");
 
             CheckAckState(request2, expectedState, null, "Second RCM call");
             CheckCapabilities(request2, expectedCapabilities, "Second RCM call");
             if (enableSecurity != false)
             {
-                await logEntryWatcher.WaitForLogEntry(AppSecEnabledMessage(), LogEntryWatcherTimeout);
+                await logEntryWatcher.WaitForLogEntry(AppSecEnabledMessage(fixture), LogEntryWatcherTimeout);
             }
 
-            var spans3 = await SendRequestsAsync(agent, url);
+            var spans3 = await fixture.SendRequestsAsync(url);
 
-            var request3 = await agent.WaitRcmRequestAndReturnLast();
+            var request3 = await fixture.Agent.WaitRcmRequestAndReturnLast();
             request3.Client.State.BackendClientState.Should().Be("second");
 
             var spans = new List<MockSpan>();
@@ -94,12 +94,12 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         {
             var enableSecurity = true;
             var url = "/Health/?[$slice]=value";
-            using var agent = await RunOnSelfHosted(enableSecurity);
+            using var fixture = RunOnSelfHosted(enableSecurity);
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
-            var spans1 = await SendRequestsAsync(agent, url);
+            var spans1 = await fixture.SendRequestsAsync(url);
 
-            var request = await agent.SetupRcmAndWait(Output, new[] { ((object)"haha, you weren't expect this!", "1") }, "ASM_FEATURES");
+            var request = await fixture.Agent.SetupRcmAndWait(Output, new[] { ((object)"haha, you weren't expect this!", "1") }, "ASM_FEATURES");
 
             CheckAckState(request, ApplyStates.ERROR, "Error converting value \"haha, you weren't expect this!\" to type 'Datadog.Trace.AppSec.AsmFeatures'. Path '', line 1, position 32.", "First RCM call");
 

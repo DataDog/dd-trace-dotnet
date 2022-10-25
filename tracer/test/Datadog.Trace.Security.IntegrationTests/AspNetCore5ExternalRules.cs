@@ -32,11 +32,11 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             var enableSecurity = true;
 
-            using var agent = await RunOnSelfHosted(enableSecurity, DefaultRuleFile);
+            using var fixture = RunOnSelfHosted(enableSecurity, DefaultRuleFile);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
-            await TestAppSecRequestWithVerifyAsync(agent, DefaultAttackUrl, null, 5, 1, settings);
+            await TestAppSecRequestWithVerifyAsync(fixture, DefaultAttackUrl, null, 5, 1, settings);
         }
     }
 }

@@ -31,9 +31,9 @@ namespace Datadog.Trace.Security.IntegrationTests
         public async Task TestSecurityInitialization(bool enableSecurity, HttpStatusCode expectedStatusCode, string ruleset = null)
         {
             var url = "/Health/?[$slice]=value";
-            using var agent = await RunOnSelfHosted(enableSecurity, externalRulesFile: ruleset);
+            using var fixture = RunOnSelfHosted(enableSecurity, externalRulesFile: ruleset);
             var settings = VerifyHelper.GetSpanVerifierSettings(enableSecurity, (int)expectedStatusCode, ruleset);
-            await TestAppSecRequestWithVerifyAsync(agent, url, null, 1, 1, settings, testInit: true);
+            await TestAppSecRequestWithVerifyAsync(fixture, url, null, 1, 1, settings, testInit: true);
         }
     }
 }

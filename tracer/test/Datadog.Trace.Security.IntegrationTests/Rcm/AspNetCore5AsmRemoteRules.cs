@@ -32,19 +32,19 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         public async Task TestNewRemoteRules()
         {
             var url = "/Health/?[$slice]=value";
-            using var agent = await RunOnSelfHosted(true);
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{SampleProcessName}*", LogDirectory);
+            using var fixture = RunOnSelfHosted(true);
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{fixture.SampleProcessName}*", LogDirectory);
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
-            var spans1 = await SendRequestsAsync(agent, url);
+            var spans1 = await fixture.SendRequestsAsync(url);
 
-            await agent.SetupRcmAndWait(Output, new[] { (GetRules("2.22.222"), "1") }, "ASM_DD");
-            await logEntryWatcher.WaitForLogEntry(WafUpdateRule(), LogEntryWatcherTimeout);
-            var spans2 = await SendRequestsAsync(agent, url);
+            await fixture.Agent.SetupRcmAndWait(Output, new[] { (GetRules("2.22.222"), "1") }, "ASM_DD");
+            await logEntryWatcher.WaitForLogEntry(WafUpdateRule(fixture), LogEntryWatcherTimeout);
+            var spans2 = await fixture.SendRequestsAsync(url);
 
-            await agent.SetupRcmAndWait(Output, new[] { (GetRules("3.33.333"), "2") }, "ASM_DD");
-            await logEntryWatcher.WaitForLogEntry(WafUpdateRule(), LogEntryWatcherTimeout);
-            var spans3 = await SendRequestsAsync(agent, url);
+            await fixture.Agent.SetupRcmAndWait(Output, new[] { (GetRules("3.33.333"), "2") }, "ASM_DD");
+            await logEntryWatcher.WaitForLogEntry(WafUpdateRule(fixture), LogEntryWatcherTimeout);
+            var spans3 = await fixture.SendRequestsAsync(url);
 
             var spans = new List<MockSpan>();
             spans.AddRange(spans1);

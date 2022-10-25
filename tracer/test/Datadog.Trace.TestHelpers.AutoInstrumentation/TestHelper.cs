@@ -61,11 +61,11 @@ namespace Datadog.Trace.TestHelpers
 
         public bool SecurityEnabled { get; private set; }
 
+        public ITestOutputHelper Output { get; }
+
         protected EnvironmentHelper EnvironmentHelper { get; }
 
         protected string TestPrefix => $"{EnvironmentTools.GetBuildConfiguration()}.{EnvironmentHelper.GetTargetFramework()}";
-
-        protected ITestOutputHelper Output { get; }
 
         public virtual void Dispose()
         {

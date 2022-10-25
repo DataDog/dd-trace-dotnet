@@ -35,8 +35,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         [Trait("Category", "ArmUnsupported")]
         public async Task TestRateLimiterSecurity(bool enableSecurity, int totalRequests, int traceRateLimit, string url = DefaultAttackUrl)
         {
-            using var agent = await RunOnSelfHosted(enableSecurity, traceRateLimit: traceRateLimit, externalRulesFile: DefaultRuleFile);
-            await TestRateLimiter(enableSecurity, url, agent, traceRateLimit, totalRequests, 1);
+            using var fixture = RunOnSelfHosted(enableSecurity, traceRateLimit: traceRateLimit, externalRulesFile: DefaultRuleFile);
+            await TestRateLimiter(fixture, enableSecurity, url, traceRateLimit, totalRequests, 1);
         }
     }
 }

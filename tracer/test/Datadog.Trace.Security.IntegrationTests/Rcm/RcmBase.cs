@@ -26,11 +26,11 @@ public class RcmBase : AspNetBase
 
     protected string LogDirectory => Path.Combine(DatadogLogging.GetLogDirectory(), $"{GetTestName()}Logs");
 
-    protected string AppSecDisabledMessage() => $"AppSec is now Disabled, _settings.Enabled is false, coming from remote config: true  {{ MachineName: \".\", Process: \"[{SampleProcessId}";
+    protected string AppSecDisabledMessage(AspNetFixture fixture) => $"AppSec is now Disabled, _settings.Enabled is false, coming from remote config: true  {{ MachineName: \".\", Process: \"[{fixture.SampleProcessId}";
 
-    protected string AppSecEnabledMessage() => $"AppSec is now Enabled, _settings.Enabled is true, coming from remote config: true  {{ MachineName: \".\", Process: \"[{SampleProcessId}";
+    protected string AppSecEnabledMessage(AspNetFixture fixture) => $"AppSec is now Enabled, _settings.Enabled is true, coming from remote config: true  {{ MachineName: \".\", Process: \"[{fixture.SampleProcessId}";
 
-    protected string RulesUpdatedMessage() => $"rules have been updated and waf status is \"DDWAF_OK\"  {{ MachineName: \".\", Process: \"[{SampleProcessId}";
+    protected string RulesUpdatedMessage(AspNetFixture fixture) => $"rules have been updated and waf status is \"DDWAF_OK\"  {{ MachineName: \".\", Process: \"[{fixture.SampleProcessId}";
 
-    protected string WafUpdateRule() => $"DDAS-0015-00: AppSec loaded 1 from file RemoteConfig.  {{ MachineName: \".\", Process: \"[{SampleProcessId}";
+    protected string WafUpdateRule(AspNetFixture fixture) => $"DDAS-0015-00: AppSec loaded 1 from file RemoteConfig.  {{ MachineName: \".\", Process: \"[{fixture.SampleProcessId}";
 }
