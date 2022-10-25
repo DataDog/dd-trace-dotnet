@@ -11,6 +11,76 @@
 
 
 
+
+## [Release 2.18.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.18.0)
+
+## Summary
+
+Profiler
+* AAS support
+* Allocation and Contention profilers are available! Enable them with `DD_PROFILING_ALLOCATION_ENABLED=1` and `DD_PROFILING_CONTENTION_ENABLED=1` respectively
+
+## Changes
+
+### Tracer
+* Add `SpanRateLimiter` for Single Span Ingestion (#3282)
+* Add `SpanSamplingRule` for Single Span Ingestion (#3283)
+* Implement the SpanSampler into the Tracer (#3286)
+* [Test Package Versions Bump] Updating package versions (#3300)
+* [Tracer] refactor trace serialization part 2: `_sampling_priority_v1` (#3315)
+* [CI Visibility] - Add a final try to load the pdb from a module. (#3350)
+* Make cgroup `ContainerMetadata` parsing more lenient (#3354)
+* [Test Package Versions Bump] Updating package versions (#3366)
+* [Test Package Versions Bump] Updating package versions (#3376)
+* Adding Tags Data to Span Started Logs (#3377)
+
+### CI Visibility
+* [CI Visibility] - Add Intelligent Test Runner support in MSTest testing framework (#3341)
+
+### ASM
+* [IAST] Implementation of the basic classes that will be used in IAST and the insecure hashing vulnerability detection (#3225)
+* [ASM] Remove warnings and fix flake (#3338)
+* [IAST] Weak cipher algorithms detection (#3353)
+* [ASM] Deduplication of vulnerabilities (#3371)
+* [ASM] Stop collecting IP if appsec is disabled, only collect ip for appsec (#3379)
+
+### Continuous Profiler
+* [Profiler] Add support for named pipes (#3257)
+* [Profiler] Sample allocation and contention profilers (#3268)
+* [Profiler] Send only activated profilers values in profile (#3337)
+* [Profiler] Ensure all sample have high precision timestamps (#3349)
+* [Profiler] Save and restore the value of errno in the signal handler (#3370)
+* [Profiler] Samples supports timestamps as label (#3372)
+* [Profiler] Disable namedpipe flacky test on x86 until fix is found (#3380)
+* [Profiler] Customize wall time and CPU sampling constants (#3382)
+
+### Serverless
+* Update Samples.AWS.Lambda and tests (#3359)
+* Add support for nested and generic arguments to Lambda handlers (#3367)
+* Run serverless tests on .NET 5.0 and .NET 6.0 (#3369)
+* Add better fallback for Lambda service name (#3378)
+
+### Fixes
+* Fixes Apple Silicon Build (#3358)
+* Fix fairly subtle bug with remote config feature ASM_DD (#3344)
+* Minor remote config fixes (#3347)
+* Close the logger on exit (#3374)
+
+### Build / Test
+* Fix all build warnings and errors (#3324)
+* [asm] Fix flake asm remote rules tests (#3334)
+* Fix dotnet install in build (#3348)
+* Exclude xml files from `dd-trace` tool and Datadog.Trace.Bundle (#3363)
+* Fix broken package version bump + add GitHub action (#3364)
+* Increase allowed variation in `SpanSamplerTests` to fix flake (#3368)
+
+### Miscellaneous
+* Revisit CMake projects architecture (#3329)
+* Native loader build (#3357)
+
+
+[Changes since 2.17.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.17.0...v2.18.0)
+
 ## [Release 2.17.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.17.0)
 
 ## Summary
