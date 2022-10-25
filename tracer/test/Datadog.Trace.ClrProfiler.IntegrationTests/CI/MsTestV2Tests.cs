@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 using (var agent = EnvironmentHelper.GetMockAgent())
                 {
                     // We remove the evp_proxy endpoint to force the APM protocol compatibility
-                    agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v1")).ToArray();
+                    agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v2")).ToArray();
                     using (ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
                     {
                         spans = agent.WaitForSpans(expectedSpanCount)

@@ -427,7 +427,7 @@ namespace Datadog.Trace.TestHelpers
                 HandlePotentialDataStreams(request);
                 response = "{}";
             }
-            else if (request.PathAndQuery.StartsWith("/evp_proxy/v1/"))
+            else if (request.PathAndQuery.StartsWith("/evp_proxy/v2/"))
             {
                 HandleEvpProxyPayload(request);
                 response = "{}";

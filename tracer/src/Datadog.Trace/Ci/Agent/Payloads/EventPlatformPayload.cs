@@ -72,7 +72,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
                 {
                     // Use Agent EVP Proxy
                     builder = new UriBuilder(_settings.TracerSettings.Exporter.AgentUri);
-                    builder.Path = $"/evp_proxy/v1/{EventPlatformPath}";
+                    builder.Path = $"/evp_proxy/v2/{EventPlatformPath}";
                 }
 
                 url = builder.Uri;

@@ -23,7 +23,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private const string SupportedConfigurationEndpoint = "v0.7/config";
         private const string SupportedStatsEndpoint = "v0.6/stats";
         private const string SupportedDataStreamsEndpoint = "v0.1/pipeline_stats";
-        private const string SupportedEventPlatformProxyEndpoint = "evp_proxy/v1";
+        private const string SupportedEventPlatformProxyEndpoint = "evp_proxy/v2";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DiscoveryService>();
         private readonly IApiRequestFactory _apiRequestFactory;
