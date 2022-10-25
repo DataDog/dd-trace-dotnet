@@ -25,6 +25,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
+    [Collection("AspNetCore Security Tests")]
     public class AspNetCore5AsmToggle : RcmBase
     {
         public AspNetCore5AsmToggle(ITestOutputHelper outputHelper)

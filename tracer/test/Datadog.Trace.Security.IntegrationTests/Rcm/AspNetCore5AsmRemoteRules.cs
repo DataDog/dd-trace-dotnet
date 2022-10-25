@@ -20,6 +20,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests.Rcm
 {
+    [Collection("AspNetCore Security Tests")]
     public class AspNetCore5AsmRemoteRules : RcmBase
     {
         public AspNetCore5AsmRemoteRules(ITestOutputHelper outputHelper)

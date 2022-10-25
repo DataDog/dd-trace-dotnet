@@ -19,6 +19,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
+    [Collection("AspNetCore Security Tests")]
     public class AspNetCore5ExternalRules : AspNetBase, IDisposable
     {
         public AspNetCore5ExternalRules(ITestOutputHelper outputHelper)

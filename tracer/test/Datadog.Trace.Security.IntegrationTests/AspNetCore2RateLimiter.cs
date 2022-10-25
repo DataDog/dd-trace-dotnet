@@ -17,6 +17,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
+    [Collection("AspNetCore Security Tests")]
     public class AspNetCore2RateLimiter : AspNetBase, IDisposable
     {
         public AspNetCore2RateLimiter(ITestOutputHelper outputHelper)

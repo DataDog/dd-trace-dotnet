@@ -15,6 +15,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
+    [Collection("AspNetCore Security Tests")]
     public class AspNetCore5AsmInitialization : AspNetBase, IDisposable
     {
         public AspNetCore5AsmInitialization(ITestOutputHelper outputHelper)

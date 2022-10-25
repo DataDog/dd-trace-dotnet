@@ -14,6 +14,7 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.Security.IntegrationTests
 {
+    [Collection("AspNetCore Security Tests")]
     public class AspNetCoreBare : AspNetBase, IDisposable
     {
         public AspNetCoreBare(ITestOutputHelper outputHelper)
