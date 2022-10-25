@@ -129,5 +129,15 @@ namespace Datadog.Trace.Ci.Tags
         /// Test command
         /// </summary>
         public const string Command = "test.command";
+
+        /// <summary>
+        /// Test command exit code
+        /// </summary>
+        public const string CommandExitCode = "test.exit_code";
+
+        /// <summary>
+        /// Test command working directory
+        /// </summary>
+        public const string CommandWorkingDirectory = "test.working_directory";
     }
 }

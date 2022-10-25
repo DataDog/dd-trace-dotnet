@@ -60,6 +60,8 @@ internal partial class TestSpanTags : TestSuiteSpanTags
         GitCommitCommitterDate = suiteTags.GitCommitCommitterDate;
         GitCommitCommitterEmail = suiteTags.GitCommitCommitterEmail;
         GitCommitCommitterName = suiteTags.GitCommitCommitterName;
+        Command = suiteTags.Command;
+        WorkingDirectory = suiteTags.WorkingDirectory;
     }
 
     [Tag(TestTags.Name)]

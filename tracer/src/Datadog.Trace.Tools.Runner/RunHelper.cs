@@ -7,6 +7,8 @@ using System;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Spectre.Console;
 using Spectre.Console.Cli;
 
@@ -121,22 +123,39 @@ namespace Datadog.Trace.Tools.Runner
                 }
             }
 
-            AnsiConsole.WriteLine("Running: " + string.Join(' ', args));
-
-            if (Program.CallbackForTests != null)
+            var command = string.Join(' ', args);
+            var session = TestSession.GetOrCreate(command);
+            var exitCode = 0;
+            try
             {
-                Program.CallbackForTests(args[0], arguments, profilerEnvironmentVariables);
-                return 0;
+                AnsiConsole.WriteLine("Running: " + command);
+
+                if (Program.CallbackForTests != null)
+                {
+                    Program.CallbackForTests(args[0], arguments, profilerEnvironmentVariables);
+                    return 0;
+                }
+
+                var processInfo = Utils.GetProcessStartInfo(args[0], Environment.CurrentDirectory, profilerEnvironmentVariables);
+
+                if (args.Count > 1)
+                {
+                    processInfo.Arguments = arguments;
+                }
+
+                exitCode = Utils.RunProcess(processInfo, applicationContext.TokenSource.Token);
+                session.SetTag(TestTags.CommandExitCode, exitCode);
+                return exitCode;
             }
-
-            var processInfo = Utils.GetProcessStartInfo(args[0], Environment.CurrentDirectory, profilerEnvironmentVariables);
-
-            if (args.Count > 1)
+            catch (Exception ex)
             {
-                processInfo.Arguments = arguments;
+                session.SetErrorInfo(ex);
+                throw;
             }
-
-            return Utils.RunProcess(processInfo, applicationContext.TokenSource.Token);
+            finally
+            {
+                session.Close(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail);
+            }
         }
 
         /// <summary>

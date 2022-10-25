@@ -15,6 +15,12 @@ internal partial class TestSessionSpanTags : Trace.Tagging.CommonTags
     [Tag(TestTags.Command)]
     public string Command { get; set; }
 
+    [Tag(TestTags.CommandWorkingDirectory)]
+    public string WorkingDirectory { get; set; }
+
+    [Tag(TestTags.CommandExitCode)]
+    public string CommandExitCode { get; set; }
+
     [Tag(TestTags.Status)]
     public string Status { get; set; }
 }

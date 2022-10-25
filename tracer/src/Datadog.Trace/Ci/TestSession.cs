@@ -24,17 +24,19 @@ public sealed class TestSession
     private readonly Span _span;
     private int _finished;
 
-    private TestSession(string? command, string? framework, DateTimeOffset? startDate)
+    private TestSession(string? command, string? workingDirectory, string? framework, DateTimeOffset? startDate)
     {
         // First we make sure that CI Visibility is initialized.
         CIVisibility.Initialize();
 
         Command = command;
+        WorkingDirectory = workingDirectory ?? Environment.CurrentDirectory;
         Framework = framework;
 
         var tags = new TestSessionSpanTags
         {
             Command = command ?? string.Empty,
+            WorkingDirectory = WorkingDirectory,
         };
 
         var span = Tracer.Instance.StartSpan(
@@ -55,6 +57,7 @@ public sealed class TestSession
         var environmentVariables = new Dictionary<string, string>
         {
             [TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable] = tags.Command,
+            [TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable] = tags.WorkingDirectory,
         };
 
         SpanContextPropagator.Instance.Inject(
@@ -81,6 +84,11 @@ public sealed class TestSession
     /// Gets the session command
     /// </summary>
     public string? Command { get; }
+
+    /// <summary>
+    /// Gets the session command working directory
+    /// </summary>
+    public string? WorkingDirectory { get; }
 
     /// <summary>
     /// Gets the test session start date
@@ -115,40 +123,58 @@ public sealed class TestSession
             return current;
         }
 
-        return new TestSession(command, null, null);
+        return new TestSession(command, null, null, null);
     }
 
     /// <summary>
     /// Get or create a new Test Session
     /// </summary>
-    /// <param name="name">Test session command</param>
-    /// <param name="framework">Testing framework name</param>
+    /// <param name="command">Test session command</param>
+    /// <param name="workingDirectory">Test session working directory</param>
     /// <returns>New test session instance</returns>
-    public static TestSession GetOrCreate(string name, string framework)
+    public static TestSession GetOrCreate(string command, string workingDirectory)
     {
         if (Current is { } current)
         {
             return current;
         }
 
-        return new TestSession(name, framework, null);
+        return new TestSession(command, workingDirectory, null, null);
     }
 
     /// <summary>
     /// Get or create a new Test Session
     /// </summary>
-    /// <param name="name">Test session command</param>
+    /// <param name="command">Test session command</param>
+    /// <param name="workingDirectory">Test session working directory</param>
+    /// <param name="framework">Testing framework name</param>
+    /// <returns>New test session instance</returns>
+    public static TestSession GetOrCreate(string command, string workingDirectory, string framework)
+    {
+        if (Current is { } current)
+        {
+            return current;
+        }
+
+        return new TestSession(command, workingDirectory, framework, null);
+    }
+
+    /// <summary>
+    /// Get or create a new Test Session
+    /// </summary>
+    /// <param name="command">Test session command</param>
+    /// <param name="workingDirectory">Test session working directory</param>
     /// <param name="framework">Testing framework name</param>
     /// <param name="startDate">Test session start date</param>
     /// <returns>New test session instance</returns>
-    public static TestSession GetOrCreate(string name, string framework, DateTimeOffset startDate)
+    public static TestSession GetOrCreate(string command, string workingDirectory, string framework, DateTimeOffset startDate)
     {
         if (Current is { } current)
         {
             return current;
         }
 
-        return new TestSession(name, framework, startDate);
+        return new TestSession(command, workingDirectory, framework, startDate);
     }
 
     /// <summary>

@@ -27,4 +27,9 @@ internal static class TestSuiteVisibilityTags
     /// Test session command environment variable
     /// </summary>
     public const string TestSessionCommandEnvironmentVariable = "DD_TESTSESSION_COMMAND";
+
+    /// <summary>
+    /// Test session working directory environment variable
+    /// </summary>
+    public const string TestSessionWorkingDirectoryEnvironmentVariable = "DD_TESTSESSION_WORKINGDIRECTORY";
 }

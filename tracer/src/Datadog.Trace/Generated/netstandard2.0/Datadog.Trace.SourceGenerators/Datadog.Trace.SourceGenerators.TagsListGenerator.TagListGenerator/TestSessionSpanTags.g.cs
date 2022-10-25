@@ -10,6 +10,10 @@ namespace Datadog.Trace.Ci.Tagging
     {
         // CommandBytes = System.Text.Encoding.UTF8.GetBytes("test.command");
         private static readonly byte[] CommandBytes = new byte[] { 116, 101, 115, 116, 46, 99, 111, 109, 109, 97, 110, 100 };
+        // WorkingDirectoryBytes = System.Text.Encoding.UTF8.GetBytes("test.working_directory");
+        private static readonly byte[] WorkingDirectoryBytes = new byte[] { 116, 101, 115, 116, 46, 119, 111, 114, 107, 105, 110, 103, 95, 100, 105, 114, 101, 99, 116, 111, 114, 121 };
+        // CommandExitCodeBytes = System.Text.Encoding.UTF8.GetBytes("test.exit_code");
+        private static readonly byte[] CommandExitCodeBytes = new byte[] { 116, 101, 115, 116, 46, 101, 120, 105, 116, 95, 99, 111, 100, 101 };
         // StatusBytes = System.Text.Encoding.UTF8.GetBytes("test.status");
         private static readonly byte[] StatusBytes = new byte[] { 116, 101, 115, 116, 46, 115, 116, 97, 116, 117, 115 };
 
@@ -18,6 +22,8 @@ namespace Datadog.Trace.Ci.Tagging
             return key switch
             {
                 "test.command" => Command,
+                "test.working_directory" => WorkingDirectory,
+                "test.exit_code" => CommandExitCode,
                 "test.status" => Status,
                 _ => base.GetTag(key),
             };
@@ -29,6 +35,12 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 case "test.command": 
                     Command = value;
+                    break;
+                case "test.working_directory": 
+                    WorkingDirectory = value;
+                    break;
+                case "test.exit_code": 
+                    CommandExitCode = value;
                     break;
                 case "test.status": 
                     Status = value;
@@ -46,6 +58,16 @@ namespace Datadog.Trace.Ci.Tagging
                 processor.Process(new TagItem<string>("test.command", Command, CommandBytes));
             }
 
+            if (WorkingDirectory is not null)
+            {
+                processor.Process(new TagItem<string>("test.working_directory", WorkingDirectory, WorkingDirectoryBytes));
+            }
+
+            if (CommandExitCode is not null)
+            {
+                processor.Process(new TagItem<string>("test.exit_code", CommandExitCode, CommandExitCodeBytes));
+            }
+
             if (Status is not null)
             {
                 processor.Process(new TagItem<string>("test.status", Status, StatusBytes));
@@ -60,6 +82,20 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("test.command (tag):")
                   .Append(Command)
+                  .Append(',');
+            }
+
+            if (WorkingDirectory is not null)
+            {
+                sb.Append("test.working_directory (tag):")
+                  .Append(WorkingDirectory)
+                  .Append(',');
+            }
+
+            if (CommandExitCode is not null)
+            {
+                sb.Append("test.exit_code (tag):")
+                  .Append(CommandExitCode)
                   .Append(',');
             }
 

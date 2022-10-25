@@ -96,6 +96,7 @@ public sealed class TestModule
         {
             tags.SessionId = sessionSpanTags.SessionId;
             tags.Command = sessionSpanTags.Command;
+            tags.WorkingDirectory = sessionSpanTags.WorkingDirectory;
         }
         else
         {
@@ -110,6 +111,11 @@ public sealed class TestModule
                 if (environmentVariables.TryGetValue<string>(TestSuiteVisibilityTags.TestSessionCommandEnvironmentVariable, out var testSessionCommand))
                 {
                     tags.Command = testSessionCommand;
+                }
+
+                if (environmentVariables.TryGetValue<string>(TestSuiteVisibilityTags.TestSessionWorkingDirectoryEnvironmentVariable, out var testSessionWorkingDirectory))
+                {
+                    tags.WorkingDirectory = testSessionWorkingDirectory;
                 }
             }
         }
