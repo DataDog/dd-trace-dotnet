@@ -30,7 +30,7 @@ To run a verification, simply:
 2. Run or restart the application we are instrumenting. Observe that as we instrument the app, more and more files will appear under [Datadog Logs Folder]/InstrumentationVerification/{ProcessName}_{ProcessID}_{ProcessCreationTime}
 3. Via command line, run the command: 
 
-    Datadog.InstrumentedAssemblyVerification.Standalone.exe [Full path of the folder generated in step 2] 
+    dd-trace analyze-instrumentation [process name] [pid] 
 
 
     Once the command has finished executing, you will find new files under the InstrumentationVerification folder:
