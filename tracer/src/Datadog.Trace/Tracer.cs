@@ -360,8 +360,6 @@ namespace Datadog.Trace
                 // if traceContext is not null, parent is from a local (non-propagated) span
                 // and this child span belongs in the same TraceContext
                 traceContext = parentSpanContext.TraceContext;
-                // if traceContext is not null, parent is from a local (non-propagated) span
-                // and this child span belongs in the same IastRequestContext
                 iastRequestContext = parentSpanContext.IastRequestContext;
 
                 if (traceContext == null)
