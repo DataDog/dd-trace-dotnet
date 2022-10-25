@@ -29,7 +29,6 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: api/{controller}/{id},
@@ -37,7 +36,6 @@
       http.url: http://localhost/api/Health,
       http.useragent: Mistake Not... Hello/V,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -80,7 +78,6 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: api/{controller}/{id},
@@ -88,7 +85,6 @@
       http.url: http://localhost/api/Health,
       http.useragent: Mistake Not... Hello/V,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -131,7 +127,6 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: api/{controller}/{id},
@@ -139,7 +134,6 @@
       http.url: http://localhost/api/Health,
       http.useragent: Mistake Not... Hello/V,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -182,7 +176,6 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: api/{controller}/{id},
@@ -190,7 +183,6 @@
       http.url: http://localhost/api/Health,
       http.useragent: Mistake Not... Hello/V,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0
@@ -233,7 +225,6 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      http.client_ip: 127.0.0.1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: api/{controller}/{id},
@@ -241,7 +232,6 @@
       http.url: http://localhost/api/Health,
       http.useragent: Mistake Not... Hello/V,
       language: dotnet,
-      network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.p.dm: -0

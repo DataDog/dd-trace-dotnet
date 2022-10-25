@@ -12,6 +12,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -284,6 +285,11 @@ namespace Datadog.Trace
                 if (AzureAppServices.Metadata.IsRelevant)
                 {
                     return AzureAppServices.Metadata.SiteName;
+                }
+
+                if (Serverless.Metadata is { IsRunningInLambda: true, ServiceName: var serviceName })
+                {
+                    return serviceName;
                 }
 
                 try

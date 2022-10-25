@@ -13,7 +13,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 
 internal class LambdaHandler
 {
-    private static readonly string[] Separator = { "::" };
+    internal const string Separator = "::";
+    private static readonly string[] Separators = { "::" };
 
     internal LambdaHandler(string? handlerName)
     {
@@ -22,7 +23,7 @@ internal class LambdaHandler
             ThrowHelper.ThrowArgumentNullException(nameof(handlerName));
         }
 
-        var handlerTokens = handlerName.Split(Separator, StringSplitOptions.None);
+        var handlerTokens = handlerName.Split(Separators, StringSplitOptions.None);
         if (handlerTokens.Length != 3)
         {
             ThrowHelper.ThrowArgumentException($"The handler name {handlerName} did not have the expected format A::B::C");
