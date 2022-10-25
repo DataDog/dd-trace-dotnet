@@ -86,6 +86,7 @@ internal class IastModule
         }
         else
         {
+            // we either are not in a request or the distributed tracer returned a scope that cannot be casted to Scope. Since we cannot access the root span, we will generate spans for each vulnerability
             var batch = new VulnerabilityBatch();
             batch.Add(vulnerability);
 
