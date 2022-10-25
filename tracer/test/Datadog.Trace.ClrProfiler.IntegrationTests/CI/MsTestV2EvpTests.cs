@@ -322,7 +322,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             AssertTargetSpanEqual(targetTest, CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
             AssertTargetSpanEqual(targetTest, CommonTags.OSArchitecture, framework.OSArchitecture);
             AssertTargetSpanEqual(targetTest, CommonTags.OSPlatform, framework.OSPlatform);
-            AssertTargetSpanEqual(targetTest, CommonTags.OSVersion, Environment.OSVersion.VersionString);
+            AssertTargetSpanEqual(targetTest, CommonTags.OSVersion, CIVisibility.GetOperatingSystemVersion());
         }
 
         private static void CheckTraitsValues(MockCIVisibilityTest targetTest)
