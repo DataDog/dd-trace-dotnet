@@ -33,6 +33,7 @@ namespace Datadog.Trace
         public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
         {
             Tracer = tracer;
+            IastRequestContext = Iast.Iast.Instance.Settings.Enabled ? new IastRequestContext() : null;
             Tags = tags ?? new TraceTagCollection(tracer?.Settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
         }
 

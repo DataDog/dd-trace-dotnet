@@ -336,6 +336,7 @@ namespace Datadog.Trace
             lock (_lock)
             {
                 ResourceName ??= OperationName;
+                Context.TraceContext.IastRequestContext.AddIastTagsIfNeeded(this);
 
                 if (!IsFinished)
                 {
@@ -344,9 +345,6 @@ namespace Datadog.Trace
                     {
                         Duration = TimeSpan.Zero;
                     }
-
-                    // IastRequestContext is null if Iast is not enabled.
-                    Context.IastRequestContext?.AddIastTagsIfNeeded(this);
 
                     IsFinished = true;
                     shouldCloseSpan = true;
