@@ -1,4 +1,4 @@
-// <copyright file="CIAgentlessWriter.cs" company="Datadog">
+// <copyright file="CIVisibilityProtocolWriter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -55,20 +55,20 @@ namespace Datadog.Trace.Ci.Agent
      *         │                                                                │
      *         └────────────────────────────────────────────────────────────────┘
      */
-    internal sealed class CIAgentlessWriter : IEventWriter
+    internal sealed class CIVisibilityProtocolWriter : IEventWriter
     {
         private const int DefaultBatchInterval = 1000;
         private const int DefaultMaxItemsInQueue = 25000;
 
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIAgentlessWriter>();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIVisibilityProtocolWriter>();
 
         private readonly BlockingCollection<IEvent> _eventQueue;
         private readonly Buffers[] _buffersArray;
         private readonly int _batchInterval;
 
-        public CIAgentlessWriter(
+        public CIVisibilityProtocolWriter(
             CIVisibilitySettings settings,
-            ICIAgentlessWriterSender sender,
+            ICIVisibilityProtocolWriterSender sender,
             IFormatterResolver formatterResolver = null,
             int? concurrency = null,
             int batchInterval = DefaultBatchInterval,
@@ -186,7 +186,7 @@ namespace Datadog.Trace.Ci.Agent
             }
         }
 
-        private static async Task InternalFlushEventsAsync(CIAgentlessWriter writer, Buffers buffers)
+        private static async Task InternalFlushEventsAsync(CIVisibilityProtocolWriter writer, Buffers buffers)
         {
             var batchInterval = writer._batchInterval;
             var eventQueue = writer._eventQueue;
@@ -321,9 +321,9 @@ namespace Datadog.Trace.Ci.Agent
         private class Buffers
         {
             private static int _globalIndexes = 0;
-            private readonly ICIAgentlessWriterSender _sender;
+            private readonly ICIVisibilityProtocolWriterSender _sender;
 
-            public Buffers(ICIAgentlessWriterSender sender, CIVisibilityProtocolPayload ciTestCycleBuffer, CICodeCoveragePayload ciCodeCoverageBuffer)
+            public Buffers(ICIVisibilityProtocolWriterSender sender, CIVisibilityProtocolPayload ciTestCycleBuffer, CICodeCoveragePayload ciCodeCoverageBuffer)
             {
                 _sender = sender;
                 Index = Interlocked.Increment(ref _globalIndexes);

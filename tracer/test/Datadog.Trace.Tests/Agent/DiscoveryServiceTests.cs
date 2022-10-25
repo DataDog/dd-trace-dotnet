@@ -254,6 +254,7 @@ public class DiscoveryServiceTests
             agentVersion: "AgentVersion",
             statsEndpoint: "StatsEndpoint",
             dataStreamsMonitoringEndpoint: "DataStreamsMonitoringEndpoint",
+            eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
             clientDropP0: false);
 
         // same config
@@ -263,6 +264,7 @@ public class DiscoveryServiceTests
             agentVersion: "AgentVersion",
             statsEndpoint: "StatsEndpoint",
             dataStreamsMonitoringEndpoint: "DataStreamsMonitoringEndpoint",
+            eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
             clientDropP0: false);
 
         // different
@@ -272,6 +274,7 @@ public class DiscoveryServiceTests
             agentVersion: "AgentVersion",
             statsEndpoint: "StatsEndpoint",
             dataStreamsMonitoringEndpoint: "DataStreamsMonitoringEndpoint",
+            eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
             clientDropP0: false);
 
         config1.Equals(config2).Should().BeTrue();

@@ -1,4 +1,4 @@
-// <copyright file="CIAgentWriterTests.cs" company="Datadog">
+// <copyright file="ApmAgentWriterTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,20 +14,20 @@ using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
 {
-    public class CIAgentWriterTests
+    public class ApmAgentWriterTests
     {
-        private readonly CIAgentWriter _ciAgentWriter;
+        private readonly ApmAgentWriter _ciAgentWriter;
         private readonly Configuration.ImmutableTracerSettings _settings;
         private readonly Mock<IApi> _api;
 
-        public CIAgentWriterTests()
+        public ApmAgentWriterTests()
         {
             var tracer = new Mock<IDatadogTracer>();
             tracer.Setup(x => x.DefaultServiceName).Returns("Default");
             _settings = new Configuration.ImmutableTracerSettings(Ci.Configuration.CIVisibilitySettings.FromDefaultSources().TracerSettings);
 
             _api = new Mock<IApi>();
-            _ciAgentWriter = new CIAgentWriter(_api.Object);
+            _ciAgentWriter = new ApmAgentWriter(_api.Object);
         }
 
         [Fact]
@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
         [Fact]
         public async Task FlushTwice()
         {
-            var w = new CIAgentWriter(_api.Object);
+            var w = new ApmAgentWriter(_api.Object);
             await w.FlushAndCloseAsync();
             await w.FlushAndCloseAsync();
         }

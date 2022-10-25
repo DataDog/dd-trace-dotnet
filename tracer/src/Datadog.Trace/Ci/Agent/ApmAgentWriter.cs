@@ -1,10 +1,9 @@
-// <copyright file="CIAgentWriter.cs" company="Datadog">
+// <copyright file="ApmAgentWriter.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -15,9 +14,9 @@ using Datadog.Trace.Sampling;
 namespace Datadog.Trace.Ci.Agent
 {
     /// <summary>
-    /// CI Visibility Agent Writer
+    /// APM Agent Writer for CI Visibility
     /// </summary>
-    internal class CIAgentWriter : IEventWriter
+    internal class ApmAgentWriter : IEventWriter
     {
         private const int DefaultMaxBufferSize = 1024 * 1024 * 10;
 
@@ -25,7 +24,7 @@ namespace Datadog.Trace.Ci.Agent
         private static Span[] _spanArray;
         private readonly AgentWriter _agentWriter;
 
-        public CIAgentWriter(ImmutableTracerSettings settings, ITraceSampler sampler, IDiscoveryService discoveryService, int maxBufferSize = DefaultMaxBufferSize)
+        public ApmAgentWriter(ImmutableTracerSettings settings, ITraceSampler sampler, IDiscoveryService discoveryService, int maxBufferSize = DefaultMaxBufferSize)
         {
             var partialFlushEnabled = settings.Exporter.PartialFlushEnabled;
             var apiRequestFactory = TracesTransportStrategy.Get(settings.Exporter);
@@ -35,7 +34,7 @@ namespace Datadog.Trace.Ci.Agent
             _agentWriter = new AgentWriter(api, statsAggregator, null, maxBufferSize: maxBufferSize);
         }
 
-        public CIAgentWriter(IApi api, int maxBufferSize = DefaultMaxBufferSize)
+        public ApmAgentWriter(IApi api, int maxBufferSize = DefaultMaxBufferSize)
         {
             _agentWriter = new AgentWriter(api, null, null, maxBufferSize: maxBufferSize);
         }

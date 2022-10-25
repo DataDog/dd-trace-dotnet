@@ -13,11 +13,11 @@ namespace Datadog.Trace.Ci.Processors;
 internal class TestSuiteVisibilityProcessor : ITraceProcessor
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TestSuiteVisibilityProcessor>();
-    private readonly bool _isAgentlessEnabled = false;
+    private readonly bool _isCiVisibilityProtocol = false;
 
-    public TestSuiteVisibilityProcessor(bool isAgentlessEnabled)
+    public TestSuiteVisibilityProcessor(bool isCiVisibilityProtocol)
     {
-        _isAgentlessEnabled = isAgentlessEnabled;
+        _isCiVisibilityProtocol = isCiVisibilityProtocol;
 
         Log.Information("TestSuiteVisibilityProcessor initialized.");
     }
@@ -25,7 +25,7 @@ internal class TestSuiteVisibilityProcessor : ITraceProcessor
     public ArraySegment<Span> Process(ArraySegment<Span> trace)
     {
         // Check if the trace has any span or Agentless is enabled
-        if (trace.Count == 0 || _isAgentlessEnabled)
+        if (trace.Count == 0 || _isCiVisibilityProtocol)
         {
             return trace;
         }
@@ -50,7 +50,7 @@ internal class TestSuiteVisibilityProcessor : ITraceProcessor
     public Span Process(Span span)
     {
         // If agentless is enabled we don't filter anything.
-        if (span is null || _isAgentlessEnabled)
+        if (span is null || _isCiVisibilityProtocol)
         {
             return span;
         }
