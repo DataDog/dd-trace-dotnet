@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Iast;
@@ -72,10 +73,12 @@ internal class IastModule
 
     private static Scope? AddVulnerability(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
     {
-        var rootSpan = ((Scope)tracer.ActiveScope)?.Root?.Span;
-        bool isRequest = rootSpan?.Type == SpanTypes.Web;
+        var iActiveScope = DistributedTracer.Instance.GetActiveScope() ?? tracer.TracerManager?.ScopeManager.Active;
+        var activeScope = iActiveScope as Scope;
+        var rootSpan = activeScope?.Root?.Span;
+        bool addToRequestContext = rootSpan?.Type == SpanTypes.Web;
 
-        if (isRequest)
+        if (addToRequestContext)
         {
             var iastRequestContext = rootSpan?.Context?.IastRequestContext;
             iastRequestContext?.AddVulnerability(vulnerability);
@@ -94,7 +97,7 @@ internal class IastModule
 
             tags.SetTag(Tags.Origin, IastOrigin);
             var scope = tracer.StartActiveInternal(operationName, tags: tags);
-            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+            tracer?.TracerManager?.Telemetry.IntegrationGeneratedSpan(integrationId);
             return scope;
         }
     }
