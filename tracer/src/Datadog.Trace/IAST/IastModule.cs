@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 
 namespace Datadog.Trace.Iast;
