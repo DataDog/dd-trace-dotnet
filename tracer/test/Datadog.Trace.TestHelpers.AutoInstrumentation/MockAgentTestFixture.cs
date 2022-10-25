@@ -16,19 +16,18 @@ namespace Datadog.Trace.TestHelpers
 {
     public class MockAgentTestFixture : IDisposable
     {
-        public MockAgentTestFixture(TestHelper test)
+        public MockAgentTestFixture()
         {
-            Test = test;
         }
 
         public MockAgentTestFixture(TestHelper test, MockTracerAgent agent, int httpPort)
-            : this(test)
         {
+            Test = test;
             Agent = agent;
             HttpPort = httpPort;
         }
 
-        public TestHelper Test { get; }
+        public TestHelper Test { get; set; }
 
         public MockTracerAgent Agent { get; set; }
 

@@ -12,11 +12,6 @@ namespace Datadog.Trace.TestHelpers
 {
     public sealed class IisFixture : MockAgentTestFixture, IDisposable
     {
-        public IisFixture(TestHelper test)
-            : base(test)
-        {
-        }
-
         public (Process Process, string ConfigFile) IisExpress { get; private set; }
 
         public string ShutdownPath { get; set; }
