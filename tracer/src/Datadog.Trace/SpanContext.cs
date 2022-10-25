@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Ci;
 using Datadog.Trace.DataStreamsMonitoring;
-using Datadog.Trace.Iast;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
