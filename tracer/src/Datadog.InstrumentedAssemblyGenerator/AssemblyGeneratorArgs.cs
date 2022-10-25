@@ -7,11 +7,10 @@ namespace Datadog.InstrumentedAssemblyGenerator
 {
     public class AssemblyGeneratorArgs
     {
-        public AssemblyGeneratorArgs(string instrumentationLogsBaseFolder, bool copyOriginalModulesToDisk = false, string[] modulesToVerify = null, string[] methodsToVerify = null)
+        public AssemblyGeneratorArgs(string instrumentationLogsBaseFolder, bool copyOriginalModulesToDisk = false, string[] modulesToVerify = null)
         {
             InstrumentationLogsBaseFolder = instrumentationLogsBaseFolder;
             ModulesToGenerate = modulesToVerify ?? Array.Empty<string>();
-            MethodsToVerify = methodsToVerify ?? Array.Empty<string>();
             if (copyOriginalModulesToDisk)
             {
                 OriginalModulesFolder = Path.Combine(InstrumentationLogsBaseFolder, InstrumentedAssembliesFolderName);
@@ -21,8 +20,6 @@ namespace Datadog.InstrumentedAssemblyGenerator
         public string InstrumentationLogsBaseFolder { get; }
 
         public string[] ModulesToGenerate { get; }
-
-        public string[] MethodsToVerify { get; }
 
         public string InstrumentationInputLogs => Path.Combine(InstrumentationLogsBaseFolder, InstrumentedAssemblyGeneratorInputFolder);
 

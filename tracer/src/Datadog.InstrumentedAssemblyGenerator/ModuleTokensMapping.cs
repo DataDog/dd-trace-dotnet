@@ -7,10 +7,7 @@ using static Datadog.InstrumentedAssemblyGenerator.InstrumentedAssemblyGenerator
 
 namespace Datadog.InstrumentedAssemblyGenerator
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    public class ModuleTokensMapping
+    internal class ModuleTokensMapping
     {
         internal ModuleTokensMapping(Guid moduleMvid, string moduleName, Func<Dictionary<Token, MetadataMember>> creator)
         {

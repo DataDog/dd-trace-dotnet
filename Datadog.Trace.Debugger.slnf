@@ -4,7 +4,6 @@
     "projects": [
       "tracer\\build\\_build\\_build.csproj",
       "tracer\\src\\Datadog.InstrumentedAssemblyGenerator\\Datadog.InstrumentedAssemblyGenerator.csproj",
-      "tracer\\src\\Datadog.InstrumentedAssemblyVerification.Standalone\\Datadog.InstrumentedAssemblyVerification.Standalone.csproj",
       "tracer\\src\\Datadog.InstrumentedAssemblyVerification\\Datadog.InstrumentedAssemblyVerification.csproj",
       "tracer\\src\\Datadog.Trace.Annotations\\Datadog.Trace.Annotations.csproj",
       "tracer\\src\\Datadog.Trace.AspNet\\Datadog.Trace.AspNet.csproj",

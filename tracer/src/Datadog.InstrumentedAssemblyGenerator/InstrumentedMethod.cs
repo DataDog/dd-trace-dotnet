@@ -6,10 +6,7 @@ using static Datadog.InstrumentedAssemblyGenerator.InstrumentedAssemblyGenerator
 
 namespace Datadog.InstrumentedAssemblyGenerator
 {
-    /// <summary>
-    /// 
-    /// </summary>
-    public class InstrumentedMethod
+    internal class InstrumentedMethod
     {
         internal InstrumentedMethod(
             Guid mvid,

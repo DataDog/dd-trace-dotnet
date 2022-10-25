@@ -24,7 +24,7 @@ public class ModifiedMethod
     /// <param name="context">Module context</param>
     /// <param name="module">The module of the method</param>
     /// <param name="instrumentedModulesFolder">Output folder of instrumented modules</param>
-    public ModifiedMethod(InstrumentedMethod instrumentedMethod, MethodDef methodDef, InstrumentedAssemblyGeneratorContext context, ModuleDefMD module, string instrumentedModulesFolder)
+    internal ModifiedMethod(InstrumentedMethod instrumentedMethod, MethodDef methodDef, InstrumentedAssemblyGeneratorContext context, ModuleDefMD module, string instrumentedModulesFolder)
     {
         try
         {

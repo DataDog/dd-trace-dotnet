@@ -36,12 +36,12 @@ internal static class InstrumentationVerification
         var generatedModules = InstrumentedAssemblyGeneration.Generate(generatorArgs);
 
         var results = new List<VerificationOutcome>();
-        foreach (var ((instrumentedModulePath, originalModulePath), methods) in generatedModules)
+        foreach (var instrumentedAssembly in generatedModules)
         {
             var result = new VerificationsRunner(
-                instrumentedModulePath,
-                originalModulePath,
-                methods.Select(m => (m.TypeName, m.MethodName)).ToList()).Run();
+                instrumentedAssembly.InstrumentedAssemblyPath,
+                instrumentedAssembly.OriginalAssemblyPath,
+                instrumentedAssembly.InstrumentedMethods.Select(m => (m.TypeName, m.MethodName)).ToList()).Run();
             results.Add(result);
         }
 

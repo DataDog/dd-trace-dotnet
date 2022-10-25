@@ -16,7 +16,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
         private readonly AssemblyGeneratorArgs _args;
         private readonly ModuleContext _moduleContext;
         private readonly List<ModuleDefMD> _allLoadedModules;
-        internal List<((string instrumentedModulePath, string originalModulePath), List<ModifiedMethod> methods)> ExportedModulesPathAndMethods { get; set; } = new();
+        internal List<InstrumentedAssembly> ExportedModulesPathAndMethods { get; set; } = new();
         internal InstrumentedAssemblyGeneratorContext ModuleRewriteContext { get; private set; }
 
         public InstrumentedAssemblyGenerator(AssemblyGeneratorArgs args)
@@ -272,11 +272,6 @@ namespace Datadog.InstrumentedAssemblyGenerator
                     {
                         try
                         {
-                            if (_args.MethodsToVerify != null && !_args.MethodsToVerify.Contains(instrumentedMethod.MethodName))
-                            {
-                                continue;
-                            }
-
                             var modifiedMethod = ModifyMethod(module, instrumentedMethod, ModuleRewriteContext.InstrumentedModulesTypesTokens[methods.Key], ModuleRewriteContext.OriginalModulesTypesTokens[methods.Key]);
                             if (modifiedMethod == null)
                             {
@@ -316,7 +311,7 @@ namespace Datadog.InstrumentedAssemblyGenerator
                     module.Write(exportPath, writeOptions);
                     Logger.Successful($"Module: '{module.FullName}' was successfully written to: '{exportPath}'");
                     var originalPath = ModuleRewriteContext.OriginalsModulesPaths.First(path => path.EndsWith(module.FullName));
-                    ExportedModulesPathAndMethods.Add(((exportPath, originalPath), modifiedMethods));
+                    ExportedModulesPathAndMethods.Add(new InstrumentedAssembly(exportPath, originalPath, modifiedMethods));
                     succeededCounter++;
 
                     if (moduleWriteLogger.ErrorsBuilder.Length > 0)
