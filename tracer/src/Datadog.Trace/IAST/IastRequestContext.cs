@@ -13,6 +13,13 @@ internal class IastRequestContext
 {
     private VulnerabilityBatch? _vulnerabilityBatch;
     private object _vulnerabilityLock = new();
+    private static int vulnerabilitiesPerRequest = Iast.Instance.Settings.VulnerabilitiesPerRequest;
+    private bool requestEnabled = true;
+
+    internal void SetRequestEnabled(bool value)
+    {
+        requestEnabled = value;
+    }
 
     public static void AddsIastTagsToSpan(Span span, IastRequestContext? iastRequestContext)
     {
@@ -28,6 +35,11 @@ internal class IastRequestContext
         {
             span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
         }
+    }
+
+    internal bool AddVulnerabilitiesAllowed()
+    {
+        return (requestEnabled && vulnerabilityBatch.Vulnerabilities.Count < vulnerabilitiesPerRequest);
     }
 
     internal void AddVulnerability(Vulnerability vulnerability)

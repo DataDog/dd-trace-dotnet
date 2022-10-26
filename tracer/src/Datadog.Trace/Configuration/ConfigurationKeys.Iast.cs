@@ -44,7 +44,7 @@ namespace Datadog.Trace.Configuration
             /// When enabled, a vulnerability will only be reported once in the lifetime of an app,
             /// instead of on every usage. Default is value is true (enabled).
             /// </summary>
-            public const string MaxConcurrentRequest = "DD_IAST_MAX_CONCURRENT_REQUESTS";
+            public const string MaxConcurrentRequests = "DD_IAST_MAX_CONCURRENT_REQUESTS";
 
             /// <summary>
             /// Configuration key for enabling or disabling the vulnerability duplication detection.

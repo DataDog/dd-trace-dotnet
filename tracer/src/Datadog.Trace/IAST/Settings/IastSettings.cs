@@ -27,7 +27,7 @@ internal class IastSettings
             (WeakHashAlgorithmsArray.Length > 0 || WeakCipherAlgorithmsArray.Length > 0);
         DeduplicationEnabled = source?.GetBool(ConfigurationKeys.Iast.IsIastDeduplicationEnabled) ?? true;
         RequestSampling = source?.GetInt32(ConfigurationKeys.Iast.RequestSampling) ?? RequestSamplingDefault;
-        MaxConcurrentRequest = source?.GetInt32(ConfigurationKeys.Iast.MaxConcurrentRequest) ?? MaxConcurrentRequestDefault;
+        MaxConcurrentRequests = source?.GetInt32(ConfigurationKeys.Iast.MaxConcurrentRequests) ?? MaxConcurrentRequestDefault;
         VulnerabilitiesPerRequest = source?.GetInt32(ConfigurationKeys.Iast.VulnerabilitiesPerRequest) ?? VulnerabilitiesPerRequestDefault;
     }
 
@@ -45,7 +45,7 @@ internal class IastSettings
 
     public int RequestSampling { get; }
 
-    public int MaxConcurrentRequest { get; }
+    public int MaxConcurrentRequests { get; }
 
     public int VulnerabilitiesPerRequest { get; }
 
