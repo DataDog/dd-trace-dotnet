@@ -18,6 +18,8 @@ namespace Datadog.Trace.Agent.MessagePack
     {
         public static readonly SpanMessagePackFormatter Instance = new();
 
+        private static readonly TruncatorTagsProcessor TagValueTruncator = new();
+
         // Cache the UTF-8 bytes for string constants (like tag names)
         // and values that are constant within the lifetime of a service (like process id).
         //
@@ -47,13 +49,13 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
 
         private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Env);
-        private readonly TransformedStringCache<byte[]> _environmentValueBytes = new(s => SerializeIfNotNullOrWhiteSpace(s));
+        private readonly TransformedStringCache<byte[]> _environmentValueBytes = new(s => SerializeTagValue(s));
 
         private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Version);
-        private readonly TransformedStringCache<byte[]> _versionValueBytes = new(s => SerializeIfNotNullOrWhiteSpace(s));
+        private readonly TransformedStringCache<byte[]> _versionValueBytes = new(s => SerializeTagValue(s));
 
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
-        private readonly TransformedStringCache<byte[]> _originValueBytes = new(s => SerializeIfNotNullOrWhiteSpace(s));
+        private readonly TransformedStringCache<byte[]> _originValueBytes = new(s => SerializeTagValue(s));
 
         // numeric tags
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
@@ -81,9 +83,18 @@ namespace Datadog.Trace.Agent.MessagePack
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static byte[] SerializeIfNotNullOrWhiteSpace(string s)
+        private static byte[] SerializeTagValue(string value)
         {
-            return string.IsNullOrWhiteSpace(s) ? null : MessagePackSerializer.Serialize(s);
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return null;
+            }
+
+            // truncate and normalize if needed
+            TagValueTruncator.ProcessMetaValue(ref value);
+            value = TraceUtil.NormalizeTag(value);
+
+            return MessagePackSerializer.Serialize(value);
         }
 
         int IMessagePackFormatter<TraceChunkModel>.Serialize(ref byte[] bytes, int offset, TraceChunkModel traceChunk, IFormatterResolver formatterResolver)
