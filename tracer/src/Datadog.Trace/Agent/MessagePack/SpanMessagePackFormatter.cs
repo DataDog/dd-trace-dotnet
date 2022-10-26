@@ -215,22 +215,6 @@ namespace Datadog.Trace.Agent.MessagePack
             offset = tagWriter.Offset;
             count += tagWriter.Count;
 
-            // and "env" to all spans
-            if (cachedBytes.Environment is not null)
-            {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentNameBytes);
-                offset += MessagePackBinary.WriteRaw(ref bytes, offset, cachedBytes.Environment);
-            }
-
-            // and "version" to all spans
-            if (cachedBytes.ServiceVersion is not null)
-            {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
-                offset += MessagePackBinary.WriteRaw(ref bytes, offset, cachedBytes.ServiceVersion);
-            }
-
             // TODO: for each trace tag, determine if it should be added to the local root,
             // to the first span in the chunk, or to all orphan spans.
             // For now, we add them to the local root which is correct in most cases.
@@ -250,6 +234,22 @@ namespace Datadog.Trace.Agent.MessagePack
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdNameBytes);
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _runtimeIdValueBytes);
+            }
+
+            // add "env" to all spans
+            if (cachedBytes.Environment is not null)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentNameBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, cachedBytes.Environment);
+            }
+
+            // add "version" to all spans
+            if (cachedBytes.ServiceVersion is not null)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
+                offset += MessagePackBinary.WriteRaw(ref bytes, offset, cachedBytes.ServiceVersion);
             }
 
             // add "_dd.origin" tag to all spans
