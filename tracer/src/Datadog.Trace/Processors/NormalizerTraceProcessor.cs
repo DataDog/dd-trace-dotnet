@@ -125,7 +125,7 @@ namespace Datadog.Trace.Processors
             }
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L133-L135
-            // NOTE: moved to Process(ArraySegment<Span>)
+            // NOTE: moved normalization of "env" tag to Process(ArraySegment<Span>)
 
             // https://github.com/DataDog/datadog-agent/blob/eac2327c5574da7f225f9ef0f89eaeb05ed10382/pkg/trace/agent/normalizer.go#L136-L142
             if (span.Tags is IHasStatusCode statusCodeTags)
