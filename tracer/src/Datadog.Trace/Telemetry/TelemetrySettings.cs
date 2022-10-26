@@ -119,7 +119,7 @@ namespace Datadog.Trace.Telemetry
         private static bool? IsAgentAvailable()
         {
             // if CIVisibility is enabled and in agentless mode, we probably don't have an agent available
-            if (CIVisibility.IsRunning || CIVisibility.Enabled)
+            if (CIVisibility.IsRunning && CIVisibility.Enabled)
             {
                 return !CIVisibility.Settings.Agentless;
             }
