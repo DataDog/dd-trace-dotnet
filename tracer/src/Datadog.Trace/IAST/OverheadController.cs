@@ -20,10 +20,11 @@ internal class OverheadController
     /// For testing only.
     /// Note that this API does NOT replace the global OverheadController instance.
     /// </summary>
-    internal OverheadController()
+    internal OverheadController(IastSettings settings = null)
     {
+        iastSettings = settings ?? Iast.Instance.Settings;
         availableRequests = iastSettings.MaxConcurrentRequests;
-        sampling = ComputeSamplingParameter(Iast.Instance.Settings.RequestSampling);
+        sampling = ComputeSamplingParameter(iastSettings.RequestSampling);
     }
 
     public static OverheadController Instance { get; } = new();

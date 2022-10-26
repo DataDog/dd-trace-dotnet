@@ -16,9 +16,9 @@ internal class IastRequestContext
     private static int vulnerabilitiesPerRequest = Iast.Instance.Settings.VulnerabilitiesPerRequest;
     private bool requestEnabled = true;
 
-    internal void SetRequestEnabled(bool value)
+    internal void UpdateShouldCollectVulnerabilities()
     {
-        requestEnabled = value;
+        requestEnabled = OverheadController.Instance.AcquireRequest();
     }
 
     public static void AddsIastTagsToSpan(Span span, IastRequestContext? iastRequestContext)
