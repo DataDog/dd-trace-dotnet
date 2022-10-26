@@ -124,21 +124,21 @@ variables:
   DD_LOGGER_DD_SERVICE: dd-trace-dotnet
   DD_LOGGER_DD_ENV: CI
   DD_LOGGER_TF_BUILD: True
-  DD_LOGGER_BUILD_BUILDID: $[variables['Build.BuildId']]
-  DD_LOGGER_BUILD_DEFINITIONNAME: $[variables['Build.DefinitionName']]
-  DD_LOGGER_BUILD_SOURCESDIRECTORY: $[variables['Build.SourcesDirectory']]
-  DD_LOGGER_BUILD_REPOSITORY_URI: $[variables['Build.Repository.Uri']]
-  DD_LOGGER_BUILD_SOURCEVERSION: $[variables['Build.SourceVersion']]
-  DD_LOGGER_BUILD_SOURCEBRANCH: $[variables['Build.SourceBranch']]
-  DD_LOGGER_BUILD_SOURCEBRANCHNAME: $[variables['Build.SourceBranchName']]
-  DD_LOGGER_BUILD_SOURCEVERSIONMESSAGE: $[variables['Build.SourceVersionMessage']]
-  DD_LOGGER_BUILD_REQUESTEDFORID: $[variables['Build.RequestedForId']]
-  DD_LOGGER_BUILD_REQUESTEDFOREMAIL: $[variables['Build.RequestedForEmail']]
-  DD_LOGGER_SYSTEM_TEAMFOUNDATIONSERVERURI: $[variables['System.TeamFoundationServerUri']]
-  DD_LOGGER_SYSTEM_TEAMPROJECTID: $[variables['System.TeamProjectId']]
-  DD_LOGGER_SYSTEM_STAGEDISPLAYNAME: $[variables['System.StageDisplayName']]
-  DD_LOGGER_SYSTEM_JOBDISPLAYNAME: $[variables['System.JobDisplayName']]
-  DD_LOGGER_SYSTEM_JOBID: $[variables['System.JobId']]
+  DD_LOGGER_BUILD_BUILDID: $(Build.BuildId)
+  DD_LOGGER_BUILD_DEFINITIONNAME: $(Build.DefinitionName)
+  DD_LOGGER_BUILD_SOURCESDIRECTORY: $(Build.SourcesDirectory)
+  DD_LOGGER_BUILD_REPOSITORY_URI: $(Build.Repository.Uri)
+  DD_LOGGER_BUILD_SOURCEVERSION: $(Build.SourceVersion)
+  DD_LOGGER_BUILD_SOURCEBRANCH: $(Build.SourceBranch)
+  DD_LOGGER_BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
+  DD_LOGGER_BUILD_SOURCEVERSIONMESSAGE: $(Build.SourceVersionMessage)
+  DD_LOGGER_BUILD_REQUESTEDFORID: $(Build.RequestedForId)
+  DD_LOGGER_BUILD_REQUESTEDFOREMAIL: $(Build.RequestedForEmail)
+  DD_LOGGER_SYSTEM_TEAMFOUNDATIONSERVERURI: $(System.TeamFoundationServerUri)
+  DD_LOGGER_SYSTEM_TEAMPROJECTID: $(System.TeamProjectId)
+  DD_LOGGER_SYSTEM_STAGEDISPLAYNAME: $(System.StageDisplayName)
+  DD_LOGGER_SYSTEM_JOBDISPLAYNAME: $(System.JobDisplayName)
+  DD_LOGGER_SYSTEM_JOBID: $(System.JobId)
   DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI: $[variables['System.PullRequest.SourceRepositoryURI']]
   DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID: $[variables['System.PullRequest.SourceCommitId']]
   DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH: $[variables['System.PullRequest.SourceBranch']]
