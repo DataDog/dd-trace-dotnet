@@ -6,6 +6,7 @@
 #if !NETFRAMEWORK
 
 using System;
+using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -54,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
             if (Security.Instance.Settings.Enabled)
             {
                 var appb = (IApplicationBuilder)returnValue;
-                appb.MapWhen(c => true, HandleBranch);
+                appb.MapWhen(context => context.Items["block"] is true, HandleBranch);
             }
 
             return new CallTargetReturn<TReturn>(returnValue);
@@ -62,12 +63,45 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 
         internal static void HandleBranch(Microsoft.AspNetCore.Builder.IApplicationBuilder app)
         {
-            app.Run(
-                context =>
+            app.Run(context =>
+            {
+                var sec = Security.Instance;
+                var settings = sec.Settings;
+                var httpResponse = context.Response;
+                httpResponse.Clear();
+
+                foreach (var cookie in context.Request.Cookies)
                 {
-                    var branchVer = context.Request.Query["branch"];
-                    return context.Response.WriteAsync($"Branch used = {branchVer}");
-                });
+                    httpResponse.Cookies.Delete(cookie.Key);
+                }
+
+                // this should always be true for core, but it would seem foolish to ignore it, as potential source of future bugs
+                if (sec.CanAccessHeaders())
+                {
+                    httpResponse.Headers.Clear();
+                }
+
+                httpResponse.StatusCode = 403;
+                var syncIOFeature = context.Features.Get<IHttpBodyControlFeature>();
+                if (syncIOFeature != null)
+                {
+                    // allow synchronous operations for net core >=3.1 otherwise invalidoperation exception
+                    syncIOFeature.AllowSynchronousIO = true;
+                }
+
+                var template = settings.BlockedJsonTemplate;
+                if (context.Request.Headers["Accept"] == "text/html")
+                {
+                    httpResponse.ContentType = "text/html";
+                }
+                else
+                {
+                    httpResponse.ContentType = "text/html";
+                    template = settings.BlockedHtmlTemplate;
+                }
+
+                return httpResponse.WriteAsync(template);
+            });
         }
     }
 }

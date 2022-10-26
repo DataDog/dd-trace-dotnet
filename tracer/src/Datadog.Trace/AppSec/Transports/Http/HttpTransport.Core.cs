@@ -24,7 +24,7 @@ namespace Datadog.Trace.AppSec.Transports.Http
 
         public bool IsSecureConnection => _context.Request.IsHttps;
 
-        public bool Blocked => _context.Items["block"] is bool blocked && blocked;
+        public bool Blocked => _context.Items["block"] is true;
 
         public Func<string, string> GetHeader => key => _context.Request.Headers[key];
 

@@ -483,7 +483,7 @@ namespace Datadog.Trace.AppSec
             }
         }
 
-        private bool CanAccessHeaders() => _usingIntegratedPipeline == true || _usingIntegratedPipeline is null;
+        internal bool CanAccessHeaders() => _usingIntegratedPipeline == true || _usingIntegratedPipeline is null;
 
         private void AddResponseHeaderTags(ITransport transport, Span span)
         {

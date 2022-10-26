@@ -62,7 +62,7 @@ namespace Samples.Security.AspNetCore5
             });
             
             app.MapWhen(
-                context => context.Items.ContainsKey("block"),
+                context => true,
                 appBuilder =>
                 {
                     appBuilder.Run(
