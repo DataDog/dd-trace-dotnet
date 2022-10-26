@@ -40,6 +40,6 @@
              Text="  Copy @(PackageReferenceFiles->'%(Identity)') to $(OutDir)"
              Importance="high"/>
     <Copy SourceFiles="@(PackageReferenceFiles)" DestinationFolder="$(OutDir)" />
-  </Target>-->
+  </Target>
   
 </Project>
