@@ -119,6 +119,31 @@ variables:
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
   DefaultTimeout: 60
   DD_INSTRUMENTATION_TELEMETRY_ENABLED: 0
+  # Logger variables
+  DD_LOGGER_DD_API_KEY: $(DD_API_KEY)
+  DD_LOGGER_DD_SERVICE: dd-trace-dotnet
+  DD_LOGGER_DD_ENV: CI
+  DD_LOGGER_TF_BUILD: True
+  DD_LOGGER_BUILD_BUILDID: $(Build.BuildId)
+  DD_LOGGER_BUILD_DEFINITIONNAME: $(Build.DefinitionName)
+  DD_LOGGER_BUILD_SOURCESDIRECTORY: $(Build.SourcesDirectory)
+  DD_LOGGER_BUILD_REPOSITORY_URI: $(Build.Repository.Uri)
+  DD_LOGGER_BUILD_SOURCEVERSION: $(Build.SourceVersion)
+  DD_LOGGER_BUILD_SOURCEBRANCH: $(Build.SourceBranch)
+  DD_LOGGER_BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
+  DD_LOGGER_BUILD_SOURCEVERSIONMESSAGE: $(Build.SourceVersionMessage)
+  DD_LOGGER_BUILD_REQUESTEDFORID: $(Build.RequestedForId)
+  DD_LOGGER_BUILD_REQUESTEDFOREMAIL: $(Build.RequestedForEmail)
+  DD_LOGGER_SYSTEM_TEAMFOUNDATIONSERVERURI: $(System.TeamFoundationServerUri)
+  DD_LOGGER_SYSTEM_TEAMPROJECTID: $(System.TeamProjectId)
+  DD_LOGGER_SYSTEM_STAGEDISPLAYNAME: $(System.StageDisplayName)
+  DD_LOGGER_SYSTEM_JOBDISPLAYNAME: $(System.JobDisplayName)
+  DD_LOGGER_SYSTEM_JOBID: $(System.JobId)
+  DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI: $[variables['System.PullRequest.SourceRepositoryURI']]
+  DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID: $[variables['System.PullRequest.SourceCommitId']]
+  DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH: $[variables['System.PullRequest.SourceBranch']]
+  DD_LOGGER_API_KEY_CHECKER_ENABLED: false
+  DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -613,6 +638,8 @@ stages:
 
       - script: tracer\build.cmd BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
+        env:
+          DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
       - publish: tracer/build_data
         artifact: profiler-logs_unit_tests_windows_$(System.JobAttempt)
@@ -637,6 +664,8 @@ stages:
 
       - script: tracer\build.cmd BuildAndRunNativeUnitTests
         displayName: Build and Test
+        env:
+          DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
       - task: PublishTestResults@2
         displayName: publish test results
@@ -671,6 +700,8 @@ stages:
 
       - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage
         displayName: Build and Test
+        env:
+          DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
       - publish: tracer/build_data
         artifact: profiler-logs_unit_tests_macos_$(System.JobAttempt)
@@ -719,6 +750,7 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildAndRunManagedUnitTests --code-coverage"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: tracer/build_data
       artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
@@ -763,6 +795,7 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildAndRunNativeUnitTests"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - task: PublishTestResults@2
       displayName: publish profiler test results
@@ -799,6 +832,7 @@ stages:
             build: true
             baseImage: debian
             command: "BuildAndRunManagedUnitTests"
+            apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - publish: tracer/build_data
           artifact: profiler-logs_unit_tests_linux_$(Agent.JobName)_$(System.JobAttempt)
@@ -856,6 +890,8 @@ stages:
 
     - script: tracer\build.cmd BuildAndRunWindowsIntegrationTests BuildAndRunWindowsRegressionTests -Framework $(framework) --code-coverage
       displayName: Run integration tests
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -953,6 +989,8 @@ stages:
 
     - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsSecurityIisIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisSecurityIntegrationTests
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1020,9 +1058,13 @@ stages:
         docker-compose up -d IntegrationTests.IIS
       displayName: docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - script: tracer\build.cmd RunWindowsMsiIntegrationTests -Framework $(framework) --code-coverage
       displayName: RunWindowsIisIntegrationTests
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1037,6 +1079,8 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeCommand: down
         projectName: ddtrace_$(Build.BuildNumber)
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
 
     - publish: tracer/build_data
@@ -1092,6 +1136,7 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false"
+        apikey: $(DD_LOGGER_DD_API_KEY)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
@@ -1106,8 +1151,11 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
+          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
         dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=false IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
     
     - script: |      
         sudo chmod -R 644 tracer/build_data/dumps/* || true
@@ -1136,6 +1184,7 @@ stages:
       parameters:
         baseImage: $(baseImage)
         command: "CheckBuildLogsForErrors"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
   - job: DockerTest
     timeoutInMinutes: 60 #default value
@@ -1165,6 +1214,7 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
@@ -1178,6 +1228,7 @@ stages:
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
       displayName: docker-compose build IntegrationTests and run StartDependencies
       retryCountOnTaskFailure: 5
 
@@ -1188,8 +1239,11 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
+          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
         dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=true IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -1197,6 +1251,8 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeCommand: down
         projectName: ddtrace_$(Build.BuildNumber)
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
 
     - script: |      
@@ -1226,6 +1282,7 @@ stages:
       parameters:
         baseImage: $(baseImage)
         command: "CheckBuildLogsForErrors"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
   - job: Serverless
     timeoutInMinutes: 60
@@ -1269,6 +1326,7 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Aws.Lambda"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - script: |
         # Include the serverless dockerfile
@@ -1294,6 +1352,7 @@ stages:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
         lambdaBaseImage: $(lambdaBaseImage)
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
       displayName: docker-compose build IntegrationTests.Serverless and run StartDependencies.Serverless
       retryCountOnTaskFailure: 5
 
@@ -1305,10 +1364,13 @@ stages:
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
           lambdaBaseImage=$(lambdaBaseImage)
+          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
         dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) IntegrationTests.Serverless
         additionalDockerComposeFiles: |
           docker-compose.serverless.yml
         projectName: ddtrace_$(Build.BuildNumber)
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - script: |
         mkdir -p tracer/build_data/docker
@@ -1345,6 +1407,7 @@ stages:
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
+        DD_LOGGER_DD_API_KEY: $(DD_LOGGER_DD_API_KEY)
       displayName: docker-compose logs for serverless services
       condition: succeededOrFailed()
       retryCountOnTaskFailure: 5
@@ -1357,6 +1420,8 @@ stages:
         projectName: ddtrace_$(Build.BuildNumber)
         additionalDockerComposeFiles: |
           docker-compose.serverless.yml
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
 
     - script: |      
@@ -1386,6 +1451,7 @@ stages:
       parameters:
         baseImage: $(baseImage)
         command: "CheckBuildLogsForErrors"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
 - stage: profiler_integration_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
@@ -1434,18 +1500,21 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildProfilerLinuxIntegrationTests"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
         command: "RunProfilerCpuLimitTests"
         extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
         command: "RunProfilerCpuLimitTests"
         extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - task: DockerCompose@0
       displayName: docker-compose run --no-deps ProfilerIntegrationTests
@@ -1453,8 +1522,11 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
+          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
         dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e IncludeTestsRequiringDocker=false ProfilerIntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - publish: profiler/build_data
       artifact: continuous-profiler-logs_integration_tests_linux_$(baseImage)_$(System.JobAttempt)
@@ -1509,6 +1581,7 @@ stages:
             build: true
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false"
+            apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - task: DownloadPipelineArtifact@2
           displayName: Download arm64 monitoring home
@@ -1523,8 +1596,11 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
+              DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
             dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
+          env:
+            DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
         - publish: tracer/build_data
           artifact: integration_tests_linux_tracer_logs_arm64_$(publishTargetFramework)_$(System.JobAttempt)
@@ -1548,6 +1624,7 @@ stages:
           parameters:
             baseImage: $(baseImage)
             command: "CheckBuildLogsForErrors"
+            apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - job: DockerTest
       timeoutInMinutes: 60 #default value
@@ -1576,6 +1653,7 @@ stages:
             build: true
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true"
+            apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - task: DownloadPipelineArtifact@2
           displayName: Download arm64 monitoring home
@@ -1589,6 +1667,7 @@ stages:
           env:
             baseImage: $(baseImage)
             framework: $(publishTargetFramework)
+            DD_LOGGER_DD_API_KEY: $(ddApiKey)
           displayName: docker-compose build IntegrationTests and run StartDependencies
           retryCountOnTaskFailure: 5
 
@@ -1599,8 +1678,11 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
+              DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
             dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
+          env:
+            DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
         - task: DockerCompose@0
           displayName: docker-compose stop services
@@ -1608,6 +1690,8 @@ stages:
             containerregistrytype: Container Registry
             dockerComposeCommand: down
             projectName: ddtrace_$(Build.BuildNumber)
+          env:
+            DD_LOGGER_DD_API_KEY: $(ddApiKey)
           condition: succeededOrFailed()
 
         - publish: tracer/build_data
@@ -1632,6 +1716,7 @@ stages:
           parameters:
             baseImage: $(baseImage)
             command: "CheckBuildLogsForErrors"
+            apiKey: $(DD_LOGGER_DD_API_KEY)
 
 - stage: exploration_tests_windows
   condition: >
@@ -1678,6 +1763,8 @@ stages:
 
     - script: tracer\build.cmd RunExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
       displayName: RunExplorationTest
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - publish: tracer/build_data
       displayName: Uploading exploration_tests_windows tracer logs
@@ -1742,6 +1829,7 @@ stages:
         build: false
         baseImage: $(baseImage)
         command: "SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) --explorationTestName $(explorationTestName) --framework $(publishTargetFramework)"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - task: DockerCompose@0
       displayName: docker-compose build ExplorationTests
@@ -2083,9 +2171,13 @@ stages:
         
     - script: tracer\build.cmd BuildAndRunToolArtifactTests --ToolSource $(runnerTool)
       displayName: Build and Test tool
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - script: tracer\build.cmd RunToolArtifactTests --ToolDestination $(runnerStandalone)
       displayName: Test standalone
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -2622,7 +2714,6 @@ stages:
         parameters:
           masterCommitId: $(masterCommitId)
       - template: steps/install-latest-dotnet-sdk.yml
-      - template: steps/restore-working-directory.yml
 
       - task: DownloadPipelineArtifact@2
         inputs:
@@ -2835,6 +2926,7 @@ stages:
           smoke-tests
       env:
         dockerTag: $(dockerTag)
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
       displayName: docker-compose build smoke-tests
       retryCountOnTaskFailure: 3
 
@@ -2853,6 +2945,7 @@ stages:
         build: true
         baseImage: alpine
         command: "CheckSmokeTestsForErrors"
+        apikey: $(DD_LOGGER_DD_API_KEY)
 
 - stage: nuget_installer_smoke_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))
