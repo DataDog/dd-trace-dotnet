@@ -36,6 +36,11 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
 
         private readonly byte[] _languageNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Language);
         private readonly byte[] _languageValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
+
+        private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Env);
+
+        private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Version);
+
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
         private readonly byte[] _originValueBytes = StringEncoding.UTF8.GetBytes(TestTags.CIAppTestOriginName);
 
@@ -217,16 +222,37 @@ namespace Datadog.Trace.Ci.Agent.MessagePack
             offset = tagWriter.Offset;
             count += tagWriter.Count;
 
-            if (span.IsRootSpan && span.Context.TraceContext != null)
+            // TODO: for each trace tag, determine if it should be added to the local root,
+            // to the first span in the chunk, or to all orphan spans.
+            // For now, we add them to the local root which is correct in most cases.
+            if (span.IsRootSpan && span.Context.TraceContext?.Tags?.ToArray() is { Length: > 0 } traceTags)
             {
-                // write trace-level string tags
-                var traceTags = span.Context.TraceContext.Tags.ToArray();
                 count += traceTags.Length;
 
                 foreach (var tag in traceTags)
                 {
                     WriteTag(ref bytes, ref offset, tag.Key, tag.Value, tagProcessors);
                 }
+            }
+
+            // add "env" to all spans
+            var env = span.Context.TraceContext?.Environment;
+
+            if (!string.IsNullOrWhiteSpace(env))
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _environmentNameBytes);
+                offset += MessagePackBinary.WriteString(ref bytes, offset, env);
+            }
+
+            // add "version" to all spans
+            var version = span.Context.TraceContext?.ServiceVersion;
+
+            if (!string.IsNullOrWhiteSpace(version))
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
+                offset += MessagePackBinary.WriteString(ref bytes, offset, version);
             }
 
             // add "_dd.origin" tag to all spans
