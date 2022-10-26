@@ -47,10 +47,13 @@ namespace Datadog.Trace.Agent.MessagePack
         private readonly byte[] _runtimeIdValueBytes = StringEncoding.UTF8.GetBytes(Tracer.RuntimeId);
 
         private readonly byte[] _environmentNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Env);
+        private readonly TransformedStringCache<byte[]> _environmentValueBytes = new(s => SerializeIfNotNullOrWhiteSpace(s));
 
         private readonly byte[] _versionNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Version);
+        private readonly TransformedStringCache<byte[]> _versionValueBytes = new(s => SerializeIfNotNullOrWhiteSpace(s));
 
         private readonly byte[] _originNameBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Origin);
+        private readonly TransformedStringCache<byte[]> _originValueBytes = new(s => SerializeIfNotNullOrWhiteSpace(s));
 
         // numeric tags
         private readonly byte[] _metricsBytes = StringEncoding.UTF8.GetBytes("metrics");
@@ -77,6 +80,12 @@ namespace Datadog.Trace.Agent.MessagePack
                                           };
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static byte[] SerializeIfNotNullOrWhiteSpace(string s)
+        {
+            return string.IsNullOrWhiteSpace(s) ? null : MessagePackSerializer.Serialize(s);
+        }
+
         int IMessagePackFormatter<TraceChunkModel>.Serialize(ref byte[] bytes, int offset, TraceChunkModel traceChunk, IFormatterResolver formatterResolver)
         {
             return Serialize(ref bytes, offset, traceChunk, formatterResolver);
@@ -88,11 +97,12 @@ namespace Datadog.Trace.Agent.MessagePack
             int originalOffset = offset;
 
             // some strings are used multiple times in the same a trace,
-            // but they are not constant across traces, so cache those per trace here
+            // but they are not always constant across traces, so collect the bytes arrays here
+            // and pass them down to every span
             var cachedBytes = new CachedMessagePackBytes(
-                environment: traceChunk.Environment,
-                serviceVersion: traceChunk.ServiceVersion,
-                origin: traceChunk.Origin);
+                environment: _environmentValueBytes.GetTransformedValue(traceChunk.Environment),
+                serviceVersion: _versionValueBytes.GetTransformedValue(traceChunk.ServiceVersion),
+                origin: _originValueBytes.GetTransformedValue(traceChunk.Origin));
 
             // start writing span[]
             offset += MessagePackBinary.WriteArrayHeader(ref bytes, offset, traceChunk.SpanCount);

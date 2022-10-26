@@ -5,8 +5,6 @@
 
 #nullable enable
 
-using Datadog.Trace.Vendors.MessagePack;
-
 namespace Datadog.Trace.Agent.MessagePack;
 
 /// <summary>
@@ -14,7 +12,7 @@ namespace Datadog.Trace.Agent.MessagePack;
 /// they include the MessagePack header for each string as well.
 /// Use these byte arrays with MessagePackBinary.WriteRaw().
 /// </summary>
-internal readonly struct CachedMessagePackBytes
+internal readonly ref struct CachedMessagePackBytes
 {
     public readonly byte[]? Environment;
 
@@ -23,17 +21,12 @@ internal readonly struct CachedMessagePackBytes
     public readonly byte[]? Origin;
 
     public CachedMessagePackBytes(
-        string? environment,
-        string? serviceVersion,
-        string? origin)
+        byte[]? environment,
+        byte[]? serviceVersion,
+        byte[]? origin)
     {
-        Environment = GetBytes(environment);
-        ServiceVersion = GetBytes(serviceVersion);
-        Origin = GetBytes(origin);
-    }
-
-    private static byte[]? GetBytes(string? value)
-    {
-        return string.IsNullOrWhiteSpace(value) ? null : MessagePackSerializer.Serialize(value);
+        Environment = environment;
+        ServiceVersion = serviceVersion;
+        Origin = origin;
     }
 }
