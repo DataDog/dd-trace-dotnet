@@ -47,62 +47,98 @@ public sealed class TestModule
         Name = name;
         Framework = framework;
 
-        var tags = new TestModuleSpanTags
-        {
-            Type = TestTags.TypeTest,
-            Module = name,
-            Framework = framework,
-            FrameworkVersion = frameworkVersion,
-            CIProvider = environment.Provider,
-            CIPipelineId = environment.PipelineId,
-            CIPipelineName = environment.PipelineName,
-            CIPipelineNumber = environment.PipelineNumber,
-            CIPipelineUrl = environment.PipelineUrl,
-            CIJobName = environment.JobName,
-            CIJobUrl = environment.JobUrl,
-            StageName = environment.StageName,
-            CIWorkspacePath = environment.WorkspacePath,
-            GitRepository = environment.Repository,
-            GitCommit = environment.Commit,
-            GitBranch = environment.Branch,
-            GitTag = environment.Tag,
-            GitCommitAuthorDate = environment.AuthorDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture),
-            GitCommitAuthorName = environment.AuthorName,
-            GitCommitAuthorEmail = environment.AuthorEmail,
-            GitCommitCommitterDate = environment.CommitterDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture),
-            GitCommitCommitterName = environment.CommitterName,
-            GitCommitCommitterEmail = environment.CommitterEmail,
-            GitCommitMessage = environment.Message,
-            BuildSourceRoot = environment.SourceRoot,
-            LibraryVersion = TracerConstants.AssemblyVersion,
-            RuntimeName = frameworkDescription.Name,
-            RuntimeVersion = frameworkDescription.ProductVersion,
-            RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
-            OSArchitecture = frameworkDescription.OSArchitecture,
-            OSPlatform = frameworkDescription.OSPlatform,
-            OSVersion = CIVisibility.GetOperatingSystemVersion(),
-        };
+        // if sessionSpanTags is not null then the TestSession is in-proc.
+        // otherwise the TestSession is out of process
 
-        if (environment.VariablesToBypass is { } variablesToBypass)
-        {
-            tags.CiEnvVars = Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(variablesToBypass);
-        }
-
-        // Check if Intelligent Test Runner has skippable tests
-        if (CIVisibility.HasSkippableTests())
-        {
-            tags.TestsSkipped = "true";
-        }
-
+        TestModuleSpanTags tags;
         if (sessionSpanTags is not null)
         {
-            tags.SessionId = sessionSpanTags.SessionId;
-            tags.Command = sessionSpanTags.Command;
-            tags.WorkingDirectory = sessionSpanTags.WorkingDirectory;
+            // In-Proc session
+            tags = new TestModuleSpanTags
+            {
+                Type = TestTags.TypeTest,
+                Module = name,
+                Framework = framework,
+                FrameworkVersion = frameworkVersion,
+                CIProvider = sessionSpanTags.CIProvider,
+                CIPipelineId = sessionSpanTags.CIPipelineId,
+                CIPipelineName = sessionSpanTags.CIPipelineName,
+                CIPipelineNumber = sessionSpanTags.CIPipelineNumber,
+                CIPipelineUrl = sessionSpanTags.CIPipelineUrl,
+                CIJobName = sessionSpanTags.CIJobName,
+                CIJobUrl = sessionSpanTags.CIJobUrl,
+                StageName = sessionSpanTags.StageName,
+                CIWorkspacePath = sessionSpanTags.CIWorkspacePath,
+                GitRepository = sessionSpanTags.GitRepository,
+                GitCommit = sessionSpanTags.GitCommit,
+                GitBranch = sessionSpanTags.GitBranch,
+                GitTag = sessionSpanTags.GitTag,
+                GitCommitAuthorDate = sessionSpanTags.GitCommitAuthorDate,
+                GitCommitAuthorName = sessionSpanTags.GitCommitAuthorName,
+                GitCommitAuthorEmail = sessionSpanTags.GitCommitAuthorEmail,
+                GitCommitCommitterDate = sessionSpanTags.GitCommitCommitterDate,
+                GitCommitCommitterName = sessionSpanTags.GitCommitCommitterName,
+                GitCommitCommitterEmail = sessionSpanTags.GitCommitCommitterEmail,
+                GitCommitMessage = sessionSpanTags.GitCommitMessage,
+                BuildSourceRoot = sessionSpanTags.BuildSourceRoot,
+                LibraryVersion = TracerConstants.AssemblyVersion,
+                RuntimeName = frameworkDescription.Name,
+                RuntimeVersion = frameworkDescription.ProductVersion,
+                RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
+                OSArchitecture = frameworkDescription.OSArchitecture,
+                OSPlatform = frameworkDescription.OSPlatform,
+                OSVersion = CIVisibility.GetOperatingSystemVersion(),
+                CiEnvVars = sessionSpanTags.CiEnvVars,
+                SessionId = sessionSpanTags.SessionId,
+                Command = sessionSpanTags.Command,
+                WorkingDirectory = sessionSpanTags.WorkingDirectory,
+            };
         }
         else
         {
-            // Extract session variables (for out of process sessions)
+            // Out-of-Proc session
+            tags = new TestModuleSpanTags
+            {
+                Type = TestTags.TypeTest,
+                Module = name,
+                Framework = framework,
+                FrameworkVersion = frameworkVersion,
+                CIProvider = environment.Provider,
+                CIPipelineId = environment.PipelineId,
+                CIPipelineName = environment.PipelineName,
+                CIPipelineNumber = environment.PipelineNumber,
+                CIPipelineUrl = environment.PipelineUrl,
+                CIJobName = environment.JobName,
+                CIJobUrl = environment.JobUrl,
+                StageName = environment.StageName,
+                CIWorkspacePath = environment.WorkspacePath,
+                GitRepository = environment.Repository,
+                GitCommit = environment.Commit,
+                GitBranch = environment.Branch,
+                GitTag = environment.Tag,
+                GitCommitAuthorDate = environment.AuthorDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture),
+                GitCommitAuthorName = environment.AuthorName,
+                GitCommitAuthorEmail = environment.AuthorEmail,
+                GitCommitCommitterDate = environment.CommitterDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture),
+                GitCommitCommitterName = environment.CommitterName,
+                GitCommitCommitterEmail = environment.CommitterEmail,
+                GitCommitMessage = environment.Message,
+                BuildSourceRoot = environment.SourceRoot,
+                LibraryVersion = TracerConstants.AssemblyVersion,
+                RuntimeName = frameworkDescription.Name,
+                RuntimeVersion = frameworkDescription.ProductVersion,
+                RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
+                OSArchitecture = frameworkDescription.OSArchitecture,
+                OSPlatform = frameworkDescription.OSPlatform,
+                OSVersion = CIVisibility.GetOperatingSystemVersion(),
+            };
+
+            if (environment.VariablesToBypass is { } variablesToBypass)
+            {
+                tags.CiEnvVars = Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(variablesToBypass);
+            }
+
+            // Extract session variables (from out of process sessions)
             var environmentVariables = Environment.GetEnvironmentVariables();
             var sessionContext = SpanContextPropagator.Instance.Extract(
                 environmentVariables, new DictionaryGetterAndSetter(DictionaryGetterAndSetter.EnvironmentVariableKeyProcessor));
@@ -120,6 +156,12 @@ public sealed class TestModule
                     tags.WorkingDirectory = testSessionWorkingDirectory;
                 }
             }
+        }
+
+        // Check if Intelligent Test Runner has skippable tests
+        if (CIVisibility.HasSkippableTests())
+        {
+            tags.TestsSkipped = "true";
         }
 
         var span = Tracer.Instance.StartSpan(
