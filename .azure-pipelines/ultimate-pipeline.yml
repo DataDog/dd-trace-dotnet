@@ -139,9 +139,10 @@ variables:
   DD_LOGGER_SYSTEM_STAGEDISPLAYNAME: $(System.StageDisplayName)
   DD_LOGGER_SYSTEM_JOBDISPLAYNAME: $(System.JobDisplayName)
   DD_LOGGER_SYSTEM_JOBID: $(System.JobId)
-  DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI: $[variables['System.PullRequest.SourceRepositoryURI']]
-  DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID: $[variables['System.PullRequest.SourceCommitId']]
-  DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH: $[variables['System.PullRequest.SourceBranch']]
+#  DD_LOGGER_SYSTEM_TASKINSTANCEID: $(System.TaskInstanceId)
+  DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI: $(System.PullRequest.SourceRepositoryURI)
+  DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID: $(System.PullRequest.SourceCommitId)
+  DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH: $(System.PullRequest.SourceBranch)
   DD_LOGGER_API_KEY_CHECKER_ENABLED: false
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
 
