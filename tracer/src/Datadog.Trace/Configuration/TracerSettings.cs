@@ -232,7 +232,7 @@ namespace Datadog.Trace.Configuration
                                         // default value
                                         false;
 
-            LogDaysLimit = source?.GetInt32(ConfigurationKeys.LogDaysLimit) ?? 32;
+            MaxLogFilesDays = source?.GetInt32(ConfigurationKeys.MaxLogFilesDays) ?? 32;
         }
 
         /// <summary>
@@ -513,7 +513,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets or sets the number of days a log file can be kept until
         /// </summary>
-        internal int LogDaysLimit { get; set; }
+        internal int MaxLogFilesDays { get; set; }
 
         /// <summary>
         /// Create a <see cref="TracerSettings"/> populated from the default sources
