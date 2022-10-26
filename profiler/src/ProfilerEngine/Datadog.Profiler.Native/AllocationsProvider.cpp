@@ -32,7 +32,7 @@ AllocationsProvider::AllocationsProvider(
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration)
     :
-    CollectorBase<RawAllocationSample>("AllocationsProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
+    CollectorBase<RawAllocationSample>("AllocationsProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),

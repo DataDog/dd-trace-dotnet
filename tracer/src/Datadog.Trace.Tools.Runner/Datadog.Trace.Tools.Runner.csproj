@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>2.18.0</Version>
+    <Version>2.19.0</Version>
     <Title>Datadog APM Auto-instrumentation Runner</Title>
     <Copyright>Copyright 2020 Datadog, Inc.</Copyright>
     <Description>Auto-instrumentation dotnet global tool for Datadog APM</Description>
@@ -11,6 +11,9 @@
     <NoWarn>NU5100</NoWarn>
     <RootNamespace>Datadog.Trace.Tools.Runner</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>None</DebugType>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
 
     <!-- Required for StrongNamer: https://github.com/dsplaisted/strongnamer/issues/61 -->
     <ErrorOnDuplicatePublishOutputFiles>False</ErrorOnDuplicatePublishOutputFiles>
@@ -41,8 +44,15 @@
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
-        
+
+        <!-- We actually WANT to include these, but single-file spits them out-->
+        <!-- next to the exe, instead of bundling them inside, so we can't -->
         <Content Update="..\Datadog.Trace.Bundle\home\**\*.pdb">
+          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+          <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+        </Content>
+
+        <Content Update="..\Datadog.Trace.Bundle\home\**\*.xml">
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
           <CopyToPublishDirectory>Never</CopyToPublishDirectory>
         </Content>
@@ -87,7 +97,7 @@
         <ToolCommandName>dd-trace</ToolCommandName>
         <PublishRepositoryUrl>true</PublishRepositoryUrl>
         <EmbedUntrackedSources>true</EmbedUntrackedSources>
-        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
         <PackageId>dd-trace</PackageId>
         <OutputPath>bin\$(Configuration)\Tool</OutputPath>
       </PropertyGroup>
@@ -97,6 +107,10 @@
         </Content>
 
         <Content Update="..\Datadog.Trace.Bundle\home\**\readme.txt" Pack="false">
+          <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+        </Content>
+
+        <Content Update="..\Datadog.Trace.Bundle\home\**\*.xml" Pack="false">
           <CopyToOutputDirectory>Never</CopyToOutputDirectory>
         </Content>
       </ItemGroup>

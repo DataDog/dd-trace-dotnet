@@ -86,11 +86,12 @@ TEST(WallTimeProviderTest, CheckNoMissingSample)
     auto appDomainStore = new AppDomainStoreHelper(2);
     auto threadscpuManager = new ThreadsCpuManagerHelper();
     MockRuntimeIdStore runtimeIdStore;
+    auto [configuration, mockConfiguration] = CreateConfiguration();
 
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(0, threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    WallTimeProvider provider(0, threadscpuManager, frameStore, appDomainStore, &runtimeIdStore, &mockConfiguration);
     Sample::ValuesCount = 1;
     provider.Start();
 
@@ -121,7 +122,7 @@ TEST(WallTimeProviderTest, CheckAppDomainInfoAndRuntimeId)
     std::string secondExpectedRuntimeId = "OtherRid";
     EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(2))).WillRepeatedly(::testing::Return(secondExpectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(0, threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    WallTimeProvider provider(0, threadscpuManager, frameStore, appDomainStore, &runtimeIdStore, &mockConfiguration);
     Sample::ValuesCount = 1;
     provider.Start();
 
@@ -201,7 +202,7 @@ TEST(WallTimeProviderTest, CheckFrames)
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(static_cast<AppDomainID>(1))).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(0, threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    WallTimeProvider provider(0, threadscpuManager, frameStore, appDomainStore, &runtimeIdStore, &mockConfiguration);
     Sample::ValuesCount = 1;
     provider.Start();
 
@@ -259,7 +260,7 @@ TEST(WallTimeProviderTest, CheckValuesAndTimestamp)
     std::string expectedRuntimeId = "MyRid";
     EXPECT_CALL(runtimeIdStore, GetId(::testing::_)).WillRepeatedly(::testing::Return(expectedRuntimeId.c_str()));
 
-    WallTimeProvider provider(0, threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    WallTimeProvider provider(0, threadscpuManager, frameStore, appDomainStore, &runtimeIdStore, &mockConfiguration);
     Sample::ValuesCount = 1;
     provider.Start();
 
@@ -298,8 +299,9 @@ TEST(CpuTimeProviderTest, CheckValuesAndTimestamp)
     auto appDomainStore = new AppDomainStoreHelper(1);
     auto threadscpuManager = new ThreadsCpuManagerHelper();
     RuntimeIdStoreHelper runtimeIdStore;
+    auto [configuration, mockConfiguration] = CreateConfiguration();
 
-    CpuTimeProvider provider(0, threadscpuManager, frameStore, appDomainStore, &runtimeIdStore);
+    CpuTimeProvider provider(0, threadscpuManager, frameStore, appDomainStore, &runtimeIdStore, &mockConfiguration);
     Sample::ValuesCount = 1;
     provider.Start();
 

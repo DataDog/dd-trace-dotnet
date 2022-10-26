@@ -5,7 +5,7 @@ cmake_policy(SET CMP0015 NEW)
 # Project definition
 # ******************************************************
 
-project("Datadog.Tracer.Native" VERSION 2.18.0)
+project("Datadog.Tracer.Native" VERSION 2.19.0)
 
 # ******************************************************
 # Environment detection
@@ -177,6 +177,7 @@ if (ISMACOS)
         re2-lib
         spdlog-headers
         ${CMAKE_DL_LIBS}
+        ${GENERATED_OBJ_FILES}
     )
 elseif(ISLINUX)
     target_link_libraries("Datadog.Tracer.Native.static"

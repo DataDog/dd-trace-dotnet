@@ -29,7 +29,7 @@ ContentionProvider::ContentionProvider(
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration)
     :
-    CollectorBase<RawContentionSample>("ContentionProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore),
+    CollectorBase<RawContentionSample>("ContentionProvider", valueOffset, pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
     _pCorProfilerInfo{pCorProfilerInfo},
     _pManagedThreadList{pManagedThreadList},
     _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval()),

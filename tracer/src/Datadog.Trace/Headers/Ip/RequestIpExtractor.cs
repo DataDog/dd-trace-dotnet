@@ -43,7 +43,8 @@ namespace Datadog.Trace.Headers.Ip
                 {
                     if (!string.IsNullOrEmpty(potentialIp) || !string.IsNullOrEmpty(customIpHeader))
                     {
-                        Log.Warning("Multiple ip headers have been found, none will be reported", potentialIp);
+                        // dont log more than debug level. some proxies have several ip headers and we end up with millions of logs.
+                        Log.Debug("Multiple ip headers have been found, none will be reported");
                         return null;
                     }
 

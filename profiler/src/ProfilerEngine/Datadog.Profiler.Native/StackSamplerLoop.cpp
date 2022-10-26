@@ -31,8 +31,6 @@
 
 // Configuration constants:
 using namespace std::chrono_literals;
-constexpr int32_t MaxThreadsPerIterationForWallTime = 5;
-constexpr int32_t MaxThreadsPerIterationForCpuTime = 60;
 constexpr const WCHAR* ThreadName = WStr("DD.Profiler.StackSamplerLoop.Thread");
 
 #ifdef NDEBUG
@@ -65,10 +63,14 @@ StackSamplerLoop::StackSamplerLoop(
     _loopThreadOsId{0},
     _targetThread(nullptr),
     _iteratorWallTime{0},
-    _iteratorCpuTime{0}
+    _iteratorCpuTime{0},
+    _walltimeThreadsThreshold{pConfiguration->WalltimeThreadsThreshold()},
+    _cpuThreadsThreshold{pConfiguration->CpuThreadsThreshold()}
 {
     _samplingPeriod = _pConfiguration->CpuWallTimeSamplingRate();
     Log::Info("CPU and wall time sampling period = ", _samplingPeriod.count() / 1000000, " ms");
+    Log::Info("Wall time sampled threads = ", _walltimeThreadsThreshold);
+    Log::Info("Max CPU sampled threads = ", _cpuThreadsThreshold);
 
     _pCorProfilerInfo->AddRef();
 
@@ -160,15 +162,14 @@ void StackSamplerLoop::WaitOnePeriod(void)
 
 void StackSamplerLoop::MainLoopIteration(void)
 {
-    // In each iteration, a few threads (up to MaxThreadsPerIterationForWallTime) are sampled
-    // to compute wall time.
+    // In each iteration, a few threads are sampled to compute wall time.
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
         WalltimeProfilingIteration();
     }
 
-    // When CPU profiling is enabled, most of the threads (up to MaxThreadsPerIterationForCpuTime)
-    // are scanned and if they are currently running, they are sampled.
+    // When CPU profiling is enabled, most of the threads are scanned
+    // and if they are currently running, they are sampled.
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
         CpuProfilingIteration();
@@ -178,7 +179,7 @@ void StackSamplerLoop::MainLoopIteration(void)
 void StackSamplerLoop::WalltimeProfilingIteration(void)
 {
     int32_t managedThreadsCount = _pManagedThreadList->Count();
-    int32_t sampledThreadsCount = (std::min)(managedThreadsCount, MaxThreadsPerIterationForWallTime);
+    int32_t sampledThreadsCount = (std::min)(managedThreadsCount, _walltimeThreadsThreshold);
 
     for (int32_t i = 0; i < sampledThreadsCount && !_shutdownRequested; i++)
     {
@@ -210,7 +211,7 @@ void StackSamplerLoop::CpuProfilingIteration(void)
 {
     int32_t managedThreadsCount = _pManagedThreadList->Count();
     // TODO: as an optimization, don't scan more threads than nb logical cores
-    int32_t sampledThreadsCount = (std::min)(managedThreadsCount, MaxThreadsPerIterationForCpuTime);
+    int32_t sampledThreadsCount = (std::min)(managedThreadsCount, _cpuThreadsThreshold);
 
     for (int32_t i = 0; i < sampledThreadsCount && !_shutdownRequested; i++)
     {

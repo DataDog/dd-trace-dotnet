@@ -38,14 +38,14 @@ Type | `web`
 ### Tags
 Name | Required |
 ---------|----------------|
-http.client_ip | Yes
+http.client_ip | No
 http.method | Yes
 http.request.headers.host | Yes
 http.route | No
 http.status_code | Yes
 http.url | Yes
 http.useragent | Yes
-network.client.ip | Yes
+network.client.ip | No
 span.kind | `server`
 
 ## AspNetMvc
@@ -102,14 +102,14 @@ Name | Required |
 aspnet_core.endpoint | No
 aspnet_core.route | No
 component | `aspnet_core`
-http.client_ip | Yes
+http.client_ip | No
 http.method | Yes
 http.request.headers.host | Yes
 http.route | No
 http.status_code | Yes
 http.url | Yes
 http.useragent | Yes
-network.client.ip | Yes
+network.client.ip | No
 span.kind | `server`
 
 ## AspNetCoreMvc

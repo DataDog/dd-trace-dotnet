@@ -129,6 +129,8 @@ namespace Datadog.Trace
                 {
                     SetSynchronizationContext(current);
                 }
+
+                DatadogLogging.CloseAndFlush();
             }
 
             static void SetSynchronizationContext(SynchronizationContext context)

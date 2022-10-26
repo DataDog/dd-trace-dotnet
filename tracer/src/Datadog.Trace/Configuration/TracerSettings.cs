@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.PlatformHelpers;
@@ -139,7 +140,8 @@ namespace Datadog.Trace.Configuration
 
             var urlSubstringSkips = source?.GetString(ConfigurationKeys.HttpClientExcludedUrlSubstrings) ??
                                     // default value
-                                    (AzureAppServices.Metadata.IsRelevant ? AzureAppServices.Metadata.DefaultHttpClientExclusions : null);
+                                    (AzureAppServices.Metadata.IsRelevant ? AzureAppServices.Metadata.DefaultHttpClientExclusions :
+                                     Serverless.Metadata is { IsRunningInLambda: true } m ? m.DefaultHttpClientExclusions : null);
 
             if (urlSubstringSkips != null)
             {
@@ -211,8 +213,6 @@ namespace Datadog.Trace.Configuration
                                         false;
 
             IpHeader = source?.GetString(ConfigurationKeys.IpHeader) ?? source?.GetString(ConfigurationKeys.AppSec.CustomIpHeader);
-
-            IpHeaderDisabled = source?.GetBool(ConfigurationKeys.IpHeaderDisabled) ?? false;
 
             if (IsActivityListenerEnabled)
             {
@@ -337,11 +337,6 @@ namespace Datadog.Trace.Configuration
         /// Gets or sets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
         /// </summary>
         internal string IpHeader { get; set; }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the ip header should not be collected. The default is false.
-        /// </summary>
-        internal bool IpHeaderDisabled { get; set; }
 
         /// <summary>
         /// Gets or sets the map of metadata keys to tag names, which are applied to the root <see cref="Span"/>

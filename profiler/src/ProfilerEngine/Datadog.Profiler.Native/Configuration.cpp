@@ -56,8 +56,11 @@ Configuration::Configuration()
     _contentionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ContentionSampleLimit, 1500);
     _contentionDurationThreshold = GetEnvironmentValue(EnvironmentVariables::ContentionDurationThreshold, 100);
     _cpuWallTimeSamplingRate = ExtractCpuWallTimeSamplingRate();
+    _walltimeThreadsThreshold = ExtractWallTimeThreadsThreshold();
+    _cpuThreadsThreshold = ExtractCpuThreadsThreshold();
     _minimumCores = GetEnvironmentValue<double>(EnvironmentVariables::CoreMinimumOverride, 1.0);
     _namedPipeName = GetEnvironmentValue(EnvironmentVariables::NamedPipeName, DefaultEmptyString);
+    _isTimestampsAsLabelEnabled = GetEnvironmentValue(EnvironmentVariables::TimestampsAsLabelEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -146,6 +149,16 @@ int32_t Configuration::ContentionDurationThreshold() const
 std::chrono::nanoseconds Configuration::CpuWallTimeSamplingRate() const
 {
     return _cpuWallTimeSamplingRate;
+}
+
+int32_t Configuration::WalltimeThreadsThreshold() const
+{
+    return _walltimeThreadsThreshold;
+}
+
+int32_t Configuration::CpuThreadsThreshold() const
+{
+    return _cpuThreadsThreshold;
 }
 
 double Configuration::MinimumCores() const
@@ -281,6 +294,12 @@ const std::string& Configuration::GetNamedPipeName() const
     return _namedPipeName;
 }
 
+bool Configuration::IsTimestampsAsLabelEnabled() const
+{
+    return _isTimestampsAsLabelEnabled;
+}
+
+
 //
 // shared::TryParse does not work on Linux
 // not found the issue yet.
@@ -325,10 +344,30 @@ std::chrono::seconds Configuration::ExtractUploadInterval()
 
 std::chrono::nanoseconds Configuration::ExtractCpuWallTimeSamplingRate()
 {
-    // default sampling rate is 13 ms; could be changed via env vars but down to a minimum of 9 ms
-    int64_t rate = std::max(GetEnvironmentValue(EnvironmentVariables::CpuWallTimeSamplingRate, 13), 9);
+    // default sampling rate is 9 ms; could be changed via env vars but down to a minimum of 5 ms
+    int64_t rate = std::max(GetEnvironmentValue(EnvironmentVariables::CpuWallTimeSamplingRate, 9), 5);
     rate *= 1000000;
     return std::chrono::nanoseconds(rate);
+}
+
+int32_t Configuration::ExtractWallTimeThreadsThreshold()
+{
+    // default threads to sample for wall time is 5; could be changed via env vars from 5 to 64
+    int32_t threshold =
+        std::min(
+            std::max(GetEnvironmentValue(EnvironmentVariables::WalltimeThreadsThreshold, 5), 5),
+            64);
+    return threshold;
+}
+
+int32_t Configuration::ExtractCpuThreadsThreshold()
+{
+    // default threads to sample for CPU profiling is 64; could be changed via env vars from 5 to 128
+    int32_t threshold =
+        std::min(
+            std::max(GetEnvironmentValue(EnvironmentVariables::CpuTimeThreadsThreshold, 64), 5),
+            128);
+    return threshold;
 }
 
 bool Configuration::GetDefaultDebugLogEnabled()
