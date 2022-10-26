@@ -31,6 +31,27 @@ namespace Datadog.Trace.Configuration
             /// instead of on every usage. Default is value is true (enabled).
             /// </summary>
             public const string IsIastDeduplicationEnabled = "DD_IAST_DEDUPLICATION_ENABLED";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling the vulnerability duplication detection.
+            /// When enabled, a vulnerability will only be reported once in the lifetime of an app,
+            /// instead of on every usage. Default is value is true (enabled).
+            /// </summary>
+            public const string RequestSampling = "DD_IAST_REQUEST_SAMPLING";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling the vulnerability duplication detection.
+            /// When enabled, a vulnerability will only be reported once in the lifetime of an app,
+            /// instead of on every usage. Default is value is true (enabled).
+            /// </summary>
+            public const string MaxConcurrentRequest = "DD_IAST_MAX_CONCURRENT_REQUESTS";
+
+            /// <summary>
+            /// Configuration key for enabling or disabling the vulnerability duplication detection.
+            /// When enabled, a vulnerability will only be reported once in the lifetime of an app,
+            /// instead of on every usage. Default is value is true (enabled).
+            /// </summary>
+            public const string VulnerabilitiesPerRequest = "DD_IAST_VULNERABILITIES_PER_REQUEST";
         }
     }
 }
