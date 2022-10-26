@@ -1,0 +1,74 @@
+﻿// <copyright file="AspNetCoreBlockMiddlewareIntegration.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#if !NETFRAMEWORK
+
+using System;
+using System.Threading.Tasks;
+using Datadog.Trace.AppSec;
+using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Builder.Extensions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
+
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
+{
+    /// <summary>
+    /// The ASP.NET Core middleware integration.
+    /// </summary>
+    [InstrumentMethod(
+        AssemblyName = "Microsoft.AspNetCore.Hosting",
+        TypeName = "Microsoft.AspNetCore.Hosting.Builder.ApplicationBuilderFactory",
+        MethodName = "CreateBuilder",
+        ParameterTypeNames = new[] { "Microsoft.AspNetCore.Http.Features.IFeatureCollection" },
+        ReturnTypeName = "Microsoft.AspNetCore.Builder.IApplicationBuilder",
+        MinimumVersion = Major3,
+        MaximumVersion = Major6,
+        IntegrationName = nameof(IntegrationId.AspNetCore))]
+    public class AspNetCoreBlockMiddlewareIntegration
+    {
+        private const string Major3 = "3";
+        private const string Major6 = "6";
+
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetCoreBlockMiddlewareIntegration));
+
+        /// <summary>
+        /// test
+        /// </summary>
+        /// <param name="instance">instance</param>
+        /// <param name="returnValue">returnValue</param>
+        /// <param name="exception">exception</param>
+        /// <param name="state">state</param>
+        /// <typeparam name="TTarget">TTarget</typeparam>
+        /// <typeparam name="TReturn">TReturn</typeparam>
+        /// <returns>CallTargetReturn</returns>
+        public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        {
+            Log.Warning("on method end");
+            if (Security.Instance.Settings.Enabled)
+            {
+                var appb = (IApplicationBuilder)returnValue;
+                appb.MapWhen(c => true, HandleBranch);
+            }
+
+            return new CallTargetReturn<TReturn>(returnValue);
+        }
+
+        internal static void HandleBranch(Microsoft.AspNetCore.Builder.IApplicationBuilder app)
+        {
+            app.Run(
+                context =>
+                {
+                    var branchVer = context.Request.Query["branch"];
+                    return context.Response.WriteAsync($"Branch used = {branchVer}");
+                });
+        }
+    }
+}
+#endif

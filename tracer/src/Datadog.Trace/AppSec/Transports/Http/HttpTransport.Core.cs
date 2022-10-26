@@ -18,8 +18,6 @@ namespace Datadog.Trace.AppSec.Transports.Http
 {
     internal class HttpTransport : ITransport
     {
-        private static System.Reflection.MethodInfo _completeAsync;
-
         private readonly HttpContext _context;
 
         public HttpTransport(HttpContext context) => _context = context;
@@ -55,52 +53,6 @@ namespace Datadog.Trace.AppSec.Transports.Http
         public void WriteBlockedResponse(string templateJson, string templateHtml, bool canAccessHeaders)
         {
             _context.Items["block"] = true;
-            var httpResponse = _context.Response;
-            httpResponse.Clear();
-
-            foreach (var cookie in _context.Request.Cookies)
-            {
-                httpResponse.Cookies.Delete(cookie.Key);
-            }
-
-            // this should always be true for core, but it would seem foolish to ignore it, as potential source of future bugs
-            if (canAccessHeaders)
-            {
-                httpResponse.Headers.Clear();
-            }
-
-            httpResponse.StatusCode = 403;
-            var syncIOFeature = _context.Features.Get<IHttpBodyControlFeature>();
-            if (syncIOFeature != null)
-            {
-                // allow synchronous operations for net core >=3.1 otherwise invalidoperation exception
-                syncIOFeature.AllowSynchronousIO = true;
-            }
-
-            var template = templateJson;
-            if (_context.Request.Headers["Accept"] == "application/json")
-            {
-                httpResponse.ContentType = "application/json";
-            }
-            else
-            {
-                httpResponse.ContentType = "text/html";
-                template = templateHtml;
-            }
-
-            var resp = Encoding.ASCII.GetBytes(template);
-            httpResponse.ContentLength = resp.Length;
-            httpResponse.Body.Write(resp, 0, resp.Length);
-            _completeAsync ??= httpResponse.GetType().GetMethod("CompleteAsync");
-            if (_completeAsync != null)
-            {
-                _completeAsync.Invoke(httpResponse, null);
-            }
-            else
-            {
-                // note that Body.FlushAsync doesnt do anything once some headers have been set so no point
-                httpResponse.Body.Dispose();
-            }
         }
     }
 }

@@ -60,6 +60,23 @@ namespace Samples.Security.AspNetCore5
                     _ = Task.Run(() => builder.ApplicationServices.GetService<IHostApplicationLifetime>().StopApplication());
                 });
             });
+            
+            app.MapWhen(
+                context => context.Items.ContainsKey("block"),
+                appBuilder =>
+                {
+                    appBuilder.Run(
+                        async c =>
+                        {
+                            await c.Response.WriteAsync("finish!");
+                        });
+                });
+
+            app.Run(
+                async context =>
+                {
+                    await context.Response.WriteAsync("Hello     world!");
+                });
 
             app.Use(async (context, next) =>
             {
