@@ -11,6 +11,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.ClrProfiler;
@@ -61,6 +62,15 @@ namespace Datadog.Trace.Ci
 
             Log.Information("Initializing CI Visibility");
 
+            // In case we are running using the agent, check if the event platform proxy is supported.
+            IDiscoveryService discoveryService = NullDiscoveryService.Instance;
+            var eventPlatformProxyEnabled = false;
+            if (!_settings.Agentless)
+            {
+                discoveryService = DiscoveryService.Create(new ImmutableExporterSettings(_settings.TracerSettings.Exporter));
+                eventPlatformProxyEnabled = IsEventPlatformProxySupportedByAgent(discoveryService);
+            }
+
             LifetimeManager.Instance.AddAsyncShutdownTask(ShutdownAsync);
 
             TracerSettings tracerSettings = _settings.TracerSettings;
@@ -75,7 +85,7 @@ namespace Datadog.Trace.Ci
 
             // Initialize Tracer
             Log.Information("Initialize Test Tracer instance");
-            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings));
+            TracerManager.ReplaceGlobalManager(tracerSettings.Build(), new CITracerManagerFactory(_settings, discoveryService, eventPlatformProxyEnabled));
             _ = Tracer.Instance;
 
             // Initialize FrameworkDescription
@@ -84,19 +94,32 @@ namespace Datadog.Trace.Ci
             // Initialize CIEnvironment
             _ = CIEnvironmentValues.Instance;
 
-            // Intelligent Test Runner
-            if (_settings.IntelligentTestRunnerEnabled)
+            // If we are running in agentless mode or the agent support the event platform proxy endpoint.
+            // We can use the intelligent test runner
+            if (_settings.Agentless || eventPlatformProxyEnabled)
             {
-                Log.Information("ITR: Update and uploading git tree metadata and getting skippable tests.");
-                _skippableTestsTask = GetIntelligentTestRunnerSkippableTestsAsync();
-                LifetimeManager.Instance.AddAsyncShutdownTask(() => _skippableTestsTask);
+                // Intelligent Test Runner or GitUploadEnabled
+                if (_settings.IntelligentTestRunnerEnabled)
+                {
+                    Log.Information("ITR: Update and uploading git tree metadata and getting skippable tests.");
+                    _skippableTestsTask = GetIntelligentTestRunnerSkippableTestsAsync();
+                    LifetimeManager.Instance.AddAsyncShutdownTask(() => _skippableTestsTask);
+                }
+                else if (_settings.GitUploadEnabled)
+                {
+                    // Update and upload git tree metadata.
+                    Log.Information("ITR: Update and uploading git tree metadata.");
+                    var tskItrUpdate = UploadGitMetadataAsync();
+                    LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
+                }
+            }
+            else if (_settings.IntelligentTestRunnerEnabled)
+            {
+                Log.Warning("ITR: Intelligent test runner cannot be activated. Agent doesn't support the event platform proxy endpoint.");
             }
             else if (_settings.GitUploadEnabled)
             {
-                // Update and upload git tree metadata.
-                Log.Information("ITR: Update and uploading git tree metadata.");
-                var tskItrUpdate = UploadGitMetadataAsync();
-                LifetimeManager.Instance.AddAsyncShutdownTask(() => tskItrUpdate);
+                Log.Warning("ITR: Upload git metadata cannot be activated. Agent doesn't support the event platform proxy endpoint.");
             }
         }
 
@@ -471,6 +494,38 @@ namespace Datadog.Trace.Ci
             {
                 Log.Error(ex, "ITR: Error getting skippeable tests.");
             }
+        }
+
+        private static bool IsEventPlatformProxySupportedByAgent(IDiscoveryService discoveryService)
+        {
+            var eventPlatformProxyEnabled = false;
+            AgentConfiguration? agentConfiguration = null;
+            ManualResetEventSlim manualResetEventSlim = new(false);
+            LifetimeManager.Instance.AddShutdownTask(() => manualResetEventSlim.Set());
+
+            Log.Debug("Waiting for agent configuration...");
+            discoveryService.SubscribeToChanges(CallBack);
+            void CallBack(AgentConfiguration aConfiguration)
+            {
+                agentConfiguration = aConfiguration;
+                manualResetEventSlim.Set();
+                discoveryService.RemoveSubscription(CallBack);
+                Log.Debug("Agent configuration received.");
+            }
+
+            // We wait up to 5 seconds for the configuration to be retrieved.
+            manualResetEventSlim.Wait(5_000);
+            if (!string.IsNullOrEmpty(Volatile.Read(ref agentConfiguration)?.EventPlatformProxyEndpoint))
+            {
+                Log.Information("Event platform proxy supported by agent.");
+                eventPlatformProxyEnabled = true;
+            }
+            else
+            {
+                Log.Information("Event platform proxy is not supported by the agent. Falling back to the APM protocol.");
+            }
+
+            return eventPlatformProxyEnabled;
         }
     }
 }

@@ -452,6 +452,7 @@ namespace Datadog.Trace.Tests.Agent
                              agentVersion: "agentVersion",
                              statsEndpoint: "traceStatsEndpoint",
                              dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
+                             eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
                              clientDropP0: true));
             }
 

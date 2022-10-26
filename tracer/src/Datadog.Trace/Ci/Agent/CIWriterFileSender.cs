@@ -15,7 +15,7 @@ namespace Datadog.Trace.Ci.Agent
     /// <summary>
     /// This class is for debugging purposes only.
     /// </summary>
-    internal sealed class CIWriterFileSender : ICIAgentlessWriterSender
+    internal sealed class CIWriterFileSender : ICIVisibilityProtocolWriterSender
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIWriterFileSender>();
 

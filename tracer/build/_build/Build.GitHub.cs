@@ -409,6 +409,7 @@ partial class Build
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/CMakeLists.txt",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Windows/Resource.rc",
                 "profiler/src/ProfilerEngine/Datadog.Profiler.Native/dd_profiler_version.h",
+                "profiler/src/ProfilerEngine/Datadog.Linux.ApiWrapper/CMakeLists.txt",
                 "profiler/src/ProfilerEngine/ProductVersion.props",
                 "shared/src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
                 "shared/src/Datadog.Trace.ClrProfiler.Native/Resource.rc",

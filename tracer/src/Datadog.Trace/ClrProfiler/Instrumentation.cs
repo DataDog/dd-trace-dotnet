@@ -103,6 +103,21 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
+                Log.Debug("Initializing TraceAttribute instrumentation.");
+                var payload = InstrumentationDefinitions.GetTraceAttributeDefinitions();
+                NativeMethods.AddTraceAttributeInstrumentation(payload.DefinitionsId, payload.AssemblyName, payload.TypeName);
+                Log.Information("TraceAttribute instrumentation enabled with Assembly={AssemblyName} and Type={TypeName}.", payload.AssemblyName, payload.TypeName);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, ex.Message);
+            }
+
+            InitializeNoNativeParts();
+            var tracer = Tracer.Instance;
+
+            try
+            {
                 Log.Debug("Sending CallTarget integration definitions to native library.");
                 var payload = InstrumentationDefinitions.GetAllDefinitions();
                 NativeMethods.InitializeProfiler(payload.DefinitionsId, payload.Definitions);
@@ -148,21 +163,6 @@ namespace Datadog.Trace.ClrProfiler
             {
                 Log.Error(ex, ex.Message);
             }
-
-            try
-            {
-                Log.Debug("Initializing TraceAttribute instrumentation.");
-                var payload = InstrumentationDefinitions.GetTraceAttributeDefinitions();
-                NativeMethods.AddTraceAttributeInstrumentation(payload.DefinitionsId, payload.AssemblyName, payload.TypeName);
-                Log.Information("TraceAttribute instrumentation enabled with Assembly={AssemblyName} and Type={TypeName}.", payload.AssemblyName, payload.TypeName);
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, ex.Message);
-            }
-
-            InitializeNoNativeParts();
-            var tracer = Tracer.Instance;
 
             if (tracer is null)
             {

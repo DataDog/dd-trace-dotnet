@@ -25,6 +25,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             }
 
             _settings = settings;
+            UseEvpProxy = !settings.Agentless;
         }
 
         /// <summary>
@@ -71,7 +72,7 @@ namespace Datadog.Trace.Ci.Agent.Payloads
                 {
                     // Use Agent EVP Proxy
                     builder = new UriBuilder(_settings.TracerSettings.Exporter.AgentUri);
-                    builder.Path = $"/evp_proxy/v1/{EventPlatformPath}";
+                    builder.Path = $"/evp_proxy/v2/{EventPlatformPath}";
                 }
 
                 url = builder.Uri;
@@ -84,6 +85,11 @@ namespace Datadog.Trace.Ci.Agent.Payloads
                 _url = value;
             }
         }
+
+        /// <summary>
+        /// Gets a value indicating whether the payload is configured to use the agent proxy
+        /// </summary>
+        public virtual bool UseEvpProxy { get; }
 
         /// <summary>
         /// Gets a value indicating whether the payload contains events or not

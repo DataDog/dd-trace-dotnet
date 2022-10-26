@@ -1,31 +1,30 @@
-// <copyright file="XUnitTests.cs" company="Datadog">
+// <copyright file="XUnitEvpTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Threading;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.TestHelpers.Ci;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
-    public class XUnitTests : TestHelper
+    public class XUnitEvpTests : TestHelper
     {
         private const string TestBundleName = "Samples.XUnitTests";
         private const string TestSuiteName = "Samples.XUnitTests.TestSuite";
-        private const int ExpectedSpanCount = 13;
+        private const int ExpectedTestCount = 13;
 
-        public XUnitTests(ITestOutputHelper output)
+        public XUnitEvpTests(ITestOutputHelper output)
             : base("XUnitTests", output)
         {
             SetServiceVersion("1.0.0");
@@ -37,7 +36,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         [Trait("Category", "TestIntegrations")]
         public void SubmitTraces(string packageVersion)
         {
-            List<MockSpan> spans = null;
+            var tests = new List<MockCIVisibilityTest>();
+            var testSuites = new List<MockCIVisibilityTestSuite>();
+            var testModules = new List<MockCIVisibilityTestModule>();
+
             string[] messages = null;
             try
             {
@@ -51,105 +53,128 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                 using (var agent = EnvironmentHelper.GetMockAgent())
                 {
-                    // We remove the evp_proxy endpoint to force the APM protocol compatibility
-                    agent.Configuration.Endpoints = agent.Configuration.Endpoints.Where(e => !e.Contains("evp_proxy/v2")).ToArray();
+                    agent.EventPlatformProxyPayloadReceived += (sender, e) =>
+                    {
+                        var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
+                        if (payload.Events?.Length > 0)
+                        {
+                            foreach (var @event in payload.Events)
+                            {
+                                if (@event.Type == SpanTypes.Test)
+                                {
+                                    tests.Add(JsonConvert.DeserializeObject<MockCIVisibilityTest>(@event.Content.ToString()));
+                                }
+                                else if (@event.Type == SpanTypes.TestSuite)
+                                {
+                                    testSuites.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestSuite>(@event.Content.ToString()));
+                                }
+                                else if (@event.Type == SpanTypes.TestModule)
+                                {
+                                    testModules.Add(JsonConvert.DeserializeObject<MockCIVisibilityTestModule>(@event.Content.ToString()));
+                                }
+                            }
+                        }
+                    };
+
                     using (ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, packageVersion: packageVersion))
                     {
-                        spans = agent.WaitForSpans(ExpectedSpanCount)
-                                     .Where(s => !(s.Tags.TryGetValue(Tags.InstrumentationName, out var sValue) && sValue == "HttpMessageHandler"))
-                                     .ToList();
+                        // Check the tests, suites and modules count
+                        Assert.Equal(ExpectedTestCount, tests.Count);
+                        Assert.Single(testSuites);
+                        Assert.Single(testModules);
 
-                        // Check the span count
-                        Assert.Equal(ExpectedSpanCount, spans.Count);
+                        // Check Suite
+                        Assert.True(tests.All(t => t.TestSuiteId == testSuites[0].TestSuiteId));
+                        Assert.True(testSuites[0].TestModuleId == testModules[0].TestModuleId);
+
+                        // Check Module
+                        Assert.True(tests.All(t => t.TestModuleId == testSuites[0].TestModuleId));
 
                         // ***************************************************************************
 
-                        foreach (var targetSpan in spans)
+                        foreach (var targetTest in tests)
                         {
                             // Remove decision maker tag (not used by the backend for civisibility)
-                            targetSpan.Tags.Remove(Tags.Propagated.DecisionMaker);
+                            targetTest.Meta.Remove(Tags.Propagated.DecisionMaker);
 
                             // check the name
-                            Assert.Equal("xunit.test", targetSpan.Name);
+                            Assert.Equal("xunit.test", targetTest.Name);
 
                             // check the CIEnvironmentValues decoration.
-                            CheckCIEnvironmentValuesDecoration(targetSpan);
+                            CheckCIEnvironmentValuesDecoration(targetTest);
 
                             // check the runtime values
-                            CheckRuntimeValues(targetSpan);
+                            CheckRuntimeValues(targetTest);
 
                             // check the bundle name
-                            AssertTargetSpanEqual(targetSpan, TestTags.Bundle, TestBundleName);
-                            AssertTargetSpanEqual(targetSpan, TestTags.Module, TestBundleName);
+                            AssertTargetSpanEqual(targetTest, TestTags.Bundle, TestBundleName);
+                            AssertTargetSpanEqual(targetTest, TestTags.Module, TestBundleName);
 
                             // check the suite name
-                            AssertTargetSpanEqual(targetSpan, TestTags.Suite, TestSuiteName);
+                            AssertTargetSpanEqual(targetTest, TestTags.Suite, TestSuiteName);
 
                             // check the test type
-                            AssertTargetSpanEqual(targetSpan, TestTags.Type, TestTags.TypeTest);
+                            AssertTargetSpanEqual(targetTest, TestTags.Type, TestTags.TypeTest);
 
                             // check the test framework
-                            AssertTargetSpanContains(targetSpan, TestTags.Framework, "xUnit");
-                            Assert.True(targetSpan.Tags.Remove(TestTags.FrameworkVersion));
+                            AssertTargetSpanContains(targetTest, TestTags.Framework, "xUnit");
+                            Assert.True(targetTest.Meta.Remove(TestTags.FrameworkVersion));
 
                             // check the version
-                            AssertTargetSpanEqual(targetSpan, "version", "1.0.0");
+                            AssertTargetSpanEqual(targetTest, "version", "1.0.0");
 
                             // checks the origin tag
-                            CheckOriginTag(targetSpan);
-
-                            // checks the runtime id tag
-                            AssertTargetSpanExists(targetSpan, Tags.RuntimeId);
+                            CheckOriginTag(targetTest);
 
                             // checks the source tags
-                            AssertTargetSpanExists(targetSpan, TestTags.SourceFile);
+                            AssertTargetSpanExists(targetTest, TestTags.SourceFile);
 
                             // checks code owners
-                            AssertTargetSpanExists(targetSpan, TestTags.CodeOwners);
+                            AssertTargetSpanExists(targetTest, TestTags.CodeOwners);
 
                             // Check the Environment
-                            AssertTargetSpanEqual(targetSpan, Tags.Env, "integration_tests");
+                            AssertTargetSpanEqual(targetTest, Tags.Env, "integration_tests");
 
                             // Language
-                            AssertTargetSpanEqual(targetSpan, Tags.Language, TracerConstants.Language);
+                            AssertTargetSpanEqual(targetTest, Tags.Language, TracerConstants.Language);
 
                             // CI Library Language
-                            AssertTargetSpanEqual(targetSpan, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
+                            AssertTargetSpanEqual(targetTest, CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
 
                             // check specific test span
-                            switch (targetSpan.Tags[TestTags.Name])
+                            switch (targetTest.Meta[TestTags.Name])
                             {
                                 case "SimplePassTest":
-                                    CheckSimpleTestSpan(targetSpan);
+                                    CheckSimpleTestSpan(targetTest);
                                     break;
 
                                 case "SimpleSkipFromAttributeTest":
-                                    CheckSimpleSkipFromAttributeTest(targetSpan);
+                                    CheckSimpleSkipFromAttributeTest(targetTest);
                                     break;
 
                                 case "SimpleErrorTest":
-                                    CheckSimpleErrorTest(targetSpan);
+                                    CheckSimpleErrorTest(targetTest);
                                     break;
 
                                 case "TraitPassTest":
-                                    CheckSimpleTestSpan(targetSpan);
-                                    CheckTraitsValues(targetSpan);
+                                    CheckSimpleTestSpan(targetTest);
+                                    CheckTraitsValues(targetTest);
                                     break;
 
                                 case "TraitSkipFromAttributeTest":
-                                    CheckSimpleSkipFromAttributeTest(targetSpan);
-                                    CheckTraitsValues(targetSpan);
+                                    CheckSimpleSkipFromAttributeTest(targetTest);
+                                    CheckTraitsValues(targetTest);
                                     break;
 
                                 case "TraitErrorTest":
-                                    CheckSimpleErrorTest(targetSpan);
-                                    CheckTraitsValues(targetSpan);
+                                    CheckSimpleErrorTest(targetTest);
+                                    CheckTraitsValues(targetTest);
                                     break;
 
                                 case "SimpleParameterizedTest":
-                                    CheckSimpleTestSpan(targetSpan);
+                                    CheckSimpleTestSpan(targetTest);
                                     AssertTargetSpanAnyOf(
-                                        targetSpan,
+                                        targetTest,
                                         TestTags.Parameters,
                                         "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 1, yValue: 1, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"1\",\"expectedResult\":\"2\"}}",
                                         "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleParameterizedTest(xValue: 2, yValue: 2, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"2\",\"expectedResult\":\"4\"}}",
@@ -160,13 +185,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                     break;
 
                                 case "SimpleSkipParameterizedTest":
-                                    CheckSimpleSkipFromAttributeTest(targetSpan);
+                                    CheckSimpleSkipFromAttributeTest(targetTest);
                                     break;
 
                                 case "SimpleErrorParameterizedTest":
-                                    CheckSimpleErrorTest(targetSpan);
+                                    CheckSimpleErrorTest(targetTest);
                                     AssertTargetSpanAnyOf(
-                                        targetSpan,
+                                        targetTest,
                                         TestTags.Parameters,
                                         "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 1, yValue: 0, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"0\",\"expectedResult\":\"2\"}}",
                                         "{\"metadata\":{\"test_name\":\"Samples.XUnitTests.TestSuite.SimpleErrorParameterizedTest(xValue: 2, yValue: 0, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"0\",\"expectedResult\":\"4\"}}",
@@ -178,7 +203,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             }
 
                             // check remaining tag (only the name)
-                            Assert.Single(targetSpan.Tags);
+                            Assert.Single(targetTest.Meta);
                         }
 
                         // ***************************************************************************
@@ -196,14 +221,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             }
             catch
             {
-                WriteSpans(spans);
+                WriteSpans(tests);
                 throw;
             }
         }
 
-        private static void WriteSpans(List<MockSpan> spans)
+        private static void WriteSpans(List<MockCIVisibilityTest> tests)
         {
-            if (spans is null || spans.Count == 0)
+            if (tests is null || tests.Count == 0)
             {
                 return;
             }
@@ -211,19 +236,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             Console.WriteLine("***********************************");
 
             int i = 0;
-            foreach (var span in spans)
+            foreach (var test in tests)
             {
                 Console.Write($" {i++}) ");
-                Console.Write($"TraceId={span.TraceId}, ");
-                Console.Write($"SpanId={span.SpanId}, ");
-                Console.Write($"Service={span.Service}, ");
-                Console.Write($"Name={span.Name}, ");
-                Console.Write($"Resource={span.Resource}, ");
-                Console.Write($"Type={span.Type}, ");
-                Console.Write($"Error={span.Error}");
+                Console.Write($"TraceId={test.TraceId}, ");
+                Console.Write($"SpanId={test.SpanId}, ");
+                Console.Write($"Service={test.Service}, ");
+                Console.Write($"Name={test.Name}, ");
+                Console.Write($"Resource={test.Resource}, ");
+                Console.Write($"Type={test.Type}, ");
+                Console.Write($"Error={test.Error}");
                 Console.WriteLine();
-                Console.WriteLine($"   Tags=");
-                foreach (var kv in span.Tags)
+                Console.WriteLine($"   Meta=");
+                foreach (var kv in test.Meta)
+                {
+                    Console.WriteLine($"       => {kv.Key} = {kv.Value}");
+                }
+
+                Console.WriteLine();
+                Console.WriteLine($"   Metrics=");
+                foreach (var kv in test.Metrics)
                 {
                     Console.WriteLine($"       => {kv.Key} = {kv.Value}");
                 }
@@ -234,32 +266,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             Console.WriteLine("***********************************");
         }
 
-        private static void AssertTargetSpanAnyOf(MockSpan targetSpan, string key, params string[] values)
+        private static void AssertTargetSpanAnyOf(MockCIVisibilityTest targetTest, string key, params string[] values)
         {
-            string actualValue = targetSpan.Tags[key];
+            string actualValue = targetTest.Meta[key];
             Assert.Contains(actualValue, values);
-            targetSpan.Tags.Remove(key);
+            targetTest.Meta.Remove(key);
         }
 
-        private static void AssertTargetSpanEqual(MockSpan targetSpan, string key, string value)
+        private static void AssertTargetSpanEqual(MockCIVisibilityTest targetTest, string key, string value)
         {
-            Assert.Equal(value, targetSpan.Tags[key]);
-            targetSpan.Tags.Remove(key);
+            Assert.Equal(value, targetTest.Meta[key]);
+            targetTest.Meta.Remove(key);
         }
 
-        private static void AssertTargetSpanExists(MockSpan targetSpan, string key)
+        private static void AssertTargetSpanExists(MockCIVisibilityTest targetTest, string key)
         {
-            Assert.True(targetSpan.Tags.ContainsKey(key));
-            targetSpan.Tags.Remove(key);
+            Assert.True(targetTest.Meta.ContainsKey(key));
+            targetTest.Meta.Remove(key);
         }
 
-        private static void AssertTargetSpanContains(MockSpan targetSpan, string key, string value)
+        private static void AssertTargetSpanContains(MockCIVisibilityTest targetTest, string key, string value)
         {
-            Assert.Contains(value, targetSpan.Tags[key]);
-            targetSpan.Tags.Remove(key);
+            Assert.Contains(value, targetTest.Meta[key]);
+            targetTest.Meta.Remove(key);
         }
 
-        private static void CheckCIEnvironmentValuesDecoration(MockSpan targetSpan)
+        private static void CheckCIEnvironmentValuesDecoration(MockCIVisibilityTest targetTest)
         {
             var context = new SpanContext(null, null, null, null);
             var span = new Span(context, DateTimeOffset.UtcNow);
@@ -280,78 +312,87 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             AssertEqual(CommonTags.GitTag);
             AssertEqual(CommonTags.GitCommitAuthorName);
             AssertEqual(CommonTags.GitCommitAuthorEmail);
-            AssertEqual(CommonTags.GitCommitAuthorDate);
+            AssertEqualDate(CommonTags.GitCommitAuthorDate);
             AssertEqual(CommonTags.GitCommitCommitterName);
             AssertEqual(CommonTags.GitCommitCommitterEmail);
-            AssertEqual(CommonTags.GitCommitCommitterDate);
+            AssertEqualDate(CommonTags.GitCommitCommitterDate);
             AssertEqual(CommonTags.GitCommitMessage);
             AssertEqual(CommonTags.BuildSourceRoot);
 
             void AssertEqual(string key)
             {
-                if (span.GetTag(key) is not null)
+                if (span.GetTag(key) is { } keyValue)
                 {
-                    Assert.Equal(span.GetTag(key), targetSpan.Tags[key]);
-                    targetSpan.Tags.Remove(key);
+                    Assert.Equal(keyValue, targetTest.Meta[key]);
+                    targetTest.Meta.Remove(key);
+                }
+            }
+
+            void AssertEqualDate(string key)
+            {
+                if (span.GetTag(key) is { } keyValue)
+                {
+                    Assert.Equal(DateTimeOffset.Parse(keyValue), DateTimeOffset.Parse(targetTest.Meta[key]));
+                    targetTest.Meta.Remove(key);
                 }
             }
         }
 
-        private static void CheckRuntimeValues(MockSpan targetSpan)
+        private static void CheckRuntimeValues(MockCIVisibilityTest targetTest)
         {
             FrameworkDescription framework = FrameworkDescription.Instance;
 
-            AssertTargetSpanEqual(targetSpan, CommonTags.RuntimeName, framework.Name);
-            AssertTargetSpanEqual(targetSpan, CommonTags.RuntimeVersion, framework.ProductVersion);
-            AssertTargetSpanEqual(targetSpan, CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
-            AssertTargetSpanEqual(targetSpan, CommonTags.OSArchitecture, framework.OSArchitecture);
-            AssertTargetSpanEqual(targetSpan, CommonTags.OSPlatform, framework.OSPlatform);
-            AssertTargetSpanEqual(targetSpan, CommonTags.OSVersion, CIVisibility.GetOperatingSystemVersion());
+            AssertTargetSpanEqual(targetTest, CommonTags.RuntimeName, framework.Name);
+            AssertTargetSpanEqual(targetTest, CommonTags.RuntimeVersion, framework.ProductVersion);
+            AssertTargetSpanEqual(targetTest, CommonTags.RuntimeArchitecture, framework.ProcessArchitecture);
+            AssertTargetSpanEqual(targetTest, CommonTags.OSArchitecture, framework.OSArchitecture);
+            AssertTargetSpanEqual(targetTest, CommonTags.OSPlatform, framework.OSPlatform);
+            AssertTargetSpanEqual(targetTest, CommonTags.OSVersion, CIVisibility.GetOperatingSystemVersion());
         }
 
-        private static void CheckTraitsValues(MockSpan targetSpan)
+        private static void CheckTraitsValues(MockCIVisibilityTest targetTest)
         {
             // Check the traits tag value
-            AssertTargetSpanEqual(targetSpan, TestTags.Traits, "{\"Category\":[\"Category01\"],\"Compatibility\":[\"Windows\",\"Linux\"]}");
+            AssertTargetSpanEqual(targetTest, TestTags.Traits, "{\"Category\":[\"Category01\"],\"Compatibility\":[\"Windows\",\"Linux\"]}");
         }
 
-        private static void CheckOriginTag(MockSpan targetSpan)
+        private static void CheckOriginTag(MockCIVisibilityTest targetTest)
         {
             // Check the test origin tag
-            AssertTargetSpanEqual(targetSpan, Tags.Origin, TestTags.CIAppTestOriginName);
+            AssertTargetSpanEqual(targetTest, Tags.Origin, TestTags.CIAppTestOriginName);
         }
 
-        private static void CheckSimpleTestSpan(MockSpan targetSpan)
+        private static void CheckSimpleTestSpan(MockCIVisibilityTest targetTest)
         {
             // Check the Test Status
-            AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusPass);
+            AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusPass);
         }
 
-        private static void CheckSimpleSkipFromAttributeTest(MockSpan targetSpan)
+        private static void CheckSimpleSkipFromAttributeTest(MockCIVisibilityTest targetTest)
         {
             // Check the Test Status
-            AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusSkip);
+            AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusSkip);
 
             // Check the Test skip reason
-            AssertTargetSpanEqual(targetSpan, TestTags.SkipReason, "Simple skip reason");
+            AssertTargetSpanEqual(targetTest, TestTags.SkipReason, "Simple skip reason");
         }
 
-        private static void CheckSimpleErrorTest(MockSpan targetSpan)
+        private static void CheckSimpleErrorTest(MockCIVisibilityTest targetTest)
         {
             // Check the Test Status
-            AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusFail);
+            AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusFail);
 
             // Check the span error flag
-            Assert.Equal(1, targetSpan.Error);
+            Assert.Equal(1, targetTest.Error);
 
             // Check the error type
-            AssertTargetSpanEqual(targetSpan, Tags.ErrorType, typeof(DivideByZeroException).FullName);
+            AssertTargetSpanEqual(targetTest, Tags.ErrorType, typeof(DivideByZeroException).FullName);
 
             // Check the error stack
-            AssertTargetSpanContains(targetSpan, Tags.ErrorStack, typeof(DivideByZeroException).FullName);
+            AssertTargetSpanContains(targetTest, Tags.ErrorStack, typeof(DivideByZeroException).FullName);
 
             // Check the error message
-            AssertTargetSpanEqual(targetSpan, Tags.ErrorMsg, new DivideByZeroException().Message);
+            AssertTargetSpanEqual(targetTest, Tags.ErrorMsg, new DivideByZeroException().Message);
         }
 
         private class MockLogsIntakeForCiVisibility : MockLogsIntake<MockLogsIntakeForCiVisibility.Log>
