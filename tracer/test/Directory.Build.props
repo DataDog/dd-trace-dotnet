@@ -21,7 +21,7 @@
 <!--      <CopyToOutputDirectory>lib\$(TargetFramework)\*</CopyToOutputDirectory>-->
 <!--      <FolderName>datadogtestlogger</FolderName>-->
 <!--    </PackageReference>-->
-    <PackageReference Include="DatadogTestLogger" Version="0.0.19" />
+    <PackageReference Include="DatadogTestLogger" Version="0.0.20" />
   </ItemGroup>
 
   <!-- StyleCop -->
