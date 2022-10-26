@@ -7,6 +7,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Threading;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
@@ -28,23 +29,53 @@ public sealed class TestSession
     {
         // First we make sure that CI Visibility is initialized.
         CIVisibility.Initialize();
+        var environment = CIEnvironmentValues.Instance;
 
         Command = command;
         WorkingDirectory = workingDirectory ?? Environment.CurrentDirectory;
         Framework = framework;
 
+        WorkingDirectory = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(WorkingDirectory, false);
+
         var tags = new TestSessionSpanTags
         {
             Command = command ?? string.Empty,
             WorkingDirectory = WorkingDirectory,
+            CIProvider = environment.Provider,
+            CIPipelineId = environment.PipelineId,
+            CIPipelineName = environment.PipelineName,
+            CIPipelineNumber = environment.PipelineNumber,
+            CIPipelineUrl = environment.PipelineUrl,
+            CIJobName = environment.JobName,
+            CIJobUrl = environment.JobUrl,
+            StageName = environment.StageName,
+            CIWorkspacePath = environment.WorkspacePath,
+            GitRepository = environment.Repository,
+            GitCommit = environment.Commit,
+            GitBranch = environment.Branch,
+            GitTag = environment.Tag,
+            GitCommitAuthorDate = environment.AuthorDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture),
+            GitCommitAuthorName = environment.AuthorName,
+            GitCommitAuthorEmail = environment.AuthorEmail,
+            GitCommitCommitterDate = environment.CommitterDate?.ToString("yyyy-MM-dd'T'HH:mm:ss.fffK", CultureInfo.InvariantCulture),
+            GitCommitCommitterName = environment.CommitterName,
+            GitCommitCommitterEmail = environment.CommitterEmail,
+            GitCommitMessage = environment.Message,
+            BuildSourceRoot = environment.SourceRoot,
+            LibraryVersion = TracerConstants.AssemblyVersion,
         };
+
+        if (environment.VariablesToBypass is { } variablesToBypass)
+        {
+            tags.CiEnvVars = Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(variablesToBypass);
+        }
 
         var span = Tracer.Instance.StartSpan(
             string.IsNullOrEmpty(framework) ? "test_session" : $"{framework!.ToLowerInvariant()}.test_session",
             tags: tags,
             startTime: startDate);
 
-        span.Type = SpanTypes.TestModule;
+        span.Type = SpanTypes.TestSession;
         span.ResourceName = $"{span.OperationName}.{command}";
         span.Context.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep, SamplingMechanism.Manual);
         span.SetTag(Trace.Tags.Origin, TestTags.CIAppTestOriginName);
