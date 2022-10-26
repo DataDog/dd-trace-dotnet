@@ -28,6 +28,8 @@ namespace Datadog.Trace.Tests.Logging
 
         public DatadogLoggingTests()
         {
+            Environment.SetEnvironmentVariable(ConfigurationKeys.LogDaysLimit, "33");
+
             GlobalSettings.Reload();
 
             _logEventSink = new CollectionSink();
@@ -215,7 +217,7 @@ namespace Datadog.Trace.Tests.Logging
             // Creating log files that match expected formats
             var logPath = Path.Combine(tempLogsDir, "DD-DotNet-Profiler-Native-1.log");
             File.Create(logPath).Dispose();
-            File.SetLastWriteTime(logPath, DateTime.Now.AddDays(-31 * 2));
+            File.SetLastWriteTime(logPath, DateTime.Now.AddDays(-36));
 
             File.Create(Path.Combine(tempLogsDir, "dotnet-tracer-managed-2.log")).Dispose();
             File.Create(Path.Combine(tempLogsDir, "dotnet-tracer-native-3.log")).Dispose();

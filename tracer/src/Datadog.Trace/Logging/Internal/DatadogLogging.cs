@@ -231,28 +231,32 @@ namespace Datadog.Trace.Logging
 
         internal static void CleanLogFiles(string logsDirectory)
         {
-            var date = DateTime.Now.AddDays(-32);
-            var logFormats = new[]
-              {
-                "dotnet-tracer-managed-*-.log",
-                "dotnet-tracer-native-*-.log",
-                "dotnet-native-loader-*.log",
-                "DD-DotNet-Profiler-Native-*.log"
-              };
-
-            foreach (var logFormat in logFormats)
+            var logDaysLimit = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.LogDaysLimit);
+            if (int.TryParse(logDaysLimit, out var days) && days > 0)
             {
-                foreach (var logFile in Directory.EnumerateFiles(logsDirectory, logFormat))
+                var date = DateTime.Now.AddDays(-1 * days);
+                var logFormats = new[]
+                  {
+                    "dotnet-tracer-managed-*-.log",
+                    "dotnet-tracer-native-*-.log",
+                    "dotnet-native-loader-*.log",
+                    "DD-DotNet-Profiler-Native-*.log"
+                  };
+
+                foreach (var logFormat in logFormats)
                 {
-                    if (File.GetLastWriteTime(logFile) < date)
+                    foreach (var logFile in Directory.EnumerateFiles(logsDirectory, logFormat))
                     {
-                        try
+                        if (File.GetLastWriteTime(logFile) < date)
                         {
-                            File.Delete(logFile);
-                        }
-                        catch
-                        {
-                            // Do nothing when an exception is thrown for attempting to delete the filesystem
+                            try
+                            {
+                                File.Delete(logFile);
+                            }
+                            catch
+                            {
+                                // Do nothing when an exception is thrown for attempting to delete the filesystem
+                            }
                         }
                     }
                 }
