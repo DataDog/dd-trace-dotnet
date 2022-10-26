@@ -84,6 +84,7 @@ public class LiveDebuggerTests
                          agentVersion: "agentVersion",
                          statsEndpoint: "traceStatsEndpoint",
                          dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
+                         eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
                          clientDropP0: false));
         }
 

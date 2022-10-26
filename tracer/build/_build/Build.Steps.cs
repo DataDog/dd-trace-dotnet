@@ -765,6 +765,7 @@ partial class Build
                     .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
                     .CombineWith(testProjects, (x, project) => x
                         .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .WithDatadogLogger()
                         .SetProjectFile(project)));
             }
             finally
@@ -1031,6 +1032,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .WithDatadogLogger()
                         .SetProjectFile(project)), degreeOfParallelism: 4);
 
 
@@ -1050,6 +1052,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .WithDatadogLogger()
                         .SetProjectFile(project)));
             }
             finally
@@ -1087,6 +1090,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .WithDatadogLogger()
                         .SetProjectFile(project)));
             }
             finally
@@ -1134,6 +1138,7 @@ partial class Build
                                 .SetLogsDirectory(TestLogsDirectory)
                                 .When(CodeCoverage, ConfigureCodeCoverage)
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
+                                // .WithDatadogLogger() // There's still a problem when activating this on these tests due the Datadog.Trace.dll requirements (further investigation is required)
                                 .SetProjectFile(project));
         }
         finally
@@ -1169,6 +1174,7 @@ partial class Build
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(resultsDirectory)
+                    .WithDatadogLogger()
                     .SetProjectFile(project));
             }
             finally
@@ -1272,7 +1278,7 @@ partial class Build
                         "Samples.Security.AspNetCoreBare" => Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
                         "Samples.GraphQL4" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
                         "Samples.HotChocolate" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
-                        "Samples.AWS.Lambda" => Framework == TargetFramework.NETCOREAPP3_1,
+                        "Samples.AWS.Lambda" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
                         var name when projectsToSkip.Contains(name) => false,
                         var name when multiPackageProjects.Contains(name) => false,
                         "Samples.Probes" => true,
@@ -1437,6 +1443,7 @@ partial class Build
                         .When(CodeCoverage, ConfigureCodeCoverage)
                         .CombineWith(ParallelIntegrationTests, (s, project) => s
                             .EnableTrxLogOutput(GetResultsDirectory(project))
+                            .WithDatadogLogger()
                             .SetProjectFile(project)),
                     degreeOfParallelism: 2);
 
@@ -1458,6 +1465,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
+                        .WithDatadogLogger()
                         .SetProjectFile(project))
                 );
             }
@@ -1521,7 +1529,8 @@ partial class Build
                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                 .SetProcessEnvironmentVariable("ToolInstallDirectory", ToolInstallDirectory)
                 .SetLogsDirectory(TestLogsDirectory)
-                .EnableTrxLogOutput(GetResultsDirectory(project)));
+                .EnableTrxLogOutput(GetResultsDirectory(project))
+                .WithDatadogLogger());
         });
 
     Target CopyServerlessArtifacts => _ => _

@@ -15,6 +15,7 @@ internal class IastModule
 {
     private const string OperationNameWeakHash = "weak_hashing";
     private const string OperationNameWeakCipher = "weak_cipher";
+    private const string IastOrigin = "iast";
 
     public IastModule()
     {
@@ -29,7 +30,7 @@ internal class IastModule
             return null;
         }
 
-        return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakCipher, OperationNameWeakCipher);
+        return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakCipher, OperationNameWeakCipher, iast);
     }
 
     public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId, Iast iast)
@@ -39,10 +40,10 @@ internal class IastModule
             return null;
         }
 
-        return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakHash, OperationNameWeakHash);
+        return GetScope(Tracer.Instance, algorithm, integrationId, VulnerabilityType.WeakHash, OperationNameWeakHash, iast);
     }
 
-    private static Scope? GetScope(Tracer tracer, string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName)
+    private static Scope? GetScope(Tracer tracer, string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, Iast iast)
     {
         if (!tracer.Settings.IsIntegrationEnabled(integrationId))
         {
@@ -60,21 +61,28 @@ internal class IastModule
         // Sometimes we do not have the file/line but we have the method/class.
         var filename = frameInfo.StackFrame?.GetFileName();
         var vulnerability = new Vulnerability(vulnerabilityType, new Location(filename ?? GetMethodName(frameInfo.StackFrame), filename != null ? frameInfo.StackFrame?.GetFileLineNumber() : null), new Evidence(evidenceValue));
-        // The VulnerabilityBatch class is not very useful right now, but we will need it when handling requests
-        var batch = new VulnerabilityBatch();
-        batch.Add(vulnerability);
 
-        // Right now, we always set the IastEnabled tag to "1", but in the future, it might be zero to indicate that a request has not been analyzed
-        var tags = new IastTags()
+        if (!iast.Settings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
         {
-            IastJson = batch.ToString(),
-            IastEnabled = "1"
-        };
+            // The VulnerabilityBatch class is not very useful right now, but we will need it when handling requests
+            var batch = new VulnerabilityBatch();
+            batch.Add(vulnerability);
 
-        var scope = tracer.StartActiveInternal(operationName, tags: tags);
-        tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+            // Right now, we always set the IastEnabled tag to "1", but in the future, it might be zero to indicate that a request has not been analyzed
+            var tags = new IastTags()
+            {
+                IastJson = batch.ToString(),
+                IastEnabled = "1"
+            };
 
-        return scope;
+            tags.SetTag(Tags.Origin, IastOrigin);
+            var scope = tracer.StartActiveInternal(operationName, tags: tags);
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
+
+            return scope;
+        }
+
+        return null;
     }
 
     private static string? GetMethodName(StackFrame? frame)

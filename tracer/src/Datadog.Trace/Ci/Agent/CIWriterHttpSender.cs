@@ -14,12 +14,14 @@ using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util.Http;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Ci.Agent
 {
-    internal sealed class CIWriterHttpSender : ICIAgentlessWriterSender
+    internal sealed class CIWriterHttpSender : ICIVisibilityProtocolWriterSender
     {
         private const string ApiKeyHeader = "dd-api-key";
+        private const string EvpSubdomainHeader = "X-Datadog-EVP-Subdomain";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<CIWriterHttpSender>();
 
         private readonly IApiRequestFactory _apiRequestFactory;
@@ -81,12 +83,13 @@ namespace Datadog.Trace.Ci.Agent
             return true;
         }
 
-        private async Task SendPayloadAsync<T>(Uri url, Func<IApiRequest, T, Task<IApiResponse>> senderFunc, T state)
+        private async Task SendPayloadAsync<T>(EventPlatformPayload payload, Func<IApiRequest, T, Task<IApiResponse>> senderFunc, T state)
         {
             // retry up to 5 times with exponential back-off
             const int retryLimit = 5;
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
+            var url = payload.Url;
 
             while (true)
             {
@@ -95,7 +98,14 @@ namespace Datadog.Trace.Ci.Agent
                 try
                 {
                     request = _apiRequestFactory.Create(url);
-                    request.AddHeader(ApiKeyHeader, CIVisibility.Settings.ApiKey);
+                    if (payload.UseEvpProxy)
+                    {
+                        request.AddHeader(EvpSubdomainHeader, payload.EventPlatformSubdomain);
+                    }
+                    else
+                    {
+                        request.AddHeader(ApiKeyHeader, CIVisibility.Settings.ApiKey);
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -162,9 +172,13 @@ namespace Datadog.Trace.Ci.Agent
         private async Task SendPayloadAsync(CIVisibilityProtocolPayload payload)
         {
             var payloadArray = payload.ToArray();
-            Log.Debug<int, string>("Sending ({numberOfTraces} events) {bytesValue} bytes...", payload.Count, payloadArray.Length.ToString("N0"));
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug<int, string>("Sending ({numberOfTraces} events) {bytesValue} bytes...", payload.Count, payloadArray.Length.ToString("N0"));
+            }
+
             await SendPayloadAsync(
-                payload.Url,
+                payload,
                 static (request, payloadBytes) => request.PostAsync(new ArraySegment<byte>(payloadBytes), MimeTypes.MsgPack),
                 payloadArray).ConfigureAwait(false);
         }
@@ -173,7 +187,7 @@ namespace Datadog.Trace.Ci.Agent
         {
             Log.Debug<int>("Sending {count} multipart items...", payload.Count);
             await SendPayloadAsync(
-                payload.Url,
+                payload,
                 static (request, payloadArray) =>
                 {
                     if (request is IMultipartApiRequest multipartRequest)

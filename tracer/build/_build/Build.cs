@@ -55,7 +55,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "2.18.0";
+    readonly string Version = "2.19.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -307,10 +307,27 @@ partial class Build : NukeBuild
                 .SetProperty("BuildStandalone", "false"));
         });
 
-    Target BuildStandaloneTool => _ => _
-        // Currently requires manual copying of files into expected locations
+    Target PackRunnerToolNuget => _ => _
         .Unlisted()
-        .After(CreateBundleHome, ExtractDebugInfoLinux)
+        .After(CreateBundleHome, ExtractDebugInfoLinux, BuildRunnerTool)
+        .Executes(() =>
+        {
+            DotNetPack(x => x
+                // we have to restore and build dependencies to make sure we remove the pdb and xml files
+                .SetProject(Solution.GetProject(Projects.Tool))
+                .SetConfiguration(BuildConfiguration)
+                .SetNoWarnDotNetCore3()
+                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
+                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "dd-trace")
+                .SetProperty("BuildStandalone", "false")
+                .SetProperty("DebugSymbols", "False")
+                .SetProperty("DebugType", "None")
+                .SetProperty("GenerateDocumentationFile", "False"));
+        });
+
+    Target BuildStandaloneTool => _ => _
+        .Unlisted()
+        .After(CreateBundleHome, ExtractDebugInfoLinux, PackRunnerToolNuget)
         .Executes(() =>
         {
             var runtimes = new[] 
@@ -331,7 +348,7 @@ partial class Build : NukeBuild
                 .SetProject(Solution.GetProject(Projects.Tool))
                 // Have to do a restore currently as we're specifying specific runtime
                 // .EnableNoRestore()
-                .EnableNoDependencies()
+                // .EnableNoDependencies()
                 .SetFramework(TargetFramework.NETCOREAPP3_1)
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
@@ -339,6 +356,7 @@ partial class Build : NukeBuild
                 .SetProperty("BuildStandalone", "true")
                 .SetProperty("DebugSymbols", "False")
                 .SetProperty("DebugType", "None")
+                .SetProperty("GenerateDocumentationFile", "False")
                 .CombineWith(runtimes, (c, runtime) => c
                                 .SetProperty("PublishDir", runtime.output)
                                 .SetRuntime(runtime.rid)));

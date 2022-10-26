@@ -6,7 +6,6 @@
 using System;
 using System.IO;
 
-using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
@@ -14,59 +13,27 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
     internal static class Serverless
     {
         private const string DefinitionsId = "68224F20D001430F9400668DD25245BA";
-        private const string ExtensionEnvName = "_DD_EXTENSION_PATH";
-        private const string ExtensionFullPath = "/opt/extensions/datadog-agent";
-        private const string FunctionEnvame = "AWS_LAMBDA_FUNCTION_NAME";
-        private const string HandlerEnvName = "_HANDLER";
         private const string LogLevelEnvName = "DD_LOG_LEVEL";
-
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(Serverless));
 
         private static NativeCallTargetDefinition[] callTargetDefinitions = null;
 
+        internal static LambdaMetadata Metadata { get; } = LambdaMetadata.Create();
+
         internal static void InitIfNeeded()
         {
-            if (IsRunningInLambda(ExtensionFullPath))
+            if (Metadata is { IsRunningInLambda: true, HandlerName: var handlerName })
             {
+                if (string.IsNullOrEmpty(handlerName))
+                {
+                    Error("Error initializing serverless integration: handler name not found");
+                    return;
+                }
+
                 Debug("Sending CallTarget serverless integration definitions to native library.");
-                var serverlessDefinitions = GetServerlessDefinitions();
+                var serverlessDefinitions = GetServerlessDefinitions(handlerName);
                 NativeMethods.InitializeProfiler(DefinitionsId, serverlessDefinitions);
 
                 Debug("The profiler has been initialized with serverless definitions, count = " + serverlessDefinitions.Length);
-            }
-        }
-
-        internal static bool IsRunningInLambda(string extensionPath)
-        {
-            string path = EnvironmentHelpers.GetEnvironmentVariable(ExtensionEnvName) ?? extensionPath;
-            return File.Exists(path) && !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(FunctionEnvame));
-        }
-
-        internal static NativeCallTargetDefinition[] GetServerlessDefinitions()
-        {
-            try
-            {
-                if (callTargetDefinitions == null)
-                {
-                    LambdaHandler handler = new LambdaHandler(EnvironmentHelpers.GetEnvironmentVariable(HandlerEnvName));
-                    var assemblyName = typeof(InstrumentationDefinitions).Assembly.FullName;
-                    var paramCount = handler.ParamTypeArray.Length;
-
-                    var integrationType = GetIntegrationType(handler.ParamTypeArray[0], paramCount);
-                    callTargetDefinitions = new NativeCallTargetDefinition[]
-                    {
-                        new(handler.Assembly, handler.FullType, handler.MethodName, handler.ParamTypeArray, 0, 0, 0, 65535, 65535, 65535, assemblyName, integrationType)
-                    };
-
-                    LifetimeManager.Instance.AddShutdownTask(RunShutdown);
-                }
-
-                return callTargetDefinitions;
-            }
-            catch (Exception ex)
-            {
-                Error("Impossible to get Serverless Definitions", ex);
-                return Array.Empty<NativeCallTargetDefinition>();
             }
         }
 
@@ -152,6 +119,90 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
             }
 
             callTargetDefinitions = null;
+        }
+
+        private static NativeCallTargetDefinition[] GetServerlessDefinitions(string handlerName)
+        {
+            try
+            {
+                if (callTargetDefinitions == null)
+                {
+                    LambdaHandler handler = new LambdaHandler(handlerName);
+                    var assemblyName = typeof(InstrumentationDefinitions).Assembly.FullName;
+                    var paramCount = handler.ParamTypeArray.Length;
+
+                    var integrationType = GetIntegrationType(handler.ParamTypeArray[0], paramCount);
+                    callTargetDefinitions = new NativeCallTargetDefinition[]
+                    {
+                        new(handler.Assembly, handler.FullType, handler.MethodName, handler.ParamTypeArray, 0, 0, 0, 65535, 65535, 65535, assemblyName, integrationType)
+                    };
+
+                    LifetimeManager.Instance.AddShutdownTask(RunShutdown);
+                }
+
+                return callTargetDefinitions;
+            }
+            catch (Exception ex)
+            {
+                Error("Impossible to get Serverless Definitions", ex);
+                return Array.Empty<NativeCallTargetDefinition>();
+            }
+        }
+
+        internal class LambdaMetadata
+        {
+            private const string ExtensionEnvName = "_DD_EXTENSION_PATH";
+            private const string ExtensionFullPath = "/opt/extensions/datadog-agent";
+            private const string FunctionEnvame = "AWS_LAMBDA_FUNCTION_NAME";
+            private const string HandlerEnvName = "_HANDLER";
+
+            private LambdaMetadata(bool isRunningInLambda, string functionName, string handlerName, string serviceName)
+            {
+                IsRunningInLambda = isRunningInLambda;
+                FunctionName = functionName;
+                HandlerName = handlerName;
+                ServiceName = serviceName;
+            }
+
+            public bool IsRunningInLambda { get; }
+
+            public string FunctionName { get; }
+
+            public string HandlerName { get; }
+
+            public string ServiceName { get; }
+
+            /// <summary>
+            /// Gets the paths we don't want to trace when running in Lambda
+            /// </summary>
+            internal string DefaultHttpClientExclusions { get; } = "/2018-06-01/runtime/invocation/".ToUpperInvariant();
+
+            public static LambdaMetadata Create(string extensionPath = ExtensionFullPath)
+            {
+                var functionName = EnvironmentHelpers.GetEnvironmentVariable(FunctionEnvame);
+
+                var isRunningInLambda = !string.IsNullOrEmpty(functionName)
+                                     && File.Exists(
+                                            EnvironmentHelpers.GetEnvironmentVariable(ExtensionEnvName)
+                                         ?? extensionPath);
+
+                if (!isRunningInLambda)
+                {
+                    // the other values are irrelevant, so don't bother setting them
+                    return new LambdaMetadata(isRunningInLambda: false, functionName, handlerName: null, serviceName: null);
+                }
+
+                var handlerName = EnvironmentHelpers.GetEnvironmentVariable(HandlerEnvName);
+                var serviceName = handlerName?.IndexOf(LambdaHandler.Separator, StringComparison.Ordinal) switch
+                {
+                    null => null, // not provided
+                    0 => null, // invalid handler name (no assembly)
+                    -1 => handlerName, // top level function style
+                    { } i => handlerName.Substring(0, i), // three part function style
+                };
+
+                return new LambdaMetadata(isRunningInLambda: true, functionName, handlerName, serviceName);
+            }
         }
     }
 }

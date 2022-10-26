@@ -94,5 +94,7 @@ namespace Datadog.Trace.Logging
         void Error<T0, T1, T2>(Exception exception, string messageTemplate, T0 property0, T1 property1, T2 property2, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "");
 
         void Error(Exception exception, string messageTemplate, object[] args, [CallerLineNumber] int sourceLine = 0, [CallerFilePath] string sourceFile = "");
+
+        void CloseAndFlush();
     }
 }

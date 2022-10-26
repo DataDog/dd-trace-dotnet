@@ -12,8 +12,10 @@ using System.Threading;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.Ci;
@@ -78,7 +80,7 @@ public sealed class TestModule
             RuntimeArchitecture = frameworkDescription.ProcessArchitecture,
             OSArchitecture = frameworkDescription.OSArchitecture,
             OSPlatform = frameworkDescription.OSPlatform,
-            OSVersion = Environment.OSVersion.VersionString,
+            OSVersion = CIVisibility.GetOperatingSystemVersion(),
         };
 
         if (environment.VariablesToBypass is { } variablesToBypass)

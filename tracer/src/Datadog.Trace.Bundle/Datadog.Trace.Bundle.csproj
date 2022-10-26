@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>2.18.0</Version>
+    <Version>2.19.0</Version>
     <Title>Datadog APM Auto-instrumentation Assets</Title>
     <Description>Auto-instrumentation assets for Datadog APM</Description>
     <IncludeBuildOutput>false</IncludeBuildOutput>
@@ -27,6 +27,12 @@
   <ItemGroup>
     <Content Update="home\**\readme.txt" Pack="false">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
+    </Content>
+
+    <Content Update="home\**\*.xml" Pack="false">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Never</CopyToPublishDirectory>
     </Content>
   </ItemGroup>
 

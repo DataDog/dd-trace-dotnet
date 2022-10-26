@@ -308,40 +308,51 @@ namespace Datadog.Trace.Ci
             // Merge commits have a different commit hash from the one reported by the CI.
             if (gitInfo.Commit == Commit)
             {
-                if (string.IsNullOrEmpty(AuthorName))
+                if (string.IsNullOrWhiteSpace(AuthorName) || string.IsNullOrWhiteSpace(AuthorEmail))
                 {
-                    AuthorName = gitInfo.AuthorName;
+                    if (!string.IsNullOrWhiteSpace(gitInfo.AuthorEmail))
+                    {
+                        AuthorEmail = gitInfo.AuthorEmail;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(gitInfo.AuthorName))
+                    {
+                        AuthorName = gitInfo.AuthorName;
+                    }
                 }
 
-                if (string.IsNullOrEmpty(AuthorEmail))
+                AuthorDate ??= gitInfo.AuthorDate;
+
+                if (string.IsNullOrWhiteSpace(CommitterName) || string.IsNullOrWhiteSpace(CommitterEmail))
                 {
-                    AuthorEmail = gitInfo.AuthorEmail;
+                    if (!string.IsNullOrWhiteSpace(gitInfo.CommitterEmail))
+                    {
+                        CommitterEmail = gitInfo.CommitterEmail;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(gitInfo.CommitterName))
+                    {
+                        CommitterName = gitInfo.CommitterName;
+                    }
                 }
 
-                if (AuthorDate is null)
-                {
-                    AuthorDate = gitInfo.AuthorDate;
-                }
+                CommitterDate ??= gitInfo.CommitterDate;
 
-                if (string.IsNullOrEmpty(CommitterName))
+                if (!string.IsNullOrWhiteSpace(gitInfo.Message))
                 {
-                    CommitterName = gitInfo.CommitterName;
+                    // Some CI's (eg Azure) adds the `Merge X into Y` message to the Pull Request
+                    // If we have the original commit message we use that.
+                    if (string.IsNullOrWhiteSpace(Message) ||
+                        (Message.StartsWith("Merge", StringComparison.Ordinal) &&
+                        !gitInfo.Message.StartsWith("Merge", StringComparison.Ordinal)))
+                    {
+                        Message = gitInfo.Message;
+                    }
                 }
-
-                if (string.IsNullOrEmpty(CommitterEmail))
-                {
-                    CommitterEmail = gitInfo.CommitterEmail;
-                }
-
-                if (CommitterDate is null)
-                {
-                    CommitterDate = gitInfo.CommitterDate;
-                }
-
-                if (string.IsNullOrEmpty(Message))
-                {
-                    Message = gitInfo.Message;
-                }
+            }
+            else
+            {
+                Log.Warning("Git commit in .git folder is different from the one in the environment variables. [{gitCommit} != {envVarCommit}]", gitInfo.Commit, Commit);
             }
 
             // **********

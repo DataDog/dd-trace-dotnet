@@ -1,10 +1,6 @@
 using System;
-using System.Collections;
 using System.IO;
-using System.Runtime.InteropServices.ComTypes;
 using System.Security.Cryptography;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace Samples.WeakHashing;
 
@@ -37,7 +33,7 @@ internal static class Program
     {
         var original = "Here is some data to encrypt!";
         var encrypted = EncryptStringToBytes(original, algorithm);
-        var roundtrip = DecryptStringFromBytes(encrypted , algorithm);
+        var roundtrip = DecryptStringFromBytes(encrypted, algorithm);
 
         //Display the original data and the decrypted data.
         Console.WriteLine("Original:   {0}", original);

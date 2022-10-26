@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -185,7 +185,6 @@
     Name: lambda.invocation,
     Resource: /lambda/end-invocation,
     Service: LambdaExtension,
-    Error: 1,
     Tags: {
       _sampling_priority_v1: 1.0
     }
@@ -196,7 +195,6 @@
     Name: lambda.invocation,
     Resource: /lambda/end-invocation,
     Service: LambdaExtension,
-    Error: 1,
     Tags: {
       _sampling_priority_v1: 1.0
     }
@@ -207,7 +205,6 @@
     Name: lambda.invocation,
     Resource: /lambda/end-invocation,
     Service: LambdaExtension,
-    Error: 1,
     Tags: {
       _sampling_priority_v1: 1.0
     }
@@ -218,7 +215,6 @@
     Name: lambda.invocation,
     Resource: /lambda/end-invocation,
     Service: LambdaExtension,
-    Error: 1,
     Tags: {
       _sampling_priority_v1: 1.0
     }
@@ -229,7 +225,6 @@
     Name: lambda.invocation,
     Resource: /lambda/end-invocation,
     Service: LambdaExtension,
-    Error: 1,
     Tags: {
       _sampling_priority_v1: 1.0
     }
@@ -246,11 +241,66 @@
     }
   },
   {
+    TraceId: Id_49,
+    SpanId: Id_50,
+    Name: lambda.invocation,
+    Resource: /lambda/end-invocation,
+    Service: LambdaExtension,
+    Error: 1,
+    Tags: {
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_51,
+    SpanId: Id_52,
+    Name: lambda.invocation,
+    Resource: /lambda/end-invocation,
+    Service: LambdaExtension,
+    Error: 1,
+    Tags: {
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_54,
+    Name: lambda.invocation,
+    Resource: /lambda/end-invocation,
+    Service: LambdaExtension,
+    Error: 1,
+    Tags: {
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_55,
+    SpanId: Id_56,
+    Name: lambda.invocation,
+    Resource: /lambda/end-invocation,
+    Service: LambdaExtension,
+    Error: 1,
+    Tags: {
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_57,
+    SpanId: Id_58,
+    Name: lambda.invocation,
+    Resource: /lambda/end-invocation,
+    Service: LambdaExtension,
+    Error: 1,
+    Tags: {
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
     TraceId: Id_1,
-    SpanId: Id_49,
+    SpanId: Id_59,
     Name: manual.HandlerNoParamSync,
     Resource: manual.HandlerNoParamSync,
-    Service: Bootstrap,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_2,
     Tags: {
       language: dotnet,
@@ -266,10 +316,10 @@
   },
   {
     TraceId: Id_3,
-    SpanId: Id_50,
+    SpanId: Id_60,
     Name: manual.HandlerOneParamSync,
     Resource: manual.HandlerOneParamSync,
-    Service: Bootstrap,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_4,
     Tags: {
       language: dotnet,
@@ -285,10 +335,10 @@
   },
   {
     TraceId: Id_5,
-    SpanId: Id_51,
+    SpanId: Id_61,
     Name: manual.HandlerTwoParamsSync,
     Resource: manual.HandlerTwoParamsSync,
-    Service: Bootstrap,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_6,
     Tags: {
       language: dotnet,
@@ -304,10 +354,10 @@
   },
   {
     TraceId: Id_7,
-    SpanId: Id_52,
+    SpanId: Id_62,
     Name: manual.HandlerNoParamAsync,
     Resource: manual.HandlerNoParamAsync,
-    Service: Bootstrap,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_8,
     Tags: {
       language: dotnet,
@@ -323,10 +373,10 @@
   },
   {
     TraceId: Id_9,
-    SpanId: Id_53,
+    SpanId: Id_63,
     Name: manual.HandlerOneParamAsync,
     Resource: manual.HandlerOneParamAsync,
-    Service: Bootstrap,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_10,
     Tags: {
       language: dotnet,
@@ -342,10 +392,10 @@
   },
   {
     TraceId: Id_11,
-    SpanId: Id_54,
+    SpanId: Id_64,
     Name: manual.HandlerTwoParamsAsync,
     Resource: manual.HandlerTwoParamsAsync,
-    Service: Bootstrap,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_12,
     Tags: {
       language: dotnet,
@@ -361,10 +411,10 @@
   },
   {
     TraceId: Id_13,
-    SpanId: Id_55,
+    SpanId: Id_65,
     Name: manual.HandlerNoParamVoid,
     Resource: manual.HandlerNoParamVoid,
-    Service: Bootstrap,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_14,
     Tags: {
       language: dotnet,
@@ -380,10 +430,10 @@
   },
   {
     TraceId: Id_15,
-    SpanId: Id_56,
+    SpanId: Id_66,
     Name: manual.HandlerOneParamVoid,
     Resource: manual.HandlerOneParamVoid,
-    Service: Bootstrap,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_16,
     Tags: {
       language: dotnet,
@@ -399,10 +449,10 @@
   },
   {
     TraceId: Id_17,
-    SpanId: Id_57,
+    SpanId: Id_67,
     Name: manual.HandlerTwoParamsVoid,
     Resource: manual.HandlerTwoParamsVoid,
-    Service: Bootstrap,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_18,
     Tags: {
       language: dotnet,
@@ -418,10 +468,10 @@
   },
   {
     TraceId: Id_19,
-    SpanId: Id_58,
+    SpanId: Id_68,
     Name: manual.HandlerNoParamSyncWithContext,
     Resource: manual.HandlerNoParamSyncWithContext,
-    Service: Bootstrap,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_20,
     Tags: {
       language: dotnet,
@@ -436,10 +486,10 @@
   },
   {
     TraceId: Id_21,
-    SpanId: Id_59,
+    SpanId: Id_69,
     Name: manual.HandlerOneParamSyncWithContext,
     Resource: manual.HandlerOneParamSyncWithContext,
-    Service: Bootstrap,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_22,
     Tags: {
       language: dotnet,
@@ -454,10 +504,10 @@
   },
   {
     TraceId: Id_23,
-    SpanId: Id_60,
+    SpanId: Id_70,
     Name: manual.HandlerTwoParamsSyncWithContext,
     Resource: manual.HandlerTwoParamsSyncWithContext,
-    Service: Bootstrap,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_24,
     Tags: {
       language: dotnet,
@@ -472,10 +522,10 @@
   },
   {
     TraceId: Id_25,
-    SpanId: Id_61,
+    SpanId: Id_71,
     Name: manual.BaseHandlerNoParamSync,
     Resource: manual.BaseHandlerNoParamSync,
-    Service: Bootstrap,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_26,
     Tags: {
       language: dotnet,
@@ -491,10 +541,10 @@
   },
   {
     TraceId: Id_27,
-    SpanId: Id_62,
+    SpanId: Id_72,
     Name: manual.BaseHandlerTwoParamsSync,
     Resource: manual.BaseHandlerTwoParamsSync,
-    Service: Bootstrap,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_28,
     Tags: {
       language: dotnet,
@@ -510,10 +560,10 @@
   },
   {
     TraceId: Id_29,
-    SpanId: Id_63,
+    SpanId: Id_73,
     Name: manual.BaseHandlerOneParamSyncWithContext,
     Resource: manual.BaseHandlerOneParamSyncWithContext,
-    Service: Bootstrap,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_30,
     Tags: {
       language: dotnet,
@@ -528,10 +578,10 @@
   },
   {
     TraceId: Id_31,
-    SpanId: Id_64,
+    SpanId: Id_74,
     Name: manual.BaseHandlerOneParamAsync,
     Resource: manual.BaseHandlerOneParamAsync,
-    Service: Bootstrap,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_32,
     Tags: {
       language: dotnet,
@@ -547,10 +597,10 @@
   },
   {
     TraceId: Id_33,
-    SpanId: Id_65,
+    SpanId: Id_75,
     Name: manual.BaseHandlerTwoParamsVoid,
     Resource: manual.BaseHandlerTwoParamsVoid,
-    Service: Bootstrap,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_34,
     Tags: {
       language: dotnet,
@@ -566,10 +616,10 @@
   },
   {
     TraceId: Id_35,
-    SpanId: Id_66,
+    SpanId: Id_76,
     Name: manual.HandlerStructParam,
     Resource: manual.HandlerStructParam,
-    Service: Bootstrap,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_36,
     Tags: {
       language: dotnet,
@@ -585,10 +635,10 @@
   },
   {
     TraceId: Id_37,
-    SpanId: Id_67,
-    Name: manual.ThrowingHandler,
-    Resource: manual.ThrowingHandler,
-    Service: Bootstrap,
+    SpanId: Id_77,
+    Name: manual.HandlerNestedClassParam,
+    Resource: manual.HandlerNestedClassParam,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_38,
     Tags: {
       language: dotnet,
@@ -604,10 +654,10 @@
   },
   {
     TraceId: Id_39,
-    SpanId: Id_68,
-    Name: manual.ThrowingHandlerAsync,
-    Resource: manual.ThrowingHandlerAsync,
-    Service: Bootstrap,
+    SpanId: Id_78,
+    Name: manual.HandlerNestedStructParam,
+    Resource: manual.HandlerNestedStructParam,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_40,
     Tags: {
       language: dotnet,
@@ -623,10 +673,10 @@
   },
   {
     TraceId: Id_41,
-    SpanId: Id_69,
-    Name: manual.ThrowingHandlerAsyncTask,
-    Resource: manual.ThrowingHandlerAsyncTask,
-    Service: Bootstrap,
+    SpanId: Id_79,
+    Name: manual.HandlerGenericDictionaryParam,
+    Resource: manual.HandlerGenericDictionaryParam,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_42,
     Tags: {
       language: dotnet,
@@ -642,14 +692,15 @@
   },
   {
     TraceId: Id_43,
-    SpanId: Id_70,
-    Name: manual.ThrowingHandler,
-    Resource: manual.ThrowingHandler,
-    Service: Bootstrap,
+    SpanId: Id_80,
+    Name: manual.HandlerNestedGenericDictionaryParam,
+    Resource: manual.HandlerNestedGenericDictionaryParam,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_44,
     Tags: {
       language: dotnet,
-      runtime-id: Guid_22
+      runtime-id: Guid_22,
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -660,14 +711,15 @@
   },
   {
     TraceId: Id_45,
-    SpanId: Id_71,
-    Name: manual.ThrowingHandlerAsync,
-    Resource: manual.ThrowingHandlerAsync,
-    Service: Bootstrap,
+    SpanId: Id_81,
+    Name: manual.HandlerDoublyNestedGenericDictionaryParam,
+    Resource: manual.HandlerDoublyNestedGenericDictionaryParam,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_46,
     Tags: {
       language: dotnet,
-      runtime-id: Guid_23
+      runtime-id: Guid_23,
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -678,14 +730,107 @@
   },
   {
     TraceId: Id_47,
-    SpanId: Id_72,
-    Name: manual.ThrowingHandlerAsyncTask,
-    Resource: manual.ThrowingHandlerAsyncTask,
-    Service: Bootstrap,
+    SpanId: Id_82,
+    Name: manual.ThrowingHandler,
+    Resource: manual.ThrowingHandler,
+    Service: Samples.AWS.Lambda,
     ParentId: Id_48,
     Tags: {
       language: dotnet,
-      runtime-id: Guid_24
+      runtime-id: Guid_24,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_49,
+    SpanId: Id_83,
+    Name: manual.ThrowingHandlerAsync,
+    Resource: manual.ThrowingHandlerAsync,
+    Service: Samples.AWS.Lambda,
+    ParentId: Id_50,
+    Tags: {
+      language: dotnet,
+      runtime-id: Guid_25,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_51,
+    SpanId: Id_84,
+    Name: manual.ThrowingHandlerAsyncTask,
+    Resource: manual.ThrowingHandlerAsyncTask,
+    Service: Samples.AWS.Lambda,
+    ParentId: Id_52,
+    Tags: {
+      language: dotnet,
+      runtime-id: Guid_26,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_53,
+    SpanId: Id_85,
+    Name: manual.ThrowingHandler,
+    Resource: manual.ThrowingHandler,
+    Service: Samples.AWS.Lambda,
+    ParentId: Id_54,
+    Tags: {
+      language: dotnet,
+      runtime-id: Guid_27
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_55,
+    SpanId: Id_86,
+    Name: manual.ThrowingHandlerAsync,
+    Resource: manual.ThrowingHandlerAsync,
+    Service: Samples.AWS.Lambda,
+    ParentId: Id_56,
+    Tags: {
+      language: dotnet,
+      runtime-id: Guid_28
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_57,
+    SpanId: Id_87,
+    Name: manual.ThrowingHandlerAsyncTask,
+    Resource: manual.ThrowingHandlerAsyncTask,
+    Service: Samples.AWS.Lambda,
+    ParentId: Id_58,
+    Tags: {
+      language: dotnet,
+      runtime-id: Guid_29
     },
     Metrics: {
       process_id: 0,
@@ -696,12 +841,12 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_73,
+    SpanId: Id_88,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerNoParamSync,
-    Service: Bootstrap-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_49,
+    ParentId: Id_59,
     Tags: {
       component: WebRequest,
       http.method: GET,
@@ -716,12 +861,12 @@
   },
   {
     TraceId: Id_3,
-    SpanId: Id_74,
+    SpanId: Id_89,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerOneParamSync,
-    Service: Bootstrap-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_50,
+    ParentId: Id_60,
     Tags: {
       component: WebRequest,
       http.method: GET,
@@ -736,12 +881,12 @@
   },
   {
     TraceId: Id_5,
-    SpanId: Id_75,
+    SpanId: Id_90,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerTwoParamsSync,
-    Service: Bootstrap-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_51,
+    ParentId: Id_61,
     Tags: {
       component: WebRequest,
       http.method: GET,
@@ -756,12 +901,12 @@
   },
   {
     TraceId: Id_7,
-    SpanId: Id_76,
+    SpanId: Id_91,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerNoParamAsync,
-    Service: Bootstrap-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_52,
+    ParentId: Id_62,
     Tags: {
       component: WebRequest,
       http.method: GET,
@@ -776,12 +921,12 @@
   },
   {
     TraceId: Id_9,
-    SpanId: Id_77,
+    SpanId: Id_92,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerOneParamAsync,
-    Service: Bootstrap-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_53,
+    ParentId: Id_63,
     Tags: {
       component: WebRequest,
       http.method: GET,
@@ -796,12 +941,12 @@
   },
   {
     TraceId: Id_11,
-    SpanId: Id_78,
+    SpanId: Id_93,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerTwoParamsAsync,
-    Service: Bootstrap-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_54,
+    ParentId: Id_64,
     Tags: {
       component: WebRequest,
       http.method: GET,
@@ -816,12 +961,12 @@
   },
   {
     TraceId: Id_13,
-    SpanId: Id_79,
+    SpanId: Id_94,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerNoParamVoid,
-    Service: Bootstrap-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_55,
+    ParentId: Id_65,
     Tags: {
       component: WebRequest,
       http.method: GET,
@@ -836,12 +981,12 @@
   },
   {
     TraceId: Id_15,
-    SpanId: Id_80,
+    SpanId: Id_95,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerOneParamVoid,
-    Service: Bootstrap-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_56,
+    ParentId: Id_66,
     Tags: {
       component: WebRequest,
       http.method: GET,
@@ -856,12 +1001,12 @@
   },
   {
     TraceId: Id_17,
-    SpanId: Id_81,
+    SpanId: Id_96,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerTwoParamsVoid,
-    Service: Bootstrap-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_57,
+    ParentId: Id_67,
     Tags: {
       component: WebRequest,
       http.method: GET,
@@ -876,12 +1021,12 @@
   },
   {
     TraceId: Id_19,
-    SpanId: Id_82,
+    SpanId: Id_97,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerNoParamSyncWithContext,
-    Service: Bootstrap-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_58,
+    ParentId: Id_68,
     Tags: {
       component: WebRequest,
       http.method: GET,
@@ -896,12 +1041,12 @@
   },
   {
     TraceId: Id_21,
-    SpanId: Id_83,
+    SpanId: Id_98,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerOneParamSyncWithContext,
-    Service: Bootstrap-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_59,
+    ParentId: Id_69,
     Tags: {
       component: WebRequest,
       http.method: GET,
@@ -916,12 +1061,12 @@
   },
   {
     TraceId: Id_23,
-    SpanId: Id_84,
+    SpanId: Id_99,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerTwoParamsSyncWithContext,
-    Service: Bootstrap-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_60,
+    ParentId: Id_70,
     Tags: {
       component: WebRequest,
       http.method: GET,
@@ -936,12 +1081,12 @@
   },
   {
     TraceId: Id_25,
-    SpanId: Id_85,
+    SpanId: Id_100,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/BaseHandlerNoParamSync,
-    Service: Bootstrap-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_61,
+    ParentId: Id_71,
     Tags: {
       component: WebRequest,
       http.method: GET,
@@ -956,12 +1101,12 @@
   },
   {
     TraceId: Id_27,
-    SpanId: Id_86,
+    SpanId: Id_101,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/BaseHandlerTwoParamsSync,
-    Service: Bootstrap-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_62,
+    ParentId: Id_72,
     Tags: {
       component: WebRequest,
       http.method: GET,
@@ -976,12 +1121,12 @@
   },
   {
     TraceId: Id_29,
-    SpanId: Id_87,
+    SpanId: Id_102,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/BaseHandlerOneParamSyncWithContext,
-    Service: Bootstrap-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_63,
+    ParentId: Id_73,
     Tags: {
       component: WebRequest,
       http.method: GET,
@@ -996,12 +1141,12 @@
   },
   {
     TraceId: Id_31,
-    SpanId: Id_88,
+    SpanId: Id_103,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/BaseHandlerOneParamAsync,
-    Service: Bootstrap-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_64,
+    ParentId: Id_74,
     Tags: {
       component: WebRequest,
       http.method: GET,
@@ -1016,12 +1161,12 @@
   },
   {
     TraceId: Id_33,
-    SpanId: Id_89,
+    SpanId: Id_104,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/BaseHandlerTwoParamsVoid,
-    Service: Bootstrap-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_65,
+    ParentId: Id_75,
     Tags: {
       component: WebRequest,
       http.method: GET,
@@ -1036,12 +1181,12 @@
   },
   {
     TraceId: Id_35,
-    SpanId: Id_90,
+    SpanId: Id_105,
     Name: http.request,
     Resource: GET serverless-dummy-api:9005/function/HandlerStructParam,
-    Service: Bootstrap-http-client,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_66,
+    ParentId: Id_76,
     Tags: {
       component: WebRequest,
       http.method: GET,
@@ -1056,24 +1201,17 @@
   },
   {
     TraceId: Id_37,
-    SpanId: Id_91,
+    SpanId: Id_106,
     Name: http.request,
-    Resource: GET localhost/function/ThrowingHandler,
-    Service: Bootstrap-http-client,
+    Resource: GET serverless-dummy-api:9005/function/HandlerNestedClassParam,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_67,
-    Error: 1,
+    ParentId: Id_77,
     Tags: {
       component: WebRequest,
-      error.msg: Cannot assign requested address Cannot assign requested address,
-      error.stack:
-System.Net.WebException: Cannot assign requested address Cannot assign requested address
----> System.Net.Http.HttpRequestException: Cannot assign requested address
----> System.Net.Sockets.SocketException (99): Cannot assign requested address
-at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
-      error.type: System.Net.WebException,
       http.method: GET,
-      http.url: http://localhost/function/ThrowingHandler,
+      http.status_code: 200,
+      http.url: http://serverless-dummy-api:9005/function/HandlerNestedClassParam,
       runtime-id: Guid_19,
       span.kind: client
     },
@@ -1083,24 +1221,17 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
   },
   {
     TraceId: Id_39,
-    SpanId: Id_92,
+    SpanId: Id_107,
     Name: http.request,
-    Resource: GET localhost/function/ThrowingHandlerAsync,
-    Service: Bootstrap-http-client,
+    Resource: GET serverless-dummy-api:9005/function/HandlerNestedStructParam,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_68,
-    Error: 1,
+    ParentId: Id_78,
     Tags: {
       component: WebRequest,
-      error.msg: Cannot assign requested address Cannot assign requested address,
-      error.stack:
-System.Net.WebException: Cannot assign requested address Cannot assign requested address
----> System.Net.Http.HttpRequestException: Cannot assign requested address
----> System.Net.Sockets.SocketException (99): Cannot assign requested address
-at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
-      error.type: System.Net.WebException,
       http.method: GET,
-      http.url: http://localhost/function/ThrowingHandlerAsync,
+      http.status_code: 200,
+      http.url: http://serverless-dummy-api:9005/function/HandlerNestedStructParam,
       runtime-id: Guid_20,
       span.kind: client
     },
@@ -1110,24 +1241,17 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
   },
   {
     TraceId: Id_41,
-    SpanId: Id_93,
+    SpanId: Id_108,
     Name: http.request,
-    Resource: GET localhost/function/ThrowingHandlerAsyncTask,
-    Service: Bootstrap-http-client,
+    Resource: GET serverless-dummy-api:9005/function/HandlerGenericDictionaryParam,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_69,
-    Error: 1,
+    ParentId: Id_79,
     Tags: {
       component: WebRequest,
-      error.msg: Cannot assign requested address Cannot assign requested address,
-      error.stack:
-System.Net.WebException: Cannot assign requested address Cannot assign requested address
----> System.Net.Http.HttpRequestException: Cannot assign requested address
----> System.Net.Sockets.SocketException (99): Cannot assign requested address
-at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
-      error.type: System.Net.WebException,
       http.method: GET,
-      http.url: http://localhost/function/ThrowingHandlerAsyncTask,
+      http.status_code: 200,
+      http.url: http://serverless-dummy-api:9005/function/HandlerGenericDictionaryParam,
       runtime-id: Guid_21,
       span.kind: client
     },
@@ -1137,24 +1261,17 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
   },
   {
     TraceId: Id_43,
-    SpanId: Id_94,
+    SpanId: Id_109,
     Name: http.request,
-    Resource: GET localhost/function/ThrowingHandler,
-    Service: Bootstrap-http-client,
+    Resource: GET serverless-dummy-api:9005/function/HandlerNestedGenericDictionaryParam,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_70,
-    Error: 1,
+    ParentId: Id_80,
     Tags: {
       component: WebRequest,
-      error.msg: Cannot assign requested address Cannot assign requested address,
-      error.stack:
-System.Net.WebException: Cannot assign requested address Cannot assign requested address
----> System.Net.Http.HttpRequestException: Cannot assign requested address
----> System.Net.Sockets.SocketException (99): Cannot assign requested address
-at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
-      error.type: System.Net.WebException,
       http.method: GET,
-      http.url: http://localhost/function/ThrowingHandler,
+      http.status_code: 200,
+      http.url: http://serverless-dummy-api:9005/function/HandlerNestedGenericDictionaryParam,
       runtime-id: Guid_22,
       span.kind: client
     },
@@ -1164,24 +1281,17 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
   },
   {
     TraceId: Id_45,
-    SpanId: Id_95,
+    SpanId: Id_110,
     Name: http.request,
-    Resource: GET localhost/function/ThrowingHandlerAsync,
-    Service: Bootstrap-http-client,
+    Resource: GET serverless-dummy-api:9005/function/HandlerDoublyNestedGenericDictionaryParam,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_71,
-    Error: 1,
+    ParentId: Id_81,
     Tags: {
       component: WebRequest,
-      error.msg: Cannot assign requested address Cannot assign requested address,
-      error.stack:
-System.Net.WebException: Cannot assign requested address Cannot assign requested address
----> System.Net.Http.HttpRequestException: Cannot assign requested address
----> System.Net.Sockets.SocketException (99): Cannot assign requested address
-at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
-      error.type: System.Net.WebException,
       http.method: GET,
-      http.url: http://localhost/function/ThrowingHandlerAsync,
+      http.status_code: 200,
+      http.url: http://serverless-dummy-api:9005/function/HandlerDoublyNestedGenericDictionaryParam,
       runtime-id: Guid_23,
       span.kind: client
     },
@@ -1191,24 +1301,20 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
   },
   {
     TraceId: Id_47,
-    SpanId: Id_96,
+    SpanId: Id_111,
     Name: http.request,
-    Resource: GET localhost/function/ThrowingHandlerAsyncTask,
-    Service: Bootstrap-http-client,
+    Resource: GET localhost/function/ThrowingHandler,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_72,
+    ParentId: Id_82,
     Error: 1,
     Tags: {
       component: WebRequest,
-      error.msg: Cannot assign requested address Cannot assign requested address,
-      error.stack:
-System.Net.WebException: Cannot assign requested address Cannot assign requested address
----> System.Net.Http.HttpRequestException: Cannot assign requested address
----> System.Net.Sockets.SocketException (99): Cannot assign requested address
-at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, CancellationToken cancellationToken),
+      error.msg: Cannot assign requested address,
+      error.stack: Cannot assign requested address (SocketException),
       error.type: System.Net.WebException,
       http.method: GET,
-      http.url: http://localhost/function/ThrowingHandlerAsyncTask,
+      http.url: http://localhost/function/ThrowingHandler,
       runtime-id: Guid_24,
       span.kind: client
     },
@@ -1217,37 +1323,21 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     }
   },
   {
-    TraceId: Id_97,
-    SpanId: Id_98,
-    Name: manual.HandlerGenericDictionaryParam,
-    Resource: manual.HandlerGenericDictionaryParam,
-    Service: Bootstrap,
-    Tags: {
-      language: dotnet,
-      runtime-id: Guid_25,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_97,
-    SpanId: Id_99,
+    TraceId: Id_49,
+    SpanId: Id_112,
     Name: http.request,
-    Resource: GET serverless-dummy-api:9005/function/HandlerGenericDictionaryParam,
-    Service: Bootstrap-http-client,
+    Resource: GET localhost/function/ThrowingHandlerAsync,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_98,
+    ParentId: Id_83,
+    Error: 1,
     Tags: {
       component: WebRequest,
+      error.msg: Cannot assign requested address,
+      error.stack: Cannot assign requested address (SocketException),
+      error.type: System.Net.WebException,
       http.method: GET,
-      http.status_code: 200,
-      http.url: http://serverless-dummy-api:9005/function/HandlerGenericDictionaryParam,
+      http.url: http://localhost/function/ThrowingHandlerAsync,
       runtime-id: Guid_25,
       span.kind: client
     },
@@ -1256,37 +1346,21 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     }
   },
   {
-    TraceId: Id_100,
-    SpanId: Id_101,
-    Name: manual.HandlerNestedClassParam,
-    Resource: manual.HandlerNestedClassParam,
-    Service: Bootstrap,
-    Tags: {
-      language: dotnet,
-      runtime-id: Guid_26,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_100,
-    SpanId: Id_102,
+    TraceId: Id_51,
+    SpanId: Id_113,
     Name: http.request,
-    Resource: GET serverless-dummy-api:9005/function/HandlerNestedClassParam,
-    Service: Bootstrap-http-client,
+    Resource: GET localhost/function/ThrowingHandlerAsyncTask,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_101,
+    ParentId: Id_84,
+    Error: 1,
     Tags: {
       component: WebRequest,
+      error.msg: Cannot assign requested address,
+      error.stack: Cannot assign requested address (SocketException),
+      error.type: System.Net.WebException,
       http.method: GET,
-      http.status_code: 200,
-      http.url: http://serverless-dummy-api:9005/function/HandlerNestedClassParam,
+      http.url: http://localhost/function/ThrowingHandlerAsyncTask,
       runtime-id: Guid_26,
       span.kind: client
     },
@@ -1295,38 +1369,68 @@ at System.Net.Http.ConnectHelper.ConnectAsync(String host, Int32 port, Cancellat
     }
   },
   {
-    TraceId: Id_103,
-    SpanId: Id_104,
-    Name: manual.HandlerNestedStructParam,
-    Resource: manual.HandlerNestedStructParam,
-    Service: Bootstrap,
+    TraceId: Id_53,
+    SpanId: Id_114,
+    Name: http.request,
+    Resource: GET localhost/function/ThrowingHandler,
+    Service: Samples.AWS.Lambda-http-client,
+    Type: http,
+    ParentId: Id_85,
+    Error: 1,
     Tags: {
-      language: dotnet,
+      component: WebRequest,
+      error.msg: Cannot assign requested address,
+      error.stack: Cannot assign requested address (SocketException),
+      error.type: System.Net.WebException,
+      http.method: GET,
+      http.url: http://localhost/function/ThrowingHandler,
       runtime-id: Guid_27,
-      _dd.p.dm: -0
+      span.kind: client
     },
     Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.top_level: 1.0
     }
   },
   {
-    TraceId: Id_103,
-    SpanId: Id_105,
+    TraceId: Id_55,
+    SpanId: Id_115,
     Name: http.request,
-    Resource: GET serverless-dummy-api:9005/function/HandlerNestedStructParam,
-    Service: Bootstrap-http-client,
+    Resource: GET localhost/function/ThrowingHandlerAsync,
+    Service: Samples.AWS.Lambda-http-client,
     Type: http,
-    ParentId: Id_104,
+    ParentId: Id_86,
+    Error: 1,
     Tags: {
       component: WebRequest,
+      error.msg: Cannot assign requested address,
+      error.stack: Cannot assign requested address (SocketException),
+      error.type: System.Net.WebException,
       http.method: GET,
-      http.status_code: 200,
-      http.url: http://serverless-dummy-api:9005/function/HandlerNestedStructParam,
-      runtime-id: Guid_27,
+      http.url: http://localhost/function/ThrowingHandlerAsync,
+      runtime-id: Guid_28,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_57,
+    SpanId: Id_116,
+    Name: http.request,
+    Resource: GET localhost/function/ThrowingHandlerAsyncTask,
+    Service: Samples.AWS.Lambda-http-client,
+    Type: http,
+    ParentId: Id_87,
+    Error: 1,
+    Tags: {
+      component: WebRequest,
+      error.msg: Cannot assign requested address,
+      error.stack: Cannot assign requested address (SocketException),
+      error.type: System.Net.WebException,
+      http.method: GET,
+      http.url: http://localhost/function/ThrowingHandlerAsyncTask,
+      runtime-id: Guid_29,
       span.kind: client
     },
     Metrics: {

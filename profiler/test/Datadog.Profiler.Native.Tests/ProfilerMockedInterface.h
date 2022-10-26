@@ -49,6 +49,9 @@ public:
     MOCK_METHOD(int32_t, ContentionDurationThreshold, (), (const override));
     MOCK_METHOD(std::chrono::nanoseconds, CpuWallTimeSamplingRate, (), (const override));
     MOCK_METHOD(std::string const&, GetNamedPipeName, (), (const override));
+    MOCK_METHOD(bool, IsTimestampsAsLabelEnabled, (), (const override));
+    MOCK_METHOD(int32_t, WalltimeThreadsThreshold, (), (const override));
+    MOCK_METHOD(int32_t, CpuThreadsThreshold, (), (const override));
 };
 
 class MockExporter : public IExporter

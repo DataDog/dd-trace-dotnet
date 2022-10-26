@@ -6,13 +6,15 @@
 #nullable enable
 
 using System;
+using System.Text;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 
 internal class LambdaHandler
 {
-    private static readonly string[] Separator = { "::" };
+    internal const string Separator = "::";
+    private static readonly string[] Separators = { "::" };
 
     internal LambdaHandler(string? handlerName)
     {
@@ -21,7 +23,7 @@ internal class LambdaHandler
             ThrowHelper.ThrowArgumentNullException(nameof(handlerName));
         }
 
-        var handlerTokens = handlerName.Split(Separator, StringSplitOptions.None);
+        var handlerTokens = handlerName.Split(Separators, StringSplitOptions.None);
         if (handlerTokens.Length != 3)
         {
             ThrowHelper.ThrowArgumentException($"The handler name {handlerName} did not have the expected format A::B::C");
@@ -53,10 +55,10 @@ internal class LambdaHandler
         var methodParameters = handlerMethod.GetParameters();
 
         var paramType = new string[methodParameters.Length + 1];
-        paramType[0] = handlerMethod.ReturnType.FullName!; // assumes it's not a generic type return etc
+        paramType[0] = GetTypeFullName(handlerMethod.ReturnType);
         for (var i = 0; i < methodParameters.Length; i++)
         {
-            paramType[i + 1] = methodParameters[i].ParameterType.FullName!; // assumes it's not a generic type return etc
+            paramType[i + 1] = GetTypeFullName(methodParameters[i].ParameterType); // assumes it's not a generic type return etc
         }
 
         ParamTypeArray = paramType;
@@ -69,4 +71,44 @@ internal class LambdaHandler
     internal string FullType { get; }
 
     internal string MethodName { get; }
+
+    // We need the following rules:
+    // - Standard types: Name including namespace (i.e. ToString() OR FullName)
+    // - Nested types: Name must _not_ include qualifying prefix (namespace or parent type)
+    // - Generic types: Name including namespace (ToString() ONLY - FullName includes assembly reference)
+    // - Generic args: each argument must follow the above rules recursively
+    // includes the assembly name in the parameters
+    // but ToString() does not
+    private static string GetTypeFullName(Type type)
+        => type.IsNested switch
+        {
+            true when type.IsGenericType => $"{type.Name}[{GetGenericTypeArguments(type)}]",
+            true => type.Name,
+            _ => type.ToString()
+        };
+
+    private static string GetGenericTypeArguments(Type type)
+    {
+        // This isn't ideal, as if we have nested type arguments we
+        // Get the SB twice and concatenate but it avoids annoying
+        // recursive complexity, and is an edge case, so I think it's fine
+        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+
+        var doneFirst = false;
+        foreach (var argument in type.GenericTypeArguments)
+        {
+            if (doneFirst)
+            {
+                sb.Append(',');
+            }
+            else
+            {
+                doneFirst = true;
+            }
+
+            sb.Append(GetTypeFullName(argument));
+        }
+
+        return StringBuilderCache.GetStringAndRelease(sb);
+    }
 }

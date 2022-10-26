@@ -51,6 +51,8 @@ namespace Datadog.Trace.TestHelpers
 
         public event EventHandler<EventArgs<string>> MetricsReceived;
 
+        public event EventHandler<EventArgs<EvpProxyPayload>> EventPlatformProxyPayloadReceived;
+
         public string ListenerInfo { get; protected set; }
 
         public TestTransports TransportType { get; }
@@ -425,6 +427,11 @@ namespace Datadog.Trace.TestHelpers
                 HandlePotentialDataStreams(request);
                 response = "{}";
             }
+            else if (request.PathAndQuery.StartsWith("/evp_proxy/v2/"))
+            {
+                HandleEvpProxyPayload(request);
+                response = "{}";
+            }
             else
             {
                 HandlePotentialTraces(request);
@@ -669,6 +676,38 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
+        private void HandleEvpProxyPayload(MockHttpParser.MockHttpRequest request)
+        {
+            if (ShouldDeserializeTraces && request.ContentLength >= 1)
+            {
+                try
+                {
+                    var body = ReadStreamBody(request);
+                    var json = MessagePackSerializer.ToJson(body);
+                    var headerCollection = new NameValueCollection();
+                    foreach (var header in request.Headers)
+                    {
+                        headerCollection.Add(header.Name, header.Value);
+                    }
+
+                    EventPlatformProxyPayloadReceived?.Invoke(this, new EventArgs<EvpProxyPayload>(new EvpProxyPayload(request.PathAndQuery, headerCollection, json)));
+                }
+                catch (Exception ex)
+                {
+                    var message = ex.Message.ToLowerInvariant();
+
+                    if (message.Contains("beyond the end of the stream"))
+                    {
+                        // Accept call is likely interrupted by a dispose
+                        // Swallow the exception and let the test finish
+                        return;
+                    }
+
+                    throw;
+                }
+            }
+        }
+
         private void AssertHeader(
             NameValueCollection headers,
             string headerKey,
@@ -796,6 +835,20 @@ namespace Datadog.Trace.TestHelpers
             // solely rely on that.
             ProbesStatuses = probeStatuses.Values.ToList();
             Snapshots.AddRange(snapshots);
+        }
+
+        public readonly struct EvpProxyPayload
+        {
+            public readonly string PathAndQuery;
+            public readonly NameValueCollection Headers;
+            public readonly string BodyInJson;
+
+            public EvpProxyPayload(string pathAndQuery, NameValueCollection headers, string bodyInJson)
+            {
+                PathAndQuery = pathAndQuery;
+                Headers = headers;
+                BodyInJson = bodyInJson;
+            }
         }
 
         public class AgentConfiguration
