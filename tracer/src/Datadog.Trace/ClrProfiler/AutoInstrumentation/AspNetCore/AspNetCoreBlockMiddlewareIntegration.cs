@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         MinimumVersion = "2",
         MaximumVersion = "6",
         IntegrationName = nameof(IntegrationId.AspNetCore))]
-    internal class AspNetCoreBlockMiddlewareIntegration
+    public class AspNetCoreBlockMiddlewareIntegration
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AspNetCoreBlockMiddlewareIntegration));
 
@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         /// <typeparam name="TTarget">TTarget</typeparam>
         /// <typeparam name="TReturn">TReturn</typeparam>
         /// <returns>CallTargetReturn</returns>
-        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
             Log.Warning("on method end");
             if (Security.Instance.Settings.Enabled)
@@ -59,7 +59,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
-        internal static void HandleBranch(Microsoft.AspNetCore.Builder.IApplicationBuilder app)
+        public static void HandleBranch(Microsoft.AspNetCore.Builder.IApplicationBuilder app)
         {
             app.Run(context =>
             {
