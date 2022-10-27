@@ -29,11 +29,6 @@ namespace Datadog.Trace.Processors
                 Log.Debug("span.truncate: truncating `Meta` key (max {maxMetaKeyLen} chars): {key}", MaxMetaKeyLen, key);
             }
 
-            ProcessMetaValue(ref value);
-        }
-
-        public void ProcessMetaValue(ref string value)
-        {
             if (TraceUtil.TruncateUTF8(ref value, MaxMetaValLen))
             {
                 value += "...";
