@@ -1138,7 +1138,6 @@ partial class Build
                                 .SetLogsDirectory(TestLogsDirectory)
                                 .When(CodeCoverage, ConfigureCodeCoverage)
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
-                                .SetDiagnosticsFile(TestLogsDirectory / "diagnostics.txt")
                                 .WithDatadogLogger()
                                 .SetProjectFile(project));
         }
