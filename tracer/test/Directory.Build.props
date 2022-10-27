@@ -17,6 +17,9 @@
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.3" />
     <PackageReference Include="Xunit.SkippableFact" Version="1.4.13" />
+  </ItemGroup>
+
+  <ItemGroup Condition=" $(DD_LOGGER_ENABLED) != 'false' ">
     <PackageReference Include="DatadogTestLogger" Version="0.0.18">
       <CopyToOutputDirectory>lib\$(TargetFramework)\*</CopyToOutputDirectory>
       <FolderName>datadogtestlogger</FolderName>
@@ -28,8 +31,7 @@
     <Compile Include="$(MSBuildThisFileDirectory)GlobalSuppressions.cs" Link="GlobalSuppressions.test.cs" />
   </ItemGroup>
 
-
-  <Target Name="PackageReferenceCopyToOutput" AfterTargets="Build">
+  <Target Name="PackageReferenceCopyToOutput" AfterTargets="Build"  Condition=" $(DD_LOGGER_ENABLED) != 'false' ">
     <ItemGroup>
       <PackageReferenceFiles Condition="%(PackageReference.CopyToOutputDirectory) != '' AND %(PackageReference.FolderName) != ''"
         Include="$(NugetPackageRoot)\%(PackageReference.FolderName)\%(PackageReference.Version)\%(PackageReference.CopyToOutputDirectory)" />
@@ -41,5 +43,5 @@
              Importance="high"/>
     <Copy SourceFiles="@(PackageReferenceFiles)" DestinationFolder="$(OutDir)" />
   </Target>
-  
+
 </Project>
