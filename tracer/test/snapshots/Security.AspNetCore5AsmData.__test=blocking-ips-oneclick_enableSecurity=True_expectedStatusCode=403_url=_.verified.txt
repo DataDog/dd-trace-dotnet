@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -55,8 +55,6 @@
       http.request.headers.host: localhost:00000,
       http.request.headers.user-agent: Mistake Not...,
       http.request.headers.x-forwarded: 86.242.244.246,
-      http.response.headers.content-length: 2xxx,
-      http.response.headers.content-type: text/html,
       http.status_code: 403,
       http.url: http://localhost:00000/,
       http.useragent: Mistake Not...,
@@ -130,8 +128,6 @@
       http.request.headers.host: localhost:00000,
       http.request.headers.user-agent: Mistake Not...,
       http.request.headers.x-forwarded: 86.242.244.246,
-      http.response.headers.content-length: 2xxx,
-      http.response.headers.content-type: text/html,
       http.status_code: 403,
       http.url: http://localhost:00000/,
       http.useragent: Mistake Not...,

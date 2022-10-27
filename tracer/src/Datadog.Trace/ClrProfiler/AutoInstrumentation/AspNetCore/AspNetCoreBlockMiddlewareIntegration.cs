@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if !NETFRAMEWORK
-
 using System;
 using System.Linq;
 using System.Text;
@@ -14,10 +12,12 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+#if !NETFRAMEWORK
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Builder.Extensions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+#endif
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 {
@@ -49,58 +49,62 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         /// <returns>CallTargetReturn</returns>
         public static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
+#if !NETFRAMEWORK
             Log.Warning("on method end");
             if (Security.Instance.Settings.Enabled)
             {
                 var appb = (IApplicationBuilder)returnValue;
                 appb.MapWhen(context => context.Items["block"] is true, HandleBranch);
             }
+#endif
 
             return new CallTargetReturn<TReturn>(returnValue);
         }
 
+#if !NETFRAMEWORK
         internal static void HandleBranch(Microsoft.AspNetCore.Builder.IApplicationBuilder app)
         {
-            app.Run(context =>
-            {
-                var sec = Security.Instance;
-                var settings = sec.Settings;
-                var httpResponse = context.Response;
-                httpResponse.Clear();
-
-                foreach (var cookie in context.Request.Cookies)
+            app.Run(
+                context =>
                 {
-                    httpResponse.Cookies.Delete(cookie.Key);
-                }
+                    var sec = Security.Instance;
+                    var settings = sec.Settings;
+                    var httpResponse = context.Response;
+                    httpResponse.Clear();
 
-                // this should always be true for core, but it would seem foolish to ignore it, as potential source of future bugs
-                if (sec.CanAccessHeaders())
-                {
-                    httpResponse.Headers.Clear();
-                }
+                    foreach (var cookie in context.Request.Cookies)
+                    {
+                        httpResponse.Cookies.Delete(cookie.Key);
+                    }
 
-                httpResponse.StatusCode = 403;
-                var syncIOFeature = context.Features.Get<IHttpBodyControlFeature>();
-                if (syncIOFeature != null)
-                {
-                    // allow synchronous operations for net core >=3.1 otherwise invalidoperation exception
-                    syncIOFeature.AllowSynchronousIO = true;
-                }
+                    // this should always be true for core, but it would seem foolish to ignore it, as potential source of future bugs
+                    if (sec.CanAccessHeaders())
+                    {
+                        httpResponse.Headers.Clear();
+                    }
 
-                var template = settings.BlockedJsonTemplate;
-                if (context.Request.Headers["Accept"].ToString().Contains("text/html"))
-                {
-                    httpResponse.ContentType = "text/html";
-                    template = settings.BlockedHtmlTemplate;
-                }
-                else
-                {
-                    httpResponse.ContentType = "application/json";
-                }
+                    httpResponse.StatusCode = 403;
+                    var syncIOFeature = context.Features.Get<IHttpBodyControlFeature>();
+                    if (syncIOFeature != null)
+                    {
+                        // allow synchronous operations for net core >=3.1 otherwise invalidoperation exception
+                        syncIOFeature.AllowSynchronousIO = true;
+                    }
 
-                return httpResponse.WriteAsync(template);
-            });
+                    var template = settings.BlockedJsonTemplate;
+                    if (context.Request.Headers["Accept"].ToString().Contains("text/html"))
+                    {
+                        httpResponse.ContentType = "text/html";
+                        template = settings.BlockedHtmlTemplate;
+                    }
+                    else
+                    {
+                        httpResponse.ContentType = "application/json";
+                    }
+
+                    return httpResponse.WriteAsync(template);
+                });
         }
+#endif
     }
 }
-#endif
