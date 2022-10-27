@@ -61,22 +61,14 @@ namespace Samples.Security.AspNetCore5
                 });
             });
             
-            app.MapWhen(
-                context => true,
-                appBuilder =>
+            app.Map("/shutdown", builder =>
+            {
+                builder.Run(async context =>
                 {
-                    appBuilder.Run(
-                        async c =>
-                        {
-                            await c.Response.WriteAsync("finish!");
-                        });
+                    await context.Response.WriteAsync("Shutting down");
+                    _ = Task.Run(() => builder.ApplicationServices.GetService<IHostApplicationLifetime>().StopApplication());
                 });
-
-            app.Run(
-                async context =>
-                {
-                    await context.Response.WriteAsync("Hello     world!");
-                });
+            });
 
             app.Use(async (context, next) =>
             {

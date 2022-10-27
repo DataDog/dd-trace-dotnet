@@ -67,7 +67,7 @@ namespace Datadog.Trace.AppSec.Transports.Http
             return new NameValueHeadersCollection(new NameValueCollection());
         }
 
-        public void WriteBlockedResponse(string templateJson, string templateHtml, bool canAccessHeaders)
+        public void HandleResponse(string templateJson, string templateHtml, bool canAccessHeaders)
         {
             _context.Items["block"] = true;
             var httpResponse = _context.Response;

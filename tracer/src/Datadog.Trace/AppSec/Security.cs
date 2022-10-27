@@ -278,7 +278,7 @@ namespace Datadog.Trace.AppSec
 
         private void AsmDDProductConfigChanged(object sender, ProductConfigChangedEventArgs e)
         {
-            var asmDD = e.GetDeserializedConfigurations<string>().FirstOrDefault();
+            var asmDD = e.GetConfigurationAsString().FirstOrDefault();
             if (!string.IsNullOrEmpty(asmDD.TypedFile))
             {
                 _remoteRulesJson = asmDD.TypedFile;
@@ -483,8 +483,7 @@ namespace Datadog.Trace.AppSec
         private void AddResponseHeaderTags(ITransport transport, Span span)
         {
             TryAddEndPoint(span);
-            var headers =
-                CanAccessHeaders() ? transport.GetResponseHeaders() : new NameValueHeadersCollection(new NameValueCollection());
+            var headers = CanAccessHeaders() ? transport.GetResponseHeaders() : new NameValueHeadersCollection(new NameValueCollection());
             AddHeaderTags(span, headers, ResponseHeaders, SpanContextPropagator.HttpResponseHeadersTagPrefix);
         }
 
@@ -528,16 +527,12 @@ namespace Datadog.Trace.AppSec
                     var block = wafResult.ReturnCode == ReturnCode.Block || wafResult.Data.Contains("ublock") || wafResult.Actions.Contains("block");
                     if (block)
                     {
-                        args.Transport.WriteBlockedResponse(_settings.BlockedJsonTemplate, _settings.BlockedHtmlTemplate, CanAccessHeaders());
-                    }
-
-                    Report(args.Transport, span, wafResult, block);
-
-                    if (block)
-                    {
+                        args.Transport.HandleResponse(_settings.BlockedJsonTemplate, _settings.BlockedHtmlTemplate, CanAccessHeaders());
                         AddResponseHeaderTags(args.Transport, args.RelatedSpan);
                         additiveContext.Dispose();
                     }
+
+                    Report(args.Transport, span, wafResult, block);
                 }
             }
             catch (Exception ex)

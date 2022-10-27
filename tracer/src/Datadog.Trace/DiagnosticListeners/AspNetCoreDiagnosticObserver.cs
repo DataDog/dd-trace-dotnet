@@ -640,16 +640,6 @@ namespace Datadog.Trace.DiagnosticListeners
                             security.InstrumentationGateway.RaiseLastChanceToWriteTags(httpContext, span);
                             return Task.CompletedTask;
                         });
-
-                    httpContext.Response.OnStarting(
-                        () =>
-                        {
-                            // we subscribe here because in OnHostingHttpRequestInStop or HostingEndRequest it's too late,
-                            // the waf is already disposed by the registerfordispose callback, but we need to be at the end to get the real response status code
-                            security.InstrumentationGateway.RaiseRequestEnd(httpContext, request, span);
-                            return Task.CompletedTask;
-                        });
-
                     security.InstrumentationGateway.RaiseRequestStart(httpContext, request, span);
                 }
             }
@@ -898,7 +888,12 @@ namespace Datadog.Trace.DiagnosticListeners
                 // If we had an unhandled exception, the status code will already be updated correctly,
                 // but if the span was manually marked as an error, we still need to record the status code
                 var httpRequest = arg.DuckCast<HttpRequestInStopStruct>();
-                HttpContext httpContext = httpRequest.HttpContext;
+                var httpContext = httpRequest.HttpContext;
+                var security = Security.Instance;
+                if (security.Settings.Enabled)
+                {
+                    security.InstrumentationGateway.RaiseRequestEnd(httpContext, httpContext.Request, scope.Span);
+                }
 
                 DoBeforeRequestStops(httpContext, scope, tracer.Settings);
             }
