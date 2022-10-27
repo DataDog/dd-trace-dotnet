@@ -11,9 +11,12 @@ using Datadog.Trace.Vendors.MessagePack;
 namespace Datadog.Trace.Agent.MessagePack;
 
 /// <summary>
-/// Caches string values encoded as MessagePack bytes. These are not plain UTF-8 strings,
-/// they include the MessagePack header for each string as well.
-/// Use these byte arrays with MessagePackBinary.WriteRaw().
+/// A cache of string values encoded as MessagePack bytes. These strings are usually
+/// constants for the lifetime of a service, but that is not guaranteed, so we cache
+/// only a single value as long as it doesn't change.
+///
+/// These are not UTF-8 strings. They also include the MessagePack header for each string.
+/// Use MessagePackBinary.WriteRaw() to write these byte arrays, not MessagePackBinary.WriteStringBytes().
 /// </summary>
 internal static class MessagePackStringCache
 {
