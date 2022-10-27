@@ -33,7 +33,6 @@ namespace Datadog.Trace
         public TraceContext(IDatadogTracer tracer, TraceTagCollection tags = null)
         {
             Tracer = tracer;
-            IastRequestContext = Iast.Iast.Instance.Settings.Enabled ? new IastRequestContext() : null;
             Tags = tags ?? new TraceTagCollection(tracer?.Settings?.OutgoingTagPropagationHeaderMaxLength ?? TagPropagation.OutgoingTagPropagationHeaderMaxLength);
         }
 
@@ -54,6 +53,11 @@ namespace Datadog.Trace
         public int? SamplingPriority
         {
             get => _samplingPriority;
+        }
+
+        public bool IastInitialized
+        {
+            get => _iastRequestContext != null;
         }
 
         /// <summary>
